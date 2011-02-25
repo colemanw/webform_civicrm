@@ -1,0 +1,177 @@
+<?php
+// $Id$
+
+/**
+ * Implimentation of Hook Menu.
+ */
+function webform_civicrm_menu() {
+  $items = array();
+  $items['node/%webform_menu/civicrm'] = array(
+    'title' => 'CiviCRM',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('webform_civicrm_configure_form', 1),
+    'access callback' => 'node_access',
+    'access arguments' => array('update', 1),
+    'file' => 'webform_civicrm_forms.inc',
+    'weight' => 3,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['webform-civicrm/js/%/%'] = array(
+    'page callback' => 'webform_civicrm_js_options',
+    'file' => 'webform_civicrm_utils.inc',
+    'access callback' => 'node_access',
+    'access arguments' => array('update', 2),
+    'page arguments' => array(3),
+    'type' => MENU_CALLBACK
+  );
+  return $items;
+}
+
+
+/**
+ * Implimentation of Hook Form Alter.
+ */
+function webform_civicrm_form_alter(&$form, $form_state, $form_id) {
+
+  // Alter back-end webform component edit forms
+  if ( $form_id == 'webform_component_edit_form' ) {
+    require_once 'webform_civicrm_forms.inc';
+    _webform_civicrm_webform_component_form_alter( $form );
+  }
+
+  // Alter front-end of webforms
+  elseif ( strpos( $form_id, 'webform_client_form_' ) !== FALSE ) {
+    require_once 'webform_civicrm_forms.inc';
+    _webform_civicrm_webform_frontend_form_alter( $form );
+  }
+}
+
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function webform_civicrm_nodeapi(&$node, $op, $teaser, $page) {
+
+  switch ($op) {
+
+    case 'load':
+      $db = db_query( 'SELECT * FROM {webform_civicrm_forms} WHERE nid = %d', $node->nid );
+      if ( $settings = db_fetch_array( $db ) ) {
+        unset( $settings['nid'] );
+        return array('webform_civicrm' => $settings);
+      }
+      break;
+
+    case 'insert':
+      // For compatibility with node_clone module
+      if ( arg(2)=='clone' ) {
+        $db = db_query( 'SELECT * FROM {webform_civicrm_forms} WHERE nid = %d', arg(1) );
+        if ( $settings = db_fetch_array( $db ) ) {
+          $settings['nid'] = $node->nid;
+          drupal_write_record('webform_civicrm_forms', $settings );
+        }
+      }
+      break;
+
+    case 'delete':
+      if ( $node->webform ) {
+        db_query('DELETE FROM {webform_civicrm_forms} WHERE nid = %d', $node->nid);
+        // Submissions have already been deleted from webform_submissions table, so we'll do the opposite of a join to find them
+        db_query( 'DELETE FROM {webform_civicrm_submissions} WHERE sid NOT IN (SELECT sid FROM {webform_submissions})' );
+      }
+      break;
+  }
+}
+
+
+/**
+ * Implementation of hook_theme().
+ */
+function webform_civicrm_theme() {
+  $theme = array(
+
+    // Override webform-results-submissions.tpl.php
+    'webform_results_submissions' => array(
+      'arguments' => array('element' => NULL),
+      'template' => 'webform-results-submissions'
+    )
+  );
+
+  return $theme;
+}
+
+
+/**
+ * Implimentation of Hook Webform submission presave.
+ */
+function webform_civicrm_webform_submission_presave($node, &$submission) {
+  if ( $node->webform_civicrm ) {
+    require_once 'webform_civicrm_forms.inc';
+    webform_civicrm_contact_match( $node, $submission );
+  }
+}
+
+
+/**
+ * Implimentation of Hook Webform submission insert.
+ */
+function webform_civicrm_webform_submission_insert($node, $submission) {
+  if ( $node->webform_civicrm ) {
+    require_once 'webform_civicrm_forms.inc';
+    webform_civicrm_process_submission($node, $submission);
+  }
+}
+
+
+/**
+ * Implimentation of Hook Webform submission delete.
+ */
+function webform_civicrm_webform_submission_delete($node, $submission) {
+  db_query("DELETE FROM {webform_civicrm_submissions} WHERE sid = %d", $submission->sid);
+}
+
+
+/**
+ * Implimentation of Hook Webform submission load.
+ * Add CiviCRM contact info to submissions.
+ */
+function webform_civicrm_webform_submission_load(&$submissions) {
+  if ( empty($submissions) )
+    return;
+  $db = db_query( 'SELECT * FROM {webform_civicrm_submissions} WHERE sid IN ('. implode(',', array_keys($submissions)) .')' );
+  $contact_ids = array();
+  while ( $row = db_fetch_array( $db ) ) {
+    $sid = $row['sid'];
+    unset( $row['sid'] );
+    $submissions[$sid]->civicrm = $row;
+    if ( $cid = $row['contact_id'] )
+      $contact_ids[$cid] = $cid;
+  }
+  if ( $contact_ids ) {
+    civicrm_initialize();
+    $sql = 'SELECT id, display_name FROM civicrm_contact WHERE id IN ('. implode(',', $contact_ids) .')';
+
+    $dao =& CRM_Core_DAO::executeQuery( $sql );
+    $contacts = array();
+    while ( $dao->fetch() ) {
+      $contacts[$dao->id] = $dao->display_name;
+    }
+    foreach ( $submissions as &$s ) {
+      if ( $cid = $s->civicrm['contact_id'] )
+        $s->civicrm['display_name'] = $contacts[$cid];
+    }
+  }
+}
+
+
+/**
+ * Implimentation of Hook Help.
+ */
+function webform_civicrm_help($section) {
+  switch ($section) {
+    case 'admin/help#webform_civicrm':
+      // Return a line-break version of the module README.txt
+      return filter_filter('process', 1, NULL, file_get_contents( dirname(__FILE__) . "/README.txt") );
+    break;
+  }
+}

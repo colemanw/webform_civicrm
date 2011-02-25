@@ -1,0 +1,122 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Webform CiviCRM module's install and uninstall code.
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function webform_civicrm_schema() {
+  $schema['webform_civicrm_forms'] = array(
+    'description' => 'CiviCRM settings for individual Webform nodes.',
+    'fields' => array(
+      'nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Webform Node ID',
+      ),
+      'activity_type_id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'FK to {civicrm_activity} activity_type_id',
+      ),
+      'activity_subject' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Subject of auto-created activities'
+      ),
+      'prefix_known' => array(
+        'description' => 'Form prefix for known users.',
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+      'prefix_unknown' => array(
+        'description' => 'Form prefix for unknown users.',
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+      'message' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Message to show to known users'
+      ),
+      'block_unknown_users' => array(
+        'description' => 'Only allow known contacts to use form.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      )
+    ),
+    'primary key' => array('nid'),
+  );
+  $schema['webform_civicrm_submissions'] = array(
+    'description' => 'Link between form submissions and CiviCRM contacts.',
+    'fields' => array(
+      'sid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Webform Submission ID',
+      ),
+      'contact_id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'FK to {civicrm_contact} id',
+      ),
+      'activity_id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'FK to {civicrm_activity} id',
+      ),
+    ),
+    'primary key' => array('sid'),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function webform_civicrm_install() {
+  drupal_install_schema('webform_civicrm');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function webform_civicrm_uninstall() {
+  drupal_uninstall_schema('webform_civicrm');
+}
+
+/**
+ * Add column for message to webform_civicrm_forms table.
+ */
+function webform_civicrm_update_6100() {
+  $message = array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'Message to show to known users'
+  );
+  $ret = array();
+  db_add_field($ret, 'webform_civicrm_forms', 'message', $message);
+  return $ret;
+}
