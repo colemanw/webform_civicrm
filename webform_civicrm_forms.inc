@@ -37,7 +37,7 @@ function webform_civicrm_configure_form( &$form_state, $node ) {
 											      <div id="webform-civicrm-instructions" style="overflow:auto; height:100%; padding:0 1em;"></div>
 										      </div>
 										      <div id="webform-civicrm-instructions-text">'.
-										        filter_filter('process', 1, NULL, file_get_contents( dirname(__FILE__) . "/README.txt") ) .'
+										        webform_civicrm_help( 'admin/help#webform_civicrm' ) .'
 									        </div>
 										    </div>';
   }

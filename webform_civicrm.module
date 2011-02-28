@@ -2,7 +2,7 @@
 // $Id$
 
 /**
- * Implimentation of Hook Menu.
+ * Implementation of hook_menu().
  */
 function webform_civicrm_menu() {
   $items = array();
@@ -29,7 +29,7 @@ function webform_civicrm_menu() {
 
 
 /**
- * Implimentation of Hook Form Alter.
+ * Implementation of hook_form_alter().
  */
 function webform_civicrm_form_alter(&$form, $form_state, $form_id) {
 
@@ -102,7 +102,7 @@ function webform_civicrm_theme() {
 
 
 /**
- * Implimentation of Hook Webform submission presave.
+ * Implementation of hook_webform_submission_presave().
  */
 function webform_civicrm_webform_submission_presave($node, &$submission) {
   if ( $node->webform_civicrm ) {
@@ -113,7 +113,7 @@ function webform_civicrm_webform_submission_presave($node, &$submission) {
 
 
 /**
- * Implimentation of Hook Webform submission insert.
+ * Implementation of hook_webform_submission_insert().
  */
 function webform_civicrm_webform_submission_insert($node, $submission) {
   if ( $node->webform_civicrm ) {
@@ -124,7 +124,7 @@ function webform_civicrm_webform_submission_insert($node, $submission) {
 
 
 /**
- * Implimentation of Hook Webform submission delete.
+ * Implementation of hook_webform_submission_delete().
  */
 function webform_civicrm_webform_submission_delete($node, $submission) {
   db_query("DELETE FROM {webform_civicrm_submissions} WHERE sid = %d", $submission->sid);
@@ -132,27 +132,26 @@ function webform_civicrm_webform_submission_delete($node, $submission) {
 
 
 /**
- * Implimentation of Hook Webform submission load.
- * Add CiviCRM contact info to submissions.
+ * Implementation of hook_webform_submission_load().
+ * Add CiviCRM contact info to submission objects.
  */
 function webform_civicrm_webform_submission_load(&$submissions) {
   if ( empty($submissions) )
     return;
   $db = db_query( 'SELECT * FROM {webform_civicrm_submissions} WHERE sid IN ('. implode(',', array_keys($submissions)) .')' );
-  $contact_ids = array();
+  $contacts = array();
   while ( $row = db_fetch_array( $db ) ) {
     $sid = $row['sid'];
     unset( $row['sid'] );
     $submissions[$sid]->civicrm = $row;
     if ( $cid = $row['contact_id'] )
-      $contact_ids[$cid] = $cid;
+      $contacts[$cid] = '';
   }
-  if ( $contact_ids ) {
+  if ( $contacts ) {
     civicrm_initialize();
-    $sql = 'SELECT id, display_name FROM civicrm_contact WHERE id IN ('. implode(',', $contact_ids) .')';
+    $sql = 'SELECT id, display_name FROM civicrm_contact WHERE id IN ('. implode(',', array_keys($contacts)) .')';
 
     $dao =& CRM_Core_DAO::executeQuery( $sql );
-    $contacts = array();
     while ( $dao->fetch() ) {
       $contacts[$dao->id] = $dao->display_name;
     }
@@ -165,13 +164,13 @@ function webform_civicrm_webform_submission_load(&$submissions) {
 
 
 /**
- * Implimentation of Hook Help.
+ * Implementation of hook_help().
  */
 function webform_civicrm_help($section) {
   switch ($section) {
     case 'admin/help#webform_civicrm':
       // Return a line-break version of the module README.txt
-      return filter_filter('process', 1, NULL, file_get_contents( dirname(__FILE__) . "/README.txt") );
+      return filter_filter('process', 1, NULL, file_get_contents( drupal_get_path( 'module', 'webform_civicrm' ) . '/README.txt') );
     break;
   }
 }
