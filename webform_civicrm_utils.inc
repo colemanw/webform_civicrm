@@ -202,7 +202,7 @@ function webform_civicrm_get_options($option_group, $return_array = FALSE, $none
       $params[1] = array($option_group, 'Integer');
     }
     else {
-      $sql .= "(SELECT id FROM civicrm_option_group WHERE name = '%1')";
+      $sql .= "(SELECT id FROM civicrm_option_group WHERE name = %1)";
       $params[1] = array($option_group, 'String');
     }
     // Exclude reserved activity types
