@@ -141,6 +141,7 @@ function webform_civicrm_update_6101() {
   }
   if ($n > 1)
     CRM_Core_DAO::executeQuery($sql, $params);
-  $ret = array(array('success' => TRUE, 'query' => $c .' '. t('activity target contacts added.')));
+  $ret = array();
+  $ret[] = array('success' => TRUE, 'query' => $c .' '. t('activity target contacts added.'));
   return $ret;
 }
