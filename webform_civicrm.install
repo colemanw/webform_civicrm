@@ -120,3 +120,23 @@ function webform_civicrm_update_6100() {
   db_add_field($ret, 'webform_civicrm_forms', 'message', $message);
   return $ret;
 }
+
+/**
+ * Add missing activity targets.
+ */
+function webform_civicrm_update_6101() {
+  civicrm_initialize();
+  $db = db_query('SELECT * FROM {webform_civicrm_submissions} WHERE contact_id <> 0 AND activity_id <> 0');
+  $sql = 'INSERT INTO civicrm_activity_target (activity_id, target_contact_id) VALUES (%1,%2)';
+  $n = 1;
+  $params = array();
+  while ($row = db_fetch_array($db)) {
+    $params[$n] = array($row['activity_id'], 'Integer');
+    $params[$n+1] = array($row['contact_id'], 'Integer');
+    if ($n > 1)
+      $sql .= ',(%'.$n.',%'.($n+1).')';
+    $n += 2;
+  }
+  if ($n > 1)
+    CRM_Core_DAO::executeQuery($sql, $params);
+}
