@@ -272,7 +272,7 @@ function webform_civicrm_fill_values(&$elements, $contact) {
     if (isset($contact[$eid])) {
       if ($element['#type'] == 'date') {
         $dates = explode('-', $contact[$eid]);
-        $contact[$eid] = array('year' => $dates[0], 'month' => intval($dates[1]), 'day' => intval(substr($dates[2], 0, 2)));
+        $contact[$eid] = array('year' => $dates[0], 'month' => intval($dates[1]), 'day' => intval($dates[2]));
       }
       elseif (($element['#type'] == 'checkboxes' || $element['#multiple']) && !is_array($contact[$eid])) {
         $contact[$eid] = explode($sp, trim($contact[$eid], $sp));
@@ -298,6 +298,7 @@ function webform_civicrm_process_submission($node, $submission) {
     $act_params = array(
       'activity_type_id' => $type,
       'source_contact_id' => $cid,
+      'target_contact_id' => $cid,
       'subject' => $node->webform_civicrm['activity_subject'],
       'status_id' => 2,
       'activity_date_time' => date('Ymdhis'),
