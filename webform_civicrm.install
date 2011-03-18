@@ -134,13 +134,15 @@ function webform_civicrm_update_6101() {
   while ($row = db_fetch_array($db)) {
     $params[$n] = array($row['activity_id'], 'Integer');
     $params[$n+1] = array($row['contact_id'], 'Integer');
-    if ($n > 1)
+    if ($n > 1) {
       $sql .= ',(%'.$n.',%'.($n+1).')';
+    }
     $n += 2;
     ++$c;
   }
-  if ($n > 1)
+  if ($n > 1) {
     CRM_Core_DAO::executeQuery($sql, $params);
-  $ret = array(array('success' => TRUE, 'query' => $c .' '. t('activity target contacts added.')));
+  }
+  $ret = array(array('success' => TRUE, 'query' => t('@num activity target contacts added.', array('@num' => $c))));
   return $ret;
 }

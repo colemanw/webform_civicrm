@@ -13,10 +13,12 @@ if (count($table['#rows']) && $node->webform_civicrm) {
   $access = user_access('access CiviCRM');
   foreach ($table['#rows'] as &$row) {
     if (($cid = $submissions[$row[0]]->civicrm['contact_id']) && ($name = $submissions[$row[0]]->civicrm['display_name'])) {
-      if ($access)
+      if ($access) {
         $row[2] = l($name, 'civicrm/contact/view', array('query' => "cid=$cid&reset=1"));
-      else
+      }
+      else {
         $row[2] = $name;
+      }
     }
   }
 }

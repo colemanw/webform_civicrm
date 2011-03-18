@@ -134,16 +134,18 @@ function webform_civicrm_webform_submission_delete($node, $submission) {
  * Add CiviCRM contact info to submission objects.
  */
 function webform_civicrm_webform_submission_load(&$submissions) {
-  if (empty($submissions))
+  if (empty($submissions)) {
     return;
+  }
   $db = db_query('SELECT * FROM {webform_civicrm_submissions} WHERE sid IN ('. implode(',', array_keys($submissions)) .')');
   $contacts = array();
   while ($row = db_fetch_array($db)) {
     $sid = $row['sid'];
     unset($row['sid']);
     $submissions[$sid]->civicrm = $row;
-    if ($cid = $row['contact_id'])
+    if ($cid = $row['contact_id']) {
       $contacts[$cid] = '';
+    }
   }
   if ($contacts) {
     civicrm_initialize();
@@ -154,8 +156,9 @@ function webform_civicrm_webform_submission_load(&$submissions) {
       $contacts[$dao->id] = $dao->display_name;
     }
     foreach ($submissions as &$s) {
-      if ($cid = $s->civicrm['contact_id'])
+      if ($cid = $s->civicrm['contact_id']) {
         $s->civicrm['display_name'] = $contacts[$cid];
+      }
     }
   }
 }
