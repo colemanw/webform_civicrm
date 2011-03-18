@@ -191,12 +191,12 @@ function webform_civicrm_contact_match($node, &$submission) {
 
 
 /**
- * Get options from civicrm_option_value OR civicrm_country OR civicrm_state_province tables
+ * Get options from civicrm_option_value OR civicrm_group OR civicrm_country OR civicrm_state_province tables
  * @Param $option_group: option group name or id
- * @Param $return_array: Can return values as a Webform-style string, or a FAPI style array
- * @Param $none: If returning FAPI array, provide label if options should include "none"
+ * @Param $var: Can return values as a Webform-style string, or a FAPI style array. Specify 'str' or 'arr'
+ * @Param $none: If returning FAPI array, provide label if first option should be "none"
  */
-function webform_civicrm_get_options($option_group, $return_array = FALSE, $none = '') {
+function webform_civicrm_get_options($option_group, $var='str', $none='') {
   $params = array();
   if ($option_group == 'country') {
     $config = webform_civicrm_get_config();
@@ -210,6 +210,9 @@ function webform_civicrm_get_options($option_group, $return_array = FALSE, $none
   elseif ($option_group == 'state') {
     $config = webform_civicrm_get_config();
     $sql = 'SELECT name AS label, id AS value FROM civicrm_state_province WHERE country_id = '. $config['defaultContactCountry'] .' ORDER BY name';
+  }
+  elseif ($option_group == 'groups') {
+    $sql = 'SELECT id AS value, title AS label FROM civicrm_group WHERE is_active = 1';
   }
   else {
     $sql = 'SELECT value, label FROM civicrm_option_value WHERE is_active <> 0 AND option_group_id = ';
@@ -229,21 +232,16 @@ function webform_civicrm_get_options($option_group, $return_array = FALSE, $none
   }
 
   $dao =& CRM_Core_DAO::executeQuery($sql, $params);
+  $arr = array();
   if ($none) {
-    $options = array($none);
+    $arr[] = $none;
   }
-  $string = '';
+  $str = '';
   while ($dao->fetch()) {
-    $options[$dao->value] = $dao->label;
-    if ($string) {
-      $string .= "\n";
-    }
-    $string .= $dao->value .'|'. $dao->label;
+    $arr[$dao->value] = $dao->label;
+    $str .= ($str?"\n":'') . $dao->value .'|'. $dao->label;
   }
-  if ($return_array) {
-    return $options;
-  }
-  return $string;
+  return $$var;
 }
 
 
@@ -252,8 +250,8 @@ function webform_civicrm_get_options($option_group, $return_array = FALSE, $none
  */
 function webform_civicrm_js_options($field_key) {
   civicrm_initialize();
+  // Validate input
   $lists = webform_civicrm_get_fields('lists');
-
   if (array_key_exists($field_key, $lists)) {
     print webform_civicrm_get_options($lists[$field_key]);
     exit();
@@ -261,19 +259,6 @@ function webform_civicrm_js_options($field_key) {
   return drupal_not_found();
 }
 
-
-/**
- * Get CiviCRM groups
- */
-function webform_civicrm_get_groups() {
-  $sql = 'SELECT id, title FROM civicrm_group WHERE is_active = 1';
-  $dao =& CRM_Core_DAO::executeQuery($sql);
-  $groups = array();
-  while ($dao->fetch()) {
-    $groups[$dao->id] = $dao->title;
-  }
-  return $groups;
-}
 
 /**
  * Get ids of enabled CiviCRM fields for a webform
@@ -421,6 +406,7 @@ function webform_civicrm_get_fields($var = 'fields') {
         continue;
       }
       $label = drupal_strtolower($dao->label);
+      // Prevent namespace collisions
       if (in_array($label, $tokens)) {
         $label .= ' '. $dao->id;
       }
@@ -466,7 +452,7 @@ function webform_civicrm_replace_tokens($str, $contact) {
   foreach ($tokens as $k => &$t) {
     $value = $contact[$k];
     if (is_array($value)) {
-      $value = explode(', ', $value);
+      $value = implode(', ', $value);
     }
     $values[] = str_replace($sp, ' &amp; ', trim($value, $sp));
     $t = "[$t]";
@@ -476,7 +462,7 @@ function webform_civicrm_replace_tokens($str, $contact) {
 
 
 /**
- * Displays the admin-defined message with "not you" link to known contacts
+ * Displays the admin-defined message with "not you?" link to known contacts
  */
 function webform_civicrm_set_message($message, $contact) {
   $message = webform_civicrm_replace_tokens($message, $contact);
