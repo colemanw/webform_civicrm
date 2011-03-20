@@ -33,7 +33,7 @@ function webform_civicrm_contact_match($node, &$submission) {
     elseif ($field == 'phone') {
       $table = 'phone';
     }
-    elseif ($field == 'groups' || $field == 'groups_hidden') {
+    elseif ($field == 'groups' || $field == 'groups_hidden' || $field == 'tags') {
       $table = 'custom';
       continue;
     }
@@ -178,7 +178,7 @@ function webform_civicrm_contact_match($node, &$submission) {
           $group_params['group_id'] = $mailer_params['group_id'] = $gid;
           unset($remove_groups[$gid]);
           if (array_key_exists($gid, $mailing_lists)) {
-            dsm(webform_civicrm_mailer_event_subscribe($mailer_params));
+            webform_civicrm_mailer_event_subscribe($mailer_params);
             $confirmations_sent[] = $mailing_lists[$gid];
           }
           else {
@@ -205,6 +205,23 @@ function webform_civicrm_contact_match($node, &$submission) {
           drupal_set_message(t('You have removed yourself from') .' '. $group .'.');
         }
       }
+    }
+  }
+  // Process tags
+  if ($enabled['civicrm_tags']) {
+    require_once 'api/v2/Tag.php';
+    require_once 'api/v2/EntityTag.php';
+    $add_tags = drupal_explode_tags($submission->data[$enabled['civicrm_tags']]['value'][0]);
+    foreach ($add_tags as $tag) {
+      $params = array('name' => $tag);
+      $result = civicrm_tag_get($params);
+      // Create tag if it doesn't exist
+      if (!($id = $result['id'])) {
+        $result = civicrm_tag_create($params);
+        $id = $result['tag_id'];
+      }
+      $params = array('tag_id' => $id, 'contact_id' => $cid);
+      civicrm_entity_tag_add($params);
     }
   }
   return $cid;
@@ -271,9 +288,30 @@ function webform_civicrm_get_options($option_group, $var='str', $null_label='') 
 /**
  * Return CiviCRM options via AJAX request
  */
-function webform_civicrm_js_options($field_key) {
+function webform_civicrm_js_options($field_key, $str='') {
+  if (!user_access('access CiviCRM')) {
+    return drupal_access_denied();
+  }
   civicrm_initialize();
-  // Validate input
+  // Autocomplete callback for tags
+  if ($field_key == 'tags') {
+    if (!$str) {
+      exit();
+    }
+    // Handle a comma-separated list of tags.
+    $existing = drupal_explode_tags($str);
+    $last_str = trim(array_pop($existing));
+    $matches = array();
+    $prefix = count($existing) ? implode(', ', $existing) .', ' : '';
+    $params = array(1 => array('%'.$last_str.'%', 'String'));
+    $sql = "SELECT name FROM civicrm_tag WHERE is_selectable = 1 AND used_for = 'civicrm_contact' AND name LIKE %1 LIMIT 0, 12";
+    $dao =& CRM_Core_DAO::executeQuery($sql, $params);
+    while ($dao->fetch()) {
+      $matches[$prefix . $dao->name] = check_plain($dao->name);
+    }
+    exit(drupal_json($matches));
+  }
+  // Get option lists
   $lists = webform_civicrm_get_fields('lists');
   if (array_key_exists($field_key, $lists)) {
     print webform_civicrm_get_options($lists[$field_key]);
@@ -367,7 +405,9 @@ function webform_civicrm_get_fields($var = 'fields') {
       'civicrm_groups'         => array('name' => t('Select Group(s)'), 'type' => 'select',
                                  'extra' => array('multiple' => 1, 'description' => t('Users can add/remove themselves from CiviCRM groups (mailing lists, etc)'))),
       'civicrm_groups_hidden'  => array('name' => t('Auto-Add Group(s)'), 'type' => 'hidden',
-                                 'extra' => array('description' => t('Hidden form element will add contacts to group(s) of your choosing')))
+                                 'extra' => array('description' => t('Hidden form element will add contacts to group(s) of your choosing'))),
+      'civicrm_tags'  => array('name' => t('Tags'), 'type' => 'hidden',
+                                 'extra' => array('description' => t('Hidden form element to add tags to contacts')))
     );
 
     $tokens = array(

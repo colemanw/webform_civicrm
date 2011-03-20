@@ -146,7 +146,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
       '#type' => 'checkbox',
       '#title' => t('Confirm Subscriptions'),
       '#default_value' => (bool)$settings['confirm_subscription'],
-      '#description' => t('Recommended. This will send a confirmation email to contacts before adding them to public mailing-list-type groups.') .'<br />'. t('Your public mailing lists:') .' <em>'. implode(', ',webform_civicrm_get_options('mailing_lists','arr')) .'</em>'
+      '#description' => t('Recommended. Send a confirmation email to contacts before adding them to public mailing-list-type groups.') .'<br />'. t('Your public mailing lists:') .' <em>'. implode(', ',webform_civicrm_get_options('mailing_lists','arr')) .'</em>'
     );
     $form['options']['block_unknown_users'] = array(
       '#prefix' => '<div class="web-civi-3-col">',
@@ -428,6 +428,14 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
           $form['civicrm_groups_fieldset']['civicrm_group_defaults']['#title'] = t('Add to Group');
         }
         array_unshift($form['#submit'], 'webform_civicrm_process_group_selection');
+      }
+      elseif ($key == 'civicrm_tags') {
+        $form['value']['#title'] = t('Tags');
+        $form['value']['#description'] = t('Enter a comma-separated list of tags to add to contacts using this webform.') .'<br />'. t('Use the autocomplete to select existing tags, or you may add new ones.');
+        $form['value']['#type'] = 'textfield';
+        $form['value']['#size'] = 100;
+        $form['value']['#autocomplete_path'] = 'webform-civicrm/js/'.$form['nid']['#value'].'/tags';
+        
       }
       // Auto set multi-value option for other fields based on schema
       elseif ($form['extra']['multiple']) {
