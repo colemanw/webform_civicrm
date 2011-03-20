@@ -34,7 +34,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
       '#title' => t('Enable CiviCRM Processing'),
       '#default_value' => (bool)$settings,
       '#return_value' => $node->nid,
-      '#suffix' => '<ul id="civicrm-instructions"><li>'.
+      '#description' => '<ul><li>'.
       t('CiviCRM contacts will be created or updated when users submit this webform.') .'</li><li>'.
       t('Logged-in users will have their contact info already filled-in for them.') .'</li><li>'.
       t('The form will also be auto-filled for anonymous users if you send them this link using CiviMail:') .'<br />'. 
@@ -101,19 +101,35 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   $form['fields'] = array(
     '#type'  => 'fieldset',
     '#title' => t('Enable Fields'),
-    '#description' => t('Webform fields will be created for you automatically when you check these boxes. You may then configure, arrange, or delete them using the standard Webform interface.') .'<br /><strong>'.
-    t('IMPORTANT NOTES:') .'</strong><ul><li>'.
-    t('First name, Last name, and Email fields are all <em>required</em> by CiviCRM in order to create new contacts.') .'</li><li>'.
-    t('Correct handling of custom fields requires proper permission configuration.') .' '.
-    t('<a !link>Read the instructions</a> for more info.', array('!link' => $readme_link)) .'</li><ul>'
   );
+    $form['fields']['box'] = array(
+      '#prefix' => '<div class="scrollme"><div class="description">'. t('Webform components will be created for you automatically when you check these boxes. You may then configure, arrange, or delete them using the standard Webform interface.') .'</div>',
+      '#suffix' => '</div>',
+    );
+      // Three columns for neatness
+      $form['fields']['box']['contact'] = array(
+        '#prefix' => '<div class="web-civi-3-col"><h4>'. t('Contact Fields') .'</h4><div class="description">'. t('First name, Last name, and Email fields are all <em>required</em> by CiviCRM in order to create new contacts.') .'</div>',
+        '#suffix' => '</div>'
+      );
+      $form['fields']['box']['groups'] = array(
+        '#prefix' => '<div class="web-civi-3-col"><h4>'. t('Groups and Tags') .'</h4><div class="description">'. t('These fields will add contacts who submit this form to groups and tags of your choosing. Configuration is done by editing the webform component.') .'</div>',
+        '#suffix' => '</div>'
+      );
+      $form['fields']['box']['custom'] = array(
+        '#prefix' => '<div class="web-civi-3-col"><h4>'. t('Custom Fields') .'</h4><div class="description">'. t('Correct handling of custom fields requires proper permission configuration.') .' '.
+    t('<a !link>Read the instructions</a> for more info.', array('!link' => $readme_link)) .'</div>',
+        '#suffix' => '</div>'
+      );
   // CiviCRM fields can be enabled through these checkboxes
-  // TODO: Organize columns by type, and perhaps remove inline css?
-  $c = 1;
-  $t = count($fields);
-  $div = 1;
+  $c = 'contact';
   foreach ($fields as $id => $field) {
-    $form['fields'][$id] = array(
+    if ($id=='civicrm_groups') {
+      $c = 'groups';
+    }
+    elseif (strpos($id, 'custom')) {
+      $c = 'custom';
+    }
+    $form['fields']['box'][$c][$id] = array(
       '#type' => 'checkbox',
       '#title' => $field['name'],
       '#default_value' => $enabled[$id],
@@ -122,19 +138,11 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     );
     // Suggested minimum enabled fields
     if (!$settings && ($id=='civicrm_first_name' || $id=='civicrm_last_name' || $id=='civicrm_email'))
-      $form['fields'][$id]['#default_value'] = TRUE;
-
-    // Create 3 columns for neatness
-    if ($c == 1 || ($c > $t/3 && $div == 1) || ($c > 2*$t/3 && $div == 2)) {
-      if ($c != 1) {
-        ++$div;
-        $form['fields'][$id]['#prefix'] = '</div>';
-      }
-      $form['fields'][$id]['#prefix'] .= '<div class="web-civi-3-col">';
-    }
-    ++$c;
+      $form['fields']['box'][$c][$id]['#default_value'] = TRUE;
   }
-  $form['fields'][$id]['#suffix'] = '</div>';
+  if ($c != 'custom') {
+    $form['fields']['box']['custom']['#prefix'] .= '<p>'. t('You have no custom fields enabled in CiviCRM.') .'</p>';
+  }
 
   $form['options'] = array(
     '#type'  => 'fieldset',
@@ -342,6 +350,7 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
     $key = $form['form_key']['#default_value'];
     // Is this component a CiviCRM field?
     if (array_key_exists($key, $fields)) {
+      drupal_add_css(drupal_get_path('module', 'webform_civicrm') .'/webform_civicrm_style.css');
 
       // Prevent users from editing the form_key and breaking things
       $form['form_key']['#disabled'] = TRUE;
@@ -392,7 +401,6 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
         $groups = webform_civicrm_get_options('groups', 'arr');
         $form['value']['#type'] = 'hidden';
         $defaults_selected = explode(',', $form['value']['#default_value']);
-        $defaults = $groups;
 
         $form['civicrm_groups_fieldset'] = array(
           '#type'  => 'fieldset',
@@ -406,21 +414,18 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
             '#required' => TRUE,
             '#options' => $groups,
             '#default_value' => $selected,
-            '#prefix' => '<div style="float:left;">',
+            '#prefix' => '<div class="web-civi-3-col">',
             '#suffix' => '</div>',
           );
-          foreach ($defaults as &$v) {
-            $v = '';
-          }
         }
         $form['civicrm_groups_fieldset']['civicrm_group_defaults'] = array(
           '#title' => t('Checked by Default on Webform?'),
           '#type'  => 'checkboxes',
-          '#options' => $defaults,
+          '#options' => $groups,
           '#default_value' => $defaults_selected,
         );
         if ($key == 'civicrm_groups') {
-          $form['civicrm_groups_fieldset']['civicrm_group_defaults']['#prefix'] = '<div style="float:left;">';
+          $form['civicrm_groups_fieldset']['civicrm_group_defaults']['#prefix'] = '<div class="web-civi-3-col">';
           $form['civicrm_groups_fieldset']['civicrm_group_defaults']['#suffix'] = '</div>';
         }
         else {
@@ -429,13 +434,13 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
         }
         array_unshift($form['#submit'], 'webform_civicrm_process_group_selection');
       }
+      // Autocomplete widget for selecting tags
       elseif ($key == 'civicrm_tags') {
         $form['value']['#title'] = t('Tags');
-        $form['value']['#description'] = t('Enter a comma-separated list of tags to add to contacts using this webform.') .'<br />'. t('Use the autocomplete to select existing tags, or you may add new ones.');
+        $form['value']['#description'] = t('Enter a comma-separated list of tags to add to contacts who submit this webform.') .'<br />'. t('Use the autocomplete to select existing tags, or you may add new ones.');
         $form['value']['#type'] = 'textfield';
         $form['value']['#size'] = 100;
         $form['value']['#autocomplete_path'] = 'webform-civicrm/js/'.$form['nid']['#value'].'/tags';
-        
       }
       // Auto set multi-value option for other fields based on schema
       elseif ($form['extra']['multiple']) {

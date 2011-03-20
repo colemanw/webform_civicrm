@@ -27,18 +27,10 @@ HOW TO USE IT
 -If you wish to delete a field, you may do so through the standard webform interface, the same as any other webform field.
 
 
-GROUPS AND TAGS
-
-This module allows you to tag contacts and add them to groups when they submit the webform.
--ASSIGNING TAGS: From the Webform CiviCRM tab, check the box to enable the Tags field. Click save. Then from the Form Components tab, click the edit button for the Tags component. You may enter as many tags as you wish, separated by commas. If the tags you enter do not already exist in CiviCRM, they will be created for you. The tags you entered will be added to all contacts who submit this webform.
--ADDING CONTACTS TO GROUPS: Follow the instructions as for tags. There are two options for Groups -- visible checkboxes on the webform that allow contacts to add themselves to one or more groups of your choosing, and a hidden form element that just adds them. You may use both elements if you wish, to give your users a choice about some groups, but automatically add them to others.
--OPT-IN CONFIRMATION: At the bottom of the options in the Webform CiviCRM tab is a checkbox to enable confirmation emails when contacts are added to public mailing lists. It is recommended that you leave that option enabled in most situations. You may configure the text of the confirmation message using CiviCRM.
-
-
 CUSTOM DATA
 
 -This module can handle (almost) any custom fields you have created for contacts in CiviCRM. Two exceptions due to their complexity are contact references and files.
--IMPORTANT NOTE: due to a limitation of the CiviCRM API, if you include any custom fields on your form, your users (including anonymous users if they will be using the form) MUST have "access all custom data" permission in order for those fields to be processed. In most situations, granting that permission to all users is not a problem.
+-However, due to a limitation of the CiviCRM API, if you include any custom fields on your form, your users (including anonymous users if they will be using the form) MUST have "access all custom data" permission in order for those fields to be processed.
 
 
 USING SPECIAL LINKS IN CIVIMAIL

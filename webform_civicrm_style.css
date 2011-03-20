@@ -1,5 +1,10 @@
 .web-civi-3-col {
   float:left;
-  width:32%;
+  width:31%;
   padding-right: 1em;
+}
+
+#webform-civicrm-configure-form .scrollme {
+  max-height:400px;
+  overflow:auto;
 }
