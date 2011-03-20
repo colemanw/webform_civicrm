@@ -83,7 +83,7 @@ function webform_civicrm_contact_match($node, &$submission) {
   $params['civicrm_contact']['contact_type'] = 'Individual';
 
   // Update or create new contact.
-  // Note that we call both add and update functions for new contacts, in order to avoid problems with API custom field handling.
+  // We call both add and update functions for new contacts, in order to avoid problems with API custom field handling.
   $op = 'update';
   if (!$cid) {
     $result = civicrm_contact_add($params['civicrm_contact']);
@@ -137,7 +137,7 @@ function webform_civicrm_contact_match($node, &$submission) {
       $result = civicrm_location_add($address_params);
     }
   }
-
+  // Process groups
   if ($enabled['civicrm_groups'] || $enabled['civicrm_groups_hidden']) {
     require_once 'api/v2/GroupContact.php';
 
@@ -161,15 +161,36 @@ function webform_civicrm_contact_match($node, &$submission) {
     }
 
     if ($add_groups) {
+      // Prepare for sending subscription confirmations
+      $confirmations_sent = array();
+      if ($node->webform_civicrm['confirm_subscription']) {
+        $param = array('contact_id' => $cid, 'return_email' => 1);
+        $info = civicrm_contact_get($params);
+        $mailer_params = array('contact_id' => $cid, 'email' => $info[$cid]['email']);
+        $mailing_lists = webform_civicrm_get_options('mailing_lists','arr');
+      }
+      else {
+        $mailing_lists = array();
+      }
       $group_params = array('contact_id.1' => $cid);
       if (!empty($add_groups)) {
-        foreach ($add_groups as $group_params['group_id']) {
-          unset($remove_groups[$group_params['group_id']]);
-          civicrm_group_contact_add($group_params);
+        foreach ($add_groups as $gid) {
+          $group_params['group_id'] = $mailer_params['group_id'] = $gid;
+          unset($remove_groups[$gid]);
+          if (array_key_exists($gid, $mailing_lists)) {
+            dsm(webform_civicrm_mailer_event_subscribe($mailer_params));
+            $confirmations_sent[] = $mailing_lists[$gid];
+          }
+          else {
+            civicrm_group_contact_add($group_params);
+          }
         }
       }
+      if (!empty($confirmations_sent)) {
+        drupal_set_message(t('A confirmation has been sent to your email address, please follow the instructions in that message to finalize your subscription to @groups.', array('@groups' => implode(' '. t('and') .' ', $confirmations_sent))));
+      }
     }
-
+    // Remove contact from groups if they have unchecked them on the form
     if ($remove_groups && $op=='update') {
       $search_params = array('contact_id' => $cid);
       $groups = civicrm_group_contact_get($search_params);
@@ -181,7 +202,7 @@ function webform_civicrm_contact_match($node, &$submission) {
       foreach ($remove_groups as $group_params['group_id'] => $group) {
         if (in_array($group_params['group_id'], $in_groups)) {
           civicrm_group_contact_remove($group_params);
-          drupal_set_message(t('You have removed yourself from') .' '. $group);
+          drupal_set_message(t('You have removed yourself from') .' '. $group .'.');
         }
       }
     }
@@ -194,9 +215,9 @@ function webform_civicrm_contact_match($node, &$submission) {
  * Get options from civicrm_option_value OR civicrm_group OR civicrm_country OR civicrm_state_province tables
  * @Param $option_group: option group name or id
  * @Param $var: Can return values as a Webform-style string, or a FAPI style array. Specify 'str' or 'arr'
- * @Param $none: If returning FAPI array, provide label if first option should be "none"
+ * @Param $null_label: If returning FAPI array, provide label if first option should be "none"
  */
-function webform_civicrm_get_options($option_group, $var='str', $none='') {
+function webform_civicrm_get_options($option_group, $var='str', $null_label='') {
   $params = array();
   if ($option_group == 'country') {
     $config = webform_civicrm_get_config();
@@ -211,8 +232,11 @@ function webform_civicrm_get_options($option_group, $var='str', $none='') {
     $config = webform_civicrm_get_config();
     $sql = 'SELECT name AS label, id AS value FROM civicrm_state_province WHERE country_id = '. $config['defaultContactCountry'] .' ORDER BY name';
   }
-  elseif ($option_group == 'groups') {
+  elseif ($option_group == 'groups' || $option_group == 'mailing_lists') {
     $sql = 'SELECT id AS value, title AS label FROM civicrm_group WHERE is_active = 1';
+    if ($option_group == 'mailing_lists') {
+      $sql .= " AND group_type LIKE '%2%' AND visibility = 'Public Pages'";
+    }
   }
   else {
     $sql = 'SELECT value, label FROM civicrm_option_value WHERE is_active <> 0 AND option_group_id = ';
@@ -230,11 +254,10 @@ function webform_civicrm_get_options($option_group, $var='str', $none='') {
     }
     $sql .= ' ORDER BY weight, name';
   }
-
   $dao =& CRM_Core_DAO::executeQuery($sql, $params);
   $arr = array();
-  if ($none) {
-    $arr[] = $none;
+  if ($null_label) {
+    $arr[] = $null_label;
   }
   $str = '';
   while ($dao->fetch()) {
@@ -380,7 +403,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'civicrm_state_province_id' => 'state'
     );
 
-    // Custom fields
+    // Pull custom fields
     $custom_types = array(
       'Select'                      => array('type' => 'select'),
       'Multi-Select'                => array('type' => 'select', 'extra' => array('multiple' => 1)),
@@ -479,4 +502,44 @@ function webform_civicrm_set_message($message, $contact) {
     }
   }
   drupal_set_message($message);
+}
+
+/**
+ * CiviCRM group subscription API function (for legacy support)
+ * This is a simplified copy of the civicrm_mailer_event_subscribe() function from civicrm/api/v2
+ * Included here because this funciton is missing from the API in CiviCRM versions prior to 3.3
+ * TODO: This can be safely removed for the D7 version of this module
+ * @param array $params
+ * @return array
+ */
+function webform_civicrm_mailer_event_subscribe($params) {
+  require_once 'CRM/Contact/BAO/Group.php';
+  require_once 'CRM/Mailing/Event/BAO/Subscribe.php';
+
+  $email      = $params['email']; 
+  $group_id   = $params['group_id']; 
+  $contact_id = $params['contact_id'];
+
+  $group = new CRM_Contact_DAO_Group();
+  $group->is_active = 1;
+  $group->id = (int)$group_id;
+  if (!$group->find(true)) {
+    return array('is_error' => 1);
+  }
+
+  $subscribe = CRM_Mailing_Event_BAO_Subscribe::subscribe($group_id, $email, $contact_id);
+
+  if ($subscribe !== null) {
+    /* Ask the contact for confirmation */
+    $subscribe->send_confirm_request($email);
+
+    $values = array();
+    $values['contact_id'] = $subscribe->contact_id;
+    $values['subscribe_id'] = $subscribe->id;
+    $values['hash'] = $subscribe->hash;
+    $values['is_error'] = 0;
+
+    return $values;
+  }
+  return array('is_error' => 2);
 }

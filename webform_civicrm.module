@@ -40,7 +40,7 @@ function webform_civicrm_form_alter(&$form, $form_state, $form_id) {
   }
 
   // Alter front-end of webforms
-  elseif (strpos($form_id, 'webform_client_form_') !== FALSE) {
+  elseif (strpos($form_id, 'webform_client_form_') !== FALSE && arg(2) != 'done') {
     require_once 'webform_civicrm_forms.inc';
     _webform_civicrm_webform_frontend_form_alter($form);
   }

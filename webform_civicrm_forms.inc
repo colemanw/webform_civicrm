@@ -13,7 +13,9 @@ require_once 'webform_civicrm_utils.inc';
  */
 function webform_civicrm_configure_form(&$form_state, $node) {
   drupal_add_js(drupal_get_path('module', 'webform_civicrm') .'/webform_civicrm_forms.js', 'module', 'header');
+  drupal_add_css(drupal_get_path('module', 'webform_civicrm') .'/webform_civicrm_style.css');
   civicrm_initialize();
+
   $fields = webform_civicrm_get_fields();
   $settings = $node->webform_civicrm;
   $enabled = webform_civicrm_enabled_fields($node);
@@ -95,9 +97,6 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     '#maxlength' => 255,
     '#default_value' => $settings['activity_subject']
   );
-  if (!$settings) {
-    $form['act']['activity_subject']['#default_value'] = $node->title;
-  }
 
   $form['fields'] = array(
     '#type'  => 'fieldset',
@@ -131,7 +130,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
         ++$div;
         $form['fields'][$id]['#prefix'] = '</div>';
       }
-      $form['fields'][$id]['#prefix'] .= '<div style="float:left; width:32%;">';
+      $form['fields'][$id]['#prefix'] .= '<div class="web-civi-3-col">';
     }
     ++$c;
   }
@@ -141,13 +140,27 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     '#type'  => 'fieldset',
     '#title' => t('Additional Options')
   );
-    $form['options']['block_unknown_users'] = array(
-      '#type' => 'radios',
-      '#title' => t('Block unknown users'),
-      '#default_value' => (int)$settings['block_unknown_users'],
-      '#options' => array(0 => t('No'), 1 => t('Yes')),
-      '#description' => t('Selecting this option will only allow users to see this form if they are either logged in or following a personalized link from CiviMail.')
+    $form['options']['confirm_subscription'] = array(
+      '#prefix' => '<div class="web-civi-3-col">',
+      '#suffix' => '</div>',
+      '#type' => 'checkbox',
+      '#title' => t('Confirm Subscriptions'),
+      '#default_value' => (bool)$settings['confirm_subscription'],
+      '#description' => t('Recommended. This will send a confirmation email to contacts before adding them to public mailing-list-type groups.') .'<br />'. t('Your public mailing lists:') .' <em>'. implode(', ',webform_civicrm_get_options('mailing_lists','arr')) .'</em>'
     );
+    $form['options']['block_unknown_users'] = array(
+      '#prefix' => '<div class="web-civi-3-col">',
+      '#suffix' => '</div>',
+      '#type' => 'checkbox',
+      '#title' => t('Block unknown users'),
+      '#default_value' => (bool)$settings['block_unknown_users'],
+      '#description' => t('Only allow users to see this form if they are logged in or following a personalized link from CiviMail.')
+    );
+  // Set a few defaults
+  if (!$settings) {
+    $form['act']['activity_subject']['#default_value'] = $node->title;
+    $form['options']['confirm_subscription']['#default_value'] = TRUE;
+  }
 
   $form['submit'] = array(
     '#type' => 'submit',
