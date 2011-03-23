@@ -1,10 +1,24 @@
 .web-civi-3-col {
   float:left;
-  width:31%;
-  padding-right: 1em;
+  width:32%;
+  padding:0 0.6%;
+}
+
+.web-civi-p {
+  margin-left: 1em;
+}
+
+.web-civi-container {
+  padding:0;
 }
 
 #webform-civicrm-configure-form .scrollme {
-  max-height:400px;
+  max-height:500px;
   overflow:auto;
+  padding-left: 0.5em;
+}
+
+#webform-civicrm-configure-form legend+.description,
+#webform-civicrm-configure-form .web-civi-description {
+  font-size:0.85em;
 }

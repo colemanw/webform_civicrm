@@ -386,6 +386,8 @@ function webform_civicrm_get_fields($var = 'fields') {
                                 'extra' => array('year_start' => '-100', 'year_end' => '-1', 'timezone' => 'user')),
       'civicrm_job_title'      => array('name' => t('Job Title'), 'type' => 'textfield'),
       'civicrm_contact_id'     => array('name' => t('Contact ID'), 'type' => 'hidden', 'extra' => array('description' => t('(hidden field, useful for post-processing)'))),
+      // Email params -- email must be first!
+      'civicrm_email'          => array('name' => t('Email'), 'type' => 'email', 'mandatory' => 1),
       // Address params -- street_address must be first!
       'civicrm_street_address' => array('name' => t('Street Address'), 'type' => 'textfield',
                                  'extra' => array('width' => 60)),
@@ -399,8 +401,6 @@ function webform_civicrm_get_fields($var = 'fields') {
       // Phone params -- phone must be first!
       'civicrm_phone'          => array('name' => t('Phone Number'), 'type' => 'textfield'),
       'civicrm_phone_type_id'  => array('name' => t('Phone Type'), 'type' => 'select'),
-      // Email params -- email must be first!
-      'civicrm_email'          => array('name' => t('Email'), 'type' => 'email', 'mandatory' => 1),
       // Other
       'civicrm_groups'         => array('name' => t('Select Group(s)'), 'type' => 'select',
                                  'extra' => array('multiple' => 1, 'description' => t('Users can add/remove themselves from CiviCRM groups (mailing lists, etc)'))),
@@ -443,7 +443,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'civicrm_state_province_id' => 'state'
     );
 
-    // Pull custom fields
+    // Pull custom fields and match to Webform element types
     $custom_types = array(
       'Select'                      => array('type' => 'select'),
       'Multi-Select'                => array('type' => 'select', 'extra' => array('multiple' => 1)),
@@ -461,15 +461,19 @@ function webform_civicrm_get_fields($var = 'fields') {
       'Multi-Select State/Province' => array('type' => 'select', 'extra' => array('multiple' => 1)),
     );
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
-    $sql = "SELECT * FROM civicrm_custom_field WHERE is_active <> 0 AND custom_group_id IN (SELECT id FROM civicrm_custom_group WHERE extends IN ('Individual','Contact') AND is_active <> 0) ORDER BY custom_group_id, weight";
+    $sql = "
+      SELECT cf.*, cg.title as custom_group_name FROM civicrm_custom_field cf
+      INNER JOIN civicrm_custom_group cg ON cg.id = cf.custom_group_id
+      WHERE cf.is_active <> 0 AND cg.extends IN ('Individual','Contact') AND cg.is_active <> 0
+      ORDER BY cf.custom_group_id, cf.weight";
     $dao =& CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {
-      $id = 'civicrm_custom_'. $dao->id;
       if (!$custom_types[$dao->html_type]) {
         continue;
       }
+      $id = 'civicrm_custom_'. $dao->id;
       $label = drupal_strtolower($dao->label);
-      // Prevent namespace collisions
+      // Prevent token namespace collisions
       if (in_array($label, $tokens)) {
         $label .= ' '. $dao->id;
       }
@@ -479,6 +483,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       $fields[$id]['mandatory'] = $dao->is_required;
       $fields[$id]['extra']['description'] = $dao->help_pre;
       $fields[$id]['value'] = str_replace($sp, ',', trim($dao->default_value, $sp));
+      $fields[$id]['custom_group'] = $dao->custom_group_name;
       if ($fields[$id]['type'] == 'date') {
         $fields[$id]['extra']['year_start'] = $dao->start_date_years ? '-'. $dao->start_date_years : '-50';
         $fields[$id]['extra']['year_end'] = $dao->end_date_years ? '+'. $dao->end_date_years : '+50';
