@@ -1,5 +1,12 @@
 <?php
-// $Id$
+
+/**
+ * @file
+ * Webform CiviCRM Integration Module:
+ * Links webform submissions to contacts in a CiviCRM database.
+ * @author Coleman Watts
+ */
+
 
 /**
  * Implementation of hook_menu().

@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * @file
@@ -478,7 +477,7 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
 
 
 /**
- * Alter front-end of webforms: Called by hook_form_alter() whenever viewing a webform
+ * Alter front-end of webforms: Called by hook_form_alter() when rendering a webform
  * Add custom prefix.
  * Display message.
  * Block unknown users.
@@ -518,6 +517,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
       }
       return;
     }
+    // Form alterations for known contacts
     require_once 'api/v2/Contact.php';
     $params = array('contact_id' => $cid);
     $contact = civicrm_contact_get($params);
@@ -563,7 +563,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
         $contact_info['civicrm_groups'][] = $group['group_id'];
       }
     }
-    // Recurse through FAPI array and set default values
+    // Recurse through FAPI array and set default values for civicrm elements
     webform_civicrm_fill_values($form['submitted'], $contact_info);
 
     if ($settings['message']) {
