@@ -141,7 +141,7 @@ function webform_civicrm_update_6101() {
     $params[$n] = array($row['activity_id'], 'Integer');
     $params[$n+1] = array($row['contact_id'], 'Integer');
     if ($n > 1) {
-      $sql .= ',(%'.$n.',%'.($n+1).')';
+      $sql .= ',(%'. $n .',%'. ($n+1) .')';
     }
     $n += 2;
     ++$c;

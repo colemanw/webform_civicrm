@@ -97,11 +97,19 @@ function webform_civicrm_contact_match($node, &$submission) {
     $params['civicrm_contact']['check_permission'] = FALSE;
     civicrm_contact_update($params['civicrm_contact']);
   }
-  else  // If an error occurred and we couldn't create contact, stop here.
+  else {
+    // If an error occurred and we couldn't create contact, stop here.
+    // TODO: Error logging, anyone?
     return;
-
+  }
+  // Fill values for hidden ID fields
   if ($enabled['civicrm_contact_id']) {
     $submission->data[$enabled['civicrm_contact_id']]['value'] = array($cid);
+  }
+  if ($enabled['civicrm_external_identifier'] && $op=='update') {
+    $get_params = array('contact_id' => $cid, 'return_external_identifier' => 1);
+    $fetched = civicrm_contact_get($get_params);
+    $submission->data[$enabled['civicrm_external_identifier']]['value'] = array($fetched[$cid]['external_identifier']);
   }
 
   // Add or update location
@@ -163,10 +171,10 @@ function webform_civicrm_contact_match($node, &$submission) {
       // Prepare for sending subscription confirmations
       $confirmations_sent = array();
       if ($node->webform_civicrm['confirm_subscription']) {
-        $param = array('contact_id' => $cid, 'return_email' => 1);
-        $info = civicrm_contact_get($params);
-        $mailer_params = array('contact_id' => $cid, 'email' => $info[$cid]['email']);
-        $mailing_lists = webform_civicrm_get_options('mailing_lists','arr');
+        $get_params = array('contact_id' => $cid, 'return_email' => 1);
+        $fetched = civicrm_contact_get($get_params);
+        $mailer_params = array('contact_id' => $cid, 'email' => $fetched[$cid]['email']);
+        $mailing_lists = webform_civicrm_get_options('mailing_lists', 'arr');
       }
       else {
         $mailing_lists = array();
@@ -302,7 +310,7 @@ function webform_civicrm_js_options($field_key, $str='') {
     $last_str = trim(array_pop($existing));
     $matches = array();
     $prefix = count($existing) ? implode(', ', $existing) .', ' : '';
-    $params = array(1 => array('%'.$last_str.'%', 'String'));
+    $params = array(1 => array('%'. $last_str .'%', 'String'));
     $sql = "SELECT name FROM civicrm_tag WHERE is_selectable = 1 AND used_for = 'civicrm_contact' AND name LIKE %1 LIMIT 0, 12";
     $dao =& CRM_Core_DAO::executeQuery($sql, $params);
     while ($dao->fetch()) {
@@ -385,6 +393,7 @@ function webform_civicrm_get_fields($var = 'fields') {
                                 'extra' => array('year_start' => '-100', 'year_end' => '-1', 'timezone' => 'user')),
       'civicrm_job_title'      => array('name' => t('Job Title'), 'type' => 'textfield'),
       'civicrm_contact_id'     => array('name' => t('Contact ID'), 'type' => 'hidden', 'extra' => array('description' => t('(hidden field, useful for post-processing)'))),
+      'civicrm_external_identifier' => array('name' => t('External ID'), 'type' => 'hidden', 'extra' => array('description' => t('(hidden field, useful for post-processing)'))),
       // Email params -- email must be first!
       'civicrm_email'          => array('name' => t('Email'), 'type' => 'email', 'mandatory' => 1),
       // Address params -- street_address must be first!
@@ -560,8 +569,8 @@ function webform_civicrm_mailer_event_subscribe($params) {
   require_once 'CRM/Contact/BAO/Group.php';
   require_once 'CRM/Mailing/Event/BAO/Subscribe.php';
 
-  $email      = $params['email']; 
-  $group_id   = $params['group_id']; 
+  $email      = $params['email'];
+  $group_id   = $params['group_id'];
   $contact_id = $params['contact_id'];
 
   $group = new CRM_Contact_DAO_Group();
@@ -573,7 +582,7 @@ function webform_civicrm_mailer_event_subscribe($params) {
 
   $subscribe = CRM_Mailing_Event_BAO_Subscribe::subscribe($group_id, $email, $contact_id);
 
-  if ($subscribe !== null) {
+  if ($subscribe !== NULL) {
     /* Ask the contact for confirmation */
     $subscribe->send_confirm_request($email);
 

@@ -1,4 +1,3 @@
-; $Id: $
 name = Webform CiviCRM Integration
 description = Links Webform submissions with your CiviCRM contacts.
 core = 6.x

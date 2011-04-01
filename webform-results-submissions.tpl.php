@@ -36,7 +36,6 @@ drupal_add_css(drupal_get_path('module', 'webform') . '/css/webform-admin.css', 
   <?php print t('There are no submissions for this form. <a href="!url">View this form</a>.', array('!url' => url('node/' . $node->nid))); ?>
 <?php endif; ?>
 
-
 <?php if ($is_submissions): ?>
   <?php print theme('links', array('webform' => array('title' => t('Go back to the form'), 'href' => 'node/' . $node->nid))); ?>
 <?php endif; ?>
