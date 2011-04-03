@@ -560,41 +560,21 @@ function webform_civicrm_set_message($message, $contact) {
 }
 
 /**
- * CiviCRM group subscription API function (for legacy support)
- * This is a simplified copy of the civicrm_mailer_event_subscribe() function from civicrm/api/v2
- * Included here because this funciton is missing from the API in CiviCRM versions prior to 3.3
+ * CiviCRM group subscription API wrapper
+ * Mimics the functionality of api V2 for CiviCRM versions prior to 3.3
  * TODO: This can be safely removed for the D7 version of this module
  * @param array $params
  * @return array
  */
 function webform_civicrm_mailer_event_subscribe($params) {
-  require_once 'CRM/Contact/BAO/Group.php';
-  require_once 'CRM/Mailing/Event/BAO/Subscribe.php';
-
-  $email      = $params['email'];
-  $group_id   = $params['group_id'];
-  $contact_id = $params['contact_id'];
-
-  $group = new CRM_Contact_DAO_Group();
-  $group->is_active = 1;
-  $group->id = (int)$group_id;
-  if (!$group->find(true)) {
-    return array('is_error' => 1);
+  require_once('CRM/Utils/System.php');
+  $civicrm_version = CRM_Utils_System::version();
+  if($civicrm_version >= 3.3) {
+    require_once('api/v2/Mailer.php');
+    return civicrm_mailer_event_subscribe($params);
   }
-
-  $subscribe = CRM_Mailing_Event_BAO_Subscribe::subscribe($group_id, $email, $contact_id);
-
-  if ($subscribe !== NULL) {
-    /* Ask the contact for confirmation */
-    $subscribe->send_confirm_request($email);
-
-    $values = array();
-    $values['contact_id'] = $subscribe->contact_id;
-    $values['subscribe_id'] = $subscribe->id;
-    $values['hash'] = $subscribe->hash;
-    $values['is_error'] = 0;
-
-    return $values;
+  else {
+    require_once('api/Mailer.php');
+    return crm_mailer_event_subscribe($params['email'], $params['group_id']);
   }
-  return array('is_error' => 2);
 }
