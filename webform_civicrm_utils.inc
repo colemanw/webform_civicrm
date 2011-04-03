@@ -21,6 +21,8 @@ function webform_civicrm_contact_match($node, &$submission) {
   $params = array('check_permission' => FALSE);
   $table = 'contact';
 
+  // Convert flat array to multidimensional array based on civi table names
+  // This is why the order is important in webform_civicrm_get_fields()
   foreach ($fields as $fid => $field) {
     $field = str_replace('civicrm_', '', $fid);
     if ($field == 'street_address') {

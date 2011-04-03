@@ -155,6 +155,7 @@ function webform_civicrm_webform_submission_load(&$submissions) {
     }
   }
   if ($contacts) {
+    // Retrieve contact names and add to submission objects
     civicrm_initialize();
     $sql = 'SELECT id, display_name FROM civicrm_contact WHERE id IN ('. implode(',', array_keys($contacts)) .')';
 
@@ -167,6 +168,17 @@ function webform_civicrm_webform_submission_load(&$submissions) {
         $s->civicrm['display_name'] = $contacts[$cid];
       }
     }
+  }
+}
+
+
+/**
+ * Implementation of hook_civicrm_merge().
+ * Update submission data to reflect new cid when contacts are merged.
+ */
+function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = NULL, $tables = NULL) {
+  if($new_id && $old_id && $type == 'sqls') {
+    db_query('UPDATE {webform_civicrm_submissions} SET contact_id = %d WHERE contact_id = %d', $new_id, $old_id);
   }
 }
 

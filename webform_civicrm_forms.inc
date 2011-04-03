@@ -335,6 +335,9 @@ function webform_civicrm_fill_values(&$elements, $contact) {
       elseif (($element['#type'] == 'checkboxes' || $element['#multiple']) && !is_array($contact[$eid])) {
         $contact[$eid] = explode($sp, trim($contact[$eid], $sp));
       }
+      if ($element['#type'] == 'hidden') {
+        $element['#value'] = $contact[$eid];
+      }
       $element['#default_value'] = $contact[$eid];
     }
   }
@@ -413,6 +416,7 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
           '</div>';
         }
       }
+      // Simplify form for hidden fields
       elseif ($key == 'civicrm_contact_id' || $key == 'civicrm_external_identifier') {
         $form['value']['#type'] = 'hidden';
         $form['value']['#value'] = 0;
