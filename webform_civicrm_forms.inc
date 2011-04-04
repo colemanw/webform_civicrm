@@ -350,26 +350,27 @@ function webform_civicrm_fill_values(&$elements, $contact) {
  * Create activity record.
  */
 function webform_civicrm_process_submission($node, $submission) {
-
-  $cid = webform_civicrm_contact_match($node, $submission);
-
-  $act = 0;
-  if ($type = $node->webform_civicrm['activity_type_id']) {
-    require_once 'api/v2/Activity.php';
-    $act_params = array(
-      'activity_type_id' => $type,
-      'source_contact_id' => $cid,
-      'target_contact_id' => $cid,
-      'subject' => $node->webform_civicrm['activity_subject'],
-      'status_id' => 2,
-      'activity_date_time' => date('Ymdhis'),
-      'details' => l(t('View Webform Submission'), 'node/'. $node->nid .'/submission/'. $submission->sid)
-    );
-    $result = civicrm_activity_create($act_params);
-    $act = $result['id'];
+  if ($cid = webform_civicrm_contact_match($node, $submission)){
+    $act = 0;
+    if ($type = $node->webform_civicrm['activity_type_id']) {
+      require_once 'api/v2/Activity.php';
+      $act_params = array(
+        'activity_type_id' => $type,
+        'source_contact_id' => $cid,
+        'target_contact_id' => $cid,
+        'subject' => $node->webform_civicrm['activity_subject'],
+        'status_id' => 2,
+        'activity_date_time' => date('Ymdhis'),
+        'details' => l(t('View Webform Submission'), 'node/'. $node->nid .'/submission/'. $submission->sid)
+      );
+      $result = civicrm_activity_create($act_params);
+      $act = $result['id'];
+    }
+    db_query('INSERT INTO {webform_civicrm_submissions} SET sid = %d, contact_id = %d, activity_id = %d', $submission->sid, $cid, $act);
   }
-
-  db_query('INSERT INTO {webform_civicrm_submissions} SET sid = %d, contact_id = %d, activity_id = %d', $submission->sid, $cid, $act);
+  else {
+    watchdog('webform_civicrm', t('An error occured when trying to create a new contact. The contact was not created.'), NULL, WATCHDOG_ERROR, l($node->title .': '. t('Submission #') . $submission->sid, 'node/'. $node->nid .'/submission/'. $submission->sid));
+  }
 }
 
 
@@ -492,97 +493,96 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
 
 
 /**
- * Alter front-end of webforms: Called by hook_form_alter() when rendering a webform
+ * Alter front-end of webforms: Called by hook_form_alter() when rendering a civicrm-enabled webform
  * Add custom prefix.
  * Display message.
  * Block unknown users.
  * Set webform default values.
  */
 function _webform_civicrm_webform_frontend_form_alter(&$form) {
+  civicrm_initialize();
   $node = $form['#node'];
-  if ($settings = $node->webform_civicrm) {
-    civicrm_initialize();
-    $enabled = webform_civicrm_enabled_fields($node);
+  $settings = $node->webform_civicrm;
+  $enabled = webform_civicrm_enabled_fields($node);
 
-    // If this is an edit op, use the original CID to avoid confusion
-    if ($submission = $form['#submission']) {
-      $cid = $submission->civicrm['contact_id'];
+  // If this is an edit op, use the original CID to avoid confusion
+  if ($submission = $form['#submission']) {
+    $cid = $submission->civicrm['contact_id'];
+  }
+  else {
+    // If user is logged in, look up the CID
+    global $user;
+    if ($user->uid) {
+      require_once 'CRM/Core/BAO/UFMatch.php';
+      $cid = CRM_Core_BAO_UFMatch::getContactId($user->uid);
     }
-    else {
-      // If user is logged in, look up their CID
-      global $user;
-      if ($user->uid) {
-        require_once 'CRM/Core/BAO/UFMatch.php';
-        $cid = CRM_Core_BAO_UFMatch::getContactId($user->uid);
-      }
-      // If user is following a hashed link from CiviMail, validate it and set CID appropriately
-      elseif ($_GET['cs'] && $_GET['cid']) {
-        require_once 'CRM/Contact/BAO/Contact/Utils.php';
-        if (CRM_Contact_BAO_Contact_Utils::validChecksum($_GET['cid'], $_GET['cs'])) {
-          $_SESSION['webform_civicrm_cid'] = $cid = $_GET['cid'];
-          $_SESSION['webform_civicrm_cs'] = $_GET['cs'];
-        }
+    // If user is following a hashed link from CiviMail, validate it and set CID appropriately
+    elseif ($_GET['cs'] && $_GET['cid']) {
+      require_once 'CRM/Contact/BAO/Contact/Utils.php';
+      if (CRM_Contact_BAO_Contact_Utils::validChecksum($_GET['cid'], $_GET['cs'])) {
+        $_SESSION['webform_civicrm_cid'] = $cid = $_GET['cid'];
+        $_SESSION['webform_civicrm_cs'] = $_GET['cs'];
       }
     }
-    // Form alterations for unknown contacts
-    if (!$cid) {
-      $form['#prefix'] .= filter_filter('process', 1, NULL, $settings['prefix_unknown']);
-      if ($settings['block_unknown_users']) {
-        $form = array();
-      }
-      return;
+  }
+  // Form alterations for unknown contacts
+  if (!$cid) {
+    $form['#prefix'] .= filter_filter('process', 1, NULL, $settings['prefix_unknown']);
+    if ($settings['block_unknown_users']) {
+      $form = array();
     }
-    // Form alterations for known contacts
-    require_once 'api/v2/Contact.php';
+    return;
+  }
+  // Form alterations for known contacts
+  require_once 'api/v2/Contact.php';
+  $params = array('contact_id' => $cid);
+  $contact = civicrm_contact_get($params);
+  $fields = webform_civicrm_get_fields();
+  $custom = FALSE;
+  foreach ($fields as $id => $f) {
+    if (strpos($id, 'custom')) {
+      $custom = TRUE;
+      $params[str_replace('civicrm', 'return', $id)] = 1;
+    }
+  }
+  if ($custom) {
+    $custom = civicrm_contact_get($params);
+    $contact = array_merge($contact[$cid], $custom[$cid]);
+  }
+  else {
+    $contact = $contact[$cid];
+  }
+
+  $form['#prefix'] .= filter_filter('process', 1, NULL, webform_civicrm_replace_tokens($settings['prefix_known'], $contact));
+
+  // Do not alter form default values if this is an edit op
+  if ($submission) {
+    return;
+  }
+
+  // Some translation of array key strings is necessary due to irregulatities in CiviCRM API v2
+  $contact_info = array();
+  foreach ($enabled as $id => $val) {
+    $new_id = str_replace(array('civicrm_', 'prefix', 'suffix'), array('', 'individual_prefix', 'individual_suffix'), $id);
+    if (($value = $contact[$new_id]) || isset($contact[$new_id])) {
+      $contact_info[$id] = $value;
+    }
+  }
+
+  // Set default values for group field
+  if ($enabled['civicrm_groups']) {
+    require_once 'api/v2/GroupContact.php';
     $params = array('contact_id' => $cid);
-    $contact = civicrm_contact_get($params);
-    $fields = webform_civicrm_get_fields();
-    $custom = FALSE;
-    foreach ($fields as $id => $f) {
-      if (strpos($id, 'custom')) {
-        $custom = TRUE;
-        $params[str_replace('civicrm', 'return', $id)] = 1;
-      }
+    $groups = civicrm_group_contact_get($params);
+    $contact_info['civicrm_groups'] = array();
+    foreach ($groups as $group) {
+      $contact_info['civicrm_groups'][] = $group['group_id'];
     }
-    if ($custom) {
-      $custom = civicrm_contact_get($params);
-      $contact = array_merge($contact[$cid], $custom[$cid]);
-    }
-    else {
-      $contact = $contact[$cid];
-    }
+  }
+  // Recurse through FAPI array and set default values for civicrm elements
+  webform_civicrm_fill_values($form['submitted'], $contact_info);
 
-    $form['#prefix'] .= filter_filter('process', 1, NULL, webform_civicrm_replace_tokens($settings['prefix_known'], $contact));
-
-    // Do not alter form default values if this is an edit op
-    if ($submission) {
-      return;
-    }
-
-    // Some translation of array key strings is necessary due to irregulatities in CiviCRM API V2
-    $contact_info = array();
-    foreach ($enabled as $id => $val) {
-      $new_id = str_replace(array('civicrm_', 'prefix', 'suffix'), array('', 'individual_prefix', 'individual_suffix'), $id);
-      if (($value = $contact[$new_id]) || isset($contact[$new_id])) {
-        $contact_info[$id] = $value;
-      }
-    }
-
-    // Set default values for group field
-    if ($enabled['civicrm_groups']) {
-      require_once 'api/v2/GroupContact.php';
-      $params = array('contact_id' => $cid);
-      $groups = civicrm_group_contact_get($params);
-      $contact_info['civicrm_groups'] = array();
-      foreach ($groups as $group) {
-        $contact_info['civicrm_groups'][] = $group['group_id'];
-      }
-    }
-    // Recurse through FAPI array and set default values for civicrm elements
-    webform_civicrm_fill_values($form['submitted'], $contact_info);
-
-    if ($settings['message']) {
-      webform_civicrm_set_message($settings['message'], $contact);
-    }
+  if ($settings['message']) {
+    webform_civicrm_set_message($settings['message'], $contact);
   }
 }

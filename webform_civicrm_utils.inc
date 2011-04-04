@@ -10,7 +10,6 @@
  * Called by both presave and insert webform hooks in order to handle the optional contact_id field correctly
  */
 function webform_civicrm_contact_match($node, &$submission) {
-
   static $cid = 0;
   if ($cid) {
     return $cid;
@@ -101,7 +100,6 @@ function webform_civicrm_contact_match($node, &$submission) {
   }
   else {
     // If an error occurred and we couldn't create contact, stop here.
-    // TODO: Error logging, anyone?
     return;
   }
   // Fill values for hidden ID fields
@@ -184,7 +182,7 @@ function webform_civicrm_contact_match($node, &$submission) {
       $group_params = array('contact_id.1' => $cid);
       if (!empty($add_groups)) {
         foreach ($add_groups as $gid) {
-          $group_params['group_id'] = $mailer_params['group_id'] = $gid;
+          $group_params['group_id'] = $mailer_params['group_id'] = (int)$gid;
           unset($remove_groups[$gid]);
           if (array_key_exists($gid, $mailing_lists)) {
             webform_civicrm_mailer_event_subscribe($mailer_params);
