@@ -249,8 +249,8 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
 
         // Set default country
         if ($id == 'civicrm_country_id') {
-          $config = webform_civicrm_get_config();
-          $field['value'] = $config['defaultContactCountry'];
+          $config = CRM_Core_Config::singleton();
+          $field['value'] = $config->defaultContactCountry;
         }
         // Retrieve option list
         if (array_key_exists($id, $lists)) {

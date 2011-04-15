@@ -4,6 +4,8 @@
  * @file
  * Webform CiviCRM module's utility functions.
  */
+ 
+require_once 'CRM/Core/DAO.php';
 
 /**
  * Create or update CiviCRM contact
@@ -244,8 +246,8 @@ function webform_civicrm_contact_match($node, &$submission) {
 function webform_civicrm_get_options($option_group, $var='str', $null_label='') {
   $params = array();
   if ($option_group == 'country') {
-    $config = webform_civicrm_get_config();
-    $enabled = implode(',', $config['countryLimit']);
+    $config = CRM_Core_Config::singleton();
+    $enabled = implode(',', $config->countryLimit);
     $sql = "SELECT name AS label, id AS value FROM civicrm_country";
     if ($enabled) {
       $sql .=  " WHERE id IN ($enabled)";
@@ -253,8 +255,8 @@ function webform_civicrm_get_options($option_group, $var='str', $null_label='') 
     $sql .= ' ORDER BY name';
   }
   elseif ($option_group == 'state') {
-    $config = webform_civicrm_get_config();
-    $sql = 'SELECT name AS label, id AS value FROM civicrm_state_province WHERE country_id = '. $config['defaultContactCountry'] .' ORDER BY name';
+    $config = CRM_Core_Config::singleton();
+    $sql = 'SELECT name AS label, id AS value FROM civicrm_state_province WHERE country_id = '. $config->defaultContactCountry .' ORDER BY name';
   }
   elseif ($option_group == 'groups' || $option_group == 'mailing_lists') {
     $sql = 'SELECT id AS value, title AS label FROM civicrm_group WHERE is_active = 1';
@@ -347,22 +349,6 @@ function webform_civicrm_enabled_fields($node) {
     }
   }
   return $enabled;
-}
-
-
-/**
- * Get configuration settings from CiviCRM
- * Used for looking up default and enabled countries
- */
-function webform_civicrm_get_config() {
-  static $config = NULL;
-  if (!$config) {
-    $sql = "SELECT config_backend FROM civicrm_domain LIMIT 0, 1";
-    if ($data =& CRM_Core_DAO::singleValueQuery($sql)) {
-      $config = unserialize($data);
-    }
-  }
-  return $config;
 }
 
 
