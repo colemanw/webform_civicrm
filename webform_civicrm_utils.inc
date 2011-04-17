@@ -4,8 +4,7 @@
  * @file
  * Webform CiviCRM module's utility functions.
  */
- 
-require_once 'CRM/Core/DAO.php';
+
 
 /**
  * Create or update CiviCRM contact
@@ -16,6 +15,7 @@ function webform_civicrm_contact_match($node, &$submission) {
   if ($cid) {
     return $cid;
   }
+  civicrm_initialize();
 
   $enabled = webform_civicrm_enabled_fields($node);
   $fields = webform_civicrm_get_fields();
@@ -51,7 +51,6 @@ function webform_civicrm_contact_match($node, &$submission) {
   $custom = $params['civicrm_custom'];
   unset($params['civicrm_custom']);
 
-  civicrm_initialize();
   require_once 'api/v2/Contact.php';
 
   // If this is an update op, just use CID from original submission to avoid confusion

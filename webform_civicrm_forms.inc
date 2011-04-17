@@ -399,13 +399,13 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
         unset($form['extra']['options_source']);
         $complete_msg = t('The options have been reloaded.');
         $form['extra']['items']['#description'] = t("These options were automatically selected from the CiviCRM database. You may change their order, or delete unwanted options as you see fit. You may also change the labels (text after the |) to be more descriptive. However, adding new items here that are <em>not</em> in CiviCRM won't work. Instead, create your new options in CiviCRM, then click here to refresh this list:");
-        if ($_GET['reload-data']) {
+        if ($_GET['reset']) {
           $form['extra']['items']['#description'] .= '<div style="color:green; font-weight:bold; margin-top:0.5em;">'. $complete_msg .'</div>';
-          $form['extra']['items']['#default_value'] = webform_civicrm_get_options($key);
+          $form['extra']['items']['#default_value'] = webform_civicrm_get_options($lists[$key]);
 
         }
         else {
-          $form['extra']['items']['#description'] .= '<div id="civicrm-ajax" style="color:green; font-weight:bold; margin-top:0.5em;">'. l(t('Reload options'), $_GET['q'], array('query' => 'reload-data=1', 'attributes' => array('style' => 'color:blue;',
+          $form['extra']['items']['#description'] .= '<div id="civicrm-ajax" style="color:green; font-weight:bold; margin-top:0.5em;">'. l(t('Reload options'), $_GET['q'], array('query' => 'reset=1', 'attributes' => array('style' => 'color:blue;',
           'onclick' => "$(this).addClass('views-throbbing');
             $.ajax({
               url: '/webform-civicrm/js/". arg(1) ."/$key',
