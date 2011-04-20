@@ -87,19 +87,18 @@ function webform_civicrm_contact_match($node, &$submission) {
   $params['civicrm_contact']['check_permission'] = FALSE;
 
   // Update or create new contact.
-  // We call both add and update functions for new contacts, in order to avoid problems with API custom field handling.
-  $op = 'update';
   if ($custom) {
     $params['civicrm_contact'] = array_merge($params['civicrm_contact'], $custom);
   }
   if (!$cid) {
-    $result = civicrm_api('contact', 'create', $params['civicrm_contact']);dsm($result);
+    $result = civicrm_api('contact', 'create', $params['civicrm_contact']);
     $cid = $result['contact_id'];
     $op = 'create';
   }
   else {
     $params['civicrm_contact']['contact_id'] = $cid;
     civicrm_api('contact', 'create', $params['civicrm_contact']);
+    $op = 'update';
   }
   if (!$cid) {
     // If an error occurred and we couldn't create contact, stop here.
@@ -197,7 +196,7 @@ function webform_civicrm_contact_match($node, &$submission) {
     }
     // Remove contact from groups if they have unchecked them on the form
     if ($remove_groups && $op == 'update') {
-      $groups = civicrm_api('group_contact', 'create', array('contact_id' => $cid, 'version' => 3));
+      $groups = civicrm_api('group_contact', 'get', array('contact_id' => $cid, 'version' => 3));
       $in_groups = array();
       if (is_array($groups['values'])) {
         foreach ($groups['values'] as $group) {

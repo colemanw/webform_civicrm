@@ -260,6 +260,9 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
             $field['extra']['aslist'] = 1;
           }
         }
+        if (strpos($id, 'custom') === FALSE) {
+          unset($field['extra']['description']);
+        }
         // Create webform component
         $fid = webform_component_insert($field);
 
@@ -406,7 +409,6 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
         if ($_GET['reset']) {
           $form['extra']['items']['#description'] .= '<div style="color:green; font-weight:bold; margin-top:0.5em;">' . $complete_msg . '</div>';
           $form['extra']['items']['#default_value'] = webform_civicrm_get_options($lists[$key]);
-
         }
         else {
           $form['extra']['items']['#description'] .= '<div id="civicrm-ajax" style="color:green; font-weight:bold; margin-top:0.5em;">' . l(t('Reload options'), $_GET['q'], array('query' => array('reset' => 1), 'attributes' => array(
