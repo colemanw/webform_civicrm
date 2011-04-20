@@ -1,4 +1,4 @@
-if (Drupal.jsEnabled) {
+(function ($) {
   $(document).ready( function(){
 
     $('#edit-nid').change( function(){
@@ -26,4 +26,4 @@ if (Drupal.jsEnabled) {
     }).change();
 
   });
-}
+})(jQuery);

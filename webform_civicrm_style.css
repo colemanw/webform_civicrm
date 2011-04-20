@@ -8,8 +8,13 @@
   margin-left: 1em;
 }
 
-.web-civi-container {
+.web-civi-container,
+.web-civi-container .fieldset-wrapper {
   padding:0;
+}
+
+.scrollme .fieldset-wrapper {
+  padding:0 8px;
 }
 
 #webform-civicrm-configure-form .scrollme {

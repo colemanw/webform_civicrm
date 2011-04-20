@@ -37,8 +37,7 @@ This module allows you to tag contacts and add them to groups when they submit t
 
 CUSTOM DATA
 
--This module can handle (almost) any custom fields you have created for contacts in CiviCRM. Two exceptions due to their complexity are contact references and files.
--IMPORTANT NOTE: due to a limitation of the CiviCRM API, if you include any custom fields on your form, your users (including anonymous users if they will be using the form) MUST have "access all custom data" permission in order for those fields to be processed. In most situations, granting that permission to all users is not a problem.
+-This module can handle (almost) any custom fields you have created for contacts in CiviCRM. Two exceptions due to their complexity are contact references and files. To use custom fields, they must be active in CiviCRM, and used for Contacts or Individuals.
 
 
 USING SPECIAL LINKS IN CIVIMAIL
