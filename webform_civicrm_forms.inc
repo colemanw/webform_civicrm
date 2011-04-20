@@ -111,8 +111,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#suffix' => '</div>',
   );
   $form['fields']['box']['custom'] = array(
-    '#prefix' => '<div class="web-civi-3-col"><h4>' . t('Custom Fields') . '</h4><div class="web-civi-description">' . t('Correct handling of custom fields requires proper permission configuration.') . ' ' .
-    t('<a !link>Read the instructions</a> for more info.', $readme_link) . '</div>',
+    '#prefix' => '<div class="web-civi-3-col"><h4>' . t('Custom Fields') . '</h4><div class="web-civi-description">' . t('Custom fields you have created for contacts in CiviCRM will appear in this list.') . '</div>',
     '#suffix' => '</div>',
   );
   // CiviCRM fields are enabled through these checkboxes
