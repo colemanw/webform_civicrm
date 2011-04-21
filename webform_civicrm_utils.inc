@@ -65,8 +65,10 @@ function webform_civicrm_contact_match($node, &$submission) {
     global $user;
     if ($user->uid) {
       $result = civicrm_api('uf_match', 'get', array('uf_id' => $user->uid, 'version' => 3));
-      $result = array_pop($result['values']);
-      $cid = $result['contact_id'];
+      if (is_array($result['values'])) {
+        $result = array_pop($result['values']);
+        $cid = $result['contact_id'];
+      }
     }
     elseif ($_SESSION['webform_civicrm_cid'] && $_SESSION['webform_civicrm_cs']) {
       require_once 'CRM/Contact/BAO/Contact/Utils.php';
@@ -110,7 +112,7 @@ function webform_civicrm_contact_match($node, &$submission) {
   }
   if ($enabled['civicrm_external_identifier'] && $op == 'update') {
     $exid = civicrm_api('contact', 'get', array('version' => 3, 'contact_id' => $cid, 'return_external_identifier' => 1));
-    if ($exid['values']) {
+    if (is_array($exid['values'])) {
       $exid = array_pop($exid['values']);
       $submission->data[$enabled['civicrm_external_identifier']]['value'] = array($exid['external_identifier']);
     }
@@ -163,6 +165,7 @@ function webform_civicrm_contact_match($node, &$submission) {
     if ($add_groups) {
       // Prepare for sending subscription confirmations
       $confirmations_sent = array();
+      $mailing_lists = array();
       if ($node->webform_civicrm['confirm_subscription']) {
         $contact = civicrm_api('contact', 'get', array('version' => 3, 'contact_id' => $cid, 'return_email' => 1));
         $contact = array_pop($contact['values']);
@@ -171,10 +174,9 @@ function webform_civicrm_contact_match($node, &$submission) {
           'contact_id' => $cid,
           'email' => $contact['email'],
         );
-        $mailing_lists = webform_civicrm_get_options('mailing_lists', 'arr');
-      }
-      else {
-        $mailing_lists = array();
+        if ($contact['email']) {
+          $mailing_lists = webform_civicrm_get_options('mailing_lists', 'arr');
+        }
       }
       $group_params = array('contact_id' => $cid, 'version' => 3);
       if (!empty($add_groups)) {
@@ -231,7 +233,7 @@ function webform_civicrm_contact_match($node, &$submission) {
 /**
  * Get options from civicrm_option_value OR civicrm_group OR civicrm_country OR civicrm_state_province tables
  * @Param $option_group: option group name or id
- * @Param $var: Can return values as a Webform-style string, or a FAPI style array. Specify 'str' or 'arr'
+ * @Param $var: Can return values as a Webform-style string, or a FAPI style array. Specify 'str' or 'arr', matey!
  * @Param $null_label: If returning FAPI array, provide label if first option should be "none"
  */
 function webform_civicrm_get_options($option_group, $var = 'str', $null_label = '') {

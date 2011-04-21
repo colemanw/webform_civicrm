@@ -12,7 +12,7 @@ module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
  */
 function webform_civicrm_configure_form($form, &$form_state, $node) {
   drupal_add_js(drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_forms.js');
-  drupal_add_css(drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_style.css');
+  drupal_add_css(drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_style.css', 'module', 'all', FALSE);
   civicrm_initialize();
 
   $fields = webform_civicrm_get_fields();
@@ -317,7 +317,7 @@ function webform_civicrm_process_group_selection($form, &$form_state) {
  * Called by _webform_civicrm_webform_frontend_form_alter() when webform is being viewed by a known contact
  * @Param $elements: FAPI array
  * @Param $contact: Array of CiviCRM contact data
- * Matching depends on form keys being the same as contact array keys
+ * Matching depends on form keys matching contact keys (i.e. form key 'civicrm_first_name' == contact key 'first_name')
  */
 function webform_civicrm_fill_values(&$elements, $contact) {
   $sp = CRM_Core_DAO::VALUE_SEPARATOR;
@@ -330,6 +330,7 @@ function webform_civicrm_fill_values(&$elements, $contact) {
       webform_civicrm_fill_values($element, $contact);
       continue;
     }
+    $eid = str_replace('civicrm_', '', $eid);
     if (isset($contact[$eid])) {
       if ($element['#type'] == 'date') {
         $dates = explode('-', $contact[$eid]);
@@ -566,14 +567,6 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
   if ($submission) {
     return;
   }
-  // Some translation of array key strings is necessary due to irregulatities in CiviCRM API
-  $contact_info = array();
-  foreach ($enabled as $id => $val) {
-    $new_id = str_replace('civicrm_', '', $id);
-    if (($value = $contact[$new_id]) || isset($contact[$new_id])) {
-      $contact_info[$id] = $value;
-    }
-  }
 
   // Set default values for group field
   if ($enabled['civicrm_groups']) {
@@ -585,7 +578,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
   }
 
   // Recurse through FAPI array and set default values for civicrm elements
-  webform_civicrm_fill_values($form['submitted'], $contact_info);
+  webform_civicrm_fill_values($form['submitted'], $contact);
 
   if ($settings['message']) {
     webform_civicrm_set_message($settings['message'], $contact);
