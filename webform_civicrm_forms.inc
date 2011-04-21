@@ -31,7 +31,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   $form['nid'] = array(
     '#type' => 'checkbox',
       '#title' => t('Enable CiviCRM Processing'),
-      '#default_value' => (bool)$settings,
+      '#default_value' => (bool) $settings,
       '#return_value' => $node->nid,
       '#description' => '<ul><li>'.
       t('CiviCRM contacts will be created or updated when users submit this webform.') .'</li><li>'.
@@ -65,7 +65,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   $form['st_message']['toggle_message'] = array(
     '#type' => 'checkbox',
     '#title' => t('Display message to known contacts?'),
-    '#default_value' => (bool)$settings['message'],
+    '#default_value' => (bool) $settings['message'],
   );
   $form['st_message']['message'] = array(
     '#type' => 'textfield',
@@ -127,8 +127,8 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     $f = array(
       '#type' => 'checkbox',
       '#title' => $field['name'],
-      '#default_value' => $enabled[$id],
-      '#disabled' => (bool)$enabled[$id],
+      '#default_value' => (bool) $enabled[$id],
+      '#disabled' => (bool) $enabled[$id],
       '#description' => $field['extra']['description']
     );
     if ($id=='civicrm_groups') {
@@ -176,7 +176,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     '#suffix' => '</div>',
     '#type' => 'checkbox',
     '#title' => t('Confirm Subscriptions'),
-    '#default_value' => (bool)$settings['confirm_subscription'],
+    '#default_value' => (bool) $settings['confirm_subscription'],
     '#description' => t('Recommended. Send a confirmation email before adding contacts to publicly subscribable mailing list groups.') .'<br />'. t('Your public mailing lists:') .' <em>'. implode(', ', webform_civicrm_get_options('mailing_lists', 'arr')) .'</em>'
   );
   $form['options']['block_unknown_users'] = array(
@@ -184,7 +184,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     '#suffix' => '</div>',
     '#type' => 'checkbox',
     '#title' => t('Block unknown users'),
-    '#default_value' => (bool)$settings['block_unknown_users'],
+    '#default_value' => (bool) $settings['block_unknown_users'],
     '#description' => t('Only allow users to see this form if they are logged in or following a personalized link from CiviMail.')
   );
   // Set a few defaults
@@ -259,6 +259,9 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
             $field['extra']['aslist'] = 1;
           }
         }
+        if (strpos($id, 'custom') === FALSE) {
+          unset($field['extra']['description']);
+        }
         // Create webform component
         $fid = webform_component_insert($field);
 
@@ -289,8 +292,9 @@ function webform_civicrm_process_group_selection($form, &$form_state) {
     $items = '';
     foreach ($form_state['values']['civicrm_groups_fieldset']['civicrm_groups'] as $gid) {
       if ($gid) {
-        if ($items)
+        if ($items) {
           $items .= "\n";
+        }
         $items .= $gid .'|'. $groups[$gid];
       }
     }

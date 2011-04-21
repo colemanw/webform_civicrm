@@ -239,7 +239,7 @@ function webform_civicrm_contact_match($node, &$submission) {
 /**
  * Get options from civicrm_option_value OR civicrm_group OR civicrm_country OR civicrm_state_province tables
  * @Param $option_group: option group name or id
- * @Param $var: Can return values as a Webform-style string, or a FAPI style array. Specify 'str' or 'arr'
+ * @Param $var: Can return values as a Webform-style string, or a FAPI style array. Specify 'str' or 'arr', matey!
  * @Param $null_label: If returning FAPI array, provide label if first option should be "none"
  */
 function webform_civicrm_get_options($option_group, $var='str', $null_label='') {
@@ -545,7 +545,6 @@ function webform_civicrm_set_message($message, $contact) {
 /**
  * CiviCRM group subscription API wrapper
  * Mimics the functionality of api V2 for CiviCRM versions prior to 3.3
- * TODO: This can be safely removed for the D7 version of this module
  * @param array $params
  * @return array
  */
