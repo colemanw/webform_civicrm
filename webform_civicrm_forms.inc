@@ -373,7 +373,7 @@ function webform_civicrm_process_submission($node, $submission) {
     db_query('INSERT INTO {webform_civicrm_submissions} SET sid = %d, contact_id = %d, activity_id = %d', $submission->sid, $cid, $act);
   }
   else {
-    watchdog('webform_civicrm', t('An error occured when trying to create a new contact. The contact was not created.'), NULL, WATCHDOG_ERROR, l($node->title .': '. t('Submission #') . $submission->sid, 'node/'. $node->nid .'/submission/'. $submission->sid));
+    watchdog('webform_civicrm', 'An error occured when trying to create a new contact. The contact was not created.', NULL, WATCHDOG_ERROR, l($node->title .': '. t('Submission #') . $submission->sid, 'node/'. $node->nid .'/submission/'. $submission->sid));
   }
 }
 
