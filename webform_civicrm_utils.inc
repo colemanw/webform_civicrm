@@ -323,12 +323,9 @@ function webform_civicrm_js_options($field_key, $str = '') {
 
 /**
  * Get ids of enabled CiviCRM fields for a webform
- * @Param $node - entire node object, or just the NID works too
+ * @Param $node - node object
  */
 function webform_civicrm_enabled_fields($node) {
-  if (!is_object($node)) {
-    $node = node_load($node);
-  }
   if (!is_array($node->webform['components'])) {
     return;
   }
