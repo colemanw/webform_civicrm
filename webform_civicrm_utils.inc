@@ -123,6 +123,9 @@ function webform_civicrm_contact_match($node, &$submission) {
     $address_params['email'][1] = $params['civicrm_email'];
     $address_params['email'][1]['is_primary'] = 1;
     $address_params['email'][1]['location_type_id'] = 1;
+    if ($user->uid && $params['civicrm_email']['email']) {
+      db_query("UPDATE {users} SET mail = '%s' WHERE uid = %d", $params['civicrm_email']['email'], $user->uid);
+    }
   }
   if ($params['civicrm_phone']) {
     $address_params['phone'][1] = $params['civicrm_phone'];
