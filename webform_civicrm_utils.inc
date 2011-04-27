@@ -393,8 +393,6 @@ function webform_civicrm_get_fields($var = 'fields') {
                                  'extra' => array('width' => 60)),
       'civicrm_supplemental_address_2' => array('name' => t('Street Address Line 3'), 'type' => 'textfield',
                                  'extra' => array('width' => 60)),
-      'civicrm_supplemental_address_3' => array('name' => t('Street Address Line 4'), 'type' => 'textfield',
-                                 'extra' => array('width' => 60)),
       'civicrm_city'           => array('name' => t('City'), 'type' => 'textfield'),
       'civicrm_state_province' => array('name' => t('State/Province Abbr.'), 'type' => 'textfield',
                                  'extra' => array('maxlength' => 4, 'width' => 4, 'description' => t('Enter state/province abbreviation'))),
@@ -407,7 +405,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'civicrm_phone_type_id'  => array('name' => t('Phone Type'), 'type' => 'select'),
       // Other
       'civicrm_groups'         => array('name' => t('Select Group(s)'), 'type' => 'select',
-                                 'extra' => array('multiple' => 1, 'description' => t('User can add/remove themselves from CiviCRM groups (mailing lists, etc)'))),
+                                 'extra' => array('multiple' => 1, 'description' => t('User can add/remove self from CiviCRM groups (mailing lists, etc)'))),
       'civicrm_groups_hidden'  => array('name' => t('Auto-Add Group(s)'), 'type' => 'hidden',
                                  'extra' => array('description' => t('Hidden form element will add contact to group(s) of your choosing'))),
       'civicrm_tags'  => array('name' => t('Tags'), 'type' => 'hidden',
