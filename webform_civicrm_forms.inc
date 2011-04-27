@@ -544,9 +544,9 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
   $fields = webform_civicrm_get_fields();
   $custom = FALSE;
   foreach ($fields as $id => $f) {
-    if (strpos($id, 'custom')) {
+    if (strpos($id, 'custom') || strpos($id, 'preferred_communication_method')) {
       $custom = TRUE;
-      $params[str_replace('civicrm', 'return', $id)] = 1;
+      $params[str_replace('civicrm_', 'return.', $id)] = 1;
     }
   }
   if ($custom) {

@@ -382,10 +382,18 @@ function webform_civicrm_get_fields($var = 'fields') {
       'civicrm_job_title'      => array('name' => t('Job Title'), 'type' => 'textfield'),
       'civicrm_contact_id'     => array('name' => t('Contact ID'), 'type' => 'hidden', 'extra' => array('description' => t('(hidden field, useful for post-processing)'))),
       'civicrm_external_identifier' => array('name' => t('External ID'), 'type' => 'hidden', 'extra' => array('description' => t('(hidden field, useful for post-processing)'))),
+      'civicrm_preferred_communication_method' => array('name' => t('Preferred Communication Method(s)'), 'type' => 'select',
+                                 'extra' => array('multiple' => 1)),
       // Email params -- email must be first!
       'civicrm_email'          => array('name' => t('Email'), 'type' => 'email', 'mandatory' => 1),
       // Address params -- street_address must be first!
       'civicrm_street_address' => array('name' => t('Street Address'), 'type' => 'textfield',
+                                 'extra' => array('width' => 60)),
+      'civicrm_supplemental_address_1' => array('name' => t('Street Address Line 2'), 'type' => 'textfield',
+                                 'extra' => array('width' => 60)),
+      'civicrm_supplemental_address_2' => array('name' => t('Street Address Line 3'), 'type' => 'textfield',
+                                 'extra' => array('width' => 60)),
+      'civicrm_supplemental_address_3' => array('name' => t('Street Address Line 4'), 'type' => 'textfield',
                                  'extra' => array('width' => 60)),
       'civicrm_city'           => array('name' => t('City'), 'type' => 'textfield'),
       'civicrm_state_province' => array('name' => t('State/Province Abbr.'), 'type' => 'textfield',
@@ -399,11 +407,11 @@ function webform_civicrm_get_fields($var = 'fields') {
       'civicrm_phone_type_id'  => array('name' => t('Phone Type'), 'type' => 'select'),
       // Other
       'civicrm_groups'         => array('name' => t('Select Group(s)'), 'type' => 'select',
-                                 'extra' => array('multiple' => 1, 'description' => t('Users can add/remove themselves from CiviCRM groups (mailing lists, etc)'))),
+                                 'extra' => array('multiple' => 1, 'description' => t('User can add/remove themselves from CiviCRM groups (mailing lists, etc)'))),
       'civicrm_groups_hidden'  => array('name' => t('Auto-Add Group(s)'), 'type' => 'hidden',
-                                 'extra' => array('description' => t('Hidden form element will add contacts to group(s) of your choosing'))),
+                                 'extra' => array('description' => t('Hidden form element will add contact to group(s) of your choosing'))),
       'civicrm_tags'  => array('name' => t('Tags'), 'type' => 'hidden',
-                                 'extra' => array('description' => t('Hidden form element to add tags to contacts')))
+                                 'extra' => array('description' => t('Hidden form element to add tags to contact')))
     );
 
     $tokens = array(
@@ -436,7 +444,8 @@ function webform_civicrm_get_fields($var = 'fields') {
       'civicrm_suffix_id'         => 'individual_suffix',
       'civicrm_gender_id'         => 'gender',
       'civicrm_country_id'        => 'country',
-      'civicrm_state_province_id' => 'state'
+      'civicrm_state_province_id' => 'state',
+      'civicrm_preferred_communication_method' => 'preferred_communication_method',
     );
 
     // Pull custom fields and match to Webform element types
