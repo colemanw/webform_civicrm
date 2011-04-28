@@ -12,7 +12,7 @@ require_once 'webform_civicrm_utils.inc';
  */
 function webform_civicrm_configure_form(&$form_state, $node) {
   drupal_add_js(drupal_get_path('module', 'webform_civicrm') .'/webform_civicrm_forms.js', 'module', 'header');
-  drupal_add_css(drupal_get_path('module', 'webform_civicrm') .'/webform_civicrm_style.css');
+  drupal_add_css(drupal_get_path('module', 'webform_civicrm') .'/webform_civicrm_style.css', 'module', 'all', FALSE);
   civicrm_initialize();
 
   $fields = webform_civicrm_get_fields();
@@ -20,6 +20,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   $enabled = webform_civicrm_enabled_fields($node);
   $tokens = '<strong>'. t('Tokens Available:') .'</strong> ['. implode('], [', webform_civicrm_get_fields('tokens')) .'].';
   $acts = webform_civicrm_get_options('activity_type', 'arr', t('- no activity -'));
+  list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
   $readme_link = array('!link' => 'href="/admin/help/webform_civicrm" target="_blank" class="popup-webform-civicrm-help"');
   $form = array('#prefix' => t('Use the options below to configure CiviCRM processing for this form.'));
 
@@ -159,6 +160,9 @@ function webform_civicrm_configure_form(&$form_state, $node) {
           '#collapsible' => TRUE,
           '#title' => $set
         );
+        if ($field['sub_types']) {
+          $form['fields']['box'][$c][$set]['#description'] = t('These fields are only for') //TODO
+        }
       }
     }
     $form['fields']['box'][$c][$set][$id] = $f;
@@ -390,7 +394,7 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
     $key = $form['form_key']['#default_value'];
     // Is this component a CiviCRM field?
     if (array_key_exists($key, $fields)) {
-      drupal_add_css(drupal_get_path('module', 'webform_civicrm') .'/webform_civicrm_style.css');
+      drupal_add_css(drupal_get_path('module', 'webform_civicrm') .'/webform_civicrm_style.css', 'module', 'all', FALSE);
 
       // Prevent users from editing the form_key and breaking things
       $form['form_key']['#disabled'] = TRUE;
