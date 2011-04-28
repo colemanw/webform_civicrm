@@ -135,8 +135,8 @@ function webform_civicrm_configure_form(&$form_state, $node) {
       $c = 'groups';
     }
     if (!strpos($id, 'custom')) {
-      // Suggested minimum enabled fields
-      if (!$settings && ($id=='civicrm_first_name' || $id=='civicrm_last_name' || $id=='civicrm_email')) {
+      // Suggest minimum enabled fields
+      if (!$settings && $field['mandatory']) {
         $f['#default_value'] = TRUE;
       }
       // Create fieldsets
