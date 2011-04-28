@@ -20,6 +20,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   $enabled = webform_civicrm_enabled_fields($node);
   $tokens = '<strong>' . t('Tokens Available:') . '</strong> [' . implode('], [', webform_civicrm_get_fields('tokens')) . '].';
   $acts = webform_civicrm_get_options('activity_type', 'arr', t('- no activity -'));
+  list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
   $readme_link = array('!link' => 'href="/admin/help/webform_civicrm" target="_blank"');
   $form = array('#prefix' => t('Use the options below to configure CiviCRM processing for this form.'));
 
@@ -159,6 +160,9 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
           '#collapsible' => TRUE,
           '#title' => $set,
         );
+        if ($field['sub_types']) {
+          $form['fields']['box'][$c][$set]['#description'] = t('These fields are only for') //TODO
+        }
       }
     }
     $form['fields']['box'][$c][$set][$id] = $f;

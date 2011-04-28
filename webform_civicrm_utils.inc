@@ -294,6 +294,30 @@ function webform_civicrm_get_options($option_group, $var = 'str', $null_label = 
 }
 
 /**
+ * Get contact types and sub-types
+ */
+function webform_civicrm_get_contact_types() {
+  $sql = "
+    SELECT c1.name, c1.label, c2.name AS parent_type
+    FROM civicrm_contact_type c1
+    LEFT JOIN civicrm_contact_type c2 ON c1.parent_id  = c2.id
+    WHERE c1.is_active = 1
+    ORDER BY c1.parent_id ASC";
+  $dao = &CRM_Core_DAO::executeQuery($sql);
+  $contact_types = $sub_types = array();
+  while ($dao->fetch()) {
+    if ($dao->parent_type) {
+      $sub_types[$dao->parent_type][$dao->name] = $dao->label;
+    }
+    else {
+      $contact_types[$dao->name] = $dao->label;
+      $sub_types[$dao->name] = array();
+    }
+  }
+  return array($contact_types, $sub_types);
+}
+
+/**
  * Return CiviCRM options via AJAX request
  */
 function webform_civicrm_js_options($field_key, $str = '') {
@@ -366,31 +390,38 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('First Name'),
       'type' => 'textfield',
       'mandatory' => 1,
+      'contact_type' => 'Individual',
     );
     $fields['civicrm_nick_name'] = array(
       'name' => t('Nick Name'),
       'type' => 'textfield',
+      'contact_type' => 'Individual',
     );
     $fields['civicrm_middle_name'] = array(
       'name' => t('Middle Name'),
       'type' => 'textfield',
+      'contact_type' => 'Individual',
     );
     $fields['civicrm_last_name'] = array(
       'name' => t('Last Name'),
       'type' => 'textfield',
       'mandatory' => 1,
+      'contact_type' => 'Individual',
     );
     $fields['civicrm_prefix_id'] = array(
       'name' => t('Name Prefix'),
       'type' => 'select',
+      'contact_type' => 'Individual',
     );
     $fields['civicrm_suffix_id'] = array(
       'name' => t('Name Suffix'),
       'type' => 'select',
+      'contact_type' => 'Individual',
     );
     $fields['civicrm_gender_id'] = array(
       'name' => t('Gender'),
       'type' => 'select',
+      'contact_type' => 'Individual',
     );
     $fields['civicrm_birth_date'] = array(
       'name' => t('Birth Date'),
@@ -400,10 +431,24 @@ function webform_civicrm_get_fields($var = 'fields') {
         'year_end' => '-1',
         'timezone' => 'user',
       ),
+      'contact_type' => 'Individual',
     );
     $fields['civicrm_job_title'] = array(
       'name' => t('Job Title'),
       'type' => 'textfield',
+      'contact_type' => 'Individual',
+    );
+    $fields['civicrm_organization_name'] = array(
+      'name' => t('Organization Name'),
+      'type' => 'textfield',
+      'mandatory' => 1,
+      'contact_type' => 'Organization',
+    );
+    $fields['civicrm_household_name'] = array(
+      'name' => t('Household Name'),
+      'type' => 'textfield',
+      'mandatory' => 1,
+      'contact_type' => 'Household',
     );
     $fields['civicrm_contact_id'] = array(
       'name' => t('Contact ID'),
@@ -499,82 +544,61 @@ function webform_civicrm_get_fields($var = 'fields') {
     );
 
     $tokens = array(
-      'display_name' => t('display name'),
-      'first_name' => t('first name'),
-      'nick_name' => t('nick name'),
-      'middle_name' => t('middle name'),
-      'last_name' => t('last name'),
-      'prefix' => t('name prefix'),
-      'suffix' => t('name suffix'),
-      'gender' => t('gender'),
-      'birth_date' => t('birth date'),
-      'job_title' => t('job title'),
-      'current_employer' => t('current employer'),
-      'contact_id' => t('contact id'),
-      'street_address' => t('street address'),
-      'city' => t('city'),
-      'state_province' => t('state/province abbr'),
+      'display_name'        => t('display name'),
+      'first_name'          => t('first name'),
+      'nick_name'           => t('nick name'),
+      'middle_name'         => t('middle name'),
+      'last_name'           => t('last name'),
+      'individual_prefix'   => t('name prefix'),
+      'individual_suffix'   => t('name suffix'),
+      'gender'              => t('gender'),
+      'birth_date'          => t('birth date'),
+      'job_title'           => t('job title'),
+      'current_employer'    => t('current employer'),
+      'contact_id'          => t('contact id'),
+      'street_address'      => t('street address'),
+      'city'                => t('city'),
+      'state_province'      => t('state/province abbr'),
       'state_province_name' => t('state/province full'),
-      'postal_code' => t('postal code'),
-      'country' => t('country'),
-      'world_region' => t('world region'),
-      'phone' => t('phone number'),
-      'email' => t('email'),
+      'postal_code'         => t('postal code'),
+      'country'             => t('country'),
+      'world_region'        => t('world region'),
+      'phone'               => t('phone number'),
+      'email'               => t('email'),
     );
 
     $lists = array(
-      'civicrm_phone_type_id' => 'phone_type',
-      'civicrm_prefix_id' => 'individual_prefix',
-      'civicrm_suffix_id' => 'individual_suffix',
-      'civicrm_gender_id' => 'gender',
-      'civicrm_country_id' => 'country',
-      'civicrm_state_province_id' => 'state',
+      'civicrm_phone_type_id'                  => 'phone_type',
+      'civicrm_prefix_id'                      => 'individual_prefix',
+      'civicrm_suffix_id'                      => 'individual_suffix',
+      'civicrm_gender_id'                      => 'gender',
+      'civicrm_country_id'                     => 'country',
+      'civicrm_state_province_id'              => 'state',
       'civicrm_preferred_communication_method' => 'preferred_communication_method',
     );
-
     // Pull custom fields and match to Webform element types
     $custom_types = array(
-      'Select' => array('type' => 'select'),
-      'Multi-Select' => array(
-        'type' => 'select',
-        'extra' => array('multiple' => 1),
-      ),
-      'AdvMulti-Select' => array(
-        'type' => 'select',
-        'extra' => array('multiple' => 1),
-      ),
-      'Radio' => array(
-        'type' => 'select',
-        'extra' => array('aslist' => 0),
-      ),
-      'CheckBox' => array(
-        'type' => 'select',
-        'extra' => array(
-          'multiple' => 1,
-          'aslist' => 0,
-        ),
-      ),
-      'Text' => array('type' => 'textfield'),
-      'TextArea' => array('type' => 'textarea'),
-      'RichTextArea' => array('type' => 'textarea'),
-      'Select Date' => array('type' => 'date'),
-      'Link' => array('type' => 'textfield'),
-      'Select Country' => array('type' => 'select'),
-      'Multi-Select Country' => array(
-        'type' => 'select',
-        'extra' => array('multiple' => 1),
-      ),
-      'Select State/Province' => array('type' => 'select'),
-      'Multi-Select State/Province' => array(
-        'type' => 'select',
-        'extra' => array('multiple' => 1),
-      ),
+      'Select'                      => array('type' => 'select'),
+      'Multi-Select'                => array('type' => 'select', 'extra' => array('multiple' => 1)),
+      'AdvMulti-Select'             => array('type' => 'select', 'extra' => array('multiple' => 1)),
+      'Radio'                       => array('type' => 'select', 'extra' => array('aslist' => 0)),
+      'CheckBox'                    => array('type' => 'select', 'extra' => array('multiple' => 1, 'aslist' => 0)),
+      'Text'                        => array('type' => 'textfield'),
+      'TextArea'                    => array('type' => 'textarea'),
+      'RichTextArea'                => array('type' => 'textarea'),
+      'Select Date'                 => array('type' => 'date'),
+      'Link'                        => array('type' => 'textfield'),
+      'Select Country'              => array('type' => 'select'),
+      'Multi-Select Country'        => array('type' => 'select', 'extra' => array('multiple' => 1)),
+      'Select State/Province'       => array('type' => 'select'),
+      'Multi-Select State/Province' => array('type' => 'select', 'extra' => array('multiple' => 1)),
     );
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
     $sql = "
-      SELECT cf.*, cg.title as custom_group_name FROM civicrm_custom_field cf
+      SELECT cf.*, cg.title AS custom_group_name, cg.extends AS contact_type, cg.extends_entity_column_value AS sub_types 
+      FROM civicrm_custom_field cf
       INNER JOIN civicrm_custom_group cg ON cg.id = cf.custom_group_id
-      WHERE cf.is_active <> 0 AND cg.extends IN ('Individual','Contact') AND cg.is_active <> 0
+      WHERE cf.is_active <> 0 AND cg.extends IN ('Contact','Individual','Organization','Household') AND cg.is_active <> 0
       ORDER BY cf.custom_group_id, cf.weight";
     $dao = &CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {
@@ -594,6 +618,12 @@ function webform_civicrm_get_fields($var = 'fields') {
       $fields[$id]['extra']['description'] = $dao->help_pre;
       $fields[$id]['value'] = str_replace($sp, ',', trim($dao->default_value, $sp));
       $fields[$id]['custom_group'] = $dao->custom_group_name;
+      if ($dao->contact_type != 'Contact') {
+        $fields[$id]['contact_type'] = $dao->contact_type;
+        if ($dao->sub_types) {
+          $fields[$id]['sub_types'] = explode($sp, trim($dao->sub_type, $sp));
+        }
+      }
       if ($fields[$id]['type'] == 'date') {
         $fields[$id]['extra']['year_start'] = $dao->start_date_years ? '-' . $dao->start_date_years : '-50';
         $fields[$id]['extra']['year_end'] = $dao->end_date_years ? '+' . $dao->end_date_years : '+50';

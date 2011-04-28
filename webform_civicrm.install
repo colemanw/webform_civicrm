@@ -19,6 +19,13 @@ function webform_civicrm_schema() {
         'default' => 0,
         'description' => 'Webform Node ID',
       ),
+      'contacts' => array(
+        'type' => 'text',
+        'serialize' => TRUE,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Array of contact types to process for this form',
+      ),
       'activity_type_id' => array(
         'type' => 'int',
         'unsigned' => TRUE,
