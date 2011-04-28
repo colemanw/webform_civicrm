@@ -64,7 +64,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   );
   $form['st_message']['message'] = array(
     '#type' => 'textfield',
-    '#title' => t('Message text (displayed as a Drupal status message)'),
+    '#title' => t('Message text (displayed as a Drupal notice)'),
     '#default_value' => $settings['message'],
     '#size' => 80,
     '#maxlength' => 255,
@@ -189,7 +189,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   );
   // Set a few defaults
   if (!$settings) {
-    $form['act']['activity_subject']['#default_value'] = $node->title;
+    $form['act']['activity_subject']['#default_value'] = check_plain($node->title);
     $form['options']['confirm_subscription']['#default_value'] = TRUE;
   }
 
@@ -551,9 +551,9 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
   $fields = webform_civicrm_get_fields();
   $custom = FALSE;
   foreach ($fields as $id => $f) {
-    if (strpos($id, 'custom')) {
+    if (strpos($id, 'custom') || strpos($id, 'preferred_communication_method')) {
       $custom = TRUE;
-      $params[str_replace('civicrm', 'return', $id)] = 1;
+      $params[str_replace('civicrm_', 'return.', $id)] = 1;
     }
   }
   if ($custom) {
