@@ -715,3 +715,22 @@ function webform_civicrm_mailer_event_subscribe($params) {
     return crm_mailer_event_subscribe($params['email'], $params['group_id']);
   }
 }
+
+/**
+ * Loads a form during AHAH callback.
+ * (This will be part of Drupal API in D7)
+ */
+function webform_civicrm_process_ahah_form() {
+  $form_state = array('storage' => NULL, 'submitted' => FALSE);
+  $form_build_id = $_POST['form_build_id'];
+  $form = form_get_cache($form_build_id, $form_state);
+  $args = $form['#parameters'];
+  $form_id = array_shift($args);
+  $form_state['post'] = $form['#post'] = $_POST;
+  // Enable the submit/validate handlers to determine whether AHAH-submittted.
+  $form_state['ahah_submission'] = TRUE;
+  $form['#programmed'] = $form['#redirect'] = FALSE;
+  drupal_process_form($form_id, $form, $form_state);
+  $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
+  return $form;
+}
