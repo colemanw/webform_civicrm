@@ -96,81 +96,132 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     '#maxlength' => 255,
     '#default_value' => $settings['activity_subject']
   );
-
-  $form['fields'] = array(
-    '#type'  => 'fieldset',
-    '#title' => t('Enable Fields'),
-    '#description' => '<p class="web-civi-p">'. t('Webform components will be created for you automatically when you check these boxes. You may then configure, arrange, or delete them using the standard Webform interface.') .'</p>',
-    '#attributes' => array('class' => 'web-civi-container')
-  );
-  $form['fields']['box'] = array(
-    '#prefix' => '<div class="scrollme">',
-    '#suffix' => '</div>',
-  );
-  // Three columns for neatness
-  $form['fields']['box']['contact'] = array(
-    '#prefix' => '<div class="web-civi-3-col"><h4>'. t('Contact Fields') .'</h4><div class="web-civi-description">'. t('First name, Last name, and Email fields are all <em>required</em> by CiviCRM in order to create new contacts.') .'</div>',
-    '#suffix' => '</div>'
-  );
-  $form['fields']['box']['groups'] = array(
-    '#prefix' => '<div class="web-civi-3-col"><h4>'. t('Groups and Tags') .'</h4><div class="web-civi-description">'. t('These fields will add contacts who submit this form to groups and tags of your choosing. Configuration is done by editing the webform component.') .'</div>',
-    '#suffix' => '</div>'
-  );
-  $form['fields']['box']['custom'] = array(
-    '#prefix' => '<div class="web-civi-3-col"><h4>'. t('Custom Fields') .'</h4><div class="web-civi-description">'. t('Correct handling of custom fields requires proper permission configuration.') .' '.
-    t('<a !link>Read the instructions</a> for more info.', $readme_link) .'</div>',
-    '#suffix' => '</div>'
-  );
-  // CiviCRM fields are enabled through these checkboxes
-  $c = 'contact';
-  $sets = array('civicrm_first_name' => 'Contact', 'civicrm_street_address' => 'Address', 'civicrm_phone' => 'Phone', 'civicrm_groups' => 'Groups', 'civicrm_tags' => 'Tags');
-  foreach ($fields as $id => $field) {
-    $f = array(
-      '#type' => 'checkbox',
-      '#title' => $field['name'],
-      '#default_value' => (bool) $enabled[$id],
-      '#disabled' => (bool) $enabled[$id],
-      '#description' => $field['extra']['description']
-    );
-    if ($id=='civicrm_groups') {
-      $c = 'groups';
-    }
-    if (!strpos($id, 'custom')) {
-      // Suggest minimum enabled fields
-      if (!$settings && $field['mandatory']) {
-        $f['#default_value'] = TRUE;
-      }
-      // Create fieldsets
-      if ($sets[$id]) {
-        $set = $sets[$id];
-        $form['fields']['box'][$c][$set] = array(
-          '#type' => 'fieldset',
-          '#collapsible' => TRUE,
-          '#title' => $set
-        );
-      }
-    }
-    // Fieldsets for custom groups
-    else {
-      $c = 'custom';
-      if (strip_tags($field['custom_group']) != $set) {
-        $set = strip_tags($field['custom_group']);
-        $form['fields']['box'][$c][$set] = array(
-          '#type' => 'fieldset',
-          '#collapsible' => TRUE,
-          '#title' => $set
-        );
-        if ($field['sub_types']) {
-          $form['fields']['box'][$c][$set]['#description'] = t('These fields are only for') //TODO
-        }
-      }
-    }
-    $form['fields']['box'][$c][$set][$id] = $f;
+  foreach ($settings['contact'] as $n => $c) {
+	  $form['contact_' . $n] = array(
+	    '#type'  => 'fieldset',
+	    '#title' => t('Contact') .' '. $n,
+	    '#attributes' => array('class' => 'web-civi-container')
+	  );
+	  $form['contact_' . $n][$n . '_contact_type'] = array(
+	    '#type' => 'select',
+	    '#title' => t('Contact Type'),
+	    '#default_value' => $c['contact_type'],
+	    '#options' => $contact_types,
+	  );
+	  if (!empty($sub_types[$c['contact_type']])) {
+	    $subs = array_merge(array(t('-none-'), t('-user select-')), $sub_types[$c['contact_type']]);
+	    $form['contact_' . $n][$n . '_sub_type'] = array(
+	      '#type' => 'select',
+	      '#title' => t('Specific Type'),
+	      '#default_value' => $c['sub_type'],
+	      '#options' => $subs,
+	      '#description' => t('You may optionally select a more specific type for this contact. Choose "user select" to create a form element with these options.'),
+	    );
+	  }
+	  $form['contact_' . $n]['box'] = array(
+	    '#prefix' => '<div class="scrollme">',
+	    '#suffix' => '</div>',
+	  );
+	  // Three columns for neatness
+	  $form['contact_' . $n]['box']['contact'] = array(
+	    '#prefix' => '<div class="web-civi-3-col"><h4>'. t('Contact Fields') .'</h4><div class="web-civi-description">'. t('First name, Last name, and Email fields are all <em>required</em> by CiviCRM in order to create new contacts.') .'</div>',
+	    '#suffix' => '</div>'
+	  );
+	  $form['contact_' . $n]['box']['groups'] = array(
+	    '#prefix' => '<div class="web-civi-3-col"><h4>'. t('Groups and Tags') .'</h4><div class="web-civi-description">'. t('These fields will add contacts who submit this form to groups and tags of your choosing. Configuration is done by editing the webform component.') .'</div>',
+	    '#suffix' => '</div>'
+	  );
+	  $form['contact_' . $n]['box']['custom'] = array(
+	    '#prefix' => '<div class="web-civi-3-col"><h4>'. t('Custom Fields') .'</h4><div class="web-civi-description">'. t('Correct handling of custom fields requires proper permission configuration.') .' '.
+	    t('<a !link>Read the instructions</a> for more info.', $readme_link) .'</div>',
+	    '#suffix' => '</div>'
+	  );
+	  // CiviCRM fields are enabled through these checkboxes
+	  $c = 'contact';
+	  $sets = array('civicrm_first_name' => 'Contact', 'civicrm_street_address' => 'Address', 'civicrm_phone' => 'Phone', 'civicrm_groups' => 'Groups', 'civicrm_tags' => 'Tags');
+	  foreach ($fields as $id => $field) {
+	    $key = $n . '_civicrm_' . $id;
+	    $f = array(
+	      '#type' => 'checkbox',
+	      '#title' => $field['name'],
+	      '#default_value' => (bool) $enabled[$key],
+	      '#disabled' => (bool) $enabled[$key],
+	      '#description' => $field['extra']['description']
+	    );
+	    if ($id=='civicrm_groups') {
+	      $c = 'groups';
+	    }
+	    if (!strpos($id, 'custom')) {
+	      // Suggest minimum enabled fields
+	      if (!$settings && $field['mandatory']) {
+	        $f['#default_value'] = TRUE;
+	      }
+	      // Create fieldsets
+	      if ($sets[$id]) {
+	        $set = strtolower($sets[$id]);
+	        $form['contact_' . $n]['box'][$c][$set] = array(
+	          '#type' => 'fieldset',
+	          '#collapsible' => TRUE,
+	          '#title' => $set
+	        );
+	      }
+	    }
+	    // Fieldsets for custom fieldgroups
+	    else {
+	      $c = 'custom';
+	      if (strip_tags($field['custom_group']) != $set) {
+	        $set = strip_tags($field['custom_group']);
+	        $form['contact_' . $n]['box'][$c][$set] = array(
+	          '#type' => 'fieldset',
+	          '#collapsible' => TRUE,
+	          '#title' => $set
+	        );
+	        if ($field['sub_types']) {
+	          $form['contact_' . $n]['box'][$c][$set]['#description'] = t('These fields are only for'); //TODO
+	        }
+	      }
+	    }
+	    $form['contact_' . $n]['box'][$c][$set][$key] = $f;
+	  }
+	  if ($c != 'custom') {
+	    $form['contact_' . $n]['box']['custom']['#prefix'] .= '<p>'. t('You have no custom fields enabled in CiviCRM.') .'</p>';
+	  }
+	  if ($n > 1) {
+	    $form['contact_' . $n]['box']['groups']['relations'] = array(
+	      '#type' => 'fieldset',
+        '#collapsible' => TRUE,
+        '#title' => 'Relationships'
+	    );
+	    for ($i = 1; $i <= $n; ++$i) {
+	      $rels = array_merge(array(t('-none-'), 'select' => t('-user select-')), webform_civicrm_get_relationship_types($c['contact_type'], $settings['contact'][$i]['contact_type'], $c['sub_type'], $settings['contact'][$i]['sub_type']));
+	      $form['contact_' . $n]['box']['groups']['relations'][$n .'_civicrm_relationship_to_contact_'. $i] = array(
+		      '#type' => 'select',
+		      '#title' => t('Relationship To Contact') .' '. $i,
+		      '#default_value' => $c['relationship_to_contact_'. $i],
+		      '#options' => $rels,
+		      '#description' => t('Specify the relationship this contact has to contact %num, or choose "user select."', array('%num' => $i)),
+		    );
+	    }
+	    $form['contact_' . $n]['box']['contact']['address'][$n .'_civicrm_shared_address'] = array(
+	      '#type' => 'select',
+	      '#title' => t('Share Address with Contact 1?'),
+	      '#default_value' => $c['shared_address'],
+	      '#options' => array(t('No'), t('Yes'), 'select' => '-user select-')
+	      '#description' => t('This will override anything entered for any other address field.'),
+	    );
+	  }
   }
-  if ($c != 'custom') {
-    $form['fields']['box']['custom']['#prefix'] .= '<p>'. t('You have no custom fields enabled in CiviCRM.') .'</p>';
-  }
-
+  $form['number_to_change'] = array(
+    '#type' => 'select',
+    '#title' => t('Add or Subtract Contacts'),
+    '#default_value' => $c['shared_address'],
+    '#options' => array(t('No'), t('Yes'), 'select' => '-user select-')
+    '#description' => t('This will override anything entered for any other address field.'),
+  );
+  $form['change_number'] = array(
+    '#type' => 'submit',
+    '#value' => t('Add 1 Contact'),
+  );
   $form['options'] = array(
     '#type'  => 'fieldset',
     '#title' => t('Additional Options')
@@ -193,7 +244,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   );
   // Set a few defaults
   if (!$settings) {
-    $form['act']['activity_subject']['#default_value'] = $node->title;
+    $form['act']['activity_subject']['#default_value'] = check_plain($node->title);
     $form['options']['confirm_subscription']['#default_value'] = TRUE;
   }
 

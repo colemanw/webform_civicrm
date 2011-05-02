@@ -320,6 +320,43 @@ function webform_civicrm_get_contact_types() {
 }
 
 /**
+ * Get valid relationship types for given contact types and sub_types
+ */
+function webform_civicrm_get_relationship_types($contact_type_a, $contact_type_b, $sub_type_a = NULL, $sub_type_b = NULL) {
+  static $types = array();
+  if (!$types) {
+    $sql = "
+      SELECT id, name_a_b, name_b_a, label_a_b, label_b_a, contact_type_a, contact_type_b, contact_sub_type_a, contact_sub_type_b
+      FROM civicrm_relationship
+      WHERE is_active <> 0"
+    );
+    $dao = &CRM_Core_DAO::executeQuery($sql, $params);
+    while ($dao->fetch()) {
+      $types[$dao->id] = (array) $dao;
+    }
+  }
+  $ret = array();
+  foreach ($types as $t) {
+    if (($t['contact_type_a'] == $contact_type_a || !$t['contact_type_a'])
+      && ($t['contact_type_b'] == $contact_type_b || !$t['contact_type_b'])
+      && ($t['contact_sub_type_a'] == $sub_type_a || !$t['contact_sub_type_a'])
+      && ($t['contact_sub_type_b'] == $sub_type_b || !$t['contact_sub_type_b'])
+    ) {
+      $ret[$t['id'] .'_a'] = $t['label_a_b'];
+    }
+    if (($t['contact_type_a'] == $contact_type_a || !$t['contact_type_a'])
+      && ($t['contact_type_b'] == $contact_type_b || !$t['contact_type_b'])
+      && ($t['contact_sub_type_a'] == $sub_type_a || !$t['contact_sub_type_a'])
+      && ($t['contact_sub_type_b'] == $sub_type_b || !$t['contact_sub_type_b'])
+      && ($t['name_a_b'] != $t['name_b_a'])
+    ) {
+      $ret[$t['id'] .'_b'] = $t['label_b_a'];
+    }
+  }
+  return $ret;
+}
+
+/**
  * Return CiviCRM options via AJAX request
  */
 function webform_civicrm_js_options($field_key, $str='') {
@@ -357,19 +394,17 @@ function webform_civicrm_js_options($field_key, $str='') {
 
 /**
  * Get ids of enabled CiviCRM fields for a webform
- * @Param $node - entire node object, or just the NID works too
+ * @Param $node - node object
  */
 function webform_civicrm_enabled_fields($node) {
-  if (!is_object($node)) {
-    $node = node_load($node);
-  }
   if (!is_array($node->webform['components'])) {
     return;
   }
   $fields = webform_civicrm_get_fields();
   $enabled = array();
   foreach ($node->webform['components'] as $c) {
-    if (array_key_exists($c['form_key'], $fields)) {
+    list($n, $civi, $id) = explode('_', $c['form_key'], 3);
+    if (array_key_exists($id, $fields) && $civi == 'civicrm') {
       $enabled[$c['form_key']] = $c['cid'];
     }
   }
@@ -393,44 +428,44 @@ function webform_civicrm_get_fields($var = 'fields') {
     // The order of these fields is important: see function webform_civicrm_contact_match
     $fields = array();
     // Contact params
-    $fields['civicrm_first_name'] = array(
+    $fields['first_name'] = array(
       'name' => t('First Name'),
       'type' => 'textfield',
       'mandatory' => 1,
       'contact_type' => 'Individual',
     );
-    $fields['civicrm_nick_name'] = array(
+    $fields['nick_name'] = array(
       'name' => t('Nick Name'),
       'type' => 'textfield',
       'contact_type' => 'Individual',
     );
-    $fields['civicrm_middle_name'] = array(
+    $fields['middle_name'] = array(
       'name' => t('Middle Name'),
       'type' => 'textfield',
       'contact_type' => 'Individual',
     );
-    $fields['civicrm_last_name'] = array(
+    $fields['last_name'] = array(
       'name' => t('Last Name'),
       'type' => 'textfield',
       'mandatory' => 1,
       'contact_type' => 'Individual',
     );
-    $fields['civicrm_prefix_id'] = array(
+    $fields['prefix_id'] = array(
       'name' => t('Name Prefix'),
       'type' => 'select',
       'contact_type' => 'Individual',
     );
-    $fields['civicrm_suffix_id'] = array(
+    $fields['suffix_id'] = array(
       'name' => t('Name Suffix'),
       'type' => 'select',
       'contact_type' => 'Individual',
     );
-    $fields['civicrm_gender_id'] = array(
+    $fields['gender_id'] = array(
       'name' => t('Gender'),
       'type' => 'select',
       'contact_type' => 'Individual',
     );
-    $fields['civicrm_birth_date'] = array(
+    $fields['birth_date'] = array(
       'name' => t('Birth Date'),
       'type' => 'date',
       'extra' => array(
@@ -440,65 +475,65 @@ function webform_civicrm_get_fields($var = 'fields') {
       ),
       'contact_type' => 'Individual',
     );
-    $fields['civicrm_job_title'] = array(
+    $fields['job_title'] = array(
       'name' => t('Job Title'),
       'type' => 'textfield',
       'contact_type' => 'Individual',
     );
-    $fields['civicrm_organization_name'] = array(
+    $fields['organization_name'] = array(
       'name' => t('Organization Name'),
       'type' => 'textfield',
       'mandatory' => 1,
       'contact_type' => 'Organization',
     );
-    $fields['civicrm_household_name'] = array(
+    $fields['household_name'] = array(
       'name' => t('Household Name'),
       'type' => 'textfield',
       'mandatory' => 1,
       'contact_type' => 'Household',
     );
-    $fields['civicrm_contact_id'] = array(
+    $fields['contact_id'] = array(
       'name' => t('Contact ID'),
       'type' => 'hidden',
       'extra' => array('description' => t('(hidden field, useful for post-processing)')),
     );
-    $fields['civicrm_external_identifier'] = array(
+    $fields['external_identifier'] = array(
       'name' => t('External ID'),
       'type' => 'hidden',
       'extra' => array('description' => t('(hidden field, useful for post-processing)')),
     );
-    $fields['civicrm_preferred_communication_method'] = array(
+    $fields['preferred_communication_method'] = array(
       'name' => t('Preferred Communication Method(s)'),
       'type' => 'select',
       'extra' => array('multiple' => 1),
     );
     // Email params -- email must be first!
-    $fields['civicrm_email'] = array(
+    $fields['email'] = array(
       'name' => t('Email'),
       'type' => 'email',
       'mandatory' => 1,
     );
     // Address params -- street_address must be first!
-    $fields['civicrm_street_address'] = array(
+    $fields['street_address'] = array(
       'name' => t('Street Address'),
       'type' => 'textfield',
       'extra' => array('width' => 60),
     );
-    $fields['civicrm_supplemental_address_1'] = array(
+    $fields['supplemental_address_1'] = array(
       'name' => t('Street Address Line 2'),
       'type' => 'textfield',
       'extra' => array('width' => 60),
     );
-    $fields['civicrm_supplemental_address_2'] = array(
+    $fields['supplemental_address_2'] = array(
       'name' => t('Street Address Line 3'),
       'type' => 'textfield',
       'extra' => array('width' => 60),
     );
-    $fields['civicrm_city'] = array(
+    $fields['city'] = array(
       'name' => t('City'),
       'type' => 'textfield',
     );
-    $fields['civicrm_state_province'] = array(
+    $fields['state_province'] = array(
       'name' => t('State/Province Abbr.'),
       'type' => 'textfield',
       'extra' => array(
@@ -507,31 +542,31 @@ function webform_civicrm_get_fields($var = 'fields') {
         'description' => t('Enter state/province abbreviation'),
       ),
     );
-    $fields['civicrm_state_province_id'] = array(
+    $fields['state_province_id'] = array(
       'name' => t('State/Province Select'),
       'type' => 'select',
       'extra' => array('description' => t('Select state/province from list')),
     );
-    $fields['civicrm_postal_code'] = array(
+    $fields['postal_code'] = array(
       'name' => t('Postal Code'),
       'type' => 'textfield',
       'extra' => array('width' => 10),
     );
-    $fields['civicrm_country_id'] = array(
+    $fields['country_id'] = array(
       'name' => t('Country'),
       'type' => 'select',
     );
     // Phone params -- phone must be first!
-    $fields['civicrm_phone'] = array(
+    $fields['phone'] = array(
       'name' => t('Phone Number'),
       'type' => 'textfield',
     );
-    $fields['civicrm_phone_type_id'] = array(
+    $fields['phone_type_id'] = array(
       'name' => t('Phone Type'),
       'type' => 'select',
     );
     // Other
-    $fields['civicrm_groups'] = array(
+    $fields['groups'] = array(
       'name' => t('Select Group(s)'),
       'type' => 'select',
       'extra' => array(
@@ -539,12 +574,12 @@ function webform_civicrm_get_fields($var = 'fields') {
         'description' => t('Users can add/remove themselves from CiviCRM groups (mailing lists, etc)'),
       ),
     );
-    $fields['civicrm_groups_hidden'] = array(
+    $fields['groups_hidden'] = array(
       'name' => t('Auto-Add Group(s)'),
       'type' => 'hidden',
       'extra' => array('description' => t('Hidden form element will add contacts to group(s) of your choosing')),
     );
-    $fields['civicrm_tags'] = array(
+    $fields['tags'] = array(
       'name' => t('Tags'),
       'type' => 'hidden',
       'extra' => array('description' => t('Hidden form element to add tags to contacts')),
@@ -575,13 +610,13 @@ function webform_civicrm_get_fields($var = 'fields') {
     );
 
     $lists = array(
-      'civicrm_phone_type_id'                  => 'phone_type',
-      'civicrm_prefix_id'                      => 'individual_prefix',
-      'civicrm_suffix_id'                      => 'individual_suffix',
-      'civicrm_gender_id'                      => 'gender',
-      'civicrm_country_id'                     => 'country',
-      'civicrm_state_province_id'              => 'state',
-      'civicrm_preferred_communication_method' => 'preferred_communication_method',
+      'phone_type_id'                  => 'phone_type',
+      'prefix_id'                      => 'individual_prefix',
+      'suffix_id'                      => 'individual_suffix',
+      'gender_id'                      => 'gender',
+      'country_id'                     => 'country',
+      'state_province_id'              => 'state',
+      'preferred_communication_method' => 'preferred_communication_method',
     );
 
     // Pull custom fields and match to Webform element types
@@ -613,7 +648,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       if (!$custom_types[$dao->html_type]) {
         continue;
       }
-      $id = 'civicrm_custom_'. $dao->id;
+      $id = 'custom_'. $dao->id;
       $label = drupal_strtolower($dao->label);
       // Prevent token namespace collisions
       if (in_array($label, $tokens)) {
