@@ -16,16 +16,18 @@ function webform_civicrm_contact_match($node, &$submission) {
     return $cid;
   }
   civicrm_initialize();
+  require_once 'api/v2/Contact.php';
 
   $enabled = webform_civicrm_enabled_fields($node);
   $fields = webform_civicrm_get_fields();
-  $params = array('check_permission' => FALSE);
+  $contacts = array(1 => array('check_permission' => FALSE));
   $table = 'contact';
+  global $user;
 
-  // Convert flat array to multidimensional array based on civi table names
+  // Convert flat array to multidimensional arrays for each contact based on civi table names
   // This is why the order is important in webform_civicrm_get_fields()
   foreach ($fields as $fid => $field) {
-    $field = str_replace('civicrm_', '', $fid);
+    list($n, $lobo, $field) = explode('_', $fid, 3);
     if ($field == 'street_address') {
       $table = 'address';
     }
@@ -41,38 +43,40 @@ function webform_civicrm_contact_match($node, &$submission) {
     }
     if ($val = $submission->data[$enabled[$fid]]['value']) {
       if (count($val) > 1 && $table == 'custom') {
-        $params['civicrm_'. $table][$field] = drupal_map_assoc($val);
+        $contacts[$n]['civicrm_'. $table][$field] = drupal_map_assoc($val);
       }
       elseif ($val[0] !== '' && $val[0] !== NULL) {
-        $params['civicrm_'. $table][$field] = $val[0];
+        $contacts[$n]['civicrm_'. $table][$field] = $val[0];
       }
     }
   }
-  $custom = $params['civicrm_custom'];
-  unset($params['civicrm_custom']);
-  global $user;
 
-  require_once 'api/v2/Contact.php';
+  $cids = array();
 
-  // If this is an update op, just use CID from original submission to avoid confusion
+  // If this is an update op, just use CIDs from original submission to avoid confusion
   if ($submission->sid) {
-    $db = db_query('SELECT contact_id FROM {webform_civicrm_submissions} WHERE sid = '. $submission->sid);
-    if ($existing = db_fetch_array($db)) {
-      $cid = $existing['contact_id'];
-    }
-  }
-  if (!$cid) {
-    // Try to match an existing contact to this submission. Logged-in user takes priority.
-    if ($user->uid) {
-      require_once 'CRM/Core/BAO/UFMatch.php';
-      $cid = CRM_Core_BAO_UFMatch::getContactId($user->uid);
-    }
-    elseif ($_SESSION['webform_civicrm_cid'] && $_SESSION['webform_civicrm_cs']) {
-      require_once 'CRM/Contact/BAO/Contact/Utils.php';
-      if (CRM_Contact_BAO_Contact_Utils::validChecksum($_SESSION['webform_civicrm_cid'], $_SESSION['webform_civicrm_cs'])) {
-        $cid = $_SESSION['webform_civicrm_cid'];
+    if ($old = db_result(db_query('SELECT contact_id FROM {webform_civicrm_submissions} WHERE sid = '. $submission->sid))) {
+      $old = explode(',', $old['contact_id']);
+      $n = 1;
+      foreach ($old as $cid) {
+        $cids[$n] = $cid;
+        $contacts[$n]['contact']['contact_id'] = $cid;
+        ++$n;
       }
     }
+  }
+  // Match contact 1 to logged in user if contact 1 is an individual
+  if (!$cids[1] && $settings['contacts'][1]['contact_type'] = 'Individual' && $user->uid) {
+    require_once 'CRM/Core/BAO/UFMatch.php';
+    $cids[1] = CRM_Core_BAO_UFMatch::getContactId($user->uid);
+  }
+  elseif ($_SESSION['webform_civicrm_cid'] && $_SESSION['webform_civicrm_cs']) {
+    require_once 'CRM/Contact/BAO/Contact/Utils.php';
+    if (CRM_Contact_BAO_Contact_Utils::validChecksum($_SESSION['webform_civicrm_cid'], $_SESSION['webform_civicrm_cs'])) {
+      $cids[1] = $_SESSION['webform_civicrm_cid'];
+    }
+  }
+  
     // Search for an existing contact using default strict rule
     if (!$cid) {
       require_once 'CRM/Dedupe/Finder.php';
@@ -403,8 +407,8 @@ function webform_civicrm_enabled_fields($node) {
   $fields = webform_civicrm_get_fields();
   $enabled = array();
   foreach ($node->webform['components'] as $c) {
-    list($n, $civi, $id) = explode('_', $c['form_key'], 3);
-    if (array_key_exists($id, $fields) && $civi == 'civicrm') {
+    list($n, $lobo, $id) = explode('_', $c['form_key'], 3);
+    if (array_key_exists($id, $fields) && $lobo == 'civicrm') {
       $enabled[$c['form_key']] = $c['cid'];
     }
   }

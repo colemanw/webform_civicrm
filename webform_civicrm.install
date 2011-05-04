@@ -24,7 +24,7 @@ function webform_civicrm_schema() {
         'not null' => TRUE,
         'serialize' => TRUE,
         'default' => '',
-        'description' => 'Array of contact types to process for this form',
+        'description' => 'Array of contact settings for this form',
       ),
       'activity_type_id' => array(
         'type' => 'int',
@@ -85,11 +85,11 @@ function webform_civicrm_schema() {
         'description' => 'Webform Submission ID',
       ),
       'contact_id' => array(
-        'type' => 'int',
-        'unsigned' => TRUE,
+        'type' => 'varchar',
+        'length' => 2000,
         'not null' => TRUE,
-        'default' => 0,
-        'description' => 'FK to {civicrm_contact} id',
+        'default' => '',
+        'description' => 'CiviCRM contact ids from this submission',
       ),
       'activity_id' => array(
         'type' => 'int',
@@ -185,10 +185,17 @@ function webform_civicrm_update_6200() {
     'not null' => TRUE,
     'serialize' => TRUE,
     'default' => '',
-    'description' => 'Array of contact types to process for this form',
+    'description' => 'Array of contact settings for this form',
   );
   $ret = array();
   db_add_field($ret, 'webform_civicrm_forms', 'contacts', $contacts);
+  db_change_field($ret, 'webform_civicrm_submissions', 'contact_id', 'contact_id', array(
+    'type' => 'varchar',
+    'length' => 2000,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'CiviCRM contact ids from this submission',
+  ));
   $default = array(
     1 => array(
       'contact_type' => 'Individual',

@@ -206,21 +206,26 @@ function webform_civicrm_configure_form(&$form_state, $node) {
 	      '#type' => 'select',
 	      '#title' => t('Share Address with Contact 1?'),
 	      '#default_value' => $c['shared_address'],
-	      '#options' => array(t('No'), t('Yes'), 'select' => '-user select-')
+	      '#options' => array(t('No'), t('Yes'), 'select' => '-user select-'),
 	      '#description' => t('This will override anything entered for any other address field.'),
 	    );
 	  }
   }
+  $nums = array();
+  for ($i = 1 - $n; $i <= 10; ++$i) {
+    if ($i !== 0) {
+      $nums[$i] = $i;
+    }
+  }
   $form['number_to_change'] = array(
     '#type' => 'select',
     '#title' => t('Add or Subtract Contacts'),
-    '#default_value' => $c['shared_address'],
-    '#options' => array(t('No'), t('Yes'), 'select' => '-user select-')
-    '#description' => t('This will override anything entered for any other address field.'),
+    '#default_value' => 1,
+    '#options' => $nums,
   );
   $form['change_number'] = array(
     '#type' => 'submit',
-    '#value' => t('Add 1 Contact'),
+    '#value' => t('Go'),
   );
   $form['options'] = array(
     '#type'  => 'fieldset',
