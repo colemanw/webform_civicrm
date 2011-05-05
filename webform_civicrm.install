@@ -180,6 +180,7 @@ function webform_civicrm_update_6102() {
  * Add column for contacts to webform_civicrm_forms table, and convert existing forms to new multi-contact schema.
  */
 function webform_civicrm_update_6200() {
+  $ret = array();
   $contacts = array(
     'type' => 'text',
     'not null' => TRUE,
@@ -187,24 +188,34 @@ function webform_civicrm_update_6200() {
     'default' => '',
     'description' => 'Array of contact settings for this form',
   );
-  $ret = array();
   db_add_field($ret, 'webform_civicrm_forms', 'contacts', $contacts);
-  db_change_field($ret, 'webform_civicrm_submissions', 'contact_id', 'contact_id', array(
+  $contact_id = array(
     'type' => 'varchar',
     'length' => 2000,
     'not null' => TRUE,
     'default' => '',
     'description' => 'CiviCRM contact ids from this submission',
-  ));
+  );
+  db_change_field($ret, 'webform_civicrm_submissions', 'contact_id', 'contact_id', $contact_id);
   $default = array(
     1 => array(
-      'contact_type' => 'Individual',
-      'sub_type' => 0,
+      'contact' => array(
+        'contact_type' => 'Individual',
+        'contact_sub_type' => '',
+      ),
+      'address' => array(1 => array('location_type_id' => 1)),
+      'phone' => array(1 => array('location_type_id' => 1)),
+      'email' => array(1 => array('location_type_id' => 1)),
+      'activity' => TRUE,
     ),
   );
   db_query("
     UPDATE {webform_civicrm_forms} SET contacts = '%s';
-    UPDATE {webform_component} SET form_key CONCAT('1_', form_key) WHERE form_key LIKE 'civicrm_%%';
+    UPDATE {webform_civicrm_submissions} SET contact_id = CONCAT('-', contact_id, '-');
     ", serialize($default));
+  $db = db_query("SELECT DISTINCT form_key FROM {webform_component} WHERE form_key LIKE 'civicrm_%%'");
+  while ($row = db_fetch_array($db)) {
+    
+  }
   return $ret;
 }

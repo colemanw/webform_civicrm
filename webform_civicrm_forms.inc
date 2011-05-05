@@ -23,10 +23,25 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
   $readme_link = array('!link' => 'href="/admin/help/webform_civicrm" target="_blank" class="popup-webform-civicrm-help"');
   $form = array('#prefix' => t('Use the options below to configure CiviCRM processing for this form.'));
+  if (!($contacts = $settings['contacts'])) {
+    $contacts = array(
+	    1 => array(
+	      'contact' => array(
+	        'contact_type' => 'Individual',
+	        'contact_sub_type' => 0,
+	      ),
+	      'address' => array(1 => array()),
+	      'phone' => array(1 => array()),
+	      'email' => array(1 => array()),
+	      'website' => array(1 => array()),
+	      'activity' => TRUE,
+	    ),
+	  );
+  }
 
   // AJAXify help text
   if (module_exists('popups')) {
-    popups_add_popups(array(".popup-webform-civicrm-help" => array('width' => '90%')));
+    popups_add_popups(array('.popup-webform-civicrm-help' => array('width' => '90%')));
   }
 
   $form['nid'] = array(
@@ -96,7 +111,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     '#maxlength' => 255,
     '#default_value' => $settings['activity_subject']
   );
-  foreach ($settings['contact'] as $n => $c) {
+  foreach ($contacts as $n => $c) {
 	  $form['contact_' . $n] = array(
 	    '#type'  => 'fieldset',
 	    '#title' => t('Contact') .' '. $n,
@@ -109,36 +124,23 @@ function webform_civicrm_configure_form(&$form_state, $node) {
 	    '#options' => $contact_types,
 	  );
 	  if (!empty($sub_types[$c['contact_type']])) {
-	    $subs = array_merge(array(t('-none-'), t('-user select-')), $sub_types[$c['contact_type']]);
-	    $form['contact_' . $n][$n . '_sub_type'] = array(
+	    $subs = array_merge(array(t('-none-'), 'select' => t('-user select-')), $sub_types[$c['contact_type']]);
+	    $form['contact_' . $n][$n . '_contact_sub_type'] = array(
 	      '#type' => 'select',
 	      '#title' => t('Specific Type'),
-	      '#default_value' => $c['sub_type'],
+	      '#default_value' => $c['contact_sub_type'],
 	      '#options' => $subs,
 	      '#description' => t('You may optionally select a more specific type for this contact. Choose "user select" to create a form element with these options.'),
 	    );
 	  }
+	  $form['contact_' . $n]['activity'] = array(
+	    '#type' => 'checkbox',
+	    '#suffix' => '</div>',
+	  );
 	  $form['contact_' . $n]['box'] = array(
 	    '#prefix' => '<div class="scrollme">',
 	    '#suffix' => '</div>',
 	  );
-	  // Three columns for neatness
-	  $form['contact_' . $n]['box']['contact'] = array(
-	    '#prefix' => '<div class="web-civi-3-col"><h4>'. t('Contact Fields') .'</h4><div class="web-civi-description">'. t('First name, Last name, and Email fields are all <em>required</em> by CiviCRM in order to create new contacts.') .'</div>',
-	    '#suffix' => '</div>'
-	  );
-	  $form['contact_' . $n]['box']['groups'] = array(
-	    '#prefix' => '<div class="web-civi-3-col"><h4>'. t('Groups and Tags') .'</h4><div class="web-civi-description">'. t('These fields will add contacts who submit this form to groups and tags of your choosing. Configuration is done by editing the webform component.') .'</div>',
-	    '#suffix' => '</div>'
-	  );
-	  $form['contact_' . $n]['box']['custom'] = array(
-	    '#prefix' => '<div class="web-civi-3-col"><h4>'. t('Custom Fields') .'</h4><div class="web-civi-description">'. t('Correct handling of custom fields requires proper permission configuration.') .' '.
-	    t('<a !link>Read the instructions</a> for more info.', $readme_link) .'</div>',
-	    '#suffix' => '</div>'
-	  );
-	  // CiviCRM fields are enabled through these checkboxes
-	  $c = 'contact';
-	  $sets = array('civicrm_first_name' => 'Contact', 'civicrm_street_address' => 'Address', 'civicrm_phone' => 'Phone', 'civicrm_groups' => 'Groups', 'civicrm_tags' => 'Tags');
 	  foreach ($fields as $id => $field) {
 	    $key = $n . '_civicrm_' . $id;
 	    $f = array(
