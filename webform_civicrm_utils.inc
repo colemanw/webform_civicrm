@@ -27,7 +27,7 @@ function webform_civicrm_contact_match($node, &$submission) {
 
   // Fill contact arrays with field values
   foreach ($enabled as $fid => $field) {
-    list($c, $n, $lobo, $table, $field) = explode('_', $fid, 5);
+    list($lobo, $c, $n, $table, $field) = explode('_', $fid, 5);
     if ($val = $submission->data[$enabled[$table .'_'. $field]]['value']) {
       if (count($val) > 1) {
         $val = drupal_map_assoc($val);
@@ -385,8 +385,8 @@ function webform_civicrm_enabled_fields($node) {
   $fields = webform_civicrm_get_fields();
   $enabled = array();
   foreach ($node->webform['components'] as $c) {
-    list($c, $n, $civi, $id) = explode('_', $c['form_key'], 4);
-    if (array_key_exists($id, $fields) && $civi == 'civicrm') {
+    list($lobo, $c, $n, $id) = explode('_', $c['form_key'], 4);
+    if (array_key_exists($id, $fields) && $lobo == 'civicrm') {
       $enabled[$c['form_key']] = $c['cid'];
     }
   }
@@ -656,7 +656,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       SELECT cf.*, cg.title AS custom_group_name, cg.extends AS contact_type, cg.extends_entity_column_value AS sub_types, cg.is_multiple, cg.max_multiple, cg.id AS custom_group_id
       FROM civicrm_custom_field cf
       INNER JOIN civicrm_custom_group cg ON cg.id = cf.custom_group_id
-      WHERE cf.is_active <> 0 AND cg.extends IN ('Contact','Individual','Organization','Household','Address') AND cg.is_active <> 0
+      WHERE cf.is_active <> 0 AND cg.extends IN ('Contact','Individual','Organization','Household','Address','Activity') AND cg.is_active <> 0
       ORDER BY cf.custom_group_id, cf.weight";
     $dao =& CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {
@@ -682,7 +682,7 @@ function webform_civicrm_get_fields($var = 'fields') {
           $fields[$id]['sub_types'] = explode($sp, trim($dao->sub_type, $sp));
         }
       }
-      if ($dao->is_multiple && $dao->contact_type != 'Address') {
+      if ($dao->is_multiple && $dao->contact_type != 'Address' && $dao->contact_type != 'Activity') {
         $multi[$dao->custom_group_id] = $dao->max_multiple;
       }
       if ($fields[$id]['type'] == 'date') {
