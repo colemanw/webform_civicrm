@@ -15,28 +15,34 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   drupal_add_css(drupal_get_path('module', 'webform_civicrm') .'/webform_civicrm_style.css', 'module', 'all', FALSE);
   civicrm_initialize();
 
-  $fields = webform_civicrm_get_fields();
-  $settings = $node->webform_civicrm;
+  $fields_raw = webform_civicrm_get_fields();
+  $multi = webform_civicrm_get_fields('multi');
   $enabled = webform_civicrm_enabled_fields($node);
   $tokens = '<strong>'. t('Tokens Available:') .'</strong> ['. implode('], [', webform_civicrm_get_fields('tokens')) .'].';
   $acts = webform_civicrm_get_options('activity_type', 'arr', t('- no activity -'));
   list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
   $readme_link = array('!link' => 'href="/admin/help/webform_civicrm" target="_blank" class="popup-webform-civicrm-help"');
   $form = array('#prefix' => t('Use the options below to configure CiviCRM processing for this form.'));
-  if (!($contacts = $settings['contacts'])) {
-    $contacts = $form_state['#storage']['contacts'] = array(
-      1 => array(
-        'contact' => array(
-          'contact_type' => 'Individual',
-          'contact_sub_type' => 0,
+  if (!($settings = $form_state['#storage']['settings'])) {
+    if (!($settings = $node->webform_civicrm)) {
+      $settings = array(
+        'activity_subject' => check_plain($node->title),
+        'contacts' => array(
+          1 => array(
+            'contact_type' => 'Individual',
+            'activity_target' => TRUE,
+          ),
         ),
-        'address' => array(1 => array()),
-        'phone' => array(1 => array()),
-        'email' => array(1 => array()),
-        'website' => array(1 => array()),
-        'activity' => TRUE,
-      ),
-    );
+        'confirm_subscription' => 1,
+        'activity_link' => 1,
+      );
+    }
+  }
+  // Sort fields by group
+  $fields = $sets = array();
+  foreach ($fields_raw as $id => $field) {
+    list($group, $id) = explode('_', $id, 2);
+    $fields[$group][$id] = $field;
   }
 
   // AJAXify help text
@@ -47,13 +53,13 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   $form['nid'] = array(
     '#type' => 'checkbox',
       '#title' => t('Enable CiviCRM Processing'),
-      '#default_value' => (bool) $settings,
+      '#default_value' => (bool) $settings['nid'],
       '#return_value' => $node->nid,
       '#description' => '<ul><li>'.
       t('CiviCRM contacts will be created or updated when users submit this webform.') .'</li><li>'.
       t('Logged-in users will have their contact info already filled-in for them.') .'</li><li>'.
       t('The form will also be auto-filled for anonymous users if you send them this link using CiviMail:') .'<br />'.
-      url('node/'. $node->nid, array('query' => 'cid={contact.contact_id}&{contact.checksum}')) .'</li><li>'.
+      url('node/'. $node->nid) .'?cid={contact.contact_id}&{contact.checksum}</li><li>'.
       t('<a !link>Read the instructions</a> for more info.', $readme_link) .'</li></ul>'
   );
   $form['prefix'] = array(
@@ -111,7 +117,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     '#maxlength' => 255,
     '#default_value' => $settings['activity_subject']
   );
-  foreach ($contacts as $n => $c) {
+  foreach ($settings['contacts'] as $n => $c) {
     $form['contact_' . $n] = array(
       '#type'  => 'fieldset',
       '#title' => t('Contact') .' '. $n,
@@ -133,10 +139,14 @@ function webform_civicrm_configure_form(&$form_state, $node) {
         '#description' => t('You may optionally select a more specific type for this contact. Choose "user select" to create a form element with these options.'),
       );
     }
-    $form['contact_' . $n]['activity'] = array(
-      '#type' => 'checkbox',
-      '#suffix' => '</div>',
-    );
+    if ($settings['activity_type_id']) {
+      $form['contact_' . $n]['activity_target'] = array(
+        '#type' => 'checkbox',
+        '#title' => 'Activity Participant?',
+        '#description' => 'Should this contact be listed as part of the civicrm activity?'
+        '#default_value' => (bool) $settings['contacts'][$n]['activity_target'],
+      );
+    }
     $form['contact_' . $n]['box'] = array(
       '#prefix' => '<div class="scrollme">',
       '#suffix' => '</div>',
@@ -249,11 +259,6 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     '#default_value' => (bool) $settings['block_unknown_users'],
     '#description' => t('Only allow users to see this form if they are logged in or following a personalized link from CiviMail.')
   );
-  // Set a few defaults
-  if (!$settings) {
-    $form['act']['activity_subject']['#default_value'] = check_plain($node->title);
-    $form['options']['confirm_subscription']['#default_value'] = TRUE;
-  }
 
   $form['submit'] = array(
     '#type' => 'submit',

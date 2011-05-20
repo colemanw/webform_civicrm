@@ -262,7 +262,7 @@ function webform_civicrm_get_options($option_group, $var='str', $null_label='') 
     if ($option_group == 'activity_type') {
       $sql .= ' AND component_id IS NULL';
     }
-    $sql .= ' ORDER BY weight, name';
+    $sql .= ' ORDER BY weight, label';
   }
   $dao =& CRM_Core_DAO::executeQuery($sql, $params);
   $arr = array();
@@ -414,38 +414,38 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('First Name'),
       'type' => 'textfield',
       'mandatory' => 1,
-      'contact_type' => 'Individual',
+      'entity_type' => 'Individual',
     );
     $fields['contact_nick_name'] = array(
       'name' => t('Nick Name'),
       'type' => 'textfield',
-      'contact_type' => 'Individual',
+      'entity_type' => 'Individual',
     );
     $fields['contact_middle_name'] = array(
       'name' => t('Middle Name'),
       'type' => 'textfield',
-      'contact_type' => 'Individual',
+      'entity_type' => 'Individual',
     );
     $fields['contact_last_name'] = array(
       'name' => t('Last Name'),
       'type' => 'textfield',
       'mandatory' => 1,
-      'contact_type' => 'Individual',
+      'entity_type' => 'Individual',
     );
     $fields['contact_prefix_id'] = array(
       'name' => t('Name Prefix'),
       'type' => 'select',
-      'contact_type' => 'Individual',
+      'entity_type' => 'Individual',
     );
     $fields['contact_suffix_id'] = array(
       'name' => t('Name Suffix'),
       'type' => 'select',
-      'contact_type' => 'Individual',
+      'entity_type' => 'Individual',
     );
     $fields['contact_gender_id'] = array(
       'name' => t('Gender'),
       'type' => 'select',
-      'contact_type' => 'Individual',
+      'entity_type' => 'Individual',
     );
     $fields['contact_birth_date'] = array(
       'name' => t('Birth Date'),
@@ -455,24 +455,24 @@ function webform_civicrm_get_fields($var = 'fields') {
         'year_end' => '-1',
         'timezone' => 'user',
       ),
-      'contact_type' => 'Individual',
+      'entity_type' => 'Individual',
     );
     $fields['contact_job_title'] = array(
       'name' => t('Job Title'),
       'type' => 'textfield',
-      'contact_type' => 'Individual',
+      'entity_type' => 'Individual',
     );
     $fields['contact_organization_name'] = array(
       'name' => t('Organization Name'),
       'type' => 'textfield',
       'mandatory' => 1,
-      'contact_type' => 'Organization',
+      'entity_type' => 'Organization',
     );
     $fields['contact_household_name'] = array(
       'name' => t('Household Name'),
       'type' => 'textfield',
       'mandatory' => 1,
-      'contact_type' => 'Household',
+      'entity_type' => 'Household',
     );
     $fields['contact_contact_id'] = array(
       'name' => t('Contact ID'),
@@ -590,6 +590,14 @@ function webform_civicrm_get_fields($var = 'fields') {
       'extra' => array('description' => t('Hidden form element to add tags to contacts')),
       'table' => 'tag',
     );
+    $fields['activity_subject'] = array(
+      'name' => t('Subject'),
+      'type' => 'textfield',
+    );
+    $fields['activity_body'] = array(
+      'name' => t('Subject'),
+      'type' => 'textarea',
+    );
 
     $tokens = array(
       'display_name'        => t('display name'),
@@ -627,11 +635,11 @@ function webform_civicrm_get_fields($var = 'fields') {
       'website_type_id'                => 'website_type',
     );
 
-    // Multi-valued tables are listed here. Numeric value represents max-instances (0 for no limit).
+    // Multi-valued tables are listed here. Numeric value represents max-instances.
     $multi = array(
-      'address' => 0,
-      'phone' => 0,
-      'email' => 0,
+      'address' => 9,
+      'phone' => 9,
+      'email' => 9,
     );
 
     // Pull custom fields and match to Webform element types
@@ -653,7 +661,7 @@ function webform_civicrm_get_fields($var = 'fields') {
     );
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
     $sql = "
-      SELECT cf.*, cg.title AS custom_group_name, cg.extends AS contact_type, cg.extends_entity_column_value AS sub_types, cg.is_multiple, cg.max_multiple, cg.id AS custom_group_id
+      SELECT cf.*, cg.title AS custom_group_name, cg.extends AS entity_type, cg.extends_entity_column_value AS sub_types, cg.is_multiple, cg.max_multiple, cg.id AS custom_group_id
       FROM civicrm_custom_field cf
       INNER JOIN civicrm_custom_group cg ON cg.id = cf.custom_group_id
       WHERE cf.is_active <> 0 AND cg.extends IN ('Contact','Individual','Organization','Household','Address','Activity') AND cg.is_active <> 0
@@ -668,7 +676,16 @@ function webform_civicrm_get_fields($var = 'fields') {
         $label .= ' '. $dao->id;
       }
       $tokens['custom_'. $dao->id] = $label;
-      $id = ($dao->contact_type == 'Address' ? 'address' : $dao->custom_group_id) .'_custom_'. $dao->id;
+      if ($dao->entity_type == 'Address') {
+        $set = 'address';
+      }
+      elseif ($dao->entity_type == 'Activity') {
+        $set = 'activity';
+      }
+      else {
+        $set = 'cg'. $dao->custom_group_id;
+      }
+      $id = $set .'_custom_'. $dao->id;
       $label = drupal_strtolower($dao->label);
       $fields[$id] = $custom_types[$dao->html_type];
       $fields[$id]['name'] = $dao->label;
@@ -676,14 +693,14 @@ function webform_civicrm_get_fields($var = 'fields') {
       $fields[$id]['extra']['description'] = $dao->help_pre;
       $fields[$id]['value'] = str_replace($sp, ',', trim($dao->default_value, $sp));
       $fields[$id]['custom_group'] = $dao->custom_group_name;
-      if ($dao->contact_type != 'Contact' && $dao->contact_type != 'Address') {
-        $fields[$id]['contact_type'] = $dao->contact_type;
+      if ($dao->entity_type != 'Contact' && $dao->entity_type != 'Address') {
+        $fields[$id]['entity_type'] = $dao->entity_type;
         if ($dao->sub_types) {
           $fields[$id]['sub_types'] = explode($sp, trim($dao->sub_type, $sp));
         }
       }
-      if ($dao->is_multiple && $dao->contact_type != 'Address' && $dao->contact_type != 'Activity') {
-        $multi[$dao->custom_group_id] = $dao->max_multiple;
+      if ($dao->is_multiple) {
+        $multi[$set] = ($dao->max_multiple ? $dao->max_multiple : 9);
       }
       if ($fields[$id]['type'] == 'date') {
         $fields[$id]['extra']['year_start'] = $dao->start_date_years ? '-'. $dao->start_date_years : '-50';

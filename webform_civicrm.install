@@ -40,6 +40,13 @@ function webform_civicrm_schema() {
         'default' => '',
         'description' => 'Subject of auto-created activities'
       ),
+      'activity_link' => array(
+        'description' => 'Link to webform submission in activity.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
       'prefix_known' => array(
         'description' => 'Form prefix for known users.',
         'type' => 'text',
@@ -189,6 +196,14 @@ function webform_civicrm_update_6200() {
     'description' => 'Array of contact settings for this form',
   );
   db_add_field($ret, 'webform_civicrm_forms', 'contacts', $contacts);
+  $activity_link = array(
+    'description' => 'Link to webform submission in activity.',
+    'type' => 'int',
+    'size' => 'tiny',
+    'not null' => TRUE,
+    'default' => 1,
+  );
+  db_add_field($ret, 'webform_civicrm_forms', 'activity_link', $activity_link);
   $contact_id = array(
     'type' => 'varchar',
     'length' => 2000,
@@ -199,14 +214,12 @@ function webform_civicrm_update_6200() {
   db_change_field($ret, 'webform_civicrm_submissions', 'contact_id', 'contact_id', $contact_id);
   $default = array(
     1 => array(
-      'contact' => array(
-        'contact_type' => 'Individual',
-        'contact_sub_type' => '',
-      ),
-      'address' => array(1 => array('location_type_id' => 1)),
-      'phone' => array(1 => array('location_type_id' => 1)),
-      'email' => array(1 => array('location_type_id' => 1)),
-      'activity' => TRUE,
+      'contact_type' => 'Individual',
+      'contact_sub_type' => '',
+      'address_sets' => 1,
+      'phone_sets' => 1,
+      'email_sets' => 1,
+      'activity_target' => TRUE,
     ),
   );
   db_query("
@@ -215,7 +228,7 @@ function webform_civicrm_update_6200() {
     ", serialize($default));
   $db = db_query("SELECT DISTINCT form_key FROM {webform_component} WHERE form_key LIKE 'civicrm_%%'");
   while ($row = db_fetch_array($db)) {
-    
+    //TODO
   }
   return $ret;
 }
