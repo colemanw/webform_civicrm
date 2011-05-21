@@ -40,8 +40,15 @@ function webform_civicrm_schema() {
         'default' => '',
         'description' => 'Subject of auto-created activities'
       ),
+      'activity_status_id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Activity status id',
+      ),
       'activity_link' => array(
-        'description' => 'Link to webform submission in activity.',
+        'description' => 'Link to webform submission in activity body.',
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
@@ -188,30 +195,38 @@ function webform_civicrm_update_6102() {
  */
 function webform_civicrm_update_6200() {
   $ret = array();
-  $contacts = array(
+  $field = array(
     'type' => 'text',
     'not null' => TRUE,
     'serialize' => TRUE,
     'default' => '',
     'description' => 'Array of contact settings for this form',
   );
-  db_add_field($ret, 'webform_civicrm_forms', 'contacts', $contacts);
-  $activity_link = array(
+  db_add_field($ret, 'webform_civicrm_forms', 'contacts', $field);
+  $field = array(
     'description' => 'Link to webform submission in activity.',
     'type' => 'int',
     'size' => 'tiny',
     'not null' => TRUE,
     'default' => 1,
   );
-  db_add_field($ret, 'webform_civicrm_forms', 'activity_link', $activity_link);
-  $contact_id = array(
+  db_add_field($ret, 'webform_civicrm_forms', 'activity_link', $field);
+  $field = array(
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'default' => 0,
+    'description' => 'Activity status id',
+  );
+  db_add_field($ret, 'webform_civicrm_forms', 'activity_status_id', $field);
+  $field = array(
     'type' => 'varchar',
     'length' => 2000,
     'not null' => TRUE,
     'default' => '',
     'description' => 'CiviCRM contact ids from this submission',
   );
-  db_change_field($ret, 'webform_civicrm_submissions', 'contact_id', 'contact_id', $contact_id);
+  db_change_field($ret, 'webform_civicrm_submissions', 'contact_id', 'contact_id', $field);
   $default = array(
     1 => array(
       'contact_type' => 'Individual',

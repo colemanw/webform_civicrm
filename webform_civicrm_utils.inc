@@ -310,9 +310,8 @@ function webform_civicrm_get_relationship_types($contact_type_a, $contact_type_b
     $sql = "
       SELECT id, name_a_b, name_b_a, label_a_b, label_b_a, contact_type_a, contact_type_b, contact_sub_type_a, contact_sub_type_b
       FROM civicrm_relationship
-      WHERE is_active <> 0"
-    );
-    $dao = &CRM_Core_DAO::executeQuery($sql, $params);
+      WHERE is_active <> 0";
+    $dao = &CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {
       $types[$dao->id] = (array) $dao;
     }
@@ -339,12 +338,25 @@ function webform_civicrm_get_relationship_types($contact_type_a, $contact_type_b
 }
 
 /**
- * Return CiviCRM options via AJAX request
+ * Handle various AHAH requests.
  */
 function webform_civicrm_js_options($field_key, $str='') {
   if (!user_access('access CiviCRM')) {
     return drupal_access_denied();
   }
+  // AHAH requests for config form
+  if (substr($field_key, 0, 12) == 'civicrm-ahah') {
+    require_once 'webform_civicrm_forms.inc';
+    $form = webform_civicrm_process_ahah_form();
+    $key = substr($field_key, 13);
+
+    if ($key == 'activity-fields') { 
+		  $snippet = $form['act']['activity_fields'];
+    }
+	  unset($snippet['#prefix'], $snippet['#suffix']);
+	  exit(drupal_json(array('status' => TRUE, 'data' => drupal_render($snippet))));
+  }
+
   civicrm_initialize();
   // Autocomplete callback for tags
   if ($field_key == 'tags') {
@@ -375,7 +387,7 @@ function webform_civicrm_js_options($field_key, $str='') {
 
 
 /**
- * Get ids of enabled CiviCRM fields for a webform
+ * Get ids of enabled CiviCRM fields for a webform.
  * @Param $node - node object
  */
 function webform_civicrm_enabled_fields($node) {
@@ -395,18 +407,18 @@ function webform_civicrm_enabled_fields($node) {
 
 
 /**
- * Fetches CiviCRM field data
+ * Fetches CiviCRM field data.
  * @Param $var: name of variable to return: fields, tokens, lists, or multi
  * @Return fields: The CiviCRM contact fields this module supports
  * @Return tokens: Available tokens keyed to field ids
  * @Return lists: Option lists keyed to option_group name
- * @Return multi: Which tables are multidimensional
+ * @Return sets: Info on fieldsets (tables)
  */
 function webform_civicrm_get_fields($var = 'fields') {
   static $fields = array();
   static $tokens = array();
   static $lists = array();
-  static $multi = array();
+  static $sets = array();
 
   if (!$fields) {
     // Field keys are in the format table_column
@@ -591,11 +603,11 @@ function webform_civicrm_get_fields($var = 'fields') {
       'table' => 'tag',
     );
     $fields['activity_subject'] = array(
-      'name' => t('Subject'),
+      'name' => t('Activity Subject'),
       'type' => 'textfield',
     );
-    $fields['activity_body'] = array(
-      'name' => t('Subject'),
+    $fields['activity_details'] = array(
+      'name' => t('Activity Details'),
       'type' => 'textarea',
     );
 
@@ -635,11 +647,14 @@ function webform_civicrm_get_fields($var = 'fields') {
       'website_type_id'                => 'website_type',
     );
 
-    // Multi-valued tables are listed here. Numeric value represents max-instances.
-    $multi = array(
-      'address' => 9,
-      'phone' => 9,
-      'email' => 9,
+    $sets = array(
+      'contact' => array('entity_type' => 'Contact', 'label' => 'Contact Fields'),
+      'other' => array('entity_type' => 'Contact', 'label' => 'Tags and Groups'),
+      'address' => array('entity_type' => 'Contact', 'label' => 'Address', 'max_instances' => 9),
+      'phone' => array('entity_type' => 'Contact', 'label' => 'Phone', 'max_instances' => 9),
+      'email' => array('entity_type' => 'Contact', 'label' => 'Email', 'max_instances' => 9),
+      'website' => array('entity_type' => 'Contact', 'label' => 'Website', 'max_instances' => 9),
+      'activity' => array('entity_type' => 'Activity', 'label' => 'Activity Fields'),
     );
 
     // Pull custom fields and match to Webform element types
@@ -671,19 +686,30 @@ function webform_civicrm_get_fields($var = 'fields') {
       if (!$custom_types[$dao->html_type]) {
         continue;
       }
-      // Prevent token namespace collisions
-      if (in_array($label, $tokens)) {
-        $label .= ' '. $dao->id;
-      }
-      $tokens['custom_'. $dao->id] = $label;
       if ($dao->entity_type == 'Address') {
         $set = 'address';
       }
-      elseif ($dao->entity_type == 'Activity') {
-        $set = 'activity';
-      }
       else {
         $set = 'cg'. $dao->custom_group_id;
+        $sets[$set]['label'] = $dao->custom_group_name;
+        if ($dao->entity_type != 'Activity') {
+	        $sets[$set]['entity_type'] = 'Contact';
+	        if ($dao->entity_type != 'Contact') {
+		        $sets[$set]['contact_type'] = $dao->entity_type;
+		      }
+		      if ($dao->is_multiple) {
+		        $sets[$set]['max_instances'] = ($dao->max_multiple ? $dao->max_multiple : 9);
+		      }
+		      else {
+		        $sets[$set]['max_instances'] = 1;
+		      }
+	      }
+	      else {
+	        $sets[$set]['entity_type'] = 'Activity';
+	      }
+        if ($dao->sub_types) {
+          $sets[$set]['sub_types'] = explode($sp, trim($dao->sub_types, $sp));
+        }
       }
       $id = $set .'_custom_'. $dao->id;
       $label = drupal_strtolower($dao->label);
@@ -692,16 +718,13 @@ function webform_civicrm_get_fields($var = 'fields') {
       $fields[$id]['mandatory'] = $dao->is_required;
       $fields[$id]['extra']['description'] = $dao->help_pre;
       $fields[$id]['value'] = str_replace($sp, ',', trim($dao->default_value, $sp));
-      $fields[$id]['custom_group'] = $dao->custom_group_name;
-      if ($dao->entity_type != 'Contact' && $dao->entity_type != 'Address') {
-        $fields[$id]['entity_type'] = $dao->entity_type;
-        if ($dao->sub_types) {
-          $fields[$id]['sub_types'] = explode($sp, trim($dao->sub_type, $sp));
-        }
+
+      // Prevent token namespace collisions
+      if (in_array($label, $tokens)) {
+        $label .= ' '. $dao->id;
       }
-      if ($dao->is_multiple) {
-        $multi[$set] = ($dao->max_multiple ? $dao->max_multiple : 9);
-      }
+      $tokens['custom_'. $dao->id] = $label;
+
       if ($fields[$id]['type'] == 'date') {
         $fields[$id]['extra']['year_start'] = $dao->start_date_years ? '-'. $dao->start_date_years : '-50';
         $fields[$id]['extra']['year_end'] = $dao->end_date_years ? '+'. $dao->end_date_years : '+50';
@@ -767,24 +790,6 @@ function webform_civicrm_set_message($message, $contact) {
   drupal_set_message($message);
 }
 
-/**
- * CiviCRM group subscription API wrapper
- * Mimics the functionality of api V2 for CiviCRM versions prior to 3.3
- * @param array $params
- * @return array
- */
-function webform_civicrm_mailer_event_subscribe($params) {
-  require_once('CRM/Utils/System.php');
-  $civicrm_version = CRM_Utils_System::version();
-  if($civicrm_version >= 3.3) {
-    require_once('api/v2/Mailer.php');
-    return civicrm_mailer_event_subscribe($params);
-  }
-  else {
-    require_once('api/Mailer.php');
-    return crm_mailer_event_subscribe($params['email'], $params['group_id']);
-  }
-}
 
 /**
  * Loads a form during AHAH callback.

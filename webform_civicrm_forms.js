@@ -17,13 +17,5 @@ if (Drupal.jsEnabled) {
       }
     }).change();
 
-    $('#edit-activity-type-id').change( function(){
-      if( $(this).val()==0 ){
-        $('#edit-activity-subject').attr('disabled','disabled');
-      }else{
-         $('#edit-activity-subject').removeAttr('disabled');
-      }
-    }).change();
-
   });
 }
