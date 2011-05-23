@@ -340,18 +340,19 @@ function webform_civicrm_get_relationship_types($contact_type_a, $contact_type_b
 /**
  * Handle various AHAH requests.
  */
-function webform_civicrm_js_options($field_key, $str='') {
+function webform_civicrm_js_options($key, $str='') {
   if (!user_access('access CiviCRM')) {
     return drupal_access_denied();
   }
-  // AHAH requests for config form
-  if (substr($field_key, 0, 12) == 'civicrm-ahah') {
+  // Serve AHAH requests for config form
+  if (substr($key, 0, 12) == 'civicrm_ahah') {
     require_once 'webform_civicrm_forms.inc';
-    $form = webform_civicrm_process_ahah_form();
-    $key = substr($field_key, 13);
+    $snippet = webform_civicrm_process_ahah_form();
 
-    if ($key == 'activity-fields') { 
-		  $snippet = $form['act']['activity_fields'];
+    // Retrieve the portion of form to fetch (array keys are passed in as a . separated string)
+    $keys = explode('.', substr($key, 13));
+    foreach($keys as $key) {
+      $snippet = $snippet[$key];
     }
 	  unset($snippet['#prefix'], $snippet['#suffix']);
 	  exit(drupal_json(array('status' => TRUE, 'data' => drupal_render($snippet))));
@@ -359,7 +360,7 @@ function webform_civicrm_js_options($field_key, $str='') {
 
   civicrm_initialize();
   // Autocomplete callback for tags
-  if ($field_key == 'tags') {
+  if ($key == 'tags') {
     if (!$str) {
       exit();
     }
@@ -378,8 +379,8 @@ function webform_civicrm_js_options($field_key, $str='') {
   }
   // Get option lists
   $lists = webform_civicrm_get_fields('lists');
-  if (array_key_exists($field_key, $lists)) {
-    print webform_civicrm_get_options($lists[$field_key]);
+  if (array_key_exists($key, $lists)) {
+    print webform_civicrm_get_options($lists[$key]);
     exit();
   }
   return drupal_not_found();
@@ -648,13 +649,13 @@ function webform_civicrm_get_fields($var = 'fields') {
     );
 
     $sets = array(
-      'contact' => array('entity_type' => 'Contact', 'label' => 'Contact Fields'),
-      'other' => array('entity_type' => 'Contact', 'label' => 'Tags and Groups'),
-      'address' => array('entity_type' => 'Contact', 'label' => 'Address', 'max_instances' => 9),
-      'phone' => array('entity_type' => 'Contact', 'label' => 'Phone', 'max_instances' => 9),
-      'email' => array('entity_type' => 'Contact', 'label' => 'Email', 'max_instances' => 9),
-      'website' => array('entity_type' => 'Contact', 'label' => 'Website', 'max_instances' => 9),
-      'activity' => array('entity_type' => 'Activity', 'label' => 'Activity Fields'),
+      'contact' => array('entity_type' => 'Contact', 'label' => t('Contact Fields')),
+      'other' => array('entity_type' => 'Contact', 'label' => t('Tags and Groups')),
+      'address' => array('entity_type' => 'Contact', 'label' => t('Address'), 'max_instances' => 9),
+      'phone' => array('entity_type' => 'Contact', 'label' => t('Phone'), 'max_instances' => 9),
+      'email' => array('entity_type' => 'Contact', 'label' => t('Email'), 'max_instances' => 9),
+      'website' => array('entity_type' => 'Contact', 'label' => t('Website'), 'max_instances' => 9),
+      'activity' => array('entity_type' => 'Activity', 'label' => t('Expose Activity Fields')),
     );
 
     // Pull custom fields and match to Webform element types

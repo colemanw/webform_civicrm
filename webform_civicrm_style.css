@@ -8,8 +8,17 @@
   margin-left: 1em;
 }
 
-.web-civi-container {
-  padding:0;
+.web-civi-act-part {
+  float: right;
+}
+
+.web-civi-checkbox-set {
+  padding-left: 0;
+}
+
+.web-civi-checkbox-set .form-item {
+  float:left;
+  margin-left: 1em;
 }
 
 #webform-civicrm-configure-form .scrollme {

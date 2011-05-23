@@ -17,8 +17,7 @@ function webform_civicrm_menu() {
     'title' => 'CiviCRM',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('webform_civicrm_configure_form', 1),
-    'access callback' => 'node_access',
-    'access arguments' => array('update', 1),
+    'access arguments' => array('access CiviCRM'),
     'file' => 'webform_civicrm_forms.inc',
     'weight' => 3,
     'type' => MENU_LOCAL_TASK,
@@ -152,7 +151,8 @@ function webform_civicrm_webform_submission_load(&$submissions) {
     unset($row['sid']);
     $submissions[$sid]->civicrm = $row;
     if ($cid = $row['contact_id']) {
-      $contacts[$cid] = '';
+      $cid = explode('-', trim($cid, '-'));
+      $contacts[$cid[0]] = '';
     }
   }
   if ($contacts) {
@@ -178,7 +178,7 @@ function webform_civicrm_webform_submission_load(&$submissions) {
  * Update submission data to reflect new cid when contacts are merged.
  */
 function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = NULL, $tables = NULL) {
-  if($new_id && $old_id && $type == 'sqls') {
+  if($new_id && $old_id && $type == 'sqls') {//TODO: change this to work with new multi-contact schema
     db_query('UPDATE {webform_civicrm_submissions} SET contact_id = %d WHERE contact_id = %d', $new_id, $old_id);
   }
 }
