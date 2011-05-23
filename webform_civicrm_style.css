@@ -19,6 +19,11 @@
 .web-civi-checkbox-set .form-item {
   float:left;
   margin-left: 1em;
+  max-width: 20em;
+}
+
+.hidden {
+  display:none;
 }
 
 #webform-civicrm-configure-form .scrollme {

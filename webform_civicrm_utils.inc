@@ -427,38 +427,38 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('First Name'),
       'type' => 'textfield',
       'mandatory' => 1,
-      'entity_type' => 'Individual',
+      'contact_type' => 'Individual',
     );
     $fields['contact_nick_name'] = array(
       'name' => t('Nick Name'),
       'type' => 'textfield',
-      'entity_type' => 'Individual',
+      'contact_type' => 'Individual',
     );
     $fields['contact_middle_name'] = array(
       'name' => t('Middle Name'),
       'type' => 'textfield',
-      'entity_type' => 'Individual',
+      'contact_type' => 'Individual',
     );
     $fields['contact_last_name'] = array(
       'name' => t('Last Name'),
       'type' => 'textfield',
       'mandatory' => 1,
-      'entity_type' => 'Individual',
+      'contact_type' => 'Individual',
     );
     $fields['contact_prefix_id'] = array(
       'name' => t('Name Prefix'),
       'type' => 'select',
-      'entity_type' => 'Individual',
+      'contact_type' => 'Individual',
     );
     $fields['contact_suffix_id'] = array(
       'name' => t('Name Suffix'),
       'type' => 'select',
-      'entity_type' => 'Individual',
+      'contact_type' => 'Individual',
     );
     $fields['contact_gender_id'] = array(
       'name' => t('Gender'),
       'type' => 'select',
-      'entity_type' => 'Individual',
+      'contact_type' => 'Individual',
     );
     $fields['contact_birth_date'] = array(
       'name' => t('Birth Date'),
@@ -468,24 +468,24 @@ function webform_civicrm_get_fields($var = 'fields') {
         'year_end' => '-1',
         'timezone' => 'user',
       ),
-      'entity_type' => 'Individual',
+      'contact_type' => 'Individual',
     );
     $fields['contact_job_title'] = array(
       'name' => t('Job Title'),
       'type' => 'textfield',
-      'entity_type' => 'Individual',
+      'contact_type' => 'Individual',
     );
     $fields['contact_organization_name'] = array(
       'name' => t('Organization Name'),
       'type' => 'textfield',
       'mandatory' => 1,
-      'entity_type' => 'Organization',
+      'contact_type' => 'Organization',
     );
     $fields['contact_household_name'] = array(
       'name' => t('Household Name'),
       'type' => 'textfield',
       'mandatory' => 1,
-      'entity_type' => 'Household',
+      'contact_type' => 'Household',
     );
     $fields['contact_contact_id'] = array(
       'name' => t('Contact ID'),
