@@ -42,6 +42,9 @@ function webform_civicrm_configure_form(&$form_state, $node) {
       );
     }
   }
+  if (!($contacts = $form_state['storage']['contacts'])) {
+    $contacts = $settings['contacts'];
+  }
   // Sort fields by set
   foreach ($fields as $fid => $field) {
     list($group, $id) = explode('_', $fid, 2);
@@ -121,6 +124,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   );
   $form['act']['activity_fields'] = array(
     '#prefix' => '<div id="civicrm-ahah-activity-fields">',
+    '#value' => ' ',
     '#suffix' => '</div>',
   );
   if ($settings['activity_type_id']) {
@@ -168,13 +172,13 @@ function webform_civicrm_configure_form(&$form_state, $node) {
 	  }
   }
   $nums = array();
-  for ($i = 0; $i < 100; ++$i) {
+  for ($i = 1; $i < 100; ++$i) {
     $nums[$i] = $i;
   }
   $form['number_of_contacts'] = array(
     '#type' => 'select',
     '#title' => t('Number of Contacts'),
-    '#default_value' => 0,
+    '#default_value' => count($contacts),
     '#options' => $nums,
     '#description' => t('How many contacts would you like on this form?'),
     '#ahah' => array(
@@ -185,14 +189,15 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   );
   $form['contacts'] = array(
     '#prefix' => '<div id="civicrm-ahah-contact-sets">',
+    '#value' => ' ',
     '#suffix' => '</div>',
   );
-  foreach ($settings['contacts'] as $n => $c) {
+  foreach ($contacts as $n => $c) {
     $form['contacts']['contact_' . $n] = array(
       '#type'  => 'fieldset',
       '#title' => t('Contact') .' '. $n,
     );
-    $form['contacts']['contact_' . $n]['activity_target'] = array(
+    $form['contacts']['contact_' . $n][$n .'_activity_target'] = array(
       '#type' => 'checkbox',
       '#title' => 'Activity Participant?',
       '#description' => 'Should this contact be listed as part of the civicrm activity?',
@@ -213,6 +218,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     );
     $form['contacts']['contact_' . $n]['contact_subtype_wrapper'] = array(
 	    '#prefix' => '<div id="civicrm-ahah-contact-subtype-wrapper-'. $n .'">',
+	    '#value' => ' ',
 	    '#suffix' => '</div>',
     );
     if (!empty($sub_types[$c['contact_type']])) {
@@ -232,6 +238,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     }
     $form['contacts']['contact_' . $n]['contact_subtype_wrapper']['contact_custom_wrapper'] = array(
 	    '#prefix' => '<div id="civicrm-ahah-contact-custom-wrapper-'. $n .'">',
+	    '#value' => ' ',
 	    '#suffix' => '</div>',
     );
     foreach ($sets as $sid => $set) {
@@ -271,6 +278,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
         );
         $pos[$n . $sid .'_wrapper'] = array(
 			    '#prefix' => '<div id="civicrm-ahah-contact-multi-wrapper-'. $n . $sid .'">',
+			    '#value' => ' ',
 			    '#suffix' => '</div>',
 		    );
 	    }
@@ -303,19 +311,16 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   }
   $form['options'] = array(
     '#type'  => 'fieldset',
-    '#title' => t('Additional Options')
+    '#title' => t('Additional Options'),
+    '#attributes' => array('class' => 'web-civi-checkbox-set'),
   );
   $form['options']['confirm_subscription'] = array(
-    '#prefix' => '<div class="web-civi-3-col">',
-    '#suffix' => '</div>',
     '#type' => 'checkbox',
     '#title' => t('Confirm Subscriptions'),
     '#default_value' => (bool) $settings['confirm_subscription'],
     '#description' => t('Recommended. Send a confirmation email before adding contacts to publicly subscribable mailing list groups.') .'<br />'. t('Your public mailing lists:') .' <em>'. implode(', ', webform_civicrm_get_options('mailing_lists', 'arr')) .'</em>'
   );
   $form['options']['block_unknown_users'] = array(
-    '#prefix' => '<div class="web-civi-3-col">',
-    '#suffix' => '</div>',
     '#type' => 'checkbox',
     '#title' => t('Block unknown users'),
     '#default_value' => (bool) $settings['block_unknown_users'],
@@ -334,7 +339,25 @@ function webform_civicrm_configure_form(&$form_state, $node) {
  * Submission handler, saves CiviCRM options for a Webform node
  */
 function webform_civicrm_configure_form_submit($form, &$form_state) {
+  $vals = $form_state['values'];
+  $contacts = array();
+  list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
+  for ($n = 1; $n <= $vals['number_of_contacts']; ++$n) {
+    $contacts[$n] = array(
+      'contact_type' => $vals[$n . '_contact_type'],
+      'activity_target' => $vals[$n . '_activity_target'],
+    );
+    if (array_key_exists($vals[$n . '_contact_sub_type'], $sub_types[$vals[$n . '_contact_type']])) {
+      $contacts[$n]['contact_sub_type'] = $vals[$n . '_contact_sub_type'];
+    }
+    foreach ($vals as $k => $v) {
+      if (strpos($k, $n. '_number_of_') !== FALSE) {
+        $contacts[$n][str_replace($n. '_', '', $k)] = $v;
+      }
+    }
+  }
   if (!empty($form_state['ahah_submission'])) {
+    $form_state['storage']['contacts'] = $contacts;
     return;
   }
   civicrm_initialize();
