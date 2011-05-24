@@ -123,7 +123,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     ),
   );
   $form['act']['activity_fields'] = array(
-    '#prefix' => '<div id="civicrm-ahah-activity-fields">',
+    '#prefix' => '<div class="civicrm-ahah-wrapper" id="civicrm-ahah-activity-fields">',
     '#value' => ' ',
     '#suffix' => '</div>',
   );
@@ -187,7 +187,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     '#value' => t('Change Number of Contacts'),
   );
   $form['contacts'] = array(
-    '#prefix' => '<div id="civicrm-ahah-contact-sets">',
+    '#prefix' => '<div class="civicrm-ahah-wrapper" id="civicrm-ahah-contact-sets">',
     '#value' => ' ',
     '#suffix' => '</div>',
   );
@@ -216,7 +216,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
       ),
     );
     $form['contacts']['contact_' . $n]['contact_subtype_wrapper'] = array(
-	    '#prefix' => '<div id="civicrm-ahah-contact-subtype-wrapper-'. $n .'">',
+	    '#prefix' => '<div class="civicrm-ahah-wrapper" id="civicrm-ahah-contact-subtype-wrapper-'. $n .'">',
 	    '#value' => ' ',
 	    '#suffix' => '</div>',
     );
@@ -243,7 +243,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
       $form['contacts']['contact_' . $n]['contact_subtype_wrapper'][$n . '_contact_sub_type']['#suffix'] = '</div>';
     }
     $form['contacts']['contact_' . $n]['contact_subtype_wrapper']['contact_custom_wrapper'] = array(
-	    '#prefix' => '<div id="civicrm-ahah-contact-custom-wrapper-'. $n .'">',
+	    '#prefix' => '<div class="civicrm-ahah-wrapper" id="civicrm-ahah-contact-custom-wrapper-'. $n .'">',
 	    '#value' => ' ',
 	    '#suffix' => '</div>',
     );
@@ -291,7 +291,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
           $pos[$n. '_number_of_' .$sid]['#suffix'] = '</div>';
         }
         $pos[$n . $sid .'_wrapper'] = array(
-			    '#prefix' => '<div id="civicrm-ahah-contact-multi-wrapper-'. $n . $sid .'">',
+			    '#prefix' => '<div class="civicrm-ahah-wrapper" id="civicrm-ahah-contact-multi-wrapper-'. $n . $sid .'">',
 			    '#value' => ' ',
 			    '#suffix' => '</div>',
 		    );
@@ -356,7 +356,10 @@ function webform_civicrm_configure_form(&$form_state, $node) {
  * Submission handler, saves CiviCRM options for a Webform node
  */
 function webform_civicrm_configure_form_submit($form, &$form_state) {
-  $vals = $form_state['values'];
+  $vals =& $form_state['values'];
+  if ($form_state['clicked_button']['#id'] != 'edit-change-number-of-contacts'  || !empty($form_state['ahah_submission'])) {
+    $vals['number_of_contacts'] = $form['number_of_contacts']['#default_value'];
+  }
   $contacts = array();
   list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
   for ($n = 1; $n <= $vals['number_of_contacts']; ++$n) {
@@ -381,12 +384,8 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
 	    );
     }
   }
-  if ($form_state['clicked_button']['#id'] == 'edit-change-number-of-contacts') {
+  if ($form_state['clicked_button']['#id'] == 'edit-change-number-of-contacts' || !empty($form_state['ahah_submission'])) {
     $form_state['rebuild'] = TRUE;
-    $form_state['storage']['contacts'] = $contacts;
-    return;
-  }
-  if (!empty($form_state['ahah_submission'])) {
     $form_state['storage']['contacts'] = $contacts;
     return;
   }
