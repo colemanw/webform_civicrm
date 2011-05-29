@@ -8,9 +8,13 @@
   margin-left: 1em;
 }
 
-.web-civi-container,
+.web-civi-container{
+  padding:0;
+}
+
 .web-civi-container .fieldset-wrapper {
   padding:0;
+  margin-top:2em;
 }
 
 .scrollme .fieldset-wrapper {

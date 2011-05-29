@@ -16,7 +16,10 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   civicrm_initialize();
 
   $fields = webform_civicrm_get_fields();
-  $settings = $node->webform_civicrm;
+  $settings = NULL;
+  if (isset($node->webform_civicrm)) {
+    $settings = $node->webform_civicrm;
+  }
   $enabled = webform_civicrm_enabled_fields($node);
   $tokens = '<strong>' . t('Tokens Available:') . '</strong> [' . implode('], [', webform_civicrm_get_fields('tokens')) . '].';
   $acts = webform_civicrm_get_options('activity_type', 'arr', t('- no activity -'));
@@ -43,13 +46,11 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   $form['prefix']['prefix_known'] = array(
     '#type' => 'textarea',
     '#title' => t('Introduction text for known contacts'),
-    '#default_value' => $settings['prefix_known'],
     '#description' => $tokens,
   );
   $form['prefix']['prefix_unknown'] = array(
     '#type' => 'textarea',
     '#title' => t('Introduction text for unknown contacts'),
-    '#default_value' => $settings['prefix_unknown'],
     '#description' => t('No tokens available for unknown contacts.'),
   );
   $form['st_message'] = array(
@@ -60,19 +61,14 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   $form['st_message']['toggle_message'] = array(
     '#type' => 'checkbox',
     '#title' => t('Display message to known contacts?'),
-    '#default_value' => (bool) $settings['message'],
   );
   $form['st_message']['message'] = array(
     '#type' => 'textfield',
     '#title' => t('Message text (displayed as a Drupal notice)'),
-    '#default_value' => $settings['message'],
     '#size' => 80,
     '#maxlength' => 255,
     '#description' => t('Enclose your "not you" link text in curly brackets {like this}.') . '<p>' . $tokens . '</p>',
   );
-  if (!$settings['message']) {
-    $form['st_message']['message']['#default_value'] = t("You are viewing this form as [display name]. Please {click here if that's not you}.");
-  }
   $form['act'] = array(
     '#type' => 'fieldset',
     '#title' => t('Create Activity'),
@@ -82,13 +78,11 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#type' => 'select',
     '#title' => t('Activity Type'),
     '#options' => $acts,
-    '#default_value' => $settings['activity_type_id'],
   );
   $form['act']['activity_subject'] = array(
     '#type' => 'textfield',
     '#title' => t('Activity Subject'),
     '#maxlength' => 255,
-    '#default_value' => $settings['activity_subject'],
   );
 
   $form['fields'] = array(
@@ -127,20 +121,24 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     $f = array(
       '#type' => 'checkbox',
       '#title' => $field['name'],
-      '#default_value' => (bool) $enabled[$id],
-      '#disabled' => (bool) $enabled[$id],
-      '#description' => $field['extra']['description'],
     );
+    if (isset($enabled[$id])) {
+      $f['#default_value'] = (bool) $enabled[$id];
+      $f['#disabled'] = (bool) $enabled[$id];
+    }
+    if (isset($field['extra']['description'])) {
+      $f['#description'] = $field['extra']['description'];
+    }
     if ($id == 'civicrm_groups') {
       $c = 'groups';
     }
     if (!strpos($id, 'custom')) {
       // Suggest minimum enabled fields
-      if (!$settings && $field['mandatory']) {
+      if (!$settings && isset($field['mandatory'])) {
         $f['#default_value'] = TRUE;
       }
       // Create fieldsets
-      if ($sets[$id]) {
+      if (isset($sets[$id])) {
         $set = $sets[$id];
         $form['fields']['box'][$c][$set] = array(
           '#type' => 'fieldset',
@@ -176,7 +174,6 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#suffix' => '</div>',
     '#type' => 'checkbox',
     '#title' => t('Confirm Subscriptions'),
-    '#default_value' => (bool) $settings['confirm_subscription'],
     '#description' => t('Recommended. Send a confirmation email before adding contacts to publicly subscribable mailing list groups.') . '<br />' . t('Your public mailing lists:') . ' <em>' . implode(', ', webform_civicrm_get_options('mailing_lists', 'arr')) . '</em>',
   );
   $form['options']['block_unknown_users'] = array(
@@ -184,13 +181,23 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#suffix' => '</div>',
     '#type' => 'checkbox',
     '#title' => t('Block unknown users'),
-    '#default_value' => (bool) $settings['block_unknown_users'],
     '#description' => t('Only allow users to see this form if they are logged in or following a personalized link from CiviMail.'),
   );
-  // Set a few defaults
-  if (!$settings) {
+  // Set defaults
+  if ($settings) {
+    $form['prefix']['prefix_known']['#default_value'] = $settings['prefix_known'];
+    $form['prefix']['prefix_unknown']['#default_value'] = $settings['prefix_unknown'];
+    $form['st_message']['toggle_message']['#default_value'] = (bool) $settings['message'];
+    $form['st_message']['message']['#default_value'] = $settings['message'] ? $settings['message'] : t("You are viewing this form as [display name]. Please {click here if that's not you}.");
+    $form['act']['activity_subject']['#default_value'] = $settings['activity_subject'];
+    $form['act']['activity_type_id']['#default_value'] = $settings['activity_type_id'];
+    $form['options']['confirm_subscription']['#default_value'] = (bool) $settings['confirm_subscription'];
+    $form['options']['block_unknown_users']['#default_value'] = (bool) $settings['block_unknown_users'];
+  }
+  else {
     $form['act']['activity_subject']['#default_value'] = check_plain($node->title);
     $form['options']['confirm_subscription']['#default_value'] = TRUE;
+    $form['st_message']['message']['#default_value'] = t("You are viewing this form as [display name]. Please {click here if that's not you}.");
   }
 
   $form['submit'] = array(
@@ -235,9 +242,10 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
 
     // Add webform components (fields)
     $i = 0;
+    $new_fields = FALSE;
     $lists = webform_civicrm_get_fields('lists');
     foreach ($fields as $id => $field) {
-      if (!$enabled[$id] && $vals[$id]) {
+      if (!isset($enabled[$id]) && $vals[$id]) {
         $field['nid'] = $nid;
         $field['form_key'] = $id;
         $field['weight'] = $i;
@@ -340,7 +348,7 @@ function webform_civicrm_fill_values(&$elements, $contact) {
           'day' => intval($dates[2]),
         );
       }
-      elseif (($element['#type'] == 'checkboxes' || $element['#multiple']) && !is_array($contact[$eid])) {
+      elseif (($element['#type'] == 'checkboxes' || isset($element['#multiple'])) && !is_array($contact[$eid])) {
         $contact[$eid] = explode($sp, trim($contact[$eid], $sp));
       }
       if ($element['#type'] == 'hidden') {
@@ -362,6 +370,7 @@ function webform_civicrm_process_submission($node, $submission) {
     if ($type = $node->webform_civicrm['activity_type_id']) {
       require_once 'api/api.php';
       $act_params = array(
+        'check_permissions' => FALSE,
         'version' => 3,
         'activity_type_id' => $type,
         'source_contact_id' => $cid,
@@ -442,8 +451,10 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
           $selected = array();
           $defaults = explode("\n", trim($form['extra']['items']['#default_value']));
           foreach ($defaults as $d) {
-            list($k, $v) = explode('|', $d);
-            $selected[] = trim($k);
+            if ($d) {
+              list($k, $v) = explode('|', $d);
+              $selected[] = trim($k);
+            }
           }
           $form['extra']['items']['#default_value'] = '';
         }
@@ -523,7 +534,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
     // If user is logged in, look up the CID
     global $user;
     if ($user->uid) {
-      $result = civicrm_api('uf_match', 'get', array('uf_id' => $user->uid, 'version' => 3));
+      $result = civicrm_api('uf_match', 'get', array('uf_id' => $user->uid, 'check_permissions' => FALSE, 'version' => 3));
       $result = array_pop($result['values']);
       $cid = $result['contact_id'];
     }
@@ -538,14 +549,14 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
   }
   // Form alterations for unknown contacts
   if (!$cid) {
-    $form['#prefix'] .= check_markup($settings['prefix_unknown']);
+    $form['#prefix'] = check_markup($settings['prefix_unknown']);
     if ($settings['block_unknown_users']) {
       $form = array();
     }
     return;
   }
   // Form alterations for known contacts
-  $params = array('contact_id' => $cid, 'version' => 3, 'check_permission' => FALSE);
+  $params = array('contact_id' => $cid, 'check_permissions' => FALSE, 'version' => 3, 'check_permission' => FALSE);
   $contact = civicrm_api('contact', 'get', $params);
   $contact = array_pop($contact['values']);
   $fields = webform_civicrm_get_fields();
@@ -560,20 +571,20 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
     $custom = civicrm_api('contact', 'get', $params);
     $contact = array_merge($contact, array_pop($custom['values']));
   }
-
-  $form['#prefix'] .= check_markup(webform_civicrm_replace_tokens($settings['prefix_known'], $contact));
-
+  if ($settings['prefix_known']) {
+    $form['#prefix'] = check_markup(webform_civicrm_replace_tokens($settings['prefix_known'], $contact));
+  }
   // Do not alter form default values if this is an edit op
   if ($submission) {
     return;
   }
 
   // Set default values for group field
-  if ($enabled['civicrm_groups']) {
-    $groups = civicrm_api('group_contact', 'get', array('version' => 3, 'contact_id' => $cid));
-    $contact_info['civicrm_groups'] = array();
+  if (isset($enabled['civicrm_groups'])) {
+    $groups = civicrm_api('group_contact', 'get', array('check_permissions' => FALSE, 'version' => 3, 'contact_id' => $cid));
+    $contact['groups'] = array();
     foreach ($groups['values'] as $group) {
-      $contact_info['civicrm_groups'][] = $group['group_id'];
+      $contact['groups'][] = $group['group_id'];
     }
   }
 

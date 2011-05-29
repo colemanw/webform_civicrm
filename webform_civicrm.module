@@ -35,6 +35,17 @@ function webform_civicrm_menu() {
 }
 
 /**
+ * Implements hook_admin_paths().
+ */
+function webform_civicrm_admin_paths() {
+  $paths = array(
+    'node/*/civicrm' => TRUE,
+  );
+  return $paths;
+}
+
+
+/**
  * Implements hook_form_alter().
  */
 function webform_civicrm_form_alter(&$form, $form_state, $form_id) {
