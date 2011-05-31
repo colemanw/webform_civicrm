@@ -60,8 +60,8 @@ function webform_civicrm_contact_match($node, &$submission) {
   }
   elseif ($_SESSION['webform_civicrm_cid'] && $_SESSION['webform_civicrm_cs']) {
     require_once 'CRM/Contact/BAO/Contact/Utils.php';
-    if (CRM_Contact_BAO_Contact_Utils::validChecksum($_SESSION['webform_civicrm_cid'], $_SESSION['webform_civicrm_cs'])) {
-      $cids[1] = $_SESSION['webform_civicrm_cid'];
+    if (CRM_Contact_BAO_Contact_Utils::validChecksum($_SESSION['webform_civicrm_cid1'], $_SESSION['webform_civicrm_cs'])) {
+      $cids[1] = $_SESSION['webform_civicrm_cid1'];
     }
   }
   foreach ($contacts as $c => $contact) {
@@ -355,7 +355,9 @@ function webform_civicrm_js_options($key, $str='') {
       $snippet = $snippet[$key];
     }
 	  unset($snippet['#prefix'], $snippet['#suffix']);
-	  exit(drupal_json(array('status' => TRUE, 'data' => drupal_render($snippet))));
+	  $output = theme('status_messages');
+	  $output .= drupal_render($snippet);
+	  exit(drupal_json(array('status' => TRUE, 'data' => $output)));
   }
 
   civicrm_initialize();
@@ -398,8 +400,9 @@ function webform_civicrm_enabled_fields($node) {
   $fields = webform_civicrm_get_fields();
   $enabled = array();
   foreach ($node->webform['components'] as $c) {
-    list($lobo, $c, $n, $id) = explode('_', $c['form_key'], 4);
-    if (array_key_exists($id, $fields) && $lobo == 'civicrm') {
+    list($lobo, $i, $n, $id) = explode('_', $c['form_key'], 4);
+    if ((array_key_exists($id, $fields) && $lobo == 'civicrm') || 
+        ($lobo == 'civicrm' && $i == 'contact' && $id == 'fieldset')) {
       $enabled[$c['form_key']] = $c['cid'];
     }
   }
@@ -507,7 +510,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'type' => 'email',
     );
     $fields['email_location_type_id'] = array(
-      'name' => t('Location Type'),
+      'name' => t('Email Location Type'),
       'type' => 'select',
       'expose_list' => TRUE,
     );
@@ -554,7 +557,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'type' => 'select',
     );
     $fields['address_location_type_id'] = array(
-      'name' => t('Location Type'),
+      'name' => t('Address Location Type'),
       'type' => 'select',
       'expose_list' => TRUE,
     );
@@ -569,7 +572,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'expose_list' => TRUE,
     );
     $fields['phone_location_type_id'] = array(
-      'name' => t('Location Type'),
+      'name' => t('Phone Location Type'),
       'type' => 'select',
       'expose_list' => TRUE,
     );
@@ -606,6 +609,7 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['activity_subject'] = array(
       'name' => t('Activity Subject'),
       'type' => 'textfield',
+      'extra' => array('width' => 60),
     );
     $fields['activity_details'] = array(
       'name' => t('Activity Details'),
@@ -644,7 +648,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'country_id'                     => 'country',
       'state_province_id'              => 'state',
       'phone_type_id'                  => 'phone_type',
-      'location_type_id'               => 'location type',
+      'location_type_id'               => 'location_type',
       'website_type_id'                => 'website_type',
     );
 
