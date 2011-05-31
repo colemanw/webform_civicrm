@@ -219,7 +219,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'node/' . $nid . '/webform';
 
   // Disable CiviCRM for this form
-  if ($node->webform_civicrm && !$vals['nid']) {
+  if (isset($node->webform_civicrm) && !$vals['nid']) {
     db_delete('webform_civicrm_forms')
   ->condition('nid', $nid)
   ->execute();
@@ -231,7 +231,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
       $vals['message'] = '';
     }
     // Write/update record
-    if (!$node->webform_civicrm) {
+    if (!isset($node->webform_civicrm)) {
       drupal_write_record('webform_civicrm_forms', $vals);
       drupal_set_message(t('CiviCRM processing for this form is now enabled.'));
     }
@@ -252,7 +252,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
         $field['pid'] = 0;
         unset($field['custom_group']);
 
-        if (($field['type'] == 'textfield' || $field['type'] == 'email') && !$field['extra']['width']) {
+        if (($field['type'] == 'textfield' || $field['type'] == 'email') && !isset($field['extra']['width'])) {
           $field['extra']['width'] = 20;
         }
 
@@ -521,14 +521,16 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
 function _webform_civicrm_webform_frontend_form_alter(&$form) {
   civicrm_initialize();
   require_once 'api/api.php';
-
+  $cid = 0;
   $node = $form['#node'];
   $settings = $node->webform_civicrm;
   $enabled = webform_civicrm_enabled_fields($node);
 
   // If this is an edit op, use the original CID to avoid confusion
-  if ($submission = $form['#submission']) {
-    $cid = $submission->civicrm['contact_id'];
+  if (array_key_exists('#submission', $form)) {
+    if (isset($form['#submission']->civicrm['contact_id'])) {
+      $cid = $form['#submission']->civicrm['contact_id'];
+    }
   }
   else {
     // If user is logged in, look up the CID
@@ -539,11 +541,13 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
       $cid = $result['contact_id'];
     }
     // If user is following a hashed link from CiviMail, validate it and set CID appropriately
-    elseif ($_GET['cs'] && $_GET['cid']) {
-      require_once 'CRM/Contact/BAO/Contact/Utils.php';
-      if (CRM_Contact_BAO_Contact_Utils::validChecksum($_GET['cid'], $_GET['cs'])) {
-        $_SESSION['webform_civicrm_cid'] = $cid = $_GET['cid'];
-        $_SESSION['webform_civicrm_cs'] = $_GET['cs'];
+    elseif (array_key_exists('cs', $_GET) && array_key_exists('cid', $_GET)) {
+      if ($_GET['cid'] && $_GET['cs']) {
+        require_once 'CRM/Contact/BAO/Contact/Utils.php';
+        if (CRM_Contact_BAO_Contact_Utils::validChecksum($_GET['cid'], $_GET['cs'])) {
+          $_SESSION['webform_civicrm_cid'] = $cid = $_GET['cid'];
+          $_SESSION['webform_civicrm_cs'] = $_GET['cs'];
+        }
       }
     }
   }
