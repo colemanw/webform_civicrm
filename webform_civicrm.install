@@ -256,9 +256,21 @@ function webform_civicrm_update_6200() {
     UPDATE {webform_civicrm_forms} SET contacts = '%s';
     UPDATE {webform_civicrm_submissions} SET contact_id = CONCAT('-', contact_id, '-');
     ", serialize($default));
-  $db = db_query("SELECT DISTINCT form_key FROM {webform_component} WHERE form_key LIKE 'civicrm_%%'");
+  // Update field keys to new format
+  civicrm_initialize();
+  require_once 'webform_civicrm_utils.inc';
+  $fields = webform_civicrm_get_fields();
+  $match = array();
+  // Create matching table
+  foreach ($fields as $key => $field) {
+    list($table, $name) = explode('_', $key, 2);
+    $match['civicrm_'.$name] = 'civicrm_1_1_' . $key;
+  }
+  $db = db_query("SELECT DISTINCT form_key FROM {webform_component} WHERE form_key LIKE 'civicrm_%%' AND type <> 'fieldset'");
   while ($row = db_fetch_array($db)) {
-    //TODO
+    if (array_key_exists($row['form_key'], $match)) {
+      db_query("UPDATE {webform_component} SET form_key = '%s' WHERE form_key = '%s' AND type <> 'fieldset'", $match[$row['form_key']], $row['form_key']);
+    }
   }
   return $ret;
 }

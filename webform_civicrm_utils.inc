@@ -20,7 +20,7 @@ function webform_civicrm_contact_match($node, &$submission) {
 
   $enabled = webform_civicrm_enabled_fields($node);
   $fields = webform_civicrm_get_fields();
-  $multi = webform_civicrm_get_fields('multi');
+  $sets = webform_civicrm_get_fields('sets');
   $settings = $node->webform_civicrm;
   $contacts = $settings['contacts'];
   global $user;
@@ -44,7 +44,7 @@ function webform_civicrm_contact_match($node, &$submission) {
   // If this is an update op, just use CIDs from original submission to avoid confusion
   if ($submission->sid) {
     if ($old = db_result(db_query('SELECT contact_id FROM {webform_civicrm_submissions} WHERE sid = '. $submission->sid))) {
-      $old = explode(',', $old['contact_id']);
+      $old = explode('-', $old['contact_id']);
       $n = 1;
       foreach ($old as $cid) {
         $cids[$n] = $cid;
@@ -80,139 +80,139 @@ function webform_civicrm_contact_match($node, &$submission) {
       }
     }
 
-	  // TODO: how to handle custom fields
-	  $op = 'update';
-	  if (!$cid) {
-	    $result = civicrm_contact_add($params['civicrm_contact']);
-	    $cid = $result['contact_id'];
-	    $op = 'create';
-	  }
-	  if ($cid) {
-	    $params['civicrm_contact']['contact_id'] = $cids[$c];
-	    $params['civicrm_contact']['check_permission'] = FALSE;
-	    civicrm_contact_update($params['civicrm_contact']);
-	  }
-	  else {
-	    // If an error occurred and we couldn't create contact, stop here.
-	    return;
-	  }
-	  // Fill values for hidden ID fields
-	  if ($enabled[$c .'_1_civicrm_contact_contact_id']) {
-	    $submission->data[$enabled[$c .'_1_civicrm_contact_contact_id']]['value'] = array($cid);
-	  }
-	  if ($enabled[$c .'_1_civicrm_contact_external_identifier'] && $op=='update') {
-	    $get_params = array('contact_id' => $cid, 'return_external_identifier' => 1);
-	    $fetched = civicrm_contact_get($get_params);
-	    $submission->data[$enabled[$c .'_1_civicrm_contact_external_identifier']]['value'] = array($fetched[$cid]['external_identifier']);
-	  }
+    // TODO: how to handle custom fields
+    $op = 'update';
+    if (!$cid) {
+      $result = civicrm_contact_add($params['civicrm_contact']);
+      $cid = $result['contact_id'];
+      $op = 'create';
+    }
+    if ($cid) {
+      $params['civicrm_contact']['contact_id'] = $cids[$c];
+      $params['civicrm_contact']['check_permission'] = FALSE;
+      civicrm_contact_update($params['civicrm_contact']);
+    }
+    else {
+      // If an error occurred and we couldn't create contact, stop here.
+      return;
+    }
+    // Fill values for hidden ID fields
+    if ($enabled[$c .'_1_civicrm_contact_contact_id']) {
+      $submission->data[$enabled[$c .'_1_civicrm_contact_contact_id']]['value'] = array($cid);
+    }
+    if ($enabled[$c .'_1_civicrm_contact_external_identifier'] && $op=='update') {
+      $get_params = array('contact_id' => $cid, 'return_external_identifier' => 1);
+      $fetched = civicrm_contact_get($get_params);
+      $submission->data[$enabled[$c .'_1_civicrm_contact_external_identifier']]['value'] = array($fetched[$cid]['external_identifier']);
+    }
 
-	  // Add or update location
-	  $params = array();
+    // Add or update location
+    $params = array();
     foreach (array('address', 'phone', 'email', 'website') as $loc) {
       if ($contact[$loc]) {
         $params[$loc] = $contact[$loc];
         $params[$loc][1]['is_primary'] = 1;
       }
     }
-	  if ($params) {
-	    require_once 'api/v2/Location.php';
-	    $params['contact_id'] = $cids[$c];
-	    $params['version'] = '3.0';
+    if ($params) {
+      require_once 'api/v2/Location.php';
+      $params['contact_id'] = $cids[$c];
+      $params['version'] = '3.0';
 
-	    // Update existing address
-	    $result = civicrm_location_update($params);
-	    // Or create a new one
-	    if ($result['is_error']) {
-	      $result = civicrm_location_add($params);
-	    }
-	  }
-	  // Process groups
-	  if ($enabled['civicrm_groups'] || $enabled['civicrm_groups_hidden']) {
-	    require_once 'api/v2/GroupContact.php';
+      // Update existing address
+      $result = civicrm_location_update($params);
+      // Or create a new one
+      if ($result['is_error']) {
+        $result = civicrm_location_add($params);
+      }
+    }
+    // Process groups
+    if ($enabled['civicrm_groups'] || $enabled['civicrm_groups_hidden']) {
+      require_once 'api/v2/GroupContact.php';
 
-	    if ($enabled['civicrm_groups']) {
-	      $add_groups = $submission->data[$enabled['civicrm_groups']]['value'];
-	      $all_groups = explode("\n", $node->webform['components'][$enabled['civicrm_groups']]['extra']['items']);
-	      $remove_groups = array();
-	      foreach ($all_groups as $g) {
-	        list($gid, $group) = explode('|', $g);
-	        $remove_groups[$gid] = $group;
-	      }
-	    }
-	    if ($enabled['civicrm_groups_hidden']) {
-	      $add_hidden = explode(',', $submission->data[$enabled['civicrm_groups_hidden']]['value'][0]);
-	      if ($add_groups) {
-	        $add_groups = array_unique(array_merge($add_groups, $add_hidden));
-	      }
-	      else {
-	        $add_groups = $add_hidden;
-	      }
-	    }
+      if ($enabled['civicrm_groups']) {
+        $add_groups = $submission->data[$enabled['civicrm_groups']]['value'];
+        $all_groups = explode("\n", $node->webform['components'][$enabled['civicrm_groups']]['extra']['items']);
+        $remove_groups = array();
+        foreach ($all_groups as $g) {
+          list($gid, $group) = explode('|', $g);
+          $remove_groups[$gid] = $group;
+        }
+      }
+      if ($enabled['civicrm_groups_hidden']) {
+        $add_hidden = explode(',', $submission->data[$enabled['civicrm_groups_hidden']]['value'][0]);
+        if ($add_groups) {
+          $add_groups = array_unique(array_merge($add_groups, $add_hidden));
+        }
+        else {
+          $add_groups = $add_hidden;
+        }
+      }
 
-	    if ($add_groups) {
-	      // Prepare for sending subscription confirmations
-	      $confirmations_sent = array();
-	      if ($node->webform_civicrm['confirm_subscription']) {
-	        $get_params = array('contact_id' => $cid, 'return_email' => 1);
-	        $fetched = civicrm_contact_get($get_params);
-	        $mailer_params = array('contact_id' => $cid, 'email' => $fetched[$cid]['email']);
-	        $mailing_lists = webform_civicrm_get_options('mailing_lists', 'arr');
-	      }
-	      else {
-	        $mailing_lists = array();
-	      }
-	      $group_params = array('contact_id.1' => $cid);
-	      if (!empty($add_groups)) {
-	        foreach ($add_groups as $gid) {
-	          $group_params['group_id'] = $mailer_params['group_id'] = (int)$gid;
-	          unset($remove_groups[$gid]);
-	          if (array_key_exists($gid, $mailing_lists)) {
-	            webform_civicrm_mailer_event_subscribe($mailer_params);
-	            $confirmations_sent[] = $mailing_lists[$gid];
-	          }
-	          else {
-	            civicrm_group_contact_add($group_params);
-	          }
-	        }
-	      }
-	      if (!empty($confirmations_sent)) {
-	        drupal_set_message(t('A confirmation has been sent to your email address, please follow the instructions in that message to finalize your subscription to @groups.', array('@groups' => implode(' '. t('and') .' ', $confirmations_sent))));
-	      }
-	    }
-	    // Remove contact from groups if they have unchecked them on the form
-	    if ($remove_groups && $op=='update') {
-	      $search_params = array('contact_id' => $cid);
-	      $groups = civicrm_group_contact_get($search_params);
-	      $in_groups = array();
-	      foreach ($groups as $group) {
-	        $in_groups[] = $group['group_id'];
-	      }
-	      $group_params = array('contact_id.1' => $cid);
-	      foreach ($remove_groups as $group_params['group_id'] => $group) {
-	        if (in_array($group_params['group_id'], $in_groups)) {
-	          civicrm_group_contact_remove($group_params);
-	          drupal_set_message(t('You have removed yourself from') .' '. $group .'.');
-	        }
-	      }
-	    }
-	  }
-	  // Process tags
-	  if ($enabled['civicrm_tags']) {
-	    require_once 'api/v2/Tag.php';
-	    require_once 'api/v2/EntityTag.php';
-	    $add_tags = drupal_explode_tags($submission->data[$enabled['civicrm_tags']]['value'][0]);
-	    foreach ($add_tags as $tag) {
-	      $params = array('name' => $tag);
-	      $result = civicrm_tag_get($params);
-	      // Create tag if it doesn't exist
-	      if (!($id = $result['id'])) {
-	        $result = civicrm_tag_create($params);
-	        $id = $result['tag_id'];
-	      }
-	      $params = array('tag_id' => $id, 'contact_id' => $cid);
-	      civicrm_entity_tag_add($params);
-	    }
-	  }
+      if ($add_groups) {
+        // Prepare for sending subscription confirmations
+        $confirmations_sent = array();
+        if ($node->webform_civicrm['confirm_subscription']) {
+          $get_params = array('contact_id' => $cid, 'return_email' => 1);
+          $fetched = civicrm_contact_get($get_params);
+          $mailer_params = array('contact_id' => $cid, 'email' => $fetched[$cid]['email']);
+          $mailing_lists = webform_civicrm_get_options('mailing_lists', 'arr');
+        }
+        else {
+          $mailing_lists = array();
+        }
+        $group_params = array('contact_id.1' => $cid);
+        if (!empty($add_groups)) {
+          foreach ($add_groups as $gid) {
+            $group_params['group_id'] = $mailer_params['group_id'] = (int)$gid;
+            unset($remove_groups[$gid]);
+            if (array_key_exists($gid, $mailing_lists)) {
+              webform_civicrm_mailer_event_subscribe($mailer_params);
+              $confirmations_sent[] = $mailing_lists[$gid];
+            }
+            else {
+              civicrm_group_contact_add($group_params);
+            }
+          }
+        }
+        if (!empty($confirmations_sent)) {
+          drupal_set_message(t('A confirmation has been sent to your email address, please follow the instructions in that message to finalize your subscription to @groups.', array('@groups' => implode(' '. t('and') .' ', $confirmations_sent))));
+        }
+      }
+      // Remove contact from groups if they have unchecked them on the form
+      if ($remove_groups && $op=='update') {
+        $search_params = array('contact_id' => $cid);
+        $groups = civicrm_group_contact_get($search_params);
+        $in_groups = array();
+        foreach ($groups as $group) {
+          $in_groups[] = $group['group_id'];
+        }
+        $group_params = array('contact_id.1' => $cid);
+        foreach ($remove_groups as $group_params['group_id'] => $group) {
+          if (in_array($group_params['group_id'], $in_groups)) {
+            civicrm_group_contact_remove($group_params);
+            drupal_set_message(t('You have removed yourself from') .' '. $group .'.');
+          }
+        }
+      }
+    }
+    // Process tags
+    if ($enabled['civicrm_tags']) {
+      require_once 'api/v2/Tag.php';
+      require_once 'api/v2/EntityTag.php';
+      $add_tags = drupal_explode_tags($submission->data[$enabled['civicrm_tags']]['value'][0]);
+      foreach ($add_tags as $tag) {
+        $params = array('name' => $tag);
+        $result = civicrm_tag_get($params);
+        // Create tag if it doesn't exist
+        if (!($id = $result['id'])) {
+          $result = civicrm_tag_create($params);
+          $id = $result['tag_id'];
+        }
+        $params = array('tag_id' => $id, 'contact_id' => $cid);
+        civicrm_entity_tag_add($params);
+      }
+    }
   }
   return $cids;
 }
@@ -354,10 +354,10 @@ function webform_civicrm_js_options($key, $str='') {
     foreach($keys as $key) {
       $snippet = $snippet[$key];
     }
-	  unset($snippet['#prefix'], $snippet['#suffix']);
-	  $output = theme('status_messages');
-	  $output .= drupal_render($snippet);
-	  exit(drupal_json(array('status' => TRUE, 'data' => $output)));
+    unset($snippet['#prefix'], $snippet['#suffix']);
+    $output = theme('status_messages');
+    $output .= drupal_render($snippet);
+    exit(drupal_json(array('status' => TRUE, 'data' => $output)));
   }
 
   civicrm_initialize();
@@ -393,17 +393,25 @@ function webform_civicrm_js_options($key, $str='') {
  * Get ids of enabled CiviCRM fields for a webform.
  * @Param $node - node object
  */
-function webform_civicrm_enabled_fields($node) {
+function webform_civicrm_enabled_fields($node, $format = 'cid') {
   if (!is_array($node->webform['components'])) {
     return;
   }
   $fields = webform_civicrm_get_fields();
   $enabled = array();
   foreach ($node->webform['components'] as $c) {
-    list($lobo, $i, $n, $id) = explode('_', $c['form_key'], 4);
-    if ((array_key_exists($id, $fields) && $lobo == 'civicrm') || 
-        ($lobo == 'civicrm' && $i == 'contact' && $id == 'fieldset')) {
-      $enabled[$c['form_key']] = $c['cid'];
+    $exp = explode('_', $c['form_key'], 4);
+      if (count($exp) == 4) {
+      list($lobo, $i, $n, $id) = $exp;
+      if ((array_key_exists($id, $fields) && $lobo == 'civicrm') || 
+          ($lobo == 'civicrm' && $i == 'contact' && $id == 'fieldset')) {
+        if ($format == 'cid') {
+          $enabled[$c['form_key']] = $c['cid'];
+        }
+        else {
+          $enabled[$c['form_key']] = 'create_civicrm_webform_element';
+        }
+      }
     }
   }
   return $enabled;
@@ -412,7 +420,7 @@ function webform_civicrm_enabled_fields($node) {
 
 /**
  * Fetches CiviCRM field data.
- * @Param $var: name of variable to return: fields, tokens, lists, or multi
+ * @Param $var: name of variable to return: fields, tokens, lists, or sets
  * @Return fields: The CiviCRM contact fields this module supports
  * @Return tokens: Available tokens keyed to field ids
  * @Return lists: Option lists keyed to option_group name
@@ -426,6 +434,11 @@ function webform_civicrm_get_fields($var = 'fields') {
 
   if (!$fields) {
     // Field keys are in the format table_column
+    $fields['contact_contact_sub_type'] = array(
+      'name' => t('Specific Type'),
+      'type' => 'select',
+      'extra' => array('multiple' => 1, 'aslist' => 0),
+    );
     $fields['contact_first_name'] = array(
       'name' => t('First Name'),
       'type' => 'textfield',
@@ -698,20 +711,20 @@ function webform_civicrm_get_fields($var = 'fields') {
         $set = 'cg'. $dao->custom_group_id;
         $sets[$set]['label'] = $dao->custom_group_name;
         if ($dao->entity_type != 'Activity') {
-	        $sets[$set]['entity_type'] = 'Contact';
-	        if ($dao->entity_type != 'Contact') {
-		        $sets[$set]['contact_type'] = $dao->entity_type;
-		      }
-		      if ($dao->is_multiple) {
-		        $sets[$set]['max_instances'] = ($dao->max_multiple ? $dao->max_multiple : 9);
-		      }
-		      else {
-		        $sets[$set]['max_instances'] = 1;
-		      }
-	      }
-	      else {
-	        $sets[$set]['entity_type'] = 'Activity';
-	      }
+          $sets[$set]['entity_type'] = 'Contact';
+          if ($dao->entity_type != 'Contact') {
+            $sets[$set]['contact_type'] = $dao->entity_type;
+          }
+          if ($dao->is_multiple) {
+            $sets[$set]['max_instances'] = ($dao->max_multiple ? $dao->max_multiple : 9);
+          }
+          else {
+            $sets[$set]['max_instances'] = 1;
+          }
+        }
+        else {
+          $sets[$set]['entity_type'] = 'Activity';
+        }
         if ($dao->sub_types) {
           $sets[$set]['sub_types'] = explode($sp, trim($dao->sub_types, $sp));
         }
@@ -723,12 +736,6 @@ function webform_civicrm_get_fields($var = 'fields') {
       $fields[$id]['mandatory'] = $dao->is_required;
       $fields[$id]['extra']['description'] = $dao->help_pre;
       $fields[$id]['value'] = str_replace($sp, ',', trim($dao->default_value, $sp));
-
-      // Prevent token namespace collisions
-      if (in_array($label, $tokens)) {
-        $label .= ' '. $dao->id;
-      }
-      $tokens['custom_'. $dao->id] = $label;
 
       if ($fields[$id]['type'] == 'date') {
         $fields[$id]['extra']['year_start'] = $dao->start_date_years ? '-'. $dao->start_date_years : '-50';
