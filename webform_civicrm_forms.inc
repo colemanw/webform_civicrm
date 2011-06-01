@@ -532,7 +532,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
       $cid = $form['#submission']->civicrm['contact_id'];
     }
   }
-  else {
+  if (!$cid) {
     // If user is logged in, look up the CID
     global $user;
     if ($user->uid) {
