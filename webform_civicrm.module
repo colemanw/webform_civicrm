@@ -38,10 +38,7 @@ function webform_civicrm_menu() {
  * Implements hook_admin_paths().
  */
 function webform_civicrm_admin_paths() {
-  $paths = array(
-    'node/*/civicrm' => TRUE,
-  );
-  return $paths;
+  return array('node/*/civicrm' => TRUE);
 }
 
 
@@ -58,7 +55,7 @@ function webform_civicrm_form_alter(&$form, $form_state, $form_id) {
 
   // Alter front-end of webforms
   elseif (strpos($form_id, 'webform_client_form_') !== FALSE) {
-    if ($form['#node']->webform_civicrm && arg(2) != 'done' && arg(2) != 'webform') {
+    if (isset($form['#node']->webform_civicrm) && arg(2) != 'done' && arg(2) != 'webform') {
       module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
       _webform_civicrm_webform_frontend_form_alter($form);
     }
@@ -125,7 +122,7 @@ function webform_civicrm_theme() {
  * Implements hook_webform_submission_presave().
  */
 function webform_civicrm_webform_submission_presave($node, &$submission) {
-  if ($node->webform_civicrm) {
+  if (isset($node->webform_civicrm)) {
     module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
     webform_civicrm_contact_match($node, $submission);
   }
@@ -135,7 +132,7 @@ function webform_civicrm_webform_submission_presave($node, &$submission) {
  * Implements hook_webform_submission_insert().
  */
 function webform_civicrm_webform_submission_insert($node, $submission) {
-  if ($node->webform_civicrm) {
+  if (isset($node->webform_civicrm)) {
     module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
     webform_civicrm_process_submission($node, $submission);
   }
