@@ -521,7 +521,7 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
 function _webform_civicrm_webform_frontend_form_alter(&$form) {
   civicrm_initialize();
   require_once 'api/api.php';
-  $cid = 0;
+  $cid = $existing = 0;
   $node = $form['#node'];
   $settings = $node->webform_civicrm;
   $enabled = webform_civicrm_enabled_fields($node);
@@ -530,6 +530,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
   if (array_key_exists('#submission', $form)) {
     if (isset($form['#submission']->civicrm['contact_id'])) {
       $cid = $form['#submission']->civicrm['contact_id'];
+      $existing = 1;
     }
   }
   if (!$cid) {
@@ -579,7 +580,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
     $form['#prefix'] = check_markup(webform_civicrm_replace_tokens($settings['prefix_known'], $contact));
   }
   // Do not alter form default values if this is an edit op
-  if ($submission) {
+  if ($existing) {
     return;
   }
 
