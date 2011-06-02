@@ -435,7 +435,7 @@ function webform_civicrm_get_fields($var = 'fields') {
   if (!$fields) {
     // Field keys are in the format table_column
     $fields['contact_contact_sub_type'] = array(
-      'name' => t('Specific Type'),
+      'name' => t('Type of'),
       'type' => 'select',
       'extra' => array('multiple' => 1, 'aslist' => 0),
     );

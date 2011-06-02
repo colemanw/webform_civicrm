@@ -273,6 +273,9 @@ function webform_civicrm_configure_form(&$form_state, $node) {
       $form['contacts']['contact_' . $n]['contact_subtype_wrapper']['civicrm_'. $n .'_1_contact_contact_sub_type']['#suffix'] = '</div>';
       $form['contacts']['contact_' . $n]['contact_subtype_wrapper']['civicrm_'. $n .'_1_contact_contact_sub_type']['#default_value'] = 0;
     }
+    elseif (isset($enabled['civicrm_'. $n .'_1_contact_contact_sub_type'])) {
+      $form['contacts']['contact_' . $n]['contact_subtype_wrapper']['civicrm_'. $n .'_1_contact_contact_sub_type']['#default_value'] = $enabled['civicrm_'. $n .'_1_contact_contact_sub_type'];
+    }
     elseif (isset($c['contact_sub_type'])) {
       $form['contacts']['contact_' . $n]['contact_subtype_wrapper']['civicrm_'. $n .'_1_contact_contact_sub_type']['#default_value'] = $c['contact_sub_type'];
     }
@@ -464,6 +467,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
   $fields = webform_civicrm_get_fields();
   $delete_me = $enabled = webform_civicrm_enabled_fields($node);
   $sets = webform_civicrm_get_fields('sets');
+  list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
   $form_state['redirect'] = 'node/'. $nid .'/webform';
   unset($form_state['storage']);
 
@@ -526,6 +530,16 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
         $field['pid'] = 0;
         if ($n > 1) {
           $field['name'] .= ' ' . $n;
+        }
+        if ($name == 'contact_sub_type') {
+          $field['name'] .= ' ' . $contact_types[$contacts[$c]['contact_type']];
+          $field['extra']['items'] = '';
+          foreach ($sub_types[$contacts[$c]['contact_type']] as $k => $v) {
+            if ($field['extra']['items']) {
+              $field['extra']['items'] .= "\n";
+            }
+            $field['extra']['items'] .= $k .'|'. $v;
+          }
         }
 
         if (($field['type'] == 'textfield' || $field['type'] == 'email') && !isset($field['extra']['width'])) {
@@ -631,7 +645,7 @@ function webform_civicrm_fill_values(&$elements, $contact) {
         $dates = explode('-', $contact[$eid]);
         $contact[$eid] = array('year' => $dates[0], 'month' => intval($dates[1]), 'day' => intval($dates[2]));
       }
-      elseif (($element['#type'] == 'checkboxes' || $element['#multiple']) && !is_array($contact[$eid])) {
+      elseif (($element['#type'] == 'checkboxes' || isset($element['#multiple'])) && !is_array($contact[$eid])) {
         $contact[$eid] = explode($sp, trim($contact[$eid], $sp));
       }
       if ($element['#type'] == 'hidden') {
