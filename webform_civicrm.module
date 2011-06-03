@@ -41,14 +41,16 @@ function webform_civicrm_form_alter(&$form, $form_state, $form_id) {
 
   // Alter back-end webform component edit forms
   if ($form_id == 'webform_component_edit_form') {
-    require_once 'webform_civicrm_forms.inc';
-    _webform_civicrm_webform_component_form_alter($form);
+    if (substr($form['form_key']['#default_value'], 0, 7) == 'civicrm') {
+      module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
+	    _webform_civicrm_webform_component_form_alter($form);
+    }
   }
 
   // Alter front-end of webforms
   elseif (strpos($form_id, 'webform_client_form_') !== FALSE) {
     if ($form['#node']->webform_civicrm && arg(2) != 'done' && arg(2) != 'webform') {
-      require_once 'webform_civicrm_forms.inc';
+      module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
       _webform_civicrm_webform_frontend_form_alter($form);
     }
   }
@@ -113,7 +115,7 @@ function webform_civicrm_theme() {
  */
 function webform_civicrm_webform_submission_presave($node, &$submission) {
   if (isset($node->webform_civicrm)) {
-    require_once 'webform_civicrm_forms.inc';
+    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
     webform_civicrm_contact_match($node, $submission);
   }
 }
@@ -124,7 +126,7 @@ function webform_civicrm_webform_submission_presave($node, &$submission) {
  */
 function webform_civicrm_webform_submission_insert($node, $submission) {
   if (isset($node->webform_civicrm)) {
-    require_once 'webform_civicrm_forms.inc';
+    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
     webform_civicrm_process_submission($node, $submission);
   }
 }
