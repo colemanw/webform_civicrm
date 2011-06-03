@@ -67,7 +67,7 @@ function webform_civicrm_nodeapi(&$node, $op, $teaser, $page) {
     case 'load':
       $db = db_query('SELECT * FROM {webform_civicrm_forms} WHERE nid = %d', $node->nid);
       if ($settings = db_fetch_array($db)) {
-        $settings['contacts'] = unserialize($settings['contacts']);
+        $settings['data'] = unserialize($settings['data']);
         return array('webform_civicrm' => $settings);
       }
       break;
@@ -78,7 +78,7 @@ function webform_civicrm_nodeapi(&$node, $op, $teaser, $page) {
         $db = db_query('SELECT * FROM {webform_civicrm_forms} WHERE nid = %d', arg(1));
         if ($settings = db_fetch_array($db)) {
           $settings['nid'] = $node->nid;
-          $settings['contacts'] = unserialize($settings['contacts']);
+          $settings['data'] = unserialize($settings['data']);
           drupal_write_record('webform_civicrm_forms', $settings);
         }
       }

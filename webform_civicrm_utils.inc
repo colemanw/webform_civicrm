@@ -22,12 +22,12 @@ function webform_civicrm_contact_match($node, &$submission) {
   $fields = webform_civicrm_get_fields();
   $sets = webform_civicrm_get_fields('sets');
   $settings = $node->webform_civicrm;
-  $contacts = $settings['contacts'];
+  $data = $settings['data'];
   global $user;
 
   // Fill contact arrays with field values
   foreach ($enabled as $fid => $field) {
-    list($lobo, $c, $n, $table, $field) = explode('_', $fid, 5);
+    list($lobo, $c, $ent, $n, $table, $field) = explode('_', $fid, 6);
     if ($val = $submission->data[$enabled[$table .'_'. $field]]['value']) {
       if (count($val) > 1) {
         $val = drupal_map_assoc($val);
@@ -36,7 +36,7 @@ function webform_civicrm_contact_match($node, &$submission) {
         $val = $val[0];
       }
       if ($val !== NULL) {
-        $contacts[$c][$table][$n][$field] = $val;
+        $data[$ent][$c][$table][$n][$field] = $val;
       }
     }
   }
@@ -48,13 +48,13 @@ function webform_civicrm_contact_match($node, &$submission) {
       $n = 1;
       foreach ($old as $cid) {
         $cids[$n] = $cid;
-        $contacts[$n]['contact']['contact_id'] = $cid;
+        $data['contact'][$n]['contact'][1]['contact_id'] = $cid;
         ++$n;
       }
     }
   }
   // Match contact 1 to logged in user if contact 1 is an individual
-  if (!$cids[1] && $contacts[1]['contact_type'] = 'Individual' && $user->uid) {
+  if (!$cids[1] && $data['contact'][1]['contact'][1]['contact_type'] = 'individual' && $user->uid) {
     require_once 'CRM/Core/BAO/UFMatch.php';
     $cids[1] = CRM_Core_BAO_UFMatch::getContactId($user->uid);
   }
@@ -64,7 +64,7 @@ function webform_civicrm_contact_match($node, &$submission) {
       $cids[1] = $_SESSION['webform_civicrm_cid1'];
     }
   }
-  foreach ($contacts as $c => $contact) {
+  foreach ($data['contact'] as $c => $contact) {
     // Search for an existing contact using default strict rule
     if (!$cids[$c]) {
       require_once 'CRM/Dedupe/Finder.php';
@@ -282,7 +282,7 @@ function webform_civicrm_get_options($option_group, $var='str', $null_label='') 
  */
 function webform_civicrm_get_contact_types() {
   $sql = "
-    SELECT c1.name, c1.label, c2.name AS parent_type
+    SELECT LOWER(c1.name) AS name, c1.label, LOWER(c2.name) AS parent_type
     FROM civicrm_contact_type c1
     LEFT JOIN civicrm_contact_type c2 ON c1.parent_id  = c2.id
     WHERE c1.is_active = 1
@@ -400,11 +400,10 @@ function webform_civicrm_enabled_fields($node, $format = 'cid') {
   $fields = webform_civicrm_get_fields();
   $enabled = array();
   foreach ($node->webform['components'] as $c) {
-    $exp = explode('_', $c['form_key'], 4);
-      if (count($exp) == 4) {
-      list($lobo, $i, $n, $id) = $exp;
-      if ((array_key_exists($id, $fields) && $lobo == 'civicrm') || 
-          ($lobo == 'civicrm' && $i == 'contact' && $id == 'fieldset')) {
+    $exp = explode('_', $c['form_key'], 5);
+      if (count($exp) == 5) {
+      list($lobo, $i, $ent, $n, $id) = $exp;
+      if ((array_key_exists($id, $fields) || $id == 'fieldset_fieldset') && $lobo == 'civicrm' && is_numeric($i) && is_numeric($n)) {
         if ($format == 'cid') {
           $enabled[$c['form_key']] = $c['cid'];
         }
@@ -443,38 +442,38 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('First Name'),
       'type' => 'textfield',
       'mandatory' => 1,
-      'contact_type' => 'Individual',
+      'contact_type' => 'individual',
     );
     $fields['contact_nick_name'] = array(
       'name' => t('Nick Name'),
       'type' => 'textfield',
-      'contact_type' => 'Individual',
+      'contact_type' => 'individual',
     );
     $fields['contact_middle_name'] = array(
       'name' => t('Middle Name'),
       'type' => 'textfield',
-      'contact_type' => 'Individual',
+      'contact_type' => 'individual',
     );
     $fields['contact_last_name'] = array(
       'name' => t('Last Name'),
       'type' => 'textfield',
       'mandatory' => 1,
-      'contact_type' => 'Individual',
+      'contact_type' => 'individual',
     );
     $fields['contact_prefix_id'] = array(
       'name' => t('Name Prefix'),
       'type' => 'select',
-      'contact_type' => 'Individual',
+      'contact_type' => 'individual',
     );
     $fields['contact_suffix_id'] = array(
       'name' => t('Name Suffix'),
       'type' => 'select',
-      'contact_type' => 'Individual',
+      'contact_type' => 'individual',
     );
     $fields['contact_gender_id'] = array(
       'name' => t('Gender'),
       'type' => 'select',
-      'contact_type' => 'Individual',
+      'contact_type' => 'individual',
     );
     $fields['contact_birth_date'] = array(
       'name' => t('Birth Date'),
@@ -484,24 +483,24 @@ function webform_civicrm_get_fields($var = 'fields') {
         'year_end' => '-1',
         'timezone' => 'user',
       ),
-      'contact_type' => 'Individual',
+      'contact_type' => 'individual',
     );
     $fields['contact_job_title'] = array(
       'name' => t('Job Title'),
       'type' => 'textfield',
-      'contact_type' => 'Individual',
+      'contact_type' => 'individual',
     );
     $fields['contact_organization_name'] = array(
       'name' => t('Organization Name'),
       'type' => 'textfield',
       'mandatory' => 1,
-      'contact_type' => 'Organization',
+      'contact_type' => 'organization',
     );
     $fields['contact_household_name'] = array(
       'name' => t('Household Name'),
       'type' => 'textfield',
       'mandatory' => 1,
-      'contact_type' => 'Household',
+      'contact_type' => 'household',
     );
     $fields['contact_contact_id'] = array(
       'name' => t('Contact ID'),
@@ -666,13 +665,13 @@ function webform_civicrm_get_fields($var = 'fields') {
     );
 
     $sets = array(
-      'contact' => array('entity_type' => 'Contact', 'label' => t('Contact Fields')),
-      'other' => array('entity_type' => 'Contact', 'label' => t('Tags and Groups')),
-      'address' => array('entity_type' => 'Contact', 'label' => t('Address'), 'max_instances' => 9),
-      'phone' => array('entity_type' => 'Contact', 'label' => t('Phone'), 'max_instances' => 9),
-      'email' => array('entity_type' => 'Contact', 'label' => t('Email'), 'max_instances' => 9),
-      'website' => array('entity_type' => 'Contact', 'label' => t('Website'), 'max_instances' => 9),
-      'activity' => array('entity_type' => 'Activity', 'label' => t('Expose Activity Fields')),
+      'contact' => array('entity_type' => 'contact', 'label' => t('Contact Fields')),
+      'other' => array('entity_type' => 'contact', 'label' => t('Tags and Groups')),
+      'address' => array('entity_type' => 'contact', 'label' => t('Address'), 'max_instances' => 9),
+      'phone' => array('entity_type' => 'contact', 'label' => t('Phone'), 'max_instances' => 9),
+      'email' => array('entity_type' => 'contact', 'label' => t('Email'), 'max_instances' => 9),
+      'website' => array('entity_type' => 'contact', 'label' => t('Website'), 'max_instances' => 9),
+      'activity' => array('entity_type' => 'activity', 'label' => t('Expose Activity Fields')),
     );
 
     // Pull custom fields and match to Webform element types
@@ -694,25 +693,25 @@ function webform_civicrm_get_fields($var = 'fields') {
     );
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
     $sql = "
-      SELECT cf.*, cg.title AS custom_group_name, cg.extends AS entity_type, cg.extends_entity_column_value AS sub_types, cg.is_multiple, cg.max_multiple, cg.id AS custom_group_id
+      SELECT cf.*, cg.title AS custom_group_name, LOWER(cg.extends) AS entity_type, LOWER(cg.extends_entity_column_value) AS sub_types, cg.is_multiple, cg.max_multiple, cg.id AS custom_group_id
       FROM civicrm_custom_field cf
       INNER JOIN civicrm_custom_group cg ON cg.id = cf.custom_group_id
-      WHERE cf.is_active <> 0 AND cg.extends IN ('Contact','Individual','Organization','Household','Address','Activity') AND cg.is_active <> 0
+      WHERE cf.is_active <> 0 AND cg.extends IN ('contact','individual','organization','household','address','activity') AND cg.is_active <> 0
       ORDER BY cf.custom_group_id, cf.weight";
     $dao =& CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {
       if (!$custom_types[$dao->html_type]) {
         continue;
       }
-      if ($dao->entity_type == 'Address') {
+      if ($dao->entity_type == 'address') {
         $set = 'address';
       }
       else {
         $set = 'cg'. $dao->custom_group_id;
         $sets[$set]['label'] = $dao->custom_group_name;
-        if ($dao->entity_type != 'Activity') {
-          $sets[$set]['entity_type'] = 'Contact';
-          if ($dao->entity_type != 'Contact') {
+        if ($dao->entity_type != 'activity') {
+          $sets[$set]['entity_type'] = 'contact';
+          if ($dao->entity_type != 'contact') {
             $sets[$set]['contact_type'] = $dao->entity_type;
           }
           if ($dao->is_multiple) {
@@ -723,7 +722,7 @@ function webform_civicrm_get_fields($var = 'fields') {
           }
         }
         else {
-          $sets[$set]['entity_type'] = 'Activity';
+          $sets[$set]['entity_type'] = 'activity';
         }
         if ($dao->sub_types) {
           $sets[$set]['sub_types'] = explode($sp, trim($dao->sub_types, $sp));
@@ -762,6 +761,17 @@ function webform_civicrm_get_fields($var = 'fields') {
   return $$var;
 }
 
+
+/**
+ * Explodes form key into an array and verifies that it has the right number of pieces
+ */
+function webform_civicrm_explode_key($key) {
+  $pieces = explode('_', $key, 6);
+  if (count($pieces) != 6) {
+    return FALSE;
+  }
+  return $pieces;
+}
 
 /**
  * Token replacement for form messages
