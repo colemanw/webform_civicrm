@@ -226,7 +226,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
     drupal_set_message(t('CiviCRM processing for this form is now disabled. You may delete any fields you no longer want.'));
   }
   // CiviCRM enabled
-  else {
+  elseif ($vals['nid']) {
     if (!$vals['toggle_message']) {
       $vals['message'] = '';
     }
