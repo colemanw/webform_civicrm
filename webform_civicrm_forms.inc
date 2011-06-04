@@ -137,7 +137,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     '#suffix' => '</div>',
   );
   if (isset($data['activity'][1]['activity'][1]['activity_type_id'])) {
-    $form['act']['activity_type_id']['#default_value'] = $data['activity'][1]['activity'][1]['activity_type_id'];
+    $form['act']['activity_type_id']['#default_value'] = $settings['activity_type_id'] = $data['activity'][1]['activity'][1]['activity_type_id'];
     $form['act']['activity_fields']['activity_subject'] = array(
       '#type' => 'textfield',
       '#title' => t('Default Activity Subject'),
@@ -259,7 +259,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     }
     $form['contacts']['contact_' . $n]['contact_subtype_wrapper']['civicrm_'. $n .'_contact_1_contact_contact_sub_type'] = array(
       '#type' => 'select',
-      '#title' => t('Specific Type'),
+      '#title' => t('Type of').' '.$contact_types[$c['contact'][1]['contact_type']],
       '#options' => $subs,
       '#description' => t('You may optionally select a more specific type for this contact. Choose "user select" to create a form element with these options.'),
       '#ahah' => array(
@@ -534,13 +534,10 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
 	          $field['name'] .= ' ' . $n;
 	        }
 	        if ($name == 'contact_sub_type') {
-	          $field['name'] .= ' ' . $contact_types[$vals['data']['contact'][$c]['contact_type']];
-	          $field['extra']['items'] = '';
-	          foreach ($sub_types[$vals['data']['contact'][$c]['contact_type']] as $k => $v) {
-	            if ($field['extra']['items']) {
-	              $field['extra']['items'] .= "\n";
-	            }
-	            $field['extra']['items'] .= $k .'|'. $v;
+	          $field['name'] .= ' ' . $contact_types[$vals['data']['contact'][$c]['contact'][1]['contact_type']];
+	          $field['extra']['items'] = '0|'.$contact_types[$vals['data']['contact'][$c]['contact'][1]['contact_type']];
+	          foreach ($sub_types[$vals['data']['contact'][$c]['contact'][1]['contact_type']] as $k => $v) {
+	            $field['extra']['items'] .= "\n" . $k .'|'. $v;
 	          }
 	        }
 
@@ -635,46 +632,6 @@ function webform_civicrm_process_group_selection($form, &$form_state) {
       $form_state['values']['value'] .= ',';
     }
     $form_state['values']['value'] .= $gid;
-  }
-}
-
-
-/**
- * Recursively walk through form array and set default values for fields based on CiviCRM contact data
- * Called by _webform_civicrm_webform_frontend_form_alter() when webform is being viewed by a known contact
- * @Param $elements: FAPI array
- * @Param $contact: Array of CiviCRM contact data
- */
-function webform_civicrm_fill_values(&$elements, $data) {
-  $sp = CRM_Core_DAO::VALUE_SEPARATOR;
-  foreach ($elements as $eid => &$element) {
-    if (substr($eid, 0, 1) == '#' || !is_array($element)) {
-      continue;
-    }
-    if ($element['#type'] == 'fieldset') {
-      // Recurse through fieldsets
-      webform_civicrm_fill_values($element, $data);
-      continue;
-    }
-    $pieces = explode('_', $eid, 6);
-    if (count($pieces) != 6 || $pieces[0] != 'civicrm') {
-      continue;
-    }
-    list($lobo, $c, $ent, $n, $table, $name) = $pieces;
-    if (isset($data[$ent][$c][$table][$n][$name])) {
-      $val = $data[$ent][$c][$table][$n][$name];
-      if ($element['#type'] == 'date') {
-        $dates = explode('-', $val);
-        $val = array('year' => $dates[0], 'month' => intval($dates[1]), 'day' => intval($dates[2]));
-      }
-      elseif (($element['#type'] == 'checkboxes' || isset($element['#multiple'])) && !is_array($val)) {
-        $val = explode($sp, trim($val, $sp));
-      }
-      if ($element['#type'] == 'hidden') {
-        $element['#value'] = $val;
-      }
-      $element['#default_value'] = $val;
-    }
   }
 }
 
@@ -881,7 +838,9 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
   }
   // Form alterations for unknown contacts
   if (!$cid) {
-    $form['#prefix'] = filter_filter('process', 1, NULL, $settings['prefix_unknown']);
+    if ($settings['prefix_unknown']) {
+      $form['#prefix'] = filter_filter('process', 1, NULL, $settings['prefix_unknown']);
+    }
     if ($settings['block_unknown_users']) {
       $form = array();
     }
@@ -889,49 +848,68 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
   }
   // Form alterations for known contacts
   require_once 'api/api.php';
+  $enabled = webform_civicrm_enabled_fields($node);
   $contacts = $settings['data']['contact'];
-  $core = array('address', 'email', 'phone', 'website');
+  $data = array('contact' => array());
+  $core = array('contact', 'address', 'email', 'phone', 'website');
   foreach ($contacts as $c => $contact) {
-    $contact_info[$c] = array();
+    $data['contact'][$c] = array();
     if ($cid[$c]) {
-      $result = civicrm_api('contact', 'get', array('check_permissions' => FALSE, 'version' => 3, 'id' => $cid[$c]));
-      $contact_info[$c]['contact'][1] = $result['values'][$cid[$c]];
 	    foreach ($core as $field) {
-	      if (isset($contact['number_of_' . $field])) {
+	      if (isset($contact['number_of_' . $field]) || $field == 'contact') {
 	        $result = civicrm_api($field, 'get', array('check_permissions' => FALSE, 'version' => 3, 'contact_id' => $cid[$c]));
 	        if ($result['count']) {
 		        $result = array_merge(array(0), array_values($result['values']));
 		        unset($result[0]);
-		        $contact_info[$c][$field] = $result;
+		        // Load address custom data
+		        if ($field == 'address') {
+		          foreach($result as &$address) {
+							  $custom = webform_civicrm_get_custom($address['id'], 'address');
+							  if (isset($custom['address'])) {
+							    $address = array_merge($address, $custom['address'][1]);
+							  }
+		          }
+		        }
+		        $data['contact'][$c][$field] = $result;
 	        }
 	      }
 	    }
+	    // Get custom contact data
+	    $custom = webform_civicrm_get_custom($cid[$c]);
+	    $data['contact'][$c] = array_merge($data['contact'][$c], $custom);
+	    // Set default values for group field
+		  if (array_key_exists('civicrm_'.$c.'_contact_1_other_groups', $enabled)) {
+		    $groups = civicrm_api('group_contact', 'get', array('check_permissions' => FALSE, 'version' => 3, 'contact_id' => $cid[$c]));
+		    $data['contact'][$c]['other'][1]['groups'] = array();
+		    foreach ($groups['values'] as $group) {
+		      $data['contact'][$c]['other'][1]['groups'][] = $group['group_id'];
+		    }
+		  }
     }
   }
-  
-  if (isset($settings['data']['activity'])) {
-    $act = $settings['data']['activity'][1];
-    //TODO: Retrieve activity
+
+  if ($act) {
+    $result = civicrm_api('activity', 'get', array(
+      'check_permissions' => FALSE,
+      'version' => 3,
+      'activity_id' => $act,
+    ));
+    if(isset($result['values'][$act])) {
+      $activity = array('activity' => array(1 => $result['values'][$act]));
+      $custom = webform_civicrm_get_custom($act, 'activity');
+	    $data['activity'] = array(1 => array_merge($activity, $custom));
+    }
   }
 
-  //TODO: Custom
-  $data = array('contact' => $contact_info);
-
-  $form['#prefix'] .= filter_filter('process', 1, NULL, webform_civicrm_replace_tokens($settings['prefix_known'], $contact));
+  if ($settings['prefix_known']) {
+    $form['#prefix'] = filter_filter('process', 1, NULL, webform_civicrm_replace_tokens($settings['prefix_known'], $contact));
+  }
 
   // Do not alter form default values if this is an edit op
   if (isset($submission)) {
     return;
   }
 
-  // Set default values for group field
-  if (array_key_exists('civicrm_1_1_other_groups', $enabled)) {
-    $groups = civicrm_api('group_contact', 'get', array('check_permissions' => FALSE, 'version' => 3, 'contact_id' => $cid));
-    $contact['groups'] = array();
-    foreach ($groups['values'] as $group) {
-      $contact['groups'][] = $group['group_id'];
-    }
-  }
   // Recurse through FAPI array and set default values for civicrm elements
   webform_civicrm_fill_values($form['submitted'], $data);
 

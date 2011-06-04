@@ -390,6 +390,58 @@ function webform_civicrm_js_options($key, $str='') {
 
 
 /**
+ * Get custom data for an entity
+ */
+function webform_civicrm_get_custom($entity_id, $entity_type = NULL) {
+  static $parents = array();
+  if (empty($parents)) {
+		require_once 'CRM/Core/BAO/CustomValueTable.php';
+    // Create matching table to sort fields by group
+    $fields = array_keys(webform_civicrm_get_fields());
+    foreach ($fields as $key) {
+      list($group, $field) = explode('_', $key, 2);
+      if (substr($field, 0, 7) == 'custom_') {
+        $parents[$field] = $group;
+      }
+    }
+  }
+  $params = array(
+    'entityID' => $entity_id,
+  );
+  if ($entity_type) {
+    $params['entityType'] = ucfirst($entity_type);
+  }
+  $result = CRM_Core_BAO_CustomValueTable::getValues($params);
+  if ($result['is_error']) {
+    return array();
+  } 
+  unset($result['is_error'], $result['entityID']);
+  $values = array();
+  // Convert multi-value strings to arrays and sort by group
+  $sp = CRM_Core_DAO::VALUE_SEPARATOR;
+  foreach ($result as $key => $value) {
+    if (strpos($value, $sp) !== FALSE) {
+      $value = explode($sp, trim($value, $sp));
+    }
+    $pieces = explode('_', $key);
+    if($pieces[0] == 'custom') {
+	    $name = 'custom_'. $pieces[1];
+	    if (!array_key_exists(2, $pieces)) {
+	      $pieces[2] = 1;
+	    }
+	    $values[$parents[$name]][$pieces[2]][$name] = $value;
+    }
+  }
+  // Normalize array keys
+  foreach($values as $key => &$value) {
+    array_unshift($value, 0);
+    unset($value[0]);
+  }
+  return $values;
+}
+
+
+/**
  * Get ids of enabled CiviCRM fields for a webform.
  * @Param $node - node object
  */
@@ -418,6 +470,46 @@ function webform_civicrm_enabled_fields($node, $format = 'cid') {
 
 
 /**
+ * Recursively walk through form array and set default values for fields based on CiviCRM contact data
+ * Called by _webform_civicrm_webform_frontend_form_alter() when webform is being viewed by a known contact
+ * @Param $elements: FAPI array
+ * @Param $contact: Array of CiviCRM contact data
+ */
+function webform_civicrm_fill_values(&$elements, $data) {
+  $sp = CRM_Core_DAO::VALUE_SEPARATOR;
+  foreach ($elements as $eid => &$element) {
+    if (substr($eid, 0, 1) == '#' || !is_array($element)) {
+      continue;
+    }
+    if ($element['#type'] == 'fieldset') {
+      // Recurse through fieldsets
+      webform_civicrm_fill_values($element, $data);
+      continue;
+    }
+    $pieces = explode('_', $eid, 6);
+    if (count($pieces) != 6 || $pieces[0] != 'civicrm') {
+      continue;
+    }
+    list($lobo, $c, $ent, $n, $table, $name) = $pieces;
+    if (isset($data[$ent][$c][$table][$n][$name])) {
+      $val = $data[$ent][$c][$table][$n][$name];
+      if ($element['#type'] == 'date') {
+        $dates = explode('-', $val);
+        $val = array('year' => $dates[0], 'month' => intval($dates[1]), 'day' => intval($dates[2]));
+      }
+      elseif (($element['#type'] == 'checkboxes' || isset($element['#multiple'])) && !is_array($val)) {
+        $val = explode($sp, trim($val, $sp));
+      }
+      if ($element['#type'] == 'hidden') {
+        $element['#value'] = $val;
+      }
+      $element['#default_value'] = $val;
+    }
+  }
+}
+
+
+/**
  * Fetches CiviCRM field data.
  * @Param $var: name of variable to return: fields, tokens, lists, or sets
  * @Return fields: The CiviCRM contact fields this module supports
@@ -436,7 +528,8 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['contact_contact_sub_type'] = array(
       'name' => t('Type of'),
       'type' => 'select',
-      'extra' => array('multiple' => 1, 'aslist' => 0),
+      'value' => '0',
+      'extra' => array('aslist' => 1),
     );
     $fields['contact_first_name'] = array(
       'name' => t('First Name'),
@@ -741,13 +834,13 @@ function webform_civicrm_get_fields($var = 'fields') {
         $fields[$id]['extra']['year_end'] = $dao->end_date_years ? '+'. $dao->end_date_years : '+50';
       }
       elseif ($og = $dao->option_group_id) {
-        $lists[$id] = $og;
+        $lists['custom_'. $dao->id] = $og;
       }
       elseif ($dao->html_type == 'Select Country' || $dao->html_type == 'Multi-Select Country') {
-        $lists[$id] = 'country';
+        $lists['custom_'. $dao->id] = 'country';
       }
       elseif ($dao->html_type == 'Select State/Province' || $dao->html_type == 'Multi-Select State/Province') {
-        $lists[$id] = 'state';
+        $lists['custom_'. $dao->id] = 'state';
       }
       elseif ($fields[$id]['type'] == 'select') {
         $fields[$id]['extra']['items'] = '1|'. t('Yes') ."\n0|". t('No');

@@ -1,3 +1,9 @@
+.web-civi-3-col {
+  float:left;
+  width:32%;
+  padding:0 0.6%;
+}
+
 .web-civi-p {
   margin-left: 1em;
 }
