@@ -16,7 +16,6 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   civicrm_initialize();
 
   $fields = webform_civicrm_get_fields();
-  $settings = NULL;
   if (isset($node->webform_civicrm)) {
     $settings = $node->webform_civicrm;
   }
@@ -29,7 +28,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   $form['nid'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable CiviCRM Processing'),
-    '#default_value' => (bool) $settings,
+    '#default_value' => !empty($settings),
     '#return_value' => $node->nid,
     '#description' => '<ul><li>' .
       t('CiviCRM contacts will be created or updated when users submit this webform.') . '</li><li>' .
@@ -61,6 +60,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   $form['st_message']['toggle_message'] = array(
     '#type' => 'checkbox',
     '#title' => t('Display message to known contacts?'),
+    '#default_value' => !empty($settings['message']),
   );
   $form['st_message']['message'] = array(
     '#type' => 'textfield',
@@ -121,11 +121,9 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     $f = array(
       '#type' => 'checkbox',
       '#title' => $field['name'],
+      '#default_value' => !empty($enabled[$id]),
+      '#disabled' => !empty($enabled[$id]),
     );
-    if (isset($enabled[$id])) {
-      $f['#default_value'] = (bool) $enabled[$id];
-      $f['#disabled'] = (bool) $enabled[$id];
-    }
     if (isset($field['extra']['description'])) {
       $f['#description'] = $field['extra']['description'];
     }
@@ -134,7 +132,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     }
     if (!strpos($id, 'custom')) {
       // Suggest minimum enabled fields
-      if (!$settings && isset($field['mandatory'])) {
+      if (empty($settings) && isset($field['mandatory'])) {
         $f['#default_value'] = TRUE;
       }
       // Create fieldsets
@@ -175,6 +173,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#type' => 'checkbox',
     '#title' => t('Confirm Subscriptions'),
     '#description' => t('Recommended. Send a confirmation email before adding contacts to publicly subscribable mailing list groups.') . '<br />' . t('Your public mailing lists:') . ' <em>' . implode(', ', webform_civicrm_get_options('mailing_lists', 'arr')) . '</em>',
+    '#default_value' => !(empty($settings['confirm_subscription']) && isset($settings)),
   );
   $form['options']['block_unknown_users'] = array(
     '#prefix' => '<div class="web-civi-3-col">',
@@ -182,21 +181,18 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#type' => 'checkbox',
     '#title' => t('Block unknown users'),
     '#description' => t('Only allow users to see this form if they are logged in or following a personalized link from CiviMail.'),
+    '#default_value' => !empty($settings['block_unknown_users']),
   );
   // Set defaults
-  if ($settings) {
+  if (!empty($settings)) {
     $form['prefix']['prefix_known']['#default_value'] = $settings['prefix_known'];
     $form['prefix']['prefix_unknown']['#default_value'] = $settings['prefix_unknown'];
-    $form['st_message']['toggle_message']['#default_value'] = (bool) $settings['message'];
-    $form['st_message']['message']['#default_value'] = $settings['message'] ? $settings['message'] : t("You are viewing this form as [display name]. Please {click here if that's not you}.");
+    $form['st_message']['message']['#default_value'] = !empty($settings['message']) ? $settings['message'] : t("You are viewing this form as [display name]. Please {click here if that's not you}.");
     $form['act']['activity_subject']['#default_value'] = $settings['activity_subject'];
     $form['act']['activity_type_id']['#default_value'] = $settings['activity_type_id'];
-    $form['options']['confirm_subscription']['#default_value'] = (bool) $settings['confirm_subscription'];
-    $form['options']['block_unknown_users']['#default_value'] = (bool) $settings['block_unknown_users'];
   }
   else {
     $form['act']['activity_subject']['#default_value'] = check_plain($node->title);
-    $form['options']['confirm_subscription']['#default_value'] = TRUE;
     $form['st_message']['message']['#default_value'] = t("You are viewing this form as [display name]. Please {click here if that's not you}.");
   }
 
@@ -416,7 +412,7 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
         unset($form['extra']['options_source']);
         $complete_msg = t('The options have been reloaded.');
         $form['extra']['items']['#description'] = t("These options were automatically selected from the CiviCRM database. You may change their order, or delete unwanted options as you see fit. You may also change the labels (text after the |) to be more descriptive. However, adding new items here that are <em>not</em> in CiviCRM won't work. Instead, create your new options in CiviCRM, then click here to refresh this list:");
-        if ($_GET['reset']) {
+        if (!empty($_GET['reset'])) {
           $form['extra']['items']['#description'] .= '<div style="color:green; font-weight:bold; margin-top:0.5em;">' . $complete_msg . '</div>';
           $form['extra']['items']['#default_value'] = webform_civicrm_get_options($lists[$key]);
         }
