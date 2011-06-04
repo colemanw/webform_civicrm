@@ -73,12 +73,10 @@ function webform_civicrm_contact_match($node, &$submission) {
         $cid = $result['contact_id'];
       }
     }
-    elseif (isset($_SESSION['webform_civicrm_cid']) && isset($_SESSION['webform_civicrm_cs'])) {
-      if ($_SESSION['webform_civicrm_cid'] && $_SESSION['webform_civicrm_cs']) {
-        require_once 'CRM/Contact/BAO/Contact/Utils.php';
-        if (CRM_Contact_BAO_Contact_Utils::validChecksum($_SESSION['webform_civicrm_cid'], $_SESSION['webform_civicrm_cs'])) {
-          $cid = $_SESSION['webform_civicrm_cid'];
-        }
+    elseif (!empty($_SESSION['webform_civicrm_cid']) && !empty($_SESSION['webform_civicrm_cs'])) {
+      require_once 'CRM/Contact/BAO/Contact/Utils.php';
+      if (CRM_Contact_BAO_Contact_Utils::validChecksum($_SESSION['webform_civicrm_cid'], $_SESSION['webform_civicrm_cs'])) {
+        $cid = $_SESSION['webform_civicrm_cid'];
       }
       unset ($_SESSION['webform_civicrm_cid'], $_SESSION['webform_civicrm_cs']);
     }
@@ -136,7 +134,7 @@ function webform_civicrm_contact_match($node, &$submission) {
         $address_params['phone_type_id'] = 1;
       }
       $result = civicrm_api($location, 'get', array('check_permissions' => FALSE, 'version' => 3, 'contact_id' => $cid));
-      if ($result['values']) {
+      if (!empty($result['values'])) {
         foreach ($result['values'] as $loc) {
           if ($loc['location_type_id'] == 1) {
             if ($location == 'phone') {
@@ -153,7 +151,7 @@ function webform_civicrm_contact_match($node, &$submission) {
     }
   }
   // Update Drupal user->mail
-  if ($user->uid && isset($params['civicrm_email']['email'])) {
+  if (!empty($user->uid) && !empty($params['civicrm_email']['email'])) {
     db_update('users')
     ->fields(array('mail' => $params['civicrm_email']['email']))
     ->condition('uid', $user->uid)
@@ -167,7 +165,7 @@ function webform_civicrm_contact_match($node, &$submission) {
       $add_groups = $submission->data[$enabled['civicrm_groups']]['value'];
       $all_groups = explode("\n", $node->webform['components'][$enabled['civicrm_groups']]['extra']['items']);
       foreach ($all_groups as $g) {
-        if ($g) {
+        if (!empty($g)) {
           list($gid, $group) = explode('|', $g);
           $remove_groups[$gid] = $group;
         }
@@ -175,7 +173,7 @@ function webform_civicrm_contact_match($node, &$submission) {
     }
     if (isset($enabled['civicrm_groups_hidden'])) {
       $add_hidden = explode(',', $submission->data[$enabled['civicrm_groups_hidden']]['value'][0]);
-      if ($add_groups) {
+      if (!empty($add_groups)) {
         $add_groups = array_unique(array_merge($add_groups, $add_hidden));
       }
       else {
@@ -183,11 +181,11 @@ function webform_civicrm_contact_match($node, &$submission) {
       }
     }
 
-    if ($add_groups) {
+    if (!empty($add_groups)) {
       // Prepare for sending subscription confirmations
       $confirmations_sent = array();
       $mailing_lists = array();
-      if ($node->webform_civicrm['confirm_subscription']) {
+      if (!empty($node->webform_civicrm['confirm_subscription'])) {
         $contact = civicrm_api('contact', 'get', array('check_permissions' => FALSE, 'version' => 3, 'contact_id' => $cid, 'return_email' => 1));
         $contact = array_pop($contact['values']);
         $mailer_params = array(
@@ -196,7 +194,7 @@ function webform_civicrm_contact_match($node, &$submission) {
           'contact_id' => $cid,
           'email' => $contact['email'],
         );
-        if ($contact['email']) {
+        if (!empty($contact['email'])) {
           $mailing_lists = webform_civicrm_get_options('mailing_lists', 'arr');
         }
       }
@@ -219,7 +217,7 @@ function webform_civicrm_contact_match($node, &$submission) {
       }
     }
     // Remove contact from groups if they have unchecked them on the form
-    if ($remove_groups && $op == 'update') {
+    if (!empty($remove_groups) && $op == 'update') {
       $groups = civicrm_api('group_contact', 'get', array('contact_id' => $cid, 'check_permissions' => FALSE, 'version' => 3));
       $in_groups = array();
       if (is_array($groups['values'])) {
@@ -262,10 +260,9 @@ function webform_civicrm_get_options($option_group, $var = 'str', $null_label = 
   $params = array();
   if ($option_group == 'country') {
     $config = CRM_Core_Config::singleton();
-    $enabled = implode(',', $config->countryLimit);
     $sql = "SELECT name AS label, id AS value FROM civicrm_country";
-    if ($enabled) {
-      $sql .=  " WHERE id IN ($enabled)";
+    if (!empty($config->countryLimit)) {
+      $sql .=  ' WHERE id IN (' . implode(',', $config->countryLimit) . ')';
     }
     $sql .= ' ORDER BY name';
   }
@@ -664,7 +661,7 @@ function webform_civicrm_replace_tokens($str, $contact) {
 function webform_civicrm_set_message($message, $contact) {
   $message = webform_civicrm_replace_tokens($message, $contact);
   preg_match_all('#\{([^}]+)\}#', $message, $matches);
-  if ($matches[0]) {
+  if (!empty($matches[0])) {
     foreach ($matches[0] as $pos => $match) {
       if (user_is_logged_in()) {
         $link = l($matches[1][$pos], 'user/logout', array('query' => array('destination' => $_GET['q'])));

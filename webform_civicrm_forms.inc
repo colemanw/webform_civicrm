@@ -132,7 +132,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     }
     if (!strpos($id, 'custom')) {
       // Suggest minimum enabled fields
-      if (empty($settings) && isset($field['mandatory'])) {
+      if (empty($settings) && !empty($field['mandatory'])) {
         $f['#default_value'] = TRUE;
       }
       // Create fieldsets
@@ -173,7 +173,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#type' => 'checkbox',
     '#title' => t('Confirm Subscriptions'),
     '#description' => t('Recommended. Send a confirmation email before adding contacts to publicly subscribable mailing list groups.') . '<br />' . t('Your public mailing lists:') . ' <em>' . implode(', ', webform_civicrm_get_options('mailing_lists', 'arr')) . '</em>',
-    '#default_value' => !(empty($settings['confirm_subscription']) && isset($settings)),
+    '#default_value' => !(empty($settings['confirm_subscription']) && !empty($settings)),
   );
   $form['options']['block_unknown_users'] = array(
     '#prefix' => '<div class="web-civi-3-col">',
@@ -215,7 +215,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'node/' . $nid . '/webform';
 
   // Disable CiviCRM for this form
-  if (isset($node->webform_civicrm) && !$vals['nid']) {
+  if (!empty($node->webform_civicrm) && empty($vals['nid'])) {
     db_delete('webform_civicrm_forms')
   ->condition('nid', $nid)
   ->execute();
@@ -227,7 +227,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
       $vals['message'] = '';
     }
     // Write/update record
-    if (!isset($node->webform_civicrm)) {
+    if (empty($node->webform_civicrm)) {
       drupal_write_record('webform_civicrm_forms', $vals);
       drupal_set_message(t('CiviCRM processing for this form is now enabled.'));
     }
@@ -238,7 +238,6 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
 
     // Add webform components (fields)
     $i = 0;
-    $new_fields = FALSE;
     $lists = webform_civicrm_get_fields('lists');
     foreach ($fields as $id => $field) {
       if (!isset($enabled[$id]) && $vals[$id]) {
@@ -280,7 +279,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
       }
       ++$i;
     }
-    if ($new_fields) {
+    if (!empty($new_fields)) {
       drupal_set_message(t('You may now customize your new fields however you wish.'));
     }
   }
@@ -290,7 +289,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
  * Custom Processing for CiviCRM groups form
  */
 function webform_civicrm_process_group_selection($form, &$form_state) {
-  if ($form_state['values']['civicrm_groups_fieldset']['civicrm_groups']) {
+  if (!empty($form_state['values']['civicrm_groups_fieldset']['civicrm_groups'])) {
     civicrm_initialize();
     $groups = webform_civicrm_get_options('groups', 'arr');
     $items = '';
@@ -309,7 +308,7 @@ function webform_civicrm_process_group_selection($form, &$form_state) {
     if (!$gid) {
       continue;
     }
-    if ($form_state['values']['value']) {
+    if (!empty($form_state['values']['value'])) {
       $form_state['values']['value'] .= ',';
     }
     $form_state['values']['value'] .= $gid;
@@ -538,13 +537,11 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
       $cid = $result['contact_id'];
     }
     // If user is following a hashed link from CiviMail, validate it and set CID appropriately
-    elseif (array_key_exists('cs', $_GET) && array_key_exists('cid', $_GET)) {
-      if ($_GET['cid'] && $_GET['cs']) {
-        require_once 'CRM/Contact/BAO/Contact/Utils.php';
-        if (CRM_Contact_BAO_Contact_Utils::validChecksum($_GET['cid'], $_GET['cs'])) {
-          $_SESSION['webform_civicrm_cid'] = $cid = $_GET['cid'];
-          $_SESSION['webform_civicrm_cs'] = $_GET['cs'];
-        }
+    if (!empty($_GET['cid']) && !empty($_GET['cs'])) {
+      require_once 'CRM/Contact/BAO/Contact/Utils.php';
+      if (CRM_Contact_BAO_Contact_Utils::validChecksum($_GET['cid'], $_GET['cs'])) {
+        $_SESSION['webform_civicrm_cid'] = $cid = $_GET['cid'];
+        $_SESSION['webform_civicrm_cs'] = $_GET['cs'];
       }
     }
   }

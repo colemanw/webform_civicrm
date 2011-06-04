@@ -189,7 +189,7 @@ function webform_civicrm_webform_submission_load(&$submissions) {
  * Update submission data to reflect new cid when contacts are merged.
  */
 function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = NULL, $tables = NULL) {
-  if ($new_id && $old_id && $type == 'sqls') {
+  if (!empty($new_id) && !empty($old_id) && $type == 'sqls') {
     db_update('webform_civicrm_submissions')
   ->fields(array('contact_id' => $new_id))
   ->condition('contact_id', $old_id)
