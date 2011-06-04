@@ -56,7 +56,7 @@ function webform_civicrm_contact_match($node, &$submission) {
   global $user;
 
   // If this is an update op, just use CID from original submission to avoid confusion
-  if (isset($submission->sid)) {
+  if (!empty($submission->sid)) {
     $db = db_query('SELECT contact_id FROM {webform_civicrm_submissions} WHERE sid = :sid', array(':sid' => $submission->sid));
     foreach ($db as $existing) {
       if ($cid = $existing['contact_id']) {
