@@ -424,6 +424,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
  * Also called for AHAH form callbacks
  */
 function webform_civicrm_configure_form_submit($form, &$form_state) {
+  civicrm_initialize();
   $vals =& $form_state['values'];
   if ($form_state['clicked_button']['#id'] != 'edit-change-number-of-contacts'  || !empty($form_state['ahah_submission'])) {
     $vals['number_of_contacts'] = $form['number_of_contacts']['#default_value'];
@@ -470,7 +471,6 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
     $form_state['rebuild'] = TRUE;
     return;
   }
-  civicrm_initialize();
   $node = node_load($nid = arg(1));
   $fields = webform_civicrm_get_fields();
   $delete_me = $enabled = webform_civicrm_enabled_fields($node);

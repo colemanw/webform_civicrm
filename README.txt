@@ -1,14 +1,9 @@
 INSTRUCTIONS FOR WEBFORM CIVICRM INTEGRATION
 
 
-INTRODUCTION:
-
-Most forms all start the same way: Name, Address, Phone Number, Email, etc. Creating those same fields over and over again can be tedious, not to mention then getting said data into your CiviCRM database. This module takes care of all that for you.
-
-
 WHAT IT DOES:
 
--Auto create just about any CiviCRM contact field (including custom fields!)
+-Expose just about any CiviCRM contact, address, email, phone, website, activity, or custom field on a webform
 -Auto-fill forms for logged in users.
 -Auto-fill for anonymous users too if you send them a personalized link through CiviMail.
 -Automatically log activities when users fill out your form.
@@ -24,7 +19,6 @@ HOW TO USE IT
 -Enable the fields you like, and optionally choose introduction text and activity settings.
 -Your selected fields will be automatically created for you.
 -Customize the webform settings for your new fields however you wish.
--If you wish to delete a field, you may do so through the standard webform interface, the same as any other webform field.
 
 
 GROUPS AND TAGS
@@ -38,7 +32,6 @@ This module allows you to tag contacts and add them to groups when they submit t
 CUSTOM DATA
 
 -This module can handle (almost) any custom fields you have created for contacts in CiviCRM. Two exceptions due to their complexity are contact references and files.
--IMPORTANT NOTE: due to a limitation of the CiviCRM API, if you include any custom fields on your form, your users (including anonymous users if they will be using the form) MUST have "access all custom data" permission in order for those fields to be processed. In most situations, granting that permission to all users is not a problem.
 
 
 USING SPECIAL LINKS IN CIVIMAIL
@@ -65,7 +58,7 @@ You can pretty easily start recording CiviCRM contacts even for an existing webf
 
 1) You don't have any contact info fields on the form yet (name, address, etc). That's easy, just go to the CiviCRM tab of your webform, check the boxes, and the new fields will be created for you.
 
-2) You already have contact info fields on your form. If people have already been using this form, you don't want to delete those fields because you'd lose data from all existing submissions! Instead, you can get webform_civicrm to start processing those fields by changing their field keys to the ones understood by webform_civicrm. For example, click to edit the "First Name" field in your webform, and then change the field key to "civicrm_first_name". Be sure to enable civicrm on that webform (which you may safely do before, during, or after renaming your field keys). For a complete list of field keys, see the function webform_civicrm_get_fields() in the webform_civicrm_utils.inc file. They are the keys of the $fields array. Or, if you don't like reading code, just create yourself a dummy webform, have webform_civicrm auto-create the fields you want, then copy and paste those field keys into your other form.
+2) You already have contact info fields on your form. If people have already been using this form, you don't want to delete those fields because you'd lose data from all existing submissions! Instead, you can get webform_civicrm to start processing those fields by changing their field keys to the ones understood by webform_civicrm. The best way to find the correct field key is by going to an existing civicrm-enabled webform (or create a dummy one) and copy the field key you are looking for.
 
 
 WILL CONTACTS AND ACTIVITIES BE CREATED RETROACTIVELY IF I ENABLE THIS MODULE ON AN EXISTING WEBFORM?
