@@ -775,7 +775,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
     }
     if (isset($_GET['act'])) {
       if (is_numeric($_GET['act']) && $_GET['act']) {
-          $_SESSION['webform_civicrm_data']['act'][1] = $act = $_GET['act'];
+          $_SESSION['webform_civicrm_data'][$node->nid]['act'][1] = $act = $_GET['act'];
         }
     }
   }
@@ -783,7 +783,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
     // If user is logged in, look up the CID
     global $user;
     if ($user->uid && $settings['data']['contact'][1]['contact'][1]['contact_type'] == 'individual') {
-      $result = civicrm_api('uf_match', 'get', array('uf_id' => $user->uid, 'check_permissions' => FALSE, 'version' => 3));
+      $result = webform_civicrm_api('uf_match', 'get', array('uf_id' => $user->uid));
       $result = array_pop($result['values']);
       $cid[1] = $result['contact_id'];
     }
@@ -810,15 +810,15 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
   require_once 'api/api.php';
   $enabled = webform_civicrm_enabled_fields($node);
   $contacts = $settings['data']['contact'];
-  $_SESSION['webform_civicrm_data']['cid'] = $cid;
+  $_SESSION['webform_civicrm_data'][$node->nid]['cid'] = $cid;
   $data = array('contact' => array());
   $core = array('contact', 'address', 'email', 'phone', 'website');
   foreach ($contacts as $c => $contact) {
     $data['contact'][$c] = array();
     if (!empty($cid[$c])) {
 	    foreach ($core as $field) {
-	      if (isset($contact['number_of_' . $field]) || $field == 'contact') {
-	        $result = civicrm_api($field, 'get', array('check_permissions' => FALSE, 'version' => 3, 'contact_id' => $cid[$c]));
+	      if (!empty($contact['number_of_' . $field]) || $field == 'contact') {
+	        $result = webform_civicrm_api($field, 'get', array('contact_id' => $cid[$c]));
 	        if ($result['count']) {
 		        $result = array_merge(array(0), array_values($result['values']));
 		        unset($result[0]);
@@ -840,7 +840,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
 	    $data['contact'][$c] = array_merge($data['contact'][$c], $custom);
 	    // Set default values for group field
 		  if (array_key_exists('civicrm_'.$c.'_contact_1_other_groups', $enabled)) {
-		    $groups = civicrm_api('group_contact', 'get', array('check_permissions' => FALSE, 'version' => 3, 'contact_id' => $cid[$c]));
+		    $groups = webform_civicrm_api('group_contact', 'get', array('contact_id' => $cid[$c]));
 		    $data['contact'][$c]['other'][1]['groups'] = array();
 		    foreach ($groups['values'] as $group) {
 		      $data['contact'][$c]['other'][1]['groups'][] = $group['group_id'];
@@ -850,9 +850,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
   }
 
   if ($act) {
-    $result = civicrm_api('activity', 'get', array(
-      'check_permissions' => FALSE,
-      'version' => 3,
+    $result = webform_civicrm_api('activity', 'get', array(
       'activity_id' => $act,
     ));
     if(isset($result['values'][$act])) {
@@ -871,7 +869,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
     return;
   }
 
-  // Recurse through FAPI array and set default values for civicrm elements
+  // Set default values for CiviCRM form elements
   webform_civicrm_fill_values($form['submitted'], $data);
 
   if ($settings['message']) {
