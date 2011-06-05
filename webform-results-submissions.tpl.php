@@ -8,7 +8,7 @@
  * TODO: Once webform module has the necessary username theme funciton in place, this template will not be necessary
  */
 
-if (count($table['#rows']) && $node->webform_civicrm) {
+if (count($table['#rows']) && !empty($node->webform_civicrm)) {
   $access = user_access('access CiviCRM');
   foreach ($table['#rows'] as &$row) {
     if (($cid = $submissions[$row[0]]->civicrm['contact_id']) && ($name = $submissions[$row[0]]->civicrm['display_name'])) {

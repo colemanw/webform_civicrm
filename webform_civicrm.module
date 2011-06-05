@@ -61,9 +61,7 @@ function webform_civicrm_form_alter(&$form, $form_state, $form_id) {
  * Implementation of hook_nodeapi().
  */
 function webform_civicrm_nodeapi(&$node, $op, $teaser, $page) {
-
   switch ($op) {
-
     case 'load':
       $db = db_query('SELECT * FROM {webform_civicrm_forms} WHERE nid = %d', $node->nid);
       if ($settings = db_fetch_array($db)) {
@@ -112,23 +110,22 @@ function webform_civicrm_theme() {
 
 /**
  * Implementation of hook_webform_submission_presave().
+ * Initial submission processing - saves contacts.
  */
 function webform_civicrm_webform_submission_presave($node, &$submission) {
-  if (isset($node->webform_civicrm)) {
-    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
-    webform_civicrm_contact_match($node, $submission);
+  if (!empty($node->webform_civicrm)) {
+    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
+    webform_civicrm_process_submission($node, $submission);
   }
 }
 
 
 /**
  * Implementation of hook_webform_submission_insert().
+ * Final submission processing - saves activity and writes webform_civicrm record.
  */
 function webform_civicrm_webform_submission_insert($node, $submission) {
-  if (isset($node->webform_civicrm)) {
-    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
-    webform_civicrm_process_submission($node, $submission);
-  }
+  webform_civicrm_webform_submission_presave($node, $submission);
 }
 
 
@@ -182,7 +179,7 @@ function webform_civicrm_webform_submission_load(&$submissions) {
  * Update submission data to reflect new cids when contacts are merged.
  */
 function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = NULL, $tables = NULL) {
-  if($new_id && $old_id && $type == 'sqls') {
+  if(!empty($new_id) && !empty($old_id) && $type == 'sqls') {
     db_query("UPDATE {webform_civicrm_submissions} SET contact_id = REPLACE(contact_id, '-%d-', '-%d-') WHERE contact_id LIKE '%%-%d-%%'", $old_id, $new_id, $old_id);
   }
 }
