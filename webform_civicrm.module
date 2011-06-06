@@ -150,11 +150,13 @@ function webform_civicrm_webform_submission_load(&$submissions) {
   while ($row = db_fetch_array($db)) {
     $sid = $row['sid'];
     unset($row['sid']);
-    $submissions[$sid]->civicrm = $row;
     if ($cid = $row['contact_id']) {
-      $cid = explode('-', trim($cid, '-'));
-      $contacts[$cid[0]] = '';
+      $cid = explode('-', rtrim($cid, '-'));
+      unset($cid[0]);
+      $row['contact_id'] = $cid;
+      $contacts[$cid[1]] = '';
     }
+    $submissions[$sid]->civicrm = $row;
   }
   if ($contacts) {
     // Retrieve contact names and add to submission objects
@@ -167,7 +169,7 @@ function webform_civicrm_webform_submission_load(&$submissions) {
     }
     foreach ($submissions as &$s) {
       if ($cid = $s->civicrm['contact_id']) {
-        $s->civicrm['display_name'] = $contacts[$cid];
+        $s->civicrm['display_name'] = $contacts[$cid[1]];
       }
     }
   }
