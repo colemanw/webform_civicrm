@@ -1004,6 +1004,7 @@ function webform_civicrm_api($entity, $operation, $params) {
   if (!empty($result['is_error'])) {
     dsm($params);
     dsm($result);
+    dsm(debug_backtrace());
   }
   return $result;
 }

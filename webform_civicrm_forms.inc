@@ -243,10 +243,10 @@ function webform_civicrm_configure_form(&$form_state, $node) {
       '#suffix' => '</div>',
     );
     if (!empty($sub_types[$c['contact'][1]['contact_type']])) {
-      $subs = array_merge(array(t('-none-'), 'create_civicrm_webform_element' => t('-user select-')), $sub_types[$c['contact'][1]['contact_type']]);
+      $subs = array_merge(array('create_civicrm_webform_element' => t('-user select-'), 0 => $contact_types[$c['contact'][1]['contact_type']]), $sub_types[$c['contact'][1]['contact_type']]);
     }
     else {
-      $subs = array(t('-none-'));
+      $subs = array($contact_types[$c['contact'][1]['contact_type']]);
     }
     $form['contacts']['contact_' . $n]['contact_subtype_wrapper']['civicrm_'. $n .'_contact_1_contact_contact_sub_type'] = array(
       '#type' => 'select',
@@ -346,10 +346,14 @@ function webform_civicrm_configure_form(&$form_state, $node) {
             }
           }
           // Create dropdown list
-          if (isset($field['expose_list'])) {
+          if (!empty($field['expose_list'])) {
             // Populate option list as needed
             if (!is_array($lists[$fname])) {
-              $lists[$fname] = array_merge(array('create_civicrm_webform_element' => t('-user select-')), webform_civicrm_get_options($lists[$fname], 'arr'));
+              $options = webform_civicrm_get_options($lists[$fname], 'arr');
+              $lists[$fname] = array('create_civicrm_webform_element' => t('-user select-'));
+              foreach($options as $k => $v) {
+                $lists[$fname][$k] = $v;
+              }
             }
             $fieldset[$fid] = array(
               '#type' => 'select',
