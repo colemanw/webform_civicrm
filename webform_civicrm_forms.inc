@@ -16,7 +16,12 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   civicrm_initialize();
 
   $fields = webform_civicrm_get_fields();
-  $settings = $node->webform_civicrm;
+  if (empty($node->webform_civicrm)) {
+    $settings = array();
+  }
+  else {
+    $settings = $node->webform_civicrm;
+  }
   $enabled = webform_civicrm_enabled_fields($node);
   $tokens = '<strong>'. t('Tokens Available:') .'</strong> ['. implode('], [', webform_civicrm_get_fields('tokens')) .'].';
   $acts = webform_civicrm_get_options('activity_type', 'arr', t('- no activity -'));
@@ -31,7 +36,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   $form['nid'] = array(
     '#type' => 'checkbox',
       '#title' => t('Enable CiviCRM Processing'),
-      '#default_value' => (bool) $settings,
+      '#default_value' => !empty($settings['nid']),
       '#return_value' => $node->nid,
       '#description' => '<ul><li>'.
       t('CiviCRM contacts will be created or updated when users submit this webform.') .'</li><li>'.
@@ -65,7 +70,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   $form['st_message']['toggle_message'] = array(
     '#type' => 'checkbox',
     '#title' => t('Display message to known contacts?'),
-    '#default_value' => (bool) $settings['message'],
+    '#default_value' => !empty($settings['message']),
   );
   $form['st_message']['message'] = array(
     '#type' => 'textfield',
@@ -75,7 +80,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     '#maxlength' => 255,
     '#description' => t('Enclose your "not you" link text in curly brackets {like this}.') .'<p>'. $tokens .'</p>'
   );
-  if (!$settings['message']) {
+  if (empty($settings['message'])) {
     $form['st_message']['message']['#default_value'] = t("You are viewing this form as [display name]. Please {click here if that's not you}.");
   }
   $form['act'] = array(
@@ -127,16 +132,16 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     $f = array(
       '#type' => 'checkbox',
       '#title' => $field['name'],
-      '#default_value' => (bool) $enabled[$id],
-      '#disabled' => (bool) $enabled[$id],
+      '#default_value' => $enabled[$id],
+      '#disabled' => !empty($enabled[$id]),
       '#description' => $field['extra']['description']
     );
     if ($id=='civicrm_groups') {
       $c = 'groups';
     }
     if (!strpos($id, 'custom')) {
-      // Suggest minimum enabled fields
-      if (!$settings && $field['mandatory']) {
+      // Suggested minimum enabled fields
+      if (!$settings && ($id=='civicrm_first_name' || $id=='civicrm_last_name' || $id=='civicrm_email')) {
         $f['#default_value'] = TRUE;
       }
       // Create fieldsets
@@ -176,7 +181,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     '#suffix' => '</div>',
     '#type' => 'checkbox',
     '#title' => t('Confirm Subscriptions'),
-    '#default_value' => (bool) $settings['confirm_subscription'],
+    '#default_value' => !empty($settings['confirm_subscription']),
     '#description' => t('Recommended. Send a confirmation email before adding contacts to publicly subscribable mailing list groups.') .'<br />'. t('Your public mailing lists:') .' <em>'. implode(', ', webform_civicrm_get_options('mailing_lists', 'arr')) .'</em>'
   );
   $form['options']['block_unknown_users'] = array(
@@ -184,7 +189,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     '#suffix' => '</div>',
     '#type' => 'checkbox',
     '#title' => t('Block unknown users'),
-    '#default_value' => (bool) $settings['block_unknown_users'],
+    '#default_value' => !empty($settings['block_unknown_users']),
     '#description' => t('Only allow users to see this form if they are logged in or following a personalized link from CiviMail.')
   );
   // Set a few defaults
@@ -213,7 +218,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'node/'. $nid .'/webform';
 
   // Disable CiviCRM for this form
-  if ($node->webform_civicrm && !$vals['nid']) {
+  if (isset($node->webform_civicrm) && !$vals['nid']) {
     db_query('DELETE FROM {webform_civicrm_forms} WHERE nid = %d', $nid);
     drupal_set_message(t('CiviCRM processing for this form is now disabled. You may delete any fields you no longer want.'));
   }
@@ -223,7 +228,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
       $vals['message'] = '';
     }
     // Write/update record
-    if (!$node->webform_civicrm) {
+    if (!isset($node->webform_civicrm)) {
       drupal_write_record('webform_civicrm_forms', $vals);
       drupal_set_message(t('CiviCRM processing for this form is now enabled.'));
     }
@@ -236,7 +241,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
     $i = 0;
     $lists = webform_civicrm_get_fields('lists');
     foreach ($fields as $id => $field) {
-      if (!$enabled[$id] && $vals[$id]) {
+      if (empty($enabled[$id]) && $vals[$id]) {
         $field['nid'] = $nid;
         $field['form_key'] = $id;
         $field['weight'] = $i;
@@ -259,9 +264,6 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
             $field['extra']['aslist'] = 1;
           }
         }
-        if (strpos($id, 'custom') === FALSE) {
-          unset($field['extra']['description']);
-        }
         // Create webform component
         $fid = webform_component_insert($field);
 
@@ -275,7 +277,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
       }
       ++$i;
     }
-    if ($new_fields) {
+    if (!empty($new_fields)) {
       drupal_set_message(t('You may now customize your new fields however you wish.'));
     }
   }
@@ -292,9 +294,8 @@ function webform_civicrm_process_group_selection($form, &$form_state) {
     $items = '';
     foreach ($form_state['values']['civicrm_groups_fieldset']['civicrm_groups'] as $gid) {
       if ($gid) {
-        if ($items) {
+        if ($items)
           $items .= "\n";
-        }
         $items .= $gid .'|'. $groups[$gid];
       }
     }
@@ -336,7 +337,7 @@ function webform_civicrm_fill_values(&$elements, $contact) {
         $dates = explode('-', $contact[$eid]);
         $contact[$eid] = array('year' => $dates[0], 'month' => intval($dates[1]), 'day' => intval($dates[2]));
       }
-      elseif (($element['#type'] == 'checkboxes' || $element['#multiple']) && !is_array($contact[$eid])) {
+      elseif (($element['#type'] == 'checkboxes' || !empty($element['#multiple'])) && !is_array($contact[$eid])) {
         $contact[$eid] = explode($sp, trim($contact[$eid], $sp));
       }
       if ($element['#type'] == 'hidden') {
@@ -373,7 +374,7 @@ function webform_civicrm_process_submission($node, $submission) {
     db_query('INSERT INTO {webform_civicrm_submissions} SET sid = %d, contact_id = %d, activity_id = %d', $submission->sid, $cid, $act);
   }
   else {
-    watchdog('webform_civicrm', 'An error occured when trying to create a new contact. The contact was not created.', NULL, WATCHDOG_ERROR, l($node->title .': '. t('Submission #') . $submission->sid, 'node/'. $node->nid .'/submission/'. $submission->sid));
+    watchdog('webform_civicrm', t('An error occured when trying to create a new contact. The contact was not created.'), NULL, WATCHDOG_ERROR, l($node->title .': '. t('Submission #') . $submission->sid, 'node/'. $node->nid .'/submission/'. $submission->sid));
   }
 }
 
@@ -544,9 +545,9 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
   $fields = webform_civicrm_get_fields();
   $custom = FALSE;
   foreach ($fields as $id => $f) {
-    if (strpos($id, 'custom') || strpos($id, 'preferred_communication_method')) {
+    if (strpos($id, 'custom')) {
       $custom = TRUE;
-      $params[str_replace('civicrm_', 'return.', $id)] = 1;
+      $params[str_replace('civicrm', 'return', $id)] = 1;
     }
   }
   if ($custom) {
@@ -574,7 +575,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
   }
 
   // Set default values for group field
-  if ($enabled['civicrm_groups']) {
+  if (!empty($enabled['civicrm_groups'])) {
     require_once 'api/v2/GroupContact.php';
     $params = array('contact_id' => $cid);
     $groups = civicrm_group_contact_get($params);
