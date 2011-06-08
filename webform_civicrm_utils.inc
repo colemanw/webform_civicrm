@@ -21,6 +21,7 @@ function webform_civicrm_contact_match($node, &$submission) {
   $fields = webform_civicrm_get_fields();
   $params = array('check_permission' => FALSE);
   $table = 'contact';
+  global $user;
 
   // Convert flat array to multidimensional array based on civi table names
   // This is why the order is important in webform_civicrm_get_fields()
@@ -39,7 +40,8 @@ function webform_civicrm_contact_match($node, &$submission) {
       $table = 'custom';
       continue;
     }
-    if ($val = $submission->data[$enabled[$fid]]['value']) {
+    if (!empty($submission->data[$enabled[$fid]]['value'])) {
+      $val = $submission->data[$enabled[$fid]]['value']
       if (count($val) > 1 && $table == 'custom') {
         $params['civicrm_'. $table][$field] = drupal_map_assoc($val);
       }
@@ -62,7 +64,6 @@ function webform_civicrm_contact_match($node, &$submission) {
   }
   if (!$cid) {
     // Try to match an existing contact to this submission. Logged-in user takes priority.
-    global $user;
     if ($user->uid) {
       require_once 'CRM/Core/BAO/UFMatch.php';
       $cid = CRM_Core_BAO_UFMatch::getContactId($user->uid);
@@ -237,7 +238,7 @@ function webform_civicrm_contact_match($node, &$submission) {
 /**
  * Get options from civicrm_option_value OR civicrm_group OR civicrm_country OR civicrm_state_province tables
  * @Param $option_group: option group name or id
- * @Param $var: Can return values as a Webform-style string, or a FAPI style array. Specify 'str' or 'arr'
+ * @Param $var: Can return values as a Webform-style string, or a FAPI style array. Specify 'str' or 'arr', matey!
  * @Param $null_label: If returning FAPI array, provide label if first option should be "none"
  */
 function webform_civicrm_get_options($option_group, $var='str', $null_label='') {
@@ -356,49 +357,148 @@ function webform_civicrm_enabled_fields($node) {
  * @Return lists: Option lists keyed to option_group name
  */
 function webform_civicrm_get_fields($var = 'fields') {
-  static $fields = 0;
-  static $tokens = 0;
-  static $lists = 0;
+  static $fields = array();
+  static $tokens = array();
+  static $lists = array();
 
   if (!$fields) {
     // The order of these fields is important: see function webform_civicrm_contact_match
-    $fields = array(
-      // Contact params
-      'civicrm_first_name'     => array('name' => t('First Name'), 'type' => 'textfield', 'mandatory' => 1),
-      'civicrm_nick_name'      => array('name' => t('Nick Name'), 'type' => 'textfield'),
-      'civicrm_middle_name'    => array('name' => t('Middle Name'), 'type' => 'textfield'),
-      'civicrm_last_name'      => array('name' => t('Last Name'), 'type' => 'textfield', 'mandatory' => 1),
-      'civicrm_prefix_id'      => array('name' => t('Name Prefix'), 'type' => 'select'),
-      'civicrm_suffix_id'      => array('name' => t('Name Suffix'), 'type' => 'select'),
-      'civicrm_gender_id'      => array('name' => t('Gender'), 'type' => 'select'),
-      'civicrm_birth_date'     => array('name' => t('Birth Date'), 'type' => 'date',
-                                'extra' => array('year_start' => '-100', 'year_end' => '-1', 'timezone' => 'user')),
-      'civicrm_job_title'      => array('name' => t('Job Title'), 'type' => 'textfield'),
-      'civicrm_contact_id'     => array('name' => t('Contact ID'), 'type' => 'hidden', 'extra' => array('description' => t('(hidden field, useful for post-processing)'))),
-      'civicrm_external_identifier' => array('name' => t('External ID'), 'type' => 'hidden', 'extra' => array('description' => t('(hidden field, useful for post-processing)'))),
-      // Email params -- email must be first!
-      'civicrm_email'          => array('name' => t('Email'), 'type' => 'email', 'mandatory' => 1),
-      // Address params -- street_address must be first!
-      'civicrm_street_address' => array('name' => t('Street Address'), 'type' => 'textfield',
-                                 'extra' => array('width' => 60)),
-      'civicrm_city'           => array('name' => t('City'), 'type' => 'textfield'),
-      'civicrm_state_province' => array('name' => t('State/Province Abbr.'), 'type' => 'textfield',
-                                 'extra' => array('maxlength' => 4, 'width' => 4, 'description' => t('Enter state/province abbreviation'))),
-      'civicrm_state_province_id' => array('name' => t('State/Province Select'), 'type' => 'select', 'extra' => array('description' => t('Select state/province from list'))),
-      'civicrm_postal_code'    => array('name' => t('Postal Code'), 'type' => 'textfield',
-                                 'extra' => array('width' => 10)),
-      'civicrm_country_id'     => array('name' => t('Country'), 'type' => 'select'),
-      // Phone params -- phone must be first!
-      'civicrm_phone'          => array('name' => t('Phone Number'), 'type' => 'textfield'),
-      'civicrm_phone_type_id'  => array('name' => t('Phone Type'), 'type' => 'select'),
-      // Other
-      'civicrm_groups'         => array('name' => t('Select Group(s)'), 'type' => 'select',
-                                 'extra' => array('multiple' => 1, 'description' => t('Users can add/remove themselves from CiviCRM groups (mailing lists, etc)'))),
-      'civicrm_groups_hidden'  => array('name' => t('Auto-Add Group(s)'), 'type' => 'hidden',
-                                 'extra' => array('description' => t('Hidden form element will add contacts to group(s) of your choosing'))),
-      'civicrm_tags'  => array('name' => t('Tags'), 'type' => 'hidden',
-                                 'extra' => array('description' => t('Hidden form element to add tags to contacts')))
-    );
+	  // Contact params
+	  $fields['civicrm_first_name'] = array(
+	    'name' => t('First Name'),
+	    'type' => 'textfield',
+	    'mandatory' => 1,
+	  );
+	  $fields['civicrm_nick_name'] = array(
+	    'name' => t('Nick Name'),
+	    'type' => 'textfield',
+	  );
+	  $fields['civicrm_middle_name'] = array(
+	    'name' => t('Middle Name'),
+	    'type' => 'textfield',
+	  );
+	  $fields['civicrm_last_name'] = array(
+	    'name' => t('Last Name'),
+	    'type' => 'textfield',
+	    'mandatory' => 1,
+	  );
+	  $fields['civicrm_prefix_id'] = array(
+	    'name' => t('Name Prefix'),
+	    'type' => 'select',
+	  );
+	  $fields['civicrm_suffix_id'] = array(
+	    'name' => t('Name Suffix'),
+	    'type' => 'select',
+	  );
+	  $fields['civicrm_gender_id'] = array(
+	    'name' => t('Gender'),
+	    'type' => 'select',
+	  );
+	  $fields['civicrm_birth_date'] = array(
+	    'name' => t('Birth Date'),
+	    'type' => 'date',
+	    'extra' => array(
+	      'year_start' => '-100',
+	      'year_end' => '-1',
+	      'timezone' => 'user',
+	    ),
+	  );
+	  $fields['civicrm_job_title'] = array(
+	    'name' => t('Job Title'),
+	    'type' => 'textfield',
+	  );
+	  $fields['civicrm_contact_id'] = array(
+	    'name' => t('Contact ID'),
+	    'type' => 'hidden',
+	    'extra' => array('description' => t('(hidden field, useful for post-processing)')),
+	  );
+	  $fields['civicrm_external_identifier'] = array(
+	    'name' => t('External ID'),
+	    'type' => 'hidden',
+	    'extra' => array('description' => t('(hidden field, useful for post-processing)')),
+	  );
+	  $fields['civicrm_preferred_communication_method'] = array(
+	    'name' => t('Preferred Communication Method(s)'),
+	    'type' => 'select',
+	    'extra' => array('multiple' => 1),
+	  );
+	  // Email params -- email must be first!
+	  $fields['civicrm_email'] = array(
+	    'name' => t('Email'),
+	    'type' => 'email',
+	    'mandatory' => 1,
+	  );
+	  // Address params -- street_address must be first!
+	  $fields['civicrm_street_address'] = array(
+	    'name' => t('Street Address'),
+	    'type' => 'textfield',
+	    'extra' => array('width' => 60),
+	  );
+	  $fields['civicrm_supplemental_address_1'] = array(
+	    'name' => t('Street Address Line 2'),
+	    'type' => 'textfield',
+	    'extra' => array('width' => 60),
+	  );
+	  $fields['civicrm_supplemental_address_2'] = array(
+	    'name' => t('Street Address Line 3'),
+	    'type' => 'textfield',
+	    'extra' => array('width' => 60),
+	  );
+	  $fields['civicrm_city'] = array(
+	    'name' => t('City'),
+	    'type' => 'textfield',
+	  );
+	  $fields['civicrm_state_province'] = array(
+	    'name' => t('State/Province Abbr.'),
+	    'type' => 'textfield',
+	    'extra' => array(
+	      'maxlength' => 4,
+	      'width' => 4,
+	      'description' => t('Enter state/province abbreviation'),
+	    ),
+	  );
+	  $fields['civicrm_state_province_id'] = array(
+	    'name' => t('State/Province Select'),
+	    'type' => 'select',
+	    'extra' => array('description' => t('Select state/province from list')),
+	  );
+	  $fields['civicrm_postal_code'] = array(
+	    'name' => t('Postal Code'),
+	    'type' => 'textfield',
+	    'extra' => array('width' => 10),
+	  );
+	  $fields['civicrm_country_id'] = array(
+	    'name' => t('Country'),
+	    'type' => 'select',
+	  );
+	  // Phone params -- phone must be first!
+	  $fields['civicrm_phone'] = array(
+	    'name' => t('Phone Number'),
+	    'type' => 'textfield',
+	  );
+	  $fields['civicrm_phone_type_id'] = array(
+	    'name' => t('Phone Type'),
+	    'type' => 'select',
+	  );
+	  // Other
+	  $fields['civicrm_groups'] = array(
+	    'name' => t('Select Group(s)'),
+	    'type' => 'select',
+	    'extra' => array(
+	      'multiple' => 1,
+	      'description' => t('Users can add/remove themselves from CiviCRM groups (mailing lists, etc)'),
+	    ),
+	  );
+	  $fields['civicrm_groups_hidden'] = array(
+	    'name' => t('Auto-Add Group(s)'),
+	    'type' => 'hidden',
+	    'extra' => array('description' => t('Hidden form element will add contacts to group(s) of your choosing')),
+	  );
+	  $fields['civicrm_tags'] = array(
+	    'name' => t('Tags'),
+	    'type' => 'hidden',
+	    'extra' => array('description' => t('Hidden form element to add tags to contacts')),
+	  );
 
     $tokens = array(
       'display_name'        => t('display name'),
@@ -430,7 +530,8 @@ function webform_civicrm_get_fields($var = 'fields') {
       'civicrm_suffix_id'         => 'individual_suffix',
       'civicrm_gender_id'         => 'gender',
       'civicrm_country_id'        => 'country',
-      'civicrm_state_province_id' => 'state'
+      'civicrm_state_province_id' => 'state',
+      'civicrm_preferred_communication_method' => 'preferred_communication_method',
     );
 
     // Pull custom fields and match to Webform element types
@@ -542,7 +643,6 @@ function webform_civicrm_set_message($message, $contact) {
 /**
  * CiviCRM group subscription API wrapper
  * Mimics the functionality of api V2 for CiviCRM versions prior to 3.3
- * TODO: This can be safely removed for the D7 version of this module
  * @param array $params
  * @return array
  */

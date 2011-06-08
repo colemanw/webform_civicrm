@@ -17,7 +17,13 @@ function webform_civicrm_configure_form(&$form_state, $node) {
 
   $fields = webform_civicrm_get_fields();
   if (empty($node->webform_civicrm)) {
-    $settings = array();
+    $settings = array(
+      'prefix_known' => '',
+      'prefix_unknown' => '',
+      'message' => '',
+      'activity_type_id' => 0,
+      'activity_subject' => '',
+    );
   }
   else {
     $settings = $node->webform_civicrm;
@@ -141,7 +147,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     }
     if (!strpos($id, 'custom')) {
       // Suggested minimum enabled fields
-      if (!$settings && ($id=='civicrm_first_name' || $id=='civicrm_last_name' || $id=='civicrm_email')) {
+      if (empty($settings['nid']) && !empty($field['mandatory'])) {
         $f['#default_value'] = TRUE;
       }
       // Create fieldsets
@@ -193,7 +199,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     '#description' => t('Only allow users to see this form if they are logged in or following a personalized link from CiviMail.')
   );
   // Set a few defaults
-  if (!$settings) {
+  if (empty($settings['nid'])) {
     $form['act']['activity_subject']['#default_value'] = $node->title;
     $form['options']['confirm_subscription']['#default_value'] = TRUE;
   }
@@ -263,6 +269,9 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
           if (!isset($field['extra']['aslist'])) {
             $field['extra']['aslist'] = 1;
           }
+          if (strpos($id, 'custom') === FALSE) {
+           unset($field['extra']['description']);
+         }
         }
         // Create webform component
         $fid = webform_component_insert($field);
@@ -294,8 +303,9 @@ function webform_civicrm_process_group_selection($form, &$form_state) {
     $items = '';
     foreach ($form_state['values']['civicrm_groups_fieldset']['civicrm_groups'] as $gid) {
       if ($gid) {
-        if ($items)
+        if ($items) {
           $items .= "\n";
+        }
         $items .= $gid .'|'. $groups[$gid];
       }
     }
@@ -374,7 +384,7 @@ function webform_civicrm_process_submission($node, $submission) {
     db_query('INSERT INTO {webform_civicrm_submissions} SET sid = %d, contact_id = %d, activity_id = %d', $submission->sid, $cid, $act);
   }
   else {
-    watchdog('webform_civicrm', t('An error occured when trying to create a new contact. The contact was not created.'), NULL, WATCHDOG_ERROR, l($node->title .': '. t('Submission #') . $submission->sid, 'node/'. $node->nid .'/submission/'. $submission->sid));
+    watchdog('webform_civicrm', 'An error occured when trying to create a new contact. The contact was not created.', NULL, WATCHDOG_ERROR, l($node->title .': '. t('Submission #') . $submission->sid, 'node/'. $node->nid .'/submission/'. $submission->sid));
   }
 }
 
@@ -543,20 +553,14 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
   $params = array('contact_id' => $cid);
   $contact = civicrm_contact_get($params);
   $fields = webform_civicrm_get_fields();
-  $custom = FALSE;
   foreach ($fields as $id => $f) {
-    if (strpos($id, 'custom')) {
-      $custom = TRUE;
-      $params[str_replace('civicrm', 'return', $id)] = 1;
+    if (strpos($id, 'custom') || strpos($id, 'preferred_communication_method')) {
+      $params[str_replace('civicrm_', 'return.', $id)] = 1;
     }
   }
-  if ($custom) {
-    $custom = civicrm_contact_get($params);
-    $contact = array_merge($contact[$cid], $custom[$cid]);
-  }
-  else {
-    $contact = $contact[$cid];
-  }
+  $custom = civicrm_contact_get($params);
+  $contact = array_merge($contact[$cid], $custom[$cid]);
+
 
   $form['#prefix'] .= filter_filter('process', 1, NULL, webform_civicrm_replace_tokens($settings['prefix_known'], $contact));
 
@@ -569,8 +573,8 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
   $contact_info = array();
   foreach ($enabled as $id => $val) {
     $new_id = str_replace(array('civicrm_', 'prefix', 'suffix'), array('', 'individual_prefix', 'individual_suffix'), $id);
-    if (($value = $contact[$new_id]) || isset($contact[$new_id])) {
-      $contact_info[$id] = $value;
+    if (isset($contact[$new_id])) {
+      $contact_info[$id] = $contact[$new_id];
     }
   }
 
