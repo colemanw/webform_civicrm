@@ -758,7 +758,7 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
 function _webform_civicrm_webform_frontend_form_alter(&$form) {
   civicrm_initialize();
   $node = $form['#node'];
-  $settings = $node->webform_civicrm;dsm($settings);
+  $settings = $node->webform_civicrm;
   $cid = array();
   // If this is an edit op, use the original CIDs to avoid confusion
   if (!empty($form['#submission'])) {
@@ -775,8 +775,8 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
         }
       }
     }
-    if (isset($_GET['aid'])) {
-      if (is_numeric($_GET['aid']) && $_GET['aid']) {
+    if (!empty($_GET['aid'])) {
+      if (is_numeric($_GET['aid'])) {
           $_SESSION['webform_civicrm_data'][$node->nid]['act'][1] = $act = $_GET['aid'];
         }
     }
