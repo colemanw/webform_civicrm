@@ -159,9 +159,9 @@ function webform_civicrm_contact_match($node, &$submission) {
   }
 
   // Process groups
-  if (isset($enabled['civicrm_groups']) || isset($enabled['civicrm_groups_hidden'])) {
+  if (!empty($enabled['civicrm_groups']) || !empty($enabled['civicrm_groups_hidden'])) {
     $add_groups = $add_hidden = $remove_groups = $all_groups = array();
-    if (isset($enabled['civicrm_groups'])) {
+    if (!empty($enabled['civicrm_groups'])) {
       $add_groups = $submission->data[$enabled['civicrm_groups']]['value'];
       $all_groups = explode("\n", $node->webform['components'][$enabled['civicrm_groups']]['extra']['items']);
       foreach ($all_groups as $g) {
@@ -171,13 +171,10 @@ function webform_civicrm_contact_match($node, &$submission) {
         }
       }
     }
-    if (isset($enabled['civicrm_groups_hidden'])) {
-      $add_hidden = explode(',', $submission->data[$enabled['civicrm_groups_hidden']]['value'][0]);
-      if (!empty($add_groups)) {
+    if (!empty($enabled['civicrm_groups_hidden'])) {
+      if (!empty($submission->data[$enabled['civicrm_groups_hidden']]['value'][0])) {
+        $add_hidden = explode(',', $submission->data[$enabled['civicrm_groups_hidden']]['value'][0]);
         $add_groups = array_unique(array_merge($add_groups, $add_hidden));
-      }
-      else {
-        $add_groups = $add_hidden;
       }
     }
 
