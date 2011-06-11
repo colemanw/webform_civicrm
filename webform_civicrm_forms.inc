@@ -770,14 +770,12 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   }
   else {
     require_once 'CRM/Contact/BAO/Contact/Permission.php';
-    $dummy = new stdClass();
     $count = count($settings['data']['contact']);
     for ($i = 1; $i <= $count; ++$i) {
       if (!empty($_GET['cid' . $i])) {
-        $cid = $_GET['cid' . $i];
-        if (is_numeric($cid)) {
-          if (CRM_Contact_BAO_Contact_Permission::validateChecksumContact($cid, $dummy)) {
-            $id['cid'][$i] = $_GET['cid' . $i];
+        if (is_numeric($cid = $_GET['cid' . $i])) {
+          if (CRM_Contact_BAO_Contact_Permission::validateChecksumContact($cid, CRM_Core_DAO::$_nullObject)) {
+            $id['cid'][$i] = $cid;
           }
         }
       }
