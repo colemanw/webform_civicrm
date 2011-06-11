@@ -57,8 +57,8 @@ function webform_civicrm_process_submission($node, &$submission) {
       $id = $_SESSION['webform_civicrm_data'][$node->nid];
       unset($_SESSION['webform_civicrm_data'][$node->nid]);
     }
-    if (empty($id['cid'])) {
-      $id['cid'] = array();
+    if (empty($id)) {
+      $id = array('cid' => array());
     }
     foreach ($data['contact'] as $c => $contact) {
       // Search for an existing contact using default strict rule
