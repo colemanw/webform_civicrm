@@ -268,11 +268,13 @@ function webform_civicrm_process_submission($node, &$submission) {
       }
       unset($params['add_link']);
       if (!empty($id['act'][1])) {
-        $params['activity_id'] = $id['act'][1];
+        $params['activity_id'] = $act = $id['act'][1];
       }
       $result = webform_civicrm_api('activity', 'create', $params);
-      if (!empty($result['id'])) {
-        $act = $result['id'];
+      if (!empty($result['id']) || $act) {
+        if (!empty($result['id']) {
+          $act = $result['id'];
+        }
         webform_civicrm_save_custom($data['activity'][1], $act, 'Activity');
       }
     }
