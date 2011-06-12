@@ -498,9 +498,9 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
         $form['value']['#autocomplete_path'] = 'webform-civicrm/js/' . $form['nid']['#value'] . '/tags';
       }
       // Auto set multi-value option for other fields based on schema
-      elseif ($form['extra']['multiple']) {
+      elseif (!empty($form['extra']['multiple'])) {
         $form['extra']['multiple']['#type'] = 'hidden';
-        $form['extra']['multiple']['#value'] = $fields[$key]['extra']['multiple'];
+        $form['extra']['multiple']['#value'] = !empty($fields[$key]['extra']['multiple']);
       }
     }
   }
