@@ -140,6 +140,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
       '#type' => 'textfield',
       '#title' => t('Default Activity Subject'),
       '#maxlength' => 255,
+      '#required' => TRUE,
       '#description' => t('You can override this default by allowing users to enter a subject (enable "Activity Subject" field below)'),
     );
     if (isset($data['activity'][1]['activity'][1]['subject'])) {

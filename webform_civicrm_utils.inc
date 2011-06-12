@@ -260,6 +260,9 @@ function webform_civicrm_process_submission($node, &$submission) {
       else {
         $params['details'] = nl2br($params['details']);
       }
+      if (empty($params['subject'])) {
+        $params['subject'] = $settings['data']['activity'][1]['activity'][1]['subject'];
+      }
       if (!empty($data['activity'][1]['add_link'])) {
         $params['details'] .= '<p>'. l(t('View Webform Submission'), 'node/' . $node->nid . '/submission/' . $submission->sid) .'</p>';
       }
