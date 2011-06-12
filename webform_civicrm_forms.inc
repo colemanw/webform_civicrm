@@ -498,7 +498,7 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
         $form['value']['#autocomplete_path'] = 'webform-civicrm/js/'. $form['nid']['#value'] .'/tags';
       }
       // Auto set multi-value option for other fields based on schema
-      elseif ($form['extra']['multiple']) {
+      elseif (!empty($form['extra']['multiple'])) {
         $form['extra']['multiple']['#type'] = 'hidden';
         $form['extra']['multiple']['#value'] = $fields[$key]['extra']['multiple'];
       }
@@ -516,12 +516,14 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
  */
 function _webform_civicrm_webform_frontend_form_alter(&$form) {
   civicrm_initialize();
+  $cid = 0;
   $node = $form['#node'];
   $settings = $node->webform_civicrm;
   $enabled = webform_civicrm_enabled_fields($node);
 
   // If this is an edit op, use the original CID to avoid confusion
-  if ($submission = $form['#submission']) {
+  if (!empty($form['#submission'])) {
+    $submission = $form['#submission'];
     $cid = $submission->civicrm['contact_id'];
   }
   else {
@@ -565,7 +567,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
   $form['#prefix'] .= filter_filter('process', 1, NULL, webform_civicrm_replace_tokens($settings['prefix_known'], $contact));
 
   // Do not alter form default values if this is an edit op
-  if ($submission) {
+  if (!empty($submission)) {
     return;
   }
 

@@ -39,7 +39,6 @@ function webform_civicrm_menu() {
  * Implementation of hook_form_alter().
  */
 function webform_civicrm_form_alter(&$form, $form_state, $form_id) {
-
   // Alter back-end webform component edit forms
   if ($form_id == 'webform_component_edit_form') {
     require_once 'webform_civicrm_forms.inc';
@@ -48,7 +47,7 @@ function webform_civicrm_form_alter(&$form, $form_state, $form_id) {
 
   // Alter front-end of webforms
   elseif (strpos($form_id, 'webform_client_form_') !== FALSE) {
-    if ($form['#node']->webform_civicrm && arg(2) != 'done' && arg(2) != 'webform') {
+    if (!empty($form['#node']->webform_civicrm) && arg(2) != 'done' && arg(2) != 'webform') {
       require_once 'webform_civicrm_forms.inc';
       _webform_civicrm_webform_frontend_form_alter($form);
     }
@@ -60,7 +59,6 @@ function webform_civicrm_form_alter(&$form, $form_state, $form_id) {
  * Implementation of hook_nodeapi().
  */
 function webform_civicrm_nodeapi(&$node, $op, $teaser, $page) {
-
   switch ($op) {
 
     case 'load':
@@ -112,7 +110,7 @@ function webform_civicrm_theme() {
  * Implementation of hook_webform_submission_presave().
  */
 function webform_civicrm_webform_submission_presave($node, &$submission) {
-  if ($node->webform_civicrm) {
+  if (!empty($node->webform_civicrm)) {
     require_once 'webform_civicrm_forms.inc';
     webform_civicrm_contact_match($node, $submission);
   }
@@ -123,7 +121,7 @@ function webform_civicrm_webform_submission_presave($node, &$submission) {
  * Implementation of hook_webform_submission_insert().
  */
 function webform_civicrm_webform_submission_insert($node, $submission) {
-  if ($node->webform_civicrm) {
+  if (!empty($node->webform_civicrm)) {
     require_once 'webform_civicrm_forms.inc';
     webform_civicrm_process_submission($node, $submission);
   }
@@ -166,8 +164,8 @@ function webform_civicrm_webform_submission_load(&$submissions) {
       $contacts[$dao->id] = $dao->display_name;
     }
     foreach ($submissions as &$s) {
-      if ($cid = $s->civicrm['contact_id']) {
-        $s->civicrm['display_name'] = $contacts[$cid];
+      if (!empty($s->civicrm['contact_id'])) {
+        $s->civicrm['display_name'] = $contacts[$s->civicrm['contact_id']];
       }
     }
   }
