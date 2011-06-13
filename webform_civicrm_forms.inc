@@ -167,7 +167,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     );
     foreach ($sets as $sid => $set) {
       if ($set['entity_type'] == 'activity') {
-        if ($set['sub_types']) {
+        if (!empty($set['sub_types'])) {
           if (!in_array($settings['activity_type_id'], $set['sub_types'])) {
             continue;
           }
@@ -281,12 +281,16 @@ function webform_civicrm_configure_form(&$form_state, $node) {
       if ($set['entity_type'] != 'contact') {
         continue;
       }
+      if ($sid == 'relationship') {
+        //TODO
+        continue;
+      }
       if (!empty($set['contact_type'])) {
         if ($set['contact_type'] != $c['contact'][1]['contact_type']) {
           $hide = TRUE;
         }
       }
-      if (isset($set['sub_types'])) {
+      if (!empty($set['sub_types'])) {
         if (!in_array($c['contact_sub_type'], $set['sub_types'])) {
           $hide = TRUE;
         }
@@ -302,6 +306,9 @@ function webform_civicrm_configure_form(&$form_state, $node) {
         $path = 'webform-civicrm/js/' . $node->nid . '/civicrm_ahah.contacts.contact_'. $n .'.';
       }
       if (!empty($set['max_instances'])) {
+        if (!isset($c['number_of_'. $sid])) {
+          $c['number_of_'. $sid] = 0;
+        }
         $numbers = array();
         for ($i = 0; $i <= $set['max_instances']; ++$i) {
           $numbers[$i] = $i;
@@ -740,9 +747,9 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
         $form['value']['#autocomplete_path'] = 'webform-civicrm/js/'. $form['nid']['#value'] .'/tags';
       }
       // Auto set multi-value option for other fields based on schema
-      elseif ($form['extra']['multiple']) {
+      elseif (!empty($form['extra']['multiple'])) {
         $form['extra']['multiple']['#type'] = 'hidden';
-        $form['extra']['multiple']['#value'] = $fields[$table .'_'. $key]['extra']['multiple'];
+        $form['extra']['multiple']['#value'] = !empty($fields[$table .'_'. $key]['extra']['multiple']);
       }
     }
   }

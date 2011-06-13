@@ -146,7 +146,7 @@ function webform_civicrm_process_submission($node, &$submission) {
       }
       // Process groups
       if (isset($enabled['civicrm_'. $n .'_contact_1_other_groups']) || isset($enabled['civicrm_'. $n .'_contact_1_other_groups_hidden'])) {
-        $add_groups = $add_hidden = $remove_groups = $all_groups = array();
+        $add_groups = $remove_groups = array();
         if (isset($enabled['civicrm_'. $n .'_contact_1_other_groups'])) {
           $add_groups = $submission->data[$enabled['civicrm_'. $n .'_contact_1_other_groups']]['value'];
           $all_groups = explode("\n", $node->webform['components'][$enabled['civicrm_'. $n .'_contact_1_other_groups']]['extra']['items']);
@@ -169,8 +169,7 @@ function webform_civicrm_process_submission($node, &$submission) {
 
         if (!empty($add_groups)) {
           // Prepare for sending subscription confirmations
-          $confirmations_sent = array();
-          $mailing_lists = array();
+          $confirmations_sent = $mailing_lists = array();
           if (!empty($node->webform_civicrm['confirm_subscription'])) {
             $contact = webform_civicrm_api('contact', 'get', array( 'contact_id' => $cid, 'return_email' => 1));
             $contact = array_pop($contact['values']);
@@ -268,11 +267,14 @@ function webform_civicrm_process_submission($node, &$submission) {
       }
       unset($params['add_link']);
       if (!empty($id['act'][1])) {
-        $params['activity_id'] = $act = $id['act'][1];
+        $params['id'] = $act = $id['act'][1];
+        $result = webform_civicrm_api('activity', 'update', $params);
       }
-      $result = webform_civicrm_api('activity', 'create', $params);
+      else {
+        $result = webform_civicrm_api('activity', 'create', $params);
+      }
       if (!empty($result['id']) || $act) {
-        if (!empty($result['id']) {
+        if (!empty($result['id'])) {
           $act = $result['id'];
         }
         webform_civicrm_save_custom($data['activity'][1], $act, 'Activity');
@@ -369,14 +371,15 @@ function webform_civicrm_get_contact_types() {
   return array($contact_types, $sub_types);
 }
 
+
 /**
- * Get valid relationship types for given contact types and sub_types
+ * Get relationship type data
  */
-function webform_civicrm_get_relationship_types($contact_type_a, $contact_type_b, $sub_type_a = NULL, $sub_type_b = NULL) {
+function webform_civicrm_get_relationship_types() {
   static $types = array();
   if (!$types) {
     $sql = "
-      SELECT id, name_a_b, name_b_a, label_a_b, label_b_a, contact_type_a, contact_type_b, contact_sub_type_a, contact_sub_type_b
+      SELECT id, name_a_b, name_b_a, label_a_b, label_b_a, LOWER(contact_type_a) AS type_a, LOWER(contact_type_b) AS type_b, contact_sub_type_a AS sub_type_a, contact_sub_type_b AS sub_type_b
       FROM civicrm_relationship
       WHERE is_active <> 0";
     $dao = &CRM_Core_DAO::executeQuery($sql);
@@ -384,19 +387,28 @@ function webform_civicrm_get_relationship_types($contact_type_a, $contact_type_b
       $types[$dao->id] = (array) $dao;
     }
   }
+  return $types;
+}
+
+
+/**
+ * Get valid relationship types for given contact types and sub_types
+ */
+function webform_civicrm_get_contact_relationship_types($type_a, $type_b, $sub_type_a = NULL, $sub_type_b = NULL) {
+  $types = webform_civicrm_get_relationship_types();
   $ret = array();
   foreach ($types as $t) {
-    if (($t['contact_type_a'] == $contact_type_a || !$t['contact_type_a'])
-      && ($t['contact_type_b'] == $contact_type_b || !$t['contact_type_b'])
-      && ($t['contact_sub_type_a'] == $sub_type_a || !$t['contact_sub_type_a'])
-      && ($t['contact_sub_type_b'] == $sub_type_b || !$t['contact_sub_type_b'])
+    if (($t['type_a'] == $type_a || !$t['type_a'])
+      && ($t['type_b'] == $type_b || !$t['type_b'])
+      && ($t['sub_type_a'] == $sub_type_a || !$t['sub_type_a'])
+      && ($t['sub_type_b'] == $sub_type_b || !$t['sub_type_b'])
     ) {
       $ret[$t['id'] .'_a'] = $t['label_a_b'];
     }
-    if (($t['contact_type_a'] == $contact_type_a || !$t['contact_type_a'])
-      && ($t['contact_type_b'] == $contact_type_b || !$t['contact_type_b'])
-      && ($t['contact_sub_type_a'] == $sub_type_a || !$t['contact_sub_type_a'])
-      && ($t['contact_sub_type_b'] == $sub_type_b || !$t['contact_sub_type_b'])
+    if (($t['type_a'] == $type_a || !$t['type_a'])
+      && ($t['type_b'] == $type_b || !$t['type_b'])
+      && ($t['sub_type_a'] == $sub_type_a || !$t['sub_type_a'])
+      && ($t['sub_type_b'] == $sub_type_b || !$t['sub_type_b'])
       && ($t['name_a_b'] != $t['name_b_a'])
     ) {
       $ret[$t['id'] .'_b'] = $t['label_b_a'];
@@ -404,6 +416,7 @@ function webform_civicrm_get_relationship_types($contact_type_a, $contact_type_b
   }
   return $ret;
 }
+
 
 /**
  * Handle various AHAH requests.
@@ -423,8 +436,7 @@ function webform_civicrm_js_options($key, $str='') {
       $snippet = $snippet[$key];
     }
     unset($snippet['#prefix'], $snippet['#suffix']);
-    $output = theme('status_messages');
-    $output .= drupal_render($snippet);
+    $output = theme('status_messages') . drupal_render($snippet);
     exit(drupal_json(array('status' => TRUE, 'data' => $output)));
   }
 
@@ -812,6 +824,11 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Activity Details'),
       'type' => 'textarea',
     );
+    $fields['relationship_relationship_type_id'] = array(
+      'name' => t('Relationship to Contact'),
+      'type' => 'select',
+//       'expose_list' => TRUE,
+    );
 
     $tokens = array(
       'display_name'        => t('display name'),
@@ -847,6 +864,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'phone_type_id'                  => 'phone_type',
       'location_type_id'               => 'location_type',
       'website_type_id'                => 'website_type',
+      'relationship_type_id'           => 'relationship_type',
     );
 
     $sets = array(
@@ -857,6 +875,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'email' => array('entity_type' => 'contact', 'label' => t('Email'), 'max_instances' => 9),
       'website' => array('entity_type' => 'contact', 'label' => t('Website'), 'max_instances' => 9),
       'activity' => array('entity_type' => 'activity', 'label' => t('Expose Activity Fields')),
+      'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship to Contact')),
     );
 
     // Pull custom fields and match to Webform element types
