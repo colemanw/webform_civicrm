@@ -71,7 +71,7 @@ function webform_civicrm_process_submission($node, &$submission) {
               if (substr($table, 0, 2) == 'cg') {
                 //TODO pass custom data to deduper
               }
-              else {
+              elseif ($table != 'other' && $table != 'relationship') {
                 $params['civicrm_' . $table] = $field[1];
               }
             }
@@ -144,6 +144,18 @@ function webform_civicrm_process_submission($node, &$submission) {
           }
         }
       }
+      // Process Relationships
+      if (!empty($contact['relationship'])) {
+        foreach ($contact['relationship'] as $i => $params) {
+          if (!empty($params['relationship_type_id'])) {
+            list($type, $a_b) = explode('_', $params['relationship_type_id']);
+            $params['relationship_type_id'] = $type;
+            $params['contact_id_a'] = $params['contact_id_b'] = $id['cid'][$i];
+            $params['contact_id_'.$a_b] = $cid;dsm($params);
+            dsm(webform_civicrm_api('relationship', 'create', $params));
+          }
+        }
+      }
       // Process groups
       if (isset($enabled['civicrm_'. $n .'_contact_1_other_groups']) || isset($enabled['civicrm_'. $n .'_contact_1_other_groups_hidden'])) {
         $add_groups = $remove_groups = array();
@@ -178,7 +190,7 @@ function webform_civicrm_process_submission($node, &$submission) {
               'email' => $contact['email'],
             );
             if (!empty($contact['email'])) {
-              $mailing_lists = webform_civicrm_get_options('mailing_lists', 'arr');
+              $mailing_lists = webform_civicrm_get_options('mailing_lists');
             }
           }
           $group_params = array('contact_id' => $cid);
@@ -291,16 +303,17 @@ function webform_civicrm_process_submission($node, &$submission) {
 /**
  * Get options from various civicrm tables
  * @Param $option_group: option group name or id
- * @Param $var: Can return values as a Webform-style string, or a FAPI style array. Specify 'str' or 'arr', matey!
- * @Param $null_label: If returning FAPI array, provide label if first option should be "none"
+ * @Param $null_label: Provide label if first option should be "none"
  */
-function webform_civicrm_get_options($option_group, $var='str', $null_label='') {
-  $params = array();
+function webform_civicrm_get_options($option_group) {
+  $vars = $arr = array();
   if ($option_group == 'country') {
     $config = CRM_Core_Config::singleton();
-    $enabled = implode(',', $config->countryLimit);
+    if (is_array($config->countryLimit)) {
+	    $enabled = implode(',', $config->countryLimit);
+    }
     $sql = "SELECT name AS label, id AS value FROM civicrm_country";
-    if ($enabled) {
+    if (!empty($enabled)) {
       $sql .=  " WHERE id IN ($enabled)";
     }
     $sql .= ' ORDER BY name';
@@ -322,11 +335,11 @@ function webform_civicrm_get_options($option_group, $var='str', $null_label='') 
     $sql = 'SELECT value, label FROM civicrm_option_value WHERE is_active <> 0 AND option_group_id = ';
     if (is_numeric($option_group)) {
       $sql .= '%1';
-      $params[1] = array($option_group, 'Integer');
+      $vars[1] = array($option_group, 'Integer');
     }
     else {
       $sql .= "(SELECT id FROM civicrm_option_group WHERE name = %1)";
-      $params[1] = array($option_group, 'String');
+      $vars[1] = array($option_group, 'String');
     }
     // Exclude reserved activity types
     if ($option_group == 'activity_type') {
@@ -334,15 +347,44 @@ function webform_civicrm_get_options($option_group, $var='str', $null_label='') 
     }
     $sql .= ' ORDER BY weight, label';
   }
-  $dao =& CRM_Core_DAO::executeQuery($sql, $params);
-  $arr = array();
-  if ($null_label) {
-    $arr[] = $null_label;
-  }
-  $str = '';
+  $dao =& CRM_Core_DAO::executeQuery($sql, $vars);
   while ($dao->fetch()) {
     $arr[$dao->value] = $dao->label;
-    $str .= ($str?"\n":'') . $dao->value .'|'. $dao->label;
+  }
+  return $arr;
+}
+
+
+/**
+ * Get options for a specific field
+ * @Param $key: field key
+ * @Param $var: Can return values as a Webform-style string, or a FAPI style array. Specify 'str' or 'arr', matey!
+ * @Param $data: CiviCRM entity data
+ */
+function webform_civicrm_field_options($key, $var, $data) {
+  $arr = array();
+  $str = '';
+  $lists = webform_civicrm_get_fields('lists');
+  if ($pieces = webform_civicrm_explode_key($key)) {
+    list($lobo, $c, $ent, $n, $table, $name) = $pieces;
+    if ($name == 'contact_sub_type') {
+      list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
+      $arr = array($contact_types[$data['contact'][$c]['contact'][1]['contact_type']]) + $sub_types[$data['contact'][$c]['contact'][1]['contact_type']];
+    }
+	  elseif ($name == 'relationship_type_id') {
+	    $arr = array(t('No Relationship')) + webform_civicrm_get_contact_relationship_types($data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][$n]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$n]['contact'][1]['contact_sub_type']);
+	  }
+	  elseif ($name == 'is_active') {
+	    $arr = array(1 => t('Yes'), 0 => t('No'));
+	  }
+	  elseif (array_key_exists($name, $lists)) {
+	    $arr = webform_civicrm_get_options($lists[$name]);
+	  }
+	  if ($var == 'str') {
+	    foreach ($arr as $k => $v) {
+	      $str .= ($str?"\n":'') . $k .'|'. $v;
+	    }
+	  }
   }
   return $$var;
 }
@@ -351,22 +393,25 @@ function webform_civicrm_get_options($option_group, $var='str', $null_label='') 
  * Get contact types and sub-types
  */
 function webform_civicrm_get_contact_types() {
-  $sql = "
-    SELECT c1.name, c1.label, LOWER(c2.name) AS parent_type
-    FROM civicrm_contact_type c1
-    LEFT JOIN civicrm_contact_type c2 ON c1.parent_id  = c2.id
-    WHERE c1.is_active = 1
-    ORDER BY c1.parent_id ASC";
-  $dao = &CRM_Core_DAO::executeQuery($sql);
-  $contact_types = $sub_types = array();
-  while ($dao->fetch()) {
-    if ($dao->parent_type) {
-      $sub_types[$dao->parent_type][$dao->name] = $dao->label;
-    }
-    else {
-      $contact_types[strtolower($dao->name)] = $dao->label;
-      $sub_types[strtolower($dao->name)] = array();
-    }
+  static $contact_types = array();
+  static $sub_types = array();
+  if (!$contact_types) {
+	  $sql = "
+	    SELECT c1.name, c1.label, LOWER(c2.name) AS parent_type
+	    FROM civicrm_contact_type c1
+	    LEFT JOIN civicrm_contact_type c2 ON c1.parent_id  = c2.id
+	    WHERE c1.is_active = 1
+	    ORDER BY c1.parent_id ASC";
+	  $dao = &CRM_Core_DAO::executeQuery($sql);
+	  while ($dao->fetch()) {
+	    if ($dao->parent_type) {
+	      $sub_types[$dao->parent_type][$dao->name] = $dao->label;
+	    }
+	    else {
+	      $contact_types[strtolower($dao->name)] = $dao->label;
+	      $sub_types[strtolower($dao->name)] = array();
+	    }
+	  }
   }
   return array($contact_types, $sub_types);
 }
@@ -379,12 +424,22 @@ function webform_civicrm_get_relationship_types() {
   static $types = array();
   if (!$types) {
     $sql = "
-      SELECT id, name_a_b, name_b_a, label_a_b, label_b_a, LOWER(contact_type_a) AS type_a, LOWER(contact_type_b) AS type_b, contact_sub_type_a AS sub_type_a, contact_sub_type_b AS sub_type_b
-      FROM civicrm_relationship
+      SELECT id, name_a_b, name_b_a, label_a_b, label_b_a, LOWER(contact_type_a) AS type_a, LOWER(contact_type_b) AS type_b, contact_sub_type_a, contact_sub_type_b
+      FROM civicrm_relationship_type
       WHERE is_active <> 0";
     $dao = &CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {
-      $types[$dao->id] = (array) $dao;
+      $types[$dao->id] = array(
+        'id' => $dao->id,
+        'name_a_b' => $dao->name_a_b,
+        'name_b_a' => $dao->name_b_a,
+        'label_a_b' => $dao->label_a_b,
+        'label_b_a' => $dao->label_b_a,
+        'type_a' => $dao->type_a,
+        'type_b' => $dao->type_b,
+        'sub_type_a' => $dao->contact_sub_type_a,
+        'sub_type_b' => $dao->contact_sub_type_b,
+      );
     }
   }
   return $types;
@@ -394,21 +449,21 @@ function webform_civicrm_get_relationship_types() {
 /**
  * Get valid relationship types for given contact types and sub_types
  */
-function webform_civicrm_get_contact_relationship_types($type_a, $type_b, $sub_type_a = NULL, $sub_type_b = NULL) {
+function webform_civicrm_get_contact_relationship_types($type_a = NULL, $type_b = NULL, $sub_type_a = NULL, $sub_type_b = NULL) {
   $types = webform_civicrm_get_relationship_types();
   $ret = array();
   foreach ($types as $t) {
-    if (($t['type_a'] == $type_a || !$t['type_a'])
-      && ($t['type_b'] == $type_b || !$t['type_b'])
-      && ($t['sub_type_a'] == $sub_type_a || !$t['sub_type_a'])
-      && ($t['sub_type_b'] == $sub_type_b || !$t['sub_type_b'])
+    if (($t['type_a'] == $type_a || !$t['type_a'] || !$type_a)
+      && ($t['type_b'] == $type_b || !$t['type_b'] || !$type_b)
+      && ($t['sub_type_a'] == $sub_type_a || !$t['sub_type_a'] || !$type_a)
+      && ($t['sub_type_b'] == $sub_type_b || !$t['sub_type_b'] || !$type_b)
     ) {
       $ret[$t['id'] .'_a'] = $t['label_a_b'];
     }
-    if (($t['type_a'] == $type_a || !$t['type_a'])
-      && ($t['type_b'] == $type_b || !$t['type_b'])
-      && ($t['sub_type_a'] == $sub_type_a || !$t['sub_type_a'])
-      && ($t['sub_type_b'] == $sub_type_b || !$t['sub_type_b'])
+    if (($t['type_a'] == $type_b || !$t['type_a'] || !$type_b)
+      && ($t['type_b'] == $type_a || !$t['type_b'] || !$type_a)
+      && ($t['sub_type_a'] == $sub_type_b || !$t['sub_type_a'] || !$type_b)
+      && ($t['sub_type_b'] == $sub_type_a || !$t['sub_type_b'] || !$type_a)
       && ($t['name_a_b'] != $t['name_b_a'])
     ) {
       $ret[$t['id'] .'_b'] = $t['label_b_a'];
@@ -430,12 +485,15 @@ function webform_civicrm_js_options($key, $str='') {
     require_once 'webform_civicrm_forms.inc';
     $snippet = webform_civicrm_process_ahah_form();
 
-    // Retrieve the portion of form to fetch (array keys are encoded as a . separated string)
+    // Isolate the portion of form to fetch (nested array keys are encoded as a . separated string)
     $keys = explode('.', substr($key, 13));
     foreach($keys as $key) {
       $snippet = $snippet[$key];
     }
     unset($snippet['#prefix'], $snippet['#suffix']);
+    if (strpos($key, 'contact') !== FALSE) {
+      $snippet['#suffix'] = '<script type="text/javascript">webform_civicrm_relationship_options();</script>';
+    }
     $output = theme('status_messages') . drupal_render($snippet);
     exit(drupal_json(array('status' => TRUE, 'data' => $output)));
   }
@@ -460,10 +518,9 @@ function webform_civicrm_js_options($key, $str='') {
     exit(drupal_json($matches));
   }
   // Get option lists
-  $lists = webform_civicrm_get_fields('lists');
-  if (array_key_exists($key, $lists)) {
-    print webform_civicrm_get_options($lists[$key]);
-    exit();
+  $node = node_load(arg(2));
+  if (!empty($node->webform_civicrm)) {
+	  exit(webform_civicrm_field_options($key, 'str', $node->webform_civicrm['data']));
   }
   return drupal_not_found();
 }
@@ -827,7 +884,30 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['relationship_relationship_type_id'] = array(
       'name' => t('Relationship to Contact'),
       'type' => 'select',
-//       'expose_list' => TRUE,
+      'expose_list' => TRUE,
+    );
+    $fields['relationship_is_active'] = array(
+      'name' => t('Is Active'),
+      'type' => 'select',
+      'expose_list' => TRUE,
+    );
+    $fields['relationship_start_date'] = array(
+      'name' => t('Start Date'),
+      'type' => 'date',
+      'extra' => array(
+        'year_start' => '-50',
+        'year_end' => '+50',
+        'timezone' => 'user',
+      ),
+    );
+    $fields['relationship_end_date'] = array(
+      'name' => t('End Date'),
+      'type' => 'date',
+      'extra' => array(
+        'year_start' => '-50',
+        'year_end' => '+50',
+        'timezone' => 'user',
+      ),
     );
 
     $tokens = array(
@@ -864,7 +944,9 @@ function webform_civicrm_get_fields($var = 'fields') {
       'phone_type_id'                  => 'phone_type',
       'location_type_id'               => 'location_type',
       'website_type_id'                => 'website_type',
-      'relationship_type_id'           => 'relationship_type',
+      'relationship_type_id'           => 'relationship_type_id',
+      'is_active'                      => 'is_active',
+      'contact_sub_type'               => 'contact_sub_type',
     );
 
     $sets = array(

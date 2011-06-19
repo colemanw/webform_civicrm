@@ -52,6 +52,9 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   $form = array('#prefix' => t('Use the options below to configure CiviCRM processing for this form.'));
   $contacts = $settings['data']['contact'];
   $data = $settings['data'];
+  $js = 'var webform_civicrm_relationship_data = '. json_encode(webform_civicrm_get_relationship_types()) .';';
+  drupal_add_js($js, 'inline');
+
 
   // Sort fields by set
   foreach ($fields as $fid => $field) {
@@ -122,7 +125,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   $form['act']['activity_type_id'] = array(
     '#type' => 'select',
     '#title' => t('Activity Type'),
-    '#options' => webform_civicrm_get_options('activity_type', 'arr', t('- no activity -')),
+    '#options' => array(t('- no activity -')) + webform_civicrm_get_options('activity_type'),
     '#ahah' => array(
       'path' => 'webform-civicrm/js/' . $node->nid . '/civicrm_ahah.act.activity_fields',
       'wrapper' => 'civicrm-ahah-activity-fields',
@@ -152,7 +155,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     $form['act']['activity_fields']['activity_status_id'] = array(
       '#type' => 'select',
       '#title' => t('Activity Status'),
-      '#options' => webform_civicrm_get_options('activity_status', 'arr'),
+      '#options' => webform_civicrm_get_options('activity_status'),
     );
     if (isset($data['activity'][1]['activity'][1]['status_id'])) {
       $form['act']['activity_fields']['activity_status_id']['#default_value'] = $data['activity'][1]['activity'][1]['status_id'];
@@ -282,8 +285,10 @@ function webform_civicrm_configure_form(&$form_state, $node) {
         continue;
       }
       if ($sid == 'relationship') {
-        //TODO
-        continue;
+        if ($n == 1) {
+	        continue;
+        }
+        $set['max_instances'] = $n - 1;
       }
       if (!empty($set['contact_type'])) {
         if ($set['contact_type'] != $c['contact'][1]['contact_type']) {
@@ -297,7 +302,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
         $pos =& $form['contacts']['contact_' . $n]['contact_subtype_wrapper']['contact_custom_wrapper'];
         $path = 'webform-civicrm/js/' . $node->nid . '/civicrm_ahah.contacts.contact_'. $n .'.contact_subtype_wrapper.contact_custom_wrapper.';
       }
-      elseif ($set['contact_type'] || $sid == 'contact') {
+      elseif (!empty($set['contact_type']) || $sid == 'contact') {
         $pos =& $form['contacts']['contact_' . $n]['contact_subtype_wrapper'];
         $path = 'webform-civicrm/js/' . $node->nid . '/civicrm_ahah.contacts.contact_'. $n .'.contact_subtype_wrapper.';
       }
@@ -340,7 +345,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
       for ($i = 1; $i <= $c['number_of_'. $sid] && !$hide; ++$i) {
         $fieldset = array(
           '#type' => 'fieldset',
-          '#title' => $set['label'] . ($set['max_instances'] > 1 ? ' '. $i : ''),
+          '#title' => $set['label'] . (($set['max_instances'] > 1 || $sid == 'relationship') ? ' '. $i : ''),
           '#attributes' => array('class' => 'web-civi-checkbox-set'),
         );
         foreach ($set['fields'] as $fid => $field) {
@@ -357,14 +362,17 @@ function webform_civicrm_configure_form(&$form_state, $node) {
           // Create dropdown list
           if (!empty($field['expose_list'])) {
             // Populate option list as needed
-            if (!is_array($lists[$fname])) {
-              $lists[$fname] =  array('create_civicrm_webform_element' => t('-user select-')) + webform_civicrm_get_options($lists[$fname], 'arr');
+            if (!is_array($lists[$fname]) || $fname = 'relationship_type_id') {
+              $lists[$fname] = array('create_civicrm_webform_element' => t('-user select-')) + webform_civicrm_field_options($fid, 'arr', $data);
             }
             $fieldset[$fid] = array(
               '#type' => 'select',
               '#title' => $field['name'],
               '#options' => $lists[$fname],
             );
+            if ($fname == 'relationship_type_id') {
+              $fieldset[$fid]['#title'] .= ' ' . $i;
+            }
             if (isset($enabled[$fid])) {
               $fieldset[$fid]['#default_value'] = $enabled[$fid];
             }
@@ -407,7 +415,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     '#type' => 'checkbox',
     '#title' => t('Confirm Subscriptions'),
     '#default_value' => (bool) $settings['confirm_subscription'],
-    '#description' => t('Recommended. Send a confirmation email before adding contacts to publicly subscribable mailing list groups.') .'<br />'. t('Your public mailing lists:') .' <em>'. implode(', ', webform_civicrm_get_options('mailing_lists', 'arr')) .'</em>'
+    '#description' => t('Recommended. Send a confirmation email before adding contacts to publicly subscribable mailing list groups.') .'<br />'. t('Your public mailing lists:') .' <em>'. implode(', ', webform_civicrm_get_options('mailing_lists')) .'</em>'
   );
   $form['options']['block_unknown_users'] = array(
     '#type' => 'checkbox',
@@ -528,15 +536,11 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
           $field['form_key'] = $key;
           $field['weight'] = $i;
           $field['pid'] = 0;
-          if ($n > 1) {
+          if ($n > 1 || $name == 'relationship_type_id') {
             $field['name'] .= ' ' . $n;
           }
           if ($name == 'contact_sub_type') {
             $field['name'] .= ' ' . $contact_types[$vals['data']['contact'][$c]['contact'][1]['contact_type']];
-            $field['extra']['items'] = '0|'.$contact_types[$vals['data']['contact'][$c]['contact'][1]['contact_type']];
-            foreach ($sub_types[$vals['data']['contact'][$c]['contact'][1]['contact_type']] as $k => $v) {
-              $field['extra']['items'] .= "\n" . $k .'|'. $v;
-            }
           }
 
           if (($field['type'] == 'textfield' || $field['type'] == 'email') && empty($field['extra']['width'])) {
@@ -550,7 +554,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
           }
           // Retrieve option list
           if (array_key_exists($name, $lists)) {
-            $field['extra']['items'] = webform_civicrm_get_options($lists[$name]);
+            $field['extra']['items'] = webform_civicrm_field_options($key, 'str', $vals['data']);
             if (!isset($field['extra']['aslist'])) {
               $field['extra']['aslist'] = 1;
             }
@@ -609,7 +613,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
 function webform_civicrm_process_group_selection($form, &$form_state) {
   if ($form_state['values']['civicrm_groups_fieldset']['civicrm_groups']) {
     civicrm_initialize();
-    $groups = webform_civicrm_get_options('groups', 'arr');
+    $groups = webform_civicrm_get_options('groups');
     $items = '';
     foreach ($form_state['values']['civicrm_groups_fieldset']['civicrm_groups'] as $gid) {
       if ($gid) {
@@ -654,7 +658,7 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
 
       // Prevent users from editing the form_key and breaking things
       $form['form_key']['#disabled'] = TRUE;
-      $form['form_key']['#value'] = $form['form_key']['#default_value'];
+      $fid = $form['form_key']['#value'] = $form['form_key']['#default_value'];
       $form['form_key']['#description'] = t('Automatically set for use by CiviCRM processing.');
 
       // Adds the ability to reload option lists via AJAX (also works without JS)
@@ -662,17 +666,18 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
       if (array_key_exists($key, $lists)) {
         unset($form['extra']['options_source']);
         $complete_msg = t('The options have been reloaded.');
-        $form['extra']['items']['#description'] = t("These options were automatically selected from the CiviCRM database. You may change their order, or delete unwanted options as you see fit. You may also change the labels (text after the |) to be more descriptive. However, adding new items here that are <em>not</em> in CiviCRM won't work. Instead, create your new options in CiviCRM, then click here to refresh this list:");
+        $form['extra']['items']['#description'] = t("These options were automatically selected from the CiviCRM database. You may change their order or delete unwanted options as you see fit. You may also change the labels (text after the |) to be more descriptive. However, adding new items here that are <em>not</em> in CiviCRM won't work. Instead, create your new options in CiviCRM, then click here to refresh this list:");
         if (!empty($_GET['reset'])) {
+          $node = node_load(arg(1));
           $form['extra']['items']['#description'] .= '<div style="color:green; font-weight:bold; margin-top:0.5em;">'. $complete_msg .'</div>';
-          $form['extra']['items']['#default_value'] = webform_civicrm_get_options($lists[$key]);
+          $form['extra']['items']['#default_value'] = webform_civicrm_field_options($fid, 'str', $node->webform_civicrm['data']);
 
         }
         else {
           $form['extra']['items']['#description'] .= '<div id="civicrm-ajax" style="color:green; font-weight:bold; margin-top:0.5em;">'. l(t('Reload options'), $_GET['q'], array('query' => 'reset=1', 'attributes' => array('style' => 'color:blue;',
           'onclick' => "$(this).addClass('views-throbbing');
             $.ajax({
-              url: '/webform-civicrm/js/". arg(1) ."/$key',
+              url: '/webform-civicrm/js/". arg(1) ."/$fid',
               success: function(data) {
                 $('#edit-extra-items').val(data);
                 $('#civicrm-ajax').html('$complete_msg');
@@ -702,7 +707,7 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
           }
           $form['extra']['items']['#default_value'] = '';
         }
-        $groups = webform_civicrm_get_options('groups', 'arr');
+        $groups = webform_civicrm_get_options('groups');
         $form['value']['#type'] = 'hidden';
         $defaults_selected = explode(',', $form['value']['#default_value']);
 
