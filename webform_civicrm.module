@@ -81,7 +81,7 @@ function webform_civicrm_nodeapi(&$node, $op, $teaser, $page) {
       break;
 
     case 'delete':
-      if ($node->webform) {
+      if (isset($node->webform)) {
         db_query('DELETE FROM {webform_civicrm_forms} WHERE nid = %d', $node->nid);
         // Submissions have already been deleted from webform_submissions table, so we'll do the opposite of a join to find them
         db_query('DELETE FROM {webform_civicrm_submissions} WHERE sid NOT IN (SELECT sid FROM {webform_submissions})');

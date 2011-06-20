@@ -234,7 +234,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
       $vals['message'] = '';
     }
     // Write/update record
-    if (!isset($node->webform_civicrm)) {
+    if (empty($node->webform_civicrm)) {
       drupal_write_record('webform_civicrm_forms', $vals);
       drupal_set_message(t('CiviCRM processing for this form is now enabled.'));
     }
@@ -379,7 +379,9 @@ function webform_civicrm_process_submission($node, $submission) {
         'details' => l(t('View Webform Submission'), 'node/'. $node->nid .'/submission/'. $submission->sid)
       );
       $result = civicrm_activity_create($act_params);
-      $act = $result['id'];
+      if (!empty($result['id'])) {
+        $act = $result['id'];
+      }
     }
     db_query('INSERT INTO {webform_civicrm_submissions} SET sid = %d, contact_id = %d, activity_id = %d', $submission->sid, $cid, $act);
   }
@@ -544,9 +546,10 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
   }
   // Form alterations for unknown contacts
   if (!$cid) {
-    $form['#prefix'] .= filter_filter('process', 1, NULL, $settings['prefix_unknown']);
+    $form['#prefix'] = filter_filter('process', 1, NULL, $settings['prefix_unknown']);
     if ($settings['block_unknown_users']) {
-      $form = array();
+      $form['#access'] = FALSE;
+      drupal_set_message(t('Sorry, you do not have permission to access this form.'), 'warning');
     }
     return;
   }
