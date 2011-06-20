@@ -549,8 +549,8 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
   if (!$cid) {
     $form['#prefix'] = check_markup($settings['prefix_unknown']);
     if ($settings['block_unknown_users']) {
-      $form['submitted'] = array();
-      drupal_set_message(t('Sorry, you do not have permission to access this form.'));
+      $form['#access'] = FALSE;
+      drupal_set_message(t('Sorry, you do not have permission to access this form.'), 'warning');
     }
     return;
   }
