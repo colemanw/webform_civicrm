@@ -828,8 +828,8 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       $form['#prefix'] = filter_filter('process', 1, NULL, $settings['prefix_unknown']);
     }
     if ($settings['block_unknown_users']) {
-      $form = array();
-      drupal_set_message(t('Sorry, you do not have permission to access this form.'));
+      $form['#access'] = FALSE;
+      drupal_set_message(t('Sorry, you do not have permission to access this form.'), 'warning');
     }
     return;
   }
