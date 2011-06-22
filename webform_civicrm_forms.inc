@@ -19,6 +19,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   $sets = webform_civicrm_get_fields('sets');
   $lists = webform_civicrm_get_fields('lists');
   if (!empty($form_state['values'])) {
+    webform_civicrm_process_form_settings($form, $form_state);
     $enabled = $form_state['values'] + webform_civicrm_enabled_fields($node, 'bool');
     $settings = $form_state['values'];
   }
@@ -34,7 +35,6 @@ function webform_civicrm_configure_form(&$form_state, $node) {
             1 => array(
               'contact' => array(1 => array('contact_type' => 'individual', 'contact_sub_type' => NULL)),
               'activity_target' => 1,
-              'number_of_email' => 1,
             ),
           ),
         ),
@@ -122,24 +122,109 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     '#title' => t('Create Activity'),
     '#description' => t('Create an activity for contacts when this form is submitted?')
   );
-  $form['act']['activity_type_id'] = array(
+  if ($case_types = webform_civicrm_get_options('case_type')) {
+    $form['act']['case_type_id'] = array(
+      '#type' => 'select',
+      '#title' => t('CiviCase Type'),
+      '#description' => t('Is this activity part of a case?'),
+      '#options' => array(t('- no case -')) + $case_types,
+      '#ahah' => array(
+        'path' => 'webform-civicrm/js/' . $node->nid . '/civicrm_ahah.act.case',
+        'wrapper' => 'civicrm-ahah-case',
+        'effect' => 'fade',
+      ),
+    );
+  }
+  $form['act']['case'] = array(
+    '#prefix' => '<div class="civicrm-ahah-wrapper" id="civicrm-ahah-case">',
+    '#value' => ' ',
+    '#suffix' => '</div>',
+  );
+  $param = NULL;
+  if (isset($data['case'][1]['case'][1]['case_type_id'])) {
+    $form['act']['case_type_id']['#default_value'] = $data['case'][1]['case'][1]['case_type_id'];
+    $param = '7';
+    $form['act']['case']['case_fieldset'] = array(
+      '#type'  => 'fieldset',
+      '#title' => t('Case Settings'),
+    );
+    $form['act']['case']['case_fieldset']['case_status_id'] = array(
+      '#type' => 'select',
+      '#title' => t('Case Status'),
+      '#description' => t('If a "@type" case with this status already exists for this contact, the activity will be added to that case. Otherwise a new case will be opened with this status.', array('@type' => $case_types[$data['case'][1]['case'][1]['case_type_id']])),
+      '#options' => webform_civicrm_get_options('case_status'),
+    );
+    if (isset($data['case'][1]['case'][1]['status_id'])) {
+      $form['act']['case']['case_fieldset']['case_status_id']['#default_value'] = $data['case'][1]['case'][1]['status_id'];
+    }
+    $form['act']['case']['case_fieldset']['case_medium_id'] = array(
+      '#type' => 'select',
+      '#title' => t('Medium'),
+      '#description' => t('Medium for the "open case" activity for new cases.'),
+      '#options' => webform_civicrm_get_options('encounter_medium'),
+    );
+    if (isset($data['case'][1]['case'][1]['medium_id'])) {
+      $form['act']['case']['case_fieldset']['case_medium_id']['#default_value'] = $data['case'][1]['case'][1]['medium_id'];
+    }
+    $form['act']['case']['case_fieldset']['case_subject'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Case Subject'),
+      '#description' => t('Optional subject for "open case" activity for new cases.'),
+    );
+    if (isset($data['case'][1]['case'][1]['subject'])) {
+      $form['act']['case']['case_fieldset']['case_subject']['#default_value'] = $data['case'][1]['case'][1]['subject'];
+    }
+    else {
+      $form['act']['case']['case_fieldset']['case_subject']['#default_value'] = check_plain($node->title);
+    }
+    $form['act']['case']['case_fieldset']['case_creator_id'] = array(
+      '#type' => 'textfield',
+      '#size' => 5,
+      '#required' => TRUE,
+      '#title' => t('Case Manager ID'),
+      '#description' => t('Contact ID of "case manager" for newly created cases.'),
+    );
+    if (isset($data['case'][1]['case'][1]['creator_id'])) {
+      $form['act']['case']['case_fieldset']['case_creator_id']['#default_value'] = $data['case'][1]['case'][1]['creator_id'];
+    }
+    else {
+      global $user;
+      $result = webform_civicrm_api('uf_match', 'get', array('uf_id' => $user->uid));
+      if (!empty($result['values'])) {
+        $result = array_pop($result['values']);
+        $form['act']['case']['case_fieldset']['case_creator_id']['#default_value'] = $result['contact_id'];
+      }
+    }
+  }
+  $act_types = webform_civicrm_get_options('activity_type', $param);
+  $form['act']['case']['activity_type_id'] = array(
     '#type' => 'select',
     '#title' => t('Activity Type'),
-    '#options' => array(t('- no activity -')) + webform_civicrm_get_options('activity_type'),
+    '#options' => array(t('- no activity -')) + $act_types,
     '#ahah' => array(
-      'path' => 'webform-civicrm/js/' . $node->nid . '/civicrm_ahah.act.activity_fields',
+      'path' => 'webform-civicrm/js/' . $node->nid . '/civicrm_ahah.act.case.activity_fields',
       'wrapper' => 'civicrm-ahah-activity-fields',
       'effect' => 'fade',
     ),
   );
-  $form['act']['activity_fields'] = array(
+  $form['act']['case']['activity_fields'] = array(
     '#prefix' => '<div class="civicrm-ahah-wrapper" id="civicrm-ahah-activity-fields">',
     '#value' => ' ',
     '#suffix' => '</div>',
   );
   if (isset($data['activity'][1]['activity'][1]['activity_type_id'])) {
-    $form['act']['activity_type_id']['#default_value'] = $settings['activity_type_id'] = $data['activity'][1]['activity'][1]['activity_type_id'];
-    $form['act']['activity_fields']['activity_subject'] = array(
+    $form['act']['case']['activity_type_id']['#default_value'] = $settings['activity_type_id'] = $data['activity'][1]['activity'][1]['activity_type_id'];
+    $act_status_ids = webform_civicrm_get_options('activity_status');
+    $form['act']['case']['activity_fields']['existing_activity_status'] = array(
+      '#type' => 'select',
+      '#title' => t('Update Existing Activity'),
+      '#description' => t('If a "@type" activity with this status already exists for this contact, it will be updated. Otherwise a new one will be created', array('@type' => $act_types[$settings['activity_type_id']])),
+      '#options' => array(t('- always create new activity -')) + $act_status_ids,
+    );
+    if (isset($data['activity'][1]['existing_activity_status'])) {
+      $form['act']['case']['activity_fields']['existing_activity_status']['#default_value'] = $data['activity'][1]['existing_activity_status'];
+    }
+    $form['act']['case']['activity_fields']['activity_subject'] = array(
       '#type' => 'textfield',
       '#title' => t('Default Activity Subject'),
       '#maxlength' => 255,
@@ -147,23 +232,23 @@ function webform_civicrm_configure_form(&$form_state, $node) {
       '#description' => t('You can override this default by allowing users to enter a subject (enable "Activity Subject" field below)'),
     );
     if (isset($data['activity'][1]['activity'][1]['subject'])) {
-      $form['act']['activity_fields']['activity_subject']['#default_value'] = $data['activity'][1]['activity'][1]['subject'];
+      $form['act']['case']['activity_fields']['activity_subject']['#default_value'] = $data['activity'][1]['activity'][1]['subject'];
     }
     else {
-      $form['act']['activity_fields']['activity_subject']['#default_value'] = check_plain($node->title);
+      $form['act']['case']['activity_fields']['activity_subject']['#default_value'] = check_plain($node->title);
     }
-    $form['act']['activity_fields']['activity_status_id'] = array(
+    $form['act']['case']['activity_fields']['activity_status_id'] = array(
       '#type' => 'select',
-      '#title' => t('Activity Status'),
-      '#options' => webform_civicrm_get_options('activity_status'),
+      '#title' => t('Set Activity Status'),
+      '#options' => $act_status_ids,
     );
     if (isset($data['activity'][1]['activity'][1]['status_id'])) {
-      $form['act']['activity_fields']['activity_status_id']['#default_value'] = $data['activity'][1]['activity'][1]['status_id'];
+      $form['act']['case']['activity_fields']['activity_status_id']['#default_value'] = $data['activity'][1]['activity'][1]['status_id'];
     }
     else {
-      $form['act']['activity_fields']['activity_status_id']['#default_value'] = 2;
+      $form['act']['case']['activity_fields']['activity_status_id']['#default_value'] = 2;
     }
-    $form['act']['activity_fields']['activity_link'] = array(
+    $form['act']['case']['activity_fields']['activity_link'] = array(
       '#type' => 'checkbox',
       '#title' => t('Include link to webform submission in activity details?'),
       '#default_value' => !(empty($data['activity'][1]['add_link']) && isset($data['activity'][1]['add_link']))
@@ -175,7 +260,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
             continue;
           }
         }
-        $form['act']['activity_fields'][$sid] = array(
+        $form['act']['case']['activity_fields'][$sid] = array(
           '#type' => 'fieldset',
           '#collapsible' => TRUE,
           '#title' => $set['label'],
@@ -183,7 +268,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
         );
         foreach ($set['fields'] as $fid => $field) {
           $fid = 'civicrm_1_activity_1_' . $fid;
-          $form['act']['activity_fields'][$sid][$fid] = array(
+          $form['act']['case']['activity_fields'][$sid][$fid] = array(
             '#type' => 'checkbox',
             '#title' => $field['name'],
             '#description' => $field['extra']['description'],
@@ -191,7 +276,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
             '#default_value' => !empty($enabled[$fid]),
           );
           if (isset($field['extra']['description'])) {
-            $form['act']['activity_fields'][$sid][$fid]['#description'] = $field['extra']['description'];
+            $form['act']['case']['activity_fields'][$sid][$fid]['#description'] = $field['extra']['description'];
           }
         }
       }
@@ -355,7 +440,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
           list($ftable, $fname) = explode('_', $fid, 2);
           $fid = 'civicrm_'. $n .'_contact_'. $i .'_' . $fid;
           if (array_key_exists('contact_type', $field)) {
-            if($field['contact_type'] != $c['contact'][1]['contact_type']) {
+            if ($field['contact_type'] != $c['contact'][1]['contact_type']) {
               continue;
             }
           }
@@ -440,33 +525,28 @@ function webform_civicrm_configure_form(&$form_state, $node) {
 }
 
 /**
- * Submission handler, saves CiviCRM options for a Webform node
- * Also called for AHAH form callbacks
+ * Build the $data array for webform settings; called during ahah callbacks and post-processing of the configure form.
  */
-function webform_civicrm_configure_form_submit($form, &$form_state) {
-  civicrm_initialize();
-  $vals =& $form_state['values'];
-  if ($form_state['clicked_button']['#id'] != 'edit-change-number-of-contacts'  || !empty($form_state['ahah_submission'])) {
-    $vals['number_of_contacts'] = $form['number_of_contacts']['#default_value'];
-  }
-  $vals['data'] = array('contact' => array());
+function webform_civicrm_process_form_settings($form, &$form_state) {
+  $vals = $form_state['values'];
+  $data = array('contact' => array());
   list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
   for ($n = 1; $n <= $vals['number_of_contacts']; ++$n) {
     if (isset($vals[$n . '_contact_type'])) {
-      $vals['data']['contact'][$n] = array(
+      $data['contact'][$n] = array(
         'activity_target' => $vals[$n . '_activity_target'],
       );
-      $vals['data']['contact'][$n]['contact'][1]['contact_type'] = $vals[$n . '_contact_type'];
-      $vals['data']['contact'][$n]['contact'][1]['contact_sub_type'] = NULL;
+      $data['contact'][$n]['contact'][1]['contact_type'] = $vals[$n . '_contact_type'];
+      $data['contact'][$n]['contact'][1]['contact_sub_type'] = NULL;
       if (array_key_exists('civicrm_'. $n .'_contact_1_contact_contact_sub_type', $vals)) {
         $sub_type = $vals['civicrm_'. $n .'_contact_1_contact_contact_sub_type'];
         if (array_key_exists($sub_type, $sub_types[$vals[$n . '_contact_type']])) {
-          $vals['data']['contact'][$n]['contact'][1]['contact_sub_type'] = $sub_type;
+          $data['contact'][$n]['contact'][1]['contact_sub_type'] = $sub_type;
         }
       }
     }
     else {
-      $vals['data']['contact'][$n] = array(
+      $data['contact'][$n] = array(
         'contact' => array(1 => array('contact_type' => 'individual', 'contact_sub_type' => NULL)),
         'activity_target' => 1,
       );
@@ -475,23 +555,44 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
   foreach ($vals as $key => $val) {
     if (strpos($key, '_number_of_') !== FALSE) {
       list($n, $k) = explode('_', $key, 2);
-      if (isset($vals['data']['contact'][$n])) {
-        $vals['data']['contact'][$n][$k] = $val;
+      if (isset($data['contact'][$n])) {
+        $data['contact'][$n][$k] = $val;
       }
     }
   }
   if (!empty($vals['activity_type_id'])) {
-    $vals['data']['activity'] = array(1 => array('activity' => array(1 => array('activity_type_id' => $vals['activity_type_id']))));
+    $data['activity'] = array(1 => array('activity' => array(1 => array('activity_type_id' => $vals['activity_type_id']))));
     if (isset($vals['activity_subject'])) {
-      $vals['data']['activity'][1]['activity'][1]['subject'] = $vals['activity_subject'];
-      $vals['data']['activity'][1]['activity'][1]['status_id'] = $vals['activity_status_id'];
-      $vals['data']['activity'][1]['add_link'] = $vals['activity_link'];
+      $data['activity'][1]['activity'][1]['subject'] = $vals['activity_subject'];
+      $data['activity'][1]['activity'][1]['status_id'] = $vals['activity_status_id'];
+      $data['activity'][1]['add_link'] = $vals['activity_link'];
+      $data['activity'][1]['existing_activity_status'] = $vals['existing_activity_status'];
     }
   }
+  if (!empty($vals['case_type_id'])) {
+    $data['case'] = array(1 => array('case' => array(1 => array('case_type_id' => $vals['case_type_id']))));
+    if (isset($vals['case_subject'])) {
+      $data['case'][1]['case'][1]['subject'] = $vals['case_subject'];
+      $data['case'][1]['case'][1]['status_id'] = $vals['case_status_id'];
+      $data['case'][1]['case'][1]['creator_id'] = $vals['case_creator_id'];
+      $data['case'][1]['case'][1]['medium_id'] = $vals['case_medium_id'];
+    }
+  }
+  $form_state['values']['data'] = $data;
+}
+
+
+/**
+ * Submission handler, saves CiviCRM options for a Webform node
+ */
+function webform_civicrm_configure_form_submit($form, &$form_state) {
   if ($form_state['clicked_button']['#id'] == 'edit-change-number-of-contacts' || !empty($form_state['ahah_submission'])) {
     $form_state['rebuild'] = TRUE;
     return;
   }
+  civicrm_initialize();
+  webform_civicrm_process_form_settings($form, $form_state);
+  $vals = $form_state['values'];
   $node = node_load($nid = arg(1));
   $fields = webform_civicrm_get_fields();
   $delete_me = $enabled = webform_civicrm_enabled_fields($node);
@@ -785,7 +886,8 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   civicrm_initialize();
   $node = $form['#node'];
   $settings = $node->webform_civicrm;
-
+  $data = $settings['data'];
+  global $user;
   $id = array();
   // If this is an edit op, use the original IDs to avoid confusion
   if (!empty($form['#submission'])) {
@@ -796,7 +898,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   }
   else {
     require_once 'CRM/Contact/BAO/Contact/Permission.php';
-    $count = count($settings['data']['contact']);
+    $count = count($data['contact']);
     for ($i = 1; $i <= $count; ++$i) {
       if (!empty($_GET['cid' . $i])) {
         if (is_numeric($cid = $_GET['cid' . $i])) {
@@ -806,11 +908,10 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
         }
       }
     }
-    if (empty($id['cid'][1])) {
-      // If user is logged in, look up the CID
-      global $user;
-      if ($user->uid && $settings['data']['contact'][1]['contact'][1]['contact_type'] == 'individual') {
-        $result = webform_civicrm_api('uf_match', 'get', array('uf_id' => $user->uid));
+    // If user is logged in, look up the CID
+    if (empty($id['cid'][1]) && $user->uid && $data['contact'][1]['contact'][1]['contact_type'] == 'individual') {
+      $result = webform_civicrm_api('uf_match', 'get', array('uf_id' => $user->uid));
+      if (!empty($result['values'])) {
         $result = array_pop($result['values']);
         $id['cid'][1] = $result['contact_id'];
       }
@@ -819,6 +920,18 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       if (is_numeric($_GET['aid'])) {
         $id['act'][1] = $_GET['aid'];
       }
+    }
+    elseif (!empty($data['activity'][1]['existing_activity_status']) && !empty($id['cid'][1])) {
+      $params = array(
+        'contact_id' => $id['cid'][1],
+        'activity_type_id' => $data['activity'][1]['activity'][1]['activity_type_id'],
+        'status_id' => $data['activity'][1]['existing_activity_status'],
+      );
+      if (!empty($id['case'][1])) {
+        $params['case_id'] = $id['case'][1];
+      }
+      $result = webform_civicrm_api('activity', 'get', $params);
+      //TODO
     }
   }
 
@@ -836,7 +949,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   // Form alterations for known contacts
   require_once 'api/api.php';
   $enabled = webform_civicrm_enabled_fields($node);
-  $contacts = $settings['data']['contact'];
+  $contacts = $data['contact'];
   $data = array('contact' => array());
   $core = array('contact', 'address', 'email', 'phone', 'website');
   foreach ($contacts as $c => $contact) {
@@ -845,7 +958,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       foreach ($core as $field) {
         if (!empty($contact['number_of_' . $field]) || $field == 'contact') {
           $result = webform_civicrm_api($field, 'get', array('contact_id' => $id['cid'][$c]));
-          if ($result['count']) {
+          if (!empty($result['count'])) {
             $result = array_merge(array(0), array_values($result['values']));
             unset($result[0]);
             // Load address custom data
@@ -889,11 +1002,11 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
 
   if (!empty($id['act'][1])) {
     $result = webform_civicrm_api('activity', 'get', array('activity_id' => $id['act'][1], 'return.target_contact_id' => 1, 'return.assignee_contact_id' => 1));
-    if(isset($result['values'][$id['act'][1]])) {
+    if (isset($result['values'][$id['act'][1]])) {
       $act = $result['values'][$id['act'][1]];
       $valid = FALSE;
       // Verify that this activity is the right type and that our contacts have some involvement in it
-      if ($act['activity_type_id'] == $settings['data']['activity'][1]['activity'][1]['activity_type_id']) {
+      if ($act['activity_type_id'] == $data['activity'][1]['activity'][1]['activity_type_id']) {
         foreach ($id['cid'] as $cid) {
           if ($act['source_contact_id'] == $cid || in_array($cid, $act['target_contact_id']) || in_array($cid, $act['assignee_contact_id'])) {
             $valid = TRUE;
@@ -912,7 +1025,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   }
 
   if ($settings['prefix_known']) {
-    $form['#prefix'] = filter_filter('process', 1, NULL, webform_civicrm_replace_tokens($settings['prefix_known'], $contact));
+    $form['#prefix'] = filter_filter('process', 1, NULL, webform_civicrm_replace_tokens($settings['prefix_known'], $data['contact'][$c]['contact'][1]));
   }
 
   if (!empty($id)) {
@@ -931,6 +1044,6 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   webform_civicrm_fill_values($form['submitted'], $data);
 
   if ($settings['message']) {
-    webform_civicrm_set_message($settings['message'], $contact);
+    webform_civicrm_set_message($settings['message'], $data['contact'][$c]['contact'][1]);
   }
 }

@@ -303,9 +303,10 @@ function webform_civicrm_process_submission($node, &$submission) {
 /**
  * Get options from various civicrm tables
  * @Param $option_group: option group name or id
+ * @Param $param: some extra info for the query
  * @Return array
  */
-function webform_civicrm_get_options($option_group) {
+function webform_civicrm_get_options($option_group, $param = NULL) {
   $vars = $arr = array();
   if ($option_group == 'country') {
     $config = CRM_Core_Config::singleton();
@@ -338,12 +339,16 @@ function webform_civicrm_get_options($option_group) {
       $vars[1] = array($option_group, 'Integer');
     }
     else {
-      $sql .= "(SELECT id FROM civicrm_option_group WHERE name = %1)";
+      $sql .= '(SELECT id FROM civicrm_option_group WHERE name = %1)';
       $vars[1] = array($option_group, 'String');
     }
     // Exclude reserved activity types
-    if ($option_group == 'activity_type') {
+    if ($option_group == 'activity_type' && !$param) {
       $sql .= ' AND component_id IS NULL';
+    }
+    // Optionally include some activity types
+    elseif ($option_group == 'activity_type') {
+      $sql .= " AND (component_id IS NULL OR component_id IN ($param))";
     }
     $sql .= ' ORDER BY weight, label';
   }
@@ -494,8 +499,9 @@ function webform_civicrm_js_options($key, $str='') {
     if (strpos($key, 'contact') !== FALSE) {
       $snippet['#suffix'] = '<script type="text/javascript">webform_civicrm_relationship_options();</script>';
     }
-    $output = theme('status_messages') . drupal_render($snippet);
-    exit(drupal_json(array('status' => TRUE, 'data' => $output)));
+    $messages = theme('status_messages');
+    $output = drupal_render($snippet);
+    exit(drupal_json(array('data' => $output)));
   }
 
   civicrm_initialize();
@@ -1050,7 +1056,7 @@ function webform_civicrm_get_fields($var = 'fields') {
 
 
 /**
- * Explodes form key into an array and verifies that it has the right number of pieces
+ * Explodes form key into an array and verifies that it is in the right format
  */
 function webform_civicrm_explode_key($key) {
   $pieces = explode('_', $key, 6);
@@ -1131,7 +1137,6 @@ function webform_civicrm_process_ahah_form() {
   // Enable the submit/validate handlers to determine whether AHAH-submittted.
   $form_state['ahah_submission'] = TRUE;
   $form['#programmed'] = $form['#redirect'] = FALSE;
-  $form['#validate'] = NULL;
   drupal_process_form($form_id, $form, $form_state);
   $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
   return $form;
