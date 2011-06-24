@@ -102,6 +102,9 @@ function webform_civicrm_theme() {
     'webform_results_submissions' => array(
       'arguments' => array('element' => NULL),
       'template' => 'webform-results-submissions'
+    ),
+    'webform_civicrm_options' => array(
+      'arguments' => array('element' => NULL),
     )
   );
   return $theme;

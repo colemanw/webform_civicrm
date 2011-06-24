@@ -720,160 +720,6 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
   }
 }
 
-/**
- * Custom Processing for CiviCRM groups form
- */
-function webform_civicrm_process_group_selection($form, &$form_state) {
-  if ($form_state['values']['civicrm_groups_fieldset']['civicrm_groups']) {
-    civicrm_initialize();
-    $groups = webform_civicrm_get_options('groups');
-    $items = '';
-    foreach ($form_state['values']['civicrm_groups_fieldset']['civicrm_groups'] as $gid) {
-      if ($gid) {
-        if ($items) {
-          $items .= "\n";
-        }
-        $items .= $gid .'|'. $groups[$gid];
-      }
-    }
-    $form_state['values']['extra']['items'] = $items;
-  }
-  $form_state['values']['value'] = '';
-  foreach ($form_state['values']['civicrm_groups_fieldset']['civicrm_group_defaults'] as $gid) {
-    if (!$gid) {
-      continue;
-    }
-    if (!empty($form_state['values']['value'])) {
-      $form_state['values']['value'] .= ',';
-    }
-    $form_state['values']['value'] .= $gid;
-  }
-}
-
-
-/**
- * Alter back-end webform component edit forms.
- * Called by hook_form_alter() whenever editing a webform component.
- */
-function _webform_civicrm_webform_component_form_alter(&$form) {
-  // Is this a CiviCRM-enabled webform?
-  if (db_result(db_query('SELECT nid FROM {webform_civicrm_forms} WHERE nid = %d', $form['nid']['#value']))) {
-    civicrm_initialize();
-    $fields = webform_civicrm_get_fields();
-    if (!($pieces = webform_civicrm_explode_key($form['form_key']['#default_value']))) {
-      return;
-    }
-    list($lobo, $i, $ent, $n, $table, $key) = $pieces;
-    // Is this component a CiviCRM field?
-    if (array_key_exists($table .'_'. $key, $fields) || 
-        ($lobo == 'civicrm' && $table == 'fieldset')) {
-      drupal_add_css(drupal_get_path('module', 'webform_civicrm') .'/webform_civicrm_style.css', 'module', 'all', FALSE);
-
-      // Prevent users from editing the form_key and breaking things
-      $form['form_key']['#disabled'] = TRUE;
-      $fid = $form['form_key']['#value'] = $form['form_key']['#default_value'];
-      $form['form_key']['#description'] = t('Automatically set for use by CiviCRM processing.');
-
-      // Adds the ability to reload option lists via AJAX (also works without JS)
-      $lists = webform_civicrm_get_fields('lists');
-      if (array_key_exists($key, $lists)) {
-        unset($form['extra']['options_source']);
-        $complete_msg = t('The options have been reloaded.');
-        $form['extra']['items']['#description'] = t("These options were automatically selected from the CiviCRM database. You may change their order or delete unwanted options as you see fit. You may also change the labels (text after the |) to be more descriptive. However, adding new items here that are <em>not</em> in CiviCRM won't work. Instead, create your new options in CiviCRM, then click here to refresh this list:");
-        if (!empty($_GET['reset'])) {
-          $node = node_load(arg(1));
-          $form['extra']['items']['#description'] .= '<div style="color:green; font-weight:bold; margin-top:0.5em;">'. $complete_msg .'</div>';
-          $form['extra']['items']['#default_value'] = webform_civicrm_field_options($fid, 'str', $node->webform_civicrm['data']);
-
-        }
-        else {
-          $form['extra']['items']['#description'] .= '<div id="civicrm-ajax" style="color:green; font-weight:bold; margin-top:0.5em;">'. l(t('Reload options'), $_GET['q'], array('query' => 'reset=1', 'attributes' => array(
-          'style' => 'color:blue;',
-          'onclick' => "$(this).addClass('views-throbbing');
-            $.ajax({
-              url: '/webform-civicrm/js/". arg(1) ."/$fid',
-              success: function(data) {
-                $('#edit-extra-items').val(data);
-                $('#civicrm-ajax').html('$complete_msg');
-              }
-            }); return false;"))) .
-          '</div>';
-        }
-      }
-      // Simplify form for hidden fields
-      elseif ($key == 'contact_id' || $key == 'external_identifier') {
-        $form['value']['#type'] = 'hidden';
-        $form['value']['#value'] = 0;
-        $form['#prefix'] = '<p>'. t('There are no configuration options for this hidden field. You can use it for post processing, for example to include a link to the CiviCRM contact in an email.') .'</p>';
-      }
-
-      // Special options for CiviCRM groups
-      if ($key == 'groups' || $key == 'groups_hidden') {
-        if ($key == 'groups') {
-          $form['extra']['items']['#type'] = 'hidden';
-          $form['extra']['items']['#required'] = FALSE;
-          unset($form['extra']['options_source']);
-          $selected = array();
-          $defaults = explode("\n", trim($form['extra']['items']['#default_value']));
-          foreach ($defaults as $d) {
-            list($k, $v) = explode('|', $d);
-            $selected[] = trim($k);
-          }
-          $form['extra']['items']['#default_value'] = '';
-        }
-        $groups = webform_civicrm_get_options('groups');
-        $form['value']['#type'] = 'hidden';
-        $defaults_selected = explode(',', $form['value']['#default_value']);
-
-        $form['civicrm_groups_fieldset'] = array(
-          '#type'  => 'fieldset',
-          '#title' => t('Groups'),
-          '#description' => t('Which group(s) is the user allowed to join on this form? (Often used for letting people subscribe to mailing lists)'),
-        );
-        if ($key == 'groups') {
-          $form['civicrm_groups_fieldset']['civicrm_groups'] = array(
-            '#title' => t('Allowed Groups'),
-            '#type'  => 'checkboxes',
-            '#required' => TRUE,
-            '#options' => $groups,
-            '#default_value' => $selected,
-            '#prefix' => '<div class="web-civi-3-col">',
-            '#suffix' => '</div>',
-          );
-        }
-        $form['civicrm_groups_fieldset']['civicrm_group_defaults'] = array(
-          '#title' => t('Checked by Default on Webform?'),
-          '#type'  => 'checkboxes',
-          '#options' => $groups,
-          '#default_value' => $defaults_selected,
-        );
-        if ($key == 'groups') {
-          $form['civicrm_groups_fieldset']['civicrm_group_defaults']['#prefix'] = '<div class="web-civi-3-col">';
-          $form['civicrm_groups_fieldset']['civicrm_group_defaults']['#suffix'] = '</div>';
-        }
-        else {
-          $form['civicrm_groups_fieldset']['#description'] = t('To which group(s) should users be automatically added when submitting this form?');
-          $form['civicrm_groups_fieldset']['civicrm_group_defaults']['#title'] = t('Add to Group');
-        }
-        array_unshift($form['#submit'], 'webform_civicrm_process_group_selection');
-      }
-      // Autocomplete widget for selecting tags
-      elseif ($key == 'tags') {
-        $form['value']['#title'] = t('Tags');
-        $form['value']['#description'] = t('Enter a comma-separated list of tags to add to contacts who submit this webform.') .'<br />'. t('Use the autocomplete to select existing tags, or you may add new ones.');
-        $form['value']['#type'] = 'textfield';
-        $form['value']['#size'] = 100;
-        $form['value']['#autocomplete_path'] = 'webform-civicrm/js/'. $form['nid']['#value'] .'/tags';
-      }
-      // Auto set multi-value option for other fields based on schema
-      elseif (!empty($form['extra']['multiple'])) {
-        $form['extra']['multiple']['#type'] = 'hidden';
-        $form['extra']['multiple']['#value'] = !empty($fields[$table .'_'. $key]['extra']['multiple']);
-      }
-    }
-  }
-}
-
 
 /**
  * Alter front-end of webforms: Called by hook_form_alter() when rendering a civicrm-enabled webform
@@ -1045,5 +891,183 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
 
   if ($settings['message']) {
     webform_civicrm_set_message($settings['message'], $data['contact'][$c]['contact'][1]);
+  }
+}
+
+
+/**
+ * Alter back-end webform component edit forms.
+ * Called by hook_form_alter() whenever editing a webform component.
+ */
+function _webform_civicrm_webform_component_form_alter(&$form) {
+  // Is this a CiviCRM-enabled webform?
+  if (db_result(db_query('SELECT nid FROM {webform_civicrm_forms} WHERE nid = %d', $form['nid']['#value']))) {
+    civicrm_initialize();
+    $fields = webform_civicrm_get_fields();
+    if (!($pieces = webform_civicrm_explode_key($form['form_key']['#default_value']))) {
+      return;
+    }
+    list($lobo, $i, $ent, $n, $table, $key) = $pieces;
+    // Is this component a CiviCRM field?
+    if (array_key_exists($table .'_'. $key, $fields) || 
+        ($lobo == 'civicrm' && $table == 'fieldset')) {
+      drupal_add_css(drupal_get_path('module', 'webform_civicrm') .'/webform_civicrm_style.css', 'module', 'all', FALSE);
+
+      // Prevent users from editing the form_key and breaking things
+      $form['form_key']['#disabled'] = TRUE;
+      $fid = $form['form_key']['#value'] = $form['form_key']['#default_value'];
+      $form['form_key']['#description'] = t('Automatically set for use by CiviCRM processing.');
+
+      $lists = webform_civicrm_get_fields('lists');
+      // Here's a much nicer interface for choosing options than the standard textfields
+      if (array_key_exists($key, $lists)) {
+        $node = node_load(arg(1));
+        $element = $node->webform['components'][arg(4)];
+        $options = $sort = webform_civicrm_field_options($fid, 'arr', $node->webform_civicrm['data']);
+        $defaults_selected = explode(',', $element['value']);
+        $form['value']['#type'] = 'hidden';
+        $form['civicrm_options_fieldset'] = array(
+          '#type'  => 'fieldset',
+          '#title' => t('Options'),
+          '#description' => t('Enable the options you wish for this hidden form element.'),
+          '#theme' => 'webform_civicrm_options',
+        );
+        $option_keys = array();
+        foreach ($options as $k => $v) {
+          $option_keys[$k] = '';
+          $form['civicrm_options_fieldset']['civicrm_option_name_'. $k] = array('#value' => $v);
+        }
+        if ($element['type'] != 'hidden') {
+          $form['civicrm_options_fieldset']['#description'] = t('Drag the arrows to re-order these options. Click the "enabled" checkbox to show/remove an item from the form. Set the label as you want it to appear on the form. Check the "default" box for an option to be selected by default when a user views the form.');
+          $options_selected = webform_civicrm_str2array($element['extra']['items']);
+          // Sort weights. Unselected options will be at the bottom.
+          $option_keys = array();
+          foreach ($options_selected as $k => $v) {
+            if (array_key_exists($k, $options)) {
+	            $option_keys[$k] = '';
+	            unset($sort[$k]);
+            }
+          }
+          foreach ($sort as $k => $v) {
+            $option_keys[$k] = '';
+          }
+          $form['extra']['items']['#type'] = 'hidden';
+          $form['extra']['items']['#required'] = FALSE;
+          $form['extra']['options_source']['#access'] = FALSE;
+          $form['civicrm_options_fieldset']['civicrm_options'] = array(
+            '#type'  => 'checkboxes',
+            '#required' => TRUE,
+            '#options' => $option_keys,
+            '#default_value' => array_keys($options_selected),
+          );
+          $w = 0;
+	        foreach ($options as $k => $v) {
+	          $form['civicrm_options_fieldset']['civicrm_option_label_'. $k] = array(
+	            '#type' => 'textfield',
+	            '#size' => 30,
+	            '#default_value' => $v,
+	          );
+	          if (!empty($options_selected[$k])) {
+	            $form['civicrm_options_fieldset']['civicrm_option_label_'. $k]['#default_value'] = $options_selected[$k];
+	          }
+	          $form['civicrm_options_fieldset']['civicrm_option_weight_'. $k] = array(
+	            '#type' => 'textfield',
+	            '#size' => 3,
+	            '#default_value' => ++$w
+            );
+	        }
+        }
+        $form['civicrm_options_fieldset']['civicrm_defaults'] = array(
+          '#type'  => 'checkboxes',
+          '#options' => $option_keys,
+          '#default_value' => $defaults_selected,
+        );
+        array_unshift($form['#submit'], 'webform_civicrm_process_options_selection');
+      }
+      // Simplify form for hidden fields
+      elseif ($key == 'contact_id' || $key == 'external_identifier') {
+        $form['value']['#type'] = 'hidden';
+        $form['value']['#value'] = 0;
+        $form['#prefix'] = '<p>'. t('There are no configuration options for this hidden field. You can use it for post processing, for example to include a link to the CiviCRM contact in an email.') .'</p>';
+      }
+
+      // Autocomplete widget for selecting tags
+      if ($key == 'tags') {
+        $form['value']['#title'] = t('Tags');
+        $form['value']['#description'] = t('Enter a comma-separated list of tags to add to contacts who submit this webform.') .'<br />'. t('Use the autocomplete to select existing tags, or you may add new ones.');
+        $form['value']['#type'] = 'textfield';
+        $form['value']['#size'] = 100;
+        $form['value']['#autocomplete_path'] = 'webform-civicrm/js/'. $form['nid']['#value'] .'/tags';
+      }
+      // Auto set multi-value option for fields based on schema
+      elseif (!empty($form['extra']['multiple'])) {
+        $form['extra']['multiple']['#type'] = 'hidden';
+        $form['extra']['multiple']['#value'] = !empty($fields[$table .'_'. $key]['extra']['multiple']);
+        if (empty($fields[$table .'_'. $key]['extra']['multiple'])) {
+          $form['civicrm_options_fieldset']['civicrm_defaults']['#type'] = 'radios';
+          $form['civicrm_options_fieldset']['civicrm_defaults']['#default_value'] = $element['value'];
+        }
+      }
+    }
+  }
+}
+
+function theme_webform_civicrm_options($element) {
+  if (empty($element['civicrm_options'])) {
+    $header = array(t('Item'), t('Selected'));
+  }
+  else {
+    $header = array(t('Item'), t('Weight'), t('Enabled'), t('Label'), t('Default'));
+    drupal_add_tabledrag('civicrm-options-table', 'order', 'self', 'civicrm-option-weight');
+  }
+  $table = array();
+  foreach (element_children($element['civicrm_defaults']) as $k) {
+    $row = array(drupal_render($element['civicrm_option_name_'. $k]));
+    if (!empty($element['civicrm_options'])) {
+      $element['civicrm_option_weight_'. $k]['#attributes']['class'] = 'civicrm-option-weight';
+      $row[] = drupal_render($element['civicrm_option_weight_'. $k]);
+      $row[] = drupal_render($element['civicrm_options'][$k]);
+      $row[] = drupal_render($element['civicrm_option_label_'. $k]);
+    }
+    $row[] = drupal_render($element['civicrm_defaults'][$k]);
+    $table[] = array(
+      'data' => $row,
+      'class' => 'draggable',
+    );
+  }
+  drupal_render($element);
+  return theme_table($header, $table, array('id' => 'civicrm-options-table'));
+}
+
+
+/**
+ * Custom Processing for CiviCRM webform component option lists
+ */
+function webform_civicrm_process_options_selection($form, &$form_state) {
+  $vals =& $form_state['values'];
+  $vals['value'] = '';
+  if (is_array($vals['civicrm_options_fieldset']['civicrm_defaults'])) {
+	  foreach ($vals['civicrm_options_fieldset']['civicrm_defaults'] as $k) {
+	    if ($k) {
+	      $vals['value'] .= ($vals['value'] ? ',' : '') . $k;
+	    }
+	  }
+  }
+  else {
+    $vals['value'] = $vals['civicrm_options_fieldset']['civicrm_defaults'];
+  }
+  if (!empty($vals['civicrm_options_fieldset']['civicrm_options'])) {
+    $items = array();
+    $a = 0;
+    foreach ($vals['civicrm_options_fieldset']['civicrm_options'] as $k) {
+      if ($k) {
+        if (!($label = $vals['civicrm_options_fieldset']['civicrm_option_label_'. $k])) {
+          $label = $form['civicrm_options_fieldset']['civicrm_option_name_'. $k]['#value'];
+        }
+        $items[$vals['civicrm_options_fieldset']['civicrm_option_weight_'. $k] .'.'. $a++] = $k .'|'. $label;
+      }
+    }
+    ksort($items);
+    $vals['extra']['items'] = implode("\n", $items);
   }
 }
