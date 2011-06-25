@@ -671,6 +671,14 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
             if (!isset($field['extra']['aslist'])) {
               $field['extra']['aslist'] = 1;
             }
+            if (is_numeric($lists[$name])) {
+              // Lookup defaults for custom fields
+              $sql = 'SELECT value FROM civicrm_option_value WHERE is_default AND is_active AND option_group_id = '. $lists[$name];
+              $dao =& CRM_Core_DAO::executeQuery($sql);
+              while ($dao->fetch()) {
+                $field['value'] .= ($field['value'] ? ',' : '') . $dao->value;
+              }
+            }
           }
           if (strpos($table, 'cg') === FALSE) {
             unset($field['extra']['description']);
@@ -693,7 +701,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
             }
             $field['pid'] = $set;
           }
-          // Create webform component
+          // Save webform component
           $fid = webform_component_insert($field);
 
           $new_fields = TRUE;
@@ -924,7 +932,10 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
         $node = node_load(arg(1));
         $element = $node->webform['components'][arg(4)];
         $options = $sort = webform_civicrm_field_options($fid, 'arr', $node->webform_civicrm['data']);
-        $defaults_selected = explode(',', $element['value']);
+        $defaults_selected = array();
+        foreach (explode(',', $element['value']) as $v) {
+          $defaults_selected[] = '_web_civi_option_selected_' . $v;
+        }
         $form['value']['#type'] = 'hidden';
         $form['civicrm_options_fieldset'] = array(
           '#type'  => 'fieldset',
@@ -934,22 +945,23 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
         );
         $option_keys = array();
         foreach ($options as $k => $v) {
-          $option_keys[$k] = '';
+          $option_keys['_web_civi_option_selected_' . $k] = '';
           $form['civicrm_options_fieldset']['civicrm_option_name_'. $k] = array('#value' => $v);
         }
         if ($element['type'] != 'hidden') {
           $form['civicrm_options_fieldset']['#description'] = t('Drag the arrows to re-order these options. Click the "enabled" checkbox to show/remove an item from the form. Set the label as you want it to appear on the form. Check the "default" box for an option to be selected by default when a user views the form.');
           $options_selected = webform_civicrm_str2array($element['extra']['items']);
           // Sort weights. Unselected options will be at the bottom.
-          $option_keys = array();
+          $option_keys = $option_selected_keys = array();
           foreach ($options_selected as $k => $v) {
             if (array_key_exists($k, $options)) {
-	            $option_keys[$k] = '';
-	            unset($sort[$k]);
+              $option_keys['_web_civi_option_selected_' . $k] = '';
+              $option_selected_keys[] = '_web_civi_option_selected_' . $k;
+              unset($sort[$k]);
             }
           }
           foreach ($sort as $k => $v) {
-            $option_keys[$k] = '';
+            $option_keys['_web_civi_option_selected_' . $k] = '';
           }
           $form['extra']['items']['#type'] = 'hidden';
           $form['extra']['items']['#required'] = FALSE;
@@ -958,30 +970,42 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
             '#type'  => 'checkboxes',
             '#required' => TRUE,
             '#options' => $option_keys,
-            '#default_value' => array_keys($options_selected),
+            '#default_value' => $option_selected_keys,
           );
           $w = 0;
-	        foreach ($options as $k => $v) {
-	          $form['civicrm_options_fieldset']['civicrm_option_label_'. $k] = array(
-	            '#type' => 'textfield',
-	            '#size' => 30,
-	            '#default_value' => $v,
-	          );
-	          if (!empty($options_selected[$k])) {
-	            $form['civicrm_options_fieldset']['civicrm_option_label_'. $k]['#default_value'] = $options_selected[$k];
-	          }
-	          $form['civicrm_options_fieldset']['civicrm_option_weight_'. $k] = array(
-	            '#type' => 'textfield',
-	            '#size' => 3,
-	            '#default_value' => ++$w
+          foreach ($option_keys as $k => $v) {
+            $k = str_replace('_web_civi_option_selected_', '', $k);
+            $form['civicrm_options_fieldset']['civicrm_option_label_'. $k] = array(
+              '#type' => 'textfield',
+              '#size' => 30,
+              '#default_value' => $v,
             );
-	        }
+            if (!empty($options_selected[$k])) {
+              $form['civicrm_options_fieldset']['civicrm_option_label_'. $k]['#default_value'] = $options_selected[$k];
+            }
+            $form['civicrm_options_fieldset']['civicrm_option_weight_'. $k] = array(
+              '#type' => 'textfield',
+              '#size' => 3,
+              '#default_value' => ++$w
+            );
+          }
         }
         $form['civicrm_options_fieldset']['civicrm_defaults'] = array(
           '#type'  => 'checkboxes',
           '#options' => $option_keys,
           '#default_value' => $defaults_selected,
         );
+        // Auto set multi-value option for fields based on schema
+        if (!empty($form['extra']['multiple'])) {
+          $form['extra']['multiple']['#type'] = 'hidden';
+          $form['extra']['multiple']['#value'] = !empty($fields[$table .'_'. $key]['extra']['multiple']);
+          if (empty($fields[$table .'_'. $key]['extra']['multiple'])) {
+            $form['civicrm_options_fieldset']['civicrm_defaults']['#type'] = 'radios';
+            if ($element['value'] !== '') {
+              $form['civicrm_options_fieldset']['civicrm_defaults']['#default_value'] = '_web_civi_option_selected_' . $element['value'];
+            }
+          }
+        }
         array_unshift($form['#submit'], 'webform_civicrm_process_options_selection');
       }
       // Simplify form for hidden fields
@@ -990,7 +1014,6 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
         $form['value']['#value'] = 0;
         $form['#prefix'] = '<p>'. t('There are no configuration options for this hidden field. You can use it for post processing, for example to include a link to the CiviCRM contact in an email.') .'</p>';
       }
-
       // Autocomplete widget for selecting tags
       if ($key == 'tags') {
         $form['value']['#title'] = t('Tags');
@@ -998,15 +1021,6 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
         $form['value']['#type'] = 'textfield';
         $form['value']['#size'] = 100;
         $form['value']['#autocomplete_path'] = 'webform-civicrm/js/'. $form['nid']['#value'] .'/tags';
-      }
-      // Auto set multi-value option for fields based on schema
-      elseif (!empty($form['extra']['multiple'])) {
-        $form['extra']['multiple']['#type'] = 'hidden';
-        $form['extra']['multiple']['#value'] = !empty($fields[$table .'_'. $key]['extra']['multiple']);
-        if (empty($fields[$table .'_'. $key]['extra']['multiple'])) {
-          $form['civicrm_options_fieldset']['civicrm_defaults']['#type'] = 'radios';
-          $form['civicrm_options_fieldset']['civicrm_defaults']['#default_value'] = $element['value'];
-        }
       }
     }
   }
@@ -1019,16 +1033,21 @@ function theme_webform_civicrm_options($element) {
   else {
     $header = array(t('Item'), t('Weight'), t('Enabled'), t('Label'), t('Default'));
     drupal_add_tabledrag('civicrm-options-table', 'order', 'self', 'civicrm-option-weight');
+    drupal_add_js(drupal_get_path('module', 'webform_civicrm') .'/webform_civicrm_options.js', 'module', 'header', FALSE);
   }
   $table = array();
   foreach (element_children($element['civicrm_defaults']) as $k) {
-    $row = array(drupal_render($element['civicrm_option_name_'. $k]));
+    $v = str_replace('_web_civi_option_selected_', '', $k);
+    $row = array(drupal_render($element['civicrm_option_name_'. $v]));
     if (!empty($element['civicrm_options'])) {
-      $element['civicrm_option_weight_'. $k]['#attributes']['class'] = 'civicrm-option-weight';
-      $row[] = drupal_render($element['civicrm_option_weight_'. $k]);
+      $element['civicrm_option_weight_'. $v]['#attributes']['class'] = 'civicrm-option-weight';
+      $element['civicrm_options'][$k]['#attributes']['class'] = 'civicrm-enabled';
+      $element['civicrm_option_label_'. $v]['#attributes']['class'] = 'civicrm-label';
+      $row[] = drupal_render($element['civicrm_option_weight_'. $v]);
       $row[] = drupal_render($element['civicrm_options'][$k]);
-      $row[] = drupal_render($element['civicrm_option_label_'. $k]);
+      $row[] = drupal_render($element['civicrm_option_label_'. $v]);
     }
+    $element['civicrm_defaults'][$k]['#attributes']['class'] = 'civicrm-default';
     $row[] = drupal_render($element['civicrm_defaults'][$k]);
     $table[] = array(
       'data' => $row,
@@ -1047,24 +1066,25 @@ function webform_civicrm_process_options_selection($form, &$form_state) {
   $vals =& $form_state['values'];
   $vals['value'] = '';
   if (is_array($vals['civicrm_options_fieldset']['civicrm_defaults'])) {
-	  foreach ($vals['civicrm_options_fieldset']['civicrm_defaults'] as $k) {
-	    if ($k) {
-	      $vals['value'] .= ($vals['value'] ? ',' : '') . $k;
-	    }
-	  }
+    foreach ($vals['civicrm_options_fieldset']['civicrm_defaults'] as $k) {
+      if ($k) {
+        $vals['value'] .= ($vals['value'] ? ',' : '') . str_replace('_web_civi_option_selected_', '', $k);
+      }
+    }
   }
   else {
-    $vals['value'] = $vals['civicrm_options_fieldset']['civicrm_defaults'];
+    $vals['value'] = str_replace('_web_civi_option_selected_', '', $vals['civicrm_options_fieldset']['civicrm_defaults']);
   }
   if (!empty($vals['civicrm_options_fieldset']['civicrm_options'])) {
     $items = array();
     $a = 0;
     foreach ($vals['civicrm_options_fieldset']['civicrm_options'] as $k) {
       if ($k) {
-        if (!($label = $vals['civicrm_options_fieldset']['civicrm_option_label_'. $k])) {
-          $label = $form['civicrm_options_fieldset']['civicrm_option_name_'. $k]['#value'];
+        $v = str_replace('_web_civi_option_selected_', '', $k);
+        if (!($label = $vals['civicrm_options_fieldset']['civicrm_option_label_'. $v])) {
+          $label = $form['civicrm_options_fieldset']['civicrm_option_name_'. $v]['#value'];
         }
-        $items[$vals['civicrm_options_fieldset']['civicrm_option_weight_'. $k] .'.'. $a++] = $k .'|'. $label;
+        $items[$vals['civicrm_options_fieldset']['civicrm_option_weight_'. $v] .'.'. $a++] = $v .'|'. $label;
       }
     }
     ksort($items);

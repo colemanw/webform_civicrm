@@ -1135,12 +1135,9 @@ function webform_civicrm_api($entity, $operation, $params) {
   $params['check_permissions'] = FALSE;
   $params['version'] = 3;
   $result = civicrm_api($entity, $operation, $params);
-  if (!empty($result['is_error'])) {
-    if (is_callable('dsm') && user_access('access devel information')) {
-      dsm($params);
-      dsm($result);
-      dsm(debug_backtrace());
-    }
+  if (!empty($result['is_error']) && is_callable('dsm') && user_access('access devel information')) {
+    dsm($result);
+    dsm(debug_backtrace());
   }
   return $result;
 }
