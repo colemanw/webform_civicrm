@@ -23,7 +23,6 @@ function webform_civicrm_schema() {
         'type' => 'text',
         'not null' => TRUE,
         'serialize' => TRUE,
-        'default' => '',
         'description' => 'Array of entity data for this webform',
       ),
       'prefix_known' => array(
@@ -178,7 +177,6 @@ function webform_civicrm_update_6200() {
     'type' => 'text',
     'not null' => TRUE,
     'serialize' => TRUE,
-    'default' => '',
     'description' => 'Array of entity data for this form',
   );
   db_add_field($ret, 'webform_civicrm_forms', 'data', $field);
