@@ -747,7 +747,6 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   if (!empty($form['#submission'])) {
     $submission = $form['#submission'];
     $id['cid'] = $submission->civicrm['contact_id'];
-    array_unshift($id['cid'], 0);
     $id['act'][1] = $submission->civicrm['activity_id'];
   }
   else {
