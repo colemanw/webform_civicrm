@@ -746,7 +746,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   // If this is an edit op, use the original IDs to avoid confusion
   if (!empty($form['#submission'])) {
     $submission = $form['#submission'];
-    $id['cid'] = explode('-', trim($submission->civicrm['contact_id'], '-'));
+    $id['cid'] = $submission->civicrm['contact_id'];
     array_unshift($id['cid'], 0);
     $id['act'][1] = $submission->civicrm['activity_id'];
   }
@@ -804,10 +804,10 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   require_once 'api/api.php';
   $enabled = webform_civicrm_enabled_fields($node);
   $contacts = $data['contact'];
-  $data = array('contact' => array());
+  $info = array('contact' => array());
   $core = array('contact', 'address', 'email', 'phone', 'website');
   foreach ($contacts as $c => $contact) {
-    $data['contact'][$c] = array();
+    $info['contact'][$c] = array();
     if (!empty($id['cid'][$c])) {
       foreach ($core as $field) {
         if (!empty($contact['number_of_' . $field]) || $field == 'contact') {
@@ -824,7 +824,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
                 }
               }
             }
-            $data['contact'][$c][$field] = $result;
+            $info['contact'][$c][$field] = $result;
           }
         }
       }
@@ -832,7 +832,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       foreach ($contact as $k => $v) {
         if (substr($k, 0, 12) == 'number_of_cg' && !empty($v)) {
           $custom = webform_civicrm_get_custom($id['cid'][$c]);
-          $data['contact'][$c] = $data['contact'][$c] + $custom;
+          $info['contact'][$c] = $info['contact'][$c] + $custom;
           break;
         }
       }
@@ -840,15 +840,15 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       if (!empty($enabled['civicrm_'. $c .'_contact_1_contact_preferred_communication_method'])) {
         $result = webform_civicrm_api('contact', 'get', array('contact_id' => $id['cid'][$c], 'return.preferred_communication_method' => 1));
         if (!empty($result['values'][$id['cid'][$c]]['preferred_communication_method'])) {
-          $data['contact'][$c]['contact'][1]['preferred_communication_method'] = $result['values'][$id['cid'][$c]]['preferred_communication_method'];
+          $info['contact'][$c]['contact'][1]['preferred_communication_method'] = $result['values'][$id['cid'][$c]]['preferred_communication_method'];
         }
       }
       // Set default values for group field
       if (array_key_exists('civicrm_'.$c.'_contact_1_other_groups', $enabled)) {
         $groups = webform_civicrm_api('group_contact', 'get', array('contact_id' => $id['cid'][$c]));
-        $data['contact'][$c]['other'][1]['groups'] = array();
+        $info['contact'][$c]['other'][1]['groups'] = array();
         foreach ($groups['values'] as $group) {
-          $data['contact'][$c]['other'][1]['groups'][] = $group['group_id'];
+          $info['contact'][$c]['other'][1]['groups'][] = $group['group_id'];
         }
       }
     }
@@ -870,7 +870,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       if ($valid) {
         $activity = array('activity' => array(1 => $result['values'][$id['act'][1]]));
         $custom = webform_civicrm_get_custom($id['act'][1], 'activity');
-        $data['activity'] = array(1 => ($activity + $custom));
+        $info['activity'] = array(1 => ($activity + $custom));
       }
       else {
         unset($id['act']);
@@ -879,7 +879,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   }
 
   if ($settings['prefix_known']) {
-    $form['#prefix'] = filter_filter('process', 1, NULL, webform_civicrm_replace_tokens($settings['prefix_known'], $data['contact'][$c]['contact'][1]));
+    $form['#prefix'] = filter_filter('process', 1, NULL, webform_civicrm_replace_tokens($settings['prefix_known'], $info['contact'][$c]['contact'][1]));
   }
 
   if (!empty($id)) {
@@ -895,10 +895,10 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   }
 
   // Set default values for CiviCRM form elements
-  webform_civicrm_fill_values($form['submitted'], $data);
+  webform_civicrm_fill_values($form['submitted'], $info);
 
   if ($settings['message']) {
-    webform_civicrm_set_message($settings['message'], $data['contact'][$c]['contact'][1]);
+    webform_civicrm_set_message($settings['message'], $info['contact'][$c]['contact'][1]);
   }
 }
 
