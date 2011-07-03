@@ -804,11 +804,10 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   $enabled = webform_civicrm_enabled_fields($node);
   $contacts = $data['contact'];
   $info = array('contact' => array());
-  $core = array('contact', 'address', 'email', 'phone', 'website');
   foreach ($contacts as $c => $contact) {
     $info['contact'][$c] = array();
     if (!empty($id['cid'][$c])) {
-      foreach ($core as $field) {
+      foreach (array('contact', 'address', 'email', 'phone', 'website') as $field) {
         if (!empty($contact['number_of_' . $field]) || $field == 'contact') {
           $result = webform_civicrm_api($field, 'get', array('contact_id' => $id['cid'][$c]));
           if (!empty($result['count'])) {
@@ -1002,6 +1001,9 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
             $form['civicrm_options_fieldset']['civicrm_defaults']['#type'] = 'radios';
             if ($element['value'] !== '') {
               $form['civicrm_options_fieldset']['civicrm_defaults']['#default_value'] = '_web_civi_option_selected_' . $element['value'];
+            }
+            else {
+              unset($form['civicrm_options_fieldset']['civicrm_defaults']['#default_value']);
             }
           }
         }
