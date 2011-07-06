@@ -297,7 +297,7 @@ function webform_civicrm_process_submission($node, &$submission) {
         if (!empty($id['case'][1])) {
           $params['case_id'] = $id['case'][1];
           $params['medium_id'] = $data['case'][1]['case'][1]['medium_id'];
-          $result = webform_civicrm_api('case', 'activity_create', $params);
+          $result = webform_civicrm_api('case', 'activity_create', $params);dsm($result);
         }
         else {
           $result = webform_civicrm_api('activity', 'create', $params);

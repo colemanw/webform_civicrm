@@ -775,7 +775,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
     }
     else {
       if (!empty($data['case'][1]['case'][1]['status_id']) && !empty($id['cid'][1])) {
-        $result = webform_civicrm_api('case', 'get', array('client_id' => $id['cid'][1]));
+        $result = webform_civicrm_api('case', 'get', array('client_id' => $id['cid'][1])); // TODO: Case API needs fixing
         if (!empty($result['values'])) {
           foreach ($result['values'] as $case) {
             if ($case['status_id'] == $data['case'][1]['case'][1]['status_id'] && empty($case['is_deleted']) && $case['case_type_id'] == $data['case'][1]['case'][1]['case_type_id']) {
