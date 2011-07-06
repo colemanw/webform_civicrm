@@ -55,7 +55,6 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   $js = 'var webform_civicrm_relationship_data = '. json_encode(webform_civicrm_get_relationship_types()) .';';
   drupal_add_js($js, 'inline');
 
-
   // Sort fields by set
   foreach ($fields as $fid => $field) {
     list($group, $id) = explode('_', $fid, 2);
@@ -160,7 +159,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     $form['act']['case']['case_fieldset']['case_medium_id'] = array(
       '#type' => 'select',
       '#title' => t('Medium'),
-      '#description' => t('Medium for the "open case" activity for new cases.'),
+      '#description' => t('Medium for activities added to cases from this webform.'),
       '#options' => webform_civicrm_get_options('encounter_medium'),
     );
     if (isset($data['case'][1]['case'][1]['medium_id'])) {
@@ -774,17 +773,29 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
         $id['act'][1] = $_GET['aid'];
       }
     }
-    elseif (!empty($data['activity'][1]['existing_activity_status']) && !empty($id['cid'][1])) {
-      $params = array(
-        'contact_id' => $id['cid'][1],
-        'activity_type_id' => $data['activity'][1]['activity'][1]['activity_type_id'],
-        'status_id' => $data['activity'][1]['existing_activity_status'],
-      );
-      if (!empty($id['case'][1])) {
-        $params['case_id'] = $id['case'][1];
+    else {
+      if (!empty($data['case'][1]['case'][1]['status_id']) && !empty($id['cid'][1])) {
+        $result = webform_civicrm_api('case', 'get', array('client_id' => $id['cid'][1]));
+        if (!empty($result['values'])) {
+          foreach ($result['values'] as $case) {
+            if ($case['status_id'] == $data['case'][1]['case'][1]['status_id'] && empty($case['is_deleted']) && $case['case_type_id'] == $data['case'][1]['case'][1]['case_type_id']) {
+              $id['case'][1] = $case['id'];
+              break;
+            }
+          }
+        }
       }
-      $result = webform_civicrm_api('activity', 'get', $params);
-      //TODO
+	    if (!empty($data['activity'][1]['existing_activity_status']) && !empty($id['cid'][1])) {
+	      $params = array(
+	        'contact_id' => $id['cid'][1],
+	        'activity_type_id' => $data['activity'][1]['activity'][1]['activity_type_id'],
+	        'status_id' => $data['activity'][1]['existing_activity_status'],
+	      );
+	      if (!empty($id['case'][1])) {
+	        $params['case_id'] = $id['case'][1];
+	      }
+	      $id['act'][1] = webform_civicrm_activity_find($params);
+	    }
     }
   }
 
@@ -924,9 +935,8 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
       $fid = $form['form_key']['#value'] = $form['form_key']['#default_value'];
       $form['form_key']['#description'] = t('Automatically set for use by CiviCRM processing.');
 
-      $lists = webform_civicrm_get_fields('lists');
       // Here's a much nicer interface for choosing options than the standard textfields
-      if (array_key_exists($key, $lists)) {
+      if (array_key_exists($key, webform_civicrm_get_fields('lists'))) {
         $node = node_load(arg(1));
         $element = $node->webform['components'][arg(4)];
         $options = $sort = webform_civicrm_field_options($fid, 'arr', $node->webform_civicrm['data']);
@@ -944,7 +954,7 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
         $option_keys = array();
         foreach ($options as $k => $v) {
           $option_keys['_web_civi_option_selected_' . $k] = '';
-          $form['civicrm_options_fieldset']['civicrm_option_name_'. $k] = array('#value' => $v);
+          $form['civicrm_options_fieldset']['civicrm_option_name_'. $k] = array('#value' => '<span class="civicrm-option-name">'. $v .'</span>');
         }
         if ($element['type'] != 'hidden') {
           $form['civicrm_options_fieldset']['#description'] = t('Drag the arrows to re-order these options. Click the "enabled" checkbox to show/remove an item from the form. Set the label as you want it to appear on the form. Check the "default" box for an option to be selected by default when a user views the form.');
@@ -976,7 +986,7 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
             $form['civicrm_options_fieldset']['civicrm_option_label_'. $k] = array(
               '#type' => 'textfield',
               '#size' => 30,
-              '#default_value' => $v,
+              '#default_value' => $options[$k],
             );
             if (!empty($options_selected[$k])) {
               $form['civicrm_options_fieldset']['civicrm_option_label_'. $k]['#default_value'] = $options_selected[$k];
@@ -984,7 +994,7 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
             $form['civicrm_options_fieldset']['civicrm_option_weight_'. $k] = array(
               '#type' => 'textfield',
               '#size' => 3,
-              '#default_value' => ++$w
+              '#default_value' => ++$w,
             );
           }
         }
@@ -1078,14 +1088,13 @@ function webform_civicrm_process_options_selection($form, &$form_state) {
   }
   if (!empty($vals['civicrm_options_fieldset']['civicrm_options'])) {
     $items = array();
-    $a = 0;
     foreach ($vals['civicrm_options_fieldset']['civicrm_options'] as $k) {
       if ($k) {
         $v = str_replace('_web_civi_option_selected_', '', $k);
         if (!($label = $vals['civicrm_options_fieldset']['civicrm_option_label_'. $v])) {
           $label = $form['civicrm_options_fieldset']['civicrm_option_name_'. $v]['#value'];
         }
-        $items[$vals['civicrm_options_fieldset']['civicrm_option_weight_'. $v] .'.'. $a++] = $v .'|'. $label;
+        $items[$vals['civicrm_options_fieldset']['civicrm_option_weight_'. $v]] = $v .'|'. $label;
       }
     }
     ksort($items);

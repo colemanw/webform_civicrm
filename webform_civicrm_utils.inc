@@ -5,7 +5,6 @@
  * Webform CiviCRM module's utility functions.
  */
 
-
 /**
  * Create/update CiviCRM data
  * Called by both presave and insert webform hooks
@@ -24,8 +23,8 @@ function webform_civicrm_process_submission($node, &$submission) {
     require_once 'CRM/Core/BAO/CustomValueTable.php';
     $enabled = webform_civicrm_enabled_fields($node);
     $fields = webform_civicrm_get_fields();
-    $sets = webform_civicrm_get_fields('sets');
     $data = $settings['data'];
+    $sets = webform_civicrm_get_fields('sets');
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
     global $user;
 
@@ -235,11 +234,11 @@ function webform_civicrm_process_submission($node, &$submission) {
         foreach ($add_tags as $tag) {
           $result = webform_civicrm_api('tag', 'get', array('name' => $tag));
           // Create tag if it doesn't exist
-          if (!($id = $result['id'])) {
+          if (!($tid = $result['id'])) {
             $result = webform_civicrm_api('tag', 'create', array('name' => $tag));
-            $id = $result['id'];
+            $tid = $result['id'];
           }
-          webform_civicrm_api('entity_tag', 'create', array('contact_id' => $cid, 'tag_id' => $id));
+          webform_civicrm_api('entity_tag', 'create', array('contact_id' => $cid, 'tag_id' => $tid));
         }
       }
     }
@@ -247,6 +246,18 @@ function webform_civicrm_process_submission($node, &$submission) {
   // Insert/update processing
   if ($op != 'presave') {
     $act = 0;
+    // Open new case if it doesn't exist.
+    if (empty($id['case'][1]) && empty($id['act'][1]) && !empty($data['case'][1]) && !empty($id['cid'][1])) {
+      $data['case'][1]['case'][1]['contact_id'] = $id['cid'][1];
+      $result = webform_civicrm_api('case', 'create', $data['case'][1]['case'][1]);dsm($result);
+      $id['case'][1] = $result['id'];
+      $id['act'][1] = webform_civicrm_activity_find(array(
+        'contact_id' => $id['cid'][1],
+        'activity_type_id' => $data['activity'][1]['activity'][1]['activity_type_id'],
+        'status_id' => $data['activity'][1]['existing_activity_status'],
+        'case_id' => $id['case'][1]
+      ));
+    }
     if (!empty($data['activity'][1])) {
       $params = $data['activity'][1]['activity'][1];
       $params['source_contact_id'] = $id['cid'][1];
@@ -261,7 +272,7 @@ function webform_civicrm_process_submission($node, &$submission) {
       }
       $params['target_contact_id'] = array();
       foreach ($data['contact'] as $c => $contact) {
-        if (!empty($contact['activity_target'])) {
+        if (!empty($contact['activity_target']) && !empty($id['cid'][$c])) {
           $params['target_contact_id'][$id['cid'][$c]] = $id['cid'][$c];
         }
       }
@@ -283,7 +294,14 @@ function webform_civicrm_process_submission($node, &$submission) {
         $result = webform_civicrm_api('activity', 'update', $params);
       }
       else {
-        $result = webform_civicrm_api('activity', 'create', $params);
+        if (!empty($id['case'][1])) {
+          $params['case_id'] = $id['case'][1];
+          $params['medium_id'] = $data['case'][1]['case'][1]['medium_id'];
+          $result = webform_civicrm_api('case', 'activity_create', $params);
+        }
+        else {
+          $result = webform_civicrm_api('activity', 'create', $params);
+        }
       }
       if (!empty($result['id']) || $act) {
         if (!empty($result['id'])) {
@@ -1140,6 +1158,29 @@ function webform_civicrm_api($entity, $operation, $params) {
     dsm(debug_backtrace());
   }
   return $result;
+}
+
+/**
+ * Fetch an existing activity for a contact based on activity & case criteria
+ * Maybe someday this will be possible through the CiviCRM API
+ */
+function webform_civicrm_activity_find($params) {
+  $cid = $params['contact_id'];
+  unset($params['contact_id']);
+  $sql = 'SELECT civicrm_activity.id FROM civicrm_activity';
+  if (!empty($params['case_id'])) {
+    $sql .= ' INNER JOIN civicrm_case_activity ON civicrm_activity.id = civicrm_case_activity.activity_id';
+  }
+  $sql .= " WHERE is_current_revision = 1 AND is_deleted = 0 AND civicrm_activity.id IN (SELECT activity_id FROM civicrm_activity_target WHERE target_contact_id = $cid)";
+  foreach ($params as $field => $value) {
+    $sql .= " AND $field = $value";
+  }
+  $sql .= ' LIMIT 0, 1';
+  $dao =& CRM_Core_DAO::executeQuery($sql);
+  while ($dao->fetch()) {
+    return $dao->id;
+  }
+  return NULL;
 }
 
 
