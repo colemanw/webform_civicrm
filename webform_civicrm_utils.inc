@@ -249,7 +249,7 @@ function webform_civicrm_process_submission($node, &$submission) {
     // Open new case if it doesn't exist.
     if (empty($id['case'][1]) && empty($id['act'][1]) && !empty($data['case'][1]) && !empty($id['cid'][1])) {
       $data['case'][1]['case'][1]['contact_id'] = $id['cid'][1];
-      $result = webform_civicrm_api('case', 'create', $data['case'][1]['case'][1]);dsm($result);
+      $result = webform_civicrm_api('case', 'create', $data['case'][1]['case'][1]);
       $id['case'][1] = $result['id'];
       $id['act'][1] = webform_civicrm_activity_find(array(
         'contact_id' => $id['cid'][1],
@@ -297,7 +297,7 @@ function webform_civicrm_process_submission($node, &$submission) {
         if (!empty($id['case'][1])) {
           $params['case_id'] = $id['case'][1];
           $params['medium_id'] = $data['case'][1]['case'][1]['medium_id'];
-          $result = webform_civicrm_api('case', 'activity_create', $params);dsm($result);
+          $result = webform_civicrm_api('case', 'activity_create', $params); // TODO: Case API output needs fixing
         }
         else {
           $result = webform_civicrm_api('activity', 'create', $params);
