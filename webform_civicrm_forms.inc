@@ -212,70 +212,72 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     '#suffix' => '</div>',
   );
   if (isset($data['activity'][1]['activity'][1]['activity_type_id'])) {
-    $form['act']['case']['activity_type_id']['#default_value'] = $settings['activity_type_id'] = $data['activity'][1]['activity'][1]['activity_type_id'];
-    $act_status_ids = webform_civicrm_get_options('activity_status');
-    $form['act']['case']['activity_fields']['existing_activity_status'] = array(
-      '#type' => 'select',
-      '#title' => t('Update Existing Activity'),
-      '#description' => t('If a "@type" activity with this status already exists for this contact, it will be updated. Otherwise a new one will be created', array('@type' => $act_types[$settings['activity_type_id']])),
-      '#options' => array(t('- always create new activity -')) + $act_status_ids,
-    );
-    if (isset($data['activity'][1]['existing_activity_status'])) {
-      $form['act']['case']['activity_fields']['existing_activity_status']['#default_value'] = $data['activity'][1]['existing_activity_status'];
-    }
-    $form['act']['case']['activity_fields']['activity_subject'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Default Activity Subject'),
-      '#maxlength' => 255,
-      '#required' => TRUE,
-      '#description' => t('You can override this default by allowing users to enter a subject (enable "Activity Subject" field below)'),
-    );
-    if (isset($data['activity'][1]['activity'][1]['subject'])) {
-      $form['act']['case']['activity_fields']['activity_subject']['#default_value'] = $data['activity'][1]['activity'][1]['subject'];
-    }
-    else {
-      $form['act']['case']['activity_fields']['activity_subject']['#default_value'] = check_plain($node->title);
-    }
-    $form['act']['case']['activity_fields']['activity_status_id'] = array(
-      '#type' => 'select',
-      '#title' => t('Set Activity Status'),
-      '#options' => $act_status_ids,
-    );
-    if (isset($data['activity'][1]['activity'][1]['status_id'])) {
-      $form['act']['case']['activity_fields']['activity_status_id']['#default_value'] = $data['activity'][1]['activity'][1]['status_id'];
-    }
-    else {
-      $form['act']['case']['activity_fields']['activity_status_id']['#default_value'] = 2;
-    }
-    $form['act']['case']['activity_fields']['activity_link'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Include link to webform submission in activity details?'),
-      '#default_value' => !(empty($data['activity'][1]['add_link']) && isset($data['activity'][1]['add_link']))
-    );
-    foreach ($sets as $sid => $set) {
-      if ($set['entity_type'] == 'activity') {
-        if (!empty($set['sub_types'])) {
-          if (!in_array($settings['activity_type_id'], $set['sub_types'])) {
-            continue;
+    if (array_key_exists($data['activity'][1]['activity'][1]['activity_type_id'], $act_types)) {
+      $form['act']['case']['activity_type_id']['#default_value'] = $settings['activity_type_id'] = $data['activity'][1]['activity'][1]['activity_type_id'];
+      $act_status_ids = webform_civicrm_get_options('activity_status');
+      $form['act']['case']['activity_fields']['existing_activity_status'] = array(
+        '#type' => 'select',
+        '#title' => t('Update Existing Activity'),
+        '#description' => t('If a "@type" activity with this status already exists for this contact, it will be updated. Otherwise a new one will be created', array('@type' => $act_types[$settings['activity_type_id']])),
+        '#options' => array(t('- always create new activity -')) + $act_status_ids,
+      );
+      if (isset($data['activity'][1]['existing_activity_status'])) {
+        $form['act']['case']['activity_fields']['existing_activity_status']['#default_value'] = $data['activity'][1]['existing_activity_status'];
+      }
+      $form['act']['case']['activity_fields']['activity_subject'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Default Activity Subject'),
+        '#maxlength' => 255,
+        '#required' => TRUE,
+        '#description' => t('You can override this default by allowing users to enter a subject (enable "Activity Subject" field below)'),
+      );
+      if (isset($data['activity'][1]['activity'][1]['subject'])) {
+        $form['act']['case']['activity_fields']['activity_subject']['#default_value'] = $data['activity'][1]['activity'][1]['subject'];
+      }
+      else {
+        $form['act']['case']['activity_fields']['activity_subject']['#default_value'] = check_plain($node->title);
+      }
+      $form['act']['case']['activity_fields']['activity_status_id'] = array(
+        '#type' => 'select',
+        '#title' => t('Set Activity Status'),
+        '#options' => $act_status_ids,
+      );
+      if (isset($data['activity'][1]['activity'][1]['status_id'])) {
+        $form['act']['case']['activity_fields']['activity_status_id']['#default_value'] = $data['activity'][1]['activity'][1]['status_id'];
+      }
+      else {
+        $form['act']['case']['activity_fields']['activity_status_id']['#default_value'] = 2;
+      }
+      $form['act']['case']['activity_fields']['activity_link'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Include link to webform submission in activity details?'),
+        '#default_value' => !(empty($data['activity'][1]['add_link']) && isset($data['activity'][1]['add_link']))
+      );
+      foreach ($sets as $sid => $set) {
+        if ($set['entity_type'] == 'activity') {
+          if (!empty($set['sub_types'])) {
+            if (!in_array($settings['activity_type_id'], $set['sub_types'])) {
+              continue;
+            }
           }
-        }
-        $form['act']['case']['activity_fields'][$sid] = array(
-          '#type' => 'fieldset',
-          '#collapsible' => TRUE,
-          '#title' => $set['label'],
-          '#attributes' => array('class' => 'web-civi-checkbox-set'),
-        );
-        foreach ($set['fields'] as $fid => $field) {
-          $fid = 'civicrm_1_activity_1_' . $fid;
-          $form['act']['case']['activity_fields'][$sid][$fid] = array(
-            '#type' => 'checkbox',
-            '#title' => $field['name'],
-            '#description' => $field['extra']['description'],
-            '#return_value' => 'create_civicrm_webform_element',
-            '#default_value' => !empty($enabled[$fid]),
+          $form['act']['case']['activity_fields'][$sid] = array(
+            '#type' => 'fieldset',
+            '#collapsible' => TRUE,
+            '#title' => $set['label'],
+            '#attributes' => array('class' => 'web-civi-checkbox-set'),
           );
-          if (isset($field['extra']['description'])) {
-            $form['act']['case']['activity_fields'][$sid][$fid]['#description'] = $field['extra']['description'];
+          foreach ($set['fields'] as $fid => $field) {
+            $fid = 'civicrm_1_activity_1_' . $fid;
+            $form['act']['case']['activity_fields'][$sid][$fid] = array(
+              '#type' => 'checkbox',
+              '#title' => $field['name'],
+              '#description' => $field['extra']['description'],
+              '#return_value' => 'create_civicrm_webform_element',
+              '#default_value' => !empty($enabled[$fid]),
+            );
+            if (isset($field['extra']['description'])) {
+              $form['act']['case']['activity_fields'][$sid][$fid]['#description'] = $field['extra']['description'];
+            }
           }
         }
       }
@@ -785,17 +787,17 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
           }
         }
       }
-	    if (!empty($data['activity'][1]['existing_activity_status']) && !empty($id['cid'][1])) {
-	      $params = array(
-	        'contact_id' => $id['cid'][1],
-	        'activity_type_id' => $data['activity'][1]['activity'][1]['activity_type_id'],
-	        'status_id' => $data['activity'][1]['existing_activity_status'],
-	      );
-	      if (!empty($id['case'][1])) {
-	        $params['case_id'] = $id['case'][1];
-	      }
-	      $id['act'][1] = webform_civicrm_activity_find($params);
-	    }
+      if (!empty($data['activity'][1]['existing_activity_status']) && !empty($id['cid'][1])) {
+        $params = array(
+          'contact_id' => $id['cid'][1],
+          'activity_type_id' => $data['activity'][1]['activity'][1]['activity_type_id'],
+          'status_id' => $data['activity'][1]['existing_activity_status'],
+        );
+        if (!empty($id['case'][1])) {
+          $params['case_id'] = $id['case'][1];
+        }
+        $id['act'][1] = webform_civicrm_activity_find($params);
+      }
     }
   }
 

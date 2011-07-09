@@ -126,9 +126,11 @@ function webform_civicrm_process_submission($node, &$submission) {
           }
           foreach ($contact[$location] as $i => $params) {
             $params['contact_id'] = $cid;
-            $params['is_primary'] = ($i == 1);
             if (!empty($existing[$i])) {
               $params['id'] = $existing[$i]['id'];
+            }
+            else {
+              $params['is_primary'] = ($i == 1);
             }
             $result = webform_civicrm_api($location, 'create', $params);
             if ($location == 'address') {
