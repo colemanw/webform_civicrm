@@ -896,6 +896,9 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   }
   elseif (isset($_SESSION['webform_civicrm_data'][$node->nid])) {
     unset($_SESSION['webform_civicrm_data'][$node->nid]);
+    if (empty($_SESSION['webform_civicrm_data'])) {
+      unset($_SESSION['webform_civicrm_data']);
+    }
   }
 
   // Do not alter form default values if this is an edit op

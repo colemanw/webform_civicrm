@@ -52,9 +52,12 @@ function webform_civicrm_process_submission($node, &$submission) {
     }
 
     // Retrieve stored ids
-    if (isset($_SESSION['webform_civicrm_data'][$node->nid])) {
+    if (!empty($_SESSION['webform_civicrm_data'][$node->nid])) {
       $id = $_SESSION['webform_civicrm_data'][$node->nid];
       unset($_SESSION['webform_civicrm_data'][$node->nid]);
+      if (empty($_SESSION['webform_civicrm_data'])) {
+        unset($_SESSION['webform_civicrm_data']);
+      }
     }
     if (empty($id)) {
       $id = array('cid' => array());
