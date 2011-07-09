@@ -835,7 +835,12 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['address_postal_code'] = array(
       'name' => t('Postal Code'),
       'type' => 'textfield',
-      'extra' => array('width' => 10),
+      'extra' => array('width' => 7),
+    );
+    $fields['address_postal_code_suffix'] = array(
+      'name' => t('Postal Code Suffix'),
+      'type' => 'textfield',
+      'extra' => array('width' => 5, 'description' => t('+4 digits of Zip Code')),
     );
     $fields['address_country_id'] = array(
       'name' => t('Country'),
