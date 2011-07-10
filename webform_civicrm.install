@@ -199,8 +199,32 @@ function webform_civicrm_update_6200() {
   );
   db_change_field($ret, 'webform_civicrm_submissions', 'contact_id', 'contact_id', $field);
 
-  // Populate entity data
   db_query("UPDATE {webform_civicrm_submissions} SET contact_id = CONCAT('-', contact_id, '-')");
+
+  // Update field keys to new format
+  civicrm_initialize();
+  require_once 'webform_civicrm_utils.inc';
+  $fields = webform_civicrm_get_fields();
+  $match = $contacts = array();
+  // Create matching table
+  foreach ($fields as $key => $field) {
+    list($table, $name) = explode('_', $key, 2);
+    $match['civicrm_'.$name] = 'civicrm_1_1_' . $key;
+  }
+
+  // Collect entity data and update field keys
+  $db = db_query("SELECT form_key, nid FROM {webform_component} WHERE form_key LIKE 'civicrm_%%' AND type <> 'fieldset'");
+  while ($row = db_fetch_array($db)) {
+    if (array_key_exists($row['form_key'], $match)) {
+      db_query("UPDATE {webform_component} SET form_key = '%s' WHERE form_key = '%s' AND nid = %d", $match[$row['form_key']], $row['form_key'], $row['nid']);
+      list($a, $b, $c, $d, $e) = explode('_', $match[$row['form_key']], 5);
+      if ($d != 'contact' && $d != 'other') {
+        $contacts[$row['nid']]['number_of_'. $d] = 1;
+      }
+    }
+  }
+
+  // Populate entity data
   $db = db_query("SELECT * FROM {webform_civicrm_forms}");
   while ($row = db_fetch_array($db)) {
     $data = array(
@@ -208,12 +232,12 @@ function webform_civicrm_update_6200() {
         1 => array(
           'contact' => array(1 => array('contact_type' => 'Individual')),
           'activity_target' => 1,
-          'number_of_email' => 1,
-          'number_of_phone' => 1,
-          'number_of_address' => 1,
         ),
       ),
     );
+    if (!empty($contacts[$row['nid']])) {
+      $data['contact'][1] = $data['contact'][1] + $contacts[$row['nid']];
+    }
     if ($row['activity_type_id']) {
       $data['activity'][1]['activity'][1] = array(
         'activity_type_id' => $row['activity_type_id'],
@@ -222,22 +246,6 @@ function webform_civicrm_update_6200() {
       );
     }
     db_query("UPDATE {webform_civicrm_forms} SET data = '%s' WHERE nid = %d", serialize($data), $row['nid']);
-  }
-  // Update field keys to new format
-  civicrm_initialize();
-  require_once 'webform_civicrm_utils.inc';
-  $fields = webform_civicrm_get_fields();
-  $match = array();
-  // Create matching table
-  foreach ($fields as $key => $field) {
-    list($table, $name) = explode('_', $key, 2);
-    $match['civicrm_'.$name] = 'civicrm_1_1_' . $key;
-  }
-  $db = db_query("SELECT DISTINCT form_key FROM {webform_component} WHERE form_key LIKE 'civicrm_%%' AND type <> 'fieldset'");
-  while ($row = db_fetch_array($db)) {
-    if (array_key_exists($row['form_key'], $match)) {
-      db_query("UPDATE {webform_component} SET form_key = '%s' WHERE form_key = '%s' AND type <> 'fieldset'", $match[$row['form_key']], $row['form_key']);
-    }
   }
   // Remove activity fields
   db_drop_field($ret, 'webform_civicrm_forms', 'activity_type_id');
