@@ -169,6 +169,7 @@ function webform_civicrm_update_6102() {
 }
 
 /**
+ * Upgrade from 1.x to 2.x
  * Add columns to webform_civicrm_forms table, and convert existing forms to new multi-entity schema.
  */
 function webform_civicrm_update_6200() {
@@ -188,7 +189,7 @@ function webform_civicrm_update_6200() {
     'default' => 0,
   );
   db_add_field($ret, 'webform_civicrm_forms', 'create_fieldsets', $field);
-  
+
   // Add value separator to CID
   $field = array(
     'type' => 'varchar',
@@ -198,30 +199,34 @@ function webform_civicrm_update_6200() {
     'description' => 'CiviCRM contact ids from this submission',
   );
   db_change_field($ret, 'webform_civicrm_submissions', 'contact_id', 'contact_id', $field);
-
   db_query("UPDATE {webform_civicrm_submissions} SET contact_id = CONCAT('-', contact_id, '-')");
 
-  // Update field keys to new format
+  // Match field keys to new format
   civicrm_initialize();
   require_once 'webform_civicrm_utils.inc';
   $fields = webform_civicrm_get_fields();
-  $match = $contacts = array();
+  $match = $contacts = $update = array();
   // Create matching table
   foreach ($fields as $key => $field) {
     list($table, $name) = explode('_', $key, 2);
     $match['civicrm_'.$name] = 'civicrm_1_1_' . $key;
   }
 
-  // Collect entity data and update field keys
+  // Collect entity data
   $db = db_query("SELECT form_key, nid FROM {webform_component} WHERE form_key LIKE 'civicrm_%%' AND type <> 'fieldset'");
   while ($row = db_fetch_array($db)) {
     if (array_key_exists($row['form_key'], $match)) {
-      db_query("UPDATE {webform_component} SET form_key = '%s' WHERE form_key = '%s' AND nid = %d", $match[$row['form_key']], $row['form_key'], $row['nid']);
+      $update[$row['form_key']] = $match[$row['form_key']];
       list($a, $b, $c, $d, $e) = explode('_', $match[$row['form_key']], 5);
       if ($d != 'contact' && $d != 'other') {
         $contacts[$row['nid']]['number_of_'. $d] = 1;
       }
     }
+  }
+
+  // Update field keys
+  foreach ($update as $old => $new) {
+    db_query("UPDATE {webform_component} SET form_key = '%s' WHERE form_key = '%s'", $new, $old);
   }
 
   // Populate entity data
