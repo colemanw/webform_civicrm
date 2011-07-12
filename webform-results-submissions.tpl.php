@@ -4,19 +4,19 @@
  * @file
  * Result submissions override for Webform_CiviCRM
  * Displays real names instead of user names on CiviCRM enabled forms
- * NOTE: This template override is a temporary fix until drupal.org/node/1067486 is resolved
- * TODO: Once webform module has the necessary username theme funciton in place, this template will not be necessary
  */
 
 if (count($table['#rows']) && !empty($node->webform_civicrm)) {
   $access = user_access('access CiviCRM');
   foreach ($table['#rows'] as &$row) {
-    if (($cid = $submissions[$row[0]]->civicrm['contact_id']) && ($name = $submissions[$row[0]]->civicrm['display_name'])) {
-      if ($access) {
-        $row[2] = l($name, 'civicrm/contact/view', array('query' => 'reset=1&cid=' . $cid[1]));
-      }
-      else {
-        $row[2] = $name;
+    if (!empty($submissions[$row[0]]->civicrm)) {
+      if (($cid = $submissions[$row[0]]->civicrm['contact_id']) && ($name = $submissions[$row[0]]->civicrm['display_name'])) {
+        if ($access) {
+          $row[2] = l($name, 'civicrm/contact/view', array('query' => 'reset=1&cid=' . $cid[1]));
+        }
+        else {
+          $row[2] = $name;
+        }
       }
     }
   }
