@@ -63,8 +63,13 @@ function webform_civicrm_process_submission($node, &$submission) {
       $id = array('cid' => array());
     }
     foreach ($data['contact'] as $c => $contact) {
-      // Search for an existing contact using default strict rule
       if (empty($id['cid'][$c])) {
+        // Skip contact if we don't have a name or id
+        if (empty($contact['contact'][1]['first_name']) && empty($contact['contact'][1]['last_name']) && empty($contact['contact'][1]['organization_name']) && empty($contact['contact'][1]['household_name'])) {
+          $id['cid'][$c] = 0;
+          continue;
+        }
+        // Search for an existing contact using default strict rule
         require_once 'CRM/Dedupe/Finder.php';
         $params = array('check_permission' => FALSE);
         foreach ($contact as $table => $field) {
@@ -83,7 +88,7 @@ function webform_civicrm_process_submission($node, &$submission) {
           $id['cid'][$c] = $dupes[0];
         }
       }
-      $params = array_merge(array(), $contact['contact'][1]);
+      $params = $contact['contact'][1];
       $params['contact_type'] = ucfirst($params['contact_type']);
 
       if (empty($id['cid'][$c])) {
