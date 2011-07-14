@@ -102,6 +102,7 @@ function webform_civicrm_process_submission($node, &$submission) {
       if(empty($id['cid'][$c]) || !empty($result['is_error'])) {
         watchdog('webform_civicrm', "An error occured when trying to create a new contact. Contact $c was not created.", NULL, WATCHDOG_ERROR, l($node->title . ': ' . t('Submission #') . $submission->sid, 'node/' . $node->nid . '/submission/' . $submission->sid));
         if (empty($id['cid'][$c])) {
+          $id['cid'][$c] = 0;
           continue;
         }
       }
@@ -130,6 +131,20 @@ function webform_civicrm_process_submission($node, &$submission) {
             array_unshift($existing, 0);
           }
           foreach ($contact[$location] as $i => $params) {
+            // Skip this item if nothing was entered
+            if ($location == 'address') {
+              if (empty($params['street_address']) && empty($params['city']) && empty($params['state_province_id']) && empty($params['state_province']) && empty($params['country_id']) && empty($params['postal_code']) && empty($params['postal_code_suffix'])) {
+                continue;
+              }
+            }
+            elseif ($location == 'website') {
+              if (empty($params['url'])) {
+                continue;
+              }
+            }
+            elseif (empty($params[$location])) {
+              continue;
+            }
             $params['contact_id'] = $cid;
             if (!empty($existing[$i])) {
               $params['id'] = $existing[$i]['id'];
@@ -138,7 +153,7 @@ function webform_civicrm_process_submission($node, &$submission) {
               $params['is_primary'] = ($i == 1);
             }
             $result = webform_civicrm_api($location, 'create', $params);
-            if ($location == 'address') {
+            if ($location == 'address' && empty($result['is_error'])) {
               $custom = array();
               foreach ($params as $param => $val) {
                 if (strpos($param, 'custom_') !== FALSE) {
