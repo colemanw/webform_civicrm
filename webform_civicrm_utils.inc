@@ -41,7 +41,7 @@ function webform_civicrm_contact_match($node, &$submission) {
       continue;
     }
     if (!empty($submission->data[$enabled[$fid]]['value'])) {
-      $val = $submission->data[$enabled[$fid]]['value']
+      $val = $submission->data[$enabled[$fid]]['value'];
       if (count($val) > 1 && $table == 'custom') {
         $params['civicrm_'. $table][$field] = drupal_map_assoc($val);
       }
