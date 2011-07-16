@@ -119,7 +119,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   );
   // Three columns for neatness
   $form['fields']['box']['contact'] = array(
-    '#prefix' => '<div class="web-civi-3-col"><h4>'. t('Contact Fields') .'</h4><div class="web-civi-description">'. t('First name, Last name, and Email fields are all <em>required</em> by CiviCRM in order to create new contacts.') .'</div>',
+    '#prefix' => '<div class="web-civi-3-col"><h4>'. t('Contact Fields') .'</h4><div class="web-civi-description">'. t('First and last name fields are <em>required</em> by CiviCRM in order to create new contacts.') .'</div>',
     '#suffix' => '</div>'
   );
   $form['fields']['box']['groups'] = array(
