@@ -151,7 +151,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
         $f['#default_value'] = TRUE;
       }
       // Create fieldsets
-      if ($sets[$id]) {
+      if (!empty($sets[$id])) {
         $set = $sets[$id];
         $form['fields']['box'][$c][$set] = array(
           '#type' => 'fieldset',
@@ -297,7 +297,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
  * Custom Processing for CiviCRM groups form
  */
 function webform_civicrm_process_group_selection($form, &$form_state) {
-  if ($form_state['values']['civicrm_groups_fieldset']['civicrm_groups']) {
+  if (!empty($form_state['values']['civicrm_groups_fieldset']['civicrm_groups'])) {
     civicrm_initialize();
     $groups = webform_civicrm_get_options('groups', 'arr');
     $items = '';
@@ -316,7 +316,7 @@ function webform_civicrm_process_group_selection($form, &$form_state) {
     if (!$gid) {
       continue;
     }
-    if ($form_state['values']['value']) {
+    if (!empty($form_state['values']['value'])) {
       $form_state['values']['value'] .= ',';
     }
     $form_state['values']['value'] .= $gid;
@@ -416,7 +416,7 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
         unset($form['extra']['options_source']);
         $complete_msg = t('The options have been reloaded.');
         $form['extra']['items']['#description'] = t("These options were automatically selected from the CiviCRM database. You may change their order, or delete unwanted options as you see fit. You may also change the labels (text after the |) to be more descriptive. However, adding new items here that are <em>not</em> in CiviCRM won't work. Instead, create your new options in CiviCRM, then click here to refresh this list:");
-        if ($_GET['reset']) {
+        if (!empty($_GET['reset'])) {
           $form['extra']['items']['#description'] .= '<div style="color:green; font-weight:bold; margin-top:0.5em;">'. $complete_msg .'</div>';
           $form['extra']['items']['#default_value'] = webform_civicrm_get_options($lists[$key]);
 
@@ -536,7 +536,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
       $cid = CRM_Core_BAO_UFMatch::getContactId($user->uid);
     }
     // If user is following a hashed link from CiviMail, validate it and set CID appropriately
-    elseif ($_GET['cs'] && $_GET['cid']) {
+    elseif (!empty($_GET['cs']) && !empty($_GET['cid'])) {
       require_once 'CRM/Contact/BAO/Contact/Utils.php';
       if (CRM_Contact_BAO_Contact_Utils::validChecksum($_GET['cid'], $_GET['cs'])) {
         $_SESSION['webform_civicrm_cid'] = $cid = $_GET['cid'];
@@ -567,7 +567,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form) {
   $contact = array_merge($contact[$cid], $custom[$cid]);
 
 
-  $form['#prefix'] .= filter_filter('process', 1, NULL, webform_civicrm_replace_tokens($settings['prefix_known'], $contact));
+  $form['#prefix'] = filter_filter('process', 1, NULL, webform_civicrm_replace_tokens($settings['prefix_known'], $contact));
 
   // Do not alter form default values if this is an edit op
   if (!empty($submission)) {

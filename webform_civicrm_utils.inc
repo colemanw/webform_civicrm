@@ -45,7 +45,7 @@ function webform_civicrm_contact_match($node, &$submission) {
       if (count($val) > 1 && $table == 'custom') {
         $params['civicrm_'. $table][$field] = drupal_map_assoc($val);
       }
-      elseif ($val[0] !== '' && $val[0] !== NULL) {
+      elseif (!empty($val[0])) {
         $params['civicrm_'. $table][$field] = $val[0];
       }
     }
@@ -93,7 +93,7 @@ function webform_civicrm_contact_match($node, &$submission) {
     $op = 'create';
   }
   if ($cid) {
-    if ($custom) {
+    if (!empty($custom)) {
       $params['civicrm_contact'] = array_merge($params['civicrm_contact'], $custom);
     }
     $params['civicrm_contact']['contact_id'] = $cid;
@@ -116,17 +116,17 @@ function webform_civicrm_contact_match($node, &$submission) {
 
   // Add or update location
   $address_params = array();
-  if ($params['civicrm_address']) {
+  if (!empty($params['civicrm_address'])) {
     $address_params['address'][1] = $params['civicrm_address'];
     $address_params['address'][1]['is_primary'] = 1;
     $address_params['address'][1]['location_type_id'] = 1;
   }
-  if ($params['civicrm_email']) {
+  if (!empty($params['civicrm_email'])) {
     $address_params['email'][1] = $params['civicrm_email'];
     $address_params['email'][1]['is_primary'] = 1;
     $address_params['email'][1]['location_type_id'] = 1;
   }
-  if ($params['civicrm_phone']) {
+  if (!empty($params['civicrm_phone'])) {
     $address_params['phone'][1] = $params['civicrm_phone'];
     if (!$params['civicrm_phone']['phone_type_id']) {
       $address_params['phone'][1]['phone_type_id'] = 1;
@@ -625,7 +625,7 @@ function webform_civicrm_replace_tokens($str, $contact) {
 function webform_civicrm_set_message($message, $contact) {
   $message = webform_civicrm_replace_tokens($message, $contact);
   preg_match_all('#\{([^}]+)\}#', $message, $matches);
-  if ($matches[0]) {
+  if (!empty($matches[0])) {
     foreach ($matches[0] as $pos => $match) {
       if (user_is_logged_in()) {
         $link = l($matches[1][$pos], 'logout', array('query' => 'destination='. $_GET['q']));
