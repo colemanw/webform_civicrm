@@ -193,7 +193,7 @@ function webform_civicrm_process_submission($node, &$submission) {
             }
           }
         }
-        if (isset($enabled['civicrm_'. $n .'_contact_1_other_groups_hidden'])) {
+        if (!empty($submission->data[$enabled['civicrm_'. $n .'_contact_1_other_groups_hidden']]['value'][0])) {
           $add_hidden = explode(',', $submission->data[$enabled['civicrm_'. $n .'_contact_1_other_groups_hidden']]['value'][0]);
           if (!empty($add_groups)) {
             $add_groups = array_unique(array_merge($add_groups, $add_hidden));
