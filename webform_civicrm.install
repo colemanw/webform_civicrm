@@ -266,7 +266,7 @@ function webform_civicrm_update_6200() {
 }
 
 /**
- * Add column for confirm_subscription to webform_civicrm_forms table.
+ * Add column for new_contact_source to webform_civicrm_forms table.
  */
 function webform_civicrm_update_6201() {
   $field = array(

@@ -19,7 +19,7 @@
 .web-civi-checkbox-set .form-item {
   float:left;
   margin-left: 1em;
-  max-width: 20em;
+  width: 20em;
 }
 
 .hidden, .js #edit-change-number-of-contacts {
@@ -33,4 +33,17 @@
 #webform-civicrm-configure-form legend+.description,
 #webform-civicrm-configure-form .web-civi-description {
   font-size:0.85em;
+}
+
+#webform-civicrm-configure-form .form-item label {
+  display:inline;
+}
+
+#webform-civicrm-configure-form .progress-disabled {
+  float:none;
+}
+
+#webform-civicrm-configure-form .ahah-progress-throbber {
+  display:inline-block;
+  float:none;
 }

@@ -294,10 +294,12 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     '#default_value' => count($contacts),
     '#options' => $nums,
     '#description' => t('How many contacts would you like on this form?'),
+    '#attributes' => array('class' => 'number-of'),
   );
   $form['change_number_of_contacts'] = array(
     '#type' => 'submit',
-    '#value' => t('Change Number of Contacts'),
+    '#value' => t('Change Form Settings'),
+    '#description' => t('You do not have Javascript enabled, so you will need to click this button after changing any option.'),
   );
   $form['contacts'] = array(
     '#prefix' => '<div class="civicrm-ahah-wrapper" id="civicrm-ahah-contact-sets">',
@@ -410,6 +412,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
           '#title' => t('Number of %type Fields', array('%type' => $sid=='relationship' ? t('Relationship') : $set['label'])),
           '#default_value' => $c['number_of_'. $sid],
           '#options' => $numbers,
+          '#attributes' => array('class' => 'number-of'),
           '#ahah' => array(
             'path' => $path . $n . $sid .'_wrapper',
             'wrapper' => 'civicrm-ahah-contact-multi-wrapper-'. $n . $sid,
@@ -523,6 +526,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     '#type' => 'textfield',
     '#title' => t('New Contact Source'),
     '#maxlength' => 255,
+    '#size' => 30,
     '#default_value' => $settings['new_contact_source'],
     '#description' => t('Optional "source" label for new contacts created by this webform.')
   );

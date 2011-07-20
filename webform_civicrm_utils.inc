@@ -821,7 +821,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'type' => 'email',
     );
     $fields['email_location_type_id'] = array(
-      'name' => t('Email # Location Type'),
+      'name' => t('Email # Location'),
       'type' => 'select',
       'expose_list' => TRUE,
     );
@@ -873,7 +873,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'type' => 'select',
     );
     $fields['address_location_type_id'] = array(
-      'name' => t('Address # Location Type'),
+      'name' => t('Address # Location'),
       'type' => 'select',
       'expose_list' => TRUE,
     );
@@ -888,7 +888,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'expose_list' => TRUE,
     );
     $fields['phone_location_type_id'] = array(
-      'name' => t('Phone # Location Type'),
+      'name' => t('Phone # Location'),
       'type' => 'select',
       'expose_list' => TRUE,
     );
