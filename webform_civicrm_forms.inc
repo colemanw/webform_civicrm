@@ -43,6 +43,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
         'message' => '',
         'confirm_subscription' => TRUE,
         'create_fieldsets' => TRUE,
+        'new_contact_source' => '',
       );
     }
   }
@@ -517,6 +518,13 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     '#title' => t('Create Fieldsets'),
     '#default_value' => (bool) $settings['create_fieldsets'],
     '#description' => t('Create a fieldset around each contact. (Nice if you have more than one contact on this form, but not required; all CiviCRM fields will be processed correctly regardless of what fieldset you place them in.')
+  );
+  $form['options']['new_contact_source'] = array(
+    '#type' => 'textfield',
+    '#title' => t('New Contact Source'),
+    '#maxlength' => 255,
+    '#default_value' => $settings['new_contact_source'],
+    '#description' => t('Optional "source" label for new contacts created by this webform.')
   );
   $form['submit'] = array(
     '#type' => 'submit',

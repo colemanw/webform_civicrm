@@ -92,6 +92,7 @@ function webform_civicrm_process_submission($node, &$submission) {
       $params['contact_type'] = ucfirst($params['contact_type']);
 
       if (empty($id['cid'][$c])) {
+        $params['source'] = $settings['new_contact_source'];
         $result = webform_civicrm_api('contact', 'create', $params);
         $id['cid'][$c] = $result['id'];
       }
