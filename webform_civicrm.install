@@ -2,13 +2,14 @@
 
 /**
  * @file
- * Webform CiviCRM module's install and uninstall code.
+ * Webform CiviCRM module's install, uninstall and upgrade code.
  */
 
 /**
  * Implements hook_schema().
  */
 function webform_civicrm_schema() {
+  $schema = array();
   $schema['webform_civicrm_forms'] = array(
     'description' => 'CiviCRM settings for individual Webform nodes.',
     'fields' => array(
@@ -19,26 +20,11 @@ function webform_civicrm_schema() {
         'default' => 0,
         'description' => 'Webform Node ID',
       ),
-      'contacts' => array(
+      'data' => array(
         'type' => 'text',
+        'not null' => TRUE,
         'serialize' => TRUE,
-        'not null' => TRUE,
-        'default' => '',
-        'description' => 'Array of contact types to process for this form',
-      ),
-      'activity_type_id' => array(
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-        'description' => 'FK to {civicrm_activity} activity_type_id',
-      ),
-      'activity_subject' => array(
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE,
-        'default' => '',
-        'description' => 'Subject of auto-created activities',
+        'description' => 'Array of entity data for this webform',
       ),
       'prefix_known' => array(
         'description' => 'Form prefix for known users.',
@@ -71,6 +57,20 @@ function webform_civicrm_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'create_fieldsets' => array(
+        'description' => 'Add fieldsets around contacts.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'new_contact_source' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Source label for newly created contacts',
+      ),
     ),
     'primary key' => array('nid'),
   );
@@ -85,11 +85,11 @@ function webform_civicrm_schema() {
         'description' => 'Webform Submission ID',
       ),
       'contact_id' => array(
-        'type' => 'int',
-        'unsigned' => TRUE,
+        'type' => 'varchar',
+        'length' => 2000,
         'not null' => TRUE,
-        'default' => 0,
-        'description' => 'FK to {civicrm_contact} id',
+        'default' => '',
+        'description' => 'CiviCRM contact ids from this submission',
       ),
       'activity_id' => array(
         'type' => 'int',
@@ -104,6 +104,7 @@ function webform_civicrm_schema() {
   return $schema;
 }
 
+
 /**
  * Add column for message to webform_civicrm_forms table.
  */
@@ -116,6 +117,7 @@ function webform_civicrm_update_6100() {
     'description' => 'Message to show to known users',
   );
   db_add_field('webform_civicrm_forms', 'message', $message);
+  return t('Update complete.');
 }
 
 /**
@@ -123,12 +125,12 @@ function webform_civicrm_update_6100() {
  */
 function webform_civicrm_update_6101() {
   civicrm_initialize();
-  $db = db_query('SELECT * FROM {webform_civicrm_submissions} WHERE contact_id <> 0 AND activity_id <> 0');
+  $db = db_query('SELECT * FROM {webform_civicrm_submissions} WHERE contact_id <> :contact_id AND activity_id <> :activity_id', array(':contact_id' => 0, ':activity_id' => 0));
   $sql = 'INSERT INTO civicrm_activity_target (activity_id, target_contact_id) VALUES (%1,%2)';
   $n = 1;
   $c = 0;
   $params = array();
-  foreach ($db as $row) {
+  while ($row = db_fetch_array($db)) {
     $params[$n] = array($row['activity_id'], 'Integer');
     $params[$n + 1] = array($row['contact_id'], 'Integer');
     if ($n > 1) {
@@ -140,6 +142,7 @@ function webform_civicrm_update_6101() {
   if ($n > 1) {
     CRM_Core_DAO::executeQuery($sql, $params);
   }
+  return t('@num activity target contacts added.', array('@num' => $c));
 }
 
 /**
@@ -153,5 +156,128 @@ function webform_civicrm_update_6102() {
     'not null' => TRUE,
     'default' => 0,
   );
+
   db_add_field('webform_civicrm_forms', 'confirm_subscription', $confirm_subscription);
+  return t('Update complete.');
+}
+
+/**
+ * Upgrade from 1.x to 2.x
+ * Add columns to webform_civicrm_forms table, and convert existing forms to new multi-entity schema.
+ */
+function webform_civicrm_update_6200() {
+  $field = array(
+    'type' => 'text',
+    'not null' => TRUE,
+    'serialize' => TRUE,
+    'description' => 'Array of entity data for this form',
+  );
+  db_add_field('webform_civicrm_forms', 'data', $field);
+  $field = array(
+    'description' => 'Add fieldsets around contacts.',
+    'type' => 'int',
+    'size' => 'tiny',
+    'not null' => TRUE,
+    'default' => 0,
+  );
+  db_add_field('webform_civicrm_forms', 'create_fieldsets', $field);
+
+  // Add value separator to CID
+  $field = array(
+    'type' => 'varchar',
+    'length' => 2000,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'CiviCRM contact ids from this submission',
+  );
+  db_change_field('webform_civicrm_submissions', 'contact_id', 'contact_id', $field);
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query("UPDATE {webform_civicrm_submissions} SET contact_id = CONCAT('-', contact_id, '-')") */
+  db_update('webform_civicrm_submissions')
+  ->fields(array('contact_id' => "CONCAT('-', 'contact_id', '-')"))
+  ->execute();
+
+  // Match field keys to new format
+  civicrm_initialize();
+  require_once 'webform_civicrm_utils.inc';
+  $fields = webform_civicrm_get_fields();
+  $match = $contacts = $update = array();
+  // Create matching table
+  foreach ($fields as $key => $field) {
+    list($table, $name) = explode('_', $key, 2);
+    $match['civicrm_' . $name] = 'civicrm_1_contact_1_' . $key;
+  }
+
+  // Collect entity data
+  $db = db_query("SELECT form_key, nid FROM {webform_component} WHERE form_key LIKE 'civicrm_%%' AND type <> 'fieldset'");
+  while ($row = db_fetch_array($db)) {
+    if (array_key_exists($row['form_key'], $match)) {
+      $update[$row['form_key']] = $match[$row['form_key']];
+      list($a, $b, $c, $d, $e, $f) = explode('_', $match[$row['form_key']], 6);
+      if ($e != 'contact' && $e != 'other') {
+        $contacts[$row['nid']]['number_of_' . $e] = 1;
+      }
+    }
+  }
+
+  // Update field keys
+  foreach ($update as $old => $new) {
+    db_update('webform_component')
+  ->fields(array(
+      'form_key' => $new,
+    ))
+  ->condition('form_key', $old)
+  ->execute();
+  }
+
+  // Populate entity data
+  $db = db_query("SELECT * FROM {webform_civicrm_forms}");
+  while ($row = db_fetch_array($db)) {
+    $data = array(
+      'contact' => array(
+        1 => array(
+          'contact' => array(1 => array(
+              'contact_type' => 'individual',
+              'contact_sub_type' => NULL,
+            )),
+          'activity_target' => 1,
+        ),
+      ),
+    );
+    if (!empty($contacts[$row['nid']])) {
+      $data['contact'][1] = $data['contact'][1] + $contacts[$row['nid']];
+    }
+    if ($row['activity_type_id']) {
+      $data['activity'][1]['activity'][1] = array(
+        'activity_type_id' => $row['activity_type_id'],
+        'subject' => $row['activity_subject'],
+        'status_id' => 2,
+      );
+    }
+    db_update('webform_civicrm_forms')
+  ->fields(array(
+      'data' => serialize($data),
+    ))
+  ->condition('nid', $row['nid'])
+  ->execute();
+  }
+  // Remove activity fields
+  db_drop_field('webform_civicrm_forms', 'activity_type_id');
+  db_drop_field('webform_civicrm_forms', 'activity_subject');
+  return t('Update complete.');
+}
+
+/**
+ * Add column for new_contact_source to webform_civicrm_forms table.
+ */
+function webform_civicrm_update_6201() {
+  $field = array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'Source label for newly created contacts',
+  );
+  db_add_field('webform_civicrm_forms', 'new_contact_source', $field);
+  return t('Update complete.');
 }

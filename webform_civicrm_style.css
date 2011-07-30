@@ -8,22 +8,42 @@
   margin-left: 1em;
 }
 
-.web-civi-container,
-.web-civi-container .fieldset-wrapper {
-  padding:0;
+.web-civi-act-part {
+  float: right;
 }
 
-.scrollme .fieldset-wrapper {
-  padding:0 8px;
+.web-civi-checkbox-set {
+  padding-left: 0;
 }
 
-#webform-civicrm-configure-form .scrollme {
-  max-height:500px;
-  overflow:auto;
-  padding-left: 0.5em;
+.web-civi-checkbox-set .form-item {
+  float:left;
+  margin-left: 1em;
+  width: 20em;
+}
+
+.hidden, .js #edit-change-number-of-contacts {
+  display:none;
+}
+
+.civicrm-ahah-wrapper {
+  clear:both;
 }
 
 #webform-civicrm-configure-form legend+.description,
 #webform-civicrm-configure-form .web-civi-description {
   font-size:0.85em;
+}
+
+#webform-civicrm-configure-form .form-item label {
+  display:inline;
+}
+
+#webform-civicrm-configure-form .progress-disabled {
+  float:none;
+}
+
+#webform-civicrm-configure-form .ahah-progress-throbber {
+  display:inline-block;
+  float:none;
 }
