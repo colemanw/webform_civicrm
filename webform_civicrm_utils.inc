@@ -101,7 +101,7 @@ function webform_civicrm_process_submission($node, &$submission) {
         $result = webform_civicrm_api('contact', 'create', $params);
       }
       if(empty($id['cid'][$c]) || !empty($result['is_error'])) {
-        watchdog('webform_civicrm', "An error occured when trying to create a new contact. Contact $c was not created.", NULL, WATCHDOG_ERROR, l($node->title . ': ' . t('Submission #') . $submission->sid, 'node/' . $node->nid . '/submission/' . $submission->sid));
+        watchdog('webform_civicrm', "An error occured when trying to create a new contact. Contact $c was not created.", NULL, WATCHDOG_ERROR, l($node->title . ': ' . t('Submission #') . $submission->sid, 'node/' . $node->nid . '/submission/' . $submission->sid), array('alias' => TRUE));
         if (empty($id['cid'][$c])) {
           $id['cid'][$c] = 0;
           continue;
@@ -312,7 +312,7 @@ function webform_civicrm_process_submission($node, &$submission) {
         $params['subject'] = $settings['data']['activity'][1]['activity'][1]['subject'];
       }
       if (!empty($data['activity'][1]['add_link'])) {
-        $params['details'] .= '<p>'. l(t('View Webform Submission'), 'node/' . $node->nid . '/submission/' . $submission->sid) .'</p>';
+        $params['details'] .= '<p>'. l(t('View Webform Submission'), 'node/' . $node->nid . '/submission/' . $submission->sid, array('alias' => TRUE)) .'</p>';
       }
       unset($params['add_link']);
       if (!empty($id['act'][1])) {
@@ -323,7 +323,7 @@ function webform_civicrm_process_submission($node, &$submission) {
         if (!empty($id['case'][1])) {
           $params['case_id'] = $id['case'][1];
           $params['medium_id'] = $data['case'][1]['case'][1]['medium_id'];
-          $result = webform_civicrm_api('case', 'activity_create', $params); // TODO: Case API output needs fixing
+          $result = webform_civicrm_api('case', 'activity_create', $params);
         }
         else {
           $result = webform_civicrm_api('activity', 'create', $params);
@@ -1164,7 +1164,7 @@ function webform_civicrm_set_message($message, $contact) {
   if ($matches[0]) {
     foreach ($matches[0] as $pos => $match) {
       if (user_is_logged_in()) {
-        $link = l($matches[1][$pos], 'logout', array('query' => 'destination='. $_GET['q']));
+        $link = l($matches[1][$pos], 'logout', array('query' => 'destination='. $_GET['q'], 'alias' => TRUE));
       }
       else {
         $link = l($matches[1][$pos], $_GET['q']);
@@ -1211,7 +1211,6 @@ function webform_civicrm_activity_find($params) {
   while ($dao->fetch()) {
     return $dao->id;
   }
-  return NULL;
 }
 
 

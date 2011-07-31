@@ -12,7 +12,7 @@ if (count($table['#rows']) && !empty($node->webform_civicrm)) {
     if (!empty($submissions[$row[0]]->civicrm)) {
       if (($cid = $submissions[$row[0]]->civicrm['contact_id']) && ($name = $submissions[$row[0]]->civicrm['display_name'])) {
         if ($access) {
-          $row[2] = l($name, 'civicrm/contact/view', array('query' => 'reset=1&cid=' . $cid[1]));
+          $row[2] = l($name, 'civicrm/contact/view', array('query' => 'reset=1&cid=' . $cid[1], 'alias' => TRUE));
         }
         else {
           $row[2] = $name;
