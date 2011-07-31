@@ -79,6 +79,7 @@ function webform_civicrm_node_insert($node) {
       $settings->nid = $node->nid;
       $settings->data = unserialize($settings->data);
       drupal_write_record('webform_civicrm_forms', $settings);
+      return;
     }
   }
 }
@@ -197,6 +198,14 @@ function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = N
     ->condition('contact_id', '-' . $old_id . '-', 'LIKE')
     ->execute());
   }
+}
+
+
+/**
+ * Implements hook_admin_paths().
+ */
+function webform_civicrm_admin_paths() {
+  return array('node/*/civicrm' => TRUE);
 }
 
 

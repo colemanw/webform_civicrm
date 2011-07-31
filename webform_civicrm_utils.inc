@@ -536,28 +536,21 @@ function webform_civicrm_js_options($key, $str = '') {
     return drupal_access_denied();
   }
   // Serve AHAH requests for config form
-  if (substr($key, 0, 12) == 'civicrm_ahah') {
-    require_once 'webform_civicrm_forms.inc';
-    $snippet = webform_civicrm_process_ahah_form();
+  if (substr($key, 0, 12) == 'civicrm_ajax') {
+    list($form, $form_state) = ajax_get_form();
+    drupal_process_form($form['#form_id'], $form, $form_state);
 
     // Isolate the portion of form to fetch (nested array keys are encoded as a . separated string)
     $keys = explode('.', substr($key, 13));
     foreach ($keys as $key) {
-      $snippet = $snippet[$key];
+      $form = $form[$key];
     }
-    unset($snippet['#prefix'], $snippet['#suffix']);
-    if (strpos($key, 'contact') !== FALSE) {
-      $snippet['#suffix'] = '<script type="text/javascript">webform_civicrm_relationship_options();</script>';
-    }
-    // TODO Please change this theme call to use an associative array for the $variables parameter.
-    $messages = theme('status_messages');
-    $output = drupal_render($snippet);
-    exit(drupal_json_output(array('data' => $output)));
+    return $form
   }
 
-  civicrm_initialize();
   // Autocomplete callback for tags
   if ($key == 'tags') {
+    civicrm_initialize();
     if (!$str) {
       exit();
     }
@@ -1275,27 +1268,4 @@ function webform_civicrm_activity_find($params) {
   while ($dao->fetch()) {
     return $dao->id;
   }
-}
-
-
-/**
- * Loads a form during AHAH callback.
- * (This is part of Drupal API in D7)
- */
-function webform_civicrm_process_ahah_form() {
-  $form_state = array(
-    'storage' => NULL,
-    'submitted' => FALSE,
-  );
-  $form_build_id = $_POST['form_build_id'];
-  $form = form_get_cache($form_build_id, $form_state);
-  $args = $form['#parameters'];
-  $form_id = array_shift($args);
-  $form_state['post'] = $form['#post'] = $_POST;
-  // Enable the submit/validate handlers to determine whether AHAH-submittted.
-  $form_state['ahah_submission'] = TRUE;
-  $form['#programmed'] = $form_state['#redirect'] = FALSE;
-  drupal_process_form($form_id, $form, $form_state);
-  $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
-  return $form;
 }
