@@ -130,9 +130,9 @@ function webform_civicrm_update_6101() {
   $n = 1;
   $c = 0;
   $params = array();
-  while ($row = db_fetch_array($db)) {
-    $params[$n] = array($row['activity_id'], 'Integer');
-    $params[$n + 1] = array($row['contact_id'], 'Integer');
+  foreach ($db as $row) {
+    $params[$n] = array($row->activity_id, 'Integer');
+    $params[$n + 1] = array($row->contact_id, 'Integer');
     if ($n > 1) {
       $sql .= ',(%' . $n . ',%' . ($n + 1) . ')';
     }
@@ -191,10 +191,9 @@ function webform_civicrm_update_6200() {
     'description' => 'CiviCRM contact ids from this submission',
   );
   db_change_field('webform_civicrm_submissions', 'contact_id', 'contact_id', $field);
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query("UPDATE {webform_civicrm_submissions} SET contact_id = CONCAT('-', contact_id, '-')") */
+
   db_update('webform_civicrm_submissions')
-  ->fields(array('contact_id' => "CONCAT('-', 'contact_id', '-')"))
+  ->expression('contact_id', "CONCAT('-', contact_id, '-')")
   ->execute();
 
   // Match field keys to new format
@@ -210,12 +209,12 @@ function webform_civicrm_update_6200() {
 
   // Collect entity data
   $db = db_query("SELECT form_key, nid FROM {webform_component} WHERE form_key LIKE 'civicrm_%%' AND type <> 'fieldset'");
-  while ($row = db_fetch_array($db)) {
-    if (array_key_exists($row['form_key'], $match)) {
-      $update[$row['form_key']] = $match[$row['form_key']];
-      list($a, $b, $c, $d, $e, $f) = explode('_', $match[$row['form_key']], 6);
+  foreach ($db as $row) {
+    if (array_key_exists($row->form_key], $match)) {
+      $update[$row->form_key] = $match[$row->form_key];
+      list($a, $b, $c, $d, $e, $f) = explode('_', $match[$row->form_key], 6);
       if ($e != 'contact' && $e != 'other') {
-        $contacts[$row['nid']]['number_of_' . $e] = 1;
+        $contacts[$row->nid]['number_of_' . $e] = 1;
       }
     }
   }
@@ -223,16 +222,14 @@ function webform_civicrm_update_6200() {
   // Update field keys
   foreach ($update as $old => $new) {
     db_update('webform_component')
-  ->fields(array(
-      'form_key' => $new,
-    ))
-  ->condition('form_key', $old)
-  ->execute();
+    ->fields(array('form_key' => $new))
+    ->condition('form_key', $old)
+    ->execute();
   }
 
   // Populate entity data
   $db = db_query("SELECT * FROM {webform_civicrm_forms}");
-  while ($row = db_fetch_array($db)) {
+  foreach ($db as $row) {
     $data = array(
       'contact' => array(
         1 => array(
@@ -244,22 +241,22 @@ function webform_civicrm_update_6200() {
         ),
       ),
     );
-    if (!empty($contacts[$row['nid']])) {
-      $data['contact'][1] = $data['contact'][1] + $contacts[$row['nid']];
+    if (!empty($contacts[$row->nid])) {
+      $data['contact'][1] = $data['contact'][1] + $contacts[$row->nid];
     }
-    if ($row['activity_type_id']) {
+    if ($row->activity_type_id) {
       $data['activity'][1]['activity'][1] = array(
-        'activity_type_id' => $row['activity_type_id'],
-        'subject' => $row['activity_subject'],
+        'activity_type_id' => $row->activity_type_id,
+        'subject' => $row->activity_subject,
         'status_id' => 2,
       );
     }
     db_update('webform_civicrm_forms')
-  ->fields(array(
+    ->fields(array(
       'data' => serialize($data),
     ))
-  ->condition('nid', $row['nid'])
-  ->execute();
+    ->condition('nid', $row->nid)
+    ->execute();
   }
   // Remove activity fields
   db_drop_field('webform_civicrm_forms', 'activity_type_id');

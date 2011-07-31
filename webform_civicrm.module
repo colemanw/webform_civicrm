@@ -93,7 +93,7 @@ function webform_civicrm_node_delete($node) {
     ->execute();
     // Submissions have already been deleted from webform_submissions table, so we'll do the opposite of a join to find them
     db_delete('webform_civicrm_submissions')
-    ->where('sid NOT IN (SELECT sid FROM {webform_submissions})',  )
+    ->where('sid NOT IN (SELECT sid FROM {webform_submissions})')
     ->execute();
   }
 }
