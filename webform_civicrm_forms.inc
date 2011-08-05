@@ -435,7 +435,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
       for ($i = 1; $i <= $c['number_of_'. $sid] && !$hide; ++$i) {
         $fieldset = array(
           '#type' => 'fieldset',
-          '#title' => $set['label'] . (($set['max_instances'] > 1 || $sid == 'relationship') ? ' '. $i : ''),
+          '#title' => $set['label'] . (((isset($set['max_instances']) && $set['max_instances'] > 1) || $sid == 'relationship') ? ' '. $i : ''),
           '#attributes' => array('class' => 'web-civi-checkbox-set'),
         );
         foreach ($set['fields'] as $fid => $field) {
