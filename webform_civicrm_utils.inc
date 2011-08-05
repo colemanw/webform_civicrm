@@ -529,26 +529,12 @@ function webform_civicrm_get_contact_relationship_types($type_a, $type_b, $sub_t
 
 
 /**
- * Handle various AHAH requests.
+ * Autocomplete callback for tags
  */
 function webform_civicrm_js_options($key, $str = '') {
   if (!user_access('access CiviCRM')) {
     return drupal_access_denied();
   }
-  // Serve AHAH requests for config form
-  if (substr($key, 0, 12) == 'civicrm_ajax') {
-    list($form, $form_state) = ajax_get_form();
-    drupal_process_form($form['#form_id'], $form, $form_state);
-
-    // Isolate the portion of form to fetch (nested array keys are encoded as a . separated string)
-    $keys = explode('.', substr($key, 13));
-    foreach ($keys as $key) {
-      $form = $form[$key];
-    }
-    return $form
-  }
-
-  // Autocomplete callback for tags
   if ($key == 'tags') {
     civicrm_initialize();
     if (!$str) {

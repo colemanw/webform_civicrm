@@ -122,7 +122,7 @@ function webform_civicrm_theme() {
  * Initial submission processing - saves contacts.
  */
 function webform_civicrm_webform_submission_presave($node, &$submission) {
-  if (!empty($node->webform_civicrm)) {
+  if (!empty($node->webform_civicrm) && empty($submission->is_draft)) {
     module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
     webform_civicrm_process_submission($node, $submission);
   }
@@ -196,8 +196,20 @@ function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = N
     db_update('webform_civicrm_submissions')
     ->expression('contact_id', 'REPLACE(contact_id, :old, :new)', array(':old' => '-' . $old_id . '-', ':new' => '-' . $new_id . '-')) 
     ->condition('contact_id', '-' . $old_id . '-', 'LIKE')
-    ->execute());
+    ->execute();
   }
+}
+
+
+/**
+ * FAPI AJAX callback for the configure form.
+ */
+function webform_civicrm_configure_form_ajax($form, $form_state) {
+  $keys = explode('.', $form_state['triggering_element']['#ajax']['pathstr']);
+  foreach ($keys as $key) {
+    $form = $form[$key];
+  }
+  return $form;
 }
 
 

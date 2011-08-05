@@ -210,7 +210,7 @@ function webform_civicrm_update_6200() {
   // Collect entity data
   $db = db_query("SELECT form_key, nid FROM {webform_component} WHERE form_key LIKE 'civicrm_%%' AND type <> 'fieldset'");
   foreach ($db as $row) {
-    if (array_key_exists($row->form_key], $match)) {
+    if (array_key_exists($row->form_key, $match)) {
       $update[$row->form_key] = $match[$row->form_key];
       list($a, $b, $c, $d, $e, $f) = explode('_', $match[$row->form_key], 6);
       if ($e != 'contact' && $e != 'other') {
@@ -245,6 +245,7 @@ function webform_civicrm_update_6200() {
       $data['contact'][1] = $data['contact'][1] + $contacts[$row->nid];
     }
     if ($row->activity_type_id) {
+      $data['activity'][1]['add_link'] = TRUE;
       $data['activity'][1]['activity'][1] = array(
         'activity_type_id' => $row->activity_type_id,
         'subject' => $row->activity_subject,
