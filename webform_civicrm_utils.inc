@@ -1207,7 +1207,7 @@ function webform_civicrm_set_message($message, $contact) {
   if ($matches[0]) {
     foreach ($matches[0] as $pos => $match) {
       if (user_is_logged_in()) {
-        $link = l($matches[1][$pos], 'user/logout', array('query' => 'destination=' . $_GET['q']));
+        $link = l($matches[1][$pos], 'user/logout', array('query' => array('destination' => $_GET['q'])));
       }
       else {
         $link = l($matches[1][$pos], $_GET['q']);

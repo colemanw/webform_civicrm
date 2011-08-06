@@ -832,7 +832,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   // Form alterations for unknown contacts
   if (!$id['cid'][1]) {
     if ($settings['prefix_unknown']) {
-      $form['#prefix'] = filter_filter('process', 1, NULL, $settings['prefix_unknown']);
+      $form['#prefix'] = nl2br($settings['prefix_unknown']);
     }
     if ($settings['block_unknown_users']) {
       $form['#access'] = FALSE;
@@ -918,7 +918,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   }
 
   if ($settings['prefix_known']) {
-    $form['#prefix'] = filter_filter('process', 1, NULL, webform_civicrm_replace_tokens($settings['prefix_known'], $info['contact'][$c]['contact'][1]));
+    $form['#prefix'] = nl2br(webform_civicrm_replace_tokens($settings['prefix_known'], $info['contact'][$c]['contact'][1]));
   }
 
   if (!empty($id)) {
