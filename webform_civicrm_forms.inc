@@ -970,8 +970,8 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
 
       // Here's a much nicer interface for choosing options than the standard textfields
       if (array_key_exists($key, webform_civicrm_get_fields('lists'))) {
-        $node = node_load(arg(1));
-        $element = $node->webform['components'][arg(4)];
+        $node = node_load($form['nid']['#value']);
+        $element = $node->webform['components'][$form['cid']['#value']];
         $options = $sort = webform_civicrm_field_options($fid, 'arr', $node->webform_civicrm['data']);
         $defaults_selected = array();
         foreach (explode(',', $element['value']) as $v) {
