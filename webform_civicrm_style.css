@@ -38,12 +38,3 @@
 #webform-civicrm-configure-form .form-item label {
   display:inline;
 }
-
-#webform-civicrm-configure-form .progress-disabled {
-  float:none;
-}
-
-#webform-civicrm-configure-form .ahah-progress-throbber {
-  display:inline-block;
-  float:none;
-}
