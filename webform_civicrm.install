@@ -21,7 +21,6 @@ function webform_civicrm_schema() {
       ),
       'data' => array(
         'type' => 'text',
-        'not null' => TRUE,
         'serialize' => TRUE,
         'description' => 'Array of entity data for this webform',
       ),
@@ -183,7 +182,6 @@ function webform_civicrm_update_6200() {
   $ret = array();
   $field = array(
     'type' => 'text',
-    'not null' => TRUE,
     'serialize' => TRUE,
     'description' => 'Array of entity data for this form',
   );
