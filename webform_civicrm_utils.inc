@@ -220,12 +220,17 @@ function webform_civicrm_process_submission($node, &$submission) {
           // Prepare for sending subscription confirmations
           $confirmations_sent = $mailing_lists = array();
           if (!empty($node->webform_civicrm['confirm_subscription'])) {
-            $email = webform_civicrm_api('email', 'get', array('contact_id' => $cid));
-            if (!empty($email['values'])) {
-              $email = array_pop($email['values']);
+            // Retrieve this contact's primary email address
+            $result = webform_civicrm_api('email', 'get', array('contact_id' => $cid, 'options' => array('sort' => 'is_primary DESC')));
+            if (!empty($result['values'])) {
+              foreach ($result['values'] as $value) {
+                if (($value['is_primary'] || empty($email)) && strpos($value['email'], '@')) {
+                  $email = $value['email'];
+                }
+              }
               $mailer_params = array(
                 'contact_id' => $cid,
-                'email' => $email['email'],
+                'email' => $email,
               );
               $mailing_lists = webform_civicrm_get_options('mailing_lists');
             }
@@ -234,7 +239,7 @@ function webform_civicrm_process_submission($node, &$submission) {
           foreach ($add_groups as $gid) {
             if (!in_array($gid, $in_groups)) {
               $group_params['group_id'] = $mailer_params['group_id'] = (int) $gid;
-              if (array_key_exists($gid, $mailing_lists)) {
+              if (isset($mailing_lists[$gid]) && !empty($email)) {
                 webform_civicrm_api('mailing_group', 'event_subscribe', $mailer_params);
                 $confirmations_sent[] = $mailing_lists[$gid];
               }
