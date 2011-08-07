@@ -116,7 +116,6 @@ function webform_civicrm_update_6100() {
     'description' => 'Message to show to known users',
   );
   db_add_field('webform_civicrm_forms', 'message', $message);
-  return t('Update complete.');
 }
 
 /**
@@ -155,9 +154,7 @@ function webform_civicrm_update_6102() {
     'not null' => TRUE,
     'default' => 0,
   );
-
   db_add_field('webform_civicrm_forms', 'confirm_subscription', $confirm_subscription);
-  return t('Update complete.');
 }
 
 /**
@@ -260,7 +257,7 @@ function webform_civicrm_update_6200() {
   // Remove activity fields
   db_drop_field('webform_civicrm_forms', 'activity_type_id');
   db_drop_field('webform_civicrm_forms', 'activity_subject');
-  return t('Update complete.');
+  return t('Upgrade to webform_civicrm 2 successful. Note: The field key (machine name) of civicrm-related webform fields has changed. If you were using any of these keys in webform hooks or tokens, please update it to use the new key.');
 }
 
 /**
@@ -275,5 +272,4 @@ function webform_civicrm_update_6201() {
     'description' => 'Source label for newly created contacts',
   );
   db_add_field('webform_civicrm_forms', 'new_contact_source', $field);
-  return t('Update complete.');
 }
