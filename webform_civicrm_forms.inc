@@ -539,7 +539,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#maxlength' => 255,
     '#size' => 30,
     '#default_value' => $settings['new_contact_source'],
-    '#description' => t('Optional "source" label for new contacts created by this webform.'),
+    '#description' => t('Optional "source" label for any new contact created by this webform.'),
   );
   $form['submit'] = array(
     '#type' => 'submit',
