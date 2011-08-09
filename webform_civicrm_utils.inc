@@ -552,9 +552,6 @@ function webform_civicrm_js_options($key, $str='') {
       $snippet = $snippet[$key];
     }
     unset($snippet['#prefix'], $snippet['#suffix']);
-    if (strpos($key, 'contact') !== FALSE) {
-      $snippet['#suffix'] = '<script type="text/javascript">webform_civicrm_relationship_options();</script>';
-    }
     $messages = theme('status_messages');
     $output = drupal_render($snippet);
     exit(drupal_json(array('data' => $output)));

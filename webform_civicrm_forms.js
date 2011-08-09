@@ -46,6 +46,10 @@ function webform_civicrm_relationship_options() {
   }
 }
 $(document).ready( function(){
+  if(!$('#edit-nid').is(':checked')){
+    $('#webform-civicrm-configure-form fieldset > div, #webform-civicrm-configure-form fieldset > fieldset, #edit-number-of-contacts-wrapper').not('.hidden').hide();
+  }
+  
   $('#edit-nid').change(function(){
     if( $(this).is(':checked') ){
       $('#webform-civicrm-configure-form fieldset > div, #webform-civicrm-configure-form fieldset > fieldset, #edit-number-of-contacts-wrapper').not('.hidden').show(600);
@@ -67,8 +71,8 @@ $(document).ready( function(){
   $('#edit-number-of-contacts').change(function(){
     $('#webform-civicrm-configure-form')[0].submit();
   });
-
-  if(!$('#edit-nid').is(':checked')){
-    $('#webform-civicrm-configure-form fieldset > div, #webform-civicrm-configure-form fieldset > fieldset, #edit-number-of-contacts-wrapper').not('.hidden').hide();
-  }
+  
+  $('select[id*=contact-type], select[id*=contact-sub-type]').change(function(){
+    webform_civicrm_relationship_options();
+  });
 });
