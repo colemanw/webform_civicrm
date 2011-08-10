@@ -68,4 +68,10 @@ No. That would require some sort of batch update script, which is not part of th
 
 ADVANCED USAGE - PASSING IDS IN THE URL
 
-By default, contact 1 is assumed to be the acting user. So if you view a webform while logged-in, you will see your own contact details auto-filled on the form.
+By default, contact 1 is assumed to be the acting user. So if you view a webform while logged-in, you will see your own contact details auto-filled on the form. You can override this by supplying ids in the url. The following are supported:
+
+cid1=123 (contact 1's ID; you can also supply cid2 and so on)
+
+aid=456 (ID of the activity to autofill and update -- specifying an activity from a case will automatically cause the system to select that case if the contact has more than one)
+
+Note that permissions are checked, so these values will be ignored if the acting user doesn't have permission to view that contact (and if contact 1 isn't already part of the given activity)
