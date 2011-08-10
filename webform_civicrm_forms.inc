@@ -277,13 +277,10 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
             $form['act']['case']['activity_fields'][$sid][$fid] = array(
               '#type' => 'checkbox',
               '#title' => $field['name'],
-              '#description' => $field['extra']['description'],
+              '#description' => isset($field['extra']['description'] ? $field['extra']['description'] : '',
               '#return_value' => 'create_civicrm_webform_element',
               '#default_value' => !empty($enabled[$fid]),
             );
-            if (isset($field['extra']['description'])) {
-              $form['act']['case']['activity_fields'][$sid][$fid]['#description'] = $field['extra']['description'];
-            }
           }
         }
       }
@@ -725,12 +722,14 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
                 'name' => t('Contact') . ' ' . $c,
                 'pid' => 0,
                 'weight' => $i,
+                'extra' => array(),
               );
               $enabled['civicrm_' . $c . '_contact_1_fieldset_fieldset'] = $set = webform_component_insert($new_set);
             }
             $field['pid'] = $set;
           }
           // Save webform component
+          $field['extra'] = isset($field['extra']) ? $field['extra'] : array();
           $fid = webform_component_insert($field);
 
           $new_fields = TRUE;
@@ -830,7 +829,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   }
 
   // Form alterations for unknown contacts
-  if (!$id['cid'][1]) {
+  if (empty($id['cid'][1])) {
     if ($settings['prefix_unknown']) {
       $form['#prefix'] = nl2br($settings['prefix_unknown']);
     }
