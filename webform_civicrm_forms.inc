@@ -277,7 +277,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
             $form['act']['case']['activity_fields'][$sid][$fid] = array(
               '#type' => 'checkbox',
               '#title' => $field['name'],
-              '#description' => isset($field['extra']['description'] ? $field['extra']['description'] : '',
+              '#description' => isset($field['extra']['description']) ? $field['extra']['description'] : '',
               '#return_value' => 'create_civicrm_webform_element',
               '#default_value' => !empty($enabled[$fid]),
             );
@@ -849,8 +849,12 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
     if (!empty($id['cid'][$c])) {
       foreach (array('contact', 'address', 'email', 'phone', 'website') as $field) {
         if (!empty($contact['number_of_' . $field]) || $field == 'contact') {
-          $result = webform_civicrm_api($field, 'get', array('contact_id' => $id['cid'][$c]));
-          if (!empty($result['count'])) {
+          $params = array('contact_id' => $id['cid'][$c]);
+          if ($field != 'contact') {
+            $params['options'] = array('sort' => 'is_primary DESC');
+          }
+          $result = webform_civicrm_api($field, 'get', $params);
+          if (!empty($result['values'])) {
             $result = array_merge(array(0), array_values($result['values']));
             unset($result[0]);
             // Load address custom data
