@@ -1199,10 +1199,24 @@ function webform_civicrm_api($entity, $operation, $params) {
   $result = civicrm_api($entity, $operation, $params);
   if (!empty($result['is_error'])) {
     $bt = debug_backtrace();
-    watchdog('webform_civicrm', 'The CiviCRM "!function" API function returned the error: "%msg" when called by line !line of !file with the following parameters: "!params"', array('!function' => $entity . ' ' . $operation, '%msg' => $result['error_message'], '!line' => $bt[0]['line'], '!file' => array_pop(explode('/', $bt[0]['file'])), '!params' => print_r($params, TRUE)), WATCHDOG_ERROR);
+    watchdog('webform_civicrm', 'The CiviCRM "%function" API function returned the error: "%msg" when called by line !line of !file with the following parameters: "!params"', array('%function' => $entity . ' ' . $operation, '%msg' => $result['error_message'], '!line' => $bt[0]['line'], '!file' => array_pop(explode('/', $bt[0]['file'])), '!params' => print_r($params, TRUE)), WATCHDOG_ERROR);
+  }
+  // The API doesn't always sort correctly, so we'll do it here:
+  elseif (!empty($params['options']['sort']) && !empty($result['values'])) {
+    $values = array();
+    foreach ($result['values'] as $val) {
+      if (empty($val['is_primary'])) {
+        $values[] = $val;
+      }
+      else {
+        array_unshift($values, $val);
+      }
+    }
+    $result['values'] = $values;
   }
   return $result;
 }
+
 
 /**
  * Fetch an existing activity for a contact based on activity & case criteria
