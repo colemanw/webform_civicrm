@@ -31,14 +31,14 @@ This module allows you to tag contacts and add them to groups when they submit t
 
 CUSTOM DATA
 
--This module can handle (almost) any custom fields you have created for contacts in CiviCRM. Two exceptions due to their complexity are contact references and files.
+-This module can handle (almost) any custom fields you have created for contacts, addresses, or activities. Two exceptions due to their complexity are contact references and files. Custom data for other CRM entities (cases, relationships, etc) are not currently supported.
 
 
 USING SPECIAL LINKS IN CIVIMAIL
 
 CiviMail has the ability to generate links that have a unique "key" for each person it sends a message to. This module can read those keys and automatically pre-fill the webform for people who follow that link. Your constituents will thank you for not making them fill out their name, address, etc when you already know it. To send out personalized links to your form in CiviMail, simply copy and paste the provided url on the CiviCRM tab of your webform into your CiviMail message. It will look similar to this:
 
-http://mysite.org/myform?cid={contact.contact_id}&{contact.checksum}
+http://example.org/myform?cid1={contact.contact_id}&{contact.checksum}
 
 NOTE: If you are sending an HTML (rich-text) message, the recommended method is to highlight a piece of text in your message such as "go to my form" then click the link button (at the top of the message text editor) and paste in the above-mentioned url.
 
@@ -64,3 +64,14 @@ You can pretty easily start recording CiviCRM contacts even for an existing webf
 WILL CONTACTS AND ACTIVITIES BE CREATED RETROACTIVELY IF I ENABLE THIS MODULE ON AN EXISTING WEBFORM?
 
 No. That would require some sort of batch update script, which is not part of this module.
+
+
+ADVANCED USAGE - PASSING IDS IN THE URL
+
+By default, contact 1 is assumed to be the acting user. So if you view a webform while logged-in, you will see your own contact details auto-filled on the form. You can override this by supplying ids in the url. The following are supported:
+
+cid1=123 (contact 1's ID; you can also supply cid2 and so on)
+
+aid=456 (ID of the activity to autofill and update -- specifying an activity from a case will automatically cause the system to select that case if the contact has more than one)
+
+Note that permissions are checked, so these values will be ignored if the acting user doesn't have permission to view that contact (and if contact 1 isn't already part of the given activity)
