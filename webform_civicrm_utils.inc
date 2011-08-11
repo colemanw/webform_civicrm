@@ -62,6 +62,7 @@ function webform_civicrm_process_submission($node, &$submission) {
     if (empty($id)) {
       $id = array('cid' => array());
     }
+    $shared_address = array();
     foreach ($data['contact'] as $c => $contact) {
       if (empty($id['cid'][$c])) {
         // Skip contact if we don't have a name or id
@@ -126,7 +127,7 @@ function webform_civicrm_process_submission($node, &$submission) {
       foreach (array('address', 'email', 'phone', 'website') as $location) {
         if (!empty($contact[$location])) {
           $existing = array();
-          $result = webform_civicrm_api($location, 'get', array('contact_id' => $cid));
+          $result = webform_civicrm_api($location, 'get', array('contact_id' => $cid, 'options' => array('sort' => 'is_primary DESC')));
           if (!empty($result['values'])) {
             $existing = array_values($result['values']);
             array_unshift($existing, 0);
@@ -134,9 +135,19 @@ function webform_civicrm_process_submission($node, &$submission) {
           foreach ($contact[$location] as $i => $params) {
             // Skip this item if nothing was entered
             if ($location == 'address') {
-              if (empty($params['street_address']) && empty($params['city']) && empty($params['state_province_id']) && empty($params['state_province']) && empty($params['country_id']) && empty($params['postal_code']) && empty($params['postal_code_suffix'])) {
+              if (empty($params['street_address']) && empty($params['city']) && empty($params['state_province_id']) && empty($params['state_province']) && empty($params['country_id']) && empty($params['postal_code']) && empty($params['postal_code_suffix']) && empty($params['master_id'])) {
                 continue;
               }
+              // Store shared addresses for later since we haven't necessarily processed
+              // the contact this address is shared with yet.
+              if (!empty($params['master_id'])) {
+                $shared_address[$cid][$i] = array(
+                  'id' => !empty($existing[$i]) ? $existing[$i]['id'] : NULL,
+                  'mc' => $params['master_id'],
+                );
+                continue;
+              }
+              unset($params['master_id']);
             }
             elseif ($location == 'website') {
               if (empty($params['url'])) {
@@ -154,7 +165,7 @@ function webform_civicrm_process_submission($node, &$submission) {
               $params['is_primary'] = ($i == 1);
             }
             $result = webform_civicrm_api($location, 'create', $params);
-            if ($location == 'address' && empty($result['is_error'])) {
+            if ($location == 'address' && empty($result['is_error']) && empty($params['master_id'])) {
               $custom = array();
               foreach ($params as $param => $val) {
                 if (strpos($param, 'custom_') !== FALSE) {
@@ -277,11 +288,24 @@ function webform_civicrm_process_submission($node, &$submission) {
         }
       }
     }
+    // Process shared addresses. We do this last so all contacts and addresses will exist.
+    foreach ($shared_address as $cid => $shared) {
+      foreach ($shared as $i => $addr) {
+        $masters = webform_civicrm_api('address', 'get', array('contact_id' => $id['cid'][$addr['mc']], 'options' => array('sort' => 'is_primary DESC')));
+        if ($params = array_shift($masters['values'])) {
+          $params['master_id'] = $params['id'];
+          $params['id'] = $addr['id'];
+          $params['contact_id'] = $cid;
+          $params['is_primary'] = $i == 1;
+          webform_civicrm_api('address', 'create', $params);
+        }
+      }
+    }
   }
   // Insert/update processing
   if ($op != 'presave') {
     $act = 0;
-    // Open new case if it doesn't exist.
+    // Open new case if needed.
     if (empty($id['case'][1]) && empty($id['act'][1]) && !empty($data['case'][1]) && !empty($id['cid'][1])) {
       $data['case'][1]['case'][1]['contact_id'] = $id['cid'][1];
       $result = webform_civicrm_api('case', 'create', $data['case'][1]['case'][1]);
@@ -370,7 +394,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
     if (is_array($config->countryLimit)) {
       $enabled = implode(',', $config->countryLimit);
     }
-    $sql = "SELECT name AS label, id AS value FROM civicrm_country";
+    $sql = 'SELECT name AS label, id AS value FROM civicrm_country';
     if (!empty($enabled)) {
       $sql .=  " WHERE id IN ($enabled)";
     }
@@ -378,7 +402,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
   }
   elseif ($option_group == 'state') {
     $config = CRM_Core_Config::singleton();
-    $sql = 'SELECT name AS label, id AS value FROM civicrm_state_province WHERE country_id = '. $config->defaultContactCountry .' ORDER BY name';
+    $sql = 'SELECT name AS label, id AS value FROM civicrm_state_province WHERE country_id = ' . $config->defaultContactCountry . ' ORDER BY name';
   }
   elseif ($option_group == 'groups' || $option_group == 'mailing_lists') {
     $sql = 'SELECT id AS value, title AS label FROM civicrm_group WHERE is_active = 1';
@@ -409,7 +433,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
     }
     $sql .= ' ORDER BY weight, label';
   }
-  $dao =& CRM_Core_DAO::executeQuery($sql, $vars);
+  $dao = &CRM_Core_DAO::executeQuery($sql, $vars);
   while ($dao->fetch()) {
     $arr[$dao->value] = $dao->label;
   }
@@ -435,12 +459,26 @@ function webform_civicrm_field_options($key, $format, $data) {
     elseif ($name == 'relationship_type_id') {
       $ret = array(t('No Relationship')) + webform_civicrm_get_contact_relationship_types($data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][$n]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$n]['contact'][1]['contact_sub_type']);
     }
+    elseif ($name == 'master_id') {
+      $ret = array(t('-do not share-'));
+      foreach ($data['contact'] as $num => $contact) {
+        if ($num != $c) {
+          $ret[$num] =  t('Contact !num', array('!num' => $num));
+        }
+      }
+    }
     elseif (array_key_exists($name, $lists)) {
       if ($lists[$name] == 'is_active') {
-        $ret = array(1 => t('Yes'), 0 => t('No'));
+        $ret = array(
+          1 => t('Yes'),
+          0 => t('No'),
+        );
       }
       else {
         $ret = webform_civicrm_get_options($lists[$name]);
+      }
+      if ($name == 'prefix_id' || $name == 'suffix_id') {
+        $ret = array(' ') + $ret;
       }
     }
     if ($format == 'str') {
@@ -457,12 +495,12 @@ function webform_civicrm_get_contact_types() {
   static $contact_types = array();
   static $sub_types = array();
   if (!$contact_types) {
-    $sql = "
+    $sql = '
       SELECT c1.name, c1.label, LOWER(c2.name) AS parent_type
       FROM civicrm_contact_type c1
       LEFT JOIN civicrm_contact_type c2 ON c1.parent_id  = c2.id
       WHERE c1.is_active = 1
-      ORDER BY c1.parent_id ASC";
+      ORDER BY c1.parent_id ASC';
     $dao = &CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {
       if ($dao->parent_type) {
@@ -484,10 +522,10 @@ function webform_civicrm_get_contact_types() {
 function webform_civicrm_get_relationship_types() {
   static $types = array();
   if (!$types) {
-    $sql = "
+    $sql = '
       SELECT id, name_a_b, name_b_a, label_a_b, label_b_a, LOWER(contact_type_a) AS type_a, LOWER(contact_type_b) AS type_b, contact_sub_type_a, contact_sub_type_b
       FROM civicrm_relationship_type
-      WHERE is_active <> 0";
+      WHERE is_active <> 0';
     $dao = &CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {
       $types[$dao->id] = array(
@@ -535,7 +573,7 @@ function webform_civicrm_get_contact_relationship_types($type_a, $type_b, $sub_t
 
 
 /**
- * Handle various AHAH requests.
+ * Autocomplete and AHAH form callback.
  */
 function webform_civicrm_js_options($key, $str='') {
   if (!user_access('access CiviCRM')) {
@@ -876,7 +914,10 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['address_postal_code_suffix'] = array(
       'name' => t('Postal Code Suffix'),
       'type' => 'textfield',
-      'extra' => array('width' => 5, 'description' => t('+4 digits of Zip Code')),
+      'extra' => array(
+        'width' => 5,
+        'description' => t('+4 digits of Zip Code'),
+      ),
     );
     $fields['address_country_id'] = array(
       'name' => t('Country'),
@@ -886,6 +927,12 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Address # Location'),
       'type' => 'select',
       'expose_list' => TRUE,
+    );
+    $fields['address_master_id'] = array(
+      'name' => t('Share address with'),
+      'type' => 'select',
+      'expose_list' => TRUE,
+      'extra' => array('description' => t('If you choose to share this address with another contact, all fields for this address will be ignored.')),
     );
     $fields['phone_phone'] = array(
       'name' => t('Phone Number'),
@@ -971,45 +1018,46 @@ function webform_civicrm_get_fields($var = 'fields') {
     );
 
     $tokens = array(
-      'display_name'        => t('display name'),
-      'first_name'          => t('first name'),
-      'nick_name'           => t('nick name'),
-      'middle_name'         => t('middle name'),
-      'last_name'           => t('last name'),
-      'individual_prefix'   => t('name prefix'),
-      'individual_suffix'   => t('name suffix'),
-      'gender'              => t('gender'),
-      'birth_date'          => t('birth date'),
-      'job_title'           => t('job title'),
-      'current_employer'    => t('current employer'),
-      'contact_id'          => t('contact id'),
-      'street_address'      => t('street address'),
-      'city'                => t('city'),
-      'state_province'      => t('state/province abbr'),
+      'display_name' => t('display name'),
+      'first_name' => t('first name'),
+      'nick_name' => t('nick name'),
+      'middle_name' => t('middle name'),
+      'last_name' => t('last name'),
+      'individual_prefix' => t('name prefix'),
+      'individual_suffix' => t('name suffix'),
+      'gender' => t('gender'),
+      'birth_date' => t('birth date'),
+      'job_title' => t('job title'),
+      'current_employer' => t('current employer'),
+      'contact_id' => t('contact id'),
+      'street_address' => t('street address'),
+      'city' => t('city'),
+      'state_province' => t('state/province abbr'),
       'state_province_name' => t('state/province full'),
-      'postal_code'         => t('postal code'),
-      'country'             => t('country'),
-      'world_region'        => t('world region'),
-      'phone'               => t('phone number'),
-      'email'               => t('email'),
+      'postal_code' => t('postal code'),
+      'country' => t('country'),
+      'world_region' => t('world region'),
+      'phone' => t('phone number'),
+      'email' => t('email'),
     );
     // key: key accepted by civicrm api
     // value: name in civicrm_option_group
     $lists = array(
-      'prefix_id'                      => 'individual_prefix',
-      'suffix_id'                      => 'individual_suffix',
-      'gender_id'                      => 'gender',
+      'prefix_id' => 'individual_prefix',
+      'suffix_id' => 'individual_suffix',
+      'gender_id' => 'gender',
       'preferred_communication_method' => 'preferred_communication_method',
-      'country_id'                     => 'country',
-      'state_province_id'              => 'state',
-      'phone_type_id'                  => 'phone_type',
-      'location_type_id'               => 'location_type',
-      'website_type_id'                => 'website_type',
-      'relationship_type_id'           => 'relationship_type_id',
-      'is_active'                      => 'is_active',
-      'contact_sub_type'               => 'contact_sub_type',
-      'groups'                         => 'groups',
-      'groups_hidden'                  => 'groups',
+      'country_id' => 'country',
+      'state_province_id' => 'state',
+      'phone_type_id' => 'phone_type',
+      'location_type_id' => 'location_type',
+      'website_type_id' => 'website_type',
+      'master_id' => 'master_id',
+      'relationship_type_id' => 'relationship_type_id',
+      'is_active' => 'is_active',
+      'contact_sub_type' => 'contact_sub_type',
+      'groups' => 'groups',
+      'groups_hidden' => 'groups',
     );
 
     $sets = array(
@@ -1025,19 +1073,19 @@ function webform_civicrm_get_fields($var = 'fields') {
 
     // Pull custom fields and match to Webform element types
     $custom_types = array(
-      'Select'                      => array('type' => 'select'),
-      'Multi-Select'                => array('type' => 'select', 'extra' => array('multiple' => 1)),
-      'AdvMulti-Select'             => array('type' => 'select', 'extra' => array('multiple' => 1)),
-      'Radio'                       => array('type' => 'select', 'extra' => array('aslist' => 0)),
-      'CheckBox'                    => array('type' => 'select', 'extra' => array('multiple' => 1, 'aslist' => 0)),
-      'Text'                        => array('type' => 'textfield'),
-      'TextArea'                    => array('type' => 'textarea'),
-      'RichTextArea'                => array('type' => 'textarea'),
-      'Select Date'                 => array('type' => 'date'),
-      'Link'                        => array('type' => 'textfield'),
-      'Select Country'              => array('type' => 'select'),
-      'Multi-Select Country'        => array('type' => 'select', 'extra' => array('multiple' => 1)),
-      'Select State/Province'       => array('type' => 'select'),
+      'Select' => array('type' => 'select'),
+      'Multi-Select' => array('type' => 'select', 'extra' => array('multiple' => 1)),
+      'AdvMulti-Select' => array('type' => 'select', 'extra' => array('multiple' => 1)),
+      'Radio' => array('type' => 'select', 'extra' => array('aslist' => 0)),
+      'CheckBox' => array('type' => 'select', 'extra' => array('multiple' => 1, 'aslist' => 0)),
+      'Text'  => array('type' => 'textfield'),
+      'TextArea' => array('type' => 'textarea'),
+      'RichTextArea' => array('type' => 'textarea'),
+      'Select Date' => array('type' => 'date'),
+      'Link'  => array('type' => 'textfield'),
+      'Select Country' => array('type' => 'select'),
+      'Multi-Select Country' => array('type' => 'select', 'extra' => array('multiple' => 1)),
+      'Select State/Province' => array('type' => 'select'),
       'Multi-Select State/Province' => array('type' => 'select', 'extra' => array('multiple' => 1)),
     );
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
@@ -1047,7 +1095,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       INNER JOIN civicrm_custom_group cg ON cg.id = cf.custom_group_id
       WHERE cf.is_active <> 0 AND cg.extends IN ('contact','individual','organization','household','address','activity') AND cg.is_active <> 0
       ORDER BY cf.custom_group_id, cf.weight";
-    $dao =& CRM_Core_DAO::executeQuery($sql);
+    $dao = &CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {
       if (!$custom_types[$dao->html_type]) {
         continue;
@@ -1056,7 +1104,7 @@ function webform_civicrm_get_fields($var = 'fields') {
         $set = 'address';
       }
       else {
-        $set = 'cg'. $dao->custom_group_id;
+        $set = 'cg' . $dao->custom_group_id;
         $sets[$set]['label'] = $dao->custom_group_name;
         if ($dao->entity_type != 'activity') {
           $sets[$set]['entity_type'] = 'contact';
@@ -1077,7 +1125,7 @@ function webform_civicrm_get_fields($var = 'fields') {
           $sets[$set]['sub_types'] = explode($sp, trim($dao->sub_types, $sp));
         }
       }
-      $id = $set .'_custom_'. $dao->id;
+      $id = $set . '_custom_' . $dao->id;
       $label = drupal_strtolower($dao->label);
       $fields[$id] = $custom_types[$dao->html_type];
       $fields[$id]['name'] = $dao->label;
@@ -1086,20 +1134,20 @@ function webform_civicrm_get_fields($var = 'fields') {
       $fields[$id]['value'] = str_replace($sp, ',', trim($dao->default_value, $sp));
 
       if ($fields[$id]['type'] == 'date') {
-        $fields[$id]['extra']['year_start'] = $dao->start_date_years ? '-'. $dao->start_date_years : '-50';
-        $fields[$id]['extra']['year_end'] = $dao->end_date_years ? '+'. $dao->end_date_years : '+50';
+        $fields[$id]['extra']['year_start'] = $dao->start_date_years ? '-' . $dao->start_date_years : '-50';
+        $fields[$id]['extra']['year_end'] = $dao->end_date_years ? '+' . $dao->end_date_years : '+50';
       }
       elseif ($og = $dao->option_group_id) {
-        $lists['custom_'. $dao->id] = $og;
+        $lists['custom_' . $dao->id] = $og;
       }
       elseif ($dao->html_type == 'Select Country' || $dao->html_type == 'Multi-Select Country') {
-        $lists['custom_'. $dao->id] = 'country';
+        $lists['custom_' . $dao->id] = 'country';
       }
       elseif ($dao->html_type == 'Select State/Province' || $dao->html_type == 'Multi-Select State/Province') {
-        $lists['custom_'. $dao->id] = 'state';
+        $lists['custom_' . $dao->id] = 'state';
       }
       elseif ($fields[$id]['type'] == 'select') {
-        $lists['custom_'. $dao->id] = 'is_active';
+        $lists['custom_' . $dao->id] = 'is_active';
       }
       elseif ($fields[$id]['type'] == 'textarea') {
         $fields[$id]['extra']['cols'] = $dao->note_columns;
@@ -1122,6 +1170,7 @@ function webform_civicrm_explode_key($key) {
   return $pieces;
 }
 
+
 /**
  * Convert a | separated string into an array
  */
@@ -1135,6 +1184,7 @@ function webform_civicrm_str2array($str) {
   return $ret;
 }
 
+
 /**
  * Convert an array into a | separated string
  */
@@ -1145,6 +1195,7 @@ function webform_civicrm_array2str($arr) {
   }
   return $str;
 }
+
 
 /**
  * Token replacement for form messages

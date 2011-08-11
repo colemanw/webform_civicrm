@@ -306,7 +306,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   foreach ($contacts as $n => $c) {
     $form['contacts']['contact_' . $n] = array(
       '#type'  => 'fieldset',
-      '#title' => t('Contact') .' '. $n,
+      '#title' =>  t('Contact !num', array('!num' => $n)),
     );
     $form['contacts']['contact_' . $n][$n .'_activity_target'] = array(
       '#type' => 'checkbox',
