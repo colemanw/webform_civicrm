@@ -311,7 +311,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   foreach ($contacts as $n => $c) {
     $form['contacts']['contact_' . $n] = array(
       '#type' => 'fieldset',
-      '#title' => t('Contact') . ' ' . $n,
+      '#title' => t('Contact !num', array('!num' => $n)),
     );
     $form['contacts']['contact_' . $n][$n . '_activity_target'] = array(
       '#type' => 'checkbox',
@@ -447,7 +447,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
           '#attributes' => array('class' => array('web-civi-checkbox-set')),
         );
         foreach ($set['fields'] as $fid => $field) {
-          if ($fid == 'contact_contact_sub_type') {
+          if ($fid == 'contact_contact_sub_type' || ($fid == 'address_master_id' && count($contacts) == 1)) {
             continue;
           }
           list($ftable, $fname) = explode('_', $fid, 2);
