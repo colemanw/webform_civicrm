@@ -64,7 +64,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
 
   // AJAXify help text
   if (module_exists('popups')) {
-    popups_add_popups(array(' .popup-webform-civicrm-help' => array('width' => '90%')));
+    popups_add_popups(array('.popup-webform-civicrm-help' => array('width' => '90%')));
   }
 
   $form['nid'] = array(
@@ -340,7 +340,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     }
     $form['contacts']['contact_' . $n]['contact_subtype_wrapper']['civicrm_' . $n . '_contact_1_contact_contact_sub_type'] = array(
       '#type' => 'select',
-      '#title' => t('Type of') . ' ' . $contact_types[$c['contact'][1]['contact_type']],
+      '#title' => t('Type of !contact', array('!contact' => $contact_types[$c['contact'][1]['contact_type']])),
       '#options' => $subs,
       '#description' => t('You may optionally select a more specific type for this contact. Choose "user select" to create a form element with these options.'),
       '#default_value' => 0,
