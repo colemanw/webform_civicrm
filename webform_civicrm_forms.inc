@@ -638,7 +638,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
       drupal_set_message(t('Deleted field: %name', array('%name' => $node->webform['components'][$id]['name'])));
       webform_component_delete($node, $node->webform['components'][$id]);
     }
-    $i = 0;
+    $i = $new_fields = 0;
     $lists = webform_civicrm_get_fields('lists');
     foreach ($vals as $key => $val) {
       if (substr($key, 0, 7) == 'civicrm') {
@@ -695,28 +695,24 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
           }
           // Create fieldsets
           if ($ent != 'activity' && !empty($vals['create_fieldsets'])) {
-            if (array_key_exists('civicrm_' . $c .'_contact_1_fieldset_fieldset', $enabled)) {
-              $set = $enabled['civicrm_' . $c .'_contact_1_fieldset_fieldset'];
-            }
-            else {
+            if (!array_key_exists('civicrm_' . $c . '_contact_1_fieldset_fieldset', $enabled)) {
               $new_set = array(
                 'nid' => $nid,
                 'form_key' => 'civicrm_' . $c . '_contact_1_fieldset_fieldset',
                 'type' => 'fieldset',
-                'name' => t('Contact') . ' ' . $c,
+                'name' => t('Contact !num', array('!num' => $c)),
                 'pid' => 0,
                 'weight' => $i,
                 'extra' => array(),
               );
-              $enabled['civicrm_' . $c . '_contact_1_fieldset_fieldset'] = $set = webform_component_insert($new_set);
+              $enabled['civicrm_' . $c . '_contact_1_fieldset_fieldset'] = webform_component_insert($new_set);
             }
-            $field['pid'] = $set;
+            $field['pid'] = $enabled['civicrm_' . $c . '_contact_1_fieldset_fieldset'];
           }
           // Save webform component
           $field['extra'] = isset($field['extra']) ? $field['extra'] : array();
           $fid = webform_component_insert($field);
-
-          $new_fields = TRUE;
+          ++$new_fields;
         }
         // Handle exposed contact settings that don't create form elements
         elseif (isset($fields[$table . '_' . $name]['expose_list'])) {
@@ -724,8 +720,11 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
         }
       }
     }
-    if (!empty($new_fields)) {
-      drupal_set_message(t('You may now customize your new fields however you wish.'));
+    if ($new_fields == 1) {
+      drupal_set_message(t('Created field: %name', array('%name' => $field['name'])));
+    }
+    elseif ($new_fields) {
+      drupal_set_message(t('Created !num new fields.', array('!num' => $new_fields)));
     }
 
     // Write/update record

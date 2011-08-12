@@ -190,7 +190,6 @@ function webform_civicrm_webform_submission_render_alter(&$sub) {
 }
 
 
-
 /**
  * Implementation of hook_civicrm_merge().
  * Update submission data to reflect new cids when contacts are merged.
