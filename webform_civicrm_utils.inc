@@ -291,13 +291,15 @@ function webform_civicrm_process_submission($node, &$submission) {
     // Process shared addresses. We do this last so all contacts and addresses will exist.
     foreach ($shared_address as $cid => $shared) {
       foreach ($shared as $i => $addr) {
-        $masters = webform_civicrm_api('address', 'get', array('contact_id' => $id['cid'][$addr['mc']], 'options' => array('sort' => 'is_primary DESC')));
-        if ($params = array_shift($masters['values'])) {
-          $params['master_id'] = $params['id'];
-          $params['id'] = $addr['id'];
-          $params['contact_id'] = $cid;
-          $params['is_primary'] = $i == 1;
-          webform_civicrm_api('address', 'create', $params);
+        if (!empty($id['cid'][$addr['mc']])) {
+          $masters = webform_civicrm_api('address', 'get', array('contact_id' => $id['cid'][$addr['mc']], 'options' => array('sort' => 'is_primary DESC')));
+          if (!empty($masters['values']) && $params = array_shift($masters['values'])) {
+            $params['master_id'] = $params['id'];
+            $params['id'] = $addr['id'];
+            $params['contact_id'] = $cid;
+            $params['is_primary'] = $i == 1;
+            webform_civicrm_api('address', 'create', $params);
+          }
         }
       }
     }

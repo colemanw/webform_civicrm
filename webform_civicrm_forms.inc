@@ -392,7 +392,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
         }
       }
       if (!empty($set['sub_types'])) {
-        if (!in_array($c['contact_sub_type'], $set['sub_types'])) {
+        if (!in_array($c['contact'][1]['contact_sub_type'], $set['sub_types'])) {
           $hide = TRUE;
         }
         $pos = &$form['contacts']['contact_' . $n]['contact_subtype_wrapper']['contact_custom_wrapper'];
@@ -466,7 +466,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
           // Create dropdown list
           if (!empty($field['expose_list'])) {
             // Populate option list as needed (always reset for relationship_type_id)
-            if (!is_array($lists[$fname]) || $fname = 'relationship_type_id') {
+            if (!is_array($lists[$fname]) || $fname == 'relationship_type_id') {
               $lists[$fname] = array('create_civicrm_webform_element' => t('-user select-')) + webform_civicrm_field_options($fid, 'arr', $data);
             }
             $fieldset[$fid] = array(
@@ -651,7 +651,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
     }
     // Delete fields TODO: There should be a confirmation or warning
     foreach ($delete_me as $id) {
-      drupal_set_message(t('Deleted field:') . ' ' . $node->webform['components'][$id]['name']);
+      drupal_set_message(t('Deleted field: %name', array('%name' => $node->webform['components'][$id]['name'])));
       webform_component_delete($node, $node->webform['components'][$id]);
     }
     $i = 0;
