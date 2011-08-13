@@ -12,12 +12,11 @@
 function webform_civicrm_process_submission($node, &$submission) {
   static $data = array();
   static $id = array();
+  static $update = array();
   $settings = $node->webform_civicrm;
-  $op = 'insert';
 
-  // The bulk of the work happens during presave
+  // Presave processing - save contact data
   if (empty($data)) {
-    $op = 'presave';
     civicrm_initialize();
     require_once 'api/api.php';
     require_once 'CRM/Core/BAO/CustomValueTable.php';
@@ -26,7 +25,11 @@ function webform_civicrm_process_submission($node, &$submission) {
     $data = $settings['data'];
     $sets = webform_civicrm_get_fields('sets');
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
-    global $user;
+    
+    // Check if this is an update op
+    if (!empty($submission->sid)) {
+      $update = 'sid';
+    }
 
     // Fill entity arrays with field values
     foreach ($enabled as $field => $fid) {
@@ -46,9 +49,6 @@ function webform_civicrm_process_submission($node, &$submission) {
           $data[$ent][$c][$table][$n][$field] = $val;
         }
       }
-    }
-    if (!empty($submission->sid)) {
-      $op = 'update';
     }
 
     // Retrieve stored ids
@@ -95,18 +95,17 @@ function webform_civicrm_process_submission($node, &$submission) {
       if (empty($id['cid'][$c])) {
         $params['source'] = $settings['new_contact_source'];
         $result = webform_civicrm_api('contact', 'create', $params);
-        $id['cid'][$c] = $result['id'];
+        if (!empty($result['id'])) {
+          $id['cid'][$c] = $result['id'];
+        }
+        else {
+          $id['cid'][$c] = 0;
+          continue;
+        }
       }
       else {
         $params['contact_id'] = $id['cid'][$c];
         $result = webform_civicrm_api('contact', 'create', $params);
-      }
-      if (empty($id['cid'][$c]) || !empty($result['is_error'])) {
-        watchdog('webform_civicrm', 'An error occured when trying to create a new contact. Contact !num was not created.', array('!num' => $c), WATCHDOG_ERROR, l($node->title . ': ' . t('Submission #') . $submission->sid, 'node/' . $node->nid . '/submission/' . $submission->sid));
-        if (empty($id['cid'][$c])) {
-          $id['cid'][$c] = 0;
-          continue;
-        }
       }
       $cid = $id['cid'][$c];
       webform_civicrm_save_custom($contact, $cid);
@@ -185,9 +184,18 @@ function webform_civicrm_process_submission($node, &$submission) {
         foreach ($contact['relationship'] as $i => $params) {
           if (!empty($params['relationship_type_id'])) {
             list($type, $a_b) = explode('_', $params['relationship_type_id']);
-            $params['relationship_type_id'] = $type;
             $params['contact_id_a'] = $params['contact_id_b'] = $id['cid'][$i];
             $params['contact_id_' . $a_b] = $cid;
+            if ($type == 'ce') {
+              foreach (webform_civicrm_get_relationship_types() as $t) {
+                if ($t['name_a_b'] == 'Employee of' && $t['name_b_a'] == 'Employer of' && $t['id'] != 'ce') {
+                  $type = $t['id'];
+                  break;
+                }
+              }
+              webform_civicrm_api('contact', 'create', array('contact_id' => $params['contact_id_a'], 'employer_id' => $params['contact_id_b'], 'contact_type' => 'Individual'));
+            }
+            $params['relationship_type_id'] = $type;
             webform_civicrm_api('relationship', 'create', $params);
           }
         }
@@ -304,8 +312,8 @@ function webform_civicrm_process_submission($node, &$submission) {
       }
     }
   }
-  // Insert/update processing
-  if ($op != 'presave') {
+  // Insert/update processing - save case & activity data
+  else {
     $act = 0;
     // Open new case if needed.
     if (empty($id['case'][1]) && empty($id['act'][1]) && !empty($data['case'][1]) && !empty($id['cid'][1])) {
@@ -371,14 +379,12 @@ function webform_civicrm_process_submission($node, &$submission) {
         webform_civicrm_save_custom($data['activity'][1], $act, 'Activity');
       }
     }
-    if ($op == 'insert') {
-      $record = array(
-        'sid' => $submission->sid,
-        'contact_id' => '-' . implode('-', $id['cid']) . '-',
-        'activity_id' => $act,
-      );
-      drupal_write_record('webform_civicrm_submissions', $record);
-    }
+    $record = array(
+      'sid' => $submission->sid,
+      'contact_id' => '-' . implode('-', $id['cid']) . '-',
+      'activity_id' => $act,
+    );
+    drupal_write_record('webform_civicrm_submissions', $record, $update);
   }
 }
 
@@ -541,6 +547,20 @@ function webform_civicrm_get_relationship_types() {
         'sub_type_a' => $dao->contact_sub_type_a,
         'sub_type_b' => $dao->contact_sub_type_b,
       );
+      // Create a pseudo relationship type for "current employer"
+      if ($dao->name_a_b == 'Employee of' && $dao->name_b_a == 'Employer of') {
+        $types['ce'] = array(
+        'id' => 'ce',
+        'name_a_b' => 'Current Employee of',
+        'name_b_a' => 'Current Employer of',
+        'label_a_b' => t('Current Employee of'),
+        'label_b_a' => t('Current Employer of'),
+        'type_a' => 'individual',
+        'type_b' => 'organization',
+        'sub_type_a' => NULL,
+        'sub_type_b' => NULL,
+      );
+      }
     }
   }
   return $types;
@@ -551,23 +571,22 @@ function webform_civicrm_get_relationship_types() {
  * Get valid relationship types for a given pair of contacts
  */
 function webform_civicrm_get_contact_relationship_types($type_a, $type_b, $sub_type_a, $sub_type_b) {
-  $types = webform_civicrm_get_relationship_types();
   $ret = array();
-  foreach ($types as $t) {
+  foreach (webform_civicrm_get_relationship_types() as $t) {
     if (($t['type_a'] == $type_a || !$t['type_a'])
-      && ($t['type_b'] == $type_b || !$t['type_b'])
-      && ($t['sub_type_a'] == $sub_type_a || !$t['sub_type_a'])
-      && ($t['sub_type_b'] == $sub_type_b || !$t['sub_type_b'])
+       && ($t['type_b'] == $type_b || !$t['type_b'])
+       && ($t['sub_type_a'] == $sub_type_a || !$t['sub_type_a'])
+       && ($t['sub_type_b'] == $sub_type_b || !$t['sub_type_b'])
     ) {
-      $ret[$t['id'] .'_a'] = $t['label_a_b'];
+      $ret[$t['id'] . '_a'] = $t['label_a_b'];
     }
     if (($t['type_a'] == $type_b || !$t['type_a'])
-      && ($t['type_b'] == $type_a || !$t['type_b'])
-      && ($t['sub_type_a'] == $sub_type_b || !$t['sub_type_a'])
-      && ($t['sub_type_b'] == $sub_type_a || !$t['sub_type_b'])
-      && ($t['name_a_b'] != $t['name_b_a'])
+       && ($t['type_b'] == $type_a || !$t['type_b'])
+       && ($t['sub_type_a'] == $sub_type_b || !$t['sub_type_a'])
+       && ($t['sub_type_b'] == $sub_type_a || !$t['sub_type_b'])
+       && ($t['name_a_b'] != $t['name_b_a'])
     ) {
-      $ret[$t['id'] .'_b'] = $t['label_b_a'];
+      $ret[$t['id'] . '_b'] = $t['label_b_a'];
     }
   }
   return $ret;

@@ -164,15 +164,15 @@ function webform_civicrm_webform_submission_load(&$submissions) {
   if ($contacts) {
     // Retrieve contact names and add to submission objects
     civicrm_initialize();
-    $sql = 'SELECT id, display_name FROM civicrm_contact WHERE id IN ('. implode(',', array_keys($contacts)) .')';
+    $sql = 'SELECT id, display_name FROM civicrm_contact WHERE id IN (' . implode(',', array_keys($contacts)) . ')';
 
-    $dao =& CRM_Core_DAO::executeQuery($sql);
+    $dao = &CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {
       $contacts[$dao->id] = $dao->display_name;
     }
     foreach ($submissions as &$s) {
-      if ($cid = $s->civicrm['contact_id']) {
-        $s->civicrm['display_name'] = $contacts[$cid[1]];
+      if (isset($s->civicrm['contact_id'])) {
+        $s->civicrm['display_name'] = $contacts[$s->civicrm['contact_id'][1]];
       }
     }
   }
