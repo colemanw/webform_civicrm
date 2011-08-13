@@ -841,14 +841,46 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   // Form alterations for known contacts
   require_once 'api/api.php';
   $enabled = webform_civicrm_enabled_fields($node);
-  $contacts = $data['contact'];
+  $count = count($data['contact']);
   $info = array('contact' => array());
-  foreach ($contacts as $c => $contact) {
+  foreach ($data['contact'] as $c => $contact) {
     $info['contact'][$c] = array();
+    $cid = 0;
     if (!empty($id['cid'][$c])) {
+      $cid = $id['cid'][$c];
+    }
+    elseif ($contact['contact'][1]['contact_type'] == 'organization') {
+      // Auto-fill "current_employer" without setting it in $id
+      // (this allows the user to change their current employer on the form)
+      $employee = 0;
+      for ($i = $c; $i <= $count; ++$i) {
+        $con = $data['contact'][$i];
+        if (!empty($con['relationship']) && (($con['contact'][1]['contact_type'] == 'individual' && !empty($id['cid'][$i])) || $i == $c)) {
+          foreach($con['relationship'] as $target => $rel) {
+            if ($rel['relationship_type_id'] == 'ce_b' && !empty($id['cid'][$target])) {
+              $employee = $id['cid'][$target];
+            }
+            elseif ($rel['relationship_type_id'] == 'ce_a' && $target == $c) {
+              $employee = $id['cid'][$i];
+            }
+            if ($employee) {
+              $result = webform_civicrm_api('contact', 'get', array('contact_id' => $employee, 'return.current_employer_id' => 1));
+              if (!empty($result['values'][$employee]['current_employer_id'])) {
+                $cid = $result['values'][$employee]['current_employer_id'];
+                break;
+              }
+              else {
+                $employee = 0;
+              }
+            }
+          }
+        }
+      }
+    }
+    if ($cid) {
       foreach (array('contact', 'address', 'email', 'phone', 'website') as $field) {
         if (!empty($contact['number_of_' . $field]) || $field == 'contact') {
-          $params = array('contact_id' => $id['cid'][$c]);
+          $params = array('contact_id' => $cid);
           if ($field != 'contact') {
             $params['options'] = array('sort' => 'is_primary DESC');
           }
@@ -872,21 +904,21 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       // Get custom contact data if needed
       foreach ($contact as $k => $v) {
         if (substr($k, 0, 12) == 'number_of_cg' && !empty($v)) {
-          $custom = webform_civicrm_get_custom($id['cid'][$c]);
+          $custom = webform_civicrm_get_custom($cid);
           $info['contact'][$c] = $info['contact'][$c] + $custom;
           break;
         }
       }
       // Preferred communication method is not fetched by default by the api
       if (!empty($enabled['civicrm_' . $c . '_contact_1_contact_preferred_communication_method'])) {
-        $result = webform_civicrm_api('contact', 'get', array('contact_id' => $id['cid'][$c], 'return.preferred_communication_method' => 1));
-        if (!empty($result['values'][$id['cid'][$c]]['preferred_communication_method'])) {
-          $info['contact'][$c]['contact'][1]['preferred_communication_method'] = $result['values'][$id['cid'][$c]]['preferred_communication_method'];
+        $result = webform_civicrm_api('contact', 'get', array('contact_id' => $cid, 'return.preferred_communication_method' => 1));
+        if (!empty($result['values'][$cid]['preferred_communication_method'])) {
+          $info['contact'][$c]['contact'][1]['preferred_communication_method'] = $result['values'][$cid]['preferred_communication_method'];
         }
       }
       // Set default values for group field
       if (array_key_exists('civicrm_' . $c . '_contact_1_other_groups', $enabled)) {
-        $groups = webform_civicrm_api('group_contact', 'get', array('contact_id' => $id['cid'][$c]));
+        $groups = webform_civicrm_api('group_contact', 'get', array('contact_id' => $cid));
         $info['contact'][$c]['other'][1]['groups'] = array();
         foreach ($groups['values'] as $group) {
           $info['contact'][$c]['other'][1]['groups'][] = $group['group_id'];
@@ -926,7 +958,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   if (!empty($id)) {
     $_SESSION['webform_civicrm_data'][$node->nid] = $id;
   }
-  elseif (isset($_SESSION['webform_civicrm_data'][$node->nid])) {
+  elseif (isset($_SESSION['webform_civicrm_data'])) {
     unset($_SESSION['webform_civicrm_data'][$node->nid]);
     if (empty($_SESSION['webform_civicrm_data'])) {
       unset($_SESSION['webform_civicrm_data']);

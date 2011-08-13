@@ -185,9 +185,18 @@ function webform_civicrm_process_submission($node, &$submission) {
         foreach ($contact['relationship'] as $i => $params) {
           if (!empty($params['relationship_type_id'])) {
             list($type, $a_b) = explode('_', $params['relationship_type_id']);
-            $params['relationship_type_id'] = $type;
             $params['contact_id_a'] = $params['contact_id_b'] = $id['cid'][$i];
             $params['contact_id_' . $a_b] = $cid;
+            if ($type == 'ce') {
+              foreach (webform_civicrm_get_relationship_types() as $t) {
+                if ($t['name_a_b'] == 'Employee of' && $t['name_b_a'] == 'Employer of' && $t['id'] != 'ce') {
+                  $type = $t['id'];
+                  break;
+                }
+              }
+              webform_civicrm_api('contact', 'create', array('contact_id' => $params['contact_id_a'], 'employer_id' => $params['contact_id_b'], 'contact_type' => 'Individual'));
+            }
+            $params['relationship_type_id'] = $type;
             webform_civicrm_api('relationship', 'create', $params);
           }
         }
@@ -541,6 +550,20 @@ function webform_civicrm_get_relationship_types() {
         'sub_type_a' => $dao->contact_sub_type_a,
         'sub_type_b' => $dao->contact_sub_type_b,
       );
+      // Create a pseudo relationship type for "current employer"
+      if ($dao->name_a_b == 'Employee of' && $dao->name_b_a == 'Employer of') {
+        $types['ce'] = array(
+        'id' => 'ce',
+        'name_a_b' => 'Current Employee of',
+        'name_b_a' => 'Current Employer of',
+        'label_a_b' => t('Current Employee of'),
+        'label_b_a' => t('Current Employer of'),
+        'type_a' => 'individual',
+        'type_b' => 'organization',
+        'sub_type_a' => NULL,
+        'sub_type_b' => NULL,
+      );
+      }
     }
   }
   return $types;
@@ -551,9 +574,8 @@ function webform_civicrm_get_relationship_types() {
  * Get valid relationship types for a given pair of contacts
  */
 function webform_civicrm_get_contact_relationship_types($type_a, $type_b, $sub_type_a, $sub_type_b) {
-  $types = webform_civicrm_get_relationship_types();
   $ret = array();
-  foreach ($types as $t) {
+  foreach (webform_civicrm_get_relationship_types() as $t) {
     if (($t['type_a'] == $type_a || !$t['type_a'])
        && ($t['type_b'] == $type_b || !$t['type_b'])
        && ($t['sub_type_a'] == $sub_type_a || !$t['sub_type_a'])
