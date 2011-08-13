@@ -12,6 +12,7 @@
 function webform_civicrm_process_submission($node, &$submission) {
   static $data = array();
   static $id = array();
+  static $update = array();
   $settings = $node->webform_civicrm;
 
   // Presave processing - save contact data
@@ -24,6 +25,11 @@ function webform_civicrm_process_submission($node, &$submission) {
     $data = $settings['data'];
     $sets = webform_civicrm_get_fields('sets');
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
+    
+    // Check if this is an update op
+    if (!empty($submission->sid)) {
+      $update = 'sid';
+    }
 
     // Fill entity arrays with field values
     foreach ($enabled as $field => $fid) {
@@ -372,13 +378,13 @@ function webform_civicrm_process_submission($node, &$submission) {
         }
         webform_civicrm_save_custom($data['activity'][1], $act, 'Activity');
       }
-      $record = array(
-        'sid' => $submission->sid,
-        'contact_id' => '-' . implode('-', $id['cid']) . '-',
-        'activity_id' => $act,
-      );
-      drupal_write_record('webform_civicrm_submissions', $record);
     }
+    $record = array(
+      'sid' => $submission->sid,
+      'contact_id' => '-' . implode('-', $id['cid']) . '-',
+      'activity_id' => $act,
+    );
+    drupal_write_record('webform_civicrm_submissions', $record, $update);
   }
 }
 
