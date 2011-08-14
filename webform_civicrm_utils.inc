@@ -379,6 +379,7 @@ function webform_civicrm_process_submission($node, &$submission) {
         webform_civicrm_save_custom($data['activity'][1], $act, 'Activity');
       }
     }
+    ksort($id['cid']);
     $record = array(
       'sid' => $submission->sid,
       'contact_id' => '-' . implode('-', $id['cid']) . '-',
