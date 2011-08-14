@@ -70,6 +70,13 @@ function webform_civicrm_schema() {
         'default' => '',
         'description' => 'Source label for newly created contacts',
       ),
+      'contact_matching' => array(
+        'description' => 'How to match and autofill for contacts',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
     ),
     'primary key' => array('nid'),
   );
@@ -272,4 +279,18 @@ function webform_civicrm_update_6201() {
     'description' => 'Source label for newly created contacts',
   );
   db_add_field('webform_civicrm_forms', 'new_contact_source', $field);
+}
+
+/**
+ * Add column for contact_matching to webform_civicrm_forms table.
+ */
+function webform_civicrm_update_6202() {
+  $field = array(
+    'description' => 'How to match and autofill for contacts',
+    'type' => 'int',
+    'size' => 'tiny',
+    'not null' => TRUE,
+    'default' => 1,
+  );
+  db_add_field('webform_civicrm_forms', 'contact_matching', $field);
 }
