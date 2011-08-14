@@ -209,7 +209,7 @@ function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = N
   if (!empty($new_id) && !empty($old_id) && $type == 'sqls') {
     db_update('webform_civicrm_submissions')
     ->expression('contact_id', 'REPLACE(contact_id, :old, :new)', array(':old' => '-' . $old_id . '-', ':new' => '-' . $new_id . '-')) 
-    ->condition('contact_id', '-' . $old_id . '-', 'LIKE')
+    ->condition('contact_id', '%-' . $old_id . '-%', 'LIKE')
     ->execute();
   }
 }
