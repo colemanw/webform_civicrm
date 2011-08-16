@@ -748,7 +748,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
             }
           }
         }
-        if (strpos($table, 'cg') === FALSE) {
+        if ($table == 'other' || $field['type'] == 'hidden') {
           unset($field['extra']['description']);
         }
         // Create fieldsets

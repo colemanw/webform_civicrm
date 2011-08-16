@@ -147,7 +147,7 @@ function webform_civicrm_process_submission($node, &$submission) {
                 );
                 continue;
               }
-              unset($params['master_id']);
+              $params['master_id'] = 'null';
             }
             elseif ($location == 'website') {
               if (empty($params['url'])) {
@@ -165,7 +165,7 @@ function webform_civicrm_process_submission($node, &$submission) {
               $params['is_primary'] = ($i == 1);
             }
             $result = webform_civicrm_api($location, 'create', $params);
-            if ($location == 'address' && empty($result['is_error']) && empty($params['master_id'])) {
+            if ($location == 'address' && empty($result['is_error'])) {
               $custom = array();
               foreach ($params as $param => $val) {
                 if (strpos($param, 'custom_') !== FALSE) {
