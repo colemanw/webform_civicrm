@@ -64,7 +64,6 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   }
   $tokens = '<strong>' . t('Tokens Available:') . '</strong> [' . implode('], [', webform_civicrm_get_fields('tokens')) . '].';
   list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
-  $readme_link = array('!link' => 'href="/admin/help/webform_civicrm" target="_blank" class="popup-webform-civicrm-help"');
   $contacts = $settings['data']['contact'];
   $data = $settings['data'];
   $js = 'var webform_civicrm_relationship_data = ' . json_encode(webform_civicrm_get_relationship_types()) . ';';
@@ -87,7 +86,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
       t('Logged-in users will have their contact info already filled-in for them.') . '</li><li>' .
       t('The form will also be auto-filled for anonymous users if you send them this link using CiviMail:') . '<br />' .
       url('node/' . $node->nid) . '?cid1={contact.contact_id}&{contact.checksum}</li><li>' .
-      t('<a !link>Read the instructions</a> for more info.', $readme_link) . '</li></ul>',
+      t('<a !link>Read the instructions</a> for more info.', array('!link' => 'href="/admin/help/webform_civicrm" target="_blank"')) . '</li></ul>',
   );
   $form['prefix'] = array(
     '#type' => 'fieldset',
@@ -108,7 +107,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   );
   $form['st_message'] = array(
     '#type' => 'fieldset',
-    '#title' => t('User Message'),
+    '#title' => t('Contact 1 Logout Message'),
     '#description' => t("Useful if you don't want people messing up your database because they aren't the person you think they are (i.e. they are logged in as, or following a hashed link for, someone else)."),
   );
   $form['st_message']['toggle_message'] = array(
@@ -305,8 +304,8 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   $form['change_form_settings'] = array(
     '#type' => 'button',
     '#value' => t('Change Form Settings'),
-    '#prefix' => '<div id="no-js-button-wrapper">',
-    '#suffix' => '<div>' . t('You do not have Javascript enabled, so you will need to click this button after changing any option to see the result.') . '</div></div>',
+    '#prefix' => '<div id="no-js-button-wrapper" class="messages warning">',
+    '#suffix' => '<div>' . t('You have Javascript disabled, so you will need to click this button after changing any option to see the result.') . '</div></div>',
   );
   $form['contacts'] = array(
     '#prefix' => '<div class="civicrm-ajax-wrapper" id="civicrm-ajax-contact-sets">',
@@ -332,6 +331,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
       '#title' => t('Contact Type'),
       '#default_value' => $c['contact'][1]['contact_type'],
       '#options' => $contact_types,
+      '#empty_value' => 'Bum',
       '#ajax' => array(
         'callback' => 'webform_civicrm_configure_form_ajax',
         'pathstr' => 'contacts.contact_' . $n . '.contact_subtype_wrapper',
@@ -471,8 +471,8 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
           }
           // Create dropdown list
           if (!empty($field['expose_list'])) {
-            // Populate option list as needed (always reset for relationship_type_id)
-            if (!is_array($lists[$fname]) || $fname == 'relationship_type_id') {
+            // Populate option list as needed (always reset for relationship_type_id && shared address)
+            if (!is_array($lists[$fname]) || $fname == 'relationship_type_id' || $fname == 'master_id') {
               $lists[$fname] = array('create_civicrm_webform_element' => t('-user select-')) + webform_civicrm_field_options($fid, 'arr', $data);
             }
             $fieldset[$fid] = array(
@@ -522,11 +522,11 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#type' => 'checkbox',
     '#title' => t('Confirm Subscriptions'),
     '#default_value' => (bool) $settings['confirm_subscription'],
-    '#description' => t('Recommended. Send a confirmation email before adding contacts to publicly subscribable mailing list groups.') . '<br />' . t('Your public mailing lists:') . ' <em>' . implode(', ', webform_civicrm_get_options('mailing_lists')) . '</em>',
+    '#description' => t('Recommended. Send a confirmation email before adding contacts to publicly subscribable mailing list groups.') . '<br />' . t('Your public mailing lists:') . ' <em>' . ($lists = webform_civicrm_get_options('mailing_lists') ? implode(', ', $lists) : t('none')) . '</em>',
   );
   $form['options']['block_unknown_users'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Block unknown users'),
+    '#title' => t('Block Unknown Users'),
     '#default_value' => !empty($settings['block_unknown_users']),
     '#description' => t('Only allow users to see this form if they are logged in or following a personalized link from CiviMail.'),
   );
@@ -534,11 +534,11 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#type' => 'checkbox',
     '#title' => t('Create Fieldsets'),
     '#default_value' => (bool) $settings['create_fieldsets'],
-    '#description' => t('Create a fieldset around each contact. (Nice if you have more than one contact on this form, but not required; all CiviCRM fields will be processed correctly regardless of what fieldset you place them in.'),
+    '#description' => t('Create a fieldset around each contact. (Nice if you have more than one contact on this form, but not required; all CiviCRM fields will be processed correctly regardless of how they are arranged).'),
   );
   $form['options']['contact_matching'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Autofill contact 1 with current user'),
+    '#title' => t('Autofill Contact 1 with Current User'),
     '#default_value' => $settings['contact_matching'],
     '#description' => t('Enable this option if users will fill out this form on behalf of themselves. Disable it to allow a logged-in user to enter someone else as contact 1.'),
   );
@@ -556,6 +556,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   );
   return $form;
 }
+
 
 /**
  * Build the $data array for webform settings; called while rebuilding and post-processing the configure form.
@@ -621,7 +622,6 @@ function webform_civicrm_process_form_settings(&$vals) {
  * Submission handler, saves CiviCRM options for a Webform node
  */
 function webform_civicrm_configure_form_submit($form, &$form_state) {
-
   $button = $form_state['clicked_button']['#id'];
   $node = $form_state['storage']['node'];
 
@@ -900,7 +900,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       unset($_SESSION['webform_civicrm_data']);
     }
   }
-  
+
   if (!empty($submission)) {
     return;
   }
@@ -930,7 +930,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       $cid = $id['cid'][$c];
     }
     elseif ($contact['contact'][1]['contact_type'] == 'organization') {
-      // Auto-fill "current_employer" without setting it in $id
+      // Populate "current_employer" without setting it in $id
       // (this allows the user to change their current employer on the form)
       $employee = 0;
       for ($i = $c; $i <= $count; ++$i) {

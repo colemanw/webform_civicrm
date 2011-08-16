@@ -26,7 +26,7 @@ function webform_civicrm_process_submission($node, &$submission) {
     $sets = webform_civicrm_get_fields('sets');
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
     
-    // Check if this is an update op
+    // Check if this is an update op for drupal_write_record()
     if (!empty($submission->sid)) {
       $update = 'sid';
     }
@@ -185,7 +185,7 @@ function webform_civicrm_process_submission($node, &$submission) {
           if (!empty($params['relationship_type_id'])) {
             list($type, $a_b) = explode('_', $params['relationship_type_id']);
             $params['contact_id_a'] = $params['contact_id_b'] = $id['cid'][$i];
-            $params['contact_id_' . $a_b] = $cid;
+            $params['contact_id_' . $a_b] = $cid;dsm($type);
             if ($type == 'ce') {
               foreach (webform_civicrm_get_relationship_types() as $t) {
                 if ($t['name_a_b'] == 'Employee of' && $t['name_b_a'] == 'Employer of' && $t['id'] != 'ce') {
@@ -485,9 +485,6 @@ function webform_civicrm_field_options($key, $format, $data) {
       }
       else {
         $ret = webform_civicrm_get_options($lists[$name]);
-      }
-      if ($name == 'prefix_id' || $name == 'suffix_id') {
-        $ret = array(' ') + $ret;
       }
     }
     if ($format == 'str') {
@@ -941,7 +938,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Share address with'),
       'type' => 'select',
       'expose_list' => TRUE,
-      'extra' => array('description' => t('If you choose to share this address with another contact, all fields for this address will be ignored.')),
+      'extra' => array('description' => t('Will overwrite all address fields with those of the other contact.')),
     );
     $fields['phone_phone'] = array(
       'name' => t('Phone Number'),
