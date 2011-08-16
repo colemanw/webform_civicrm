@@ -17,8 +17,8 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   if (!empty($form_state['storage']['msg'])) {
     $form['#prefix'] = $form_state['storage']['msg'];
     $form['cancel'] = $form['no_delete'] = $form['confirm'] = array('#type' => 'submit');
-    $form['confirm']['#value'] = t('Delete Fields and Save Settings');
-    $form['no_delete']['#value'] = t('Save Settings, Leave Fields');
+    $form['confirm']['#value'] = t('Remove Fields and Save Settings');
+    $form['no_delete']['#value'] = t('Leave Fields and Save Settings');
     $form['cancel']['#value'] = t('Cancel (go back)');
     return $form;
   }
@@ -331,7 +331,6 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
       '#title' => t('Contact Type'),
       '#default_value' => $c['contact'][1]['contact_type'],
       '#options' => $contact_types,
-      '#empty_value' => 'Bum',
       '#ajax' => array(
         'callback' => 'webform_civicrm_configure_form_ajax',
         'pathstr' => 'contacts.contact_' . $n . '.contact_subtype_wrapper',
@@ -540,7 +539,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#type' => 'checkbox',
     '#title' => t('Autofill Contact 1 with Current User'),
     '#default_value' => $settings['contact_matching'],
-    '#description' => t('Enable this option if users will fill out this form on behalf of themselves. Disable it to allow a logged-in user to enter someone else as contact 1.'),
+    '#description' => '<span id = "civi-contact-match-on">' . t('Enable this option if users will fill out this form on behalf of themselves. Disable it to allow a logged-in user to enter someone else as contact 1.') . '</span> <span id = "civi-contact-match-off">' . t('This option is disabled when contact 1 is not an individual.') . '</span>',
   );
   $form['options']['new_contact_source'] = array(
     '#type' => 'textfield',
@@ -663,7 +662,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
       $info .= $info ? ':</em> ' : '';
       $msg .= '<li>' . $info . $node->webform['components'][$id]['name'] . '</li>';
     }
-    $msg .= '</ul><p>' . t('Would you like them to be automatically removed from the webform? If you choose not to, they can still be deleted manually.') . '</p><p><em>' . t('Note: Deleting webform components cannot be undone, and will result in the loss of any webform-results data for those elements. Data in the CiviCRM database will not be affected.') . '</em></p>';
+    $msg .= '</ul><p>' . t('Would you like them to be automatically removed from the webform? This is recommended unless you have existing submissions for this form and need webform-results reporting for these fields. They can still be deleted manually later if you choose not to remove them now.') . '</p><p><em>' . t('Note: Deleting webform components cannot be undone, and will result in the loss of any webform-results data for those elements. Data in the CiviCRM database will not be affected.') . '</em></p>';
     $form_state['storage']['msg'] = $msg;
     $form_state['storage']['vals'] = $vals;
     $form_state['rebuild'] = TRUE;

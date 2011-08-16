@@ -143,6 +143,7 @@ function webform_civicrm_process_submission($node, &$submission) {
                 $shared_address[$cid][$i] = array(
                   'id' => !empty($existing[$i]) ? $existing[$i]['id'] : NULL,
                   'mc' => $params['master_id'],
+                  'loc' => $params['location_type_id'],
                 );
                 continue;
               }
@@ -185,7 +186,7 @@ function webform_civicrm_process_submission($node, &$submission) {
           if (!empty($params['relationship_type_id'])) {
             list($type, $a_b) = explode('_', $params['relationship_type_id']);
             $params['contact_id_a'] = $params['contact_id_b'] = $id['cid'][$i];
-            $params['contact_id_' . $a_b] = $cid;dsm($type);
+            $params['contact_id_' . $a_b] = $cid;
             if ($type == 'ce') {
               foreach (webform_civicrm_get_relationship_types() as $t) {
                 if ($t['name_a_b'] == 'Employee of' && $t['name_b_a'] == 'Employer of' && $t['id'] != 'ce') {
@@ -301,7 +302,16 @@ function webform_civicrm_process_submission($node, &$submission) {
       foreach ($shared as $i => $addr) {
         if (!empty($id['cid'][$addr['mc']])) {
           $masters = webform_civicrm_api('address', 'get', array('contact_id' => $id['cid'][$addr['mc']], 'options' => array('sort' => 'is_primary DESC')));
-          if (!empty($masters['values']) && $params = array_shift($masters['values'])) {
+          if (!empty($masters['values'])) {
+            $masters = array_values($masters['values']);
+            // Pick the address with the same location type; default to primary.
+            $params = $masters[0];
+            foreach($masters as $m) {
+              if ($m['location_type_id'] == $addr['loc']) {
+                $params = $m;
+                break;
+              }
+            }
             $params['master_id'] = $params['id'];
             $params['id'] = $addr['id'];
             $params['contact_id'] = $cid;
@@ -469,7 +479,7 @@ function webform_civicrm_field_options($key, $format, $data) {
       $ret = array(t('No Relationship')) + webform_civicrm_get_contact_relationship_types($data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][$n]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$n]['contact'][1]['contact_sub_type']);
     }
     elseif ($name == 'master_id') {
-      $ret = array(t('-do not share-'));
+      $ret = array(t('- do not share -'));
       foreach ($data['contact'] as $num => $contact) {
         if ($num != $c) {
           $ret[$num] =  t('Contact !num', array('!num' => $num));
@@ -935,10 +945,10 @@ function webform_civicrm_get_fields($var = 'fields') {
       'expose_list' => TRUE,
     );
     $fields['address_master_id'] = array(
-      'name' => t('Share address with'),
+      'name' => t('Share address of'),
       'type' => 'select',
       'expose_list' => TRUE,
-      'extra' => array('description' => t('Will overwrite all address fields with those of the other contact.')),
+      'extra' => array('description' => t('Will overwrite address fields with those of the other contact.')),
     );
     $fields['phone_phone'] = array(
       'name' => t('Phone Number'),
