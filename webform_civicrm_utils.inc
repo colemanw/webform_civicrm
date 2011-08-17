@@ -355,6 +355,9 @@ function webform_civicrm_process_submission($node, &$submission) {
           $params['target_contact_id'][$id['cid'][$c]] = $id['cid'][$c];
         }
       }
+      if (!empty($params['assignee_contact_id']) && !empty($id['cid'][$params['assignee_contact_id']])) {
+        $params['assignee_contact_id'] = $id['cid'][$params['assignee_contact_id']];
+      }
       if (empty($params['details'])) {
         $params['details'] = '';
       }
