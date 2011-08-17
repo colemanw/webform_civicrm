@@ -448,9 +448,15 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
       for ($i = 1; $i <= $c['number_of_' . $sid] && !$hide; ++$i) {
         $fieldset = array(
           '#type' => 'fieldset',
-          '#title' => $set['label'] . (((isset($set['max_instances']) && $set['max_instances'] > 1) || $sid == 'relationship') ? ' ' . $i : ''),
+          '#title' => $set['label'],
           '#attributes' => array('class' => array('web-civi-checkbox-set')),
         );
+        if ((isset($set['max_instances']) && $set['max_instances'] > 1) || $sid == 'relationship') {
+          $fieldset['#title'] .= ' ' . $i;
+          if (in_array($sid, array('email', 'address', 'phone', 'website')) && $i == 1) {
+            $fieldset['#title'] .= ' ' . t('(primary)');
+          }
+        }
         foreach ($set['fields'] as $fid => $field) {
           if ($fid == 'contact_contact_sub_type' || ($fid == 'address_master_id' && count($contacts) == 1)) {
             continue;
