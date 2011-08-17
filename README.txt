@@ -1,12 +1,15 @@
 INSTRUCTIONS FOR WEBFORM CIVICRM INTEGRATION
 
-
 WHAT IT DOES:
 
 -Expose just about any CiviCRM contact, address, email, phone, website, activity, or custom field on a webform
--Auto-fill forms for logged in users.
+-Auto-fill forms for logged in users (as contact 1).
 -Auto-fill for anonymous users too if you send them a personalized link through CiviMail.
--Automatically log activities when users fill out your form.
+-Create or update an activity when users fill out your form.
+-Open or update a case.
+-Create relationships between contacts.
+-Share addresses.
+-Enter one contact as current employer of another.
 -It uses your CiviCRM default strict deduping rule to decide whether to update an existing contact or create a new one when the form is submitted by an anonymous user.
 -It imposes no restrictions on how you style, rename, nest, or edit your CiviCRM fields; you may do anything with them that you can do with any other webform field.
 
@@ -16,7 +19,7 @@ HOW TO USE IT
 -Enable the module.
 -Create a new webform (or go to edit an existing one).
 -Click on the CiviCRM tab.
--Enable the fields you like, and optionally choose introduction text and activity settings.
+-Enable the fields you like, and optionally choose introduction text and other settings.
 -Your selected fields will be automatically created for you.
 -Customize the webform settings for your new fields however you wish.
 
@@ -68,10 +71,10 @@ No. That would require some sort of batch update script, which is not part of th
 
 ADVANCED USAGE - PASSING IDS IN THE URL
 
-By default, contact 1 is assumed to be the acting user. So if you view a webform while logged-in, you will see your own contact details auto-filled on the form. You can override this by supplying ids in the url. The following are supported:
+By default, contact 1 is assumed to be the acting user. So if you view a webform while logged-in, you will see your own contact details auto-filled on the form. You can disable that in the "additional options" so that logged in users are always presented with a blank form for  You can also supply ids in the url. The following are supported:
 
 cid1=123 (contact 1's ID; you can also supply cid2 and so on)
 
-aid=456 (ID of the activity to autofill and update -- specifying an activity from a case will automatically cause the system to select that case if the contact has more than one)
+aid=456 (ID of the activity to autofill and update -- specifying an activity from a case works too)
 
-Note that permissions are checked, so these values will be ignored if the acting user doesn't have permission to view that contact (and if contact 1 isn't already part of the given activity)
+Note that permissions are checked, so these values will be ignored if the acting user doesn't have permission to view that contact. Activity ID will be ignored if no contact is part of the given activity.

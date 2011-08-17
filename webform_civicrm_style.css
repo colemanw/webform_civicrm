@@ -5,17 +5,26 @@
 }
 
 .web-civi-p {
-  margin-left: 1em;
+  margin-left:1em;
 }
 
 .web-civi-checkbox-set {
-  padding-left: 0;
+  padding-left:0;
 }
 
 .web-civi-checkbox-set .form-item {
   float:left;
-  margin-left: 1em;
-  width: 20em;
+  margin-left:1em;
+  width:20em;
+}
+
+.form-item-activity-targets .form-item.form-type-checkbox {
+  float:left;
+  margin-right:1em;
+}
+
+.form-item-activity-assignee {
+  clear:both;
 }
 
 .hidden, .js #no-js-button-wrapper {

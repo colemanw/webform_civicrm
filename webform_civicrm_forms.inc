@@ -63,7 +63,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
       );
     }
   }
-  $tokens = '<strong>' . t('Tokens Available:') . '</strong> [' . implode('], [', webform_civicrm_get_fields('tokens')) . '].';
+  $tokens = '<strong>' . t('Contact 1 Tokens:') . '</strong> [' . implode('], [', webform_civicrm_get_fields('tokens')) . '].';
   list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
   $contacts = $settings['data']['contact'];
   $data = $settings['data'];
@@ -93,6 +93,8 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#type' => 'fieldset',
     '#title' => t('Introduction Text'),
     '#description' => t('This text will appear at the top of the form. You may configure separate messages for known contacts (logged in users, or users following a hashed link from civimail) and unknown (anonymous) users.'),
+    '#collapsible' => TRUE,
+    '#collapsed' => !$settings['prefix_known'] && !$settings['prefix_unknown'],
   );
   $form['prefix']['prefix_known'] = array(
     '#type' => 'textarea',
@@ -109,7 +111,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   $form['st_message'] = array(
     '#type' => 'fieldset',
     '#title' => t('Contact 1 Logout Message'),
-    '#description' => t("Useful if you don't want people messing up your database because they aren't the person you think they are (i.e. they are logged in as, or following a hashed link for, someone else)."),
+    '#description' => t('Prompt for users who are logged in as, or following a hashed link for, someone else.'),
   );
   $form['st_message']['toggle_message'] = array(
     '#type' => 'checkbox',
@@ -230,6 +232,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
       '#type' => 'checkboxes',
       '#options' => array(),
       '#default_value' => array(),
+      '#required' => TRUE,
     );
     $form['act']['case']['activity_fields']['activity_assignee'] = array(
       '#title' => t('Assign Activity to'),
@@ -240,8 +243,8 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     );
     foreach($contacts as $n => $c) {
       $form['act']['case']['activity_fields']['activity_targets']['#options'][$n] =
-      $form['act']['case']['activity_fields']['activity_assignee']['#options'][$n] =
-      t('Contact !num', array('!num' => $n));
+        $form['act']['case']['activity_fields']['activity_assignee']['#options'][$n] =
+          t('Contact !num', array('!num' => $n));
       if (!isset($settings['activity_subject']) || !empty($c['activity_target'])) {
         $form['act']['case']['activity_fields']['activity_targets']['#default_value'][] = $n;
       }
@@ -249,7 +252,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     $form['act']['case']['activity_fields']['existing_activity_status'] = array(
       '#type' => 'select',
       '#title' => t('Update Existing Activity'),
-      '#description' => t('If a "@type" activity with this status already exists for this contact, it will be updated. Otherwise a new one will be created', array('@type' => $act_types[$settings['activity_type_id']])),
+      '#description' => t('If a "@type" activity with this status already exists for contact 1, it will be updated. Otherwise a new one will be created', array('@type' => $act_types[$settings['activity_type_id']])),
       '#options' => array(t('- always create new activity -')) + $act_status_ids,
     );
     if (isset($data['activity'][1]['existing_activity_status'])) {
@@ -587,18 +590,13 @@ function webform_civicrm_process_form_settings(&$vals) {
           'contact_type' => $vals[$n . '_contact_type'],
           'contact_sub_type' => NULL,
         )),
+        'activity_target' => isset($vals['activity_targets'][$n]) ? $vals['activity_targets'][$n] : 1,
       );
       if (array_key_exists('civicrm_' . $n . '_contact_1_contact_contact_sub_type', $vals)) {
         $sub_type = $vals['civicrm_' . $n . '_contact_1_contact_contact_sub_type'];
         if (array_key_exists($sub_type, $sub_types[$vals[$n . '_contact_type']])) {
           $data['contact'][$n]['contact'][1]['contact_sub_type'] = $sub_type;
         }
-      }
-      if (isset($vals['activity_targets'])) {
-        $data['contact'][$n]['activity_target'] = $vals['activity_targets'][$n];
-      }
-      else {
-        $data['contact'][$n]['activity_target'] = 1;
       }
     }
     else {
@@ -994,6 +992,14 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
         if (!empty($result['values'])) {
           $result = array_merge(array(0), array_values($result['values']));
           unset($result[0]);
+          if ($field == 'contact') {
+            // Privacy fields
+            foreach (array_keys(webform_civicrm_get_options('privacy')) as $key) {
+              if (!empty($result[1][$key])) {
+                $result[1]['privacy'][] = $key;
+              }
+            }
+          }
           // Load address custom data
           if ($field == 'address') {
             foreach ($result as &$address) {
@@ -1016,7 +1022,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       }
     }
     // Preferred communication method is not fetched by default by the api
-    if (!empty($enabled['civicrm_' . $c . '_contact_1_contact_preferred_communication_method'])) {
+    if (array_key_exists('civicrm_' . $c . '_contact_1_contact_preferred_communication_method', $enabled)) {
       $result = webform_civicrm_api('contact', 'get', array('contact_id' => $cid, 'return.preferred_communication_method' => 1));
       if (!empty($result['values'][$cid]['preferred_communication_method'])) {
         $info['contact'][$c]['contact'][1]['preferred_communication_method'] = $result['values'][$cid]['preferred_communication_method'];

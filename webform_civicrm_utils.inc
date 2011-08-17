@@ -36,6 +36,12 @@ function webform_civicrm_process_submission($node, &$submission) {
       if (!empty($submission->data[$fid]['value'])) {
         list($lobo, $c, $ent, $n, $table, $field) = explode('_', $field, 6);
         $val = $submission->data[$fid]['value'];
+        if ($field == 'privacy') {
+          foreach (array_keys(webform_civicrm_str2array($node->webform['components'][$fid]['extra']['items'])) as $key) {
+            $data[$ent][$c][$table][$n][$key] = in_array($key, $val);
+          }
+          continue;
+        }
         if (!empty($fields[$table . '_' . $field]['extra']['multiple'])) {
           $val = $sp . implode($sp, $val) . $sp;
         }
@@ -411,6 +417,16 @@ function webform_civicrm_process_submission($node, &$submission) {
  */
 function webform_civicrm_get_options($option_group, $param = NULL) {
   $vars = $arr = array();
+  if ($option_group == 'privacy') {
+    // Privacy options aren't actually listed in the database
+    return array(
+      'do_not_email' => ts('Do not email'),
+      'do_not_phone' => ts('Do not phone'),
+      'do_not_mail' => ts('Do not mail'),
+      'do_not_sms' => ts('Do not sms'),
+      'do_not_trade' => ts('Do not trade'),
+    );
+  }
   if ($option_group == 'country') {
     $config = CRM_Core_Config::singleton();
     if (is_array($config->countryLimit)) {
@@ -881,7 +897,12 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['contact_preferred_communication_method'] = array(
       'name' => t('Preferred Communication Method(s)'),
       'type' => 'select',
-      'extra' => array('multiple' => 1),
+      'extra' => array('multiple' => 1, 'aslist' => 0),
+    );
+    $fields['contact_privacy'] = array(
+      'name' => t('Privacy Preferences'),
+      'type' => 'select',
+      'extra' => array('multiple' => 1, 'aslist' => 0),
     );
     $fields['email_email'] = array(
       'name' => t('Email'),
@@ -1060,12 +1081,13 @@ function webform_civicrm_get_fields($var = 'fields') {
       'email' => t('email'),
     );
     // key: key accepted by civicrm api
-    // value: name in civicrm_option_group
+    // value: name of civicrm_option_group
     $lists = array(
       'prefix_id' => 'individual_prefix',
       'suffix_id' => 'individual_suffix',
       'gender_id' => 'gender',
       'preferred_communication_method' => 'preferred_communication_method',
+      'privacy' => 'privacy',
       'country_id' => 'country',
       'state_province_id' => 'state',
       'phone_type_id' => 'phone_type',
