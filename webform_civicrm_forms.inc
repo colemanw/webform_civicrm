@@ -193,18 +193,8 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
       '#required' => TRUE,
       '#title' => t('Case Manager ID'),
       '#description' => t('Contact ID of "case manager" for newly created cases.'),
+      '#default_value' => isset($data['case'][1]['case'][1]['creator_id']) ? $data['case'][1]['case'][1]['creator_id'] : webform_civicrm_user_cid(),
     );
-    if (isset($data['case'][1]['case'][1]['creator_id'])) {
-      $form['act']['case']['case_fieldset']['case_creator_id']['#default_value'] = $data['case'][1]['case'][1]['creator_id'];
-    }
-    else {
-      global $user;
-      $result = webform_civicrm_api('uf_match', 'get', array('uf_id' => $user->uid));
-      if (!empty($result['values'])) {
-        $result = array_pop($result['values']);
-        $form['act']['case']['case_fieldset']['case_creator_id']['#default_value'] = $result['contact_id'];
-      }
-    }
   }
   $act_types = webform_civicrm_get_options('activity_type', $param);
   $form['act']['case']['activity_type_id'] = array(
@@ -832,7 +822,6 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   $node = $form['#node'];
   $settings = $node->webform_civicrm;
   $data = $settings['data'];
-  global $user;
   $id = $info = array();
   // If this is an edit op, use the original IDs to avoid confusion
   if (!empty($form['#submission'])) {
@@ -855,12 +844,8 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       }
     }
     // If user is logged in, look up the CID
-    if (empty($id['cid'][1]) && $user->uid && $data['contact'][1]['contact'][1]['contact_type'] == 'individual' && $settings['contact_matching']) {
-      $result = webform_civicrm_api('uf_match', 'get', array('uf_id' => $user->uid));
-      if (!empty($result['values'])) {
-        $result = array_pop($result['values']);
-        $id['cid'][1] = $result['contact_id'];
-      }
+    if (empty($id['cid'][1]) && $settings['contact_matching'] && $data['contact'][1]['contact'][1]['contact_type'] == 'individual' && $cid = webform_civicrm_user_cid()) {
+      $id['cid'][1] = $cid;
     }
     if (!empty($args['aid']) && !empty($id['cid']) && is_numeric($args['aid'])) {
       $result = webform_civicrm_api('activity', 'get', array('activity_id' => $args['aid'], 'return.target_contact_id' => 1, 'return.assignee_contact_id' => 1));

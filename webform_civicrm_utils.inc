@@ -347,13 +347,8 @@ function webform_civicrm_process_submission($node, &$submission) {
       $params = $data['activity'][1]['activity'][1];
       $params['source_contact_id'] = $id['cid'][1];
       $params['activity_date_time'] = date('Ymdhis');
-      global $user;
-      if (!empty($user->uid)) {
-        $result = webform_civicrm_api('uf_match', 'get', array('uf_id' => $user->uid));
-        if (!empty($result['values'])) {
-          $result = array_pop($result['values']);
-          $params['source_contact_id'] = $result['contact_id'];
-        }
+      if ($cid = webform_civicrm_user_cid()) {
+        $params['source_contact_id'] = $cid;
       }
       $params['target_contact_id'] = array();
       foreach ($data['contact'] as $c => $contact) {
@@ -1197,6 +1192,21 @@ function webform_civicrm_get_fields($var = 'fields') {
     }
   }
   return $$var;
+}
+
+
+/**
+ * Get logged-in user's contact id
+ */
+function webform_civicrm_user_cid() {
+  global $user;
+  if ($user->uid) {
+    $result = webform_civicrm_api('uf_match', 'get', array('uf_id' => $user->uid));
+    if (!empty($result['values'])) {
+      $result = array_pop($result['values']);
+      return $result['contact_id'];
+    }
+  }
 }
 
 
