@@ -213,7 +213,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#type' => 'markup',
     '#suffix' => '</div>',
   );
-  if (isset($data['activity'][1]['activity'][1]['activity_type_id']) 
+  if (isset($data['activity'][1]['activity'][1]['activity_type_id'])
       && array_key_exists($data['activity'][1]['activity'][1]['activity_type_id'], $act_types)) {
     $form['act']['case']['activity_type_id']['#default_value'] = $settings['activity_type_id'] = $data['activity'][1]['activity'][1]['activity_type_id'];
     $act_status_ids = webform_civicrm_get_options('activity_status');
@@ -224,25 +224,10 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
       '#default_value' => array(),
       '#required' => TRUE,
     );
-    $form['act']['case']['activity_fields']['activity_assignee'] = array(
-      '#title' => t('Assign Activity to'),
-      '#type' => 'select',
-      '#options' => array(),
-      '#empty_option' => t('- no one -'),
-      '#default_value' => empty($data['activity'][1]['assignee_contact_id']) ? NULL : $data['activity'][1]['assignee_contact_id'],
-    );
-    foreach($contacts as $n => $c) {
-      $form['act']['case']['activity_fields']['activity_targets']['#options'][$n] =
-        $form['act']['case']['activity_fields']['activity_assignee']['#options'][$n] =
-          t('Contact !num', array('!num' => $n));
-      if (!isset($settings['activity_subject']) || !empty($c['activity_target'])) {
-        $form['act']['case']['activity_fields']['activity_targets']['#default_value'][] = $n;
-      }
-    }
     $form['act']['case']['activity_fields']['existing_activity_status'] = array(
       '#type' => 'select',
       '#title' => t('Update Existing Activity'),
-      '#description' => t('If a "@type" activity with this status already exists for contact 1, it will be updated. Otherwise a new one will be created', array('@type' => $act_types[$settings['activity_type_id']])),
+      '#description' => t('If a "@type" activity with this status already exists for contact 1, it will be updated. Otherwise a new one will be created.', array('@type' => $act_types[$settings['activity_type_id']])),
       '#options' => array(t('- always create new activity -')) + $act_status_ids,
     );
     if (isset($data['activity'][1]['existing_activity_status'])) {
@@ -272,11 +257,25 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     else {
       $form['act']['case']['activity_fields']['activity_status_id']['#default_value'] = 2;
     }
+    $form['act']['case']['activity_fields']['activity_assignee'] = array(
+      '#title' => t('Assign Activity to'),
+      '#type' => 'select',
+      '#options' => array(t('- no one -')),
+      '#default_value' => empty($data['activity'][1]['assignee_contact_id']) ? NULL : $data['activity'][1]['assignee_contact_id'],
+    );
     $form['act']['case']['activity_fields']['activity_link'] = array(
       '#type' => 'checkbox',
       '#title' => t('Include link to webform submission in activity details'),
       '#default_value' => !(empty($data['activity'][1]['add_link']) && isset($data['activity'][1]['add_link'])),
     );
+    foreach($contacts as $n => $c) {
+      $form['act']['case']['activity_fields']['activity_targets']['#options'][$n] =
+        $form['act']['case']['activity_fields']['activity_assignee']['#options'][$n] =
+          t('Contact !num', array('!num' => $n));
+      if (!isset($settings['activity_subject']) || !empty($c['activity_target'])) {
+        $form['act']['case']['activity_fields']['activity_targets']['#default_value'][] = $n;
+      }
+    }
     foreach ($sets as $sid => $set) {
       if ($set['entity_type'] == 'activity') {
         if (!empty($set['sub_types']) && !in_array($settings['activity_type_id'], $set['sub_types'])) {
@@ -531,8 +530,14 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#type' => 'checkbox',
     '#title' => t('Confirm Subscriptions'),
     '#default_value' => (bool) $settings['confirm_subscription'],
-    '#description' => t('Recommended. Send a confirmation email before adding contacts to publicly subscribable mailing list groups.') . '<br />' . t('Your public mailing lists:') . ' <em>' . ($lists = webform_civicrm_get_options('mailing_lists') ? implode(', ', $lists) : t('none')) . '</em>',
+    '#description' => t('Recommended. Send a confirmation email before adding contacts to publicly subscribable mailing list groups.') . '<br />' . t('Your public mailing lists:') . ' <em>',
   );
+  if ($ml = webform_civicrm_get_options('mailing_lists')) {
+    $form['options']['confirm_subscription']['#description'] .= implode(', ', $ml) . '</em>';
+  }
+  else {
+    $form['options']['confirm_subscription']['#description'] .= t('none') . '</em>';
+  }
   $form['options']['block_unknown_users'] = array(
     '#type' => 'checkbox',
     '#title' => t('Block Unknown Users'),

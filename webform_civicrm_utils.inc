@@ -25,7 +25,7 @@ function webform_civicrm_process_submission($node, &$submission) {
     $data = $settings['data'];
     $sets = webform_civicrm_get_fields('sets');
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
-    
+
     // Check if this is an update op for drupal_write_record()
     if (!empty($submission->sid)) {
       $update = 'sid';
@@ -616,35 +616,6 @@ function webform_civicrm_get_contact_relationship_types($type_a, $type_b, $sub_t
 
 
 /**
- * Autocomplete callback for tags
- */
-function webform_civicrm_js_options($key, $str = '') {
-  if (!user_access('access CiviCRM')) {
-    return drupal_access_denied();
-  }
-  if ($key == 'tags') {
-    civicrm_initialize();
-    if (!$str) {
-      exit();
-    }
-    // Handle a comma-separated list of tags.
-    $existing = drupal_explode_tags($str);
-    $last_str = trim(array_pop($existing));
-    $matches = array();
-    $prefix = count($existing) ? implode(', ', $existing) . ', ' : '';
-    $params = array(1 => array('%' . $last_str . '%', 'String'));
-    $sql = "SELECT name FROM civicrm_tag WHERE is_selectable = 1 AND used_for = 'civicrm_contact' AND name LIKE %1 LIMIT 0, 12";
-    $dao = &CRM_Core_DAO::executeQuery($sql, $params);
-    while ($dao->fetch()) {
-      $matches[$prefix . $dao->name] = check_plain($dao->name);
-    }
-    exit(drupal_json_output($matches));
-  }
-  return drupal_not_found();
-}
-
-
-/**
  * Get custom data for an entity
  */
 function webform_civicrm_get_custom($entity_id, $entity_type = NULL, $normalize = TRUE) {
@@ -815,43 +786,20 @@ function webform_civicrm_get_fields($var = 'fields') {
       'value' => '0',
       'extra' => array('aslist' => 1),
     );
-    $fields['contact_first_name'] = array(
-      'name' => t('First Name'),
-      'type' => 'textfield',
-      'mandatory' => 1,
-      'contact_type' => 'individual',
-    );
-    $fields['contact_nick_name'] = array(
-      'name' => t('Nick Name'),
-      'type' => 'textfield',
-      'contact_type' => 'individual',
-    );
-    $fields['contact_middle_name'] = array(
-      'name' => t('Middle Name'),
-      'type' => 'textfield',
-      'contact_type' => 'individual',
-    );
-    $fields['contact_last_name'] = array(
-      'name' => t('Last Name'),
-      'type' => 'textfield',
-      'mandatory' => 1,
-      'contact_type' => 'individual',
-    );
-    $fields['contact_prefix_id'] = array(
-      'name' => t('Name Prefix'),
-      'type' => 'select',
-      'contact_type' => 'individual',
-    );
-    $fields['contact_suffix_id'] = array(
-      'name' => t('Name Suffix'),
-      'type' => 'select',
-      'contact_type' => 'individual',
-    );
-    $fields['contact_gender_id'] = array(
-      'name' => t('Gender'),
-      'type' => 'select',
-      'contact_type' => 'individual',
-    );
+    foreach (array('first' => t('First Name'), 'nick' => t('Nick Name'), 'middle' => t('Middle Name'), 'last' => t('Last Name')) as $key => $label) {
+      $fields['contact_' . $key . '_name'] = array(
+        'name' => $label,
+        'type' => 'textfield',
+        'contact_type' => 'individual',
+      );
+    }
+    foreach (array('prefix' => t('Name Prefix'), 'suffix' => t('Name Suffix'), 'gender' => t('Gender')) as $key => $label) {
+      $fields['contact_' . $key . '_id'] = array(
+        'name' => $label,
+        'type' => 'select',
+        'contact_type' => 'individual',
+      );
+    }
     $fields['contact_birth_date'] = array(
       'name' => t('Birth Date'),
       'type' => 'date',
@@ -903,11 +851,6 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Email'),
       'type' => 'email',
     );
-    $fields['email_location_type_id'] = array(
-      'name' => t('Email # Location'),
-      'type' => 'select',
-      'expose_list' => TRUE,
-    );
     $fields['address_street_address'] = array(
       'name' => t('Street Address'),
       'type' => 'textfield',
@@ -958,11 +901,6 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Country'),
       'type' => 'select',
     );
-    $fields['address_location_type_id'] = array(
-      'name' => t('Address # Location'),
-      'type' => 'select',
-      'expose_list' => TRUE,
-    );
     $fields['address_master_id'] = array(
       'name' => t('Share address of'),
       'type' => 'select',
@@ -979,11 +917,13 @@ function webform_civicrm_get_fields($var = 'fields') {
       'table' => 'phone',
       'expose_list' => TRUE,
     );
-    $fields['phone_location_type_id'] = array(
-      'name' => t('Phone # Location'),
-      'type' => 'select',
-      'expose_list' => TRUE,
-    );
+    foreach (array('address' => t('Address # Location'), 'phone' => t('Phone # Location'), 'email' => t('Email # Location')) as $key => $label) {
+      $fields[$key . '_location_type_id'] = array(
+        'name' => $label,
+        'type' => 'select',
+        'expose_list' => TRUE,
+      );
+    }
     $fields['website_url'] = array(
       'name' => t('Website'),
       'type' => 'textfield',
@@ -1338,4 +1278,33 @@ function webform_civicrm_activity_find($params) {
   while ($dao->fetch()) {
     return $dao->id;
   }
+}
+
+
+/**
+ * Autocomplete callback for tags
+ */
+function webform_civicrm_js_options($key, $str = '') {
+  if (!user_access('access CiviCRM')) {
+    return drupal_access_denied();
+  }
+  if ($key == 'tags') {
+    civicrm_initialize();
+    if (!$str) {
+      exit();
+    }
+    // Handle a comma-separated list of tags.
+    $existing = drupal_explode_tags($str);
+    $last_str = trim(array_pop($existing));
+    $matches = array();
+    $prefix = count($existing) ? implode(', ', $existing) . ', ' : '';
+    $params = array(1 => array('%' . $last_str . '%', 'String'));
+    $sql = "SELECT name FROM civicrm_tag WHERE is_selectable = 1 AND used_for = 'civicrm_contact' AND name LIKE %1 LIMIT 0, 12";
+    $dao = &CRM_Core_DAO::executeQuery($sql, $params);
+    while ($dao->fetch()) {
+      $matches[$prefix . $dao->name] = check_plain($dao->name);
+    }
+    exit(drupal_json_output($matches));
+  }
+  return drupal_not_found();
 }

@@ -46,7 +46,7 @@
       });
     }
   }
-  
+
   function webform_civicrm_contact_match_checkbox(){
     if($('#edit-1-contact-type').val() == 'individual') {
       $('#civi-contact-match-on').show();
@@ -84,6 +84,10 @@
         $('.form-item-message').hide().addClass('hidden');
       }
     }).change();
+
+    $('select[id*=contact-type], select[id*=contact-sub-type]').change(function(){
+      webform_civicrm_relationship_options();
+    });
 
     $('#edit-number-of-contacts').change(function(){
       $('#webform-civicrm-configure-form')[0].submit();

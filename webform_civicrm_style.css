@@ -1,13 +1,3 @@
-.web-civi-3-col {
-  float:left;
-  width:32%;
-  padding:0 0.6%;
-}
-
-.web-civi-p {
-  margin-left:1em;
-}
-
 .web-civi-checkbox-set {
   padding-left:0;
 }
@@ -18,12 +8,15 @@
   width:20em;
 }
 
-.form-item-activity-targets .form-item.form-type-checkbox {
+.form-item-activity-targets .form-item.form-type-checkbox,
+.form-item-activity-status-id,
+.form-item-activity-assignee {
   float:left;
   margin-right:1em;
 }
 
-.form-item-activity-assignee {
+.form-item-activity-targets + div,
+.form-item-activity-assignee + div {
   clear:both;
 }
 
