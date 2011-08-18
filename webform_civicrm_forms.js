@@ -45,11 +45,27 @@ function webform_civicrm_relationship_options() {
     });
   }
 }
+
+function webform_civicrm_contact_match_checkbox(){
+  if($('#edit-1-contact-type').val() == 'individual') {
+    $('#civi-contact-match-on').show();
+    $('#civi-contact-match-off').hide();
+    $('#edit-contact-matching').removeAttr('disabled');
+  }
+  else {
+    $('#civi-contact-match-on').hide();
+    $('#civi-contact-match-off').show();
+    $('#edit-contact-matching').attr('disabled', 'disabled');
+  }
+}
+
 $(document).ready( function(){
   if(!$('#edit-nid').is(':checked')){
     $('#webform-civicrm-configure-form fieldset > div, #webform-civicrm-configure-form fieldset > fieldset, #edit-number-of-contacts-wrapper').not('.hidden').hide();
   }
-  
+
+  webform_civicrm_contact_match_checkbox();
+
   $('#edit-nid').change(function(){
     if( $(this).is(':checked') ){
       $('#webform-civicrm-configure-form fieldset > div, #webform-civicrm-configure-form fieldset > fieldset, #edit-number-of-contacts-wrapper').not('.hidden').show(600);
@@ -71,8 +87,12 @@ $(document).ready( function(){
   $('#edit-number-of-contacts').change(function(){
     $('#webform-civicrm-configure-form')[0].submit();
   });
-  
+
   $('select[id*=contact-type], select[id*=contact-sub-type]').change(function(){
     webform_civicrm_relationship_options();
+  });
+
+  $('#edit-1-contact-type').change(function(){
+    webform_civicrm_contact_match_checkbox();
   });
 });
