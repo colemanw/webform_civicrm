@@ -163,13 +163,17 @@ function webform_civicrm_process_submission($node, &$submission) {
             elseif (empty($params[$location])) {
               continue;
             }
+            elseif ($location == 'email' && $i == 1 && $uid = webform_civicrm_user_cid($cid, 'contact')) {
+              $user = user_load($uid);dsm($user);
+              if ($params['email'] != $user->mail) {
+                user_save($user, array('email' => $params['email']));
+              }
+            }
             $params['contact_id'] = $cid;
             if (!empty($existing[$i])) {
               $params['id'] = $existing[$i]['id'];
             }
-            else {
-              $params['is_primary'] = ($i == 1);
-            }
+            $params['is_primary'] = $i == 1;
             $result = webform_civicrm_api($location, 'create', $params);
             if ($location == 'address' && empty($result['is_error'])) {
               $custom = array();
@@ -1138,14 +1142,17 @@ function webform_civicrm_get_fields($var = 'fields') {
 /**
  * Get logged-in user's contact id
  */
-function webform_civicrm_user_cid() {
-  global $user;
-  if ($user->uid) {
-    $result = webform_civicrm_api('uf_match', 'get', array('uf_id' => $user->uid));
-    if (!empty($result['values'])) {
-      $result = array_pop($result['values']);
-      return $result['contact_id'];
+function webform_civicrm_user_cid($id = NULL, $lookup = 'uf') {
+  if (!$id) {
+    global $user;
+    if (!($id = $user->uid)) {
+      return;
     }
+  }
+  $result = webform_civicrm_api('uf_match', 'get', array($lookup . '_id' => $id));
+  if (!empty($result['values'])) {
+    $result = array_pop($result['values']);
+    return $lookup == 'uf' ? $result['contact_id'] : $result['uf_id'];
   }
 }
 
