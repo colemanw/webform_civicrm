@@ -567,8 +567,6 @@ function webform_civicrm_configure_form(&$form_state, $node) {
 }
 
 
-
-
 /**
  * Build the $data array for webform settings; called while rebuilding or post-processing the configure form.
  */

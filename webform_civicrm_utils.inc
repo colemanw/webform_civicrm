@@ -163,13 +163,17 @@ function webform_civicrm_process_submission($node, &$submission) {
             elseif (empty($params[$location])) {
               continue;
             }
+            elseif ($location == 'email' && $i == 1 && $uid = webform_civicrm_user_cid($cid, 'contact')) {
+              $user = user_load($uid);
+              if ($params['email'] != $user->mail) {
+                user_save($user, array('email' => $params['email']));
+              }
+            }
             $params['contact_id'] = $cid;
             if (!empty($existing[$i])) {
               $params['id'] = $existing[$i]['id'];
             }
-            else {
-              $params['is_primary'] = ($i == 1);
-            }
+            $params['is_primary'] = $i == 1;
             $result = webform_civicrm_api($location, 'create', $params);
             if ($location == 'address' && empty($result['is_error'])) {
               $custom = array();
@@ -346,7 +350,7 @@ function webform_civicrm_process_submission($node, &$submission) {
     if (!empty($data['activity'][1])) {
       $params = $data['activity'][1]['activity'][1];
       $params['source_contact_id'] = $id['cid'][1];
-      $params['activity_date_time'] = date('Ymdhis');
+      $params['activity_date_time'] = date('YmdHis');
       if ($cid = webform_civicrm_user_cid()) {
         $params['source_contact_id'] = $cid;
       }
@@ -1136,16 +1140,21 @@ function webform_civicrm_get_fields($var = 'fields') {
 
 
 /**
- * Get logged-in user's contact id
+ * Lookup a uf ID from contact ID or vice-versa
+ * @param $id: uf or contact id
+ * @param $type: what type of ID is supplied
  */
-function webform_civicrm_user_cid() {
-  global $user;
-  if ($user->uid) {
-    $result = webform_civicrm_api('uf_match', 'get', array('uf_id' => $user->uid));
-    if (!empty($result['values'])) {
-      $result = array_pop($result['values']);
-      return $result['contact_id'];
+function webform_civicrm_user_cid($id = NULL, $type = 'uf') {
+  if (!$id) {
+    global $user;
+    if (!($id = $user->uid)) {
+      return;
     }
+  }
+  $result = webform_civicrm_api('uf_match', 'get', array($type . '_id' => $id));
+  if (!empty($result['values'])) {
+    $result = array_pop($result['values']);
+    return $type == 'uf' ? $result['contact_id'] : $result['uf_id'];
   }
 }
 
