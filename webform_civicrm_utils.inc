@@ -390,10 +390,8 @@ function webform_civicrm_process_submission($node, &$submission) {
           $result = webform_civicrm_api('activity', 'create', $params);
         }
       }
-      if (!empty($result['id']) || $act) {
-        if (!empty($result['id'])) {
-          $act = $result['id'];
-        }
+      if (!empty($result['id'])) {
+        $act = $result['id'];
         webform_civicrm_save_custom($data['activity'][1], $act, 'Activity');
       }
     }
@@ -415,7 +413,7 @@ function webform_civicrm_process_submission($node, &$submission) {
  * @Return array
  */
 function webform_civicrm_get_options($option_group, $param = NULL) {
-  $vars = $arr = array();
+  $vars = $ret = array();
   if ($option_group == 'privacy') {
     // Privacy options aren't actually listed in the database
     return array(
@@ -427,13 +425,10 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
     );
   }
   if ($option_group == 'country') {
-    $config = CRM_Core_Config::singleton();
-    if (is_array($config->countryLimit)) {
-      $enabled = implode(',', $config->countryLimit);
-    }
     $sql = 'SELECT name AS label, id AS value FROM civicrm_country';
-    if (!empty($enabled)) {
-      $sql .=  " WHERE id IN ($enabled)";
+    $config = CRM_Core_Config::singleton();
+    if (!empty($config->countryLimit) && is_array($config->countryLimit)) {
+      $sql .=  ' WHERE id IN (' . implode(',', $config->countryLimit) . ')';
     }
     $sql .= ' ORDER BY name';
   }
@@ -442,7 +437,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
     $sql = 'SELECT name AS label, id AS value FROM civicrm_state_province WHERE country_id = ' . $config->defaultContactCountry . ' ORDER BY name';
   }
   elseif ($option_group == 'groups' || $option_group == 'mailing_lists') {
-    $sql = 'SELECT id AS value, title AS label FROM civicrm_group WHERE is_active = 1';
+    $sql = 'SELECT id AS value, title AS label FROM civicrm_group WHERE is_active = 1 AND is_hidden = 0';
     if ($option_group == 'mailing_lists') {
       $sql .= " AND group_type LIKE '%2%' AND visibility = 'Public Pages'";
     }
@@ -461,20 +456,16 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
       $vars[1] = array($option_group, 'String');
     }
     // Exclude reserved activity types
-    if ($option_group == 'activity_type' && !$param) {
-      $sql .= ' AND component_id IS NULL';
-    }
-    // Optionally include some activity types
-    elseif ($option_group == 'activity_type') {
-      $sql .= " AND (component_id IS NULL OR component_id IN ($param))";
+    if ($option_group == 'activity_type') {
+      $sql .= ' AND (component_id IS NULL' . ($param ? " OR component_id IN ($param))" : ')');
     }
     $sql .= ' ORDER BY weight, label';
   }
   $dao = &CRM_Core_DAO::executeQuery($sql, $vars);
   while ($dao->fetch()) {
-    $arr[$dao->value] = $dao->label;
+    $ret[$dao->value] = $dao->label;
   }
-  return $arr;
+  return $ret;
 }
 
 
@@ -515,11 +506,8 @@ function webform_civicrm_field_options($key, $format, $data) {
         $ret = webform_civicrm_get_options($lists[$name]);
       }
     }
-    if ($format == 'str') {
-      $ret = webform_civicrm_array2str($ret);
-    }
   }
-  return $ret;
+  return $format == 'str' ? webform_civicrm_array2str($ret) : $ret;
 }
 
 /**
@@ -790,8 +778,8 @@ function webform_civicrm_get_fields($var = 'fields') {
       'value' => '0',
       'extra' => array('aslist' => 1),
     );
-    foreach (array('first' => t('First Name'), 'nick' => t('Nick Name'), 'middle' => t('Middle Name'), 'last' => t('Last Name')) as $key => $label) {
-      $fields['contact_' . $key . '_name'] = array(
+    foreach (array('first_name' => t('First Name'), 'nick_name' => t('Nick Name'), 'middle_name' => t('Middle Name'), 'last_name' => t('Last Name'), 'job_title' => t('Job Title')) as $key => $label) {
+      $fields['contact_' . $key] = array(
         'name' => $label,
         'type' => 'textfield',
         'contact_type' => 'individual',
@@ -812,11 +800,6 @@ function webform_civicrm_get_fields($var = 'fields') {
         'year_end' => '-1',
         'timezone' => 'user',
       ),
-      'contact_type' => 'individual',
-    );
-    $fields['contact_job_title'] = array(
-      'name' => t('Job Title'),
-      'type' => 'textfield',
       'contact_type' => 'individual',
     );
     $fields['contact_organization_name'] = array(
@@ -855,25 +838,13 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Email'),
       'type' => 'email',
     );
-    $fields['address_street_address'] = array(
-      'name' => t('Street Address'),
-      'type' => 'textfield',
-      'extra' => array('width' => 60),
-    );
-    $fields['address_supplemental_address_1'] = array(
-      'name' => t('Street Address # Line 2'),
-      'type' => 'textfield',
-      'extra' => array('width' => 60),
-    );
-    $fields['address_supplemental_address_2'] = array(
-      'name' => t('Street Address # Line 3'),
-      'type' => 'textfield',
-      'extra' => array('width' => 60),
-    );
-    $fields['address_city'] = array(
-      'name' => t('City'),
-      'type' => 'textfield',
-    );
+    foreach (array('street_address' => t('Street Address'), 'supplemental_address_1' => t('Street Address # Line 2'), 'supplemental_address_2' => t('Street Address # Line 3'), 'city' => t('City')) as $key => $value) {
+      $fields['address_' . $key] = array(
+        'name' => $value,
+        'type' => 'textfield',
+        'extra' => array('width' => 60),
+      );
+    }
     $fields['address_state_province'] = array(
       'name' => t('State/Province Abbr.'),
       'type' => 'textfield',
@@ -1170,6 +1141,7 @@ function webform_civicrm_explode_key($key) {
   return $pieces;
 }
 
+
 /**
  * Convert a | separated string into an array
  */
@@ -1182,6 +1154,7 @@ function webform_civicrm_str2array($str) {
   }
   return $ret;
 }
+
 
 /**
  * Convert an array into a | separated string
@@ -1214,27 +1187,6 @@ function webform_civicrm_replace_tokens($str, $contact) {
     $t = "[$t]";
   }
   return str_ireplace($tokens, $values, $str);
-}
-
-
-/**
- * Displays the admin-defined message with "not you?" link to known contacts
- */
-function webform_civicrm_set_message($message, $contact) {
-  $message = webform_civicrm_replace_tokens($message, $contact);
-  preg_match_all('#\{([^}]+)\}#', $message, $matches);
-  if ($matches[0]) {
-    foreach ($matches[0] as $pos => $match) {
-      if (user_is_logged_in()) {
-        $link = l($matches[1][$pos], 'user/logout', array('query' => array('destination' => $_GET['q'])));
-      }
-      else {
-        $link = l($matches[1][$pos], $_GET['q']);
-      }
-      $message = str_replace($match, $link, $message);
-    }
-  }
-  drupal_set_message($message);
 }
 
 
@@ -1287,6 +1239,28 @@ function webform_civicrm_activity_find($params) {
   while ($dao->fetch()) {
     return $dao->id;
   }
+}
+
+/** D7 Specific functions **/
+
+/**
+ * Displays the admin-defined message with "not you?" link to known contacts
+ */
+function webform_civicrm_set_message($message, $contact) {
+  $message = webform_civicrm_replace_tokens($message, $contact);
+  preg_match_all('#\{([^}]+)\}#', $message, $matches);
+  if ($matches[0]) {
+    foreach ($matches[0] as $pos => $match) {
+      if (user_is_logged_in()) {
+        $link = l($matches[1][$pos], 'user/logout', array('query' => array('destination' => $_GET['q'])));
+      }
+      else {
+        $link = l($matches[1][$pos], $_GET['q']);
+      }
+      $message = str_replace($match, $link, $message);
+    }
+  }
+  drupal_set_message($message);
 }
 
 
