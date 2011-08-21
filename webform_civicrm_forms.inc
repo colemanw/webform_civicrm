@@ -262,7 +262,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
       '#title' => t('Assign Activity to'),
       '#type' => 'select',
       '#options' => array(t('- no one -')),
-      '#default_value' => empty($data['activity'][1]['assignee_contact_id']) ? NULL : $data['activity'][1]['assignee_contact_id'],
+      '#default_value' => empty($data['activity'][1]['activity'][1]['assignee_contact_id']) ? NULL : $data['activity'][1]['activity'][1]['assignee_contact_id'],
     );
     $form['act']['case']['activity_fields']['activity_link'] = array(
       '#type' => 'checkbox',
@@ -612,9 +612,9 @@ function webform_civicrm_process_form_settings(&$vals) {
     if (isset($vals['activity_subject'])) {
       $data['activity'][1]['activity'][1]['subject'] = $vals['activity_subject'];
       $data['activity'][1]['activity'][1]['status_id'] = $vals['activity_status_id'];
+      $data['activity'][1]['activity'][1]['assignee_contact_id'] = $vals['activity_assignee'];
       $data['activity'][1]['add_link'] = $vals['activity_link'];
       $data['activity'][1]['existing_activity_status'] = $vals['existing_activity_status'];
-      $data['activity'][1]['assignee_contact_id'] = $vals['activity_assignee'];
     }
   }
   if (!empty($vals['case_type_id'])) {
@@ -826,6 +826,9 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   // If this is an edit op, use the original IDs to avoid confusion
   if (!empty($form['#submission'])) {
     $submission = $form['#submission'];
+    if (!isset($submission->civicrm)) {
+      return;
+    }
     $id['cid'] = $submission->civicrm['contact_id'];
     $id['act'][1] = $submission->civicrm['activity_id'];
   }

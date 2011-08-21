@@ -116,7 +116,7 @@ function webform_civicrm_theme() {
  * Initial submission processing - saves contacts.
  */
 function webform_civicrm_webform_submission_presave($node, &$submission) {
-  if (!empty($node->webform_civicrm) && empty($submission->is_draft)) {
+  if (!empty($node->webform_civicrm)) {
     module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
     webform_civicrm_process_submission($node, $submission);
   }
@@ -128,6 +128,15 @@ function webform_civicrm_webform_submission_presave($node, &$submission) {
  * Final submission processing - saves activity and writes webform_civicrm record.
  */
 function webform_civicrm_webform_submission_insert($node, $submission) {
+  webform_civicrm_webform_submission_presave($node, $submission);
+}
+
+
+/**
+ * Implements hook_webform_submission_update().
+ * Final submission processing - saves activity and updates webform_civicrm record.
+ */
+function webform_civicrm_webform_submission_update($node, $submission) {
   webform_civicrm_webform_submission_presave($node, $submission);
 }
 
