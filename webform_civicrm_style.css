@@ -1,36 +1,31 @@
-.web-civi-checkbox-set {
+form .web-civi-checkbox-set {
   padding-left:0;
 }
 
-.web-civi-checkbox-set .form-item {
+form .web-civi-checkbox-set .form-item {
   float:left;
   margin-left:1em;
   width:20em;
 }
 
-.form-item-activity-targets .form-item.form-type-checkbox,
-.form-item-activity-status-id,
-.form-item-activity-assignee {
+form .form-item-activity-targets div.form-item.form-type-checkbox,
+form div.form-item-activity-assignee-group,
+#civicrm-ajax-assignee {
   float:left;
   margin-right:1em;
 }
 
-.form-item-activity-targets + div,
-.form-item-activity-assignee + div {
+form .form-item-activity-targets + div,
+#civicrm-ajax-assignee + div {
   clear:both;
 }
 
-.hidden, .js #no-js-button-wrapper {
+form .hidden, .js #no-js-button-wrapper {
   display:none;
 }
 
 .civicrm-ahah-wrapper {
   clear:both;
-}
-
-#webform-civicrm-configure-form legend+.description,
-#webform-civicrm-configure-form .web-civi-description {
-  font-size:0.85em;
 }
 
 #webform-civicrm-configure-form .form-item label {
