@@ -333,83 +333,78 @@ function webform_civicrm_process_submission($node, &$submission) {
     }
   }
   // Insert/update processing - save case & activity data
-  else {
-    $act = empty($id['act'][1]) ? 0 : $id['act'][1];
-    if (empty($submission->is_draft)) {
-      // Open new case if needed.
-      if (empty($id['case'][1]) && empty($id['act'][1]) && !empty($data['case'][1]) && !empty($id['cid'][1])) {
-        $data['case'][1]['case'][1]['contact_id'] = $id['cid'][1];
-        $result = webform_civicrm_api('case', 'create', $data['case'][1]['case'][1]);
-        $id['case'][1] = $result['id'];
-        $id['act'][1] = webform_civicrm_activity_find(array(
-          'contact_id' => $id['cid'][1],
-          'activity_type_id' => $data['activity'][1]['activity'][1]['activity_type_id'],
-          'status_id' => $data['activity'][1]['existing_activity_status'],
-          'case_id' => $id['case'][1],
-        ));
+  elseif (empty($submission->is_draft)) {
+    // Open new case if needed.
+    if (empty($id['case'][1]) && empty($id['act'][1]) && !empty($data['case'][1]) && !empty($id['cid'][1])) {
+      $data['case'][1]['case'][1]['contact_id'] = $id['cid'][1];
+      $result = webform_civicrm_api('case', 'create', $data['case'][1]['case'][1]);
+      $id['case'][1] = $result['id'];
+      $id['act'][1] = webform_civicrm_activity_find(array(
+        'contact_id' => $id['cid'][1],
+        'activity_type_id' => $data['activity'][1]['activity'][1]['activity_type_id'],
+        'status_id' => $data['activity'][1]['existing_activity_status'],
+        'case_id' => $id['case'][1],
+      ));
+    }
+    if (!empty($data['activity'][1])) {
+      $params = $data['activity'][1]['activity'][1];
+      $params['source_contact_id'] = $id['cid'][1];
+      $params['activity_date_time'] = date('YmdHis');
+      if ($cid = webform_civicrm_user_cid()) {
+        $params['source_contact_id'] = $cid;
       }
-      if (!empty($data['activity'][1])) {
-        $params = $data['activity'][1]['activity'][1];
-        $params['source_contact_id'] = $id['cid'][1];
-        $params['activity_date_time'] = date('YmdHis');
-        if ($cid = webform_civicrm_user_cid()) {
-          $params['source_contact_id'] = $cid;
+      $params['target_contact_id'] = array();
+      foreach ($data['contact'] as $c => $contact) {
+        if (!empty($contact['activity_target']) && !empty($id['cid'][$c])) {
+          $params['target_contact_id'][$id['cid'][$c]] = $id['cid'][$c];
         }
-        $params['target_contact_id'] = array();
-        foreach ($data['contact'] as $c => $contact) {
-          if (!empty($contact['activity_target']) && !empty($id['cid'][$c])) {
-            $params['target_contact_id'][$id['cid'][$c]] = $id['cid'][$c];
-          }
+      }
+      // Choose assignee contact ID from webform contacts if a CID was not specified
+      if (!empty($params['assignee_contact_id']) && $params['assignee_contact_id'][0] == '#') {
+        $acid = substr($params['assignee_contact_id'], 1);
+        unset($params['assignee_contact_id']);
+        if (!empty($id['cid'][$acid])) {
+          $params['assignee_contact_id'] = $id['cid'][$acid];
         }
-        // Choose assignee contact ID from webform contacts if a CID was not specified
-        if (!empty($params['assignee_contact_id']) && $params['assignee_contact_id'][0] == '#') {
-          $acid = substr($params['assignee_contact_id'], 1);
-          unset($params['assignee_contact_id']);
-          if (!empty($id['cid'][$acid])) {
-            $params['assignee_contact_id'] = $id['cid'][$acid];
-          }
-        }
-        elseif (empty($params['assignee_contact_id'])) {
-          unset($params['assignee_contact_id']);
-        }
-        if (empty($params['details'])) {
-          $params['details'] = '';
-        }
-        else {
-          $params['details'] = nl2br($params['details']);
-        }
-        if (empty($params['subject'])) {
-          $params['subject'] = $settings['data']['activity'][1]['activity'][1]['subject'];
-        }
-        if (!empty($data['activity'][1]['add_link'])) {
-          $params['details'] .= '<p>' . l(t('View Webform Submission'), 'node/' . $node->nid . '/submission/' . $submission->sid) . '</p>';
-        }
-        unset($params['add_link']);
-        if (!empty($id['act'][1])) {
-          $params['id'] = $act = $id['act'][1];
-          $result = webform_civicrm_api('activity', 'update', $params);
-        }
-        else {
-          if (!empty($id['case'][1])) {
-            $params['case_id'] = $id['case'][1];
-            $params['medium_id'] = $data['case'][1]['case'][1]['medium_id'];
-            $result = webform_civicrm_api('case', 'activity_create', $params);
-          }
-          else {
-            $result = webform_civicrm_api('activity', 'create', $params);
-          }
-        }
-        if (!empty($result['id'])) {
-          $act = $result['id'];
-          webform_civicrm_save_custom($data['activity'][1], $act, 'Activity');
-        }
+      }
+      elseif (empty($params['assignee_contact_id'])) {
+        unset($params['assignee_contact_id']);
+      }
+      if (empty($params['details'])) {
+        $params['details'] = '';
+      }
+      else {
+        $params['details'] = nl2br($params['details']);
+      }
+      if (empty($params['subject'])) {
+        $params['subject'] = $settings['data']['activity'][1]['activity'][1]['subject'];
+      }
+      if (!empty($data['activity'][1]['add_link'])) {
+        $params['details'] .= '<p>' . l(t('View Webform Submission'), 'node/' . $node->nid . '/submission/' . $submission->sid) . '</p>';
+      }
+      unset($params['add_link']);
+      if (!empty($id['act'][1])) {
+        $params['id'] = $id['act'][1];
+      }
+      elseif (!empty($id['case'][1])) {
+        $params['case_id'] = $id['case'][1];
+        $params['medium_id'] = $data['case'][1]['case'][1]['medium_id'];
+      }
+      $result = webform_civicrm_api('activity', 'create', $params);
+
+      if (!empty($result['id'])) {
+        $id['act'][1] = $result['id'];
+        webform_civicrm_save_custom($data['activity'][1], $id['act'][1], 'Activity');
       }
     }
-    ksort($id['cid']);
+    $cid = '-';
+    foreach (array_keys($data['contact']) as $c) {
+      $cid .= (empty($id['cid'][$c]) ? 0 : $id['cid'][$c]) . '-';
+    }
     $record = array(
       'sid' => $submission->sid,
-      'contact_id' => '-' . implode('-', $id['cid']) . '-',
-      'activity_id' => $act,
+      'contact_id' => $cid,
+      'activity_id' => empty($id['act'][1]) ? 0 : $id['act'][1],
     );
     drupal_write_record('webform_civicrm_submissions', $record, $update);
   }
