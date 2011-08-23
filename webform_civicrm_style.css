@@ -9,14 +9,14 @@
 }
 
 div.form-item-activity-targets div.form-item,
-#edit-activity-status-id-wrapper,
-#edit-activity-assignee-wrapper {
+#edit-activity-assignee-group-wrapper,
+#civicrm-ahah-assignee {
   float:left;
   margin-right:1em;
 }
 
-#edit-existing-activity-status-wrapper,
-#edit-activity-link-wrapper {
+#civicrm-ahah-assignee + div,
+#edit-activity-assignee-group-wrapper {
   clear:both;
 }
 
@@ -28,8 +28,7 @@ div.form-item-activity-targets div.form-item,
   clear:both;
 }
 
-#webform-civicrm-configure-form legend+.description,
-#webform-civicrm-configure-form .web-civi-description {
+#webform-civicrm-configure-form legend+.description {
   font-size:0.85em;
 }
 
