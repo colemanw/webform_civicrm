@@ -347,6 +347,7 @@ function webform_civicrm_process_submission($node, &$submission) {
       ));
     }
     if (!empty($data['activity'][1])) {
+      $config = &CRM_Core_Config::singleton();
       $params = $data['activity'][1]['activity'][1];
       $params['source_contact_id'] = $id['cid'][1];
       $params['activity_date_time'] = date('YmdHis');
@@ -362,12 +363,9 @@ function webform_civicrm_process_submission($node, &$submission) {
       // Choose assignee contact ID from webform contacts if a CID was not specified
       if (!empty($params['assignee_contact_id']) && $params['assignee_contact_id'][0] == '#') {
         $acid = substr($params['assignee_contact_id'], 1);
-        unset($params['assignee_contact_id']);
-        if (!empty($id['cid'][$acid])) {
-          $params['assignee_contact_id'] = $id['cid'][$acid];
-        }
+        $params['assignee_contact_id'] = empty($id['cid'][$acid]) ? 0 : $id['cid'][$acid];
       }
-      elseif (empty($params['assignee_contact_id'])) {
+      if (empty($params['assignee_contact_id'])) {
         unset($params['assignee_contact_id']);
       }
       if (empty($params['details'])) {
@@ -395,6 +393,19 @@ function webform_civicrm_process_submission($node, &$submission) {
       if (!empty($result['id'])) {
         $id['act'][1] = $result['id'];
         webform_civicrm_save_custom($data['activity'][1], $id['act'][1], 'Activity');
+      }
+      if ($config->activityAssigneeNotification && !empty($id['act'][1]) && !empty($params['assignee_contact_id'])) {
+        // Send email to assignees. TODO: Move to CiviCRM API?
+        $assignee = webform_civicrm_api('contact', 'get', array('id' => $params['assignee_contact_id']));
+        $assignee = array_pop($assignee['values']); 
+        if (!empty($assignee['email'])) {
+          $mailToContacts = array($assignee['email'] => $assignee);
+          //include attachments while sendig a copy of activity.
+          require_once 'CRM/Core/BAO/File.php';
+          $attachments = &CRM_Core_BAO_File::getEntityFile('civicrm_activity', $id['act'][1]);
+          require_once 'CRM/Case/BAO/Case.php';
+          $result = CRM_Case_BAO_Case::sendActivityCopy(null, $id['act'][1], $mailToContacts, $attachments, null);
+        }
       }
     }
     $cid = '-';

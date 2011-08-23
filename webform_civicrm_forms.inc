@@ -26,6 +26,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   drupal_add_js(drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_forms.js');
   drupal_add_css(drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_style.css', array('preprocess' => FALSE));
   civicrm_initialize();
+  $config = CRM_Core_Config::singleton();
 
   $fields = webform_civicrm_get_fields();
   $sets = webform_civicrm_get_fields('sets');
@@ -232,11 +233,14 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     );
     $fid = 'civicrm_1_activity_1_activity_assignee_contact_id';
     $form['act']['case']['activity_fields']['assignee'] = array(
-      '#prefix' => '<div class="civicrm-ajax-wrapper" id="civicrm-ajax-assignee">',
+      '#prefix' => '<div id="civicrm-ajax-assignee">',
       '#type' => 'markup',
       '#suffix' => '</div>',
       $fid => webform_civicrm_configure_form_item($fid, $fields['activity_assignee_contact_id'], $settings, t('- no one -'))
     );
+    if ($config->activityAssigneeNotification) {
+      $form['act']['case']['activity_fields']['assignee'][$fid]['#description'] = t('A copy of this activity will be emailed to the assignee.');
+    }
     $form['act']['case']['activity_fields']['existing_activity_status'] = array(
       '#type' => 'select',
       '#title' => t('Update Existing Activity'),
@@ -300,7 +304,6 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#default_value' => $contacts = count($data['contact']),
     '#options' => $nums,
     '#description' => t('How many contacts would you like on this form?'),
-    '#attributes' => array('class' => array('number-of')),
   );
   $form['change_form_settings'] = array(
     '#type' => 'button',
@@ -400,7 +403,6 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
           '#title' => t('Number of %type Fields', array('%type' => $sid == 'relationship' ? t('Relationship') : $set['label'])),
           '#default_value' => $c['number_of_' . $sid],
           '#options' => $numbers,
-          '#attributes' => array('class' => array('number-of')),
           '#ajax' => array(
             'callback' => 'webform_civicrm_configure_form_ajax',
             'pathstr' => $path . $n . $sid . '_wrapper',

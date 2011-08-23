@@ -9,7 +9,7 @@ WHAT IT DOES:
 -Open or update a case.
 -Create relationships between contacts.
 -Share addresses.
--Enter one contact as current employer of another.
+-Set a contact as current employer of another.
 -It uses your CiviCRM default strict deduping rule to decide whether to update an existing contact or create a new one when the form is submitted by an anonymous user.
 -It imposes no restrictions on how you style, rename, nest, or edit your CiviCRM fields; you may do anything with them that you can do with any other webform field.
 
@@ -61,7 +61,7 @@ You can pretty easily start recording CiviCRM contacts even for an existing webf
 
 1) You don't have any contact info fields on the form yet (name, address, etc). That's easy, just go to the CiviCRM tab of your webform, check the boxes, and the new fields will be created for you.
 
-2) You already have contact info fields on your form. If people have already been using this form, you don't want to delete those fields because you'd lose data from all existing submissions! Instead, you can get webform_civicrm to start processing those fields by changing their field keys to the ones understood by webform_civicrm. The best way to find the correct field key is by going to an existing civicrm-enabled webform (or create a dummy one) and copy the field key you are looking for.
+2) You already have contact info fields on your form. If people have already been using this form, you don't want to delete those fields because you'd lose data from all existing submissions! Instead, you can get webform_civicrm to start processing those fields by changing their field keys to the ones understood by webform_civicrm. The best way to find the correct field key is by going to an existing civicrm-enabled webform (or create a dummy one) and copy the field key you are looking for (see anatomy of a form key, below). Then visit the CiviCRM tab of your webform and you will see that field is enabled.
 
 
 WILL CONTACTS AND ACTIVITIES BE CREATED RETROACTIVELY IF I ENABLE THIS MODULE ON AN EXISTING WEBFORM?
@@ -71,10 +71,23 @@ No. That would require some sort of batch update script, which is not part of th
 
 ADVANCED USAGE - PASSING IDS IN THE URL
 
-By default, contact 1 is assumed to be the acting user. So if you view a webform while logged-in, you will see your own contact details auto-filled on the form. You can disable that in the "additional options" so that logged in users are always presented with a blank form for  You can also supply ids in the url. The following are supported:
+By default, contact 1 is assumed to be the acting user. So if you view a webform while logged-in, you will see your own contact details auto-filled on the form. You can disable that in the "additional options" so that logged in users are always presented with a blank form for entering/updating other contacts. To facilitate working with existing contacts, you can supply ids in the url. The following are supported:
 
 cid1=123 (contact 1's ID; you can also supply cid2 and so on)
 
 aid=456 (ID of the activity to autofill and update -- specifying an activity from a case works too)
 
 Note that permissions are checked, so these values will be ignored if the acting user doesn't have permission to view that contact. Activity ID will be ignored if no contact is part of the given activity.
+
+
+ANATOMY OF A FORM KEY - for geeks only
+
+CiviCRM webform keys all contain 6 pieces, connected by underscores. They are:
+civicrm _ number _ entity _ number _ table _ field_key (note that the 6th piece may itself contain underscores)
+For example, the field "civicrm_2_contact_1_address_postal_code" translates to:
+civicrm_ - all civicrm fields start with this
+2_contact_ - this field belongs to contact 2
+1_address_ - this field is for this contact's first address (address is the table name in the database)
+postal_code - the id of the field (usually the column name in the database)
+So this field is for the postal code of the first address of the second contact on the form.
+Note that for consistency, all form keys are treated as if everything might be multi-valued. So even though a contact can only have one first_name, the form key for contact 1's first name is still "civicrm_1_contact_1_contact_first_name" which represents both that this is the first contact on the form, and the first (and only) set of contact fields for them.

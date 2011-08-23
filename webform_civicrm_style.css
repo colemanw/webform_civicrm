@@ -24,10 +24,6 @@ form .hidden, .js #no-js-button-wrapper {
   display:none;
 }
 
-.civicrm-ahah-wrapper {
-  clear:both;
-}
-
 #webform-civicrm-configure-form .form-item label {
   display:inline;
 }
