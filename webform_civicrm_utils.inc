@@ -44,7 +44,7 @@ function webform_civicrm_process_submission($node, &$submission) {
           $val = empty($val[0]) ? '' : str_replace('-', '', $val[0]);
         }
         else {
-          $val = empty($val[0]) ? '' : $val[0];
+          $val = isset($val[0]) ? $val[0] : '';
         }
         $data[$ent][$c][$table][$n][$field] = $val;
       }
@@ -107,23 +107,27 @@ function webform_civicrm_process_submission($node, &$submission) {
       }
       $params = $contact['contact'][1];
       $params['contact_type'] = ucfirst($params['contact_type']);
-
+      if (empty($params['contact_sub_type'])) {
+        unset($params['contact_sub_type']);
+      }
+      // Create new contact
       if (empty($id['cid'][$c])) {
         $params['source'] = $settings['new_contact_source'];
         $result = webform_civicrm_api('contact', 'create', $params);
         if (!empty($result['id'])) {
-          $id['cid'][$c] = $result['id'];
+          $cid = $id['cid'][$c] = $result['id'];
         }
         else {
           $id['cid'][$c] = 0;
           continue;
         }
       }
+      // Update existing contact
       else {
-        $params['contact_id'] = $id['cid'][$c];
+        $params['contact_id'] = $cid = $id['cid'][$c];
         $result = webform_civicrm_api('contact', 'create', $params);
       }
-      $cid = $id['cid'][$c];
+
       webform_civicrm_save_custom($contact, $cid);
 
       // Fill values for hidden ID fields
@@ -397,7 +401,7 @@ function webform_civicrm_process_submission($node, &$submission) {
       if ($config->activityAssigneeNotification && !empty($id['act'][1]) && !empty($params['assignee_contact_id'])) {
         // Send email to assignees. TODO: Move to CiviCRM API?
         $assignee = webform_civicrm_api('contact', 'get', array('id' => $params['assignee_contact_id']));
-        $assignee = array_pop($assignee['values']); 
+        $assignee = array_pop($assignee['values']);
         if (!empty($assignee['email'])) {
           $mailToContacts = array($assignee['email'] => $assignee);
           //include attachments while sendig a copy of activity.
