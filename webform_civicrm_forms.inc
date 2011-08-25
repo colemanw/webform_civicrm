@@ -27,6 +27,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   drupal_add_js(drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_forms.js', 'module', 'header', FALSE);
   drupal_add_css(drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_style.css', 'module', 'all', FALSE);
   civicrm_initialize();
+  $config = CRM_Core_Config::singleton();
 
   $fields = webform_civicrm_get_fields();
   $sets = webform_civicrm_get_fields('sets');
@@ -240,6 +241,9 @@ function webform_civicrm_configure_form(&$form_state, $node) {
       '#suffix' => '</div>',
       $fid => webform_civicrm_configure_form_item($fid, $fields['activity_assignee_contact_id'], $settings, t('- no one -'))
     );
+    if ($config->activityAssigneeNotification) {
+      $form['act']['case']['activity_fields']['assignee'][$fid]['#description'] = t('A copy of this activity will be emailed to the assignee.');
+    }
     $form['act']['case']['activity_fields']['existing_activity_status'] = array(
       '#type' => 'select',
       '#title' => t('Update Existing Activity'),
