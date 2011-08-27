@@ -83,7 +83,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#description' => '<ul><li>' .
       t('CiviCRM contacts will be created or updated when users submit this webform.') . '</li><li>' .
       t('The form can be auto-filled for logged-in users, or people following this link from CiviMail:') . '<br />' .
-      url('node/' . $node->nid) . '?cid1={contact.contact_id}&{contact.checksum}</li><li>' .
+      url('node/' . $node->nid, array('absolute' => TRUE)) . '?cid1={contact.contact_id}&{contact.checksum}</li><li>' .
       t('<a !link>Read the instructions</a> for more info.', array('!link' => 'href="/admin/help/webform_civicrm" target="_blank"')) . '</li></ul>',
   );
   $form['prefix'] = array(

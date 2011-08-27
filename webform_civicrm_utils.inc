@@ -207,7 +207,7 @@ function webform_civicrm_process_submission($node, &$submission) {
       // Process Relationships
       if (!empty($contact['relationship'])) {
         foreach ($contact['relationship'] as $i => $params) {
-          if (!empty($params['relationship_type_id'])) {
+          if (!empty($params['relationship_type_id']) && !empty($id['cid'][$i])) {
             list($type, $a_b) = explode('_', $params['relationship_type_id']);
             $params['contact_id_a'] = $params['contact_id_b'] = $id['cid'][$i];
             $params['contact_id_' . $a_b] = $cid;
@@ -846,13 +846,11 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['contact_organization_name'] = array(
       'name' => t('Organization Name'),
       'type' => 'textfield',
-      'mandatory' => 1,
       'contact_type' => 'organization',
     );
     $fields['contact_household_name'] = array(
       'name' => t('Household Name'),
       'type' => 'textfield',
-      'mandatory' => 1,
       'contact_type' => 'household',
     );
     $fields['contact_contact_id'] = array(

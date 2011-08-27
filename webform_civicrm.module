@@ -63,8 +63,9 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
 function webform_civicrm_node_load($nodes, $types) {
   $db = db_query('SELECT * FROM {webform_civicrm_forms} WHERE nid IN(:nids)', array(':nids' => array_keys($nodes)));
   foreach ($db as $settings) {
+    $node = &$nodes[$settings->nid];
     $settings->data = unserialize($settings->data);
-    $nodes[$settings->nid]->webform_civicrm = (array) $settings;
+    $node->webform_civicrm = (array) $settings;
   }
 }
 
