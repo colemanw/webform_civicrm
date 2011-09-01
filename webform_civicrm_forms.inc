@@ -88,7 +88,7 @@ function webform_civicrm_configure_form(&$form_state, $node) {
     '#description' => '<ul><li>' .
       t('CiviCRM contacts will be created or updated when users submit this webform.') . '</li><li>' .
       t('The form can be auto-filled for logged-in users, or people following this link from CiviMail:') . '<br />' .
-      url('node/' . $node->nid) . '?cid1={contact.contact_id}&{contact.checksum}</li><li>' .
+      url('node/' . $node->nid, array('absolute' => TRUE)) . '?cid1={contact.contact_id}&{contact.checksum}</li><li>' .
       t('<a !link>Read the instructions</a> for more info.', array('!link' => 'href="/admin/help/webform_civicrm" target="_blank"')) . '</li></ul>',
   );
   $form['prefix'] = array(
@@ -1134,18 +1134,16 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
           '#options' => $option_keys,
           '#default_value' => $defaults_selected,
         );
-        // Auto set multi-value option for fields based on schema
-        if (!empty($form['extra']['multiple'])) {
+        // Auto set multi-value option for single-valued entities
+        if (empty($fields[$table . '_' . $key]['extra']['multiple'])) {
           $form['extra']['multiple']['#type'] = 'hidden';
-          $form['extra']['multiple']['#value'] = !empty($fields[$table . '_' . $key]['extra']['multiple']);
-          if (empty($fields[$table . '_' . $key]['extra']['multiple'])) {
-            $form['civicrm_options_fieldset']['civicrm_defaults']['#type'] = 'radios';
-            if ($element['value'] !== '') {
-              $form['civicrm_options_fieldset']['civicrm_defaults']['#default_value'] = '_web_civi_option_selected_' . $element['value'];
-            }
-            else {
-              unset($form['civicrm_options_fieldset']['civicrm_defaults']['#default_value']);
-            }
+          $form['extra']['multiple']['#value'] = 0;
+          $form['civicrm_options_fieldset']['civicrm_defaults']['#type'] = 'radios';
+          if ($element['value'] !== '') {
+            $form['civicrm_options_fieldset']['civicrm_defaults']['#default_value'] = '_web_civi_option_selected_' . $element['value'];
+          }
+          else {
+            unset($form['civicrm_options_fieldset']['civicrm_defaults']['#default_value']);
           }
         }
         array_unshift($form['#submit'], 'webform_civicrm_process_options_selection');

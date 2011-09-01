@@ -207,7 +207,7 @@ function webform_civicrm_process_submission($node, &$submission) {
       // Process Relationships
       if (!empty($contact['relationship'])) {
         foreach ($contact['relationship'] as $i => $params) {
-          if (!empty($params['relationship_type_id'])) {
+          if (!empty($params['relationship_type_id']) && !empty($id['cid'][$i])) {
             list($type, $a_b) = explode('_', $params['relationship_type_id']);
             $params['contact_id_a'] = $params['contact_id_b'] = $id['cid'][$i];
             $params['contact_id_' . $a_b] = $cid;
@@ -511,6 +511,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
  */
 function webform_civicrm_field_options($key, $format, $data) {
   $ret = array();
+  $fields = webform_civicrm_get_fields();
   $lists = webform_civicrm_get_fields('lists');
   if ($pieces = webform_civicrm_explode_key($key)) {
     list($lobo, $c, $ent, $n, $table, $name) = $pieces;
@@ -541,6 +542,15 @@ function webform_civicrm_field_options($key, $format, $data) {
       }
       else {
         $ret = webform_civicrm_get_options($lists[$name], $param);
+        $field = $fields[$table . '_' . $name];
+        // Format money data correctly
+        if (!empty($field['data_type']) && $field['data_type'] == 'Money') {
+          $old = $ret;
+          $ret = array();
+          foreach ($old as $key => $val) {
+            $ret[number_format(str_replace(',', '', $key), 2, '.', '')] = $val;
+          }
+        }
       }
     }
   }
@@ -653,8 +663,7 @@ function webform_civicrm_get_custom($entity_id, $entity_type = NULL, $normalize 
   if (empty($parents)) {
     require_once 'CRM/Core/BAO/CustomValueTable.php';
     // Create matching table to sort fields by group
-    $fields = array_keys(webform_civicrm_get_fields());
-    foreach ($fields as $key) {
+    foreach (webform_civicrm_get_fields() as $key => $value) {
       list($group, $field) = explode('_', $key, 2);
       if (substr($field, 0, 7) == 'custom_') {
         $parents[$field] = $group;
@@ -668,7 +677,7 @@ function webform_civicrm_get_custom($entity_id, $entity_type = NULL, $normalize 
     $params['entityType'] = ucfirst($entity_type);
   }
   $result = CRM_Core_BAO_CustomValueTable::getValues($params);
-  if ($result['is_error']) {
+  if (!empty($result['is_error'])) {
     return array();
   }
   unset($result['is_error'], $result['entityID']);
@@ -719,7 +728,9 @@ function webform_civicrm_save_custom($entity, $entity_id, $entity_type = NULL) {
       }
     }
   }
-  CRM_Core_BAO_CustomValueTable::setValues($params);
+  if (count($params) > 1) {
+    CRM_Core_BAO_CustomValueTable::setValues($params);
+  }
 }
 
 
@@ -846,13 +857,11 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['contact_organization_name'] = array(
       'name' => t('Organization Name'),
       'type' => 'textfield',
-      'mandatory' => 1,
       'contact_type' => 'organization',
     );
     $fields['contact_household_name'] = array(
       'name' => t('Household Name'),
       'type' => 'textfield',
-      'mandatory' => 1,
       'contact_type' => 'household',
     );
     $fields['contact_contact_id'] = array(
@@ -1141,6 +1150,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       $fields[$id]['mandatory'] = $dao->is_required;
       $fields[$id]['extra']['description'] = $dao->help_pre;
       $fields[$id]['value'] = str_replace($sp, ',', trim($dao->default_value, $sp));
+      $fields[$id]['data_type'] = $dao->data_type;
 
       if ($fields[$id]['type'] == 'date') {
         $fields[$id]['extra']['year_start'] = $dao->start_date_years ? '-' . $dao->start_date_years : '-50';
