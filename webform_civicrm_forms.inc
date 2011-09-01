@@ -1137,18 +1137,16 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
           '#options' => $option_keys,
           '#default_value' => $defaults_selected,
         );
-        // Auto set multi-value option for fields based on schema
-        if (!empty($form['extra']['multiple'])) {
+        // Auto set multi-value option for single-valued entities
+        if (empty($fields[$table . '_' . $key]['extra']['multiple'])) {
           $form['extra']['multiple']['#type'] = 'hidden';
-          $form['extra']['multiple']['#value'] = !empty($fields[$table . '_' . $key]['extra']['multiple']);
-          if (empty($fields[$table . '_' . $key]['extra']['multiple'])) {
-            $form['civicrm_options_fieldset']['civicrm_defaults']['#type'] = 'radios';
-            if ($element['value'] !== '') {
-              $form['civicrm_options_fieldset']['civicrm_defaults']['#default_value'] = '_web_civi_option_selected_' . $element['value'];
-            }
-            else {
-              unset($form['civicrm_options_fieldset']['civicrm_defaults']['#default_value']);
-            }
+          $form['extra']['multiple']['#value'] = 0;
+          $form['civicrm_options_fieldset']['civicrm_defaults']['#type'] = 'radios';
+          if ($element['value'] !== '') {
+            $form['civicrm_options_fieldset']['civicrm_defaults']['#default_value'] = '_web_civi_option_selected_' . $element['value'];
+          }
+          else {
+            unset($form['civicrm_options_fieldset']['civicrm_defaults']['#default_value']);
           }
         }
         array_unshift($form['#submit'], 'webform_civicrm_process_options_selection');
