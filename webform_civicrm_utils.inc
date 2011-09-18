@@ -178,6 +178,7 @@ function webform_civicrm_process_submission($node, &$submission) {
               continue;
             }
             elseif ($location == 'email' && $i == 1 && $uid = webform_civicrm_user_cid($cid, 'contact')) {
+              // Update drupal email address
               $user = user_load($uid);
               if ($params['email'] != $user->mail) {
                 user_save($user, array('email' => $params['email']));
@@ -190,6 +191,7 @@ function webform_civicrm_process_submission($node, &$submission) {
             $params['is_primary'] = $i == 1;
             $result = webform_civicrm_api($location, 'create', $params);
             if ($location == 'address' && empty($result['is_error'])) {
+              // Process custom data for address
               $custom = array();
               foreach ($params as $param => $val) {
                 if (strpos($param, 'custom_') !== FALSE) {
@@ -427,7 +429,7 @@ function webform_civicrm_process_submission($node, &$submission) {
 
 
 /**
- * Get variables from various civicrm tables
+ * Get option values from various civicrm tables
  * @Param $option_group: option group name or id
  * @Param $param: some extra info for the query
  * @Return array
@@ -592,36 +594,22 @@ function webform_civicrm_get_contact_types() {
 function webform_civicrm_get_relationship_types() {
   static $types = array();
   if (!$types) {
+    $f = array('id', 'name_a_b', 'name_b_a', 'label_a_b', 'label_b_a', 'type_a', 'type_b', 'sub_type_a', 'sub_type_b');
     $sql = '
-      SELECT id, name_a_b, name_b_a, label_a_b, label_b_a, LOWER(contact_type_a) AS type_a, LOWER(contact_type_b) AS type_b, contact_sub_type_a, contact_sub_type_b
+      SELECT id, name_a_b, name_b_a, label_a_b, label_b_a, LOWER(contact_type_a) AS type_a, LOWER(contact_type_b) AS type_b, contact_sub_type_a AS sub_type_a, contact_sub_type_b AS sub_type_b
       FROM civicrm_relationship_type
       WHERE is_active <> 0';
     $dao = &CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {
-      $types[$dao->id] = array(
-        'id' => $dao->id,
-        'name_a_b' => $dao->name_a_b,
-        'name_b_a' => $dao->name_b_a,
-        'label_a_b' => $dao->label_a_b,
-        'label_b_a' => $dao->label_b_a,
-        'type_a' => $dao->type_a,
-        'type_b' => $dao->type_b,
-        'sub_type_a' => $dao->contact_sub_type_a,
-        'sub_type_b' => $dao->contact_sub_type_b,
-      );
+      foreach ($f as $field) {
+        $types[$dao->id][$field] = $dao->{$field};
+      }
       // Create a pseudo relationship type for "current employer"
       if ($dao->name_a_b == 'Employee of' && $dao->name_b_a == 'Employer of') {
-        $types['ce'] = array(
-        'id' => 'ce',
-        'name_a_b' => 'Current Employee of',
-        'name_b_a' => 'Current Employer of',
-        'label_a_b' => t('Current Employee of'),
-        'label_b_a' => t('Current Employer of'),
-        'type_a' => 'individual',
-        'type_b' => 'organization',
-        'sub_type_a' => NULL,
-        'sub_type_b' => NULL,
-      );
+        $types['ce'] = $types[$dao->id];
+        $types['ce']['id'] = 'ce';
+        $types['ce']['label_a_b'] = t('Current Employee of');
+        $types['ce']['label_b_a'] = t('Current Employer of');
       }
     }
   }
@@ -992,7 +980,7 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['activity_status_id'] = array(
       'name' => t('Activity Status'),
       'type' => 'select',
-      'value' => 2,
+      'value' => '2',
       'expose_list' => TRUE,
     );
     $fields['activity_assignee_contact_id'] = array(
@@ -1004,6 +992,7 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['relationship_relationship_type_id'] = array(
       'name' => t('Relationship to Contact #'),
       'type' => 'select',
+      'value' => '0',
       'expose_list' => TRUE,
       'do_not_cache' => TRUE,
     );
@@ -1011,7 +1000,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Relationship to Contact # Is Active'),
       'type' => 'select',
       'expose_list' => TRUE,
-      'value' => 1,
+      'value' => '1',
     );
     $fields['relationship_start_date'] = array(
       'name' => t('Relationship to Contact # Start Date'),
