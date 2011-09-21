@@ -118,7 +118,7 @@ function webform_civicrm_theme() {
 function webform_civicrm_webform_submission_presave($node, &$submission) {
   if (!empty($node->webform_civicrm)) {
     module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
-    webform_civicrm_process_submission($node, $submission);
+    webform_civicrm_process_submission($node, $submission, 'presave');
   }
 }
 
@@ -128,7 +128,9 @@ function webform_civicrm_webform_submission_presave($node, &$submission) {
  * Final submission processing - saves activity and writes webform_civicrm record.
  */
 function webform_civicrm_webform_submission_insert($node, $submission) {
-  webform_civicrm_webform_submission_presave($node, $submission);
+  if (!empty($node->webform_civicrm)) {
+    webform_civicrm_process_submission($node, $submission, 'insert');
+  }
 }
 
 
@@ -137,7 +139,9 @@ function webform_civicrm_webform_submission_insert($node, $submission) {
  * Final submission processing - saves activity and updates webform_civicrm record.
  */
 function webform_civicrm_webform_submission_update($node, $submission) {
-  webform_civicrm_webform_submission_presave($node, $submission);
+  if (!empty($node->webform_civicrm)) {
+    webform_civicrm_process_submission($node, $submission, 'update');
+  }
 }
 
 

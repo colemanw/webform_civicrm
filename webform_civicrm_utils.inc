@@ -9,14 +9,14 @@
  * Create/update CiviCRM data
  * Called by both presave and insert webform hooks
  */
-function webform_civicrm_process_submission($node, &$submission) {
+function webform_civicrm_process_submission($node, &$submission, $op) {
   static $data = array();
   static $id = array();
   static $update = array();
   $settings = $node->webform_civicrm;
 
   // Presave processing - save contact data
-  if (empty($data)) {
+  if ($op == 'presave') {
     civicrm_initialize();
     require_once 'api/api.php';
     require_once 'CRM/Core/BAO/CustomValueTable.php';
@@ -69,9 +69,9 @@ function webform_civicrm_process_submission($node, &$submission) {
         $id['act'][1] = $submitted[$submission->sid]->civicrm['activity_id'];
         $updating = $id;
       }
-      if (!empty($submission->is_draft)) {
-        return;
-      }
+    }
+    if (!empty($submission->is_draft)) {
+      return;
     }
 
     if (empty($id)) {
@@ -178,9 +178,10 @@ function webform_civicrm_process_submission($node, &$submission) {
               continue;
             }
             elseif ($location == 'email' && $i == 1 && $uid = webform_civicrm_user_cid($cid, 'contact')) {
+              // Update drupal email address
               $user = user_load($uid);
               if ($params['email'] != $user->mail) {
-                user_save($user, array('email' => $params['email']));
+                user_save($user, array('mail' => $params['email']));
               }
             }
             $params['contact_id'] = $cid;
@@ -190,6 +191,7 @@ function webform_civicrm_process_submission($node, &$submission) {
             $params['is_primary'] = $i == 1;
             $result = webform_civicrm_api($location, 'create', $params);
             if ($location == 'address' && empty($result['is_error'])) {
+              // Process custom data for address
               $custom = array();
               foreach ($params as $param => $val) {
                 if (strpos($param, 'custom_') !== FALSE) {
@@ -412,6 +414,8 @@ function webform_civicrm_process_submission($node, &$submission) {
         }
       }
     }
+  }
+  if ($op != 'presave') {
     $cid = '-';
     foreach (array_keys($data['contact']) as $c) {
       $cid .= (empty($id['cid'][$c]) ? 0 : $id['cid'][$c]) . '-';
@@ -427,7 +431,7 @@ function webform_civicrm_process_submission($node, &$submission) {
 
 
 /**
- * Get variables from various civicrm tables
+ * Get option values from various civicrm tables
  * @Param $option_group: option group name or id
  * @Param $param: some extra info for the query
  * @Return array
@@ -435,7 +439,7 @@ function webform_civicrm_process_submission($node, &$submission) {
 function webform_civicrm_get_options($option_group, $param = NULL) {
   $vars = $ret = array();
   if ($option_group == 'privacy') {
-    // Privacy options aren't actually listed in the database
+    // Privacy options aren't in the database as options; they are all separate contact fields.
     return array(
       'do_not_email' => ts('Do not email'),
       'do_not_phone' => ts('Do not phone'),
@@ -592,36 +596,22 @@ function webform_civicrm_get_contact_types() {
 function webform_civicrm_get_relationship_types() {
   static $types = array();
   if (!$types) {
+    $f = array('id', 'name_a_b', 'name_b_a', 'label_a_b', 'label_b_a', 'type_a', 'type_b', 'sub_type_a', 'sub_type_b');
     $sql = '
-      SELECT id, name_a_b, name_b_a, label_a_b, label_b_a, LOWER(contact_type_a) AS type_a, LOWER(contact_type_b) AS type_b, contact_sub_type_a, contact_sub_type_b
+      SELECT id, name_a_b, name_b_a, label_a_b, label_b_a, LOWER(contact_type_a) AS type_a, LOWER(contact_type_b) AS type_b, contact_sub_type_a AS sub_type_a, contact_sub_type_b AS sub_type_b
       FROM civicrm_relationship_type
       WHERE is_active <> 0';
     $dao = &CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {
-      $types[$dao->id] = array(
-        'id' => $dao->id,
-        'name_a_b' => $dao->name_a_b,
-        'name_b_a' => $dao->name_b_a,
-        'label_a_b' => $dao->label_a_b,
-        'label_b_a' => $dao->label_b_a,
-        'type_a' => $dao->type_a,
-        'type_b' => $dao->type_b,
-        'sub_type_a' => $dao->contact_sub_type_a,
-        'sub_type_b' => $dao->contact_sub_type_b,
-      );
+      foreach ($f as $field) {
+        $types[$dao->id][$field] = $dao->{$field};
+      }
       // Create a pseudo relationship type for "current employer"
       if ($dao->name_a_b == 'Employee of' && $dao->name_b_a == 'Employer of') {
-        $types['ce'] = array(
-        'id' => 'ce',
-        'name_a_b' => 'Current Employee of',
-        'name_b_a' => 'Current Employer of',
-        'label_a_b' => t('Current Employee of'),
-        'label_b_a' => t('Current Employer of'),
-        'type_a' => 'individual',
-        'type_b' => 'organization',
-        'sub_type_a' => NULL,
-        'sub_type_b' => NULL,
-      );
+        $types['ce'] = $types[$dao->id];
+        $types['ce']['id'] = 'ce';
+        $types['ce']['label_a_b'] = t('Current Employee of');
+        $types['ce']['label_b_a'] = t('Current Employer of');
       }
     }
   }
@@ -670,9 +660,7 @@ function webform_civicrm_get_custom($entity_id, $entity_type = NULL, $normalize 
       }
     }
   }
-  $params = array(
-    'entityID' => $entity_id,
-  );
+  $params = array('entityID' => $entity_id);
   if ($entity_type) {
     $params['entityType'] = ucfirst($entity_type);
   }
@@ -992,7 +980,7 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['activity_status_id'] = array(
       'name' => t('Activity Status'),
       'type' => 'select',
-      'value' => 2,
+      'value' => '2',
       'expose_list' => TRUE,
     );
     $fields['activity_assignee_contact_id'] = array(
@@ -1004,6 +992,7 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['relationship_relationship_type_id'] = array(
       'name' => t('Relationship to Contact #'),
       'type' => 'select',
+      'value' => '0',
       'expose_list' => TRUE,
       'do_not_cache' => TRUE,
     );
@@ -1011,7 +1000,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Relationship to Contact # Is Active'),
       'type' => 'select',
       'expose_list' => TRUE,
-      'value' => 1,
+      'value' => '1',
     );
     $fields['relationship_start_date'] = array(
       'name' => t('Relationship to Contact # Start Date'),
@@ -1185,10 +1174,7 @@ function webform_civicrm_get_fields($var = 'fields') {
  */
 function webform_civicrm_user_cid($id = NULL, $type = 'uf') {
   if (!$id) {
-    global $user;
-    if (!($id = $user->uid)) {
-      return;
-    }
+    return empty($_SESSION['CiviCRM']['userID']) ? NULL : $_SESSION['CiviCRM']['userID'];
   }
   $result = webform_civicrm_api('uf_match', 'get', array($type . '_id' => $id));
   if (!empty($result['values'])) {
