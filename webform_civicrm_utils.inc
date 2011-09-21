@@ -9,14 +9,14 @@
  * Create/update CiviCRM data
  * Called by both presave and insert webform hooks
  */
-function webform_civicrm_process_submission($node, &$submission) {
+function webform_civicrm_process_submission($node, &$submission, $op) {
   static $data = array();
   static $id = array();
   static $update = array();
   $settings = $node->webform_civicrm;
 
   // Presave processing - save contact data
-  if (empty($data)) {
+  if ($op == 'presave') {
     civicrm_initialize();
     require_once 'api/api.php';
     require_once 'CRM/Core/BAO/CustomValueTable.php';
@@ -69,9 +69,9 @@ function webform_civicrm_process_submission($node, &$submission) {
         $id['act'][1] = $submitted[$submission->sid]->civicrm['activity_id'];
         $updating = $id;
       }
-      if (!empty($submission->is_draft)) {
-        return;
-      }
+    }
+    if (!empty($submission->is_draft)) {
+      return;
     }
 
     if (empty($id)) {
@@ -181,7 +181,7 @@ function webform_civicrm_process_submission($node, &$submission) {
               // Update drupal email address
               $user = user_load($uid);
               if ($params['email'] != $user->mail) {
-                user_save($user, array('email' => $params['email']));
+                user_save($user, array('mail' => $params['email']));
               }
             }
             $params['contact_id'] = $cid;
@@ -414,6 +414,8 @@ function webform_civicrm_process_submission($node, &$submission) {
         }
       }
     }
+  }
+  if ($op != 'presave') {
     $cid = '-';
     foreach (array_keys($data['contact']) as $c) {
       $cid .= (empty($id['cid'][$c]) ? 0 : $id['cid'][$c]) . '-';
@@ -437,7 +439,7 @@ function webform_civicrm_process_submission($node, &$submission) {
 function webform_civicrm_get_options($option_group, $param = NULL) {
   $vars = $ret = array();
   if ($option_group == 'privacy') {
-    // Privacy options aren't actually listed in the database
+    // Privacy options aren't in the database as options; they are all separate contact fields.
     return array(
       'do_not_email' => ts('Do not email'),
       'do_not_phone' => ts('Do not phone'),
@@ -658,9 +660,7 @@ function webform_civicrm_get_custom($entity_id, $entity_type = NULL, $normalize 
       }
     }
   }
-  $params = array(
-    'entityID' => $entity_id,
-  );
+  $params = array('entityID' => $entity_id);
   if ($entity_type) {
     $params['entityType'] = ucfirst($entity_type);
   }
@@ -1174,10 +1174,7 @@ function webform_civicrm_get_fields($var = 'fields') {
  */
 function webform_civicrm_user_cid($id = NULL, $type = 'uf') {
   if (!$id) {
-    global $user;
-    if (!($id = $user->uid)) {
-      return;
-    }
+    return empty($_SESSION['CiviCRM']['userID']) ? NULL : $_SESSION['CiviCRM']['userID'];
   }
   $result = webform_civicrm_api('uf_match', 'get', array($type . '_id' => $id));
   if (!empty($result['values'])) {
