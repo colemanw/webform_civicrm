@@ -211,8 +211,9 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         foreach ($contact['relationship'] as $i => $params) {
           if (!empty($params['relationship_type_id']) && !empty($id['cid'][$i])) {
             list($type, $a_b) = explode('_', $params['relationship_type_id']);
-            $params['contact_id_a'] = $params['contact_id_b'] = $id['cid'][$i];
+            $b_a = $a_b == 'a' ? 'b' : 'a';
             $params['contact_id_' . $a_b] = $cid;
+            $params['contact_id_' . $b_a] = $id['cid'][$i];
             if ($type == 'ce') {
               foreach (webform_civicrm_get_relationship_types() as $t) {
                 if ($t['name_a_b'] == 'Employee of' && $t['name_b_a'] == 'Employer of' && $t['id'] != 'ce') {
@@ -223,6 +224,14 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
               webform_civicrm_api('contact', 'create', array('contact_id' => $params['contact_id_a'], 'employer_id' => $params['contact_id_b'], 'contact_type' => 'Individual'));
             }
             $params['relationship_type_id'] = $type;
+            if (array_key_exists('relationship_permission', $params)) {
+              $perm = $params['relationship_permission'];
+              $params['is_permission_a_b'] = $params['is_permission_b_a'] = $perm == 3 ? 1 : 0;
+              if ($perm == 1 || $perm == 2) {
+                $params['is_permission_' . ($perm == 1 ? $a_b . '_' .$b_a : $b_a . '_' . $a_b)] = 1;
+              }
+              unset($params['relationship_permission']);
+            }
             webform_civicrm_api('relationship', 'create', $params);
           }
         }
@@ -526,6 +535,14 @@ function webform_civicrm_field_options($key, $format, $data) {
     elseif ($name == 'relationship_type_id') {
       $ret = array(t('No Relationship')) + webform_civicrm_get_contact_relationship_types($data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][$n]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$n]['contact'][1]['contact_sub_type']);
     }
+    elseif ($name == 'relationship_permission') {
+      $ret = array(
+        t('No Permissions'),
+        t('Contact !a may view and edit contact !b', array('!a' => $c, '!b' => $n)),
+        t('Contact !a may view and edit contact !b', array('!a' => $n, '!b' => $c)),
+        t('Both contacts may view and edit each other'),
+      );
+    }
     elseif ($name == 'master_id') {
       $ret[] = t('- do not share -');
       foreach ($data['contact'] as $num => $contact) {
@@ -717,7 +734,11 @@ function webform_civicrm_save_custom($entity, $entity_id, $entity_type = NULL) {
     }
   }
   if (count($params) > 1) {
-    CRM_Core_BAO_CustomValueTable::setValues($params);
+    $result = CRM_Core_BAO_CustomValueTable::setValues($params);
+    if (!empty($result['is_error'])) {
+      $bt = debug_backtrace();
+      watchdog('webform_civicrm', 'The CiviCRM "CustomValueTable::setValues" function returned the error: "%msg" when called by line !line of !file with the following parameters: "!params"', array('%msg' => $result['error_message'], '!line' => $bt[0]['line'], '!file' => array_pop(explode('/', $bt[0]['file'])), '!params' => print_r($params, TRUE)), WATCHDOG_ERROR);
+    }
   }
 }
 
@@ -1002,6 +1023,12 @@ function webform_civicrm_get_fields($var = 'fields') {
       'expose_list' => TRUE,
       'value' => '1',
     );
+    $fields['relationship_relationship_permission'] = array(
+      'name' => t('Relationship Permission'),
+      'type' => 'select',
+      'expose_list' => TRUE,
+      'do_not_cache' => TRUE,
+    );
     $fields['relationship_start_date'] = array(
       'name' => t('Relationship to Contact # Start Date'),
       'type' => 'date',
@@ -1060,6 +1087,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'master_id' => 'master_id',
       'relationship_type_id' => 'relationship_type_id',
       'is_active' => 'yes_no',
+      'relationship_permission' => 'relationship_permission',
       'contact_sub_type' => 'contact_sub_type',
       'groups' => 'groups',
       'groups_hidden' => 'groups',
