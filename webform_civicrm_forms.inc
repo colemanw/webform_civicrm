@@ -673,7 +673,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
       $info .= $info ? ':</em> ' : '';
       $msg .= '<li>' . $info . $node->webform['components'][$id]['name'] . '</li>';
     }
-    $msg .= '</ul><p>' . t('Would you like them to be automatically removed from the webform? This is recommended unless you have existing submissions for this form and need webform-results reporting for these fields. They can still be deleted manually later if you choose not to remove them now.') . '</p><p><em>' . t('Note: Deleting webform components cannot be undone, and will result in the loss of any webform-results data for those elements. Data in the CiviCRM database will not be affected.') . '</em></p>';
+    $msg .= '</ul><p>' . t('Would you like them to be automatically removed from the webform? This is recommended unless you need webform-results reporting for these fields. They can still be deleted manually later if you choose not to remove them now.') . '</p><p><em>' . t('Note: Deleting webform components cannot be undone, and will result in the loss of webform-results data for those elements. Data in the CiviCRM database will not be affected.') . '</em></p>';
     $form_state['storage']['msg'] = $msg;
     $form_state['storage']['vals'] = $vals;
     $form_state['rebuild'] = TRUE;
