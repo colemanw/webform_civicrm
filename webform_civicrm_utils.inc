@@ -728,7 +728,9 @@ function webform_civicrm_save_custom($entity, $entity_id, $entity_type = NULL) {
           }
         }
         foreach ($custom as $k => $v) {
-          $params[$k . $suf] = $v;
+          // Quick fix to prevent fatal errors. FIXME: handle empty data correctly
+          if ($v !== '')
+            $params[$k . $suf] = $v;
         }
       }
     }
