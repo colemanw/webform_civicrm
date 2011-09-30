@@ -765,6 +765,10 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
         if ($table == 'other' || $field['type'] == 'hidden') {
           unset($field['extra']['description']);
         }
+        if ($field['type'] == 'date') {
+          $field['extra']['timezone'] = 'user';
+          $field['extra']['datepicker'] = 1;
+        }
         // Create fieldsets
         if ($ent != 'activity' && !empty($vals['create_fieldsets'])) {
           if (!array_key_exists('civicrm_' . $c . '_contact_1_fieldset_fieldset', $enabled)) {
@@ -782,7 +786,6 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
           $field['pid'] = $enabled['civicrm_' . $c . '_contact_1_fieldset_fieldset'];
         }
         // Save webform component
-        $field['extra'] = isset($field['extra']) ? $field['extra'] : array();
         $fid = webform_component_insert($field);
         ++$new_fields;
       }

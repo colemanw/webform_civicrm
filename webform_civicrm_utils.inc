@@ -7,7 +7,8 @@
 
 /**
  * Create/update CiviCRM data
- * Called by both presave and insert webform hooks
+ * Called by presave, insert and update webform hooks
+ * @param $op: Which hook is being called
  */
 function webform_civicrm_process_submission($node, &$submission, $op) {
   static $data = array();
@@ -859,9 +860,8 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Birth Date'),
       'type' => 'date',
       'extra' => array(
-        'year_start' => '-100',
-        'year_end' => '-1',
-        'timezone' => 'user',
+        'start_date' => '-100 years',
+        'end_date' => 'now',
       ),
       'contact_type' => 'individual',
     );
@@ -1035,18 +1035,16 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Relationship to Contact # Start Date'),
       'type' => 'date',
       'extra' => array(
-        'year_start' => '-50',
-        'year_end' => '+50',
-        'timezone' => 'user',
+        'start_date' => '-50 years',
+        'end_date' => '+50 years',
       ),
     );
     $fields['relationship_end_date'] = array(
       'name' => t('Relationship to Contact # End Date'),
       'type' => 'date',
       'extra' => array(
-        'year_start' => '-50',
-        'year_end' => '+50',
-        'timezone' => 'user',
+        'start_date' => '-50 years',
+        'end_date' => '+50 years',
       ),
     );
 
@@ -1172,8 +1170,8 @@ function webform_civicrm_get_fields($var = 'fields') {
       $fields[$id]['data_type'] = $dao->data_type;
 
       if ($fields[$id]['type'] == 'date') {
-        $fields[$id]['extra']['year_start'] = $dao->start_date_years ? '-' . $dao->start_date_years : '-50';
-        $fields[$id]['extra']['year_end'] = $dao->end_date_years ? '+' . $dao->end_date_years : '+50';
+        $fields[$id]['extra']['start_date'] = ($dao->start_date_years ? '-' . $dao->start_date_years : '-50') . ' years';
+        $fields[$id]['extra']['end_date'] = ($dao->end_date_years ? '+' . $dao->end_date_years : '+50') . ' years';
       }
       elseif ($og = $dao->option_group_id) {
         $lists['custom_' . $dao->id] = $og;
