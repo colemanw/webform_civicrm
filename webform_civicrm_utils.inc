@@ -729,18 +729,24 @@ function webform_civicrm_save_custom($entity, $entity_id, $entity_type = NULL) {
           }
         }
         foreach ($custom as $k => $v) {
-          // Quick fix to prevent fatal errors. FIXME: handle empty data correctly
-          if ($v !== '')
-            $params[$k . $suf] = $v;
+          $params[$k . $suf] = $v;
         }
       }
     }
   }
   if (count($params) > 1) {
     $result = CRM_Core_BAO_CustomValueTable::setValues($params);
+    // Prevent wholesale failure by saving each param individually if there was an error while trying to save them all at once
     if (!empty($result['is_error'])) {
       $bt = debug_backtrace();
-      watchdog('webform_civicrm', 'The CiviCRM "CustomValueTable::setValues" function returned the error: "%msg" when called by line !line of !file with the following parameters: "!params"', array('%msg' => $result['error_message'], '!line' => $bt[0]['line'], '!file' => array_pop(explode('/', $bt[0]['file'])), '!params' => print_r($params, TRUE)), WATCHDOG_ERROR);
+      array_shift($params);
+      foreach ($params as $key => $value) {
+        $single_param = array('entityID' => $entity_id, $key => $value);
+        $result = CRM_Core_BAO_CustomValueTable::setValues($single_param);
+        if (!empty($result['is_error'])) {
+          watchdog('webform_civicrm', 'The CiviCRM "CustomValueTable::setValues" function returned the error: "%msg" when called by line !line of !file with the following parameters: "!params"', array('%msg' => $result['error_message'], '!line' => $bt[0]['line'], '!file' => array_pop(explode('/', $bt[0]['file'])), '!params' => print_r($single_param, TRUE)), WATCHDOG_ERROR);
+        }
+      }
     }
   }
 }
