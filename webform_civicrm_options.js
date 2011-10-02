@@ -1,4 +1,5 @@
 (function ($) {
+  
   $(document).ready( function(){
     $('input.civicrm-enabled').change(function(){
       if( $(this).is(':checked') ){
@@ -11,5 +12,22 @@
         $(this).parents('tr').find('input.civicrm-label').val(val);
       }
     }).change();
+
+    $('input.select-all-civi-options').change(function(){
+      if( $(this).is(':checked') ){
+        $("input.civicrm-enabled").attr("checked", "checked");
+      }else{
+        $("input.civicrm-enabled").removeAttr("checked");
+      }
+    });
+
+    $('input.select-all-civi-defaults').change(function(){
+      if( $(this).is(':checked') ){
+        $("input.civicrm-default").attr("checked", "checked");
+      }else{
+        $("input.civicrm-default").removeAttr("checked");
+      }
+    });
+
   });
 })(jQuery);

@@ -740,8 +740,8 @@ function webform_civicrm_save_custom($entity, $entity_id, $entity_type = NULL) {
     if (!empty($result['is_error'])) {
       $bt = debug_backtrace();
       array_shift($params);
-      foreach ($params as $key => $value) {
-        $single_param = array('entityID' => $entity_id, $key => $value);
+      foreach ($params as $k => $v) {
+        $single_param = array('entityID' => $entity_id, $k => $v);
         $result = CRM_Core_BAO_CustomValueTable::setValues($single_param);
         if (!empty($result['is_error'])) {
           watchdog('webform_civicrm', 'The CiviCRM "CustomValueTable::setValues" function returned the error: "%msg" when called by line !line of !file with the following parameters: "!params"', array('%msg' => $result['error_message'], '!line' => $bt[0]['line'], '!file' => array_pop(explode('/', $bt[0]['file'])), '!params' => print_r($single_param, TRUE)), WATCHDOG_ERROR);
@@ -757,7 +757,7 @@ function webform_civicrm_save_custom($entity, $entity_id, $entity_type = NULL) {
  * @Param $node - node object
  */
 function webform_civicrm_enabled_fields($node, $format = 'cid') {
-  if (!is_array($node->webform['components'])) {
+  if (empty($node->webform['components'])) {
     return;
   }
   $fields = webform_civicrm_get_fields();
@@ -766,7 +766,8 @@ function webform_civicrm_enabled_fields($node, $format = 'cid') {
     $exp = explode('_', $c['form_key'], 5);
     if (count($exp) == 5) {
       list($lobo, $i, $ent, $n, $id) = $exp;
-      if ((array_key_exists($id, $fields) || $id == 'fieldset_fieldset') && $lobo == 'civicrm' && is_numeric($i) && is_numeric($n)) {
+      if ((array_key_exists($id, $fields) || $id == 'fieldset_fieldset')
+        && $lobo == 'civicrm' && is_numeric($i) && is_numeric($n)) {
         if ($format == 'cid') {
           $enabled[$c['form_key']] = $c['cid'];
         }
@@ -786,19 +787,27 @@ function webform_civicrm_enabled_fields($node, $format = 'cid') {
  * @Param $elements: FAPI array
  * @Param $data: Array of CiviCRM data
  */
-function webform_civicrm_fill_values(&$elements, $data) {
+function webform_civicrm_fill_values(&$elements, $data, $fields) {
   $sp = CRM_Core_DAO::VALUE_SEPARATOR;
   foreach ($elements as $eid => &$element) {
-    if (substr($eid, 0, 1) == '#' || !is_array($element)) {
+    if ($eid[0] == '#' || !is_array($element)) {
       continue;
     }
-    if ($element['#type'] == 'fieldset') {
+    if (!empty($element['#type']) && $element['#type'] == 'fieldset') {
       // Recurse through fieldsets
-      webform_civicrm_fill_values($element, $data);
+      webform_civicrm_fill_values($element, $data, $fields);
       continue;
     }
     if ($pieces = webform_civicrm_explode_key($eid)) {
       list($lobo, $c, $ent, $n, $table, $name) = $pieces;
+      $field = $fields[$table . '_' . $name];
+      if ($field['type'] == 'textfield' && !empty($field['data_type'])) {
+        // Add CiviCRM JS to link fields
+        if ($field['data_type'] == 'Link') {
+          $element['#attributes']['onblur'] = "if (this.value == 'http://') {this.value = '';}";
+          $element['#attributes']['onfocus'] = "if (this.value == '') {this.value = 'http://';}";
+        }
+      }
       if (isset($data[$ent][$c][$table][$n][$name])) {
         $val = $data[$ent][$c][$table][$n][$name];
         if ($element['#type'] == 'date') {
@@ -816,6 +825,34 @@ function webform_civicrm_fill_values(&$elements, $data) {
           $element['#value'] = $val;
         }
         $element['#default_value'] = $val;
+      }
+    }
+  }
+}
+
+
+/**
+ * Recursive validation callback for webform submissions.
+ */
+function _webform_civicrm_form_validate($form, &$form_state, $fields) {
+  // Recurse through form elements.
+  foreach (element_children($form) as $key) {
+    if ($element = $form[$key]) {
+      if (!empty($element['#type']) && $element['#type'] == 'fieldset') {
+        _webform_civicrm_form_validate($form[$key], $form_state, $fields);
+        continue;
+      }
+      elseif (!empty($element['#webform_component']['form_key'])
+        && $element['#value'] !== NULL
+        && $element['#value'] !== ''
+        && $pieces = webform_civicrm_explode_key($key)) {
+        list($lobo, $c, $ent, $n, $table, $name) = $pieces;
+        $field = $fields[$table . '_' . $name];
+        if ($field['type'] == 'textfield'
+          && !empty($field['data_type'])
+          && CRM_Utils_Type::escape($element['#value'], $field['data_type'], FALSE) === null) {
+          form_error($element, t('Please enter a %type value for %field', array('%type' => $field['data_type'], '%field' => $element['#title'])));
+        }
       }
     }
   }
@@ -970,6 +1007,7 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['website_url'] = array(
       'name' => t('Website'),
       'type' => 'textfield',
+      'data_type' => 'Link',
     );
     $fields['website_website_type_id'] = array(
       'name' => t('Website # Type'),
@@ -1138,62 +1176,61 @@ function webform_civicrm_get_fields($var = 'fields') {
       ORDER BY cf.custom_group_id, cf.weight";
     $dao = &CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {
-      if (!$custom_types[$dao->html_type]) {
-        continue;
-      }
-      if ($dao->entity_type == 'address') {
-        $set = 'address';
-      }
-      else {
-        $set = 'cg' . $dao->custom_group_id;
-        $sets[$set]['label'] = $dao->custom_group_name;
-        if ($dao->entity_type != 'activity') {
-          $sets[$set]['entity_type'] = 'contact';
-          if ($dao->entity_type != 'contact') {
-            $sets[$set]['contact_type'] = $dao->entity_type;
-          }
-          if ($dao->is_multiple) {
-            $sets[$set]['max_instances'] = ($dao->max_multiple ? $dao->max_multiple : 9);
-          }
-          else {
-            $sets[$set]['max_instances'] = 1;
-          }
+      if (array_key_exists($dao->html_type, $custom_types)) {
+        if ($dao->entity_type == 'address') {
+          $set = 'address';
         }
         else {
-          $sets[$set]['entity_type'] = 'activity';
+          $set = 'cg' . $dao->custom_group_id;
+          $sets[$set]['label'] = $dao->custom_group_name;
+          if ($dao->entity_type != 'activity') {
+            $sets[$set]['entity_type'] = 'contact';
+            if ($dao->entity_type != 'contact') {
+              $sets[$set]['contact_type'] = $dao->entity_type;
+            }
+            if ($dao->is_multiple) {
+              $sets[$set]['max_instances'] = ($dao->max_multiple ? $dao->max_multiple : 9);
+            }
+            else {
+              $sets[$set]['max_instances'] = 1;
+            }
+          }
+          else {
+            $sets[$set]['entity_type'] = 'activity';
+          }
+          if ($dao->sub_types) {
+            $sets[$set]['sub_types'] = explode($sp, trim($dao->sub_types, $sp));
+          }
         }
-        if ($dao->sub_types) {
-          $sets[$set]['sub_types'] = explode($sp, trim($dao->sub_types, $sp));
+        $id = $set . '_custom_' . $dao->id;
+        $label = drupal_strtolower($dao->label);
+        $fields[$id] = $custom_types[$dao->html_type];
+        $fields[$id]['name'] = $dao->label;
+        $fields[$id]['mandatory'] = $dao->is_required;
+        $fields[$id]['extra']['description'] = $dao->help_pre;
+        $fields[$id]['value'] = str_replace($sp, ',', trim($dao->default_value, $sp));
+        $fields[$id]['data_type'] = $dao->data_type;
+  
+        if ($fields[$id]['type'] == 'date') {
+          $fields[$id]['extra']['start_date'] = ($dao->start_date_years ? '-' . $dao->start_date_years : '-50') . ' years';
+          $fields[$id]['extra']['end_date'] = ($dao->end_date_years ? '+' . $dao->end_date_years : '+50') . ' years';
         }
-      }
-      $id = $set . '_custom_' . $dao->id;
-      $label = drupal_strtolower($dao->label);
-      $fields[$id] = $custom_types[$dao->html_type];
-      $fields[$id]['name'] = $dao->label;
-      $fields[$id]['mandatory'] = $dao->is_required;
-      $fields[$id]['extra']['description'] = $dao->help_pre;
-      $fields[$id]['value'] = str_replace($sp, ',', trim($dao->default_value, $sp));
-      $fields[$id]['data_type'] = $dao->data_type;
-
-      if ($fields[$id]['type'] == 'date') {
-        $fields[$id]['extra']['start_date'] = ($dao->start_date_years ? '-' . $dao->start_date_years : '-50') . ' years';
-        $fields[$id]['extra']['end_date'] = ($dao->end_date_years ? '+' . $dao->end_date_years : '+50') . ' years';
-      }
-      elseif ($og = $dao->option_group_id) {
-        $lists['custom_' . $dao->id] = $og;
-      }
-      elseif ($dao->html_type == 'Select Country' || $dao->html_type == 'Multi-Select Country') {
-        $lists['custom_' . $dao->id] = 'country';
-      }
-      elseif ($dao->html_type == 'Select State/Province' || $dao->html_type == 'Multi-Select State/Province') {
-        $lists['custom_' . $dao->id] = 'state';
-      }
-      elseif ($fields[$id]['type'] == 'select') {
-        $lists['custom_' . $dao->id] = 'yes_no';
-      }
-      elseif ($fields[$id]['type'] == 'textarea') {
-        $fields[$id]['extra']['cols'] = $dao->note_columns;
-        $fields[$id]['extra']['rows'] = $dao->note_rows;
+        elseif ($og = $dao->option_group_id) {
+          $lists['custom_' . $dao->id] = $og;
+        }
+        elseif ($dao->html_type == 'Select Country' || $dao->html_type == 'Multi-Select Country') {
+          $lists['custom_' . $dao->id] = 'country';
+        }
+        elseif ($dao->html_type == 'Select State/Province' || $dao->html_type == 'Multi-Select State/Province') {
+          $lists['custom_' . $dao->id] = 'state';
+        }
+        elseif ($fields[$id]['type'] == 'select') {
+          $lists['custom_' . $dao->id] = 'yes_no';
+        }
+        elseif ($fields[$id]['type'] == 'textarea') {
+          $fields[$id]['extra']['cols'] = $dao->note_columns;
+          $fields[$id]['extra']['rows'] = $dao->note_rows;
+        }
       }
     }
   }
