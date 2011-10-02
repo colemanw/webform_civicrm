@@ -839,7 +839,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
     $id['act'][1] = $submission->civicrm['activity_id'];
   }
   // Do form alterations, except when going back to a previous page
-  elseif (!(!empty($form_state['clicked_button']['#id']) && $form_state['clicked_button']['#id'] != 'edit-previous')) {
+  elseif (!(!empty($form_state['clicked_button']['#id']) && $form_state['clicked_button']['#id'] == 'edit-previous')) {
     $args = $_GET;
     if (!empty($args['cid']) && empty($args['cid1'])) {
       $args['cid1'] = $args['cid'];
@@ -1023,12 +1023,6 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   // Store ids in session
   if (!empty($id)) {
     $_SESSION['webform_civicrm_data'][$node->nid] = $id;
-  }
-  elseif (isset($_SESSION['webform_civicrm_data'])) {
-    unset($_SESSION['webform_civicrm_data'][$node->nid]);
-    if (empty($_SESSION['webform_civicrm_data'])) {
-      unset($_SESSION['webform_civicrm_data']);
-    }
   }
 
   // Set default values and other attributes for CiviCRM form elements
