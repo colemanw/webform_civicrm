@@ -49,7 +49,8 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
 
   // Alter front-end of webforms
   elseif (strpos($form_id, 'webform_client_form_') !== FALSE) {
-    if (!empty($form['#node']->webform_civicrm) && arg(2) != 'done' && arg(2) != 'webform') {
+    if (!empty($form['#node']->webform_civicrm)
+      && !(empty($form_state['rebuild']) && !empty($form_state['input']))) {dsm($form);dsm($form_state);
       module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
       _webform_civicrm_webform_frontend_form_alter($form, $form_state);
     }

@@ -838,7 +838,8 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
     $id['cid'] = $submission->civicrm['contact_id'];
     $id['act'][1] = $submission->civicrm['activity_id'];
   }
-  else {
+  // Do form alterations, except when going back to a previous page
+  elseif (!(!empty($form_state['clicked_button']['#id']) && $form_state['clicked_button']['#id'] != 'edit-previous')) {
     $args = $_GET;
     if (!empty($args['cid']) && empty($args['cid1'])) {
       $args['cid1'] = $args['cid'];
@@ -1170,9 +1171,9 @@ function theme_webform_civicrm_options($variables) {
   $element = $variables['element'];
   $default_box = '';
   if ($element['civicrm_defaults']['#type'] == 'checkboxes') {
-    $default_box = '<input class="select-all-civi-defaults" type="checkbox"> ';
+    $default_box = '<input class="select-all-civi-defaults" type="checkbox"' . (empty($element['civicrm_defaults']['#default_value']) ? '' : 'checked="checked"') . 'title="' . t('Select All') . '"> ';
   }
-  $select_box = '<input class="select-all-civi-options" type="checkbox" checked="checked"> ';
+  $select_box = '<input class="select-all-civi-options" type="checkbox" checked="checked" title="' . t('Select All') . '"> ';
   $table = array(
     'rows' => array(),
     'attributes' => array('id' => 'civicrm-options-table'),
