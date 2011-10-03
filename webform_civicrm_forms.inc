@@ -211,7 +211,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#suffix' => '</div>',
   );
   if (isset($data['activity'][1]['activity'][1]['activity_type_id'])
-      && array_key_exists($data['activity'][1]['activity'][1]['activity_type_id'], $act_types)) {
+      && isset($act_types[$data['activity'][1]['activity'][1]['activity_type_id']])) {
     $form['act']['case']['activity_type_id']['#default_value'] = $settings['activity_type_id'] = $data['activity'][1]['activity'][1]['activity_type_id'];
     $form['act']['case']['activity_fields']['activity_targets'] = array(
       '#title' => t('Activity Participants'),
@@ -444,7 +444,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
           $fid = 'civicrm_' . $n . '_contact_' . $i . '_' . $fid;
           $fieldset[$fid] = webform_civicrm_configure_form_item($fid, $field, $settings);
         }
-        if (array_key_exists('max_instances', $set)) {
+        if (isset($set['max_instances'])) {
           $pos[$n . $sid . '_wrapper'][$n . $sid . $i . '_fieldset'] = $fieldset;
         }
         else {
@@ -520,9 +520,9 @@ function webform_civicrm_process_form_settings(&$vals) {
         )),
         'activity_target' => isset($vals['activity_targets'][$n]) ? $vals['activity_targets'][$n] : 1,
       );
-      if (array_key_exists('civicrm_' . $n . '_contact_1_contact_contact_sub_type', $vals)) {
+      if (isset($vals['civicrm_' . $n . '_contact_1_contact_contact_sub_type'])) {
         $sub_type = $vals['civicrm_' . $n . '_contact_1_contact_contact_sub_type'];
-        if (array_key_exists($sub_type, $sub_types[$vals[$n . '_contact_type']])) {
+        if (isset($sub_types[$vals[$n . '_contact_type']][$sub_type])) {
           $data['contact'][$n]['contact'][1]['contact_sub_type'] = $sub_type;
         }
       }
@@ -653,7 +653,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
 
   // Fields to delete
   foreach ($enabled as $key => $val) {
-    if ((array_key_exists($key, $vals) && $vals[$key] === 'create_civicrm_webform_element' && $vals['nid']) || strpos($key, 'fieldset') !== FALSE) {
+    if ((isset($vals[$key]) && $vals[$key] === 'create_civicrm_webform_element' && $vals['nid']) || strpos($key, 'fieldset') !== FALSE) {
       unset($delete_me[$key]);
     }
   }
@@ -714,7 +714,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
       ++$i;
       list($lobo, $c, $ent, $n, $table, $name) = explode('_', $key, 6);
       // Add webform components (fields)
-      if (!array_key_exists($key, $enabled) && $val === 'create_civicrm_webform_element') {
+      if (!isset($enabled[$key]) && $val === 'create_civicrm_webform_element') {
         $field = $fields[$table . '_' . $name];
         $field['nid'] = $nid;
         $field['form_key'] = $key;
@@ -745,7 +745,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
           $field['value'] = $config->defaultContactCountry;
         }
         // Retrieve option list
-        if (array_key_exists($name, $lists)) {
+        if (isset($lists[$name])) {
           $field['extra']['items'] = webform_civicrm_field_options($key, 'str', $vals['data']);
           if (!isset($field['extra']['aslist']) && empty($field['extra']['multiple'])) {
             $field['extra']['aslist'] = 1;
@@ -771,7 +771,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
         }
         // Create fieldsets
         if ($ent != 'activity' && !empty($vals['create_fieldsets'])) {
-          if (!array_key_exists('civicrm_' . $c . '_contact_1_fieldset_fieldset', $enabled)) {
+          if (!isset($enabled['civicrm_' . $c . '_contact_1_fieldset_fieldset'])) {
             $new_set = array(
               'nid' => $nid,
               'form_key' => 'civicrm_' . $c . '_contact_1_fieldset_fieldset',
@@ -831,12 +831,10 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   $id = $info = array();
   // If this is an edit op, use the original IDs to avoid confusion
   if (!empty($form['#submission'])) {
-    $submission = $form['#submission'];
-    if (!isset($submission->civicrm)) {
-      return;
+    if (isset($form['#submission']->civicrm)) {
+      $id['cid'] = $form['#submission']->civicrm['contact_id'];
+      $id['act'][1] = $form['#submission']->civicrm['activity_id'];
     }
-    $id['cid'] = $submission->civicrm['contact_id'];
-    $id['act'][1] = $submission->civicrm['activity_id'];
   }
   // Do form alterations, except when going back to a previous page
   elseif (!(!empty($form_state['clicked_button']['#id']) && $form_state['clicked_button']['#id'] == 'edit-previous')) {
@@ -996,12 +994,12 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
         }
       }
       // Preferred communication method is not fetched by default by the api
-      if (array_key_exists('civicrm_' . $c . '_contact_1_contact_preferred_communication_method', $enabled)) {
+      if (isset($enabled['civicrm_' . $c . '_contact_1_contact_preferred_communication_method'])) {
         $result = webform_civicrm_api('contact', 'get', array('contact_id' => $cid, 'return.preferred_communication_method' => 1));
         $info['contact'][$c]['contact'][1] += $result['values'][$cid];
       }
       // Set default values for group field
-      if (array_key_exists('civicrm_' . $c . '_contact_1_other_groups', $enabled)) {
+      if (isset($enabled['civicrm_' . $c . '_contact_1_other_groups'])) {
         $groups = webform_civicrm_api('group_contact', 'get', array('contact_id' => $cid));
         $info['contact'][$c]['other'][1]['groups'] = array();
         foreach ($groups['values'] as $group) {
@@ -1045,7 +1043,7 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
     }
     list($lobo, $i, $ent, $n, $table, $key) = $pieces;
     // Is this component a CiviCRM field?
-    if (array_key_exists($table . '_' . $key, $fields) ||
+    if (isset($fields[$table . '_' . $key]) ||
         ($lobo == 'civicrm' && $table == 'fieldset')) {
       drupal_add_css(drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_style.css', array('preprocess' => FALSE));
 
@@ -1084,7 +1082,7 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
           // Sort weights. Unselected options will be at the bottom.
           $option_keys = $option_selected_keys = array();
           foreach ($options_selected as $k => $v) {
-            if (array_key_exists($k, $options)) {
+            if (isset($options[$k])) {
               $option_keys['_web_civi_option_selected_' . $k] = '';
               $option_selected_keys[] = '_web_civi_option_selected_' . $k;
               unset($sort[$k]);

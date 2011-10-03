@@ -225,7 +225,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
               webform_civicrm_api('contact', 'create', array('contact_id' => $params['contact_id_a'], 'employer_id' => $params['contact_id_b'], 'contact_type' => 'Individual'));
             }
             $params['relationship_type_id'] = $type;
-            if (array_key_exists('relationship_permission', $params)) {
+            if (isset($params['relationship_permission'])) {
               $perm = $params['relationship_permission'];
               $params['is_permission_a_b'] = $params['is_permission_b_a'] = $perm == 3 ? 1 : 0;
               if ($perm == 1 || $perm == 2) {
@@ -310,7 +310,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         }
       }
       // Process tags
-      if (array_key_exists('civicrm_' . $c . '_contact_1_other_tags', $enabled)) {
+      if (isset($enabled['civicrm_' . $c . '_contact_1_other_tags'])) {
         $add_tags = drupal_explode_tags($submission->data[$enabled['civicrm_' . $c . '_contact_1_other_tags']]['value'][0]);
         foreach ($add_tags as $tag) {
           $result = webform_civicrm_api('tag', 'get', array('name' => $tag));
@@ -552,7 +552,7 @@ function webform_civicrm_field_options($key, $format, $data) {
         }
       }
     }
-    elseif (array_key_exists($name, $lists)) {
+    elseif (isset($lists[$name])) {
       $param = NULL;
       if ($name == 'assignee_contact_id') {
         $param = empty($data['activity'][1]['assignee_group']) ? 0 : $data['activity'][1]['assignee_group'];
@@ -766,7 +766,7 @@ function webform_civicrm_enabled_fields($node, $format = 'cid') {
     $exp = explode('_', $c['form_key'], 5);
     if (count($exp) == 5) {
       list($lobo, $i, $ent, $n, $id) = $exp;
-      if ((array_key_exists($id, $fields) || $id == 'fieldset_fieldset')
+      if ((isset($fields[$id]) || $id == 'fieldset_fieldset')
         && $lobo == 'civicrm' && is_numeric($i) && is_numeric($n)) {
         if ($format == 'cid') {
           $enabled[$c['form_key']] = $c['cid'];
@@ -1176,7 +1176,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       ORDER BY cf.custom_group_id, cf.weight";
     $dao = &CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {
-      if (array_key_exists($dao->html_type, $custom_types)) {
+      if (isset($custom_types[$dao->html_type])) {
         if ($dao->entity_type == 'address') {
           $set = 'address';
         }
