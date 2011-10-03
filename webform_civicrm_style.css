@@ -25,5 +25,10 @@ form .hidden, .js #no-js-button-wrapper {
 }
 
 #webform-civicrm-configure-form .form-item label {
+}
+
+th div.form-type-radio {
   display:inline;
+  margin:0;
+  padding:0;
 }

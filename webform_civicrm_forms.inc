@@ -583,7 +583,7 @@ function webform_civicrm_configure_form_item($fid, $field, $settings, $empty_opt
 
   // Create dropdown list
   if (!empty($field['expose_list'])) {
-    // Populate option list as needed (always reset for dynamic types)
+    // Retrieve option list and cache (except for dynamic types)
     if (!is_array($lists[$name]) || !empty($field['do_not_cache'])) {
       $lists[$name] = array('create_civicrm_webform_element' => t('-user select-'));
       if ($empty_option) {
@@ -1033,11 +1033,11 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
   // Is this a CiviCRM-enabled webform?
   if (db_query('SELECT nid FROM {webform_civicrm_forms} WHERE nid = :nid', array(':nid' => $form['nid']['#value']))->fetchField()) {
     civicrm_initialize();
-    $fields = webform_civicrm_get_fields();
     if (!($pieces = webform_civicrm_explode_key($form['form_key']['#default_value']))) {
       return;
     }
     list($lobo, $i, $ent, $n, $table, $key) = $pieces;
+    $fields = webform_civicrm_get_fields();
     // Is this component a CiviCRM field?
     if (isset($fields[$table . '_' . $key]) ||
         ($lobo == 'civicrm' && $table == 'fieldset')) {
@@ -1124,12 +1124,8 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
           $form['extra']['multiple']['#type'] = 'hidden';
           $form['extra']['multiple']['#value'] = 0;
           $form['civicrm_options_fieldset']['civicrm_defaults']['#type'] = 'radios';
-          if ($element['value'] !== '') {
-            $form['civicrm_options_fieldset']['civicrm_defaults']['#default_value'] = '_web_civi_option_selected_' . $element['value'];
-          }
-          else {
-            unset($form['civicrm_options_fieldset']['civicrm_defaults']['#default_value']);
-          }
+          $form['civicrm_options_fieldset']['civicrm_defaults']['#options'] += array('' => '');
+          $form['civicrm_options_fieldset']['civicrm_defaults']['#default_value'] = $element['value'] ? '_web_civi_option_selected_' . $element['value'] : '';
         }
         array_unshift($form['#submit'], 'webform_civicrm_process_options_selection');
       }
@@ -1157,9 +1153,11 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
 function theme_webform_civicrm_options($variables) {
   drupal_add_js(drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_options.js');
   $element = $variables['element'];
-  $default_box = '';
   if ($element['civicrm_defaults']['#type'] == 'checkboxes') {
-    $default_box = '<input class="select-all-civi-defaults" type="checkbox"' . (empty($element['civicrm_defaults']['#default_value']) ? '' : 'checked="checked"') . 'title="' . t('Select All') . '"> ';
+    $default_box = '<input class="select-all-civi-defaults" type="checkbox" ' . (empty($element['civicrm_defaults']['#default_value']) ? '' : 'checked="checked"') . 'title="' . t('Select All') . '"> ';
+  }
+  else {
+    $default_box = drupal_render($element['civicrm_defaults']['']);
   }
   $select_box = '<input class="select-all-civi-options" type="checkbox" checked="checked" title="' . t('Select All') . '"> ';
   $table = array(
