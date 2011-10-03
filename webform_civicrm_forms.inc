@@ -574,17 +574,13 @@ function webform_civicrm_process_form_settings(&$vals) {
  * Build a field item for the configure form
  */
 function webform_civicrm_configure_form_item($fid, $field, $settings, $empty_option = '') {
-  static $lists = 0;
+  static $lists = array();
   if (!$lists) {
     $lists = webform_civicrm_get_fields('lists');
   }
   list($lobo, $c, $ent, $n, $table, $name) = explode('_', $fid, 6);
-  if ($table == 'relationship') {
-    $field['name'] = str_replace('#', $n, $field['name']);
-  }
-  else {
-    $field['name'] = str_replace(' #', '', $field['name']);
-  }
+  $field['name'] = str_replace('#', $table == 'relationship' ? $n : '', $field['name']);
+
   // Create dropdown list
   if (!empty($field['expose_list'])) {
     // Populate option list as needed (always reset for dynamic types)
@@ -621,8 +617,8 @@ function webform_civicrm_configure_form_item($fid, $field, $settings, $empty_opt
       '#default_value' => !empty($settings[$fid]),
     );
   }
-  if (isset($field['extra']['description'])) {
-    $item['#description'] = $field['extra']['description'];
+  if (isset($field['extra']['description']) && $d = $field['extra']['description']) {
+    $item['#description'] = strlen($d) > 75 ? substr($d, 0, 75) . '...' : $d;
   }
   return $item;
 }
