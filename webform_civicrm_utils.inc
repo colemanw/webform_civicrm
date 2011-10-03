@@ -787,7 +787,7 @@ function webform_civicrm_enabled_fields($node, $format = 'cid') {
  * @Param $elements: FAPI array
  * @Param $data: Array of CiviCRM data
  */
-function webform_civicrm_fill_values(&$elements, $data, $fields) {
+function webform_civicrm_fill_values(&$elements, $data, $fields, $submitted) {
   $sp = CRM_Core_DAO::VALUE_SEPARATOR;
   foreach ($elements as $eid => &$element) {
     if ($eid[0] == '#' || !is_array($element)) {
@@ -795,18 +795,22 @@ function webform_civicrm_fill_values(&$elements, $data, $fields) {
     }
     if (!empty($element['#type']) && $element['#type'] == 'fieldset') {
       // Recurse through fieldsets
-      webform_civicrm_fill_values($element, $data, $fields);
+      webform_civicrm_fill_values($element, $data, $fields, $submitted);
       continue;
     }
     if ($pieces = webform_civicrm_explode_key($eid)) {
       list($lobo, $c, $ent, $n, $table, $name) = $pieces;
       $field = $fields[$table . '_' . $name];
-      if ($field['type'] == 'textfield' && !empty($field['data_type'])) {
+      if (!empty($field['data_type'])) {
         // Add CiviCRM JS to link fields
-        if ($field['data_type'] == 'Link') {
+        if ($field['data_type'] == 'Link' && substr($element['#type'], 0, 4) == 'text') {
           $element['#attributes']['onblur'] = "if (this.value == 'http://') {this.value = '';}";
           $element['#attributes']['onfocus'] = "if (this.value == '') {this.value = 'http://';}";
         }
+      }
+      // If the user has already entered a value for this field, don't change it
+      if (isset($submitted[$element['#webform_component']['cid']])) {
+        continue;
       }
       if (isset($data[$ent][$c][$table][$n][$name])) {
         $val = $data[$ent][$c][$table][$n][$name];

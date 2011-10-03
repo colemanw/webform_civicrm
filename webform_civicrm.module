@@ -38,22 +38,19 @@ function webform_civicrm_menu() {
  * Implements hook_form_alter().
  */
 function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
-
   // Alter back-end webform component edit forms
-  if ($form_id == 'webform_component_edit_form') {
-    if (substr($form['form_key']['#default_value'], 0, 7) == 'civicrm') {
-      module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
-      _webform_civicrm_webform_component_form_alter($form);
-    }
+  if ($form_id == 'webform_component_edit_form'
+    && substr($form['form_key']['#default_value'], 0, 7) == 'civicrm') {
+    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
+    _webform_civicrm_webform_component_form_alter($form);
   }
 
   // Alter front-end of webforms
-  elseif (strpos($form_id, 'webform_client_form_') !== FALSE) {
-    if (!empty($form['#node']->webform_civicrm)
-      && !(empty($form_state['rebuild']) && !empty($form_state['input']))) {
-      module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
-      _webform_civicrm_webform_frontend_form_alter($form, $form_state);
-    }
+  elseif (strpos($form_id, 'webform_client_form_') !== FALSE
+    && !empty($form['#node']->webform_civicrm)
+    && !(empty($form_state['rebuild']) && !empty($form_state['input']))) {
+    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
+    _webform_civicrm_webform_frontend_form_alter($form, $form_state);
   }
 }
 

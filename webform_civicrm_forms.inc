@@ -832,18 +832,25 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       $id['act'][1] = $form['#submission']->civicrm['activity_id'];
     }
   }
-  // Do form alterations, except when going back to a previous page
+  // Do form alterations unless going back to a previous page
   elseif (!(!empty($form_state['clicked_button']['#id']) && $form_state['clicked_button']['#id'] == 'edit-previous')) {
-    $args = $_GET;
-    if (!empty($args['cid']) && empty($args['cid1'])) {
-      $args['cid1'] = $args['cid'];
+    
+    // If this form is already in-process, IDs will be stored in session
+    if (!empty($form_state['input'])) {
+      $id = $_SESSION['webform_civicrm_data'][$node->nid];
     }
-    $count = count($data['contact']);
-    for ($i = 1; $i <= $count; ++$i) {
-      if (!empty($args['cid' . $i]) && is_numeric($cid = $args['cid' . $i])) {
-        require_once 'CRM/Contact/BAO/Contact/Permission.php';
-        if (CRM_Contact_BAO_Contact_Permission::validateChecksumContact($cid, CRM_Core_DAO::$_nullObject)) {
-          $id['cid'][$i] = $cid;
+    else {
+      $args = $_GET;
+      if (!empty($args['cid']) && empty($args['cid1'])) {
+        $args['cid1'] = $args['cid'];
+      }
+      $count = count($data['contact']);
+      for ($i = 1; $i <= $count; ++$i) {
+        if (!empty($args['cid' . $i]) && is_numeric($cid = $args['cid' . $i])) {
+          require_once 'CRM/Contact/BAO/Contact/Permission.php';
+          if (CRM_Contact_BAO_Contact_Permission::validateChecksumContact($cid, CRM_Core_DAO::$_nullObject)) {
+            $id['cid'][$i] = $cid;
+          }
         }
       }
     }
@@ -1015,13 +1022,19 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   }
 
   // Store ids in session
-  if (!empty($id)) {
-    $_SESSION['webform_civicrm_data'][$node->nid] = $id;
-  }
+  $_SESSION['webform_civicrm_data'][$node->nid] = $id;
 
   // Set default values and other attributes for CiviCRM form elements
-  webform_civicrm_fill_values($form['submitted'], $info, $fields);
-  $form['actions']['submit']['#validate'][] = 'webform_civicrm_form_validate';
+  $submitted = empty($form_state['values']['submitted']) ? array() : $form_state['values']['submitted'];
+  webform_civicrm_fill_values($form['submitted'], $info, $fields, $submitted);
+
+  // Add custom validation handler
+  if (isset($form['actions']['submit'])) {
+    $form['actions']['submit']['#validate'][] = 'webform_civicrm_form_validate';
+  }
+  if (isset($form['actions']['next'])) {
+    $form['actions']['next']['#validate'][] = 'webform_civicrm_form_validate';
+  }
 }
 
 
