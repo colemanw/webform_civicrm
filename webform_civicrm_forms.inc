@@ -238,7 +238,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
       '#suffix' => '</div>',
       $fid => webform_civicrm_configure_form_item($fid, $fields['activity_assignee_contact_id'], $settings, t('- no one -'))
     );
-    if ($config->activityAssigneeNotification) {
+    if (!empty($config->activityAssigneeNotification)) {
       $form['act']['case']['activity_fields']['assignee'][$fid]['#description'] = t('A copy of this activity will be emailed to the assignee.');
     }
     $form['act']['case']['activity_fields']['existing_activity_status'] = array(
@@ -284,6 +284,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
           '#collapsible' => TRUE,
           '#title' => $set['label'],
           '#attributes' => array('class' => array('web-civi-checkbox-set')),
+          'js_select' => webform_civicrm_js_select($sid),
         );
         foreach ($set['fields'] as $fid => $field) {
           if (empty($field['do_not_cache'])) {
@@ -428,6 +429,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
           '#type' => 'fieldset',
           '#title' => $set['label'],
           '#attributes' => array('class' => array('web-civi-checkbox-set')),
+          'js_select' => webform_civicrm_js_select($n . $sid . $i . '_fieldset'),
         );
         if ((isset($set['max_instances']) && $set['max_instances'] > 1) || $sid == 'relationship') {
           $fieldset['#title'] .= ' ' . $i;
@@ -1243,4 +1245,16 @@ function webform_civicrm_process_options_selection($form, &$form_state) {
     ksort($items);
     $vals['extra']['items'] = implode("\n", $items);
   }
+}
+
+
+/**
+ * Build select all/none js links for a fieldset
+ */
+function webform_civicrm_js_select($name) {
+  $name = "'#edit-" . str_replace('_', '-', $name) . "'";
+  return array(
+    '#type' => 'markup',
+    '#markup' => '<div class="web-civi-js-select"><a href="javascript:web_civi_select_reset(\'checked\', ' . $name . ')">' . t('Select All') . '</a> | <a href="javascript:web_civi_select_reset(\'\', ' . $name . ')">' . t('Select None') . '</a> | <a href="javascript:web_civi_select_reset(\'reset\', ' . $name . ')">' . t('Reset') . '</a></div>',
+  );
 }

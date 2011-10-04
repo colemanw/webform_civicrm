@@ -1,3 +1,15 @@
+function web_civi_select_reset(op, id) {
+  switch (op) {
+    case 'reset':
+      jQuery(id).find('input:checkbox').each(function() {
+        jQuery(this).attr('checked', jQuery(this).attr('defaultChecked'));
+      });
+      break;
+    default:
+      jQuery(id).find('input:checkbox').attr('checked', op);
+  }
+}
+
 (function ($) {
   function webform_civicrm_relationship_options() {
     var contacts = $('#edit-number-of-contacts').val();

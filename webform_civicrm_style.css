@@ -32,3 +32,21 @@ th div.form-type-radio {
   margin:0;
   padding:0;
 }
+
+.web-civi-js-select {
+  display:none;
+}
+
+.js div.web-civi-js-select {
+  display:block;
+  font-size:0.8em;
+  position:absolute;
+  right:1em;
+  padding:0.2em;
+  background-color:white;
+  top:-2.5em;
+}
+
+.web-civi-js-select a:hover {
+  cursor:pointer;
+}
