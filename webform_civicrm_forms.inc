@@ -1255,6 +1255,6 @@ function webform_civicrm_js_select($name) {
   $name = "'#edit-" . str_replace('_', '-', $name) . "'";
   return array(
     '#type' => 'markup',
-    '#markup' => '<div class="web-civi-js-select"><a href="javascript:web_civi_select_reset(\'checked\', ' . $name . ')">' . t('Select All') . '</a> | <a href="javascript:web_civi_select_reset(\'\', ' . $name . ')">' . t('Select None') . '</a> | <a href="javascript:web_civi_select_reset(\'reset\', ' . $name . ')">' . t('Reset') . '</a></div>',
+    '#markup' => '<div class="web-civi-js-select"><a href="javascript:web_civi_select_reset(\'checked\', ' . $name . ')">' . t('Select All') . '</a> | <a href="javascript:web_civi_select_reset(\'\', ' . $name . ')">' . t('Select None') . '</a> | <a href="javascript:web_civi_select_reset(\'reset\', ' . $name . ')">' . t('Restore') . '</a></div>',
   );
 }
