@@ -17,7 +17,8 @@ function webform_civicrm_menu() {
     'title' => 'CiviCRM',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('webform_civicrm_configure_form', 1),
-    'access arguments' => array('access CiviCRM'),
+    'access callback' => 'webform_civicrm_form_access',
+    'access arguments' => array(1),
     'file' => 'webform_civicrm_forms.inc',
     'weight' => 3,
     'type' => MENU_LOCAL_TASK,
@@ -41,6 +42,13 @@ function webform_civicrm_configure_form(&$form_state, $node) {
   return webform_civicrm_configure_form_builder(array(), $form_state, $node);
 }
 
+
+/**
+ * Access callback to determine if user can see the CiviCRM tab of a webform.
+ */
+function webform_civicrm_form_access($node) {
+  return (node_access('update', $node) && user_access('access CiviCRM'));
+}
 
 
 /**
