@@ -11,8 +11,9 @@ module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
 
 /**
  * Form to configure CiviCRM options for a Webform
+ * Called indirectly from hook_menu() for D7-D6 compatibility
  */
-function webform_civicrm_configure_form_handler($form, &$form_state, $node) {
+function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
   $form = array();
   $form_state['storage']['node'] = $node;
 
@@ -58,7 +59,7 @@ function webform_civicrm_configure_form_handler($form, &$form_state, $node) {
         'message' => '',
         'confirm_subscription' => 1,
         'create_fieldsets' => 1,
-        'new_contact_source' => '',
+        'new_contact_source' => check_plain($node->title),
         'contact_matching' => 1,
       );
     }

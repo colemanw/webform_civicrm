@@ -38,7 +38,7 @@ function webform_civicrm_menu() {
  * Menu callback to pass the right number of params for this version of Drupal
  */
 function webform_civicrm_configure_form($form, &$form_state, $node) {
-  return webform_civicrm_configure_form_handler($form, $form_state, $node);
+  return webform_civicrm_configure_form_builder($form, $form_state, $node);
 }
 
 

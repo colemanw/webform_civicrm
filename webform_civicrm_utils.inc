@@ -760,24 +760,24 @@ function webform_civicrm_save_custom($entity, $entity_id, $entity_type = NULL) {
 /**
  * Get ids of enabled CiviCRM fields for a webform.
  * @Param $node - node object
+ * @Param $format - whether to return the component id, or just a return value
  */
 function webform_civicrm_enabled_fields($node, $format = 'cid') {
-  if (empty($node->webform['components'])) {
-    return;
-  }
-  $fields = webform_civicrm_get_fields();
   $enabled = array();
-  foreach ($node->webform['components'] as $c) {
-    $exp = explode('_', $c['form_key'], 5);
-    if (count($exp) == 5) {
-      list($lobo, $i, $ent, $n, $id) = $exp;
-      if ((isset($fields[$id]) || $id == 'fieldset_fieldset')
-        && $lobo == 'civicrm' && is_numeric($i) && is_numeric($n)) {
-        if ($format == 'cid') {
-          $enabled[$c['form_key']] = $c['cid'];
-        }
-        else {
-          $enabled[$c['form_key']] = 'create_civicrm_webform_element';
+  if (!empty($node->webform['components'])) {
+    $fields = webform_civicrm_get_fields();
+    foreach ($node->webform['components'] as $c) {
+      $exp = explode('_', $c['form_key'], 5);
+      if (count($exp) == 5) {
+        list($lobo, $i, $ent, $n, $id) = $exp;
+        if ((isset($fields[$id]) || $id == 'fieldset_fieldset')
+          && $lobo == 'civicrm' && is_numeric($i) && is_numeric($n)) {
+          if ($format == 'cid') {
+            $enabled[$c['form_key']] = $c['cid'];
+          }
+          else {
+            $enabled[$c['form_key']] = 'create_civicrm_webform_element';
+          }
         }
       }
     }
@@ -859,6 +859,8 @@ function _webform_civicrm_form_validate($form, &$form_state, $fields) {
         $field = $fields[$table . '_' . $name];
         if ($field['type'] == 'textfield'
           && !empty($field['data_type'])
+          // For the moment we don't validate links because of CRM-8968
+          && $field['data_type'] !== 'Link'
           && CRM_Utils_Type::escape($element['#value'], $field['data_type'], FALSE) === null) {
           form_error($element, t('Please enter a %type value for %field', array('%type' => $field['data_type'], '%field' => $element['#title'])));
         }
