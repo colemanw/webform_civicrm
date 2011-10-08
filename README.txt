@@ -27,7 +27,7 @@ HOW TO USE IT
 GROUPS AND TAGS
 
 This module allows you to tag contacts and add them to groups when they submit the webform.
--ASSIGNING TAGS: From the Webform CiviCRM tab, check the box to enable the Tags field. Click save. Then from the Form Components tab, click the edit button for the Tags component. You may enter as many tags as you wish, separated by commas. If the tags you enter do not already exist in CiviCRM, they will be created for you. The tags you entered will be added to all contacts who submit this webform.
+-ASSIGNING TAGS: From the Webform CiviCRM tab, check the box to enable the Tags field. Click save. Then from the Form Components tab, click the edit button for the Tags component. You may enter as many tags as you wish, separated by commas. If the tags you enter do not already exist in CiviCRM, they will be created for you.
 -ADDING CONTACTS TO GROUPS: Follow the instructions as for tags. There are two options for Groups -- visible checkboxes on the webform that allow contacts to add themselves to one or more groups of your choosing, and a hidden form element that just adds them. You may use both elements if you wish, to give your users a choice about some groups, but automatically add them to others.
 -OPT-IN CONFIRMATION: At the bottom of the options in the Webform CiviCRM tab is a checkbox to enable confirmation emails when contacts are added to public mailing lists. It is recommended that you leave that option enabled in most situations. You may configure the text of the confirmation message using CiviCRM.
 
@@ -61,10 +61,10 @@ You can pretty easily start recording CiviCRM contacts even for an existing webf
 
 1) You don't have any contact info fields on the form yet (name, address, etc). That's easy, just go to the CiviCRM tab of your webform, check the boxes, and the new fields will be created for you.
 
-2) You already have contact info fields on your form. If people have already been using this form, you don't want to delete those fields because you'd lose data from all existing submissions! Instead, you can get webform_civicrm to start processing those fields by changing their field keys to the ones understood by webform_civicrm. The best way to find the correct field key is by going to an existing civicrm-enabled webform (or create a dummy one) and copy the field key you are looking for (see anatomy of a form key, below). Then visit the CiviCRM tab of your webform and you will see that field is enabled.
+2) You already have contact info fields on your form. If people have already been using this form, you don't want to delete those fields because you'd lose data from all existing submissions! Instead, you can get webform_civicrm to start processing those fields by changing their field keys to the ones understood by webform_civicrm. An easy way to find the correct field key is by going to an existing civicrm-enabled webform (or create a dummy one) and copy the field key you are looking for (or see anatomy of a form key, below). Then visit the CiviCRM tab of your webform and you will see that field is enabled.
 
 
-WILL CONTACTS AND ACTIVITIES BE CREATED RETROACTIVELY IF I ENABLE THIS MODULE ON AN EXISTING WEBFORM?
+WILL CONTACTS, ACTIVITIES, ETC. BE CREATED RETROACTIVELY IF I ENABLE THIS MODULE ON AN EXISTING WEBFORM?
 
 No. That would require some sort of batch update script, which is not part of this module.
 
@@ -82,12 +82,16 @@ Note that permissions are checked, so these values will be ignored if the acting
 
 ANATOMY OF A FORM KEY - for geeks only
 
+When this module looks to see if a particular field exists, it checks the form key. Understanding form keys can allow you to get creative with your webform elements. You can, for example, create your own webform element of a custom type, give it the corresponding form key for a civicrm field of your choosing, and the webform_civicrm module will include that field in its processing.
+
 CiviCRM webform keys all contain 6 pieces, connected by underscores. They are:
 civicrm _ number _ entity _ number _ table _ field_key (note that the 6th piece may itself contain underscores)
+
 For example, the field "civicrm_2_contact_1_address_postal_code" translates to:
 civicrm_ - all civicrm fields start with this
 2_contact_ - this field belongs to contact 2
 1_address_ - this field is for this contact's first address (address is the table name in the database)
 postal_code - the id of the field (usually the column name in the database)
 So this field is for the postal code of the first address of the second contact on the form.
-Note that for consistency, all form keys are treated as if everything might be multi-valued. So even though a contact can only have one first_name, the form key for contact 1's first name is still "civicrm_1_contact_1_contact_first_name" which represents both that this is the first contact on the form, and the first (and only) set of contact fields for them.
+
+Note that for consistency, all form keys are treated as if everything might be multi-valued. So even though a contact can only have one first_name, the form key for contact 1's first name is still "civicrm_1_contact_1_contact_first_name" which tells us that this is the first contact on the form, and the first (and only) set of contact fields for them.

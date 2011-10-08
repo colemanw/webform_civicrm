@@ -35,6 +35,15 @@ function webform_civicrm_menu() {
 
 
 /**
+ * Menu callback to pass the right number of params for this version of Drupal
+ */
+function webform_civicrm_configure_form(&$form_state, $node) {
+  return webform_civicrm_configure_form_handler(array(), $form_state, $node);
+}
+
+
+
+/**
  * Implementation of hook_form_alter().
  */
 function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
@@ -221,7 +230,19 @@ function webform_civicrm_help($section) {
   switch ($section) {
     case 'admin/help#webform_civicrm':
       // Return a line-break version of the module README.txt
-      return filter_filter('process', 1, NULL, file_get_contents(drupal_get_path('module', 'webform_civicrm') . '/README.txt'));
+      return nl2br(file_get_contents(drupal_get_path('module', 'webform_civicrm') . '/README.txt'));
     break;
   }
+}
+
+
+/**
+ * Validation callback for webform submissions.
+ */
+function webform_civicrm_form_validate($form, &$form_state) {
+  civicrm_initialize();
+  require_once 'CRM/Utils/Type.php';
+  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
+  $fields = webform_civicrm_get_fields();
+  _webform_civicrm_form_validate($form['submitted'], $form_state, $fields);
 }

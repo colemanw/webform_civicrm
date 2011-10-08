@@ -1,5 +1,6 @@
 .web-civi-checkbox-set {
   padding-left:0;
+  position:relative;
 }
 
 .web-civi-checkbox-set .form-item {
@@ -10,22 +11,18 @@
 
 div.form-item-activity-targets div.form-item,
 #edit-activity-assignee-group-wrapper,
-#civicrm-ahah-assignee {
+#civicrm-ajax-act-case-activity-fieldsassignee {
   float:left;
   margin-right:1em;
 }
 
-#civicrm-ahah-assignee + div,
+#civicrm-ajax-act-case-activity-fieldsassignee + div,
 #edit-activity-assignee-group-wrapper {
   clear:both;
 }
 
 .hidden, .js #no-js-button-wrapper {
   display:none;
-}
-
-.civicrm-ahah-wrapper {
-  clear:both;
 }
 
 #webform-civicrm-configure-form legend+.description {
@@ -43,4 +40,29 @@ div.form-item-activity-targets div.form-item,
 #webform-civicrm-configure-form .ahah-progress-throbber {
   display:inline-block;
   float:none;
+}
+
+th div.form-type-radio {
+  display:inline;
+  margin:0;
+  padding:0;
+}
+
+.web-civi-js-select {
+  display:none;
+}
+
+.js div.web-civi-js-select {
+  display:block;
+  font-size:0.8em;
+  position:absolute;
+  right:1em;
+  padding:0.2em 0.5em;
+  background-color:white;
+  top:-2.5em;
+  border:1px solid #CCCCCC;
+}
+
+.web-civi-js-select a:hover {
+  cursor:pointer;
 }

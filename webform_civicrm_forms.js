@@ -1,3 +1,16 @@
+function web_civi_select_reset(op, id) {
+    id = "#js-select-" + id;
+  switch (op) {
+    case 'reset':
+      $(id).parent().find('input:checkbox').each(function() {
+        $(this).attr('checked', $(this).attr('defaultChecked'));
+      });
+      break;
+    default:
+      $(id).parent().find('input:checkbox').attr('checked', op);
+  }
+}
+
 function webform_civicrm_relationship_options() {
   var contacts = $('#edit-number-of-contacts').val();
   if (contacts > 1) {
@@ -95,4 +108,13 @@ $(document).ready( function(){
   $('#edit-1-contact-type').change(function(){
     webform_civicrm_contact_match_checkbox();
   });
+
+  // D6 Can't handle dynamically generated ahah elements, so just refresh the form
+  if ($('#edit-activity-type-id').val() == 0) {
+    $('#edit-activity-type-id').unbind('change');
+    $('#edit-activity-type-id').change(function(){
+      $('#webform-civicrm-configure-form')[0].submit();
+    });
+  }
+
 });
