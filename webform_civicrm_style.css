@@ -1,5 +1,6 @@
 form .web-civi-checkbox-set {
   padding-left:0;
+  position:relative;
 }
 
 form .web-civi-checkbox-set .form-item {
@@ -10,13 +11,13 @@ form .web-civi-checkbox-set .form-item {
 
 form .form-item-activity-targets div.form-item.form-type-checkbox,
 form div.form-item-activity-assignee-group,
-#civicrm-ajax-assignee {
+#civicrm-ajax-act-case-activity-fields-assignee {
   float:left;
   margin-right:1em;
 }
 
 form .form-item-activity-targets + div,
-#civicrm-ajax-assignee + div {
+#civicrm-ajax-act-case-activity-fields-assignee + div {
   clear:both;
 }
 
@@ -42,9 +43,10 @@ th div.form-type-radio {
   font-size:0.8em;
   position:absolute;
   right:1em;
-  padding:0.2em;
+  padding:0.2em 0.5em;
   background-color:white;
   top:-2.5em;
+  border:1px solid #CCCCCC;
 }
 
 .web-civi-js-select a:hover {

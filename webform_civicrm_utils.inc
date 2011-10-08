@@ -3,7 +3,12 @@
 /**
  * @file
  * Webform CiviCRM module's utility functions.
+ * The functions in this file are all cross-compatible with D6/Civi3 and D7/Civi4
+ * Drupal-version-specific functions belong in webform_civicrm_dx_functions.inc
  */
+
+//Load drupal-version-specific helper functions
+module_load_include('inc', 'webform_civicrm', 'webform_civicrm_d' . substr(VERSION, 0, 1) . '_functions');
 
 /**
  * Create/update CiviCRM data
@@ -1370,7 +1375,6 @@ function webform_civicrm_activity_find($params) {
   }
 }
 
-/** D7 Specific functions **/
 
 /**
  * Displays the admin-defined message with "not you?" link to known contacts
@@ -1378,10 +1382,11 @@ function webform_civicrm_activity_find($params) {
 function webform_civicrm_set_message($message, $contact) {
   $message = webform_civicrm_replace_tokens($message, $contact);
   preg_match_all('#\{([^}]+)\}#', $message, $matches);
+  $path = substr(VERSION, 0, 1) == '6' ? 'logout' : 'user/logout';
   if ($matches[0]) {
     foreach ($matches[0] as $pos => $match) {
       if (user_is_logged_in()) {
-        $link = l($matches[1][$pos], 'user/logout', array('query' => array('destination' => $_GET['q'])));
+        $link = l($matches[1][$pos], $path, array('query' => array('destination' => $_GET['q'])));
       }
       else {
         $link = l($matches[1][$pos], $_GET['q']);
@@ -1394,29 +1399,35 @@ function webform_civicrm_set_message($message, $contact) {
 
 
 /**
- * Autocomplete callback for tags
+ * Autocomplete and AHAH form callback.
  */
-function webform_civicrm_js_options($key, $str = '') {
+function webform_civicrm_js_options($key, $str='') {
   if (!user_access('access CiviCRM')) {
     return drupal_access_denied();
   }
+  // Serve AHAH requests for D6
+  if (substr($key, 0, 12) == 'civicrm_ahah') {
+    webform_civicrm_ahah_callback($key);
+  }
+
+  civicrm_initialize();
+
+  // Autocomplete callback for tags
   if ($key == 'tags') {
-    civicrm_initialize();
-    if (!$str) {
-      exit();
-    }
-    // Handle a comma-separated list of tags.
-    $existing = drupal_explode_tags($str);
-    $last_str = trim(array_pop($existing));
     $matches = array();
-    $prefix = count($existing) ? implode(', ', $existing) . ', ' : '';
-    $params = array(1 => array('%' . $last_str . '%', 'String'));
-    $sql = "SELECT name FROM civicrm_tag WHERE is_selectable = 1 AND used_for = 'civicrm_contact' AND name LIKE %1 LIMIT 0, 12";
-    $dao = &CRM_Core_DAO::executeQuery($sql, $params);
-    while ($dao->fetch()) {
-      $matches[$prefix . $dao->name] = check_plain($dao->name);
+    if ($str) {
+      // Handle a comma-separated list of tags.
+      $existing = drupal_explode_tags($str);
+      $last_str = trim(array_pop($existing));
+      $prefix = count($existing) ? implode(', ', $existing) . ', ' : '';
+      $params = array(1 => array('%'. $last_str .'%', 'String'));
+      $sql = "SELECT name FROM civicrm_tag WHERE is_selectable = 1 AND used_for = 'civicrm_contact' AND name LIKE %1 LIMIT 0, 12";
+      $dao =& CRM_Core_DAO::executeQuery($sql, $params);
+      while ($dao->fetch()) {
+        $matches[$prefix . $dao->name] = check_plain($dao->name);
+      }
     }
-    exit(drupal_json_output($matches));
+    exit(webform_civicrm_json($matches));
   }
   return drupal_not_found();
 }

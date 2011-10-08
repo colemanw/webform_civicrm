@@ -1,4 +1,5 @@
 function web_civi_select_reset(op, id) {
+  id = "#edit-" + id;
   switch (op) {
     case 'reset':
       jQuery(id).find('input:checkbox').each(function() {
