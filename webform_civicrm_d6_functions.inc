@@ -6,6 +6,7 @@
  * to allow the rest of the code to be version-independent.
  */
 
+// FAPI items of type markup use '#value' in D6 and '#markup' in D7
 define('WEBFORM_CIVICRM_MARKUP', '#value');
 
 
@@ -56,7 +57,7 @@ function webform_civicrm_fapi_class($str) {
 
 
 /**
- * Return drupal json
+ * Compatibility wrapper for drupal_json_output()
  */
  function webform_civicrm_json($input) {
    return drupal_json($input);
@@ -72,7 +73,7 @@ function webform_civicrm_disable($nid) {
 
 
 /**
- * Add drupal JS
+ * Compatibility wrapper for drupal_add_js()
  */
 function webform_civicrm_add_js($js, $type = 'file') {
   if ($type == 'file') {
@@ -90,8 +91,8 @@ function webform_civicrm_add_js($js, $type = 'file') {
  * @param $container: str. Array key of the container to be created
  */
 function webform_civicrm_ajax_form_item(&$form, $pathstr, $control_element, $container) {
-  eval('$snippet = &$form[\'' . str_replace('.', "']['", $pathstr) . "'];");
-  $pathstr .= '.' . $container;
+  eval('$snippet = &$form[\'' . str_replace(':', "']['", $pathstr) . "'];");
+  $pathstr = str_replace(':', '.', $pathstr) . '.' . $container;
   $id = 'civicrm-ajax-' . str_replace(array('.', '_'), '-', $pathstr);
   $snippet[$control_element]['#ahah'] = array(
     'path' => 'webform-civicrm/js/' . arg(1) . '/civicrm_ahah.' . $pathstr,

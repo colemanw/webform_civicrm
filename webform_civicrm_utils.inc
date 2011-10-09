@@ -1221,7 +1221,7 @@ function webform_civicrm_get_fields($var = 'fields') {
         $fields[$id]['extra']['description'] = $dao->help_pre;
         $fields[$id]['value'] = str_replace($sp, ',', trim($dao->default_value, $sp));
         $fields[$id]['data_type'] = $dao->data_type;
-  
+
         if ($fields[$id]['type'] == 'date') {
           $fields[$id]['extra']['start_date'] = ($dao->start_date_years ? '-' . $dao->start_date_years : '-50') . ' years';
           $fields[$id]['extra']['end_date'] = ($dao->end_date_years ? '+' . $dao->end_date_years : '+50') . ' years';
@@ -1432,4 +1432,20 @@ function webform_civicrm_js_options($key, $str='') {
     exit(webform_civicrm_json($matches));
   }
   return drupal_not_found();
+}
+
+
+/**
+ * Return a value from an array.
+ */
+function webform_civicrm_aval($haystack, $keys, $default = NULL) {
+  foreach(explode(':', $keys) as $key) {
+    if (is_array($haystack) && isset($haystack[$key])) {
+      $haystack = $haystack[$key];
+    }
+    else {
+      return $default;
+    }
+  }
+  return $haystack;
 }
