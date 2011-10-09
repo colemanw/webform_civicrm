@@ -54,9 +54,6 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
             ),
           ),
         ),
-        'prefix_known' => '',
-        'prefix_unknown' => '',
-        'message' => '',
         'confirm_subscription' => 1,
         'create_fieldsets' => 1,
         'new_contact_source' => check_plain($node->title),
@@ -104,13 +101,13 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
   $form['prefix']['prefix_known'] = array(
     '#type' => 'textarea',
     '#title' => t('Introduction text for known contacts'),
-    '#default_value' => $settings['prefix_known'],
+    '#default_value' => webform_civicrm_aval($settings, 'prefix_known'),
     '#description' => $tokens,
   );
   $form['prefix']['prefix_unknown'] = array(
     '#type' => 'textarea',
     '#title' => t('Introduction text for unknown contacts'),
-    '#default_value' => $settings['prefix_unknown'],
+    '#default_value' => webform_civicrm_aval($settings, 'prefix_unknown'),
     '#description' => t('No tokens available for unknown contacts.'),
   );
   $form['st_message'] = array(
@@ -121,16 +118,18 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
   $form['st_message']['toggle_message'] = array(
     '#type' => 'checkbox',
     '#title' => t('Display message to known contacts?'),
-    '#default_value' => (bool) $settings['message'],
+    '#default_value' => !empty($settings['message']),
   );
   $form['st_message']['message'] = array(
     '#type' => 'textfield',
     '#title' => t('Message text (displayed as a Drupal status message)'),
-    '#default_value' => $settings['message'] ? $settings['message'] : t("You are viewing this form as [display name]. Please {click here if that's not you}."),
+    '#default_value' => webform_civicrm_aval($settings, 'message', t("You are viewing this form as [display name]. Please {click here if that's not you}.")),
     '#size' => 100,
     '#maxlength' => 255,
     '#description' => t('Enclose your "not you" link text in curly brackets {like this}.') . '<p>' . $tokens . '</p>',
   );
+
+  // Case and activity settings
   $form['act'] = array(
     '#type' => 'fieldset',
     '#title' => t('Create Activity'),
@@ -146,7 +145,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
   }
   webform_civicrm_ajax_form_item($form, 'act', 'case_type_id', 'case');
   $param = NULL;
-  if (isset($data['case'][1]['case'][1]['case_type_id'])) {
+  if (!empty($data['case'][1]['case'][1]['case_type_id'])) {
     $form['act']['case_type_id']['#default_value'] = $data['case'][1]['case'][1]['case_type_id'];
     $param = '7';
     $form['act']['case']['case_fieldset'] = array(
@@ -158,37 +157,28 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
       '#title' => t('Case Status'),
       '#description' => t('If a "@type" case with this status already exists for this contact, the activity will be added to that case. Otherwise a new case will be opened with this status.', array('@type' => $case_types[$data['case'][1]['case'][1]['case_type_id']])),
       '#options' => webform_civicrm_get_options('case_status'),
+      '#default_value' => webform_civicrm_aval($data, 'case:1:case:1:status_id'),
     );
-    if (isset($data['case'][1]['case'][1]['status_id'])) {
-      $form['act']['case']['case_fieldset']['case_status_id']['#default_value'] = $data['case'][1]['case'][1]['status_id'];
-    }
     $form['act']['case']['case_fieldset']['case_medium_id'] = array(
       '#type' => 'select',
       '#title' => t('Medium'),
       '#description' => t('Medium for activities added to cases from this webform.'),
       '#options' => webform_civicrm_get_options('encounter_medium'),
+      '#default_value' => webform_civicrm_aval($data, 'case:1:case:1:medium_id'),
     );
-    if (isset($data['case'][1]['case'][1]['medium_id'])) {
-      $form['act']['case']['case_fieldset']['case_medium_id']['#default_value'] = $data['case'][1]['case'][1]['medium_id'];
-    }
     $form['act']['case']['case_fieldset']['case_subject'] = array(
       '#type' => 'textfield',
       '#title' => t('Case Subject'),
       '#description' => t('Optional subject for "open case" activity for new cases.'),
+      '#default_value' => webform_civicrm_aval($data, 'case:1:case:1:subject', check_plain($node->title)),
     );
-    if (isset($data['case'][1]['case'][1]['subject'])) {
-      $form['act']['case']['case_fieldset']['case_subject']['#default_value'] = $data['case'][1]['case'][1]['subject'];
-    }
-    else {
-      $form['act']['case']['case_fieldset']['case_subject']['#default_value'] = check_plain($node->title);
-    }
     $form['act']['case']['case_fieldset']['case_creator_id'] = array(
       '#type' => 'textfield',
       '#size' => 5,
       '#required' => TRUE,
       '#title' => t('Case Manager ID'),
       '#description' => t('Contact ID of "case manager" for newly created cases.'),
-      '#default_value' => isset($data['case'][1]['case'][1]['creator_id']) ? $data['case'][1]['case'][1]['creator_id'] : webform_civicrm_user_cid(),
+      '#default_value' => webform_civicrm_aval($data, 'case:1:case:1:creator_id', webform_civicrm_user_cid()),
     );
   }
   $act_types = webform_civicrm_get_options('activity_type', $param);
@@ -212,6 +202,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
       '#title' => t('Choose Assignee From'),
       '#type' => 'select',
       '#options' => array(t('- Webform Contacts -')) + webform_civicrm_get_options('groups'),
+      '#default_value' => webform_civicrm_aval($data, 'activity:1:assignee_group'),
     );
     webform_civicrm_ajax_form_item($form, 'act.case.activity_fields', 'activity_assignee_group', 'assignee');
     // Activity assignee
@@ -225,6 +216,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
       '#title' => t('Update Existing Activity'),
       '#description' => t('If a "@type" activity with this status already exists for contact 1, it will be updated. Otherwise a new one will be created.', array('@type' => $act_types[$settings['activity_type_id']])),
       '#options' => array(t('- always create new activity -')) + webform_civicrm_get_options('activity_status'),
+      '#default_value' => webform_civicrm_aval($data, 'activity:1:existing_activity_status'),
     );
     $form['act']['case']['activity_fields']['activity_subject'] = array(
       '#type' => 'textfield',
@@ -232,21 +224,13 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
       '#maxlength' => 255,
       '#required' => TRUE,
       '#description' => t('You can override this default by allowing users to enter a subject (enable "Activity Subject" field below)'),
+      '#default_value' => webform_civicrm_aval($data, 'activity:1:activity:1:subject', check_plain($node->title)),
     );
     $form['act']['case']['activity_fields']['activity_link'] = array(
       '#type' => 'checkbox',
       '#title' => t('Include link to webform submission in activity details'),
       '#default_value' => !(empty($data['activity'][1]['add_link']) && isset($data['activity'][1]['add_link'])),
     );
-    // Set default values
-    if (isset($data['activity'][1]['activity'][1]['subject'])) {
-      $form['act']['case']['activity_fields']['activity_subject']['#default_value'] = $data['activity'][1]['activity'][1]['subject'];
-      $form['act']['case']['activity_fields']['existing_activity_status']['#default_value'] = $data['activity'][1]['existing_activity_status'];
-      $form['act']['case']['activity_fields']['activity_assignee_group']['#default_value'] = $data['activity'][1]['assignee_group'];
-    }
-    else {
-      $form['act']['case']['activity_fields']['activity_subject']['#default_value'] = check_plain($node->title);
-    }
     foreach($data['contact'] as $n => $c) {
       $form['act']['case']['activity_fields']['activity_targets']['#options'][$n] = t('Contact !num', array('!num' => $n));
       if (!isset($settings['activity_subject']) || !empty($c['activity_target'])) {
@@ -274,6 +258,8 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
       }
     }
   }
+
+  // Contact settings
   $nums = array();
   for ($i = 1; $i < 30; ++$i) {
     $nums[$i] = $i;
@@ -1067,11 +1053,8 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
             $form['civicrm_options_fieldset']['civicrm_option_label_' . $k] = array(
               '#type' => 'textfield',
               '#size' => 30,
-              '#default_value' => $options[$k],
+              '#default_value' => !empty($options_selected[$k]) ? $options_selected[$k] : $options[$k],
             );
-            if (!empty($options_selected[$k])) {
-              $form['civicrm_options_fieldset']['civicrm_option_label_' . $k]['#default_value'] = $options_selected[$k];
-            }
             $form['civicrm_options_fieldset']['civicrm_option_weight_' . $k] = array(
               '#type' => 'textfield',
               '#size' => 3,

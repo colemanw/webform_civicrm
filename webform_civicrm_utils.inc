@@ -1433,3 +1433,19 @@ function webform_civicrm_js_options($key, $str='') {
   }
   return drupal_not_found();
 }
+
+
+/**
+ * Return a value from an array.
+ */
+function webform_civicrm_aval($haystack, $keys, $default = NULL) {
+  foreach(explode(':', $keys) as $key) {
+    if (is_array($haystack) && isset($haystack[$key])) {
+      $haystack = $haystack[$key];
+    }
+    else {
+      return $default;
+    }
+  }
+  return $haystack;
+}
