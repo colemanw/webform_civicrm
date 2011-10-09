@@ -1221,7 +1221,7 @@ function webform_civicrm_get_fields($var = 'fields') {
         $fields[$id]['extra']['description'] = $dao->help_pre;
         $fields[$id]['value'] = str_replace($sp, ',', trim($dao->default_value, $sp));
         $fields[$id]['data_type'] = $dao->data_type;
-  
+
         if ($fields[$id]['type'] == 'date') {
           $fields[$id]['extra']['start_date'] = ($dao->start_date_years ? '-' . $dao->start_date_years : '-50') . ' years';
           $fields[$id]['extra']['end_date'] = ($dao->end_date_years ? '+' . $dao->end_date_years : '+50') . ' years';

@@ -187,7 +187,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     '#title' => t('Activity Type'),
     '#options' => array(t('- no activity -')) + $act_types,
   );
-  webform_civicrm_ajax_form_item($form, 'act.case', 'activity_type_id', 'activity_fields');
+  webform_civicrm_ajax_form_item($form, 'act:case', 'activity_type_id', 'activity_fields');
   if (isset($data['activity'][1]['activity'][1]['activity_type_id'])
     && isset($act_types[$data['activity'][1]['activity'][1]['activity_type_id']])) {
     $form['act']['case']['activity_type_id']['#default_value'] = $settings['activity_type_id'] = $data['activity'][1]['activity'][1]['activity_type_id'];
@@ -204,7 +204,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
       '#options' => array(t('- Webform Contacts -')) + webform_civicrm_get_options('groups'),
       '#default_value' => webform_civicrm_aval($data, 'activity:1:assignee_group'),
     );
-    webform_civicrm_ajax_form_item($form, 'act.case.activity_fields', 'activity_assignee_group', 'assignee');
+    webform_civicrm_ajax_form_item($form, 'act:case:activity_fields', 'activity_assignee_group', 'assignee');
     // Activity assignee
     $fid = 'civicrm_1_activity_1_activity_assignee_contact_id';
     $form['act']['case']['activity_fields']['assignee'][$fid] = webform_civicrm_configure_form_item($fid, $fields['activity_assignee_contact_id'], $settings, t('- no one -'));
@@ -298,7 +298,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     $form['contact_' . $n]['contact_subtype_wrapper'][$fid] = webform_civicrm_configure_form_item($fid, $fields['contact_contact_sub_type'], $settings, $contact_types[$c['contact'][1]['contact_type']]);
     $form['contact_' . $n]['contact_subtype_wrapper'][$fid]['#title'] .= ' ' .  $contact_types[$c['contact'][1]['contact_type']];
     $form['contact_' . $n]['contact_subtype_wrapper'][$fid]['#description'] = t('You may optionally select a more specific type for this contact. Choose "user select" to create a form element with these options.');
-    webform_civicrm_ajax_form_item($form, 'contact_' . $n . '.contact_subtype_wrapper', $fid, 'contact_custom_wrapper');
+    webform_civicrm_ajax_form_item($form, 'contact_' . $n . ':contact_subtype_wrapper', $fid, 'contact_custom_wrapper');
 
     if (empty($sub_types[$c['contact'][1]['contact_type']])) {
       $form['contact_' . $n]['contact_subtype_wrapper']['civicrm_' . $n . '_contact_1_contact_contact_sub_type']['#prefix'] = '<div class="hidden">';
@@ -325,11 +325,11 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
           $hide = TRUE;
         }
         $pos = &$form['contact_' . $n]['contact_subtype_wrapper']['contact_custom_wrapper'];
-        $path = 'contact_' . $n . '.contact_subtype_wrapper.contact_custom_wrapper';
+        $path = 'contact_' . $n . ':contact_subtype_wrapper:contact_custom_wrapper';
       }
       elseif (!empty($set['contact_type']) || $sid == 'contact') {
         $pos = &$form['contact_' . $n]['contact_subtype_wrapper'];
-        $path = 'contact_' . $n . '.contact_subtype_wrapper';
+        $path = 'contact_' . $n . ':contact_subtype_wrapper';
       }
       else {
         $pos = &$form['contact_' . $n];
@@ -373,8 +373,8 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
           }
         }
         foreach ($set['fields'] as $fid => $field) {
-          if ($fid == 'contact_contact_sub_type' || 
-          ($fid == 'address_master_id' && $contacts == 1) || 
+          if ($fid == 'contact_contact_sub_type' ||
+          ($fid == 'address_master_id' && $contacts == 1) ||
           (isset($field['contact_type']) && $field['contact_type'] != $c['contact'][1]['contact_type'])) {
             continue;
           }
@@ -769,7 +769,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   }
   // Do form alterations unless going back to a previous page
   elseif (!(!empty($form_state['clicked_button']['#id']) && $form_state['clicked_button']['#id'] == 'edit-previous')) {
-    
+
     // If this form is already in-process, IDs will be stored in session
     if (!empty($form_state['input'])) {
       $id = $_SESSION['webform_civicrm_data'][$node->nid];
@@ -945,7 +945,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
         }
       }
     }
-  
+
     if (!empty($id['cid'][1])) {
       if ($settings['prefix_known']) {
         $form['#prefix'] = nl2br(webform_civicrm_replace_tokens($settings['prefix_known'], $info['contact'][1]['contact'][1]));
