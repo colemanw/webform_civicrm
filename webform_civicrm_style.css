@@ -29,6 +29,10 @@ form .hidden, .js #no-js-button-wrapper {
   display:inline;
 }
 
+.civicrm-ajax-wrapper {
+  clear:both;
+}
+
 th div.form-type-radio {
   display:inline;
   margin:0;

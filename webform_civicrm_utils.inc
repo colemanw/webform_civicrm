@@ -488,7 +488,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
     $sql = 'SELECT name AS label, id AS value FROM civicrm_location_type WHERE is_active <> 0 ORDER BY is_default DESC';
   }
   elseif ($option_group == 'event_id') {
-    $sql = 'SELECT title AS label, id AS value FROM civicrm_event WHERE is_template = 0';
+    $sql = "SELECT CONCAT(title, DATE_FORMAT(start_date, ': %e-%Y')) AS label, id AS value FROM civicrm_event WHERE is_template = 0";
     if ($param == 'current') {
       $sql .= ' AND end_date >= NOW()';
     }
@@ -1484,4 +1484,15 @@ function webform_civicrm_aval($haystack, $keys, $default = NULL) {
     }
   }
   return $haystack;
+}
+
+/**
+ * Fetch the event type of an event.
+ */
+function webform_civicrm_event_type($eid) {
+  if ($eid && is_numeric($eid)) {
+    $query = 'SELECT event_type_id FROM civicrm_event WHERE id = ' . $eid;
+    return CRM_Core_DAO::singleValueQuery($query);
+  }
+  return 0;
 }

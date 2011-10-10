@@ -310,14 +310,19 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
         '#attributes' => array('class' => webform_civicrm_fapi_class('web-civi-checkbox-set')),
         'js_select' => webform_civicrm_js_select($fs),
       );
+      $etype = 0;
       foreach ($sets as $sid => $set) {
         if ($set['entity_type'] == 'participant') {
+          if (!empty($set['sub_types']) && !in_array($etype, $set['sub_types'])) {
+            continue;
+          }
           foreach ($set['fields'] as $fid => $field) {
             $id = 'civicrm_' . $n . '_participant_' . $e . '_' . $fid;
             $item = webform_civicrm_configure_form_item($id, $field, $settings);
             if ($fid == 'participant_event_id') {
               $form['event']['participants'][$n]['div'][$fs][$id] = $item;
               webform_civicrm_ajax_form_item($form, "event:participants:{$n}:div:{$fs}", $id, 'fields');
+              $etype = webform_civicrm_event_type($item['#default_value']);
             }
             else {
               $form['event']['participants'][$n]['div'][$fs]['fields'][$id] = $item;
@@ -633,11 +638,8 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
   $button = $form_state['clicked_button']['#id'];
   $node = $form_state['storage']['node'];
 
-  if (!empty($form_state['storage']['vals'])) {
-    $form_state['values'] = $form_state['storage']['vals'];
-  }
+  $vals = webform_civicrm_aval($form_state, 'storage:vals', $form_state['values']);
   unset($form_state['storage']);
-  $vals = $form_state['values'];
 
   if ((empty($node->webform_civicrm) && !$vals['nid']) || $button == 'edit-cancel') {
     $form_state['rebuild'] = TRUE;
@@ -662,7 +664,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
     foreach ($delete_me as $key => $id) {
       list($lobo, $c, $ent, $n, $table, $name) = explode('_', $key, 6);
       $info = '';
-      if ($ent == 'contact') {
+      if ($ent == 'contact' || $ent == 'participant') {
         $info = '<em>' . t('Contact !num', array('!num' => $c));
       }
       if ($info && isset($sets[$table]['max_instances'])) {
@@ -671,7 +673,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
       $info .= $info ? ':</em> ' : '';
       $msg .= '<li>' . $info . $node->webform['components'][$id]['name'] . '</li>';
     }
-    $msg .= '</ul><p>' . t('Would you like them to be automatically removed from the webform? This is recommended unless you need webform-results reporting for these fields. They can still be deleted manually later if you choose not to remove them now.') . '</p><p><em>' . t('Note: Deleting webform components cannot be undone, and will result in the loss of webform-results data for those elements. Data in the CiviCRM database will not be affected.') . '</em></p>';
+    $msg .= '</ul><p>' . t('Would you like them to be automatically removed from the webform? This is recommended unless you need webform-results reporting for these fields. (They can still be deleted manually later if you choose not to remove them now.)') . '</p><p><em>' . t('Note: Deleting webform components cannot be undone, and will result in the loss of webform-results info for those elements. Data in the CiviCRM database will not be affected.') . '</em></p>';
     $form_state['storage']['msg'] = $msg;
     $form_state['storage']['vals'] = $vals;
     $form_state['rebuild'] = TRUE;
