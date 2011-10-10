@@ -70,6 +70,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
   $tokens = '<strong>' . t('Contact 1 Tokens:') . '</strong> [' . implode('], [', webform_civicrm_get_fields('tokens')) . '].';
   list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
   $data = $settings['data'];
+  $contacts = count($data['contact']);
   $js = 'var webform_civicrm_relationship_data = ' . json_encode(webform_civicrm_get_relationship_types()) . ';';
   webform_civicrm_add_js($js, 'inline');
 
@@ -123,7 +124,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
   $form['st_message']['message'] = array(
     '#type' => 'textfield',
     '#title' => t('Message text (displayed as a Drupal status message)'),
-    '#default_value' => webform_civicrm_aval($settings, 'message', t("You are viewing this form as [display name]. Please {click here if that's not you}.")),
+    '#default_value' => !empty($settings['message']) ? $settings['message'] : t("You are viewing this form as [display name]. Please {click here if that's not you}."),
     '#size' => 100,
     '#maxlength' => 255,
     '#description' => t('Enclose your "not you" link text in curly brackets {like this}.') . '<p>' . $tokens . '</p>',
@@ -259,16 +260,80 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     }
   }
 
-  // Contact settings
-  $nums = array();
-  for ($i = 1; $i < 30; ++$i) {
-    $nums[$i] = $i;
+  // Event participant settings
+  $form['event'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Register Event Participants'),
+  );
+  $reg_type = webform_civicrm_aval($data, 'participant_reg_type');
+  $form['event']['participant_reg_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Registration Method'),
+    '#default_value' => $reg_type,
+    '#options' => array(
+      t('- no event registration -'),
+      'all' => t('Register all contacts for the same event(s)'),
+      'separate' => t('Register each contact separately'),
+    ),
+  );
+  $form['event']['event_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Event Type'),
+    '#options' => array('current' => t('Upcoming Events')) + webform_civicrm_get_options('event_type'),
+    '#default_value' => webform_civicrm_aval($data, 'event_type', 'current'),
+  );
+  webform_civicrm_ajax_form_item($form, 'event', 'participant_reg_type', 'participants');
+  webform_civicrm_ajax_form_item($form, 'event', 'event_type', 'participants');
+  for ($n = 1; $n <= $contacts; ++$n) {
+    $class = (!$reg_type || ($reg_type == 'all' && $n > 1)) ? 'class="hidden"' : '';
+    $form['event']['participants'][$n] = array(
+      '#type' => 'fieldset',
+      '#title' => $reg_type == 'all' && $n == 1 ? t('Registration') : t('Contact !num', array('!num' => $n)),
+      '#prefix' => "<div id=\"participant-fieldset-$n\" $class>",
+      '#suffix' => '</div>',
+    );
+    if (!($num = webform_civicrm_aval($data, "participant:{$n}:number_of_participant")) || ($n > 1 && $reg_type == 'all')) {
+      $num = 0;
+    }
+    $form['event']['participants'][$n]['participant_' . $n . '_number_of_participant'] = array(
+      '#type' => 'select',
+      '#title' => $reg_type == 'all' ? t('Number of Events') : t('Number of Events for Contact !num', array('!num' => $n)),
+      '#default_value' => $num,
+      '#options' => range(0, $sets['participant']['max_instances']),
+    );
+    webform_civicrm_ajax_form_item($form, "event:participants:{$n}", 'participant_' . $n . '_number_of_participant', 'div');
+    for ($e = 1; $e <= $num; ++$e) {
+      $fs = $n . 'participant_' . '_' . $e . '_fieldset';
+      $form['event']['participants'][$n]['div'][$fs] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Event !num', array('!num' => $e)),
+        '#attributes' => array('class' => webform_civicrm_fapi_class('web-civi-checkbox-set')),
+        'js_select' => webform_civicrm_js_select($fs),
+      );
+      foreach ($sets as $sid => $set) {
+        if ($set['entity_type'] == 'participant') {
+          foreach ($set['fields'] as $fid => $field) {
+            $id = 'civicrm_' . $n . '_participant_' . $e . '_' . $fid;
+            $item = webform_civicrm_configure_form_item($id, $field, $settings);
+            if ($fid == 'participant_event_id') {
+              $form['event']['participants'][$n]['div'][$fs][$id] = $item;
+              webform_civicrm_ajax_form_item($form, "event:participants:{$n}:div:{$fs}", $id, 'fields');
+            }
+            else {
+              $form['event']['participants'][$n]['div'][$fs]['fields'][$id] = $item;
+            }
+          }
+        }
+      }
+    }
   }
+
+  // Contact settings
   $form['number_of_contacts'] = array(
     '#type' => 'select',
     '#title' => t('Number of Contacts'),
-    '#default_value' => $contacts = count($data['contact']),
-    '#options' => $nums,
+    '#default_value' => $contacts,
+    '#options' => drupal_map_assoc(range(1, 30)),
     '#description' => t('How many contacts would you like on this form?'),
   );
   $form['change_form_settings'] = array(
@@ -339,22 +404,17 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
         if (!isset($c['number_of_' . $sid])) {
           $c['number_of_' . $sid] = 0;
         }
-        $numbers = array();
-        for ($i = 0; $i <= $set['max_instances']; ++$i) {
-          $numbers[$i] = $i;
-        }
-        $pos[$n . '_number_of_' . $sid] = array(
+        $pos['contact_' . $n . '_number_of_' . $sid] = array(
           '#type' => 'select',
           '#title' => t('Number of %type Fields', array('%type' => $sid == 'relationship' ? t('Relationship') : $set['label'])),
           '#default_value' => $c['number_of_' . $sid],
-          '#options' => $numbers,
+          '#options' => range(0, $set['max_instances']),
         );
         if ($hide) {
-          $pos[$n . '_number_of_' . $sid]['#prefix'] = '<div class="hidden">';
-          $pos[$n . '_number_of_' . $sid]['#suffix'] = '</div>';
+          $pos['contact_' . $n . '_number_of_' . $sid]['#prefix'] = '<div class="hidden">';
+          $pos['contact_' . $n . '_number_of_' . $sid]['#suffix'] = '</div>';
         }
-        webform_civicrm_ajax_form_item($form, $path, $n . '_number_of_' . $sid, $n . $sid . '_wrapper');
-
+        webform_civicrm_ajax_form_item($form, $path, 'contact_' . $n . '_number_of_' . $sid, $n . $sid . '_wrapper');
       }
       else {
         $c['number_of_' . $sid] = 1;
@@ -476,9 +536,9 @@ function webform_civicrm_process_form_settings(&$vals) {
   }
   foreach ($vals as $key => $val) {
     if (strpos($key, '_number_of_') !== FALSE) {
-      list($n, $k) = explode('_', $key, 2);
-      if (isset($data['contact'][$n])) {
-        $data['contact'][$n][$k] = $val;
+      list($ent, $n, $k) = explode('_', $key, 3);
+      if (isset($data[$ent][$n]) || $ent == 'participant') {
+        $data[$ent][$n][$k] = $val;
       }
     }
   }
@@ -503,6 +563,8 @@ function webform_civicrm_process_form_settings(&$vals) {
       $data['case'][1]['case'][1]['medium_id'] = $vals['case_medium_id'];
     }
   }
+  $data['event_type'] = $vals['event_type'];
+  $data['participant_reg_type'] = $vals['participant_reg_type'];
   $vals['data'] = $data;
 }
 
@@ -543,6 +605,9 @@ function webform_civicrm_configure_form_item($fid, $field, $settings, $empty_opt
     else {
       $options = array_keys($lists[$name]);
       $item['#default_value'] = $options[1];
+    }
+    if ($table == 'address' && $name == 'master_id') {
+      $item['#attributes']['onchange'] = "web_civi_master_id($c, $n);";
     }
   }
   // Create checkbox

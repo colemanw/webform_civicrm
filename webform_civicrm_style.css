@@ -26,6 +26,7 @@ form .hidden, .js #no-js-button-wrapper {
 }
 
 #webform-civicrm-configure-form .form-item label {
+  display:inline;
 }
 
 th div.form-type-radio {

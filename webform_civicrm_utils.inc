@@ -487,6 +487,16 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
   elseif ($option_group == 'location_type') {
     $sql = 'SELECT name AS label, id AS value FROM civicrm_location_type WHERE is_active <> 0 ORDER BY is_default DESC';
   }
+  elseif ($option_group == 'event_id') {
+    $sql = 'SELECT title AS label, id AS value FROM civicrm_event WHERE is_template = 0';
+    if ($param == 'current') {
+      $sql .= ' AND end_date >= NOW()';
+    }
+    else {
+      $sql .= ' AND event_type_id = ' . $param;
+    }
+    $sql .= ' ORDER BY start_date DESC';
+  }
   elseif ($option_group == 'group_contact') {
     $result = webform_civicrm_api('group_contact', 'get', array('group_id' => $param, 'options' => array('limit' => 100)));
     if (empty($result['values'])) {
@@ -525,7 +535,8 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
 /**
  * Get options for a specific field
  * @Param $key: field key
- * @Param $format: Can return values as a Webform-style string, or a FAPI style array. Specify 'str' or 'arr', matey!
+ * @Param $format: Can return values as a Webform-style string, or a FAPI style array.
+ *                 Specify 'str' or 'arr', matey!
  * @Param $data: CiviCRM entity data
  */
 function webform_civicrm_field_options($key, $format, $data) {
@@ -557,12 +568,17 @@ function webform_civicrm_field_options($key, $format, $data) {
         }
       }
     }
+    elseif ($name == 'status_id' && $table == 'participant') {
+      require_once 'CRM/Event/PseudoConstant.php';
+      $ret = CRM_Event_PseudoConstant::participantStatus(NULL, NULL, 'label');
+    }
     elseif (isset($lists[$name])) {
       $param = NULL;
-      if ($name == 'assignee_contact_id') {
-        $param = empty($data['activity'][1]['assignee_group']) ? 0 : $data['activity'][1]['assignee_group'];
+      if ($name == 'event_id') {
+        $param = webform_civicrm_aval($data, 'event_type', 'current');
       }
-      if ($lists[$name] == 'group_contact' && !$param) {
+      if ($name == 'assignee_contact_id'
+        && !($param = webform_civicrm_aval($data, 'activity:1:assignee_group'))) {
         foreach ($data['contact'] as $num => $contact) {
           $ret['#' . $num] =  t('Contact !num', array('!num' => $num));
         }
@@ -1081,7 +1097,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'value' => '1',
     );
     $fields['relationship_relationship_permission'] = array(
-      'name' => t('Relationship Permission'),
+      'name' => t('Relationship to Contact # Permission'),
       'type' => 'select',
       'expose_list' => TRUE,
       'do_not_cache' => TRUE,
@@ -1101,6 +1117,23 @@ function webform_civicrm_get_fields($var = 'fields') {
         'start_date' => '-50 years',
         'end_date' => '+50 years',
       ),
+    );
+    $fields['participant_event_id'] = array(
+      'name' => t('Event'),
+      'type' => 'select',
+      'expose_list' => TRUE,
+    );
+    $fields['participant_role_id'] = array(
+      'name' => t('Participant Role'),
+      'type' => 'select',
+      'expose_list' => TRUE,
+      'value' => '1',
+    );
+    $fields['participant_status_id'] = array(
+      'name' => t('Registration Status'),
+      'type' => 'select',
+      'expose_list' => TRUE,
+      'value' => '1',
     );
 
     $tokens = array(
@@ -1148,6 +1181,8 @@ function webform_civicrm_get_fields($var = 'fields') {
       'groups_hidden' => 'groups',
       'assignee_contact_id' => 'group_contact',
       'status_id' => 'activity_status',
+      'event_id' => 'event_id',
+      'role_id' => 'participant_role'
     );
 
     $sets = array(
@@ -1159,6 +1194,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'website' => array('entity_type' => 'contact', 'label' => t('Website'), 'max_instances' => 9),
       'activity' => array('entity_type' => 'activity', 'label' => t('Expose Activity Fields')),
       'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship to Contact')),
+      'participant' => array('entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9),
     );
 
     // Pull custom fields and match to Webform element types
@@ -1183,7 +1219,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       SELECT cf.*, cg.title AS custom_group_name, LOWER(cg.extends) AS entity_type, cg.extends_entity_column_value AS sub_types, cg.is_multiple, cg.max_multiple, cg.id AS custom_group_id
       FROM civicrm_custom_field cf
       INNER JOIN civicrm_custom_group cg ON cg.id = cf.custom_group_id
-      WHERE cf.is_active <> 0 AND cg.extends IN ('contact','individual','organization','household','address','activity') AND cg.is_active <> 0
+      WHERE cf.is_active <> 0 AND cg.extends IN ('contact','individual','organization','household','address','activity', 'participant') AND cg.is_active <> 0
       ORDER BY cf.custom_group_id, cf.weight";
     $dao = &CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {
@@ -1194,7 +1230,7 @@ function webform_civicrm_get_fields($var = 'fields') {
         else {
           $set = 'cg' . $dao->custom_group_id;
           $sets[$set]['label'] = $dao->custom_group_name;
-          if ($dao->entity_type != 'activity') {
+          if ($dao->entity_type != 'activity' && $dao->entity_type != 'participant') {
             $sets[$set]['entity_type'] = 'contact';
             if ($dao->entity_type != 'contact') {
               $sets[$set]['contact_type'] = $dao->entity_type;
@@ -1207,7 +1243,7 @@ function webform_civicrm_get_fields($var = 'fields') {
             }
           }
           else {
-            $sets[$set]['entity_type'] = 'activity';
+            $sets[$set]['entity_type'] = $dao->entity_type;
           }
           if ($dao->sub_types) {
             $sets[$set]['sub_types'] = explode($sp, trim($dao->sub_types, $sp));

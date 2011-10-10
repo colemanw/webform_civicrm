@@ -1,5 +1,20 @@
+function web_civi_master_id(n, c) {
+  id = '#edit-civicrm-'+n+'-contact-'+c+'-address-master-id';
+
+  switch (jQuery(id).val()) {
+    case 'create_civicrm_webform_element':
+    case '0':
+      jQuery(id).parent().parent().find('input:checkbox').removeAttr('disabled');
+      jQuery(id).parent().parent().find('div.form-type-checkbox').show(300);
+      break;
+    default:
+      jQuery(id).parent().parent().find('input:checkbox').attr('disabled', 'disabled');
+      jQuery(id).parent().parent().find('div.form-type-checkbox').hide(300);
+  }
+}
+
 function web_civi_select_reset(op, id) {
-    id = "#js-select-" + id;
+  id = "#js-select-" + id;
   switch (op) {
     case 'reset':
       jQuery(id).parent().find('input:checkbox').each(function() {
@@ -101,6 +116,8 @@ function web_civi_select_reset(op, id) {
     $('select[id*=contact-type], select[id*=contact-sub-type]').change(function(){
       webform_civicrm_relationship_options();
     });
+
+    $('select[id$=address-master-id]').change();
 
     $('#edit-number-of-contacts').change(function(){
       $('#webform-civicrm-configure-form')[0].submit();
