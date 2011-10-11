@@ -488,11 +488,11 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
     $sql = 'SELECT name AS label, id AS value FROM civicrm_location_type WHERE is_active <> 0 ORDER BY is_default DESC';
   }
   elseif ($option_group == 'event_id') {
-    $sql = "SELECT CONCAT(title, DATE_FORMAT(start_date, ': %e-%Y')) AS label, id AS value FROM civicrm_event WHERE is_template = 0";
+    $sql = "SELECT CONCAT(title, DATE_FORMAT(start_date, ': %c/%Y')) AS label, CONCAT(id, '-', event_type_id) AS value FROM civicrm_event WHERE is_template = 0";
     if ($param == 'current') {
       $sql .= ' AND end_date >= NOW()';
     }
-    else {
+    elseif ($param) {
       $sql .= ' AND event_type_id = ' . $param;
     }
     $sql .= ' ORDER BY start_date DESC';
@@ -1473,6 +1473,10 @@ function webform_civicrm_js_options($key, $str='') {
 
 /**
  * Return a value from an array.
+ * @param $haystack: the array to search
+ * @param $keys: pass a single key, or multiple keys separated by : to get a nested value
+ * @param $default: value to return if given array key does not exist
+ * @return: found value or default
  */
 function webform_civicrm_aval($haystack, $keys, $default = NULL) {
   foreach(explode(':', $keys) as $key) {
@@ -1483,16 +1487,6 @@ function webform_civicrm_aval($haystack, $keys, $default = NULL) {
       return $default;
     }
   }
+  // $haystack has been reduced down to the item we want
   return $haystack;
-}
-
-/**
- * Fetch the event type of an event.
- */
-function webform_civicrm_event_type($eid) {
-  if ($eid && is_numeric($eid)) {
-    $query = 'SELECT event_type_id FROM civicrm_event WHERE id = ' . $eid;
-    return CRM_Core_DAO::singleValueQuery($query);
-  }
-  return 0;
 }

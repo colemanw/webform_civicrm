@@ -303,30 +303,22 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     );
     webform_civicrm_ajax_form_item($form, "event:participants:{$n}", 'participant_' . $n . '_number_of_participant', 'div');
     for ($e = 1; $e <= $num; ++$e) {
-      $fs = $n . 'participant_' . '_' . $e . '_fieldset';
+      $fs = "participant_{$n}_event_{$e}_fieldset";
       $form['event']['participants'][$n]['div'][$fs] = array(
         '#type' => 'fieldset',
         '#title' => t('Event !num', array('!num' => $e)),
-        '#attributes' => array('class' => webform_civicrm_fapi_class('web-civi-checkbox-set')),
+        '#attributes' => array('id' => $fs, 'class' => webform_civicrm_fapi_class('web-civi-checkbox-set')),
         'js_select' => webform_civicrm_js_select($fs),
       );
-      $etype = 0;
       foreach ($sets as $sid => $set) {
         if ($set['entity_type'] == 'participant') {
-          if (!empty($set['sub_types']) && !in_array($etype, $set['sub_types'])) {
-            continue;
-          }
           foreach ($set['fields'] as $fid => $field) {
             $id = 'civicrm_' . $n . '_participant_' . $e . '_' . $fid;
             $item = webform_civicrm_configure_form_item($id, $field, $settings);
-            if ($fid == 'participant_event_id') {
-              $form['event']['participants'][$n]['div'][$fs][$id] = $item;
-              webform_civicrm_ajax_form_item($form, "event:participants:{$n}:div:{$fs}", $id, 'fields');
-              $etype = webform_civicrm_event_type($item['#default_value']);
+            if ($fid == 'participant_event_id' || $fid == 'participant_role_id') {
+              $item['#attributes']['onchange'] = "web_civi_participant_conditional('#$fs');";
             }
-            else {
-              $form['event']['participants'][$n]['div'][$fs]['fields'][$id] = $item;
-            }
+            $form['event']['participants'][$n]['div'][$fs][$id] = $item;
           }
         }
       }

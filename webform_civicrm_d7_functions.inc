@@ -50,7 +50,7 @@ function webform_civicrm_add_js($js, $type = 'file') {
 /**
  * Add an ajax container to a form, and set an existing form element to control it
  * @param $form: the entire form
- * @param $pathstr: a . separated string of nested array keys leading to the relevant form snippet
+ * @param $pathstr: a : separated string of nested array keys leading to the relevant form snippet
  * @param $control_element: str. Array key of the existing element to add ajax behavior to
  * @param $container: str. Array key of the container to be created
  */
@@ -102,22 +102,24 @@ function theme_webform_civicrm_options($variables) {
     drupal_add_tabledrag('civicrm-options-table', 'order', 'self', 'civicrm-option-weight');
   }
   foreach (element_children($element['civicrm_defaults']) as $k) {
-    $v = str_replace('_web_civi_option_selected_', '', $k);
-    $row = array(drupal_render($element['civicrm_option_name_' . $v]));
-    if (!empty($element['civicrm_options'])) {
-      $element['civicrm_option_weight_' . $v]['#attributes']['class'] = webform_civicrm_fapi_class('civicrm-option-weight');
-      $element['civicrm_options'][$k]['#attributes']['class'] = webform_civicrm_fapi_class('civicrm-enabled');
-      $element['civicrm_option_label_' . $v]['#attributes']['class'] = webform_civicrm_fapi_class('civicrm-label');
-      $row[] = drupal_render($element['civicrm_option_weight_' . $v]);
-      $row[] = drupal_render($element['civicrm_options'][$k]);
-      $row[] = drupal_render($element['civicrm_option_label_' . $v]);
+    if ($k) {
+      $v = str_replace('_web_civi_option_selected_', '', $k);
+      $row = array(drupal_render($element['civicrm_option_name_' . $v]));
+      if (!empty($element['civicrm_options'])) {
+        $element['civicrm_option_weight_' . $v]['#attributes']['class'] = webform_civicrm_fapi_class('civicrm-option-weight');
+        $element['civicrm_options'][$k]['#attributes']['class'] = webform_civicrm_fapi_class('civicrm-enabled');
+        $element['civicrm_option_label_' . $v]['#attributes']['class'] = webform_civicrm_fapi_class('civicrm-label');
+        $row[] = drupal_render($element['civicrm_option_weight_' . $v]);
+        $row[] = drupal_render($element['civicrm_options'][$k]);
+        $row[] = drupal_render($element['civicrm_option_label_' . $v]);
+      }
+      $element['civicrm_defaults'][$k]['#attributes']['class'] = webform_civicrm_fapi_class('civicrm-default');
+      $row[] = drupal_render($element['civicrm_defaults'][$k]);
+      $table['rows'][] = array(
+        'data' => $row,
+        'class' => webform_civicrm_fapi_class('draggable'),
+      );
     }
-    $element['civicrm_defaults'][$k]['#attributes']['class'] = webform_civicrm_fapi_class('civicrm-default');
-    $row[] = drupal_render($element['civicrm_defaults'][$k]);
-    $table['rows'][] = array(
-      'data' => $row,
-      'class' => webform_civicrm_fapi_class('draggable'),
-    );
   }
   drupal_render_children($element);
   return theme('table', $table);
