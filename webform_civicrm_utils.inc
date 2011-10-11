@@ -485,9 +485,12 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
     }
   }
   elseif ($option_group == 'location_type') {
-    $sql = 'SELECT name AS label, id AS value FROM civicrm_location_type WHERE is_active <> 0 ORDER BY is_default DESC';
+    $sql = 'SELECT name AS label, id AS value FROM civicrm_location_type WHERE is_active = 1 ORDER BY is_default DESC';
   }
-  elseif ($option_group == 'event_id') {
+  elseif ($option_group == 'campaign') {
+    $sql = 'SELECT title AS label, id AS value FROM civicrm_campaign WHERE is_active = 1 AND (end_date >= NOW() OR end_date IS NULL) ORDER BY start_date DESC';
+  }
+  elseif ($option_group == 'event') {
     $sql = "SELECT CONCAT(title, DATE_FORMAT(start_date, ': %c/%Y')) AS label, CONCAT(id, '-', event_type_id) AS value FROM civicrm_event WHERE is_template = 0";
     if ($param == 'current') {
       $sql .= ' AND end_date >= NOW()';
@@ -550,18 +553,16 @@ function webform_civicrm_field_options($key, $format, $data) {
       $ret = array($contact_types[$data['contact'][$c]['contact'][1]['contact_type']]) + $sub_types[$data['contact'][$c]['contact'][1]['contact_type']];
     }
     elseif ($name == 'relationship_type_id') {
-      $ret = array(t('No Relationship')) + webform_civicrm_get_contact_relationship_types($data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][$n]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$n]['contact'][1]['contact_sub_type']);
+      $ret = webform_civicrm_get_contact_relationship_types($data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][$n]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$n]['contact'][1]['contact_sub_type']);
     }
     elseif ($name == 'relationship_permission') {
       $ret = array(
-        t('No Permissions'),
         t('Contact !a may view and edit contact !b', array('!a' => $c, '!b' => $n)),
         t('Contact !a may view and edit contact !b', array('!a' => $n, '!b' => $c)),
         t('Both contacts may view and edit each other'),
       );
     }
     elseif ($name == 'master_id') {
-      $ret[] = t('- do not share -');
       foreach ($data['contact'] as $num => $contact) {
         if ($num != $c) {
           $ret[$num] =  t('Contact !num', array('!num' => $num));
@@ -1013,6 +1014,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'expose_list' => TRUE,
       'do_not_cache' => TRUE,
       'extra' => array('description' => t('Will overwrite address fields with those of the other contact.')),
+      'empty_option' => t('- do not share -'),
     );
     $fields['phone_phone'] = array(
       'name' => t('Phone Number'),
@@ -1082,6 +1084,13 @@ function webform_civicrm_get_fields($var = 'fields') {
       'type' => 'select',
       'expose_list' => TRUE,
       'do_not_cache' => TRUE,
+      'empty_option' => t('- no one -')
+    );
+    $fields['activity_campaign_id'] = array(
+      'name' => t('Campaign'),
+      'type' => 'select',
+      'expose_list' => TRUE,
+      'empty_option' => t('- none -'),
     );
     $fields['relationship_relationship_type_id'] = array(
       'name' => t('Relationship to Contact #'),
@@ -1089,6 +1098,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'value' => '0',
       'expose_list' => TRUE,
       'do_not_cache' => TRUE,
+      'empty_option' => t('- no relationship -'),
     );
     $fields['relationship_is_active'] = array(
       'name' => t('Relationship to Contact # Is Active'),
@@ -1101,6 +1111,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'type' => 'select',
       'expose_list' => TRUE,
       'do_not_cache' => TRUE,
+      'empty_option' => t('- no permissions -'),
     );
     $fields['relationship_start_date'] = array(
       'name' => t('Relationship to Contact # Start Date'),
@@ -1134,6 +1145,12 @@ function webform_civicrm_get_fields($var = 'fields') {
       'type' => 'select',
       'expose_list' => TRUE,
       'value' => '1',
+    );
+    $fields['participant_campaign_id'] = array(
+      'name' => t('Campaign'),
+      'type' => 'select',
+      'expose_list' => TRUE,
+      'empty_option' => t('- none -'),
     );
 
     $tokens = array(
@@ -1181,8 +1198,9 @@ function webform_civicrm_get_fields($var = 'fields') {
       'groups_hidden' => 'groups',
       'assignee_contact_id' => 'group_contact',
       'status_id' => 'activity_status',
-      'event_id' => 'event_id',
-      'role_id' => 'participant_role'
+      'event_id' => 'event',
+      'role_id' => 'participant_role',
+      'campaign_id' => 'campaign',
     );
 
     $sets = array(

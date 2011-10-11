@@ -208,7 +208,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     webform_civicrm_ajax_form_item($form, 'act:case:activity_fields', 'activity_assignee_group', 'assignee');
     // Activity assignee
     $fid = 'civicrm_1_activity_1_activity_assignee_contact_id';
-    $form['act']['case']['activity_fields']['assignee'][$fid] = webform_civicrm_configure_form_item($fid, $fields['activity_assignee_contact_id'], $settings, t('- no one -'));
+    $form['act']['case']['activity_fields']['assignee'][$fid] = webform_civicrm_configure_form_item($fid, $fields['activity_assignee_contact_id'], $settings);
     if (!empty($config->activityAssigneeNotification)) {
       $form['act']['case']['activity_fields']['assignee'][$fid]['#description'] = t('A copy of this activity will be emailed to the assignee.');
     }
@@ -569,7 +569,7 @@ function webform_civicrm_process_form_settings(&$vals) {
 /**
  * Build a field item for the configure form
  */
-function webform_civicrm_configure_form_item($fid, $field, $settings, $empty_option = '') {
+function webform_civicrm_configure_form_item($fid, $field, $settings) {
   static $lists = array();
   if (!$lists) {
     $lists = webform_civicrm_get_fields('lists');
@@ -582,8 +582,8 @@ function webform_civicrm_configure_form_item($fid, $field, $settings, $empty_opt
     // Retrieve option list and cache (except for dynamic types)
     if (!is_array($lists[$name]) || !empty($field['do_not_cache'])) {
       $lists[$name] = array('create_civicrm_webform_element' => t('-user select-'));
-      if ($empty_option) {
-        $lists[$name] += array($empty_option);
+      if (!empty($field['empty_option'])) {
+        $lists[$name] += array($field['empty_option']);
       }
       $lists[$name] += webform_civicrm_field_options($fid, 'arr', $settings['data']);
     }
@@ -591,7 +591,7 @@ function webform_civicrm_configure_form_item($fid, $field, $settings, $empty_opt
       '#type' => 'select',
       '#title' => $field['name'],
       '#options' => $lists[$name],
-      '#default_value' => $empty_option ? 0 : NULL,
+      '#default_value' => !empty($field['empty_option']) ? 0 : NULL,
     );
     if (isset($settings[$fid])) {
       $item['#default_value'] = $settings[$fid];
