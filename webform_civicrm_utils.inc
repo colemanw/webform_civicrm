@@ -368,7 +368,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       ));
     }
     if (!empty($data['activity'][1])) {
-      $config = &CRM_Core_Config::singleton();
+      $config = CRM_Core_Config::singleton();
       $params = $data['activity'][1]['activity'][1];
       $params['source_contact_id'] = $id['cid'][1];
       $params['activity_date_time'] = date('YmdHis');
@@ -509,6 +509,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
     foreach ($result['values'] as $val) {
       $in[$val['contact_id']] = $val['contact_id'];
     }
+    // Because group_contact API doesn't fetch names, we still have to run a query.
     $sql = 'SELECT id AS value, display_name AS label FROM civicrm_contact WHERE id IN ('. implode(',', $in) . ') ORDER BY sort_name';
   }
   else {
@@ -557,9 +558,9 @@ function webform_civicrm_field_options($key, $format, $data) {
     }
     elseif ($name == 'relationship_permission') {
       $ret = array(
-        t('Contact !a may view and edit contact !b', array('!a' => $c, '!b' => $n)),
-        t('Contact !a may view and edit contact !b', array('!a' => $n, '!b' => $c)),
-        t('Both contacts may view and edit each other'),
+        1 => t('Contact !a may view and edit contact !b', array('!a' => $c, '!b' => $n)),
+        2 => t('Contact !a may view and edit contact !b', array('!a' => $n, '!b' => $c)),
+        3 => t('Both contacts may view and edit each other'),
       );
     }
     elseif ($name == 'master_id') {
@@ -902,6 +903,8 @@ function webform_civicrm_get_fields($var = 'fields') {
   static $sets = array();
 
   if (!$fields) {
+    $config = CRM_Core_Config::singleton();
+    $components = $config->enableComponents;
     // Field keys are in the format table_column
     // Use a # sign as a placeholder for field number in the title (or by default it will be appended to the end)
     // Setting 'expose_list' allows the value to be set on the config form
@@ -1086,12 +1089,14 @@ function webform_civicrm_get_fields($var = 'fields') {
       'do_not_cache' => TRUE,
       'empty_option' => t('- no one -')
     );
-    $fields['activity_campaign_id'] = array(
-      'name' => t('Campaign'),
-      'type' => 'select',
-      'expose_list' => TRUE,
-      'empty_option' => t('- none -'),
-    );
+    if (in_array('CiviCampaign', $components)) {
+      $fields['activity_campaign_id'] = array(
+        'name' => t('Campaign'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'empty_option' => t('- none -'),
+      );
+    }
     $fields['relationship_relationship_type_id'] = array(
       'name' => t('Relationship to Contact #'),
       'type' => 'select',
@@ -1129,29 +1134,33 @@ function webform_civicrm_get_fields($var = 'fields') {
         'end_date' => '+50 years',
       ),
     );
-    $fields['participant_event_id'] = array(
-      'name' => t('Event'),
-      'type' => 'select',
-      'expose_list' => TRUE,
-    );
-    $fields['participant_role_id'] = array(
-      'name' => t('Participant Role'),
-      'type' => 'select',
-      'expose_list' => TRUE,
-      'value' => '1',
-    );
-    $fields['participant_status_id'] = array(
-      'name' => t('Registration Status'),
-      'type' => 'select',
-      'expose_list' => TRUE,
-      'value' => '1',
-    );
-    $fields['participant_campaign_id'] = array(
-      'name' => t('Campaign'),
-      'type' => 'select',
-      'expose_list' => TRUE,
-      'empty_option' => t('- none -'),
-    );
+    if (in_array('CiviEvent', $components)) {
+      $fields['participant_event_id'] = array(
+        'name' => t('Event'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+      );
+      $fields['participant_role_id'] = array(
+        'name' => t('Participant Role'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'value' => '1',
+      );
+      $fields['participant_status_id'] = array(
+        'name' => t('Registration Status'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'value' => '1',
+      );
+      if (in_array('CiviCampaign', $components)) {
+        $fields['participant_campaign_id'] = array(
+          'name' => t('Campaign'),
+          'type' => 'select',
+          'expose_list' => TRUE,
+          'empty_option' => t('- none -'),
+        );
+      }
+    }
 
     $tokens = array(
       'display_name' => t('display name'),
@@ -1212,8 +1221,10 @@ function webform_civicrm_get_fields($var = 'fields') {
       'website' => array('entity_type' => 'contact', 'label' => t('Website'), 'max_instances' => 9),
       'activity' => array('entity_type' => 'activity', 'label' => t('Expose Activity Fields')),
       'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship to Contact')),
-      'participant' => array('entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9),
     );
+    if (in_array('CiviEvent', $components)) {
+      $sets['participant'] = array('entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9);
+    }
 
     // Pull custom fields and match to Webform element types
     $custom_types = array(
@@ -1233,11 +1244,15 @@ function webform_civicrm_get_fields($var = 'fields') {
       'Multi-Select State/Province' => array('type' => 'select', 'extra' => array('multiple' => 1)),
     );
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
+    $custom_extends = "'contact','individual','organization','household','address','activity'";
+    if (in_array('CiviEvent', $components)) {
+      $custom_extends .= ",'participant'";
+    }
     $sql = "
       SELECT cf.*, cg.title AS custom_group_name, LOWER(cg.extends) AS entity_type, cg.extends_entity_column_value AS sub_types, cg.is_multiple, cg.max_multiple, cg.id AS custom_group_id
       FROM civicrm_custom_field cf
       INNER JOIN civicrm_custom_group cg ON cg.id = cf.custom_group_id
-      WHERE cf.is_active <> 0 AND cg.extends IN ('contact','individual','organization','household','address','activity', 'participant') AND cg.is_active <> 0
+      WHERE cf.is_active <> 0 AND cg.extends IN ($custom_extends) AND cg.is_active <> 0
       ORDER BY cf.custom_group_id, cf.weight";
     $dao = &CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {

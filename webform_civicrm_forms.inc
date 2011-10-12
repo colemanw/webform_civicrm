@@ -136,15 +136,16 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     '#title' => t('Create Activity'),
     '#description' => t('Create an activity for contacts when this form is submitted?'),
   );
-  if ($case_types = webform_civicrm_get_options('case_type')) {
+  if (in_array('CiviCase', $config->enableComponents)
+  && $case_types = webform_civicrm_get_options('case_type')) {
     $form['act']['case_type_id'] = array(
       '#type' => 'select',
       '#title' => t('CiviCase Type'),
       '#description' => t('Is this activity part of a case?'),
       '#options' => array(t('- no case -')) + $case_types,
     );
+    webform_civicrm_ajax_form_item($form, 'act', 'case_type_id', 'case');
   }
-  webform_civicrm_ajax_form_item($form, 'act', 'case_type_id', 'case');
   $param = NULL;
   if (!empty($data['case'][1]['case'][1]['case_type_id'])) {
     $form['act']['case_type_id']['#default_value'] = $data['case'][1]['case'][1]['case_type_id'];
@@ -261,64 +262,66 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
   }
 
   // Event participant settings
-  $form['event'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Register Event Participants'),
-  );
-  $reg_type = webform_civicrm_aval($data, 'participant_reg_type');
-  $form['event']['participant_reg_type'] = array(
-    '#type' => 'select',
-    '#title' => t('Registration Method'),
-    '#default_value' => $reg_type,
-    '#options' => array(
-      t('- no event registration -'),
-      'all' => t('Register all contacts for the same event(s)'),
-      'separate' => t('Register each contact separately'),
-    ),
-  );
-  $form['event']['event_type'] = array(
-    '#type' => 'select',
-    '#title' => t('Event Type'),
-    '#options' => array('current' => t('Upcoming Events')) + webform_civicrm_get_options('event_type'),
-    '#default_value' => webform_civicrm_aval($data, 'event_type', 'current'),
-  );
-  webform_civicrm_ajax_form_item($form, 'event', 'participant_reg_type', 'participants');
-  webform_civicrm_ajax_form_item($form, 'event', 'event_type', 'participants');
-  for ($n = 1; $n <= $contacts; ++$n) {
-    $class = (!$reg_type || ($reg_type == 'all' && $n > 1)) ? 'class="hidden"' : '';
-    $form['event']['participants'][$n] = array(
+  if (in_array('CiviEvent', $config->enableComponents)) {
+    $form['event'] = array(
       '#type' => 'fieldset',
-      '#title' => $reg_type == 'all' && $n == 1 ? t('Registration') : t('Contact !num', array('!num' => $n)),
-      '#prefix' => "<div id=\"participant-fieldset-$n\" $class>",
-      '#suffix' => '</div>',
+      '#title' => t('Register Event Participants'),
     );
-    if (!($num = webform_civicrm_aval($data, "participant:{$n}:number_of_participant")) || ($n > 1 && $reg_type == 'all')) {
-      $num = 0;
-    }
-    $form['event']['participants'][$n]['participant_' . $n . '_number_of_participant'] = array(
+    $reg_type = webform_civicrm_aval($data, 'participant_reg_type');
+    $form['event']['participant_reg_type'] = array(
       '#type' => 'select',
-      '#title' => $reg_type == 'all' ? t('Number of Events') : t('Number of Events for Contact !num', array('!num' => $n)),
-      '#default_value' => $num,
-      '#options' => range(0, $sets['participant']['max_instances']),
+      '#title' => t('Registration Method'),
+      '#default_value' => $reg_type,
+      '#options' => array(
+        t('- no event registration -'),
+        'all' => t('Register all contacts for the same event(s)'),
+        'separate' => t('Register each contact separately'),
+      ),
     );
-    webform_civicrm_ajax_form_item($form, "event:participants:{$n}", 'participant_' . $n . '_number_of_participant', 'div');
-    for ($e = 1; $e <= $num; ++$e) {
-      $fs = "participant_{$n}_event_{$e}_fieldset";
-      $form['event']['participants'][$n]['div'][$fs] = array(
+    $form['event']['event_type'] = array(
+      '#type' => 'select',
+      '#title' => t('Event Type'),
+      '#options' => array('current' => t('Upcoming Events')) + webform_civicrm_get_options('event_type'),
+      '#default_value' => webform_civicrm_aval($data, 'event_type', 'current'),
+    );
+    webform_civicrm_ajax_form_item($form, 'event', 'participant_reg_type', 'participants');
+    webform_civicrm_ajax_form_item($form, 'event', 'event_type', 'participants');
+    for ($n = 1; $n <= $contacts; ++$n) {
+      $class = (!$reg_type || ($reg_type == 'all' && $n > 1)) ? 'class="hidden"' : '';
+      $form['event']['participants'][$n] = array(
         '#type' => 'fieldset',
-        '#title' => t('Event !num', array('!num' => $e)),
-        '#attributes' => array('id' => $fs, 'class' => webform_civicrm_fapi_class('web-civi-checkbox-set')),
-        'js_select' => webform_civicrm_js_select($fs),
+        '#title' => $reg_type == 'all' && $n == 1 ? t('Registration') : t('Contact !num', array('!num' => $n)),
+        '#prefix' => "<div id=\"participant-fieldset-$n\" $class>",
+        '#suffix' => '</div>',
       );
-      foreach ($sets as $sid => $set) {
-        if ($set['entity_type'] == 'participant') {
-          foreach ($set['fields'] as $fid => $field) {
-            $id = 'civicrm_' . $n . '_participant_' . $e . '_' . $fid;
-            $item = webform_civicrm_configure_form_item($id, $field, $settings);
-            if ($fid == 'participant_event_id' || $fid == 'participant_role_id') {
-              $item['#attributes']['onchange'] = "web_civi_participant_conditional('#$fs');";
+      if (!($num = webform_civicrm_aval($data, "participant:{$n}:number_of_participant")) || ($n > 1 && $reg_type == 'all')) {
+        $num = 0;
+      }
+      $form['event']['participants'][$n]['participant_' . $n . '_number_of_participant'] = array(
+        '#type' => 'select',
+        '#title' => $reg_type == 'all' ? t('Number of Events') : t('Number of Events for Contact !num', array('!num' => $n)),
+        '#default_value' => $num,
+        '#options' => range(0, $sets['participant']['max_instances']),
+      );
+      webform_civicrm_ajax_form_item($form, "event:participants:{$n}", 'participant_' . $n . '_number_of_participant', 'div');
+      for ($e = 1; $e <= $num; ++$e) {
+        $fs = "participant_{$n}_event_{$e}_fieldset";
+        $form['event']['participants'][$n]['div'][$fs] = array(
+          '#type' => 'fieldset',
+          '#title' => t('Event !num', array('!num' => $e)),
+          '#attributes' => array('id' => $fs, 'class' => webform_civicrm_fapi_class('web-civi-checkbox-set')),
+          'js_select' => webform_civicrm_js_select($fs),
+        );
+        foreach ($sets as $sid => $set) {
+          if ($set['entity_type'] == 'participant') {
+            foreach ($set['fields'] as $fid => $field) {
+              $id = 'civicrm_' . $n . '_participant_' . $e . '_' . $fid;
+              $item = webform_civicrm_configure_form_item($id, $field, $settings);
+              if ($fid == 'participant_event_id' || $fid == 'participant_role_id') {
+                $item['#attributes']['onchange'] = "web_civi_participant_conditional('#$fs');";
+              }
+              $form['event']['participants'][$n]['div'][$fs][$id] = $item;
             }
-            $form['event']['participants'][$n]['div'][$fs][$id] = $item;
           }
         }
       }
