@@ -514,16 +514,13 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
     $sql .= ' ORDER BY start_date DESC';
   }
   elseif ($option_group == 'group_contact') {
-    $result = webform_civicrm_api('group_contact', 'get', array('group_id' => $param, 'options' => array('limit' => 100)));
-    if (empty($result['values'])) {
-      return array();
+    $result = webform_civicrm_api('contact', 'get', array('group' => array($param => 1), 'return.display_name' => 1, 'rowCount' => 100));
+    if (!empty($result['values'])) {
+      foreach ($result['values'] as $val) {
+        $ret[$val['contact_id']] = $val['display_name'];
+      }
     }
-    $in = array();
-    foreach ($result['values'] as $val) {
-      $in[$val['contact_id']] = $val['contact_id'];
-    }
-    // Because group_contact API doesn't fetch names, we still have to run a query.
-    $sql = 'SELECT id AS value, display_name AS label FROM civicrm_contact WHERE id IN ('. implode(',', $in) . ') ORDER BY sort_name';
+    return $ret;
   }
   else {
     $sql = 'SELECT value, label FROM civicrm_option_value WHERE is_active <> 0 AND option_group_id = ';
