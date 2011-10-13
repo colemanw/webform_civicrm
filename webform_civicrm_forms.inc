@@ -563,8 +563,10 @@ function webform_civicrm_process_form_settings(&$vals) {
       $data['case'][1]['case'][1]['medium_id'] = $vals['case_medium_id'];
     }
   }
-  $data['event_type'] = $vals['event_type'];
-  $data['participant_reg_type'] = $vals['participant_reg_type'];
+  if (isset($vals['participant_reg_type'])) {
+    $data['participant_reg_type'] = $vals['participant_reg_type'];
+    $data['event_type'] = $vals['event_type'];
+  }
   $vals['data'] = $data;
 }
 

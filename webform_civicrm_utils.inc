@@ -24,6 +24,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
   // Presave processing - save contact data
   if ($op == 'presave') {
     civicrm_initialize();
+    $config = CRM_Core_Config::singleton();
     require_once 'api/api.php';
     require_once 'CRM/Core/BAO/CustomValueTable.php';
     $enabled = webform_civicrm_enabled_fields($node);
@@ -325,6 +326,18 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
             $tid = $result['id'];
           }
           webform_civicrm_api('entity_tag', 'create', array('contact_id' => $cid, 'tag_id' => $tid));
+        }
+      }
+      // Process event participation
+      if (in_array('CiviEvent', $config->enableComponents) && !empty($data['participant_reg_type'])) {
+        $n = $data['participant_reg_type'] == 'separate' ? $c : 1;
+        if ($p = webform_civicrm_aval($data, "participant:$n:participant")) {
+          foreach ($p as $params) {
+            if (!empty($params['event_id'])) {
+              $params['contact_id'] = $cid;
+              webform_civicrm_api('participant', 'create', $params);
+            }
+          }
         }
       }
     }
