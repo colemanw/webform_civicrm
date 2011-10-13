@@ -24,6 +24,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
   // Presave processing - save contact data
   if ($op == 'presave') {
     civicrm_initialize();
+    $config = CRM_Core_Config::singleton();
     require_once 'api/api.php';
     require_once 'CRM/Core/BAO/CustomValueTable.php';
     $enabled = webform_civicrm_enabled_fields($node);
@@ -327,6 +328,18 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
           webform_civicrm_api('entity_tag', 'create', array('contact_id' => $cid, 'tag_id' => $tid));
         }
       }
+      // Process event participation
+      if (in_array('CiviEvent', $config->enableComponents) && !empty($data['participant_reg_type'])) {
+        $n = $data['participant_reg_type'] == 'separate' ? $c : 1;
+        if ($p = webform_civicrm_aval($data, "participant:$n:participant")) {
+          foreach ($p as $params) {
+            if (!empty($params['event_id'])) {
+              $params['contact_id'] = $cid;
+              webform_civicrm_api('participant', 'create', $params);
+            }
+          }
+        }
+      }
     }
     // Process shared addresses. We do this last so all contacts and addresses will exist.
     foreach ($shared_address as $cid => $shared) {
@@ -368,7 +381,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       ));
     }
     if (!empty($data['activity'][1])) {
-      $config = &CRM_Core_Config::singleton();
+      $config = CRM_Core_Config::singleton();
       $params = $data['activity'][1]['activity'][1];
       $params['source_contact_id'] = $id['cid'][1];
       $params['activity_date_time'] = date('YmdHis');
@@ -485,7 +498,20 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
     }
   }
   elseif ($option_group == 'location_type') {
-    $sql = 'SELECT name AS label, id AS value FROM civicrm_location_type WHERE is_active <> 0 ORDER BY is_default DESC';
+    $sql = 'SELECT name AS label, id AS value FROM civicrm_location_type WHERE is_active = 1 ORDER BY is_default DESC';
+  }
+  elseif ($option_group == 'campaign') {
+    $sql = 'SELECT title AS label, id AS value FROM civicrm_campaign WHERE is_active = 1 AND (end_date >= NOW() OR end_date IS NULL) ORDER BY start_date DESC';
+  }
+  elseif ($option_group == 'event') {
+    $sql = "SELECT CONCAT(title, DATE_FORMAT(start_date, ': %c/%Y')) AS label, CONCAT(id, '-', event_type_id) AS value FROM civicrm_event WHERE is_template = 0";
+    if ($param == 'current') {
+      $sql .= ' AND end_date >= NOW()';
+    }
+    elseif ($param) {
+      $sql .= ' AND event_type_id = ' . $param;
+    }
+    $sql .= ' ORDER BY start_date DESC';
   }
   elseif ($option_group == 'group_contact') {
     $result = webform_civicrm_api('group_contact', 'get', array('group_id' => $param, 'options' => array('limit' => 100)));
@@ -496,6 +522,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
     foreach ($result['values'] as $val) {
       $in[$val['contact_id']] = $val['contact_id'];
     }
+    // Because group_contact API doesn't fetch names, we still have to run a query.
     $sql = 'SELECT id AS value, display_name AS label FROM civicrm_contact WHERE id IN ('. implode(',', $in) . ') ORDER BY sort_name';
   }
   else {
@@ -525,7 +552,8 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
 /**
  * Get options for a specific field
  * @Param $key: field key
- * @Param $format: Can return values as a Webform-style string, or a FAPI style array. Specify 'str' or 'arr', matey!
+ * @Param $format: Can return values as a Webform-style string, or a FAPI style array.
+ *                 Specify 'str' or 'arr', matey!
  * @Param $data: CiviCRM entity data
  */
 function webform_civicrm_field_options($key, $format, $data) {
@@ -539,30 +567,33 @@ function webform_civicrm_field_options($key, $format, $data) {
       $ret = array($contact_types[$data['contact'][$c]['contact'][1]['contact_type']]) + $sub_types[$data['contact'][$c]['contact'][1]['contact_type']];
     }
     elseif ($name == 'relationship_type_id') {
-      $ret = array(t('No Relationship')) + webform_civicrm_get_contact_relationship_types($data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][$n]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$n]['contact'][1]['contact_sub_type']);
+      $ret = webform_civicrm_get_contact_relationship_types($data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][$n]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$n]['contact'][1]['contact_sub_type']);
     }
     elseif ($name == 'relationship_permission') {
       $ret = array(
-        t('No Permissions'),
-        t('Contact !a may view and edit contact !b', array('!a' => $c, '!b' => $n)),
-        t('Contact !a may view and edit contact !b', array('!a' => $n, '!b' => $c)),
-        t('Both contacts may view and edit each other'),
+        1 => t('Contact !a may view and edit contact !b', array('!a' => $c, '!b' => $n)),
+        2 => t('Contact !a may view and edit contact !b', array('!a' => $n, '!b' => $c)),
+        3 => t('Both contacts may view and edit each other'),
       );
     }
     elseif ($name == 'master_id') {
-      $ret[] = t('- do not share -');
       foreach ($data['contact'] as $num => $contact) {
         if ($num != $c) {
           $ret[$num] =  t('Contact !num', array('!num' => $num));
         }
       }
     }
+    elseif ($name == 'status_id' && $table == 'participant') {
+      require_once 'CRM/Event/PseudoConstant.php';
+      $ret = CRM_Event_PseudoConstant::participantStatus(NULL, NULL, 'label');
+    }
     elseif (isset($lists[$name])) {
       $param = NULL;
-      if ($name == 'assignee_contact_id') {
-        $param = empty($data['activity'][1]['assignee_group']) ? 0 : $data['activity'][1]['assignee_group'];
+      if ($name == 'event_id') {
+        $param = webform_civicrm_aval($data, 'event_type', 'current');
       }
-      if ($lists[$name] == 'group_contact' && !$param) {
+      if ($name == 'assignee_contact_id'
+        && !($param = webform_civicrm_aval($data, 'activity:1:assignee_group'))) {
         foreach ($data['contact'] as $num => $contact) {
           $ret['#' . $num] =  t('Contact !num', array('!num' => $num));
         }
@@ -885,6 +916,8 @@ function webform_civicrm_get_fields($var = 'fields') {
   static $sets = array();
 
   if (!$fields) {
+    $config = CRM_Core_Config::singleton();
+    $components = $config->enableComponents;
     // Field keys are in the format table_column
     // Use a # sign as a placeholder for field number in the title (or by default it will be appended to the end)
     // Setting 'expose_list' allows the value to be set on the config form
@@ -997,6 +1030,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'expose_list' => TRUE,
       'do_not_cache' => TRUE,
       'extra' => array('description' => t('Will overwrite address fields with those of the other contact.')),
+      'empty_option' => t('- do not share -'),
     );
     $fields['phone_phone'] = array(
       'name' => t('Phone Number'),
@@ -1066,13 +1100,23 @@ function webform_civicrm_get_fields($var = 'fields') {
       'type' => 'select',
       'expose_list' => TRUE,
       'do_not_cache' => TRUE,
+      'empty_option' => t('- no one -')
     );
+    if (in_array('CiviCampaign', $components)) {
+      $fields['activity_campaign_id'] = array(
+        'name' => t('Campaign'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'empty_option' => t('- none -'),
+      );
+    }
     $fields['relationship_relationship_type_id'] = array(
       'name' => t('Relationship to Contact #'),
       'type' => 'select',
       'value' => '0',
       'expose_list' => TRUE,
       'do_not_cache' => TRUE,
+      'empty_option' => t('- no relationship -'),
     );
     $fields['relationship_is_active'] = array(
       'name' => t('Relationship to Contact # Is Active'),
@@ -1081,10 +1125,11 @@ function webform_civicrm_get_fields($var = 'fields') {
       'value' => '1',
     );
     $fields['relationship_relationship_permission'] = array(
-      'name' => t('Relationship Permission'),
+      'name' => t('Relationship to Contact # Permission'),
       'type' => 'select',
       'expose_list' => TRUE,
       'do_not_cache' => TRUE,
+      'empty_option' => t('- no permissions -'),
     );
     $fields['relationship_start_date'] = array(
       'name' => t('Relationship to Contact # Start Date'),
@@ -1102,6 +1147,33 @@ function webform_civicrm_get_fields($var = 'fields') {
         'end_date' => '+50 years',
       ),
     );
+    if (in_array('CiviEvent', $components)) {
+      $fields['participant_event_id'] = array(
+        'name' => t('Event'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+      );
+      $fields['participant_role_id'] = array(
+        'name' => t('Participant Role'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'value' => '1',
+      );
+      $fields['participant_status_id'] = array(
+        'name' => t('Registration Status'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'value' => '1',
+      );
+      if (in_array('CiviCampaign', $components)) {
+        $fields['participant_campaign_id'] = array(
+          'name' => t('Campaign'),
+          'type' => 'select',
+          'expose_list' => TRUE,
+          'empty_option' => t('- none -'),
+        );
+      }
+    }
 
     $tokens = array(
       'display_name' => t('display name'),
@@ -1148,6 +1220,9 @@ function webform_civicrm_get_fields($var = 'fields') {
       'groups_hidden' => 'groups',
       'assignee_contact_id' => 'group_contact',
       'status_id' => 'activity_status',
+      'event_id' => 'event',
+      'role_id' => 'participant_role',
+      'campaign_id' => 'campaign',
     );
 
     $sets = array(
@@ -1160,6 +1235,9 @@ function webform_civicrm_get_fields($var = 'fields') {
       'activity' => array('entity_type' => 'activity', 'label' => t('Expose Activity Fields')),
       'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship to Contact')),
     );
+    if (in_array('CiviEvent', $components)) {
+      $sets['participant'] = array('entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9);
+    }
 
     // Pull custom fields and match to Webform element types
     $custom_types = array(
@@ -1179,11 +1257,15 @@ function webform_civicrm_get_fields($var = 'fields') {
       'Multi-Select State/Province' => array('type' => 'select', 'extra' => array('multiple' => 1)),
     );
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
+    $custom_extends = "'contact','individual','organization','household','address','activity'";
+    if (in_array('CiviEvent', $components)) {
+      $custom_extends .= ",'participant'";
+    }
     $sql = "
       SELECT cf.*, cg.title AS custom_group_name, LOWER(cg.extends) AS entity_type, cg.extends_entity_column_value AS sub_types, cg.is_multiple, cg.max_multiple, cg.id AS custom_group_id
       FROM civicrm_custom_field cf
       INNER JOIN civicrm_custom_group cg ON cg.id = cf.custom_group_id
-      WHERE cf.is_active <> 0 AND cg.extends IN ('contact','individual','organization','household','address','activity') AND cg.is_active <> 0
+      WHERE cf.is_active <> 0 AND cg.extends IN ($custom_extends) AND cg.is_active <> 0
       ORDER BY cf.custom_group_id, cf.weight";
     $dao = &CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {
@@ -1194,7 +1276,7 @@ function webform_civicrm_get_fields($var = 'fields') {
         else {
           $set = 'cg' . $dao->custom_group_id;
           $sets[$set]['label'] = $dao->custom_group_name;
-          if ($dao->entity_type != 'activity') {
+          if ($dao->entity_type != 'activity' && $dao->entity_type != 'participant') {
             $sets[$set]['entity_type'] = 'contact';
             if ($dao->entity_type != 'contact') {
               $sets[$set]['contact_type'] = $dao->entity_type;
@@ -1207,7 +1289,7 @@ function webform_civicrm_get_fields($var = 'fields') {
             }
           }
           else {
-            $sets[$set]['entity_type'] = 'activity';
+            $sets[$set]['entity_type'] = $dao->entity_type;
           }
           if ($dao->sub_types) {
             $sets[$set]['sub_types'] = explode($sp, trim($dao->sub_types, $sp));
@@ -1437,6 +1519,10 @@ function webform_civicrm_js_options($key, $str='') {
 
 /**
  * Return a value from an array.
+ * @param $haystack: the array to search
+ * @param $keys: pass a single key, or multiple keys separated by : to get a nested value
+ * @param $default: value to return if given array key does not exist
+ * @return: found value or default
  */
 function webform_civicrm_aval($haystack, $keys, $default = NULL) {
   foreach(explode(':', $keys) as $key) {
@@ -1447,5 +1533,6 @@ function webform_civicrm_aval($haystack, $keys, $default = NULL) {
       return $default;
     }
   }
+  // $haystack has been reduced down to the item we want
   return $haystack;
 }

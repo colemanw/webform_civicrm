@@ -1,3 +1,18 @@
+function web_civi_master_id(n, c) {
+  id = '#edit-civicrm-'+n+'-contact-'+c+'-address-master-id';
+
+  switch ($(id).val()) {
+    case 'create_civicrm_webform_element':
+    case '0':
+      $(id).parent().parent().find('input:checkbox').removeAttr('disabled');
+      $(id).parent().parent().find('label.option').parent().show(300);
+      break;
+    default:
+      $(id).parent().parent().find('input:checkbox').attr('disabled', 'disabled');
+      $(id).parent().parent().find('label.option').parent().hide(300);
+  }
+}
+
 function web_civi_select_reset(op, id) {
     id = "#js-select-" + id;
   switch (op) {
@@ -108,6 +123,8 @@ $(document).ready( function(){
   $('#edit-1-contact-type').change(function(){
     webform_civicrm_contact_match_checkbox();
   });
+
+  $('select[id$=address-master-id]').change();
 
   // D6 Can't handle dynamically generated ahah elements, so just refresh the form
   if ($('#edit-activity-type-id').val() == 0) {

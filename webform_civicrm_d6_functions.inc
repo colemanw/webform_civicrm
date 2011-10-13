@@ -14,7 +14,6 @@ define('WEBFORM_CIVICRM_MARKUP', '#value');
  * Callback to return relevant portion of a form during AHAH processing.
  */
 function webform_civicrm_ahah_callback($key) {
-  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
   $snippet = webform_civicrm_process_ahah_form();
 
   // Isolate the portion of form to fetch (nested array keys are encoded as a . separated string)
@@ -86,7 +85,7 @@ function webform_civicrm_add_js($js, $type = 'file') {
 /**
  * Add an ajax container to a form, and set an existing form element to control it
  * @param $form: the entire form
- * @param $pathstr: a . separated string of nested array keys leading to the relevant form snippet
+ * @param $pathstr: a : separated string of nested array keys leading to the relevant form snippet
  * @param $control_element: str. Array key of the existing element to add ajax behavior to
  * @param $container: str. Array key of the container to be created
  */
@@ -134,22 +133,24 @@ function theme_webform_civicrm_options($element) {
   }
   $table = array();
   foreach (element_children($element['civicrm_defaults']) as $k) {
-    $v = str_replace('_web_civi_option_selected_', '', $k);
-    $row = array(drupal_render($element['civicrm_option_name_' . $v]));
-    if (!empty($element['civicrm_options'])) {
-      $element['civicrm_option_weight_' . $v]['#attributes']['class'] = 'civicrm-option-weight';
-      $element['civicrm_options'][$k]['#attributes']['class'] = 'civicrm-enabled';
-      $element['civicrm_option_label_' . $v]['#attributes']['class'] = 'civicrm-label';
-      $row[] = drupal_render($element['civicrm_option_weight_' . $v]);
-      $row[] = drupal_render($element['civicrm_options'][$k]);
-      $row[] = drupal_render($element['civicrm_option_label_' . $v]);
+    if ($k) {
+      $v = str_replace('_web_civi_option_selected_', '', $k);
+      $row = array(drupal_render($element['civicrm_option_name_' . $v]));
+      if (!empty($element['civicrm_options'])) {
+        $element['civicrm_option_weight_' . $v]['#attributes']['class'] = 'civicrm-option-weight';
+        $element['civicrm_options'][$k]['#attributes']['class'] = 'civicrm-enabled';
+        $element['civicrm_option_label_' . $v]['#attributes']['class'] = 'civicrm-label';
+        $row[] = drupal_render($element['civicrm_option_weight_' . $v]);
+        $row[] = drupal_render($element['civicrm_options'][$k]);
+        $row[] = drupal_render($element['civicrm_option_label_' . $v]);
+      }
+      $element['civicrm_defaults'][$k]['#attributes']['class'] = 'civicrm-default';
+      $row[] = drupal_render($element['civicrm_defaults'][$k]);
+      $table[] = array(
+        'data' => $row,
+        'class' => 'draggable',
+      );
     }
-    $element['civicrm_defaults'][$k]['#attributes']['class'] = 'civicrm-default';
-    $row[] = drupal_render($element['civicrm_defaults'][$k]);
-    $table[] = array(
-      'data' => $row,
-      'class' => 'draggable',
-    );
   }
   drupal_render($element);
   return theme_table($header, $table, array('id' => 'civicrm-options-table'));
