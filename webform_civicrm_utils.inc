@@ -331,11 +331,29 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       // Process event participation
       if (in_array('CiviEvent', $config->enableComponents) && !empty($data['participant_reg_type'])) {
         $n = $data['participant_reg_type'] == 'separate' ? $c : 1;
-        if ($p = webform_civicrm_aval($data, "participant:$n:participant")) {
-          foreach ($p as $params) {
+        if ($p = webform_civicrm_aval($data, "participant:$n:participant")) {dsm($p);
+          foreach ($p as $e => $params) {
             if (!empty($params['event_id'])) {
               $params['contact_id'] = $cid;
-              webform_civicrm_api('participant', 'create', $params);
+              $params['event_id'] = (int) $params['event_id'];
+              $params['source'] = check_plain($node->title);
+              if ($c > 1 && !empty($registered_by_id)) {
+                $params['registered_by_id'] = $registered_by_id;
+              }
+              $result = webform_civicrm_api('participant', 'create', $params);
+              if ($c == 1 && $data['participant_reg_type'] == 'all') {
+                $registered_by_id = $result['id'];
+              }
+              // Format custom data for processing
+              $custom = array();
+              foreach ($data['participant'][$n] as $key => $vals) {
+                if (substr($key, 0, 2) == 'cg' && isset($vals[$e])) {
+                  $custom[$key][1] = $vals[$e];
+                }
+              }
+              if ($custom) {
+                webform_civicrm_save_custom($custom, $result['id'], 'Participant');
+              }
             }
           }
         }
