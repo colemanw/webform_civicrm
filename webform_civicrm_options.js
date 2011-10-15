@@ -10,7 +10,7 @@ $(document).ready( function(){
       $(this).parents('tr').find('input.civicrm-label').val(val);
     }
   }).change();
-  
+
   $('input.select-all-civi-options').change(function(){
     if( $(this).is(':checked') ){
       $('input.civicrm-enabled, input.select-all-civi-options').attr('checked', 'checked');

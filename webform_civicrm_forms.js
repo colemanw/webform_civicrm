@@ -1,6 +1,5 @@
 function web_civi_master_id(n, c) {
   id = '#edit-civicrm-'+n+'-contact-'+c+'-address-master-id';
-
   switch ($(id).val()) {
     case 'create_civicrm_webform_element':
     case '0':
@@ -14,7 +13,7 @@ function web_civi_master_id(n, c) {
 }
 
 function web_civi_select_reset(op, id) {
-    id = "#js-select-" + id;
+  id = "#js-select-" + id;
   switch (op) {
     case 'reset':
       $(id).parent().find('input:checkbox').each(function() {

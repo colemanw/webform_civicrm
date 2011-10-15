@@ -1,6 +1,6 @@
 INSTRUCTIONS FOR WEBFORM CIVICRM INTEGRATION
 
-WHAT IT DOES:
+WHAT IT DOES
 
 -Expose just about any CiviCRM contact, address, email, phone, website, activity, or custom field on a webform
 -Auto-fill forms for logged in users (as contact 1).
