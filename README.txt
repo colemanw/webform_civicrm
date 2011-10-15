@@ -19,22 +19,46 @@ HOW TO USE IT
 -Enable the module.
 -Create a new webform (or go to edit an existing one).
 -Click on the CiviCRM tab.
+-Drupal 6 users: installing the vertical_tabs module makes the massive civicrm options much more manageable.
+ (the vertical tabs interface is already built in to Drupal 7)
 -Enable the fields you like, and optionally choose introduction text and other settings.
 -Your selected fields will be automatically created for you.
 -Customize the webform settings for your new fields however you wish.
 
 
+OPTION LISTS
+
+Any CiviCRM field with options (whether it's a simple yes/no select, or a list of every country in the world) can be fully customized:
+-First create the field, then visit the webform tab and click the edit button by that field.
+-You can rearrange options by dragging them up and down.
+-You can disable options so they don't appear on the form.
+-You can set an option to be the default value on the form.
+-You can rename options.
+
+NOTE: Once a webform field is created, the options are set and will not change automatically. So if you update a custom field's option list in CiviCRM, the corresponding webform field will not be updated unless you click the edit button as described above and manually enable the new options.
+
+
 GROUPS AND TAGS
 
 This module allows you to tag contacts and add them to groups when they submit the webform.
+
 -ASSIGNING TAGS: From the Webform CiviCRM tab, check the box to enable the Tags field. Click save. Then from the Form Components tab, click the edit button for the Tags component. You may enter as many tags as you wish, separated by commas. If the tags you enter do not already exist in CiviCRM, they will be created for you.
+
 -ADDING CONTACTS TO GROUPS: Follow the instructions as for tags. There are two options for Groups -- visible checkboxes on the webform that allow contacts to add themselves to one or more groups of your choosing, and a hidden form element that just adds them. You may use both elements if you wish, to give your users a choice about some groups, but automatically add them to others.
--OPT-IN CONFIRMATION: At the bottom of the options in the Webform CiviCRM tab is a checkbox to enable confirmation emails when contacts are added to public mailing lists. It is recommended that you leave that option enabled in most situations. You may configure the text of the confirmation message using CiviCRM.
+
+-OPT-IN CONFIRMATION: In the "additional options" section is a checkbox to enable confirmation emails when contacts are added to public mailing lists. It is recommended that you leave that option enabled in most situations. You may configure the text of the confirmation message using CiviCRM message templates.
 
 
 CUSTOM DATA
 
 -This module can handle (almost) any custom fields you have created for contacts, addresses, or activities. Two exceptions due to their complexity are contact references and files. Custom data for other CRM entities (cases, relationships, etc) are not currently supported.
+
+
+EVENT REGISTRATION
+
+-You can register contacts for events via webform. If your form has multiple contacts on it, you may choose to register them each separately for different events, or all together for the same event(s). If you choose to register them together, CiviCRM will show contact 1 as having registered the others.
+
+NOTE: It is not currently possible to pay for events via webform.
 
 
 USING SPECIAL LINKS IN CIVIMAIL
@@ -82,7 +106,7 @@ Note that permissions are checked, so these values will be ignored if the acting
 
 ANATOMY OF A FORM KEY - for geeks only
 
-When this module looks to see if a particular field exists, it checks the form key. Understanding form keys can allow you to get creative with your webform elements. You can, for example, create your own webform element of a custom type, give it the corresponding form key for a civicrm field of your choosing, and the webform_civicrm module will include that field in its processing.
+When this module looks to see if a particular field exists, it checks the form key. Understanding form keys can allow you to get creative with your webform elements. You can, for example, create your own webform element of a custom type, give it the appropriate form key and it will be linked to that civicrm field.
 
 CiviCRM webform keys all contain 6 pieces, connected by underscores. They are:
 civicrm _ number _ entity _ number _ table _ field_key (note that the 6th piece may itself contain underscores)
