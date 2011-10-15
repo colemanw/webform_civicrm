@@ -6,7 +6,11 @@
 .web-civi-checkbox-set .form-item {
   float:left;
   margin-left:1em;
-  width:20em;
+  min-width:15em;
+}
+
+.web-civi-checkbox-set .form-item div.description {
+  max-width: 20em;
 }
 
 div.form-item-activity-targets div.form-item,
