@@ -26,6 +26,42 @@ function web_civi_select_reset(op, id) {
   }
 }
 
+function web_civi_participant_conditional(fs) {
+  var splitstr = $(fs + ' .participant_event_id').val().split('-');
+  var info = {
+    roleid:$(fs + ' .participant_role_id').val(),
+    eventid:splitstr[0],
+    eventtype:splitstr[1]
+  };
+  if (info['eventid'] === 'create_civicrm_webform_element') {
+    info['eventtype'] = $('#edit-event-type').val();
+  }
+  $(fs + ' fieldset.extends-condition').each(function(){
+    var hide = true;
+    classes = $(this).attr('class').split(' ');
+    for (cl in classes) {
+      var c = classes[cl].split('-');
+      type = c[0];
+      if (type === 'roleid' || type === 'eventtype' || type === 'eventid') {
+        for (cid in c) {
+          if (c[cid] === info[type]) {
+            hide = false;
+          }
+        }
+        break;
+      }
+    }
+    if (hide) {
+      $(this).find(':checkbox').attr('disabled', 'disabled');
+      $(this).hide(300);
+    }
+    else {
+      $(this).find(':checkbox').removeAttr('disabled');
+      $(this).show(300);
+    }
+  });
+}
+
 function webform_civicrm_relationship_options() {
   var contacts = $('#edit-number-of-contacts').val();
   if (contacts > 1) {

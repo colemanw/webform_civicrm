@@ -332,10 +332,28 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       if (in_array('CiviEvent', $config->enableComponents) && !empty($data['participant_reg_type'])) {
         $n = $data['participant_reg_type'] == 'separate' ? $c : 1;
         if ($p = webform_civicrm_aval($data, "participant:$n:participant")) {
-          foreach ($p as $params) {
+          foreach ($p as $e => $params) {
             if (!empty($params['event_id'])) {
               $params['contact_id'] = $cid;
-              webform_civicrm_api('participant', 'create', $params);
+              $params['event_id'] = (int) $params['event_id'];
+              $params['source'] = check_plain($node->title);
+              if ($c > 1 && !empty($registered_by_id)) {
+                $params['registered_by_id'] = $registered_by_id;
+              }
+              $result = webform_civicrm_api('participant', 'create', $params);
+              if ($c == 1 && $data['participant_reg_type'] == 'all') {
+                $registered_by_id = $result['id'];
+              }
+              // Format custom data for processing
+              $custom = array();
+              foreach ($data['participant'][$n] as $key => $vals) {
+                if (substr($key, 0, 2) == 'cg' && isset($vals[$e])) {
+                  $custom[$key][1] = $vals[$e];
+                }
+              }
+              if ($custom) {
+                webform_civicrm_save_custom($custom, $result['id'], 'Participant');
+              }
             }
           }
         }
@@ -1259,7 +1277,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       $custom_extends .= ",'participant'";
     }
     $sql = "
-      SELECT cf.*, cg.title AS custom_group_name, LOWER(cg.extends) AS entity_type, cg.extends_entity_column_value AS sub_types, cg.is_multiple, cg.max_multiple, cg.id AS custom_group_id
+      SELECT cf.*, cg.title AS custom_group_name, LOWER(cg.extends) AS entity_type, cg.extends_entity_column_id, cg.extends_entity_column_value AS sub_types, cg.is_multiple, cg.max_multiple, cg.id AS custom_group_id
       FROM civicrm_custom_field cf
       INNER JOIN civicrm_custom_group cg ON cg.id = cf.custom_group_id
       WHERE cf.is_active <> 0 AND cg.extends IN ($custom_extends) AND cg.is_active <> 0
@@ -1290,6 +1308,9 @@ function webform_civicrm_get_fields($var = 'fields') {
           }
           if ($dao->sub_types) {
             $sets[$set]['sub_types'] = explode($sp, trim($dao->sub_types, $sp));
+          }
+          if ($dao->extends_entity_column_id) {
+            $sets[$set]['extension_of'] = $dao->extends_entity_column_id;
           }
         }
         $id = $set . '_custom_' . $dao->id;

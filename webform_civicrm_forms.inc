@@ -309,18 +309,51 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
         $form['event']['participants'][$n]['div'][$fs] = array(
           '#type' => 'fieldset',
           '#title' => t('Event !num', array('!num' => $e)),
-          '#attributes' => array('id' => $fs, 'class' => webform_civicrm_fapi_class('web-civi-checkbox-set')),
-          'js_select' => webform_civicrm_js_select($fs),
+          '#attributes' => array('id' => $fs),
         );
         foreach ($sets as $sid => $set) {
           if ($set['entity_type'] == 'participant') {
+            $sid = 'civicrm_' . $n . '_participant_' . $e . '_' . $sid . '_fieldset';
+            $class = 'web-civi-checkbox-set';
+            if (!empty($set['sub_types'])) {
+              list($event_id, $event_type) = $participant_event_id != 'create_civicrm_webform_element' ? explode('-', $participant_event_id) : array('', webform_civicrm_aval($data, 'event_type', ''));
+              switch ($set['extension_of']) {
+                case 1:
+                  if (!in_array($participant_role_id, $set['sub_types'])) {
+                    $class .= ' hidden';
+                  }
+                  $class .= ' extends-condition roleid-';
+                  break;
+                case 2:
+                  if (!in_array($event_id, $set['sub_types'])) {
+                    $class .= ' hidden';
+                  }
+                  $class .= ' extends-condition eventid-';
+                  break;
+                case 3:
+                  if (!in_array($event_type, $set['sub_types'])) {
+                    $class .= ' hidden';
+                  }
+                  $class .= ' extends-condition eventtype-';
+                  break;
+              }
+              $class .= implode('-', $set['sub_types']);
+            }
+            $form['event']['participants'][$n]['div'][$fs][$sid] = array(
+              '#type' => 'fieldset',
+              '#title' => $set['label'],
+              '#attributes' => array('id' => $sid, 'class' => webform_civicrm_fapi_class($class)),
+              'js_select' => webform_civicrm_js_select($sid),
+            );
             foreach ($set['fields'] as $fid => $field) {
               $id = 'civicrm_' . $n . '_participant_' . $e . '_' . $fid;
               $item = webform_civicrm_configure_form_item($id, $field, $settings);
               if ($fid == 'participant_event_id' || $fid == 'participant_role_id') {
                 $item['#attributes']['onchange'] = "web_civi_participant_conditional('#$fs');";
+                $item['#attributes']['class'] = webform_civicrm_fapi_class($fid);
+                $$fid = webform_civicrm_aval($item, '#default_value');
               }
-              $form['event']['participants'][$n]['div'][$fs][$id] = $item;
+              $form['event']['participants'][$n]['div'][$fs][$sid][$id] = $item;
             }
           }
         }
