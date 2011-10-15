@@ -1138,7 +1138,6 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['relationship_relationship_type_id'] = array(
       'name' => t('Relationship to Contact #'),
       'type' => 'select',
-      'value' => '0',
       'expose_list' => TRUE,
       'do_not_cache' => TRUE,
       'empty_option' => t('- no relationship -'),
@@ -1392,11 +1391,12 @@ function webform_civicrm_explode_key($key) {
  * Convert a | separated string into an array
  */
 function webform_civicrm_str2array($str) {
-  $arr = explode("\n", trim($str));
   $ret = array();
-  foreach ($arr as $row) {
-    list($k, $v) = explode('|', $row);
-    $ret[trim($k)] = trim($v);
+  if ($str) {
+    foreach (explode("\n", trim($str)) as $row) {
+      list($k, $v) = explode('|', $row);
+      $ret[trim($k)] = trim($v);
+    }
   }
   return $ret;
 }
