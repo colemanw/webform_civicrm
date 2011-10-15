@@ -944,21 +944,13 @@ function webform_civicrm_get_fields($var = 'fields') {
       'expose_list' => TRUE,
       'do_not_cache' => TRUE,
     );
-    $fields['contact_organization_name'] = array(
-      'name' => t('Organization Name'),
-      'type' => 'textfield',
-      'contact_type' => 'organization',
-    );
-    $fields['contact_legal_name'] = array(
-      'name' => t('Legal Name'),
-      'type' => 'textfield',
-      'contact_type' => 'organization',
-    );
-    $fields['contact_household_name'] = array(
-      'name' => t('Household Name'),
-      'type' => 'textfield',
-      'contact_type' => 'household',
-    );
+    foreach (array('organization_name' => t('Organization Name'), 'legal_name' => t('Legal Name'), 'household_name' => t('Household Name')) as $key => $label) {
+      $fields['contact_' . $key] = array(
+        'name' => $label,
+        'type' => 'textfield',
+        'contact_type' => $key == 'household_name' ? 'household' : 'organization',
+      );
+    }
     foreach (array('first_name' => t('First Name'), 'nick_name' => t('Nick Name'), 'middle_name' => t('Middle Name'), 'last_name' => t('Last Name'), 'job_title' => t('Job Title')) as $key => $label) {
       $fields['contact_' . $key] = array(
         'name' => $label,
@@ -1010,7 +1002,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       $fields['address_' . $key] = array(
         'name' => $value,
         'type' => 'textfield',
-        'extra' => array('width' => 60),
+        'extra' => array('width' => $key == 'city' ? 20 : 60),
       );
     }
     $fields['address_state_province'] = array(
