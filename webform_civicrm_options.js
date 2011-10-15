@@ -1,5 +1,5 @@
 (function ($) {
-  
+
   $(document).ready( function(){
     $('input.civicrm-enabled').change(function(){
       if( $(this).is(':checked') ){
