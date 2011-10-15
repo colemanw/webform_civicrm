@@ -1310,7 +1310,7 @@ function webform_civicrm_get_fields($var = 'fields') {
             $sets[$set]['sub_types'] = explode($sp, trim($dao->sub_types, $sp));
           }
           if ($dao->extends_entity_column_id) {
-            $sets[$set]['extention_of'] = $dao->extends_entity_column_id;
+            $sets[$set]['extension_of'] = $dao->extends_entity_column_id;
           }
         }
         $id = $set . '_custom_' . $dao->id;
