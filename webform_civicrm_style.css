@@ -6,7 +6,11 @@ form .web-civi-checkbox-set {
 form .web-civi-checkbox-set .form-item {
   float:left;
   margin-left:1em;
-  width:20em;
+  min-width:15em;
+}
+
+.web-civi-checkbox-set .form-item div.description {
+  max-width: 20em;
 }
 
 form .form-item-activity-targets div.form-item.form-type-checkbox,
@@ -29,10 +33,6 @@ form .hidden, .js #no-js-button-wrapper {
   display:inline;
 }
 
-.civicrm-ajax-wrapper {
-  clear:both;
-}
-
 th div.form-type-radio {
   display:inline;
   margin:0;
@@ -50,10 +50,25 @@ th div.form-type-radio {
   right:1em;
   padding:0.2em 0.5em;
   background-color:white;
-  top:-2em;
+  top:-2.5em;
   border:1px solid #CCCCCC;
 }
 
 .web-civi-js-select a:hover {
   cursor:pointer;
+}
+
+#webform-civicrm-configure-form fieldset fieldset{
+  border: 1px solid #CCCCCC;
+  margin: 1em 0;
+  padding: 2.5em 0 0;
+}
+
+#webform-civicrm-configure-form fieldset fieldset legend{
+  display:block;
+}
+
+.participant_event_id {
+  float:none;
+  clear:both;
 }

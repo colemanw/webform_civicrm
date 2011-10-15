@@ -76,11 +76,10 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
 
   // Sort fields by set
   foreach ($fields as $fid => $field) {
-    list($group, $id) = explode('_', $fid, 2);
+    list($group) = explode('_', $fid, 2);
     $sets[$group]['fields'][$fid] = $field;
   }
 
-  $form['#prefix'] = t('Use the options below to configure CiviCRM processing for this form.');
   $form['nid'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable CiviCRM Processing'),
@@ -92,12 +91,25 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
       url('node/' . $node->nid, array('absolute' => TRUE)) . '?cid1={contact.contact_id}&{contact.checksum}</li><li>' .
       t('<a !link>Read the instructions</a> for more info.', array('!link' => 'href="/admin/help/webform_civicrm" target="_blank"')) . '</li></ul>',
   );
+  $form['number_of_contacts'] = array(
+    '#type' => 'select',
+    '#title' => t('Number of Contacts'),
+    '#default_value' => $contacts,
+    '#options' => drupal_map_assoc(range(1, 30)),
+    '#description' => t('How many contacts would you like on this form?'),
+  );
+  $form['change_form_settings'] = array(
+    '#type' => 'button',
+    '#value' => t('Change Form Settings'),
+    '#prefix' => '<div id="no-js-button-wrapper" class="messages warning">',
+    '#suffix' => '<div>' . t('You have Javascript disabled, so you will need to click this button after changing any option to see the result.') . '</div></div>',
+  );
+  $form['webform_civicrm'] = array('#type' => 'vertical_tabs');
   $form['prefix'] = array(
     '#type' => 'fieldset',
     '#title' => t('Introduction Text'),
     '#description' => t('This text will appear at the top of the form. You may configure separate messages for known contacts (logged in users, or users following a hashed link from civimail) and unknown (anonymous) users.'),
-    '#collapsible' => TRUE,
-    '#collapsed' => !$settings['prefix_known'] && !$settings['prefix_unknown'],
+    '#group' => 'webform_civicrm',
   );
   $form['prefix']['prefix_known'] = array(
     '#type' => 'textarea',
@@ -115,6 +127,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     '#type' => 'fieldset',
     '#title' => t('Contact 1 Logout Message'),
     '#description' => t('Prompt for users who are logged in as, or following a hashed link for, someone else.'),
+    '#group' => 'webform_civicrm',
   );
   $form['st_message']['toggle_message'] = array(
     '#type' => 'checkbox',
@@ -135,6 +148,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     '#type' => 'fieldset',
     '#title' => t('Create Activity'),
     '#description' => t('Create an activity for contacts when this form is submitted?'),
+    '#group' => 'webform_civicrm',
   );
   if (in_array('CiviCase', $config->enableComponents)
   && $case_types = webform_civicrm_get_options('case_type')) {
@@ -246,7 +260,6 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
         }
         $form['act']['case']['activity_fields'][$sid] = array(
           '#type' => 'fieldset',
-          '#collapsible' => TRUE,
           '#title' => $set['label'],
           '#attributes' => array('class' => webform_civicrm_fapi_class('web-civi-checkbox-set')),
           'js_select' => webform_civicrm_js_select($sid),
@@ -266,6 +279,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     $form['event'] = array(
       '#type' => 'fieldset',
       '#title' => t('Register Event Participants'),
+      '#group' => 'webform_civicrm',
     );
     $reg_type = webform_civicrm_aval($data, 'participant_reg_type');
     $form['event']['participant_reg_type'] = array(
@@ -362,26 +376,12 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
   }
 
   // Contact settings
-  $form['number_of_contacts'] = array(
-    '#type' => 'select',
-    '#title' => t('Number of Contacts'),
-    '#default_value' => $contacts,
-    '#options' => drupal_map_assoc(range(1, 30)),
-    '#description' => t('How many contacts would you like on this form?'),
-  );
-  $form['change_form_settings'] = array(
-    '#type' => 'button',
-    '#value' => t('Change Form Settings'),
-    '#prefix' => '<div id="no-js-button-wrapper" class="messages warning">',
-    '#suffix' => '<div>' . t('You have Javascript disabled, so you will need to click this button after changing any option to see the result.') . '</div></div>',
-  );
-
-  // Generate fieldset for each contact
   foreach ($data['contact'] as $n => $c) {
     $form['contact_' . $n] = array(
       '#type' => 'fieldset',
       '#title' => t('Contact !num', array('!num' => $n)),
       '#description' => $n > 1 ? NULL : t('Primary contact. Usually assumed to be the person filling out the form.'),
+      '#group' => 'webform_civicrm',
     );
     $form['contact_' . $n][$n . '_contact_type'] = array(
       '#type' => 'select',
@@ -487,7 +487,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     '#type' => 'fieldset',
     '#title' => t('Additional Options'),
     '#attributes' => array('class' => webform_civicrm_fapi_class('web-civi-checkbox-set')),
-    '#collapsible' => TRUE,
+    '#group' => 'webform_civicrm',
   );
   $form['options']['contact_matching'] = array(
     '#type' => 'checkbox',
@@ -531,6 +531,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     '#type' => 'submit',
     '#value' => t('Save Settings'),
   );
+  $form['#pre_render'][] = 'vertical_tabs_form_pre_render';
   return $form;
 }
 
