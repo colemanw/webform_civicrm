@@ -338,15 +338,15 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
               $params['contact_id'] = $cid;
               $params['event_id'] = (int) $params['event_id'];
               $params['source'] = check_plain($node->title);
-              if ($c > 1 && !empty($registered_by_id)) {
-                $params['registered_by_id'] = $registered_by_id;
+              if ($c > 1 && !empty($registered_by_id[$e])) {
+                $params['registered_by_id'] = $registered_by_id[$e];
               }
               if (empty($params['campaign_id']) || !in_array('CiviCampaign', $config->enableComponents)) {
                 unset($params['campaign_id']);
               }
               $result = webform_civicrm_api('participant', 'create', $params);
               if ($c == 1 && $data['participant_reg_type'] == 'all') {
-                $registered_by_id = $result['id'];
+                $registered_by_id[$e] = $result['id'];
               }
               // Format custom data for processing
               $custom = array();
