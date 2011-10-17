@@ -718,6 +718,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
     return;
   }
 
+  module_load_include('inc', 'webform', 'includes/webform.components');
   $nid = $node->nid;
   $form_state['redirect'] = 'node/' . $nid . '/webform';
 
