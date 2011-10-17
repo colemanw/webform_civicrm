@@ -232,6 +232,12 @@ function webform_civicrm_update_6200() {
       list($a, $b, $c, $d, $e, $f) = explode('_', $match[$row['form_key']], 6);
       if ($e != 'contact' && $e != 'other') {
         $contacts[$row['nid']]['number_of_'. $e] = 1;
+        if ($e == 'address' || $e == 'email' || $e == 'phone') {
+          $contacts[$row['nid']][$e][1]['location_type_id'] = 1;
+        }
+        if ($e == 'phone') {
+          $contacts[$row['nid']][$e][1]['phone_type_id'] = 1;
+        }
       }
     }
   }
@@ -253,7 +259,7 @@ function webform_civicrm_update_6200() {
       ),
     );
     if (!empty($contacts[$row['nid']])) {
-      $data['contact'][1] = $data['contact'][1] + $contacts[$row['nid']];
+      $data['contact'][1] += $contacts[$row['nid']];
     }
     if ($row['activity_type_id']) {
       $data['activity'][1]['add_link'] = TRUE;
