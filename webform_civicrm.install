@@ -200,7 +200,7 @@ function webform_civicrm_update_6200() {
 
   // Match field keys to new format
   civicrm_initialize();
-  require_once 'webform_civicrm_utils.inc';
+  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
   $fields = webform_civicrm_get_fields();
   $match = $contacts = $update = array();
   // Create matching table
@@ -208,6 +208,8 @@ function webform_civicrm_update_6200() {
     list($table, $name) = explode('_', $key, 2);
     $match['civicrm_' . $name] = 'civicrm_1_contact_1_' . $key;
   }
+  // Include field types that no longer exist, to be dealt with by subsequent update hooks
+  $match['civicrm_state_province'] = 'civicrm_1_contact_1_address_state_province';
 
   // Collect entity data
   $db = db_query("SELECT form_key, nid FROM {webform_component} WHERE form_key LIKE 'civicrm_%%' AND type <> 'fieldset'");
@@ -314,18 +316,35 @@ function webform_civicrm_update_6203() {
   }
 
   // Update state_province fields
+  $submitted = array();
   $db = db_query("SELECT * FROM {webform_component} WHERE form_key LIKE 'civicrm_%%_contact_%%_address_state_province%%'");
   foreach ($db as $item) {
-    $item->type = 'textfield';
-    if (substr($item->form_key, -3) != '_id') {
+    if (substr($item->form_key, -3) == '_id') {
+      $submitted[] = '(nid = ' . $item->nid . ' AND cid = ' . $item->cid . ')';
+    }
+    else {
       $item->form_key .= '_id';
     }
+    $item->type = 'textfield';
     $item->extra = array(
       'maxlength' => 5,
       'width' => 4,
       'private' => 0,
     );
     webform_component_update((array) $item); 
+  }
+  
+  // Update submission results
+  if ($submitted) {
+    $where = implode(' OR ', $submitted);
+    civicrm_initialize();
+    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
+    $db = db_query('SELECT DISTINCT data FROM {webform_submitted_data} WHERE ' . $where);
+    foreach ($db as $row) {
+      if ($row->data && is_numeric($row->data)) {
+        db_query('UPDATE {webform_submitted_data} SET data = \'' . webform_civicrm_state_abbr($row->data) . '\' WHERE data = ' . $row->data . ' AND (' . $where . ')');
+      }
+    }
   }
 
   return t('Upgrade successful. Note: If you upgraded via drush you will now need to clear all caches with the command drush cc');
