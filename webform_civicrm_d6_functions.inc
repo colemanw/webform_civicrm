@@ -59,7 +59,7 @@ function webform_civicrm_fapi_class($str) {
  * Compatibility wrapper for drupal_json_output()
  */
  function webform_civicrm_json($input) {
-   return drupal_json($input);
+   exit(drupal_json($input));
  }
 
 
@@ -94,7 +94,7 @@ function webform_civicrm_ajax_form_item(&$form, $pathstr, $control_element, $con
   $pathstr = str_replace(':', '.', $pathstr) . '.' . $container;
   $id = 'civicrm-ajax-' . str_replace(array('.', '_'), '-', $pathstr);
   $snippet[$control_element]['#ahah'] = array(
-    'path' => 'webform-civicrm/js/' . arg(1) . '/civicrm_ahah.' . $pathstr,
+    'path' => 'webform-civicrm/js/civicrm_ahah.' . $pathstr,
     'wrapper' => $id,
     'effect' => 'fade',
   );

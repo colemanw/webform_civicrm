@@ -859,6 +859,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
  * Set webform default values.
  */
 function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
+  webform_civicrm_add_js('webform_civicrm_webforms.js');
   civicrm_initialize();
   require_once 'api/api.php';
   $node = $form['#node'];
@@ -1016,9 +1017,14 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
                 }
               }
             }
-            // Load address custom data
+            // Extra processing for addresses
             if ($field == 'address') {
               foreach ($result as &$address) {
+                // Translate to abbr
+                if (!empty($address['state_province_id'])) {
+                  $address['state_province_id'] = webform_civicrm_state_abbr($address['state_province_id']);
+                }
+                // Load custom data
                 $custom = webform_civicrm_get_custom($address['id'], 'address');
                 if (!empty($custom['address'])) {
                   $address = $address + $custom['address'][1];
@@ -1103,6 +1109,11 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
       $form['form_key']['#disabled'] = TRUE;
       $fid = $form['form_key']['#value'] = $form['form_key']['#default_value'];
       $form['form_key']['#description'] = t('Automatically set for use by CiviCRM processing.');
+
+      if ($table == 'address' && $key == 'state_province_id') {
+        $form['validation']['maxlength']['#type'] = 'hidden';
+        $form['validation']['maxlength']['#value'] = 5;
+      }
 
       // Here's a much nicer interface for choosing options than the standard textfields
       if (array_key_exists($key, webform_civicrm_get_fields('lists'))) {
@@ -1195,7 +1206,7 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
         $form['value']['#description'] = t('Enter a comma-separated list of tags to add to contacts who submit this webform.') . '<br />' . t('Use the autocomplete to select existing tags, or you may add new ones.');
         $form['value']['#type'] = 'textfield';
         $form['value']['#size'] = 100;
-        $form['value']['#autocomplete_path'] = 'webform-civicrm/js/' . $form['nid']['#value'] . '/tags';
+        $form['value']['#autocomplete_path'] = 'webform-civicrm/js/tags';
       }
     }
   }

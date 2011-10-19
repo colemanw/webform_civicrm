@@ -161,7 +161,13 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
           foreach ($contact[$location] as $i => $params) {
             // Skip this item if nothing was entered
             if ($location == 'address') {
-              if (empty($params['street_address']) && empty($params['city']) && empty($params['state_province_id']) && empty($params['state_province']) && empty($params['country_id']) && empty($params['postal_code']) && empty($params['postal_code_suffix']) && empty($params['master_id'])) {
+              if (empty($params['street_address'])
+              && empty($params['city'])
+              && empty($params['state_province_id'])
+              && empty($params['country_id'])
+              && empty($params['postal_code'])
+              && empty($params['postal_code_suffix'])
+              && empty($params['master_id'])) {
                 continue;
               }
               // Store shared addresses for later since we haven't necessarily processed
@@ -175,6 +181,10 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
                 continue;
               }
               unset($params['master_id']);
+              // Translate state/prov abbr to id
+              if (!empty($params['state_province_id'])) {
+                $params['state_province_id'] = webform_civicrm_state_abbr($params['state_province_id'], 'id', webform_civicrm_aval($params, 'country_id', $config->defaultContactCountry));
+              }
             }
             elseif ($location == 'website') {
               if (empty($params['url'])) {
@@ -363,7 +373,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         }
       }
     }
-    // Process shared addresses. We do this last so all contacts and addresses will exist.
+    // Process shared addresses. We do this last after all contacts and addresses exist.
     foreach ($shared_address as $cid => $shared) {
       foreach ($shared as $i => $addr) {
         if (!empty($id['cid'][$addr['mc']])) {
@@ -517,9 +527,19 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
     }
     $sql .= ' ORDER BY name';
   }
-  elseif ($option_group == 'state') {
-    $config = CRM_Core_Config::singleton();
-    $sql = 'SELECT name AS label, id AS value FROM civicrm_state_province WHERE country_id = ' . $config->defaultContactCountry . ' ORDER BY name';
+  elseif ($option_group == 'state_province') {
+    $value = 'abbreviation';
+    if (!$param) {
+      $config = CRM_Core_Config::singleton();
+      if (!empty($config->provinceLimit)) {
+        $param = implode(',', $config->provinceLimit);
+      }
+      else {
+        $param = $config->defaultContactCountry;
+      }
+      $value = 'id';
+    }
+    $sql = "SELECT name AS label, $value AS value FROM civicrm_state_province WHERE country_id IN ($param) ORDER BY name";
   }
   elseif ($option_group == 'groups' || $option_group == 'mailing_lists') {
     $sql = 'SELECT id AS value, title AS label FROM civicrm_group WHERE is_active = 1 AND is_hidden = 0';
@@ -870,11 +890,9 @@ function webform_civicrm_fill_values(&$elements, $data, $fields, $submitted) {
         }
       }
       // If the user has already entered a value for this field, don't change it
-      if (isset($element['#webform_component']['cid'])
-      && isset($submitted[$element['#webform_component']['cid']])) {
-        continue;
-      }
-      if (isset($data[$ent][$c][$table][$n][$name])) {
+      if (isset($data[$ent][$c][$table][$n][$name])
+      && !(isset($element['#webform_component']['cid'])
+           && isset($submitted[$element['#webform_component']['cid']]))) {
         $val = $data[$ent][$c][$table][$n][$name];
         if ($element['#type'] == 'date') {
           $dates = explode('-', $val);
@@ -894,6 +912,21 @@ function webform_civicrm_fill_values(&$elements, $data, $fields, $submitted) {
       }
     }
   }
+}
+
+
+/**
+ * Match a state/province id to its abbr.
+ */
+function webform_civicrm_state_abbr($input, $ret = 'abbreviation', $country_id = NULL) {
+  $input_type = $ret == 'id' ? 'abbreviation' : 'id';
+  $input = $ret == 'id' ? "'$input'" : $input;
+  $sql = "SELECT $ret FROM civicrm_state_province WHERE $input_type = $input";
+  if ($country_id) {
+    $sql .= " AND country_id = $country_id";
+  }
+  $sql .= " LIMIT 0, 1";
+  return CRM_Core_DAO::singleValueQuery($sql);
 }
 
 
@@ -1018,20 +1051,6 @@ function webform_civicrm_get_fields($var = 'fields') {
         'extra' => array('width' => $key == 'city' ? 20 : 60),
       );
     }
-    $fields['address_state_province'] = array(
-      'name' => t('State/Province Abbr.'),
-      'type' => 'textfield',
-      'extra' => array(
-        'maxlength' => 4,
-        'width' => 4,
-        'description' => t('Enter state/province abbreviation'),
-      ),
-    );
-    $fields['address_state_province_id'] = array(
-      'name' => t('State/Province Select'),
-      'type' => 'select',
-      'extra' => array('description' => t('Select state/province from list')),
-    );
     $fields['address_postal_code'] = array(
       'name' => t('Postal Code'),
       'type' => 'textfield',
@@ -1048,6 +1067,14 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['address_country_id'] = array(
       'name' => t('Country'),
       'type' => 'select',
+    );
+    $fields['address_state_province_id'] = array(
+      'name' => t('State/Province'),
+      'type' => 'textfield',
+      'extra' => array(
+        'maxlength' => 5,
+        'width' => 4,
+      ),
     );
     $fields['address_master_id'] = array(
       'name' => t('Share address of'),
@@ -1231,7 +1258,6 @@ function webform_civicrm_get_fields($var = 'fields') {
       'preferred_communication_method' => 'preferred_communication_method',
       'privacy' => 'privacy',
       'country_id' => 'country',
-      'state_province_id' => 'state',
       'phone_type_id' => 'phone_type',
       'location_type_id' => 'location_type',
       'website_type_id' => 'website_type',
@@ -1342,7 +1368,7 @@ function webform_civicrm_get_fields($var = 'fields') {
           $lists['custom_' . $dao->id] = 'country';
         }
         elseif ($dao->html_type == 'Select State/Province' || $dao->html_type == 'Multi-Select State/Province') {
-          $lists['custom_' . $dao->id] = 'state';
+          $lists['custom_' . $dao->id] = 'state_province';
         }
         elseif ($fields[$id]['type'] == 'select') {
           $lists['custom_' . $dao->id] = 'yes_no';
@@ -1513,9 +1539,20 @@ function webform_civicrm_set_message($message, $contact) {
 
 
 /**
- * Autocomplete and AHAH form callback.
+ * Callback to serve AJAX requests.
  */
 function webform_civicrm_js_options($key, $str='') {
+  // Populate state/prov on the fly
+  if ($key == 'state_province') {
+    if (!$str || (intval($str) != $str && $str != 'default')) {
+      webform_civicrm_json(array('' => t('- first choose a country -')));
+    }
+    civicrm_initialize();
+    $config = CRM_Core_Config::singleton();
+    $str = $str == 'default' ? $config->defaultContactCountry : (int) $str;
+    webform_civicrm_json(array('' => t('- Select -')) + webform_civicrm_get_options('state_province', $str));
+  }
+
   if (!user_access('access CiviCRM')) {
     return drupal_access_denied();
   }
@@ -1524,12 +1561,11 @@ function webform_civicrm_js_options($key, $str='') {
     webform_civicrm_ahah_callback($key);
   }
 
-  civicrm_initialize();
-
   // Autocomplete callback for tags
   if ($key == 'tags') {
     $matches = array();
     if ($str) {
+      civicrm_initialize();
       // Handle a comma-separated list of tags.
       $existing = drupal_explode_tags($str);
       $last_str = trim(array_pop($existing));
@@ -1545,7 +1581,7 @@ function webform_civicrm_js_options($key, $str='') {
         $matches[$prefix . $dao->name] = check_plain($dao->name);
       }
     }
-    exit(webform_civicrm_json($matches));
+    webform_civicrm_json($matches);
   }
   return drupal_not_found();
 }
