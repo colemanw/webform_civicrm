@@ -181,10 +181,9 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
                 continue;
               }
               unset($params['master_id']);
-              // Translate abbr to id for non-js users
-              if (!empty($params['state_province_id'])
-              && (!is_numeric($params['state_province_id']) || $params['state_province_id'] < 1000)) {
-                $params['state_province_id'] = webform_civicrm_state_abbr($params['state_province_id'], 'id', webform_civicrm_aval($params, 'country_id'));
+              // Translate state/prov abbr to id
+              if (!empty($params['state_province_id'])) {
+                $params['state_province_id'] = webform_civicrm_state_abbr($params['state_province_id'], 'id', webform_civicrm_aval($params, 'country_id', $config->defaultContactCountry));
               }
             }
             elseif ($location == 'website') {
@@ -374,7 +373,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         }
       }
     }
-    // Process shared addresses. We do this last so all contacts and addresses will exist.
+    // Process shared addresses. We do this last after all contacts and addresses exist.
     foreach ($shared_address as $cid => $shared) {
       foreach ($shared as $i => $addr) {
         if (!empty($id['cid'][$addr['mc']])) {
@@ -529,6 +528,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
     $sql .= ' ORDER BY name';
   }
   elseif ($option_group == 'state_province') {
+    $value = 'abbreviation';
     if (!$param) {
       $config = CRM_Core_Config::singleton();
       if (!empty($config->provinceLimit)) {
@@ -537,8 +537,9 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
       else {
         $param = $config->defaultContactCountry;
       }
+      $value = 'id';
     }
-    $sql = 'SELECT name AS label, id AS value FROM civicrm_state_province WHERE country_id IN (' . $param . ') ORDER BY name';
+    $sql = "SELECT name AS label, $value AS value FROM civicrm_state_province WHERE country_id IN ($param) ORDER BY name";
   }
   elseif ($option_group == 'groups' || $option_group == 'mailing_lists') {
     $sql = 'SELECT id AS value, title AS label FROM civicrm_group WHERE is_active = 1 AND is_hidden = 0';
@@ -908,14 +909,6 @@ function webform_civicrm_fill_values(&$elements, $data, $fields, $submitted) {
           $element['#value'] = $val;
         }
         $element['#default_value'] = $val;
-        
-      }
-      // Add data for state/prov chain-select
-      if ($table == 'address' && $name == 'state_province_id') {
-        if ($val = webform_civicrm_aval($element, '#default_value', '')) {
-          $element['#default_value'] = webform_civicrm_state_abbr($val);
-        }
-        $element['#attributes']['class'] = webform_civicrm_fapi_class('stateprovid-' . $val);
       }
     }
   }
@@ -1551,11 +1544,12 @@ function webform_civicrm_set_message($message, $contact) {
 function webform_civicrm_js_options($key, $str='') {
   // Populate state/prov on the fly
   if ($key == 'state_province') {
-    if (!$str || (intval($str) != $str && $str != 'all')) {
+    if (!$str || (intval($str) != $str && $str != 'default')) {
       webform_civicrm_json(array('' => t('- first choose a country -')));
     }
     civicrm_initialize();
-    $str = $str == 'all' ? '' : (int) $str;
+    $config = CRM_Core_Config::singleton();
+    $str = $str == 'default' ? $config->defaultContactCountry : (int) $str;
     webform_civicrm_json(array('' => t('- Select -')) + webform_civicrm_get_options('state_province', $str));
   }
 

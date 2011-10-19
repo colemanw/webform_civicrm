@@ -1017,9 +1017,14 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
                 }
               }
             }
-            // Load address custom data
+            // Extra processing for addresses
             if ($field == 'address') {
               foreach ($result as &$address) {
+                // Translate to abbr
+                if (!empty($address['state_province_id'])) {
+                  $address['state_province_id'] = webform_civicrm_state_abbr($address['state_province_id']);
+                }
+                // Load custom data
                 $custom = webform_civicrm_get_custom($address['id'], 'address');
                 if (!empty($custom['address'])) {
                   $address = $address + $custom['address'][1];
