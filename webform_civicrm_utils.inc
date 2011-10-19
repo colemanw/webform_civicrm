@@ -182,7 +182,8 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
               }
               unset($params['master_id']);
               // Translate abbr to id for non-js users
-              if (!empty($params['state_province_id']) && !is_numeric($params['state_province_id'])) {
+              if (!empty($params['state_province_id'])
+              && (!is_numeric($params['state_province_id']) || $params['state_province_id'] < 1000)) {
                 $params['state_province_id'] = webform_civicrm_state_abbr($params['state_province_id'], 'id', webform_civicrm_aval($params, 'country_id'));
               }
             }
@@ -1550,11 +1551,11 @@ function webform_civicrm_set_message($message, $contact) {
 function webform_civicrm_js_options($key, $str='') {
   // Populate state/prov on the fly
   if ($key == 'state_province') {
-    if (!$str || (!is_numeric($str) && $str != 'all')) {
+    if (!$str || (intval($str) != $str && $str != 'all')) {
       webform_civicrm_json(array('' => t('- first choose a country -')));
     }
     civicrm_initialize();
-    $str = $str == 'all' ? '' : $str;
+    $str = $str == 'all' ? '' : (int) $str;
     webform_civicrm_json(array('' => t('- Select -')) + webform_civicrm_get_options('state_province', $str));
   }
 
