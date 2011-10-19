@@ -41,7 +41,7 @@ function web_civi_participant_conditional(fs) {
     classes = jQuery(this).attr('class').split(' ');
     for (cl in classes) {
       var c = classes[cl].split('-');
-      type = c[0];
+      var type = c[0];
       if (type === 'roleid' || type === 'eventtype' || type === 'eventid') {
         for (cid in c) {
           if (c[cid] === info[type]) {

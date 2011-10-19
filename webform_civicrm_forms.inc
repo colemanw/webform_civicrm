@@ -859,6 +859,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
  * Set webform default values.
  */
 function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
+  webform_civicrm_add_js('webform_civicrm_webforms.js');
   civicrm_initialize();
   require_once 'api/api.php';
   $node = $form['#node'];
@@ -1195,7 +1196,7 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
         $form['value']['#description'] = t('Enter a comma-separated list of tags to add to contacts who submit this webform.') . '<br />' . t('Use the autocomplete to select existing tags, or you may add new ones.');
         $form['value']['#type'] = 'textfield';
         $form['value']['#size'] = 100;
-        $form['value']['#autocomplete_path'] = 'webform-civicrm/js/' . $form['nid']['#value'] . '/tags';
+        $form['value']['#autocomplete_path'] = 'webform-civicrm/js/tags';
       }
     }
   }

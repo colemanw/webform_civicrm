@@ -22,7 +22,7 @@ function webform_civicrm_fapi_class($str) {
  * Compatibility wrapper for drupal_json_output()
  */
  function webform_civicrm_json($input) {
-   return drupal_json_output($input);
+   exit(drupal_json_output($input));
  }
 
 
