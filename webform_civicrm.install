@@ -310,13 +310,12 @@ function webform_civicrm_update_6203() {
   // First get rid of redundant fields
   $db = db_query("SELECT c1.* FROM {webform_component} c1, {webform_component} c2 WHERE c1.nid = c2.nid AND c1.form_key LIKE 'civicrm_%%_contact_%%_address_state_province' AND c2.form_key = CONCAT(c1.form_key, '_id')");
   foreach ($db as $item) {
-    $node = node_load($item->nid);dsm($item);
-    webform_component_delete($node, $item->cid);
+    webform_component_delete($item, (array) $item);
   }
 
   // Update state_province fields
   $db = db_query("SELECT * FROM {webform_component} WHERE form_key LIKE 'civicrm_%%_contact_%%_address_state_province%%'");
-  foreach ($db as $item) {dsm($item);
+  foreach ($db as $item) {
     $item->type = 'textfield';
     if (substr($item->form_key, -3) != '_id') {
       $item->form_key .= '_id';

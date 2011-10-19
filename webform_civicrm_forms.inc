@@ -1105,6 +1105,11 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
       $fid = $form['form_key']['#value'] = $form['form_key']['#default_value'];
       $form['form_key']['#description'] = t('Automatically set for use by CiviCRM processing.');
 
+      if ($table == 'address' && $key == 'state_province_id') {
+        $form['validation']['maxlength']['#type'] = 'hidden';
+        $form['validation']['maxlength']['#value'] = 5;
+      }
+
       // Here's a much nicer interface for choosing options than the standard textfields
       if (array_key_exists($key, webform_civicrm_get_fields('lists'))) {
         webform_civicrm_add_js('webform_civicrm_options.js');
