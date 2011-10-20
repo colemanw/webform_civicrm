@@ -498,7 +498,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     '#type' => 'checkbox',
     '#title' => t('Autofill Contact 1 with Current User'),
     '#default_value' => $settings['contact_matching'],
-    '#description' => '<span id = "civi-contact-match-on">' . t('Enable this option if users will fill out this form on behalf of themselves. Disable it to allow a logged-in user to enter someone else as contact 1.') . '</span> <span id = "civi-contact-match-off">' . t('This option is disabled when contact 1 is not an individual.') . '</span>',
+    '#description' => '<span id="civi-contact-match-on">' . t('Enable this option if users will fill out this form on behalf of themselves. Disable it to allow a logged-in user to enter someone else as contact 1.') . '</span> <span id="civi-contact-match-off">' . t('This option is disabled when contact 1 is not an individual.') . '</span>',
   );
   $form['options']['create_fieldsets'] = array(
     '#type' => 'checkbox',
@@ -951,7 +951,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
     // Form alterations for unknown contacts
     if (empty($id['cid'][1])) {
       if ($settings['prefix_unknown']) {
-        $form['#prefix'] = nl2br($settings['prefix_unknown']);
+        $form['#prefix'] = webform_civicrm_aval($form, '#prefix', '') . '<div class="webform-civicrm-prefix contact-unknown">' . nl2br($settings['prefix_unknown']) . '</div>';
       }
       if ($settings['block_unknown_users']) {
         $form['#access'] = FALSE;
@@ -1060,7 +1060,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
 
     if (!empty($id['cid'][1])) {
       if ($settings['prefix_known']) {
-        $form['#prefix'] = nl2br(webform_civicrm_replace_tokens($settings['prefix_known'], $info['contact'][1]['contact'][1]));
+        $form['#prefix'] = webform_civicrm_aval($form, '#prefix', '') . '<div class="webform-civicrm-prefix contact-known">' . nl2br(webform_civicrm_replace_tokens($settings['prefix_known'], $info['contact'][1]['contact'][1])) . '</div>';
       }
       if ($settings['message']) {
         webform_civicrm_set_message($settings['message'], $info['contact'][1]['contact'][1]);

@@ -331,9 +331,9 @@ function webform_civicrm_update_6203() {
       'width' => 4,
       'private' => 0,
     );
-    webform_component_update((array) $item); 
+    webform_component_update((array) $item);
   }
-  
+
   // Update submission results
   if ($submitted) {
     $where = implode(' OR ', $submitted);
