@@ -859,7 +859,6 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
  * Set webform default values.
  */
 function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
-  webform_civicrm_add_js('webform_civicrm_webforms.js');
   civicrm_initialize();
   require_once 'api/api.php';
   $node = $form['#node'];
