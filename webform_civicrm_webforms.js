@@ -26,18 +26,23 @@ $(document).ready(function(){
     var name = $(this).attr('name');
     var key = webform_civicrm_parse_name(name);
     var value = $(this).val();
-    var countrySelect = $(this).parents('form.webform-client-form').find('select[name*="'+(key.replace('state_province','country' ))+'"]');
+    var countrySelect = $(this).parents('form.webform-client-form').find('[name*="'+(key.replace('state_province','country' ))+'"]');
     var classes = $(this).attr('class').replace('text', 'select');
     $(this).replaceWith('<select id="'+id+'" name="'+name+'" class="'+classes+'"><option selected="selected" value="'+value+'"> </option></select>');
-    if (countrySelect.length == 0) {
-      webform_civicrm_populate_states($('#'+id), 'default');
+    var countryVal = 'default';
+    if (countrySelect.length === 1) {
+      countryVal = $(countrySelect).val();
     }
-    else{
-      webform_civicrm_populate_states($('#'+id), $(countrySelect).val());
+    else if (countrySelect.length > 1) {
+      countryVal = $(countrySelect).filter(':checked').val();
     }
+    if (!countryVal) {
+      countryVal = '';
+    }
+    webform_civicrm_populate_states($('#'+id), countryVal);
   });
 
-  $('form.webform-client-form select[name*="_address_country_id"][name*="civicrm_"]').change(function(){
+  $('form.webform-client-form [name*="_address_country_id"][name*="civicrm_"]').change(function(){
     var name = webform_civicrm_parse_name($(this).attr('name'));
     var countryId = $(this).val();
     var stateSelect = $(this).parents('form.webform-client-form').find('select[name*="'+(name.replace('country', 'state_province'))+'"]');
