@@ -23,6 +23,7 @@ function webform_civicrm_populate_states(stateSelect, countryId) {
 }
 
 $(document).ready(function(){
+  // Replace state/prov textboxes with dynamic select lists
   $('form.webform-client-form').find('input[name*="_address_state_province_id"][name*="civicrm_"]').each(function(){
     var id = $(this).attr('id');
     var name = $(this).attr('name');
@@ -44,13 +45,28 @@ $(document).ready(function(){
     webform_civicrm_populate_states($('#'+id), countryVal);
   });
 
+  // Add handler to country field to trigger ajax refresh of corresponding state/prov
   $('form.webform-client-form [name*="_address_country_id"][name*="civicrm_"]').change(function(){
     var name = webform_civicrm_parse_name($(this).attr('name'));
     var countryId = $(this).val();
     var stateSelect = $(this).parents('form.webform-client-form').find('select[name*="'+(name.replace('country', 'state_province'))+'"]');
-    $(stateSelect).val('');
-    webform_civicrm_populate_states(stateSelect, countryId);
+    if (stateSelect.length) {
+      $(stateSelect).val('');
+      webform_civicrm_populate_states(stateSelect, countryId);
+    }
   });
+
+  // Show/hide address fields when sharing an address
+  $('form.webform-client-form [name*="_address_master_id"][name*="civicrm_"]').change(function(){
+    var name = webform_civicrm_parse_name($(this).attr('name'));
+    if ($(this).val() !== '') {
+      $(this).parents('form.webform-client-form').find('[name*="'+(name.replace('master_id', ''))+'"]').not(this).parent().hide(500);
+    }
+    else {
+      $(this).parents('form.webform-client-form').find('[name*="'+(name.replace('master_id', ''))+'"]').not(this).parent().show(500);
+    }
+  }).change();
+
 });
 
 })(jQuery);
