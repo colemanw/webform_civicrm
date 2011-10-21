@@ -949,7 +949,7 @@ function _webform_civicrm_form_validate($form, &$form_state) {
         $dt = $element['#civicrm_data_type'];
         // Strings don't need any validation
         // For the moment we don't validate links because of CRM-8968
-        if ($dt !== 'Link' && $dt !== 'String'
+        if ($dt !== 'Link' && $dt !== 'String' && $dt !== 'Memo'
         && CRM_Utils_Type::escape($element['#value'], $dt, FALSE) === NULL) {
           form_error($element, t('Please enter a %type value for %field', array('%type' => $dt, '%field' => $element['#title'])));
         }
@@ -1297,7 +1297,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'CheckBox' => array('type' => 'select', 'extra' => array('multiple' => 1)),
       'Text'  => array('type' => 'textfield'),
       'TextArea' => array('type' => 'textarea'),
-      'RichTextArea' => array('type' => 'textarea'),
+      'RichTextEditor' => array('type' => 'textarea'),
       'Select Date' => array('type' => 'date'),
       'Link'  => array('type' => 'textfield'),
       'Select Country' => array('type' => 'select'),
