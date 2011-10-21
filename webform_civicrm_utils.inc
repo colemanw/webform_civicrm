@@ -1541,7 +1541,7 @@ function webform_civicrm_set_message($message, $contact) {
  * Callback to serve AJAX requests.
  */
 function webform_civicrm_js_options($key, $str='') {
-  // Populate state/prov on the fly
+  // Populate state/prov lists on the fly
   if ($key == 'state_province') {
     if (!$str || (intval($str) != $str && $str != 'default')) {
       webform_civicrm_json(array('' => t('- first choose a country -')));
