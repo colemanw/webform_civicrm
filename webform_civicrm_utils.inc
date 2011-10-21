@@ -883,8 +883,9 @@ function webform_civicrm_fill_values(&$elements, $data, $fields, $submitted) {
       list($lobo, $c, $ent, $n, $table, $name) = $pieces;
       $field = $fields[$table . '_' . $name];
       if (!empty($field['data_type'])) {
+        $dt = $element['#civicrm_data_type'] = $field['data_type'];
         // Add CiviCRM JS to link fields
-        if ($field['data_type'] == 'Link' && substr($element['#type'], 0, 4) == 'text') {
+        if ($dt == 'Link' && substr($element['#type'], 0, 4) == 'text') {
           $element['#attributes']['onblur'] = "if (this.value == 'http://') {this.value = '';}";
           $element['#attributes']['onfocus'] = "if (this.value == '') {this.value = 'http://';}";
         }
@@ -933,26 +934,24 @@ function webform_civicrm_state_abbr($input, $ret = 'abbreviation', $country_id =
 /**
  * Recursive validation callback for webform submissions.
  */
-function _webform_civicrm_form_validate($form, &$form_state, $fields) {
+function _webform_civicrm_form_validate($form, &$form_state) {
   // Recurse through form elements.
   foreach (element_children($form) as $key) {
-    if ($element = $form[$key]) {
+    if (is_array($form[$key]) && ($element = $form[$key])) {
       if (!empty($element['#type']) && $element['#type'] == 'fieldset') {
-        _webform_civicrm_form_validate($form[$key], $form_state, $fields);
+        _webform_civicrm_form_validate($form[$key], $form_state);
         continue;
       }
-      elseif (!empty($element['#webform_component']['form_key'])
+      elseif (!empty($element['#civicrm_data_type'])
+      && substr($element['#type'], 0, 4) === 'text'
       && $element['#value'] !== NULL
-      && $element['#value'] !== ''
-      && $pieces = webform_civicrm_explode_key($key)) {
-        list($lobo, $c, $ent, $n, $table, $name) = $pieces;
-        $field = $fields[$table . '_' . $name];
-        if ($field['type'] == 'textfield'
-        && !empty($field['data_type'])
+      && $element['#value'] !== '') {
+        $dt = $element['#civicrm_data_type'];
+        // Strings don't need any validation
         // For the moment we don't validate links because of CRM-8968
-        && $field['data_type'] !== 'Link'
-        && CRM_Utils_Type::escape($element['#value'], $field['data_type'], FALSE) === NULL) {
-          form_error($element, t('Please enter a %type value for %field', array('%type' => $field['data_type'], '%field' => $element['#title'])));
+        if ($dt !== 'Link' && $dt !== 'String'
+        && CRM_Utils_Type::escape($element['#value'], $dt, FALSE) === NULL) {
+          form_error($element, t('Please enter a %type value for %field', array('%type' => $dt, '%field' => $element['#title'])));
         }
       }
     }

@@ -859,6 +859,10 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
  * Set webform default values.
  */
 function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
+  webform_civicrm_add_js('webform_civicrm_webforms.js');
+  $form['#validate'][] = 'webform_civicrm_form_validate';
+
+
   civicrm_initialize();
   require_once 'api/api.php';
   $node = $form['#node'];
@@ -866,6 +870,13 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   $data = $settings['data'];
   $fields = webform_civicrm_get_fields();
   $id = $info = array();
+
+  // Early return for after the form's been submitted
+  if (empty($form_state['rebuild']) && !empty($form_state['input'])) {
+    webform_civicrm_fill_values($form['submitted'], array(), $fields, array());
+    return;
+  }
+
   // If this is an edit op, use the original IDs to avoid confusion
   if (!empty($form['#submission'])) {
     if (isset($form['#submission']->civicrm)) {
@@ -874,7 +885,8 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
     }
   }
   // Do form alterations unless going back to a previous page
-  elseif (!(!empty($form_state['clicked_button']['#id']) && $form_state['clicked_button']['#id'] == 'edit-previous')) {
+  elseif (!(!empty($form_state['clicked_button']['#id'])
+  && $form_state['clicked_button']['#id'] == 'edit-previous')) {
 
     // If this form is already in-process, IDs will be stored in session
     if (!empty($form_state['input'])) {
@@ -1074,14 +1086,6 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   // Passing $submitted helps us avoid overwriting values that have been entered on a multi-step form
   $submitted = empty($form_state['values']['submitted']) ? array() : $form_state['values']['submitted'];
   webform_civicrm_fill_values($form['submitted'], $info, $fields, $submitted);
-
-  // Add custom validation handler
-  if (isset($form['actions']['submit'])) {
-    $form['actions']['submit']['#validate'][] = 'webform_civicrm_form_validate';
-  }
-  if (isset($form['actions']['next'])) {
-    $form['actions']['next']['#validate'][] = 'webform_civicrm_form_validate';
-  }
 }
 
 
