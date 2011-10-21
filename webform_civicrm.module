@@ -54,23 +54,18 @@ function webform_civicrm_form_access($node) {
  * Implementation of hook_form_alter().
  */
 function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
-
   // Alter back-end webform component edit forms
-  if ($form_id == 'webform_component_edit_form') {
-    if (substr($form['form_key']['#default_value'], 0, 7) == 'civicrm') {
-      module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
-      _webform_civicrm_webform_component_form_alter($form);
-    }
+  if ($form_id == 'webform_component_edit_form'
+  && substr($form['form_key']['#default_value'], 0, 7) == 'civicrm') {
+    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
+    _webform_civicrm_webform_component_form_alter($form);
   }
 
   // Alter front-end of webforms
   elseif (strpos($form_id, 'webform_client_form_') !== FALSE
-    && !empty($form['#node']->webform_civicrm)) {
+  && !empty($form['#node']->webform_civicrm)) {
     module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
-    webform_civicrm_add_js('webform_civicrm_webforms.js');
-    if (!(empty($form_state['rebuild']) && !empty($form_state['input']))) {
-      _webform_civicrm_webform_frontend_form_alter($form, $form_state);
-    }
+    _webform_civicrm_webform_frontend_form_alter($form, $form_state);
   }
 }
 
@@ -249,9 +244,8 @@ function webform_civicrm_help($section) {
  * Validation callback for webform submissions.
  */
 function webform_civicrm_form_validate($form, &$form_state) {
+  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
   civicrm_initialize();
   require_once 'CRM/Utils/Type.php';
-  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
-  $fields = webform_civicrm_get_fields();
-  _webform_civicrm_form_validate($form['submitted'], $form_state, $fields);
+  _webform_civicrm_form_validate($form['submitted'], $form_state);
 }
