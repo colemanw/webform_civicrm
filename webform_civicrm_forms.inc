@@ -1244,6 +1244,11 @@ function webform_civicrm_process_options_selection($form, &$form_state) {
     }
     ksort($items);
     $vals['extra']['items'] = implode("\n", $items);
+
+    // A single radio should be shown as a checkbox
+    if (count($items) == 1 && empty($vals['extra']['aslist'])) {
+      $vals['extra']['multiple'] = 1;
+    }
   }
 }
 
