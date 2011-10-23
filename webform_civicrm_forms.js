@@ -14,15 +14,14 @@ function web_civi_master_id(n, c) {
 }
 
 function web_civi_select_reset(op, id) {
-  id = "#js-select-" + id;
   switch (op) {
     case 'reset':
-      jQuery(id).parent().find('input:checkbox').each(function() {
+      jQuery(id).find('input:checkbox').each(function() {
         jQuery(this).attr('checked', jQuery(this).attr('defaultChecked'));
       });
       break;
     default:
-      jQuery(id).parent().find('input:checkbox').attr('checked', op);
+      jQuery(id).find('input:checkbox').attr('checked', op);
   }
 }
 
