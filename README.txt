@@ -28,14 +28,14 @@ HOW TO USE IT
 
 OPTION LISTS
 
-Any CiviCRM field with options (whether it's a simple yes/no select, or a list of every country in the world) can be fully customized:
+Any CiviCRM field with options (whether it's a simple yes/no select, your upcoming events, or countries of the world) can be fully customized:
 -First create the field, then visit the webform tab and click the edit button by that field.
 -You can rearrange options by dragging them up and down.
 -You can disable options so they don't appear on the form.
 -You can set an option to be the default value on the form.
 -You can rename options.
 
-NOTE: Once a webform field is created, the options are set and will not change automatically. So if you update a custom field's option list in CiviCRM, the corresponding webform field will not be updated unless you click the edit button as described above and manually enable the new options.
+NOTE: Once a webform field is created, the options are set and will not change automatically. So if you update a custom field's option list in CiviCRM, the corresponding webform field will not be updated unless you click the edit button as described above and enable the new options.
 
 
 GROUPS AND TAGS
@@ -59,6 +59,16 @@ EVENT REGISTRATION
 -You can register contacts for events via webform. If your form has multiple contacts on it, you may choose to register them each separately for different events, or all together for the same event(s). If you choose to register them together, CiviCRM will show contact 1 as having registered the others.
 
 NOTE: It is not currently possible to pay for events via webform.
+
+
+STATE/PROVINCE AND COUNTRY ADDRESS FIELDS
+
+This module gives approximately the same functionality as core CiviCRM profiles for the state field of an address:
+- If you enable both state and country fields for an address, the state list will dynamically update based on the chosen country.
+- If you enable a state field but not a country field for an address, only states from your site's default country will be shown (note that this differs slightly from core profile behavior in that only states from your default country will show).
+- If the end-user has scripts disabled, the dynamic state list will degrade to a simple textbox where they may enter the abbreviation. This is why state fields appear as textfield form components.
+
+- None of the above applies to custom fields. Custom fields of type state/province will be a non-js dropdown list of all "Available states and provinces" you have enabled in CiviCRM's localization settings. This is exact same behavior as on CiviCRM profiles.
 
 
 USING SPECIAL LINKS IN CIVIMAIL
@@ -106,7 +116,7 @@ Note that permissions are checked, so these values will be ignored if the acting
 
 ANATOMY OF A FORM KEY - for geeks only
 
-When this module looks to see if a particular field exists, it checks the form key. Understanding form keys can allow you to get creative with your webform elements. You can, for example, create your own webform element of a custom type, give it the appropriate form key and it will be linked to that civicrm field.
+When this module looks to see if a particular field exists, it checks the form key. Understanding form keys can allow you to get creative with your webform elements. You can, for example, create your own webform element of a custom type, give it the appropriate form key and it will be linked to that civicrm field. You can also use this to set an element to be hidden on the form, but still available as an email token.
 
 CiviCRM webform keys all contain 6 pieces, connected by underscores. They are:
 civicrm _ number _ entity _ number _ table _ field_key (note that the 6th piece may itself contain underscores)
