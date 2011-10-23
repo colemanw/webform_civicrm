@@ -185,11 +185,12 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
         $c['number_of_' . $sid] = 1;
       }
       for ($i = 1; $i <= $c['number_of_' . $sid] && !$hide; ++$i) {
+        $fsid = 'civicrm_' . $n . $sid . $i . '_fieldset';
         $fieldset = array(
           '#type' => 'fieldset',
           '#title' => $set['label'],
-          '#attributes' => array('class' => webform_civicrm_fapi_class('web-civi-checkbox-set')),
-          'js_select' => webform_civicrm_js_select($n . $sid . $i . '_fieldset'),
+          '#attributes' => array('id' => $fsid, 'class' => webform_civicrm_fapi_class('web-civi-checkbox-set')),
+          'js_select' => webform_civicrm_js_select($fsid),
         );
         if ((isset($set['max_instances']) && $set['max_instances'] > 1) || $sid == 'relationship') {
           $fieldset['#title'] .= ' ' . $i;
@@ -366,6 +367,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
       }
     }
     foreach ($sets as $sid => $set) {
+      $sid .= '_fieldset';
       if ($set['entity_type'] == 'activity') {
         if (!empty($set['sub_types']) && !in_array($settings['activity_type_id'], $set['sub_types'])) {
           continue;
@@ -373,7 +375,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
         $form['act']['case']['activity_fields'][$sid] = array(
           '#type' => 'fieldset',
           '#title' => $set['label'],
-          '#attributes' => array('class' => webform_civicrm_fapi_class('web-civi-checkbox-set')),
+          '#attributes' => array('id' => $sid, 'class' => webform_civicrm_fapi_class('web-civi-checkbox-set')),
           'js_select' => webform_civicrm_js_select($sid),
         );
         foreach ($set['fields'] as $fid => $field) {
@@ -1257,12 +1259,11 @@ function webform_civicrm_process_options_selection($form, &$form_state) {
  * Build select all/none js links for a fieldset
  */
 function webform_civicrm_js_select($name) {
-  $name = str_replace('_', '-', $name);
   return array(WEBFORM_CIVICRM_MARKUP =>
-    '<div class="web-civi-js-select" id="js-select-' . $name . '">
-      <a href="javascript:web_civi_select_reset(\'checked\', ' . "'$name'" . ')">' . t('Select All') . '</a> |
-      <a href="javascript:web_civi_select_reset(\'\', ' . "'$name'" . ')">' . t('Select None') . '</a> |
-      <a href="javascript:web_civi_select_reset(\'reset\', ' . "'$name'" . ')">' . t('Restore') . '</a>
+    '<div class="web-civi-js-select">
+      <a href="javascript:web_civi_select_reset(\'checked\', ' . "'#$name'" . ')">' . t('Select All') . '</a> |
+      <a href="javascript:web_civi_select_reset(\'\', ' . "'#$name'" . ')">' . t('Select None') . '</a> |
+      <a href="javascript:web_civi_select_reset(\'reset\', ' . "'#$name'" . ')">' . t('Restore') . '</a>
     </div>',
   );
 }
