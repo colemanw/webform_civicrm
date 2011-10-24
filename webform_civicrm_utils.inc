@@ -528,16 +528,15 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
     $sql .= ' ORDER BY name';
   }
   elseif ($option_group == 'state_province') {
-    $value = 'abbreviation';
-    if (!$param) {
+    $value = $param ? 'UPPER(abbreviation)' : 'id';
+    if (!$param || $param == 'default') {
       $config = CRM_Core_Config::singleton();
-      if (!empty($config->provinceLimit)) {
+      if (!$param && !empty($config->provinceLimit)) {
         $param = implode(',', $config->provinceLimit);
       }
       else {
         $param = $config->defaultContactCountry;
       }
-      $value = 'id';
     }
     $sql = "SELECT name AS label, $value AS value FROM civicrm_state_province WHERE country_id IN ($param) ORDER BY name";
   }
@@ -934,12 +933,12 @@ function webform_civicrm_state_abbr($input, $ret = 'abbreviation', $country_id =
 /**
  * Recursive validation callback for webform submissions.
  */
-function _webform_civicrm_form_validate($form, &$form_state) {
+function _webform_civicrm_form_validate($form, &$form_state, $enabled, $values) {
   // Recurse through form elements.
   foreach (element_children($form) as $key) {
     if (is_array($form[$key]) && ($element = $form[$key])) {
       if (!empty($element['#type']) && $element['#type'] == 'fieldset') {
-        _webform_civicrm_form_validate($form[$key], $form_state);
+        _webform_civicrm_form_validate($form[$key], $form_state, $enabled, $values);
         continue;
       }
       elseif (!empty($element['#civicrm_data_type'])
@@ -947,11 +946,23 @@ function _webform_civicrm_form_validate($form, &$form_state) {
       && $element['#value'] !== NULL
       && $element['#value'] !== '') {
         $dt = $element['#civicrm_data_type'];
+        // Validate state/prov abbreviation 
+        if ($dt == 'state_province_abbr') {
+          $ckey = str_replace('state_province', 'country', $key);
+          $country_id = 'default';
+          if (!empty($enabled[$ckey]) && !empty($values[$enabled[$ckey]])) {
+            $country_id = $values[$enabled[$ckey]];
+          }
+          if (!array_key_exists(strtoupper($element['#value']), webform_civicrm_get_options('state_province', $country_id))) {
+            $countries = webform_civicrm_get_options('country');
+            form_error($element, t('Mismatch: "@state" is not a state/province of %country. Please enter a valid state/province abbreviation for %field.', array('@state' => $element['#value'], '%country' => $countries[$country_id], '%field' => $element['#title'])));
+          }
+        }
         // Strings don't need any validation
         // For the moment we don't validate links because of CRM-8968
-        if ($dt !== 'Link' && $dt !== 'String' && $dt !== 'Memo'
+        elseif ($dt !== 'Link' && $dt !== 'String' && $dt !== 'Memo'
         && CRM_Utils_Type::escape($element['#value'], $dt, FALSE) === NULL) {
-          form_error($element, t('Please enter a %type value for %field', array('%type' => $dt, '%field' => $element['#title'])));
+          form_error($element, t('Please enter a %type value for %field.', array('%type' => $dt, '%field' => $element['#title'])));
         }
       }
     }
@@ -1074,6 +1085,7 @@ function webform_civicrm_get_fields($var = 'fields') {
         'maxlength' => 5,
         'width' => 4,
       ),
+      'data_type' => 'state_province_abbr',
     );
     $fields['address_master_id'] = array(
       'name' => t('Share address of'),
@@ -1547,8 +1559,6 @@ function webform_civicrm_js_options($key, $str='') {
       webform_civicrm_json(array('' => t('- first choose a country -')));
     }
     civicrm_initialize();
-    $config = CRM_Core_Config::singleton();
-    $str = $str == 'default' ? $config->defaultContactCountry : (int) $str;
     webform_civicrm_json(array('' => t('- Select -')) + webform_civicrm_get_options('state_province', $str));
   }
 

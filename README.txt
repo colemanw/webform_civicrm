@@ -116,7 +116,7 @@ Note that permissions are checked, so these values will be ignored if the acting
 
 ANATOMY OF A FORM KEY - for geeks only
 
-When this module looks to see if a particular field exists, it checks the form key. Understanding form keys can allow you to get creative with your webform elements. You can, for example, create your own webform element of a custom type, give it the appropriate form key and it will be linked to that civicrm field. You can also use this to set an element to be hidden on the form, but still available as an email token.
+When this module looks to see if a particular field exists, it checks the form key. Understanding form keys can allow you to get creative with your webform elements. You can, for example, create your own webform element with a type of your choosing, give it the appropriate form key and it will be linked to that civicrm field. You can also use this to set an element to be hidden on the form, but still available as an email token.
 
 CiviCRM webform keys all contain 6 pieces, connected by underscores. They are:
 civicrm _ number _ entity _ number _ table _ field_key (note that the 6th piece may itself contain underscores)
@@ -128,4 +128,4 @@ civicrm_ - all civicrm fields start with this
 postal_code - the id of the field (usually the column name in the database)
 So this field is for the postal code of the first address of the second contact on the form.
 
-Note that for consistency, all form keys are treated as if everything might be multi-valued. So even though a contact can only have one first_name, the form key for contact 1's first name is still "civicrm_1_contact_1_contact_first_name" which tells us that this is the first contact on the form, and the first (and only) set of contact fields for them.
+Note that for consistency, all form keys are treated as if everything might be multi-valued. So even though a contact can only have one first_name, the form key for contact 1's first name is still "civicrm_1_contact_1_contact_first_name" which tells us that this is a field for the first contact on the form, and the first (and only) set of contact fields for them.
