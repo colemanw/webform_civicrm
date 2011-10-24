@@ -63,7 +63,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
   }
   // On rebuilding the form
   else {
-    $settings = webform_civicrm_aval($form_state, 'storage:vals', $form_state['values']);
+    $settings = webform_civicrm_aval($form_state['storage'], 'vals', $form_state['values']);
     webform_civicrm_process_form_settings($settings);
     unset($form_state['storage']['vals']);
   }
