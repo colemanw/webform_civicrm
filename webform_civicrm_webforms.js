@@ -8,21 +8,33 @@ function webform_civicrm_parse_name(name) {
   return name;
 }
 
+var stateProvinceCache = {};
+
 function webform_civicrm_populate_states(stateSelect, countryId) {
-  var value = $(stateSelect).val();
   $(stateSelect).attr('disabled', 'disabled');
-  $.ajax({
-    url: '/webform-civicrm/js/state_province/'+countryId,
-    dataType: 'json',
-    success: function(data) {
-      $(stateSelect).find('option').remove();
-      for (key in data) {
-        $(stateSelect).append('<option value="'+key+'">'+data[key]+'</option>');
+  if (stateProvinceCache[countryId]) {
+    webform_civicrm_fill_options(stateSelect, stateProvinceCache[countryId]);
+  }
+  else {
+    $.ajax({
+      url: '/webform-civicrm/js/state_province/'+countryId,
+      dataType: 'json',
+      success: function(data) {
+        webform_civicrm_fill_options(stateSelect, data);
+        stateProvinceCache[countryId] = data;
       }
-      $(stateSelect).val(value);
-      $(stateSelect).removeAttr('disabled');
-    }
-  });
+    });
+  }
+}
+
+function webform_civicrm_fill_options(element, data) {
+  var value = $(element).val();
+  $(element).find('option').remove();
+  for (key in data) {
+    $(element).append('<option value="'+key+'">'+data[key]+'</option>');
+  }
+  $(element).val(value);
+  $(element).removeAttr('disabled');
 }
 
 function webform_civicrm_shared_address(item, action, speed) {
