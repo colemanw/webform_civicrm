@@ -218,6 +218,36 @@ function webform_civicrm_webform_submission_render_alter(&$sub) {
 
 
 /**
+ * Implements hook_webform_submission_actions().
+ * Add links to view contact & activity.
+ */
+function webform_civicrm_webform_submission_actions($node, $submission) {
+  $actions = array();
+  if (!empty($node->webform_civicrm)
+  && !empty($submission->civicrm)
+  && webform_results_access($node)
+  && user_access('access CiviCRM')) {
+    $data = $submission->civicrm;
+    if (!empty($data['display_name'])) {
+      $actions['civicrm_action contact_view'] = array(
+        'title' => t('View @name', array('@name' => $data['display_name'])),
+        'href' => 'civicrm/contact/view',
+        'query' => array('reset' => 1, 'cid' => $data['contact_id'][1]),
+      );
+    }
+    if (!empty($data['activity_id'])) {
+      $actions['civicrm_action activity_view'] = array(
+        'title' => t('View Activity'),
+        'href' => 'civicrm/activity',
+        'query' => array('action' => 'view', 'reset' => 1, 'cid' => $data['contact_id'][1], 'id' => $data['activity_id']),
+      );
+    }
+  }
+  return $actions;
+}
+
+
+/**
  * Implementation of hook_civicrm_merge().
  * Update submission data to reflect new cids when contacts are merged.
  */
