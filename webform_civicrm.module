@@ -222,7 +222,8 @@ function webform_civicrm_webform_submission_load(&$submissions) {
  * Add display name to title while viewing a submission.
  */
 function webform_civicrm_webform_submission_render_alter(&$sub) {
-  if (!empty($sub['#submission']->civicrm['display_name']) && empty($sub['#email']) && $sub['#format'] == 'html') {
+  if (!empty($sub['#submission']->civicrm['display_name'])
+  && empty($sub['#email']) && $sub['#format'] == 'html') {
     drupal_set_title(t('Submission #!num by @name', array('!num' => $sub['#submission']->sid, '@name' => $sub['#submission']->civicrm['display_name'])));
   }
 }
@@ -246,10 +247,7 @@ function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = N
  * FAPI AJAX callback for the configure form.
  */
 function webform_civicrm_configure_form_ajax($form, $form_state) {
-  foreach (explode(':', $form_state['triggering_element']['#ajax']['pathstr']) as $key) {
-    $form = $form[$key];
-  }
-  return $form;
+  return webform_civicrm_aval($form, $form_state['triggering_element']['#ajax']['pathstr']);
 }
 
 
