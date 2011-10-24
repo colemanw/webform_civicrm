@@ -63,8 +63,9 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
   }
   // On rebuilding the form
   else {
-    $settings = $form_state['values'];
+    $settings = webform_civicrm_aval($form_state, 'storage:vals', $form_state['values']);
     webform_civicrm_process_form_settings($settings);
+    unset($form_state['storage']['vals']);
   }
   // Merge in existing fields
   $settings += webform_civicrm_enabled_fields($node, 'bool');
@@ -408,12 +409,20 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     );
     $form['event']['event_type'] = array(
       '#type' => 'select',
-      '#title' => t('Event Type'),
-      '#options' => array('current' => t('Upcoming Events')) + webform_civicrm_get_options('event_type'),
-      '#default_value' => webform_civicrm_aval($data, 'event_type', 'current'),
+      '#title' => t('Show Events of Type'),
+      '#options' => array('any' => t('- Any Type -')) + webform_civicrm_get_options('event_type'),
+      '#default_value' => webform_civicrm_aval($data, 'event_type', 'any'),
+      '#prefix' => '<div class="web-civi-checkbox-set">',
+    );
+    $form['event']['show_past_events'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Show Past Events'),
+      '#default_value' => (bool) webform_civicrm_aval($data, 'show_past_events'),
+      '#suffix' => '</div>',
     );
     webform_civicrm_ajax_form_item($form, 'event', 'participant_reg_type', 'participants');
     webform_civicrm_ajax_form_item($form, 'event', 'event_type', 'participants');
+    webform_civicrm_ajax_form_item($form, 'event', 'show_past_events', 'participants');
     for ($n = 1; $n <= $contacts; ++$n) {
       $class = (!$reg_type || ($reg_type == 'all' && $n > 1)) ? 'class="hidden"' : '';
       $form['event']['participants'][$n] = array(
@@ -609,6 +618,7 @@ function webform_civicrm_process_form_settings(&$vals) {
   if (isset($vals['participant_reg_type'])) {
     $data['participant_reg_type'] = $vals['participant_reg_type'];
     $data['event_type'] = $vals['event_type'];
+    $data['show_past_events'] = $vals['show_past_events'];
   }
   $vals['data'] = $data;
 }
@@ -677,14 +687,14 @@ function webform_civicrm_configure_form_item($fid, $field, $settings) {
 function webform_civicrm_configure_form_submit($form, &$form_state) {
   $button = $form_state['clicked_button']['#id'];
   $node = $form_state['storage']['node'];
-
   $vals = webform_civicrm_aval($form_state, 'storage:vals', $form_state['values']);
-  unset($form_state['storage']);
 
   if ((empty($node->webform_civicrm) && !$vals['nid']) || $button == 'edit-cancel') {
     $form_state['rebuild'] = TRUE;
+    unset($form_state['storage']['msg']);
     return;
   }
+  unset($form_state['storage']);
 
   civicrm_initialize();
   $delete_me = $enabled = webform_civicrm_enabled_fields($node);

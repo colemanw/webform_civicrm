@@ -20,6 +20,7 @@ div.form-item-activity-targets div.form-item,
   margin-right:1em;
 }
 
+.web-civi-checkbox-set + div,
 #civicrm-ajax-act-case-activity-fieldsassignee + div,
 #edit-activity-assignee-group-wrapper {
   clear:both;

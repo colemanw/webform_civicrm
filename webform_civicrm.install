@@ -342,7 +342,7 @@ function webform_civicrm_update_6203() {
     webform_component_update((array) $item);
   }
 
-  // Update submission results
+  // Update submission results - change numeric state/prov ids to abbreviations
   if ($submitted) {
     $where = implode(' OR ', $submitted);
     civicrm_initialize();

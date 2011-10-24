@@ -555,11 +555,11 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
   }
   elseif ($option_group == 'event') {
     $sql = "SELECT CONCAT(title, DATE_FORMAT(start_date, ': %c/%Y')) AS label, CONCAT(id, '-', event_type_id) AS value FROM civicrm_event WHERE is_template = 0";
-    if ($param == 'current') {
+    if (empty($param['show_past_events'])) {
       $sql .= ' AND end_date >= NOW()';
     }
-    elseif ($param) {
-      $sql .= ' AND event_type_id = ' . $param;
+    if (is_numeric($param['event_type'])) {
+      $sql .= ' AND event_type_id = ' . $param['event_type'];
     }
     $sql .= ' ORDER BY start_date DESC';
   }
@@ -637,7 +637,7 @@ function webform_civicrm_field_options($key, $format, $data) {
     elseif (isset($lists[$name])) {
       $param = NULL;
       if ($name == 'event_id') {
-        $param = webform_civicrm_aval($data, 'event_type', 'current');
+        $param = $data;
       }
       if ($name == 'assignee_contact_id'
       && !($param = webform_civicrm_aval($data, 'activity:1:assignee_group'))) {
@@ -1595,12 +1595,10 @@ function webform_civicrm_js_options($key, $str='') {
  */
 function webform_civicrm_aval($haystack, $keys, $default = NULL) {
   foreach (explode(':', $keys) as $key) {
-    if (is_array($haystack) && isset($haystack[$key])) {
-      $haystack = $haystack[$key];
-    }
-    else {
+    if (!is_array($haystack) || !isset($haystack[$key])) {
       return $default;
     }
+    $haystack = $haystack[$key];
   }
   // $haystack has been reduced down to the item we want
   return $haystack;
