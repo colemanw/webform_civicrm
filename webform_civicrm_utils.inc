@@ -155,8 +155,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
           $existing = array();
           $result = webform_civicrm_api($location, 'get', array('contact_id' => $cid, 'options' => array('sort' => 'is_primary DESC')));
           if (!empty($result['values'])) {
-            $existing = array_values($result['values']);
-            array_unshift($existing, 0);
+            $existing = array_merge(array(array()), $result['values']);
           }
           foreach ($contact[$location] as $i => $params) {
             // Skip this item if nothing was entered
@@ -166,7 +165,6 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
               && empty($params['state_province_id'])
               && empty($params['country_id'])
               && empty($params['postal_code'])
-              && empty($params['postal_code_suffix'])
               && empty($params['master_id'])) {
                 continue;
               }
@@ -205,7 +203,10 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
             if (!empty($existing[$i])) {
               $params['id'] = $existing[$i]['id'];
             }
-            $params['is_primary'] = $i == 1;
+            if ($location != 'website' && empty($params['location_type_id'])) {
+              $params['location_type_id'] = webform_civicrm_aval($existing, $i . ':location_type_id', 1);
+            }
+            $params['is_primary'] = $i == 1 ? 1 : 0;
             $result = webform_civicrm_api($location, 'create', $params);
             if ($location == 'address' && empty($result['is_error'])) {
               // Process custom data for address
@@ -949,9 +950,8 @@ function _webform_civicrm_form_validate($form, &$form_state, $enabled, $values) 
         // Validate state/prov abbreviation 
         if ($dt == 'state_province_abbr') {
           $ckey = str_replace('state_province', 'country', $key);
-          $country_id = 'default';
-          if (!empty($enabled[$ckey]) && !empty($values[$enabled[$ckey]])) {
-            $country_id = $values[$enabled[$ckey]];
+          if (!empty($enabled[$ckey])) {
+            $country_id = webform_civicrm_aval($values, $enabled[$ckey], 'default');
           }
           if (!array_key_exists(strtoupper($element['#value']), webform_civicrm_get_options('state_province', $country_id))) {
             $countries = webform_civicrm_get_options('country');
@@ -962,7 +962,22 @@ function _webform_civicrm_form_validate($form, &$form_state, $enabled, $values) 
         // For the moment we don't validate links because of CRM-8968
         elseif ($dt !== 'Link' && $dt !== 'String' && $dt !== 'Memo'
         && CRM_Utils_Type::escape($element['#value'], $dt, FALSE) === NULL) {
-          form_error($element, t('Please enter a %type value for %field.', array('%type' => $dt, '%field' => $element['#title'])));
+          // Allow data type names to be translated
+          switch ($dt) {
+            case 'Int':
+              $dt = t('an integer');
+              break;
+            case 'Float':
+              $dt = t('a number');
+              break;
+            case 'Link':
+              $dt = t('a web address starting with http://');
+              break;
+            case 'Money':
+              $dt = t('a currency value');
+              break;
+          }
+          form_error($element, t('Please enter @type for %field.', array('@type' => $dt, '%field' => $element['#title'])));
         }
       }
     }
