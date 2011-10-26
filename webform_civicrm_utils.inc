@@ -536,8 +536,11 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
         $param = implode(',', $config->provinceLimit);
       }
       else {
-        $param = $config->defaultContactCountry;
+        $param = (int) $config->defaultContactCountry;
       }
+    }
+    else {
+      $param = (int) $param;
     }
     $sql = "SELECT name AS label, $value AS value FROM civicrm_state_province WHERE country_id IN ($param) ORDER BY name";
   }
@@ -950,8 +953,9 @@ function _webform_civicrm_form_validate($form, &$form_state, $enabled, $values) 
         // Validate state/prov abbreviation 
         if ($dt == 'state_province_abbr') {
           $ckey = str_replace('state_province', 'country', $key);
-          if (!empty($enabled[$ckey])) {
-            $country_id = webform_civicrm_aval($values, $enabled[$ckey], 'default');
+          $country_id = 'default';
+          if (!empty($enabled[$ckey]) && !empty($values[$enabled[$ckey]])) {
+            $country_id = $values[$enabled[$ckey]];
           }
           if (!array_key_exists(strtoupper($element['#value']), webform_civicrm_get_options('state_province', $country_id))) {
             $countries = webform_civicrm_get_options('country');
