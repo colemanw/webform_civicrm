@@ -867,7 +867,7 @@ function webform_civicrm_enabled_fields($node, $format = 'cid') {
 
 /**
  * Recursively walk through form array and set default values for fields based on CiviCRM entity data
- * Called by _webform_civicrm_webform_frontend_form_alter() when webform is being viewed by a known contact
+ * Called by _webform_civicrm_webform_frontend_form_alter() when webform is being viewed
  * @Param $elements: FAPI array
  * @Param $data: Array of CiviCRM data
  */
@@ -954,7 +954,7 @@ function _webform_civicrm_form_validate($form, &$form_state, $enabled, $values) 
         if ($dt == 'state_province_abbr') {
           $ckey = str_replace('state_province', 'country', $key);
           $country_id = 'default';
-          if (!empty($enabled[$ckey]) && !empty($values[$enabled[$ckey]])) {
+          if (!empty($enabled[$ckey]) && !empty($values[$enabled[$ckey]]) && is_numeric($values[$enabled[$ckey]])) {
             $country_id = $values[$enabled[$ckey]];
           }
           if (!array_key_exists(strtoupper($element['#value']), webform_civicrm_get_options('state_province', $country_id))) {
@@ -1129,6 +1129,7 @@ function webform_civicrm_get_fields($var = 'fields') {
         'name' => $label,
         'type' => 'select',
         'expose_list' => TRUE,
+        'value' => '1',
       );
     }
     $fields['website_url'] = array(
