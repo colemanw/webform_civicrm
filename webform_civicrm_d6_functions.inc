@@ -153,5 +153,7 @@ function theme_webform_civicrm_options($element) {
     }
   }
   drupal_render($element);
-  return theme_table($header, $table, array('id' => 'civicrm-options-table'));
+  $output = theme_table($header, $table, array('id' => 'civicrm-options-table'));
+  // Disable drupal sticky headers because they cause invalid markup
+  return str_replace('<thead>', '<thead class="tableHeader-processed">', $output);
 }

@@ -915,6 +915,10 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
         require_once 'CRM/Contact/BAO/Contact/Permission.php';
         if (CRM_Contact_BAO_Contact_Permission::validateChecksumContact($cid, CRM_Core_DAO::$_nullObject)) {
           $id['cid'][$i] = $cid;
+          // Identify contact 1 as acting user if not already logged in
+          if ($i == 1 && user_is_anonymous()) {
+            CRM_Core_DAO::executeQuery('SET @civicrm_user_id = %1', array(1 => array($cid, 'Integer')));
+          }
         }
       }
     }
