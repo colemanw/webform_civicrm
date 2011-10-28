@@ -87,6 +87,7 @@ function theme_webform_civicrm_options($variables) {
   $table = array(
     'rows' => array(),
     'attributes' => array('id' => 'civicrm-options-table'),
+    'sticky' => FALSE,
   );
   if (empty($element['civicrm_options'])) {
     $table['header'] = array(t('Item'), $default_box . t('Selected'));
