@@ -805,15 +805,16 @@ function webform_civicrm_save_custom($entity, $entity_id, $entity_type = NULL) {
       if (empty($existing[$table])) {
         $existing[$table] = array();
       }
+      $insert = 0;
       foreach ($values as $offset => $custom) {
-        $suf = '';
         if ($id = each($existing[$table])) {
-          if (!empty($id[0])) {
-            $suf = '_' . $id[0];
-          }
+          $suf = $id['key'];
+        }
+        else {
+          $suf = --$insert;
         }
         foreach ($custom as $k => $v) {
-          $params[$k . $suf] = $v;
+          $params[$k . '_' . $suf] = $v;
         }
       }
     }
