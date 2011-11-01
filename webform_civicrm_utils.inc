@@ -158,16 +158,16 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
             $existing = array_merge(array(array()), $result['values']);
           }
           foreach ($contact[$location] as $i => $params) {
-            // Skip this item if nothing was entered
+            $empty = FALSE;
             if ($location == 'address') {
-              if (empty($params['street_address'])
+              // Check if nothing was entered
+              $empty = (empty($params['street_address'])
               && empty($params['city'])
               && empty($params['state_province_id'])
               && empty($params['country_id'])
               && empty($params['postal_code'])
-              && empty($params['master_id'])) {
-                continue;
-              }
+              && empty($params['master_id']));
+
               // Store shared addresses for later since we haven't necessarily processed
               // the contact this address is shared with yet.
               if (!empty($params['master_id'])) {
@@ -184,13 +184,12 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
                 $params['state_province_id'] = webform_civicrm_state_abbr($params['state_province_id'], 'id', webform_civicrm_aval($params, 'country_id', $config->defaultContactCountry));
               }
             }
+            // Check if nothing was entered
             elseif ($location == 'website') {
-              if (empty($params['url'])) {
-                continue;
-              }
+              $empty = empty($params['url']);
             }
             elseif (empty($params[$location])) {
-              continue;
+              $empty = TRUE;
             }
             elseif ($location == 'email' && $i == 1 && $uid = webform_civicrm_user_cid($cid, 'contact')) {
               // Update drupal email address
@@ -202,6 +201,13 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
             $params['contact_id'] = $cid;
             if (!empty($existing[$i])) {
               $params['id'] = $existing[$i]['id'];
+            }
+            if ($empty) {
+              // Delete this location if nothing was entered and this is a known contact
+              if (!empty($updating['cid'][$c]) && !empty($params['id'])) {
+                webform_civicrm_api($location, 'delete', $params);
+              }
+              continue;
             }
             if ($location != 'website' && empty($params['location_type_id'])) {
               $params['location_type_id'] = webform_civicrm_aval($existing, $i . ':location_type_id', 1);
@@ -949,7 +955,7 @@ function _webform_civicrm_form_validate($form, &$form_state, $enabled, $values) 
       && $element['#value'] !== NULL
       && $element['#value'] !== '') {
         $dt = $element['#civicrm_data_type'];
-        // Validate state/prov abbreviation 
+        // Validate state/prov abbreviation
         if ($dt == 'state_province_abbr') {
           $ckey = str_replace('state_province', 'country', $key);
           if (!empty($enabled[$ckey]) && !empty($values[$enabled[$ckey]]) && is_numeric($values[$enabled[$ckey]])) {
