@@ -925,13 +925,14 @@ function webform_civicrm_fill_values(&$elements, $data, $fields, $submitted) {
  */
 function webform_civicrm_state_abbr($input, $ret = 'abbreviation', $country_id = NULL) {
   $input_type = $ret == 'id' ? 'abbreviation' : 'id';
-  $input = $ret == 'id' ? "'$input'" : $input;
-  $sql = "SELECT $ret FROM civicrm_state_province WHERE $input_type = $input";
+  $sql = "SELECT $ret FROM civicrm_state_province WHERE $input_type = %1";
+  $vars = array(1 => array($input, $ret == 'id' ? 'String' : 'Integer'));
   if ($country_id) {
-    $sql .= " AND country_id = $country_id";
+    $sql .= " AND country_id = %2";
+    $vars[2] = array($country_id, 'Integer');
   }
   $sql .= " LIMIT 0, 1";
-  return CRM_Core_DAO::singleValueQuery($sql);
+  return CRM_Core_DAO::singleValueQuery($sql, $vars);
 }
 
 
