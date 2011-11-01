@@ -878,9 +878,9 @@ function webform_civicrm_fill_values(&$elements, $data, $fields, $submitted) {
     if ($eid[0] == '#' || !is_array($element)) {
       continue;
     }
+    // Recurse through nested elements
+    webform_civicrm_fill_values($element, $data, $fields, $submitted);
     if (!empty($element['#type']) && $element['#type'] == 'fieldset') {
-      // Recurse through fieldsets
-      webform_civicrm_fill_values($element, $data, $fields, $submitted);
       continue;
     }
     if ($pieces = webform_civicrm_explode_key($eid)) {
@@ -942,11 +942,8 @@ function _webform_civicrm_form_validate($form, &$form_state, $enabled, $values) 
   // Recurse through form elements.
   foreach (element_children($form) as $key) {
     if (is_array($form[$key]) && ($element = $form[$key])) {
-      if (!empty($element['#type']) && $element['#type'] == 'fieldset') {
-        _webform_civicrm_form_validate($form[$key], $form_state, $enabled, $values);
-        continue;
-      }
-      elseif (!empty($element['#civicrm_data_type'])
+      _webform_civicrm_form_validate($form[$key], $form_state, $enabled, $values);
+      if (!empty($element['#civicrm_data_type'])
       && substr($element['#type'], 0, 4) === 'text'
       && $element['#value'] !== NULL
       && $element['#value'] !== '') {
@@ -954,9 +951,12 @@ function _webform_civicrm_form_validate($form, &$form_state, $enabled, $values) 
         // Validate state/prov abbreviation 
         if ($dt == 'state_province_abbr') {
           $ckey = str_replace('state_province', 'country', $key);
-          $country_id = 'default';
           if (!empty($enabled[$ckey]) && !empty($values[$enabled[$ckey]]) && is_numeric($values[$enabled[$ckey]])) {
             $country_id = $values[$enabled[$ckey]];
+          }
+          else {
+            $config = CRM_Core_Config::singleton();
+            $country_id = $config->defaultContactCountry;
           }
           if (!array_key_exists(strtoupper($element['#value']), webform_civicrm_get_options('state_province', $country_id))) {
             $countries = webform_civicrm_get_options('country');
