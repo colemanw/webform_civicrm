@@ -17,7 +17,7 @@ module_load_include('inc', 'webform_civicrm', 'webform_civicrm_d' . substr(VERSI
  */
 function webform_civicrm_process_submission($node, &$submission, $op) {
   static $data = array();
-  static $id = array();
+  static $id = array('cid' => array());
   static $update = array();
   $settings = $node->webform_civicrm;
 
@@ -32,6 +32,29 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
     $data = $settings['data'];
     $sets = webform_civicrm_get_fields('sets');
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
+
+    // Retrieve stored ids
+    if (!empty($_SESSION['webform_civicrm_data'][$node->nid])) {
+      $id = $updating = $_SESSION['webform_civicrm_data'][$node->nid];
+      unset($_SESSION['webform_civicrm_data'][$node->nid]);
+      if (empty($_SESSION['webform_civicrm_data'])) {
+        unset($_SESSION['webform_civicrm_data']);
+      }
+    }
+
+    // If this is an update op, set param for drupal_write_record()
+    if (!empty($submission->sid)) {
+      $submitted = array($submission->sid => new stdClass());
+      webform_civicrm_webform_submission_load($submitted);
+      if (isset($submitted[$submission->sid]->civicrm)) {
+        $update = 'sid';
+      }
+    }
+
+    // While saving a draft, just skip to the end and write the record
+    if (!empty($submission->is_draft)) {
+      return;
+    }
 
     // Fill entity arrays with field values
     foreach ($enabled as $field => $fid) {
@@ -53,36 +76,11 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         else {
           $val = isset($val[0]) ? $val[0] : '';
         }
-        $data[$ent][$c][$table][$n][$field] = $val;
+        // Only known contacts are allowed to empty a field
+        if (($val !== '' && $val !== NULL) || !empty($updating['cid'][$c])) {
+          $data[$ent][$c][$table][$n][$field] = $val;
+        }
       }
-    }
-
-    // Retrieve stored ids
-    if (!empty($_SESSION['webform_civicrm_data'][$node->nid])) {
-      $id = $updating = $_SESSION['webform_civicrm_data'][$node->nid];
-      unset($_SESSION['webform_civicrm_data'][$node->nid]);
-      if (empty($_SESSION['webform_civicrm_data'])) {
-        unset($_SESSION['webform_civicrm_data']);
-      }
-    }
-
-    // Check if this is an update op
-    if (!empty($submission->sid)) {
-      $submitted = array($submission->sid => new stdClass());
-      webform_civicrm_webform_submission_load($submitted);
-      if (isset($submitted[$submission->sid]->civicrm)) {
-        $update = 'sid';
-        $id['cid'] = $submitted[$submission->sid]->civicrm['contact_id'];
-        $id['act'][1] = $submitted[$submission->sid]->civicrm['activity_id'];
-        $updating = $id;
-      }
-    }
-    if (!empty($submission->is_draft)) {
-      return;
-    }
-
-    if (empty($id)) {
-      $id = array('cid' => array());
     }
 
     $shared_address = array();
