@@ -29,13 +29,13 @@ HOW TO USE IT
 OPTION LISTS
 
 Any CiviCRM field with options (whether it's a simple yes/no select, your upcoming events, or countries of the world) can be fully customized:
--First create the field, then visit the webform tab and click the edit button by that field.
+-First create the field on the CiviCRM tab, then visit the Webform tab and click the edit button by that field.
 -You can rearrange options by dragging them up and down.
 -You can disable options so they don't appear on the form.
 -You can set an option to be the default value on the form.
 -You can rename options.
 
-NOTE: Once a webform field is created, the options are set and will not change automatically. So if you update a custom field's option list in CiviCRM, the corresponding webform field will not be updated unless you click the edit button as described above and enable the new options.
+NOTE: Once a webform field is created, the options are set and will not change automatically. So if you update an option list in CiviCRM, the corresponding webform field will not be updated unless you click the edit button as described above and enable the new options.
 
 
 GROUPS AND TAGS
@@ -65,15 +65,15 @@ STATE/PROVINCE AND COUNTRY ADDRESS FIELDS
 
 This module gives approximately the same functionality as core CiviCRM profiles for the state field of an address:
 - If you enable both state and country fields for an address, the state list will dynamically update based on the chosen country.
-- If you enable a state field but not a country field for an address, only states from your site's default country will be shown (note that this differs slightly from core profile behavior in that only states from your default country will show).
-- If the end-user has scripts disabled, the dynamic state list will degrade to a simple textbox where they may enter the abbreviation. This is why state fields appear as textfield form components.
+- If you enable a state field but not a country field for an address, only states from your site's default country will be shown.
+- If the end-user has scripts disabled, the dynamic state list will degrade to a simple textbox where they may enter the abbreviation. This is why the Webform Components tab shows them as textfields.
 
-- None of the above applies to custom fields. Custom fields of type state/province will be a non-js dropdown list of all "Available states and provinces" you have enabled in CiviCRM's localization settings. This is exact same behavior as on CiviCRM profiles.
+- None of the above applies to custom fields. Custom fields of type state/province will be a non-dynamic dropdown list of all "Available states and provinces" you have enabled in CiviCRM's localization settings. This is exact same behavior as on CiviCRM profiles.
 
 
 USING SPECIAL LINKS IN CIVIMAIL
 
-CiviMail has the ability to generate links that have a unique "key" for each person it sends a message to. This module can read those keys and automatically pre-fill the webform for people who follow that link. Your constituents will thank you for not making them fill out their name, address, etc when you already know it. To send out personalized links to your form in CiviMail, simply copy and paste the provided url on the CiviCRM tab of your webform into your CiviMail message. It will look similar to this:
+CiviMail has the ability to generate links that have a unique "key" for each person it sends a message to. This module can read those keys and automatically pre-fill the webform for people who follow that link. Your constituents will thank you for not making them fill out their name, address, etc when you already know it. To send out personalized links to your form in CiviMail, simply copy and paste the url provided under "Additional Options" on the CiviCRM tab of your webform into your CiviMail message. It will look similar to this:
 
 http://example.org/myform?cid1={contact.contact_id}&{contact.checksum}
 
@@ -86,12 +86,12 @@ ABOUT THE USER MESSAGE
 
 This feature exists to help prevent a major CRM headache: If users view your form while logged-in as someone else, or they click to your form by following someone else's personalized link (i.e. from a forwarded email), they will see that person's details on the form. Not given any alternative, they are likely to manually clear those fields and type their own information, which would cause the existing contact to be updated with a different person's details, throwing your contact data into confusion.
 
-When enabled, users will see a configurable message instructing them to "click here" if they are not the intended contact. The link will take the appropriate action (logging them out if they are logged in, or else getting rid of the personalized hash) and bring them  to an anonymous version of the form.
+When enabled, users will see a configurable message instructing them to "click here" if they are not the intended contact. The link will take the appropriate action (logging them out if they are logged in, or else getting rid of the personalized hash) and bring them to an anonymous version of the form (make sure anonymous & unknown users have access to the webform if using this feature!)
 
 
 RETROFITTING AN EXISTING WEBFORM
 
-You can pretty easily start recording CiviCRM contacts even for an existing webform. This falls into two scenarios:
+You can start recording CiviCRM contacts even for an existing webform. This falls into two scenarios:
 
 1) You don't have any contact info fields on the form yet (name, address, etc). That's easy, just go to the CiviCRM tab of your webform, check the boxes, and the new fields will be created for you.
 
