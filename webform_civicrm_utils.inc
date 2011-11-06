@@ -1425,6 +1425,7 @@ function webform_civicrm_get_fields($var = 'fields') {
  * Lookup a uf ID from contact ID or vice-versa
  * @param $id: uf or contact ID - defaults to current user
  * @param $type: what type of ID is supplied
+ * With no arguments passed in, this function will return the contact_id of the current logged-in user
  */
 function webform_civicrm_user_cid($id = NULL, $type = 'uf') {
   if (!$id) {

@@ -13,6 +13,10 @@
   max-width: 20em;
 }
 
+form #web-civi-help {
+  float:right;
+}
+
 div.form-item-activity-targets div.form-item,
 #edit-activity-assignee-group-wrapper,
 #civicrm-ajax-act-case-activity-fieldsassignee {
