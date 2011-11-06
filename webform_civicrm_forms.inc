@@ -82,17 +82,13 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     list($group) = explode('_', $fid, 2);
     $sets[$group]['fields'][$fid] = $field;
   }
-
   $form['nid'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable CiviCRM Processing'),
     '#default_value' => !empty($settings['nid']),
     '#return_value' => $node->nid,
-    '#description' => '<ul><li>' .
-      t('CiviCRM contacts will be created or updated when users submit this webform.') . '</li><li>' .
-      t('The form can be auto-filled for logged-in users, or people following this link from CiviMail:') . '<br />' .
-      url('node/' . $node->nid, array('absolute' => TRUE)) . '?cid1={contact.contact_id}&{contact.checksum}</li><li>' .
-      t('<a !link>Read the instructions</a> for more info.', array('!link' => 'href="/admin/help/webform_civicrm" target="_blank"')) . '</li></ul>',
+    '#description' => '<a id="web-civi-help" class="module-link module-link-help" href="/admin/help/webform_civicrm" target="_blank">' . t('Webform CiviCRM Help') . '</a>
+    <ul><li>' . t('Contacts will be created or updated when users submit this webform.') . '</li></ul>',
   );
   $form['number_of_contacts'] = array(
     '#type' => 'select',
@@ -251,7 +247,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
   $form['st_message']['message'] = array(
     '#type' => 'textfield',
     '#title' => t('Message text (displayed as a Drupal status message)'),
-    '#default_value' => !empty($settings['message']) ? $settings['message'] : t("You are viewing this form as [display name]. Please {click here if that's not you}."),
+    '#default_value' => webform_civicrm_aval($settings, 'message', t("You are viewing this form as [display name]. Please {click here if that's not you}.")),
     '#size' => 100,
     '#maxlength' => 255,
     '#description' => t('Enclose your "not you" link text in curly brackets {like this}.') . '<p>' . $tokens . '</p>',
@@ -502,8 +498,8 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
   $form['options'] = array(
     '#type' => 'fieldset',
     '#title' => t('Additional Options'),
-    '#attributes' => array('class' => webform_civicrm_fapi_class('web-civi-checkbox-set')),
     '#group' => 'webform_civicrm',
+    '#description' => '<p>' . t('Configure the behavior of this form with the following options:') . '</p><p>' . t('To have this form auto-filled for anonymous users, send the following link from CiviMail:') . '<br />' . url('node/' . $node->nid, array('absolute' => TRUE)) . '?cid1={contact.contact_id}&{contact.checksum}</p>',
   );
   $form['options']['contact_matching'] = array(
     '#type' => 'checkbox',
@@ -515,7 +511,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     '#type' => 'checkbox',
     '#title' => t('Create Fieldsets'),
     '#default_value' => (bool) $settings['create_fieldsets'],
-    '#description' => t('Create a fieldset around each contact. (Nice if you have more than one contact on this form, but not required; all CiviCRM fields will be processed correctly regardless of how they are arranged).'),
+    '#description' => t('Create a fieldset around each contact. (Nice if you have more than one contact on this form, but not required; all CiviCRM fields will be processed regardless of how they are arranged).'),
   );
   $form['options']['confirm_subscription'] = array(
     '#type' => 'checkbox',

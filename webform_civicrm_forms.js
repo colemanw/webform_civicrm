@@ -124,27 +124,24 @@ function web_civi_participant_conditional(fs) {
   }
 
   $(document).ready( function(){
-    if(!$('#edit-nid').is(':checked')){
-      $('#webform-civicrm-configure-form fieldset > div, #webform-civicrm-configure-form fieldset > fieldset, .form-item-number-of-contacts').not('.hidden').hide();
-    }
 
     webform_civicrm_contact_match_checkbox();
 
     $('#edit-nid').change(function(){
       if( $(this).is(':checked') ){
-        $('#webform-civicrm-configure-form fieldset > div, #webform-civicrm-configure-form fieldset > fieldset, .form-item-number-of-contacts').not('.hidden').show(600);
+        $('#webform-civicrm-configure-form .vertical-tabs').removeAttr('style');
+        $('#webform-civicrm-configure-form .vertical-tabs-panes').removeClass('hidden');
       }else{
-        $('#webform-civicrm-configure-form fieldset > div, #webform-civicrm-configure-form fieldset > fieldset, .form-item-number-of-contacts').not('.hidden').hide(600);
+        $('#webform-civicrm-configure-form .vertical-tabs').css('opacity', '0.4');
+        $('#webform-civicrm-configure-form .vertical-tabs-panes').addClass('hidden');
       }
-    });
+    }).change();
 
     $('#edit-toggle-message').change(function(){
       if( $(this).is(':checked')){
         $('#edit-message').removeAttr('disabled');
-        $('.form-item-message').show(600).removeClass('hidden');
       }else{
         $('#edit-message').attr('disabled','disabled');
-        $('.form-item-message').hide().addClass('hidden');
       }
     }).change();
 

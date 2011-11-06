@@ -13,6 +13,10 @@ form .web-civi-checkbox-set .form-item {
   max-width: 20em;
 }
 
+form #web-civi-help {
+  float:right;
+}
+
 form .form-item-activity-targets div.form-item.form-type-checkbox,
 form div.form-item-activity-assignee-group,
 #civicrm-ajax-act-case-activity-fields-assignee {
