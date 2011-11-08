@@ -499,7 +499,9 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     '#type' => 'fieldset',
     '#title' => t('Additional Options'),
     '#group' => 'webform_civicrm',
-    '#description' => '<p>' . t('Configure the behavior of this form with the following options:') . '</p><p>' . t('To have this form auto-filled for anonymous users, send the following link from CiviMail:') . '<br />' . url('node/' . $node->nid, array('absolute' => TRUE)) . '?cid1={contact.contact_id}&{contact.checksum}</p>',
+    '#description' => '<p>' .
+    t('To have this form auto-filled for anonymous users, send the following link from CiviMail:') .
+    '<br />' . url('node/' . $node->nid, array('absolute' => TRUE)) . '?cid1={contact.contact_id}&{contact.checksum}</p>',
   );
   $form['options']['contact_matching'] = array(
     '#type' => 'checkbox',
