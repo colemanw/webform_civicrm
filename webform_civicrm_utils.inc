@@ -739,11 +739,12 @@ function webform_civicrm_get_contact_relationship_types($type_a, $type_b, $sub_t
     && ($t['sub_type_b'] == $sub_type_b || !$t['sub_type_b'])) {
       $ret[$t['id'] . '_a'] = $t['label_a_b'];
     }
+    // Reciprocal form - only show if different from above
     if (($t['type_a'] == $type_b || !$t['type_a'])
     && ($t['type_b'] == $type_a || !$t['type_b'])
     && ($t['sub_type_a'] == $sub_type_b || !$t['sub_type_a'])
     && ($t['sub_type_b'] == $sub_type_a || !$t['sub_type_b'])
-    && ($t['name_a_b'] != $t['name_b_a'])) {
+    && ($t['label_a_b'] != $t['label_b_a'] && $t['label_b_a'] || $t['type_a'] != $t['type_b'])) {
       $ret[$t['id'] . '_b'] = $t['label_b_a'];
     }
   }
