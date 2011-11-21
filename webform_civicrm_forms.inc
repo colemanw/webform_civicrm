@@ -873,7 +873,6 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   $form['#validate'][] = 'webform_civicrm_form_validate';
 
   civicrm_initialize();
-  require_once 'api/api.php';
   $node = $form['#node'];
   $settings = $node->webform_civicrm;
   $data = $settings['data'];
