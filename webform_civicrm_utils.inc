@@ -25,7 +25,6 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
   if ($op == 'presave') {
     civicrm_initialize();
     $config = CRM_Core_Config::singleton();
-    require_once 'api/api.php';
     require_once 'CRM/Core/BAO/CustomValueTable.php';
     $enabled = webform_civicrm_enabled_fields($node);
     $fields = webform_civicrm_get_fields();
@@ -86,8 +85,12 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
     $shared_address = array();
     foreach ($data['contact'] as $c => $contact) {
       if (empty($id['cid'][$c])) {
-        // Skip contact if we don't have a name or id
-        if (empty($contact['contact'][1]['first_name']) && empty($contact['contact'][1]['last_name']) && empty($contact['contact'][1]['organization_name']) && empty($contact['contact'][1]['household_name'])) {
+        // Don't create contact if we don't have a name or email
+        if (empty($contact['contact'][1]['first_name'])
+        && empty($contact['contact'][1]['last_name']) 
+        && empty($contact['contact'][1]['organization_name'])
+        && empty($contact['contact'][1]['household_name'])
+        && empty($contact['email'][1]['email'])) {
           $id['cid'][$c] = 0;
           continue;
         }
@@ -179,7 +182,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
               unset($params['master_id']);
               // Translate state/prov abbr to id
               if (!empty($params['state_province_id'])) {
-                $params['state_province_id'] = webform_civicrm_state_abbr($params['state_province_id'], 'id', webform_civicrm_aval($params, 'country_id', $config->defaultContactCountry));
+                $params['state_province_id'] = webform_civicrm_state_abbr($params['state_province_id'], 'id', empty($params['country_id']) ? $config->defaultContactCountry : $params['country_id']);
               }
             }
             // Check if nothing was entered
