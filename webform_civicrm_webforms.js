@@ -41,12 +41,14 @@ function webform_civicrm_fill_options(element, data) {
 
 function webform_civicrm_shared_address(item, action, speed) {
   var name = webform_civicrm_parse_name($(item).attr('name'));
-  fields = $(item).parents('form.webform-client-form').find('[name*="['+(name.replace('master_id', ''))+'"]').not(item).not('[name*=location_type_id]').parent();
+  fields = $(item).parents('form.webform-client-form').find('[name*="['+(name.replace('master_id', ''))+'"]').not(item).not('[name*=location_type_id]').not('[type="hidden"]');
   if (action === 'hide') {
-    $(fields).hide(speed);
+    $(fields).not(':hidden').parent().hide(speed);
+    $(fields).attr('disabled', 'disabled');
   }
   else {
-    $(fields).show(speed);
+    $(fields).removeAttr('disabled');
+    $(fields).parent().show(speed);
   }
 }
 
