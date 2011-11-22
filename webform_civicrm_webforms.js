@@ -54,7 +54,7 @@ function webform_civicrm_shared_address(item, action, speed) {
 
 $(document).ready(function(){
   // Replace state/prov textboxes with dynamic select lists
-  $('form.webform-client-form').find('input[name*="_address_state_province_id"][name*="[civicrm_"]').each(function(){
+  $('form.webform-client-form').find('input[name*="_address_state_province_id"][name*="[civicrm_"][type="text"]').each(function(){
     var id = $(this).attr('id');
     var name = $(this).attr('name');
     var key = webform_civicrm_parse_name(name);
