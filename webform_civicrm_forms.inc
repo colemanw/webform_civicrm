@@ -1110,7 +1110,8 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
   $node = node_load($form['nid']['#value']);
   if (!empty($node->webform_civicrm)) {
     civicrm_initialize();
-    if (!($pieces = webform_civicrm_explode_key($form['form_key']['#default_value']))) {
+    $fid = $form['form_key']['#default_value'];
+    if (!($pieces = webform_civicrm_explode_key($fid))) {
       return;
     }
     list($lobo, $i, $ent, $n, $table, $key) = $pieces;
@@ -1120,10 +1121,12 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
       ($lobo == 'civicrm' && $table == 'fieldset')) {
       drupal_add_css(drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_style.css');
 
-      // Prevent users from editing the form_key and breaking things
-      $form['form_key']['#disabled'] = TRUE;
-      $fid = $form['form_key']['#value'] = $form['form_key']['#default_value'];
-      $form['form_key']['#description'] = t('Automatically set for use by CiviCRM processing.');
+      if (arg(5) != 'clone') {
+        // Prevent users from editing the form_key and breaking things
+        $form['form_key']['#disabled'] = TRUE;
+        $form['form_key']['#value'] = $fid;
+        $form['form_key']['#description'] = t('Automatically set for use by CiviCRM processing.');
+      }
 
       if ($table == 'address' && $key == 'state_province_id') {
         $form['validation']['maxlength']['#type'] = 'hidden';

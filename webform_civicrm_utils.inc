@@ -120,6 +120,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       }
       // Create new contact
       if (empty($id['cid'][$c])) {
+        unset($params['contact_id']);
         $params['source'] = $settings['new_contact_source'];
         $result = webform_civicrm_api('contact', 'create', $params);
         if (!empty($result['id'])) {
@@ -1631,12 +1632,12 @@ function webform_civicrm_js_options($key, $str='') {
  * Return a value from an array.
  * @param $haystack: the array to search
  * @param $keys: pass a single key, or multiple keys separated by : to get a nested value
- * @param $default: value to return if given array key does not exist
+ * @param $default: value to return if given array key does not exist or its value is empty
  * @return: found value or default
  */
 function webform_civicrm_aval($haystack, $keys, $default = NULL) {
   foreach (explode(':', $keys) as $key) {
-    if (!is_array($haystack) || !isset($haystack[$key])) {
+    if (!is_array($haystack) || !isset($haystack[$key]) || (empty($haystack) && $default !== NULL)) {
       return $default;
     }
     $haystack = $haystack[$key];
