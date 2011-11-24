@@ -86,7 +86,17 @@ ABOUT THE USER MESSAGE
 
 This feature exists to help prevent a major CRM headache: If users view your form while logged-in as someone else, or they click to your form by following someone else's personalized link (i.e. from a forwarded email), they will see that person's details on the form. Not given any alternative, they are likely to manually clear those fields and type their own information, which would cause the existing contact to be updated with a different person's details, throwing your contact data into confusion.
 
-When enabled, users will see a configurable message instructing them to "click here" if they are not the intended contact. The link will take the appropriate action (logging them out if they are logged in, or else getting rid of the personalized hash) and bring them to an anonymous version of the form (make sure anonymous & unknown users have access to the webform if using this feature!)
+When enabled, users will see a configurable message instructing them to "click here" if they are not the intended contact. The link will take the appropriate action (logging them out if they are logged in, or else getting rid of the personalized hash) and bring them to an anonymous version of the form. Make sure anonymous & unknown users have access to the webform if using this feature.
+
+
+CLONING A CONTACT
+
+This is particuarly useful to avoid re-doing all your webform component customizations for each contact on the form.
+
+- Add a contact to the webform via the CiviCRM tab
+- Rename, arrange, and customize all the webform fields for that contact. For now, keep them all within the auto-generated fieldset (although you may add add as many sub-fieldsets within the main one as you like, for example to contain their address fields).
+- Click the clone button on the contact's fieldset.
+- All fields within that fieldset (including non-civicrm fields) will be cloned, and 
 
 
 RETROFITTING AN EXISTING WEBFORM
