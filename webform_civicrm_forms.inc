@@ -513,7 +513,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     '#type' => 'checkbox',
     '#title' => t('Create Fieldsets'),
     '#default_value' => (bool) $settings['create_fieldsets'],
-    '#description' => t('Create a fieldset around each contact. (Nice if you have more than one contact on this form, but not required; all CiviCRM fields will be processed regardless of how they are arranged).'),
+    '#description' => t('Create a fieldset around each contact. Allows the contact clone feature to work. (Optional - all CiviCRM fields will be processed regardless of how they are arranged).'),
   );
   $form['options']['confirm_subscription'] = array(
     '#type' => 'checkbox',
@@ -557,6 +557,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
  */
 function webform_civicrm_process_form_settings(&$vals) {
   $data = array('contact' => array());
+  $created_new_contact = FALSE;
   list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
   for ($n = 1; $n <= $vals['number_of_contacts']; ++$n) {
     if (isset($vals[$n . '_contact_type'])) {
@@ -582,7 +583,11 @@ function webform_civicrm_process_form_settings(&$vals) {
           )),
         'activity_target' => 1,
       );
+      $created_new_contact = TRUE;
     }
+  }
+  if ($created_new_contact) {
+    drupal_set_message(t('Tip: Consider using the clone feature to add multiple similar contacts. (see help for more info)'));
   }
   foreach ($vals as $key => $val) {
     if (strpos($key, '_number_of_') !== FALSE) {
@@ -1105,7 +1110,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
  * Alter back-end webform component edit forms.
  * Called by hook_form_alter() whenever editing a webform component.
  */
-function _webform_civicrm_webform_component_form_alter(&$form) {
+function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
   // Is this a CiviCRM-enabled webform?
   $node = node_load($form['nid']['#value']);
   if (!empty($node->webform_civicrm)) {
@@ -1121,11 +1126,26 @@ function _webform_civicrm_webform_component_form_alter(&$form) {
       ($lobo == 'civicrm' && $table == 'fieldset')) {
       drupal_add_css(drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_style.css');
 
-      if (arg(5) != 'clone') {
+      if (arg(5) != 'clone' || $key == 'fieldset') {
         // Prevent users from editing the form_key and breaking things
         $form['form_key']['#disabled'] = TRUE;
         $form['form_key']['#value'] = $fid;
         $form['form_key']['#description'] = t('Automatically set for use by CiviCRM processing.');
+        // Clone an entire contact
+        if (arg(5) == 'clone') {
+          $form['submit']['#value'] = t('Clone Contact');
+          $new = count($node->webform_civicrm['data']['contact']) + 1;
+          $form['form_key']['#value'] = implode('_', array($lobo, $new, $ent, $n, $table, $key));
+          $form['name']['#default_value'] = str_replace($i, $new, $form['name']['#default_value']);
+          array_unshift($form['#submit'], 'webform_civicrm_contact_clone');
+          if (empty($form_state['input'])) {
+            drupal_set_message(t('Press the submit button below to clone this contact. A new CiviCRM contact will be added to the form, with all fields from within this fieldset and all the settings for contact !num.', array('!num' => $i)));
+          }
+        }
+      }
+      elseif (empty($form_state['input'])) {
+        // Clone a single CiviCRM field
+        drupal_set_message(t('You are cloning a CiviCRM component. Refer to the Webform CiviCRM instructions for how to set the key if you want the clone to be processed by CiviCRM. You can also clone an entire contact by clicking the clone button for a CiviCRM-generated contact fieldset.'));
       }
 
       if ($table == 'address' && $key == 'state_province_id') {

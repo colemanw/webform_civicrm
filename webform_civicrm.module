@@ -58,7 +58,7 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
   if ($form_id == 'webform_component_edit_form'
   && substr($form['form_key']['#default_value'], 0, 7) == 'civicrm') {
     module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
-    _webform_civicrm_webform_component_form_alter($form);
+    _webform_civicrm_webform_component_form_alter($form, $form_state);
   }
 
   // Alter front-end of webforms
@@ -268,6 +268,45 @@ function webform_civicrm_help($section) {
       return nl2br(file_get_contents(drupal_get_path('module', 'webform_civicrm') . '/README.txt'));
     break;
   }
+}
+
+
+/**
+ * Implements hook_webform_component_presave().
+ * Alter form key when cloning a contact.
+ */
+function webform_civicrm_webform_component_presave(&$component) {
+  if ($c = webform_civicrm_contact_clone_storage()) {
+    $component['form_key'] = str_replace("civicrm_{$c['old']}_contact_", "civicrm_{$c['new']}_contact_", $component['form_key']);
+  }
+}
+
+
+/**
+ * Store info while a clone operation is running.
+ */
+function webform_civicrm_contact_clone_storage($old = NULL, $new = NULL) {
+  static $contacts = NULL;
+  if ($old && $new) {
+    $contacts = array('old' => $old, 'new' => $new);
+  }
+  return $contacts;
+}
+
+
+/**
+ * Clone a contact via webform.
+ */
+function webform_civicrm_contact_clone($form, $form_state) {
+  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
+  $fid = $form['form_key']['#default_value'];
+  list($lobo, $old, $ent, $n, $table, $key) = webform_civicrm_explode_key($fid);
+  $node = node_load($form['nid']['#value']);
+  $settings = $node->webform_civicrm;
+  $new = count($settings['data']['contact']) + 1;
+  $settings['data']['contact'][$new] = $settings['data']['contact'][$old];
+  webform_civicrm_contact_clone_storage($old, $new);
+  drupal_write_record('webform_civicrm_forms', $settings, 'nid');
 }
 
 
