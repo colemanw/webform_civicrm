@@ -567,7 +567,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
   elseif ($option_group == 'event') {
     $sql = "SELECT CONCAT(title, DATE_FORMAT(start_date, ': %c/%Y')) AS label, CONCAT(id, '-', event_type_id) AS value FROM civicrm_event WHERE is_template = 0";
     if (empty($param['show_past_events'])) {
-      $sql .= ' AND end_date >= NOW()';
+      $sql .= ' AND (end_date >= NOW() OR end_date IS NULL)';
     }
     if (is_numeric($param['event_type'])) {
       $sql .= ' AND event_type_id = ' . $param['event_type'];

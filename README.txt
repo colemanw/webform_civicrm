@@ -91,12 +91,13 @@ When enabled, users will see a configurable message instructing them to "click h
 
 CLONING A CONTACT
 
-This is particuarly useful to avoid re-doing all your webform component customizations for each contact on the form.
+This is particularly useful to avoid re-doing all your webform component customizations for each contact on the form.
 
 - Add a contact to the webform via the CiviCRM tab
 - Rename, arrange, and customize all the webform fields for that contact. For now, keep them all within the auto-generated fieldset (although you may add add as many sub-fieldsets within the main one as you like, for example to contain their address fields).
 - Click the clone button on the contact's fieldset.
-- All fields within that fieldset (including non-civicrm fields) will be cloned, and 
+- All fields within that fieldset (including non-civicrm fields) will be cloned.
+- Note that if there are CiviCRM fields that do not belong to the contact within their fieldset (such as an activity field, or a field belonging to another contact), they will be cloned as well, which would be problematic.
 
 
 RETROFITTING AN EXISTING WEBFORM
