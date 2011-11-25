@@ -10,8 +10,6 @@ function webform_civicrm_parse_name(name) {
   return name;
 }
 
-var stateProvinceCache = {};
-
 function webform_civicrm_populate_states(stateSelect, countryId) {
   $(stateSelect).attr('disabled', 'disabled');
   if (stateProvinceCache[countryId]) {
