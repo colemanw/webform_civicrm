@@ -68,7 +68,8 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     unset($form_state['storage']['vals']);
   }
   // Merge in existing fields
-  $settings += webform_civicrm_enabled_fields($node, 'bool');
+  $existing = array_keys(webform_civicrm_enabled_fields($node));
+  $settings += array_fill_keys($existing, 'create_civicrm_webform_element');
 
   $tokens = '<strong>' . t('Contact 1 Tokens:') . '</strong> [' . implode('], [', webform_civicrm_get_fields('tokens')) . '].';
   list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
@@ -989,8 +990,12 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       return;
     }
   }
-  // Form alterations for known contacts
   $enabled = webform_civicrm_enabled_fields($node);
+
+  // Check participant count
+  webform_civicrm_event_count($node, $enabled);
+  
+  // Form alterations for known contacts
   $count = count($data['contact']);
   foreach ($data['contact'] as $c => $contact) {
     $info['contact'][$c] = array();

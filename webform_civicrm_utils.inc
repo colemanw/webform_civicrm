@@ -140,14 +140,15 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       webform_civicrm_save_custom($contact, $cid);
 
       // Fill values for hidden ID fields
-      if (!empty($enabled['civicrm_' . $c . '_contact_1_contact_contact_id'])) {
-        $submission->data[$enabled['civicrm_' . $c . '_contact_1_contact_contact_id']]['value'] = array($cid);
+      $fid = 'civicrm_' . $c . '_contact_1_contact_';
+      if (!empty($enabled[$fid . 'contact_id'])) {
+        $submission->data[$enabled[$fid . 'contact_id']]['value'] = array($cid);
       }
-      if (!empty($enabled['civicrm_' . $c . '_contact_1_contact_external_identifier']) && !empty($updating['cid'][$c])) {
+      if (!empty($enabled[$fid . 'external_identifier']) && !empty($updating['cid'][$c])) {
         $exid = webform_civicrm_api('contact', 'get', array('contact_id' => $cid, 'return.external_identifier' => 1));
-        if (is_array($exid['values'])) {
+        if (!empty($exid['values'])) {
           $exid = array_pop($exid['values']);
-          $submission->data[$enabled['civicrm_' . $c . '_contact_1_contact_external_identifier']]['value'] = array($exid['external_identifier']);
+          $submission->data[$enabled[$fid . 'external_identifier']]['value'] = array($exid['external_identifier']);
         }
       }
 
@@ -847,11 +848,11 @@ function webform_civicrm_save_custom($entity, $entity_id, $entity_type = NULL) {
 
 
 /**
- * Get ids of enabled CiviCRM fields for a webform.
+ * Get ids or values of enabled CiviCRM fields for a webform.
  * @Param $node - node object
- * @Param $format - whether to return the component id, or just a return value
+ * @Param $submission - if supplied, will match field keys with submitted values
  */
-function webform_civicrm_enabled_fields($node, $format = 'cid') {
+function webform_civicrm_enabled_fields($node, $submission = NULL) {
   $enabled = array();
   if (!empty($node->webform['components'])) {
     $fields = webform_civicrm_get_fields();
@@ -861,11 +862,11 @@ function webform_civicrm_enabled_fields($node, $format = 'cid') {
         list($lobo, $i, $ent, $n, $id) = $exp;
         if ((isset($fields[$id]) || $id == 'fieldset_fieldset')
         && $lobo == 'civicrm' && is_numeric($i) && is_numeric($n)) {
-          if ($format == 'cid') {
-            $enabled[$c['form_key']] = $c['cid'];
+          if ($submission) {
+            $enabled[$c['form_key']] = webform_civicrm_aval($submission, $c['cid']);
           }
           else {
-            $enabled[$c['form_key']] = 'create_civicrm_webform_element';
+            $enabled[$c['form_key']] = $c['cid'];
           }
         }
       }
@@ -948,11 +949,11 @@ function webform_civicrm_state_abbr($input, $ret = 'abbreviation', $country_id =
 /**
  * Recursive validation callback for webform submissions.
  */
-function _webform_civicrm_form_validate($form, &$form_state, $enabled, $values) {
+function _webform_civicrm_form_validate($form, &$form_state, $submitted) {
   // Recurse through form elements.
   foreach (element_children($form) as $key) {
     if (is_array($form[$key]) && ($element = $form[$key])) {
-      _webform_civicrm_form_validate($form[$key], $form_state, $enabled, $values);
+      _webform_civicrm_form_validate($form[$key], $form_state, $submitted);
       if (!empty($element['#civicrm_data_type'])
       && substr($element['#type'], 0, 4) === 'text'
       && $element['#value'] !== NULL
@@ -961,8 +962,8 @@ function _webform_civicrm_form_validate($form, &$form_state, $enabled, $values) 
         // Validate state/prov abbreviation
         if ($dt == 'state_province_abbr') {
           $ckey = str_replace('state_province', 'country', $key);
-          if (!empty($enabled[$ckey]) && !empty($values[$enabled[$ckey]]) && is_numeric($values[$enabled[$ckey]])) {
-            $country_id = $values[$enabled[$ckey]];
+          if (!empty($submitted[$ckey]) && is_numeric($submitted[$ckey])) {
+            $country_id = $submitted[$ckey];
           }
           else {
             $config = CRM_Core_Config::singleton();
@@ -1556,6 +1557,37 @@ function webform_civicrm_activity_find($params) {
   while ($dao->fetch()) {
     return $dao->id;
   }
+}
+
+
+/**
+ * Fetch Events associated with a webform
+ */
+function webform_civicrm_event_count($node, $enabled) {
+  $events = array();
+  $data = $node->webform_civicrm['data'] + array('participant' => array());
+  // Events set in the back-end
+  foreach ($data['participant'] as $par) {
+    if (!empty($par['participant'])) {
+      foreach ($par['participant'] as $p) {
+        if (!empty($p['event_id'])) {
+          list($id, $type) = explode('-', $p['event_id']);
+          $events[$id] = '';
+        }
+      }
+    }
+  }
+  // Events exposed to the form
+  foreach($enabled as $field => $fid) {
+    if (strpos($field, 'participant_event_id')) {
+      $options = webform_civicrm_str2array(webform_civicrm_aval($node->webform['components'][$fid], 'extra:items'));
+      foreach ($options as $p => $label) {
+        list($id, $type) = explode('-', $p);
+        $events[$id] = '';
+      }
+    }
+  }
+  return $events;
 }
 
 

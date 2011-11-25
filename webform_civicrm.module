@@ -348,7 +348,7 @@ function webform_civicrm_form_validate($form, &$form_state) {
   module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
   civicrm_initialize();
   require_once 'CRM/Utils/Type.php';
-  $enabled = webform_civicrm_enabled_fields($form['#node']);
   $values = _webform_client_form_submit_flatten($form['#node'], webform_civicrm_aval($form_state, 'values:submitted'));
-  _webform_civicrm_form_validate($form['submitted'], $form_state, $enabled, $values);
+  $submitted = webform_civicrm_enabled_fields($form['#node'], $values);
+  _webform_civicrm_form_validate($form['submitted'], $form_state, $submitted);
 }
