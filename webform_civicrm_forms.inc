@@ -706,7 +706,8 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
 
   // Fields to delete
   foreach ($enabled as $key => $val) {
-    if ((isset($vals[$key]) && $vals[$key] === 'create_civicrm_webform_element' && $vals['nid']) || strpos($key, 'fieldset') !== FALSE) {
+    if ((webform_civicrm_aval($vals, $key) === 'create_civicrm_webform_element' && $vals['nid'])
+    || strpos($key, 'fieldset') !== FALSE) {
       unset($delete_me[$key]);
     }
   }
@@ -1131,7 +1132,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         $form['form_key']['#disabled'] = TRUE;
         $form['form_key']['#value'] = $fid;
         $form['form_key']['#description'] = t('Automatically set for use by CiviCRM processing.');
-        // Clone an entire contact
+        // Clone an entire contact when cloning their fieldset
         if (arg(5) == 'clone') {
           $form['submit']['#value'] = t('Clone Contact');
           $new = count($node->webform_civicrm['data']['contact']) + 1;
@@ -1145,12 +1146,13 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
       }
       elseif (empty($form_state['input'])) {
         // Clone a single CiviCRM field
-        drupal_set_message(t('You are cloning a CiviCRM component. Refer to the Webform CiviCRM instructions for how to set the key if you want the clone to be processed by CiviCRM. You can also clone an entire contact by clicking the clone button for a CiviCRM-generated contact fieldset.'));
+        drupal_set_message(t('You are cloning a CiviCRM component. Refer to the Webform CiviCRM instructions for how to set the key if you want the new field to be processed by CiviCRM. You can also clone an entire contact by clicking the clone button by their fieldset.'));
       }
 
       if ($table == 'address' && $key == 'state_province_id') {
         $form['validation']['maxlength']['#type'] = 'hidden';
         $form['validation']['maxlength']['#value'] = 5;
+        $form['value']['#description'] = t('To set a default value, enter the state/province abbreviation in all caps.');
       }
 
       // Here's a much nicer interface for choosing options than the standard textfields
