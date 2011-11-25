@@ -880,11 +880,23 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   $form['#validate'][] = 'webform_civicrm_form_validate';
 
   civicrm_initialize();
+  $config = CRM_Core_Config::singleton();
   $node = $form['#node'];
   $settings = $node->webform_civicrm;
   $data = $settings['data'];
   $fields = webform_civicrm_get_fields();
   $id = $info = $args = array();
+
+  // JS Cache eliminates the need for most ajax state/province callbacks
+  foreach ($data['contact'] as $c) {
+    if (!empty($c['number_of_address'])) {
+      $dc = $config->defaultContactCountry;
+      $js = 'var stateProvinceDefault = ' . json_encode(webform_civicrm_get_options('state_province', $dc)) . ";
+        var stateProvinceCache = {'default':stateProvinceDefault,'$dc':stateProvinceDefault};";
+      webform_civicrm_add_js($js, 'inline');
+      break;
+    }
+  }
 
   // Early return if the form (or page) was already submitted
   if (empty($form_state['rebuild']) && !empty($form_state['input'])

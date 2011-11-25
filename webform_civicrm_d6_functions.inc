@@ -74,11 +74,11 @@ function webform_civicrm_disable($nid) {
 /**
  * Compatibility wrapper for drupal_add_js()
  */
-function webform_civicrm_add_js($js, $type = 'file') {
+function webform_civicrm_add_js($js, $type = 'file', $scope = 'header') {
   if ($type == 'file') {
     $js = drupal_get_path('module', 'webform_civicrm') . '/' . $js;
   }
-  drupal_add_js($js, $type, 'header', FALSE, TRUE, FALSE);
+  drupal_add_js($js, $type, $scope, FALSE, TRUE, FALSE);
 }
 
 
