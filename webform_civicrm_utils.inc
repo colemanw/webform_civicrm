@@ -184,7 +184,9 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
               unset($params['master_id']);
               // Translate state/prov abbr to id
               if (!empty($params['state_province_id'])) {
-                $params['state_province_id'] = webform_civicrm_state_abbr($params['state_province_id'], 'id', empty($params['country_id']) ? $config->defaultContactCountry : $params['country_id']);
+                if (!($params['state_province_id'] = webform_civicrm_state_abbr($params['state_province_id'], 'id', webform_civicrm_aval($params, 'country_id', $config->defaultContactCountry)))) {
+                  $params['state_province_id'] = '';
+                }
               }
             }
             // Check if nothing was entered
@@ -969,7 +971,8 @@ function _webform_civicrm_form_validate($form, &$form_state, $submitted) {
             $config = CRM_Core_Config::singleton();
             $country_id = $config->defaultContactCountry;
           }
-          if (!array_key_exists(strtoupper($element['#value']), webform_civicrm_get_options('state_province', $country_id))) {
+          $states = webform_civicrm_get_options('state_province', $country_id);
+          if ($states && !array_key_exists(strtoupper($element['#value']), $states)) {
             $countries = webform_civicrm_get_options('country');
             form_error($element, t('Mismatch: "@state" is not a state/province of %country. Please enter a valid state/province abbreviation for %field.', array('@state' => $element['#value'], '%country' => $countries[$country_id], '%field' => $element['#title'])));
           }
@@ -1623,7 +1626,7 @@ function webform_civicrm_js_options($key, $str='') {
       webform_civicrm_json(array('' => t('- first choose a country -')));
     }
     civicrm_initialize();
-    webform_civicrm_json(array('' => t('- Select -')) + webform_civicrm_get_options('state_province', $str));
+    webform_civicrm_json(webform_civicrm_get_options('state_province', $str));
   }
 
   if (!user_access('access CiviCRM')) {

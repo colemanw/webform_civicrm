@@ -28,10 +28,33 @@ function webform_civicrm_populate_states(stateSelect, countryId) {
 function webform_civicrm_fill_options(element, data) {
   var value = $(element).val();
   $(element).find('option').remove();
+  var dataEmpty = true;
   for (key in data) {
-    $(element).append('<option value="'+key+'">'+data[key]+'</option>');
+    dataEmpty = false;
+    break;
   }
-  $(element).val(value);
+  if (!dataEmpty) {
+    if ($(element).hasClass('required')) {
+      var text = webformSelectSelect;
+    }
+    else {
+      var text = webformSelectNone;
+    }
+    if ($(element).hasClass('has-default')) {
+      $(element).removeClass('has-default');
+    }
+    else {
+      $(element).append('<option value="">'+text+'</option>');
+    }
+    for (key in data) {
+      $(element).append('<option value="'+key+'">'+data[key]+'</option>');
+    }
+    $(element).val(value);
+  }
+  else {
+    $(element).removeClass('has-default');
+    $(element).append('<option value="-">'+webformSelectNa+'</option>');
+  }
   $(element).removeAttr('disabled');
 }
 
@@ -57,6 +80,9 @@ $(document).ready(function(){
     var value = $(this).val();
     var countrySelect = $(this).parents('form.webform-client-form').find('[name*="['+(key.replace('state_province','country' ))+']"]');
     var classes = $(this).attr('class').replace('text', 'select');
+    if (value.length >= 0) {
+      classes = classes + ' has-default';
+    }
     $(this).replaceWith('<select id="'+id+'" name="'+name+'" class="'+classes+'"><option selected="selected" value="'+value+'"> </option></select>');
     var countryVal = 'default';
     if (countrySelect.length === 1) {

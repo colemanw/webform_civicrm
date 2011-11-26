@@ -892,7 +892,10 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
     if (!empty($c['number_of_address'])) {
       $dc = $config->defaultContactCountry;
       $js = 'var stateProvinceDefault = ' . json_encode(webform_civicrm_get_options('state_province', $dc)) . ";
-        var stateProvinceCache = {'default':stateProvinceDefault,'$dc':stateProvinceDefault};";
+        var stateProvinceCache = {'default':stateProvinceDefault,'$dc':stateProvinceDefault};
+        var webformSelectNa = '" . t('- N/A -') . "';
+        var webformSelectNone = '" . t('- None -') . "';
+        var webformSelectSelect = '" . t('- Select -') . "';";
       webform_civicrm_add_js($js, 'inline');
       break;
     }
