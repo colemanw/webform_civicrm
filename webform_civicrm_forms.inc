@@ -823,8 +823,10 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
           $field['extra']['timezone'] = 'user';
           $field['extra']['datepicker'] = 1;
         }
-        // Create fieldsets
-        if ($ent != 'activity' && !empty($vals['create_fieldsets'])) {
+        // Create fieldsets - for contact fields only
+        if (!empty($vals['create_fieldsets'])
+        && $ent != 'activity'
+        && ($ent != 'participant' || webform_civicrm_aval($data, 'participant_reg_type') == 'separate')) {
           if (!isset($enabled['civicrm_' . $c . '_contact_1_fieldset_fieldset'])) {
             $new_set = array(
               'nid' => $nid,
@@ -844,7 +846,8 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
         ++$new_fields;
       }
       // Handle exposed contact settings that don't create form elements
-      elseif (isset($fields[$table . '_' . $name]['expose_list'])) {
+      elseif (isset($fields[$table . '_' . $name]['expose_list'])
+      && $val !== 'create_civicrm_webform_element' && $val !== 0) {
         $vals['data'][$ent][$c][$table][$n][$name] = $val;
       }
     }
@@ -1008,7 +1011,16 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   $enabled = webform_civicrm_enabled_fields($node);
 
   // Check participant count
-  webform_civicrm_event_count($node, $enabled);
+/*
+  require_once 'CRM/Event/BAO/Participant.php';
+  $events = webform_civicrm_event_count($node, $enabled);
+  $now = time();
+  foreach ($events as $eid => $event) {
+    if (strtotime($event['end_date']) < $now)
+    $remaining = CRM_Event_BAO_Participant::eventFull($eid, TRUE, FALSE);
+    dsm($eid); dsm($remaining);
+  }
+*/
   
   // Form alterations for known contacts
   $count = count($data['contact']);
@@ -1245,7 +1257,8 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
           '#default_value' => $defaults_selected,
         );
         // Auto set multi-value option for single-valued entities
-        if (empty($fields[$table . '_' . $key]['extra']['multiple']) && $element['type'] != 'hidden') {
+        if (empty($fields[$table . '_' . $key]['extra']['multiple'])
+        && $element['type'] != 'hidden' && $key != 'event_id') {
           $form['extra']['multiple']['#type'] = 'hidden';
           $form['extra']['multiple']['#value'] = 0;
           $form['civicrm_options_fieldset']['civicrm_defaults']['#type'] = 'radios';
