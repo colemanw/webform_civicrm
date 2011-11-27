@@ -349,3 +349,26 @@ function webform_civicrm_update_6203() {
 
   return t('Upgrade successful. Note: If you upgraded via drush you will now need to clear all caches with the command drush cc');
 }
+
+/**
+ * Group participant options into a single array.
+ */
+function webform_civicrm_update_6204() {
+  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
+
+  $db = db_query("SELECT * FROM {webform_civicrm_forms}");
+  foreach ($db as $form) {
+    $data = unserialize($form->data);
+    if (isset($data['event_type'])) {
+      $data['reg_options'] = array(
+        'event_type' => $data['event_type'],
+        'show_past_events' => webform_civicrm_aval($data, 'show_past_events', 0),
+      );
+      $form = (array) $form;
+      $form['data'] = $data;
+      drupal_write_record('webform_civicrm_forms', $form, 'nid');
+    }
+  }
+
+  return t('Upgrade successful. Note: If you upgraded via drush you will now need to clear all caches with the command drush cc');
+}
