@@ -78,7 +78,7 @@ function webform_civicrm_add_js($js, $type = 'file', $scope = 'header') {
   if ($type == 'file') {
     $js = drupal_get_path('module', 'webform_civicrm') . '/' . $js;
   }
-  drupal_add_js($js, $type, $scope, FALSE, TRUE, FALSE);
+  drupal_add_js($js, $type, $scope);
 }
 
 

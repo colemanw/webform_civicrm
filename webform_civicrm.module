@@ -9,7 +9,7 @@
 
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function webform_civicrm_menu() {
   $items = array();
@@ -51,7 +51,7 @@ function webform_civicrm_form_access($node) {
 
 
 /**
- * Implementation of hook_form_alter().
+ * Implements hook_form_alter().
  */
 function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
   // Alter back-end webform component edit forms
@@ -71,7 +71,7 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
 
 
 /**
- * Implementation of hook_nodeapi().
+ * Implements hook_nodeapi().
  */
 function webform_civicrm_nodeapi(&$node, $op, $teaser, $page) {
   switch ($op) {
@@ -107,7 +107,7 @@ function webform_civicrm_nodeapi(&$node, $op, $teaser, $page) {
 
 
 /**
- * Implementation of hook_theme().
+ * Implements hook_theme().
  */
 function webform_civicrm_theme() {
   $theme = array(
@@ -125,7 +125,7 @@ function webform_civicrm_theme() {
 
 
 /**
- * Implementation of hook_webform_submission_presave().
+ * Implements hook_webform_submission_presave().
  * Initial submission processing - saves contacts.
  */
 function webform_civicrm_webform_submission_presave($node, &$submission) {
@@ -137,7 +137,7 @@ function webform_civicrm_webform_submission_presave($node, &$submission) {
 
 
 /**
- * Implementation of hook_webform_submission_insert().
+ * Implements hook_webform_submission_insert().
  * Final submission processing - saves activity and writes webform_civicrm record.
  */
 function webform_civicrm_webform_submission_insert($node, $submission) {
@@ -159,7 +159,7 @@ function webform_civicrm_webform_submission_update($node, $submission) {
 
 
 /**
- * Implementation of hook_webform_submission_delete().
+ * Implements hook_webform_submission_delete().
  */
 function webform_civicrm_webform_submission_delete($node, $submission) {
   db_query("DELETE FROM {webform_civicrm_submissions} WHERE sid = %d", $submission->sid);
@@ -167,7 +167,7 @@ function webform_civicrm_webform_submission_delete($node, $submission) {
 
 
 /**
- * Implementation of hook_webform_submission_load().
+ * Implements hook_webform_submission_load().
  * Add CiviCRM contact info to submission objects.
  */
 function webform_civicrm_webform_submission_load(&$submissions) {
@@ -248,7 +248,7 @@ function webform_civicrm_webform_submission_actions($node, $submission) {
 
 
 /**
- * Implementation of hook_civicrm_merge().
+ * Implements hook_civicrm_merge().
  * Update submission data to reflect new cids when contacts are merged.
  */
 function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = NULL, $tables = NULL) {
@@ -259,7 +259,7 @@ function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = N
 
 
 /**
- * Implementation of hook_help().
+ * Implements hook_help().
  */
 function webform_civicrm_help($section) {
   switch ($section) {
@@ -277,7 +277,7 @@ function webform_civicrm_help($section) {
  */
 function webform_civicrm_webform_component_presave(&$component) {
   if ($c = webform_civicrm_contact_clone_storage()) {
-    $component['form_key'] = str_replace("civicrm_{$c['old']}_contact_", "civicrm_{$c['new']}_contact_", $component['form_key']);
+    $component['form_key'] = str_replace($c['old'], $c['new'], $component['form_key']);
   }
 }
 
@@ -285,17 +285,18 @@ function webform_civicrm_webform_component_presave(&$component) {
 /**
  * Store info while a clone operation is running.
  */
-function webform_civicrm_contact_clone_storage($old = NULL, $new = NULL) {
-  static $contacts = NULL;
-  if ($old && $new) {
-    $contacts = array('old' => $old, 'new' => $new);
+function webform_civicrm_contact_clone_storage($storage = NULL) {
+  static $ret = NULL;
+  if ($storage) {
+    $ret = $storage;
   }
-  return $contacts;
+  return $ret;
 }
 
 
 /**
  * Clone a contact via webform.
+ * This submit handler is called first when cloning a contact's fieldset
  */
 function webform_civicrm_contact_clone($form, $form_state) {
   module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
@@ -304,9 +305,21 @@ function webform_civicrm_contact_clone($form, $form_state) {
   $node = node_load($form['nid']['#value']);
   $settings = $node->webform_civicrm;
   $new = count($settings['data']['contact']) + 1;
+  // Clone contact
   $settings['data']['contact'][$new] = $settings['data']['contact'][$old];
-  webform_civicrm_contact_clone_storage($old, $new);
+  $storage = array(
+    'old' => array("civicrm_{$old}_contact_"),
+    'new' => array("civicrm_{$new}_contact_"),
+  );
+  // Clone particpant if registering separately
+  if (webform_civicrm_aval($settings['data'], 'participant_reg_type') == 'separate') {
+    $settings['data']['participant'][$new] = $settings['data']['participant'][$old];
+    $storage['old'][] = "civicrm_{$old}_participant_";
+    $storage['new'][] = "civicrm_{$new}_participant_";
+  }
   drupal_write_record('webform_civicrm_forms', $settings, 'nid');
+  // Store data to rewrite form keys
+  webform_civicrm_contact_clone_storage($storage);
 }
 
 

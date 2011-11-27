@@ -72,7 +72,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         elseif ($fields[$table . '_' . $field]['type'] == 'date') {
           $val = empty($val[0]) ? '' : str_replace('-', '', $val[0]);
         }
-        else {
+        elseif ($field != 'event_id') {
           $val = isset($val[0]) ? $val[0] : '';
         }
         // Only known contacts are allowed to empty a field
@@ -356,29 +356,36 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         $n = $data['participant_reg_type'] == 'separate' ? $c : 1;
         if ($p = webform_civicrm_aval($data, "participant:$n:participant")) {
           foreach ($p as $e => $params) {
-            if (!empty($params['event_id'])) {
-              $params['contact_id'] = $cid;
-              $params['event_id'] = (int) $params['event_id'];
-              $params['source'] = check_plain($node->title);
-              if ($c > 1 && !empty($registered_by_id[$e])) {
-                $params['registered_by_id'] = $registered_by_id[$e];
-              }
-              if (empty($params['campaign_id']) || !in_array('CiviCampaign', $config->enableComponents)) {
-                unset($params['campaign_id']);
-              }
-              $result = webform_civicrm_api('participant', 'create', $params);
-              if ($c == 1 && $data['participant_reg_type'] == 'all') {
-                $registered_by_id[$e] = $result['id'];
-              }
-              // Format custom data for processing
-              $custom = array();
-              foreach ($data['participant'][$n] as $key => $vals) {
-                if (substr($key, 0, 2) == 'cg' && isset($vals[$e])) {
-                  $custom[$key][1] = $vals[$e];
+            if (empty($params['event_id'])) {
+              continue;
+            }
+            // Loop through event ids to support multi-valued form elements
+            $events = is_array($params['event_id']) ? $params['event_id'] : array($params['event_id']);
+            foreach ($events as $i => $params['event_id']) {
+              if (!empty($params['event_id'])) {
+                $params['contact_id'] = $cid;
+                $params['event_id'] = (int) $params['event_id'];
+                $params['source'] = check_plain($node->title);
+                if ($c > 1 && !empty($registered_by_id[$e][$i])) {
+                  $params['registered_by_id'] = $registered_by_id[$e][$i];
                 }
-              }
-              if ($custom) {
-                webform_civicrm_save_custom($custom, $result['id'], 'Participant');
+                if (empty($params['campaign_id']) || !in_array('CiviCampaign', $config->enableComponents)) {
+                  unset($params['campaign_id']);
+                }
+                $result = webform_civicrm_api('participant', 'create', $params);
+                if ($c == 1 && $data['participant_reg_type'] == 'all') {
+                  $registered_by_id[$e][$i] = $result['id'];
+                }
+                // Format custom data for processing
+                $custom = array();
+                foreach ($data['participant'][$n] as $key => $vals) {
+                  if (substr($key, 0, 2) == 'cg' && isset($vals[$e])) {
+                    $custom[$key][1] = $vals[$e];
+                  }
+                }
+                if ($custom) {
+                  webform_civicrm_save_custom($custom, $result['id'], 'Participant');
+                }
               }
             }
           }
@@ -1573,9 +1580,13 @@ function webform_civicrm_event_count($node, $enabled) {
   foreach ($data['participant'] as $par) {
     if (!empty($par['participant'])) {
       foreach ($par['participant'] as $p) {
-        if (!empty($p['event_id'])) {
-          list($id, $type) = explode('-', $p['event_id']);
-          $events[$id] = '';
+        if (!empty($p['event_id']) && $p['event_id'] != 'create_civicrm_webform_element') {
+          list($id) = explode('-', $p['event_id']);
+          if (is_numeric($id)) {
+            $events[$id] = array(
+              'ended' => TRUE,
+            );
+          }
         }
       }
     }
@@ -1585,10 +1596,23 @@ function webform_civicrm_event_count($node, $enabled) {
     if (strpos($field, 'participant_event_id')) {
       $options = webform_civicrm_str2array(webform_civicrm_aval($node->webform['components'][$fid], 'extra:items'));
       foreach ($options as $p => $label) {
-        list($id, $type) = explode('-', $p);
-        $events[$id] = '';
+        list($id) = explode('-', $p);
+        $events[$id] = array(
+          'ended' => TRUE,
+        );
       }
     }
+  }
+  // Fetch event info
+  $dao = &CRM_Core_DAO::executeQuery('SELECT id, title, end_date, max_participants
+    FROM civicrm_event WHERE id IN (' . implode(',', array_keys($events)) . ')');
+  while ($dao->fetch()) {
+    $events[$dao->id] = array(
+      'title' => $dao->title,
+      'end_date' => $dao->end_date,
+      'max_participants' => $dao->max_participants,
+      'ended' => $dao->end_date && strtotime($dao->end_date) < time(),
+    );
   }
   return $events;
 }
