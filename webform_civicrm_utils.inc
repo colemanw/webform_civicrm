@@ -658,7 +658,7 @@ function webform_civicrm_field_options($key, $format, $data) {
     elseif (isset($lists[$name])) {
       $param = NULL;
       if ($name == 'event_id') {
-        $param = $data;
+        $param = $data['reg_options'];
       }
       if ($name == 'assignee_contact_id'
       && !($param = webform_civicrm_aval($data, 'activity:1:assignee_group'))) {
@@ -1585,6 +1585,7 @@ function webform_civicrm_event_count($node, $enabled) {
           if (is_numeric($id)) {
             $events[$id] = array(
               'ended' => TRUE,
+              'title' => t('this event'),
             );
           }
         }
@@ -1599,6 +1600,7 @@ function webform_civicrm_event_count($node, $enabled) {
         list($id) = explode('-', $p);
         $events[$id] = array(
           'ended' => TRUE,
+          'title' => $label,
         );
       }
     }

@@ -408,14 +408,51 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
       '#type' => 'select',
       '#title' => t('Show Events of Type'),
       '#options' => array('any' => t('- Any Type -')) + webform_civicrm_get_options('event_type'),
-      '#default_value' => webform_civicrm_aval($data, 'event_type', 'any'),
+      '#default_value' => webform_civicrm_aval($data, 'reg_options:event_type', 'any'),
       '#prefix' => '<div class="web-civi-checkbox-set">',
+      '#parents' => array('reg_options', 'event_type'),
+      '#tree' => TRUE,
     );
     $form['event']['show_past_events'] = array(
       '#type' => 'checkbox',
       '#title' => t('Show Past Events'),
-      '#default_value' => (bool) webform_civicrm_aval($data, 'show_past_events'),
+      '#default_value' => (bool) webform_civicrm_aval($data, 'reg_options:show_past_events'),
       '#suffix' => '</div>',
+      '#parents' => array('reg_options', 'show_past_events'),
+      '#tree' => TRUE,
+    );
+    $form['event']['reg_options'] = array(
+      '#prefix' => '<div class="clear-block"></div>',
+      '#type' => 'fieldset',
+      '#title' => t('Registration Options'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#tree' => TRUE,
+    );
+    $form['event']['reg_options']['show_remaining'] = array(
+      '#type' => 'select',
+      '#title' => t('Show Remaining Space in Events'),
+      '#default_value' => webform_civicrm_aval($data, 'reg_options:show_remaining', 0),
+      '#description' => t('Display a message at the top of the form for each event with a registration limit.'),
+      '#options' => array(
+        t('Never'),
+        'always' => t('Always'),
+      ),
+    );
+    foreach(array(5, 10, 20, 50, 100, 200, 500, 1000) as $num) {
+      $form['event']['reg_options']['show_remaining']['#options'][$num] = t('When under !num spaces left', array('!num' => $num));
+    }
+    $form['event']['reg_options']['validate'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Prevent Registration for Past/Full Events'),
+      '#default_value' => (bool) webform_civicrm_aval($data, 'reg_options:validate'),
+      '#description' => t('Will not allow the form to be submitted if user registers for an event that is ended or full.'),
+    );
+    $form['event']['reg_options']['block_form'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Block Form Access when Event(s) are Full/Ended'),
+      '#default_value' => (bool) webform_civicrm_aval($data, 'reg_options:block_form'),
+      '#description' => t('Hide webform if all the events for the form are full or ended.'),
     );
     webform_civicrm_ajax_form_item($form, 'event', 'participant_reg_type', 'participants');
     webform_civicrm_ajax_form_item($form, 'event', 'event_type', 'participants');
@@ -450,7 +487,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
             $sid = 'civicrm_' . $n . '_participant_' . $e . '_' . $sid . '_fieldset';
             $class = 'web-civi-checkbox-set';
             if (!empty($set['sub_types'])) {
-              list($event_id, $event_type) = $participant_event_id != 'create_civicrm_webform_element' ? explode('-', $participant_event_id) : array('', webform_civicrm_aval($data, 'event_type', ''));
+              list($event_id, $event_type) = $participant_event_id != 'create_civicrm_webform_element' ? explode('-', $participant_event_id) : array('', webform_civicrm_aval($data, 'reg_options:event_type', ''));
               switch ($set['extension_of']) {
                 case 1:
                   if (!in_array($participant_role_id, $set['sub_types'])) {
@@ -621,8 +658,7 @@ function webform_civicrm_process_form_settings(&$vals) {
   }
   if (isset($vals['participant_reg_type'])) {
     $data['participant_reg_type'] = $vals['participant_reg_type'];
-    $data['event_type'] = $vals['event_type'];
-    $data['show_past_events'] = $vals['show_past_events'];
+    $data['reg_options'] = $vals['reg_options'];
   }
   $vals['data'] = $data;
 }
@@ -823,7 +859,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
           $field['extra']['timezone'] = 'user';
           $field['extra']['datepicker'] = 1;
         }
-        // Create fieldsets - for contact fields only
+        // Create fieldsets - for contact and contact-specific event fields only
         if (!empty($vals['create_fieldsets'])
         && $ent != 'activity'
         && ($ent != 'participant' || webform_civicrm_aval($data, 'participant_reg_type') == 'separate')) {
@@ -845,7 +881,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
         $fid = webform_component_insert($field);
         ++$new_fields;
       }
-      // Handle exposed contact settings that don't create form elements
+      // Store exposed contact settings that don't create form elements
       elseif (isset($fields[$table . '_' . $name]['expose_list'])
       && $val !== 'create_civicrm_webform_element' && $val !== 0) {
         $vals['data'][$ent][$c][$table][$n][$name] = $val;
@@ -1010,17 +1046,43 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   }
   $enabled = webform_civicrm_enabled_fields($node);
 
-  // Check participant count
-/*
-  require_once 'CRM/Event/BAO/Participant.php';
-  $events = webform_civicrm_event_count($node, $enabled);
-  $now = time();
-  foreach ($events as $eid => $event) {
-    if (strtotime($event['end_date']) < $now)
-    $remaining = CRM_Event_BAO_Participant::eventFull($eid, TRUE, FALSE);
-    dsm($eid); dsm($remaining);
+  // Check if events are open to registration and take appropriate action
+  $reg = webform_civicrm_aval($data, 'reg_options', array());
+  if (!empty($data['participant_reg_type'])
+  && (!empty($reg['show_remaining']) || !empty($reg['block_form']))) {
+    $block_form = !empty($reg['block_form']);
+    require_once 'CRM/Event/BAO/Participant.php';
+    $events = webform_civicrm_event_count($node, $enabled);
+    foreach ($events as $eid => $event) {
+      if ($event['ended']) {
+        if (!empty($reg['show_remaining'])) {
+          drupal_set_message(t('Sorry, %event has ended.', array('%event' => $event['title'])), 'warning');
+        }
+      }
+      elseif (!empty($event['max_participants'])) {
+        $remaining = CRM_Event_BAO_Participant::eventFull($eid, TRUE, FALSE);
+        if (is_int($remaining) || !$remaining) {
+          $block_form = FALSE;
+          if (!empty($reg['show_remaining'])) {
+            $remaining = $remaining ? $remaining : $event['max_participants'];
+            if ($reg['show_remaining'] == 'always' || $reg['show_remaining'] >= $remaining) {
+              drupal_set_message(t('%event has !count remaining spaces.', array('%event' => $event['title'], '!count' => $remaining)));
+            }
+          }
+        }
+        elseif (!empty($reg['show_remaining'])) {
+          drupal_set_message($remaining, 'warning');
+        }
+      }
+      else {
+        $block_form = FALSE;
+      }
+    }
+    if ($block_form) {
+      $form['#access'] = FALSE;
+      return;
+    }
   }
-*/
   
   // Form alterations for known contacts
   $count = count($data['contact']);
