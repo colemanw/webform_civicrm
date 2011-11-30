@@ -32,7 +32,7 @@ function web_civi_participant_conditional(fs) {
     eventtype:splitstr[1]
   };
   if (info['eventid'] === 'create_civicrm_webform_element') {
-    info['eventtype'] = $('#edit-event-type').val();
+    info['eventtype'] = $('#edit-reg-options-event-type').val();
   }
   $(fs + ' fieldset.extends-condition').each(function(){
     var hide = true;
