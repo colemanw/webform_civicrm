@@ -335,7 +335,8 @@ function webform_civicrm_form_validate($form, &$form_state) {
   $submitted = webform_civicrm_enabled_fields($node, $values);
   _webform_civicrm_form_validate($form['submitted'], $form_state, $submitted);
   if (!empty($node->webform_civicrm['data']['reg_options']['block_form'])
-  && !empty($node->webform_civicrm['data']['participant'])) {
+  && !empty($node->webform_civicrm['data']['participant'])
+  && !empty($node->webform_civicrm['data']['participant_reg_type'])) {
     _webform_civicrm_participant_validate($form, $form_state, $submitted);
   }
 }
