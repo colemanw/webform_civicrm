@@ -943,8 +943,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
 
   // Early return if the form (or page) was already submitted
   if (empty($form_state['rebuild']) && !empty($form_state['input'])
-  || (!empty($form_state['clicked_button']['#id'])
-  && $form_state['clicked_button']['#id'] == 'edit-previous')) {
+  || webform_civicrm_aval($form_state, 'clicked_button:#id') == 'edit-previous') {
     webform_civicrm_fill_values($form['submitted'], array(), $fields, array());
     return;
   }
@@ -1095,7 +1094,8 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       }
       else {
         $reg['block_form'] = FALSE;
-        if ($event['max_participants'] && ($reg['show_remaining'] == 'always' || intval($reg['show_remaining']) >= $event['remaining'])) {
+        if ($event['max_participants'] && empty($form_state['input'])
+        && ($reg['show_remaining'] == 'always' || intval($reg['show_remaining']) >= $event['remaining'])) {
           drupal_set_message(format_plural($event['remaining'],
             '%event has 1 remaining space.',
             '%event has @count remaining spaces.',
@@ -1211,7 +1211,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
     if ($settings['prefix_known']) {
       $form['#prefix'] = webform_civicrm_aval($form, '#prefix', '') . '<div class="webform-civicrm-prefix contact-known">' . nl2br(webform_civicrm_replace_tokens($settings['prefix_known'], $info['contact'][1]['contact'][1])) . '</div>';
     }
-    if ($settings['message']) {
+    if ($settings['message'] && empty($form_state['input'])) {
       webform_civicrm_set_message($settings['message'], $info['contact'][1]['contact'][1]);
     }
   }

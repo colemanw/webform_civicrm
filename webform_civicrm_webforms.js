@@ -80,7 +80,7 @@ $(document).ready(function(){
     var value = $(this).val();
     var countrySelect = $(this).parents('form.webform-client-form').find('[name*="['+(key.replace('state_province','country' ))+']"]');
     var classes = $(this).attr('class').replace('text', 'select');
-    if (value.length >= 0) {
+    if (value !== '') {
       classes = classes + ' has-default';
     }
     $(this).replaceWith('<select id="'+id+'" name="'+name+'" class="'+classes+'"><option selected="selected" value="'+value+'"> </option></select>');
