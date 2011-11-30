@@ -98,14 +98,12 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         require_once 'CRM/Dedupe/Finder.php';
         $params = array('check_permission' => FALSE);
         foreach ($contact as $table => $field) {
-          if (is_array($field)) {
-            if (!empty($field[1])) {
-              if (substr($table, 0, 2) == 'cg') {
-                //TODO pass custom data to deduper
-              }
-              elseif ($table != 'other' && $table != 'relationship') {
-                $params['civicrm_' . $table] = $field[1];
-              }
+          if (is_array($field) && !empty($field[1])) {
+            if (substr($table, 0, 2) == 'cg') {
+              //TODO pass custom data to deduper
+            }
+            elseif ($table != 'other' && $table != 'relationship') {
+              $params['civicrm_' . $table] = $field[1];
             }
           }
         }
@@ -575,9 +573,9 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
     $sql = 'SELECT title AS label, id AS value FROM civicrm_campaign WHERE is_active = 1 AND (end_date >= NOW() OR end_date IS NULL) ORDER BY start_date DESC';
   }
   elseif ($option_group == 'event') {
-    $sql = "SELECT CONCAT(title, DATE_FORMAT(start_date, ': %c/%Y')) AS label, CONCAT(id, '-', event_type_id) AS value FROM civicrm_event WHERE is_template = 0";
+    $sql = "SELECT title AS label, CONCAT(id, '-', event_type_id) AS value FROM civicrm_event WHERE is_template = 0";
     if (empty($param['show_past_events'])) {
-      $sql .= ' AND (end_date >= NOW() OR end_date IS NULL)';
+      $sql .= ' AND (end_date >= NOW() OR end_date IS NULL) AND is_active = 1';
     }
     if (is_numeric($param['event_type'])) {
       $sql .= ' AND event_type_id = ' . $param['event_type'];
@@ -1005,6 +1003,77 @@ function _webform_civicrm_form_validate($form, &$form_state, $submitted) {
           }
           form_error($element, t('Please enter @type for %field.', array('@type' => $dt, '%field' => $element['#title'])));
         }
+      }
+    }
+  }
+}
+
+
+/**
+ * Validation callback for event registrations.
+ */
+function _webform_civicrm_participant_validate($form, &$form_state, $submitted) {
+  $data = $form['#node']->webform_civicrm['data'];
+  // Check how many valid contacts we have
+  $contacts = array();
+  foreach (array_keys($data['contact']) as $c) {
+    if (!empty($_SESSION['webform_civicrm'][$form['#node']->nid]['cid'][$c])
+    || !empty($submitted["civicrm_{$c}_contact_1_contact_first_name"])
+    || !empty($submitted["civicrm_{$c}_contact_1_contact_last_name"])
+    || !empty($submitted["civicrm_{$c}_contact_1_contact_organization_name"])
+    || !empty($submitted["civicrm_{$c}_contact_1_contact_household_name"])
+    || !empty($submitted["civicrm_{$c}_contact_1_email_email"])) {
+      $contacts[] = $c;
+    }
+  }
+  $events = array();
+  $add = $data['participant_reg_type'] == 'all' ? count($contacts) : 1;
+  // Fetch events set in back-end
+  foreach ($data['participant'] as $c => $par) {
+    if (!empty($par['participant']) && in_array($c, $contacts)) {
+      foreach ($par['participant'] as $p) {
+        if (!empty($p['event_id']) && $p['event_id'] != 'create_civicrm_webform_element') {
+          list($eid) = explode('-', $p['event_id']);
+          if (is_numeric($eid)) {
+            $events[$eid]['ended'] = TRUE;
+            $events[$eid]['title'] = t('this event');
+            $events[$eid]['count'] = webform_civicrm_aval($events, "$eid:count", 0) + $add;
+          }
+        }
+      }
+    }
+  }
+  // Add events selected by user
+  foreach ($submitted as $field => $value) {
+    if (strpos($field, 'participant_event_id')) {
+      list($lobo, $c, $ent, $n, $table, $key) = webform_civicrm_explode_key($field);
+      if (in_array($c, $contacts)
+      || ($c == 1 && $data['participant_reg_type'] == 'all')) {
+        $value = is_array($value) ? $value : array($value);
+        foreach($value as $val) {
+          $eid = explode('-', $val);
+          if (count($eid) == 2 && $eid = $eid[0]) {
+            $events[$eid]['ended'] = TRUE;
+            $events[$eid]['title'] = t('this event');
+            $events[$eid]['count'] = webform_civicrm_aval($events, "$eid:count", 0) + $add;
+          }
+        }
+      }
+    }
+  }
+  webform_civicrm_event_info($events);
+  foreach ($events as $eid => $event) {
+    if ($event['ended']) {
+      form_set_error($eid, t('Sorry, you may no longer register for %event.', array('%event' => $event['title'])));
+    }
+    elseif ($event['max_participants'] && $event['count'] > $event['remaining']) {
+      if (!empty($event['full'])) {
+        form_set_error($eid, '<em>' . $event['title'] . '</em>: ' . $event['full_message']);
+      }
+      else {
+        form_set_error($eid, format_plural($event['remaining'],
+          'Sorry, you tried to register !count people for %event but there is only 1 space remaining.',
+          'Sorry, you tried to register !count people for %event but there are only @count spaces remaining.', array('%event' => $event['title'], '!count' => $event['count'])));
       }
     }
   }
@@ -1571,52 +1640,42 @@ function webform_civicrm_activity_find($params) {
 
 
 /**
- * Fetch Events associated with a webform
+ * Fetch events set in the back-end
  */
-function webform_civicrm_event_count($node, $enabled) {
-  $events = array();
-  $data = $node->webform_civicrm['data'] + array('participant' => array());
-  // Events set in the back-end
-  foreach ($data['participant'] as $par) {
-    if (!empty($par['participant'])) {
-      foreach ($par['participant'] as $p) {
-        if (!empty($p['event_id']) && $p['event_id'] != 'create_civicrm_webform_element') {
-          list($id) = explode('-', $p['event_id']);
-          if (is_numeric($id)) {
-            $events[$id] = array(
-              'ended' => TRUE,
-              'title' => t('this event'),
-            );
-          }
+function webform_civicrm_event_count($data) {
+
+  return $events;
+}
+
+
+/**
+ * Fetch info and remaining spaces for events
+ */
+function webform_civicrm_event_info(&$events) {
+  if (!empty($events)) {
+    require_once 'CRM/Event/BAO/Participant.php';
+    $now = time();
+    // Fetch event info
+    $dao = &CRM_Core_DAO::executeQuery('SELECT id, title, end_date, max_participants
+      FROM civicrm_event WHERE id IN (' . implode(',', array_keys($events)) . ')');
+    while ($dao->fetch()) {
+      $events[$dao->id]['title'] = $dao->title;
+      $events[$dao->id]['end_date'] = $dao->end_date;
+      $events[$dao->id]['full'] = FALSE;
+      $events[$dao->id]['ended'] = $dao->end_date && strtotime($dao->end_date) < $now;
+      if ($events[$dao->id]['max_participants'] = $dao->max_participants) {
+        $remaining = CRM_Event_BAO_Participant::eventFull($dao->id, TRUE, FALSE);
+        if (is_string($remaining)) {
+          $events[$dao->id]['full'] = TRUE;
+          $events[$dao->id]['remaining'] = 0;
+          $events[$dao->id]['full_message'] = $remaining;
+        }
+        else {
+          $events[$dao->id]['remaining'] = $remaining ? $remaining : $dao->max_participants;
         }
       }
     }
   }
-  // Events exposed to the form
-  foreach($enabled as $field => $fid) {
-    if (strpos($field, 'participant_event_id')) {
-      $options = webform_civicrm_str2array(webform_civicrm_aval($node->webform['components'][$fid], 'extra:items'));
-      foreach ($options as $p => $label) {
-        list($id) = explode('-', $p);
-        $events[$id] = array(
-          'ended' => TRUE,
-          'title' => $label,
-        );
-      }
-    }
-  }
-  // Fetch event info
-  $dao = &CRM_Core_DAO::executeQuery('SELECT id, title, end_date, max_participants
-    FROM civicrm_event WHERE id IN (' . implode(',', array_keys($events)) . ')');
-  while ($dao->fetch()) {
-    $events[$dao->id] = array(
-      'title' => $dao->title,
-      'end_date' => $dao->end_date,
-      'max_participants' => $dao->max_participants,
-      'ended' => $dao->end_date && strtotime($dao->end_date) < time(),
-    );
-  }
-  return $events;
 }
 
 
@@ -1693,7 +1752,7 @@ function webform_civicrm_js_options($key, $str='') {
  * Return a value from an array.
  * @param $haystack: the array to search
  * @param $keys: pass a single key, or multiple keys separated by : to get a nested value
- * @param $default: value to return if given array key does not exist or its value is empty
+ * @param $default: value to return if given array key does not exist or is empty
  * @return: found value or default
  */
 function webform_civicrm_aval($haystack, $keys, $default = NULL) {

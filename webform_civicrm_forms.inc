@@ -409,7 +409,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
       '#title' => t('Show Events of Type'),
       '#options' => array('any' => t('- Any Type -')) + webform_civicrm_get_options('event_type'),
       '#default_value' => webform_civicrm_aval($data, 'reg_options:event_type', 'any'),
-      '#prefix' => '<div class="web-civi-checkbox-set">',
+      '#prefix' => '<div id="event-reg-options-wrapper"><div class="web-civi-checkbox-set">',
       '#parents' => array('reg_options', 'event_type'),
       '#tree' => TRUE,
     );
@@ -423,20 +423,21 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     );
     $form['event']['reg_options'] = array(
       '#prefix' => '<div class="clear-block"></div>',
+      '#suffix' => '</div>',
       '#type' => 'fieldset',
       '#title' => t('Registration Options'),
       '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
       '#tree' => TRUE,
     );
     $form['event']['reg_options']['show_remaining'] = array(
       '#type' => 'select',
       '#title' => t('Show Remaining Space in Events'),
       '#default_value' => webform_civicrm_aval($data, 'reg_options:show_remaining', 0),
-      '#description' => t('Display a message at the top of the form for each event with a registration limit.'),
+      '#description' => t('Display a message at the top of the form for each event with a registration limit (will also display if an event has ended).'),
       '#options' => array(
         t('Never'),
         'always' => t('Always'),
+        '0_full' => t('When full - 0 spaces left'),
       ),
     );
     foreach(array(5, 10, 20, 50, 100, 200, 500, 1000) as $num) {
@@ -862,7 +863,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
         // Create fieldsets - for contact and contact-specific event fields only
         if (!empty($vals['create_fieldsets'])
         && $ent != 'activity'
-        && ($ent != 'participant' || webform_civicrm_aval($data, 'participant_reg_type') == 'separate')) {
+        && ($ent != 'participant' || webform_civicrm_aval($node->webform_civicrm['data'], 'participant_reg_type') == 'separate')) {
           if (!isset($enabled['civicrm_' . $c . '_contact_1_fieldset_fieldset'])) {
             $new_set = array(
               'nid' => $nid,
@@ -910,8 +911,8 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
 /**
  * Alter front-end of webforms: Called by hook_form_alter() when rendering a civicrm-enabled webform
  * Add custom prefix.
- * Display message.
- * Block unknown users.
+ * Display messages.
+ * Block users who should not have access.
  * Set webform default values.
  */
 function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
@@ -1050,35 +1051,59 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   $reg = webform_civicrm_aval($data, 'reg_options', array());
   if (!empty($data['participant_reg_type'])
   && (!empty($reg['show_remaining']) || !empty($reg['block_form']))) {
-    $block_form = !empty($reg['block_form']);
-    require_once 'CRM/Event/BAO/Participant.php';
-    $events = webform_civicrm_event_count($node, $enabled);
-    foreach ($events as $eid => $event) {
-      if ($event['ended']) {
-        if (!empty($reg['show_remaining'])) {
-          drupal_set_message(t('Sorry, %event has ended.', array('%event' => $event['title'])), 'warning');
-        }
-      }
-      elseif (!empty($event['max_participants'])) {
-        $remaining = CRM_Event_BAO_Participant::eventFull($eid, TRUE, FALSE);
-        if (is_int($remaining) || !$remaining) {
-          $block_form = FALSE;
-          if (!empty($reg['show_remaining'])) {
-            $remaining = $remaining ? $remaining : $event['max_participants'];
-            if ($reg['show_remaining'] == 'always' || $reg['show_remaining'] >= $remaining) {
-              drupal_set_message(t('%event has !count remaining spaces.', array('%event' => $event['title'], '!count' => $remaining)));
+    $events = array();
+    // Fetch events set in back-end
+    $data += array('participant' => array());
+    foreach ($data['participant'] as $par) {
+      if (!empty($par['participant'])) {
+        foreach ($par['participant'] as $p) {
+          if (!empty($p['event_id']) && $p['event_id'] != 'create_civicrm_webform_element') {
+            list($eid) = explode('-', $p['event_id']);
+            if (is_numeric($eid)) {
+              $events[$eid]['ended'] = TRUE;
+              $events[$eid]['title'] = t('this event');
+              $events[$eid]['count'] = webform_civicrm_aval($events, "$eid:count", 0) + 1;
             }
           }
         }
-        elseif (!empty($reg['show_remaining'])) {
-          drupal_set_message($remaining, 'warning');
+      }
+    }
+    // Add events exposed to the form
+    foreach($enabled as $field => $fid) {
+      if (strpos($field, 'participant_event_id')) {
+        $options = webform_civicrm_str2array(webform_civicrm_aval($node->webform['components'][$fid], 'extra:items'));
+        foreach ($options as $p => $label) {
+          list($eid) = explode('-', $p);
+          $events[$eid] = array(
+            'ended' => TRUE,
+            'title' => $label,
+          );
+        }
+      }
+    }
+    webform_civicrm_event_info($events);
+    foreach ($events as $eid => $event) {
+      if ($event['ended']) {
+        if (!empty($reg['show_remaining']) && empty($form_state['input'])) {
+          drupal_set_message(t('Sorry, %event has ended.', array('%event' => $event['title'])), 'warning');
+        }
+      }
+      elseif ($event['full']) {
+        if (!empty($reg['show_remaining']) && empty($form_state['input'])) {
+          drupal_set_message('<em>' . $event['title'] . '</em>: ' . $event['full_message'], 'warning');
         }
       }
       else {
-        $block_form = FALSE;
+        $reg['block_form'] = FALSE;
+        if ($event['max_participants'] && ($reg['show_remaining'] == 'always' || intval($reg['show_remaining']) >= $event['remaining'])) {
+          drupal_set_message(format_plural($event['remaining'],
+            '%event has 1 remaining space.',
+            '%event has @count remaining spaces.',
+            array('%event' => $event['title'])));
+        }
       }
     }
-    if ($block_form) {
+    if ($reg['block_form']) {
       $form['#access'] = FALSE;
       return;
     }
