@@ -931,7 +931,8 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   foreach ($data['contact'] as $c) {
     if (!empty($c['number_of_address'])) {
       $dc = $config->defaultContactCountry;
-      $js = 'var stateProvinceDefault = ' . json_encode(webform_civicrm_get_options('state_province', $dc)) . ";
+      $js = '
+        var stateProvinceDefault = ' . json_encode(webform_civicrm_get_options('state_province', $dc)) . ";
         var stateProvinceCache = {'default':stateProvinceDefault,'$dc':stateProvinceDefault};
         var webformSelectNa = '" . t('- N/A -') . "';
         var webformSelectNone = '" . t('- None -') . "';
@@ -1047,10 +1048,9 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   $enabled = webform_civicrm_enabled_fields($node);
 
   // Check if events are open to registration and take appropriate action
+  $events = $exposed_events = array();
   $reg = webform_civicrm_aval($data, 'reg_options', array());
-  if (!empty($data['participant_reg_type'])
-  && (!empty($reg['show_remaining']) || !empty($reg['block_form']))) {
-    $events = array();
+  if (!empty($data['participant_reg_type'])) {
     // Fetch events set in back-end
     $data += array('participant' => array());
     foreach ($data['participant'] as $par) {
@@ -1073,6 +1073,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
         $options = webform_civicrm_str2array(webform_civicrm_aval($node->webform['components'][$fid], 'extra:items'));
         foreach ($options as $p => $label) {
           list($eid) = explode('-', $p);
+          $exposed_events[$eid][] = array('field' => $field, 'eid' => $p);;
           $events[$eid] = array(
             'ended' => TRUE,
             'title' => $label,
@@ -1080,36 +1081,39 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
         }
       }
     }
-    webform_civicrm_event_info($events);
-    foreach ($events as $eid => $event) {
-      if ($event['ended']) {
-        if (!empty($reg['show_remaining']) && empty($form_state['input'])) {
-          drupal_set_message(t('Sorry, %event has ended.', array('%event' => $event['title'])), 'warning');
+    if ($events && (!empty($reg['show_remaining']) || !empty($reg['block_form']))) {
+      webform_civicrm_event_info($events);
+      foreach ($events as $eid => $event) {
+        if ($event['ended']) {
+          if (!empty($reg['show_remaining']) && empty($form_state['input'])) {
+            drupal_set_message(t('Sorry, %event has ended.', array('%event' => $event['title'])), 'warning');
+          }
+        }
+        elseif ($event['full']) {
+          if (!empty($reg['show_remaining']) && empty($form_state['input'])) {
+            drupal_set_message('<em>' . $event['title'] . '</em>: ' . $event['full_message'], 'warning');
+          }
+        }
+        else {
+          $reg['block_form'] = FALSE;
+          if ($event['max_participants'] && empty($form_state['input'])
+          && ($reg['show_remaining'] == 'always' || intval($reg['show_remaining']) >= $event['remaining'])) {
+            drupal_set_message(format_plural($event['remaining'],
+              '%event has 1 remaining space.',
+              '%event has @count remaining spaces.',
+              array('%event' => $event['title'])));
+          }
         }
       }
-      elseif ($event['full']) {
-        if (!empty($reg['show_remaining']) && empty($form_state['input'])) {
-          drupal_set_message('<em>' . $event['title'] . '</em>: ' . $event['full_message'], 'warning');
-        }
+      if ($reg['block_form']) {
+        $form['#access'] = FALSE;
+        return;
       }
-      else {
-        $reg['block_form'] = FALSE;
-        if ($event['max_participants'] && empty($form_state['input'])
-        && ($reg['show_remaining'] == 'always' || intval($reg['show_remaining']) >= $event['remaining'])) {
-          drupal_set_message(format_plural($event['remaining'],
-            '%event has 1 remaining space.',
-            '%event has @count remaining spaces.',
-            array('%event' => $event['title'])));
-        }
-      }
-    }
-    if ($reg['block_form']) {
-      $form['#access'] = FALSE;
-      return;
     }
   }
   
   // Form alterations for known contacts
+  $par = array();
   $count = count($data['contact']);
   foreach ($data['contact'] as $c => $contact) {
     $info['contact'][$c] = array();
@@ -1205,6 +1209,32 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
         $info['contact'][$c]['other'][1]['groups'][] = $group['group_id'];
       }
     }
+    // Retrieve participant data
+    if ($exposed_events && ($c == 1 || $data['participant_reg_type'] == 'separate')) {
+      $select = array('id', 'event_id', 'role_id', 'status_id');
+      if (in_array('CiviCampaign', $config->enableComponents)) {
+        $select[] = 'campaign_id';
+      }
+      $dao = &CRM_Core_DAO::executeQuery('SELECT ' . implode(',', $select) . " FROM civicrm_participant WHERE contact_id = $cid AND event_id IN (" . implode(',', array_keys($exposed_events)) . ")");
+      while ($dao->fetch()) {
+        foreach($select as $sel) {
+          $par['participant'][1][$sel] = $dao->$sel;
+        }
+        $par += webform_civicrm_get_custom($dao->id, 'Participant');
+        foreach ($exposed_events[$dao->event_id] as $event) {
+          list(,$n,,$i) = explode('_', $event['field']);
+          if ($n == $c) {
+            // Support multi-valued form elements
+            $event_ids = webform_civicrm_aval($info, "participant:$n:participant:$i:event_id", array());
+            $event_ids[] = $event['eid'];
+            foreach ($par as $k => $v) {
+              $info['participant'][$n][$k][$i] = $v[1];
+            }
+            $info['participant'][$n]['participant'][$i]['event_id'] = $event_ids;
+          }
+        }
+      }
+    }
   }
 
   if (!empty($id['cid'][1])) {
@@ -1259,7 +1289,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
           $form['name']['#default_value'] = str_replace($i, $new, $form['name']['#default_value']);
           array_unshift($form['#submit'], 'webform_civicrm_contact_clone');
           if (empty($form_state['input'])) {
-            drupal_set_message(t('Press the submit button below to clone this contact. A new CiviCRM contact will be added to the form, with all fields from within this fieldset and all the settings for contact !num.', array('!num' => $i)));
+            drupal_set_message(t('Press the button below to clone this contact. A new CiviCRM contact will be added to the form with all the settings for contact !num. All fields from within this fieldset will be cloned (be careful, that may include non-contact !num fields).', array('!num' => $i)));
           }
         }
       }
