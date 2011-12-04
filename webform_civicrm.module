@@ -296,7 +296,7 @@ function webform_civicrm_contact_clone_storage($storage = NULL) {
 
 /**
  * Clone a contact via webform.
- * This submit handler is called first when cloning a contact's fieldset
+ * This submit handler is called when cloning a contact's fieldset
  */
 function webform_civicrm_contact_clone($form, $form_state) {
   module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');

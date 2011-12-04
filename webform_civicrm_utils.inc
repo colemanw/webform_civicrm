@@ -797,7 +797,9 @@ function webform_civicrm_get_custom($entity_id, $entity_type = NULL, $normalize 
       if (empty($pieces[2])) {
         $pieces[2] = ($normalize ? 1 : 0);
       }
-      $values[$parents[$name]][$pieces[2]][$name] = $value;
+      if (isset($parents[$name])) {
+        $values[$parents[$name]][$pieces[2]][$name] = $value;
+      }
     }
   }
   if ($normalize) {
