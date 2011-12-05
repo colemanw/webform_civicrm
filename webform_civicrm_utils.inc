@@ -370,6 +370,10 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
                 if (empty($params['campaign_id']) || !in_array('CiviCampaign', $config->enableComponents)) {
                   unset($params['campaign_id']);
                 }
+                // Fetch existing participant - can't be done with the API currently
+                if ($existing = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_participant WHERE event_id = {$params['event_id']} AND contact_id = $cid AND is_test = 0 LIMIT 0, 1")) {
+                  $params['id'] = $existing;
+                }
                 $result = webform_civicrm_api('participant', 'create', $params);
                 if ($c == 1 && $data['participant_reg_type'] == 'all') {
                   $registered_by_id[$e][$i] = $result['id'];
@@ -928,6 +932,9 @@ function webform_civicrm_fill_values(&$elements, $data, $fields, $submitted) {
         }
         elseif (($element['#type'] == 'checkboxes' || !empty($element['#multiple'])) && !is_array($val)) {
           $val = explode($sp, trim($val, $sp));
+        }
+        if ($element['#type'] != 'checkboxes' && empty($element['#multiple']) && is_array($val)) {
+          $val = array_shift($val);
         }
         if ($element['#type'] == 'hidden') {
           $element['#value'] = $val;

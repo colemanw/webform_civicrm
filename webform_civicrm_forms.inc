@@ -1113,7 +1113,6 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   }
   
   // Form alterations for known contacts
-  $par = array();
   $count = count($data['contact']);
   foreach ($data['contact'] as $c => $contact) {
     $info['contact'][$c] = array();
