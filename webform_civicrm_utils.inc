@@ -934,7 +934,7 @@ function webform_civicrm_fill_values(&$elements, $data, $fields, $submitted) {
           $val = explode($sp, trim($val, $sp));
         }
         if ($element['#type'] != 'checkboxes' && empty($element['#multiple']) && is_array($val)) {
-          $val = array_shift($val);
+          $val = array_pop($val);
         }
         if ($element['#type'] == 'hidden') {
           $element['#value'] = $val;
