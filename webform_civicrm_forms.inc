@@ -1048,20 +1048,25 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   $enabled = webform_civicrm_enabled_fields($node);
 
   // Check if events are open to registration and take appropriate action
-  $events = $exposed_events = array();
+  $events = array();
   $reg = webform_civicrm_aval($data, 'reg_options', array());
   if (!empty($data['participant_reg_type'])) {
     // Fetch events set in back-end
     $data += array('participant' => array());
-    foreach ($data['participant'] as $par) {
+    foreach ($data['participant'] as $e => $par) {
       if (!empty($par['participant'])) {
-        foreach ($par['participant'] as $p) {
+        foreach ($par['participant'] as $n => $p) {
           if (!empty($p['event_id']) && $p['event_id'] != 'create_civicrm_webform_element') {
             list($eid) = explode('-', $p['event_id']);
             if (is_numeric($eid)) {
               $events[$eid]['ended'] = TRUE;
               $events[$eid]['title'] = t('this event');
               $events[$eid]['count'] = webform_civicrm_aval($events, "$eid:count", 0) + 1;
+              $events[$eid]['form'][] = array(
+                'contact' => $e,
+                'num' => $n,
+                'eid' => NULL
+              );
             }
           }
         }
@@ -1073,10 +1078,13 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
         $options = webform_civicrm_str2array(webform_civicrm_aval($node->webform['components'][$fid], 'extra:items'));
         foreach ($options as $p => $label) {
           list($eid) = explode('-', $p);
-          $exposed_events[$eid][] = array('field' => $field, 'eid' => $p);;
-          $events[$eid] = array(
-            'ended' => TRUE,
-            'title' => $label,
+          $events[$eid]['ended'] = TRUE;
+          $events[$eid]['title'] = $label;
+          list(,$e,,$n) = explode('_', $field);
+          $events[$eid]['form'][] = array(
+            'contact' => $e,
+            'num' => $n,
+            'eid' => $p
           );
         }
       }
@@ -1209,23 +1217,27 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       }
     }
     // Retrieve participant data
-    if ($exposed_events && ($c == 1 || $data['participant_reg_type'] == 'separate')) {
+    if ($events && ($c == 1 || $data['participant_reg_type'] == 'separate')) {
       $select = array('id', 'event_id', 'role_id', 'status_id');
       if (in_array('CiviCampaign', $config->enableComponents)) {
         $select[] = 'campaign_id';
       }
-      $dao = &CRM_Core_DAO::executeQuery('SELECT ' . implode(',', $select) . " FROM civicrm_participant WHERE contact_id = $cid AND event_id IN (" . implode(',', array_keys($exposed_events)) . ")");
+      $dao = &CRM_Core_DAO::executeQuery('SELECT ' . implode(',', $select) . " FROM civicrm_participant WHERE contact_id = $cid AND event_id IN (" . implode(',', array_keys($events)) . ")");
       while ($dao->fetch()) {
+        $par = array();
         foreach($select as $sel) {
           $par['participant'][1][$sel] = $dao->$sel;
         }
         $par += webform_civicrm_get_custom($dao->id, 'Participant');
-        foreach ($exposed_events[$dao->event_id] as $event) {
-          list(,$n,,$i) = explode('_', $event['field']);
-          if ($n == $c) {
+        foreach ($events[$dao->event_id]['form'] as $event) {
+          if ($event['contact'] == $c) {
+            $n = $event['contact'];
+            $i = $event['num'];
             // Support multi-valued form elements
             $event_ids = webform_civicrm_aval($info, "participant:$n:participant:$i:event_id", array());
-            $event_ids[] = $event['eid'];
+            if ($event['eid']) {
+              $event_ids[] = $event['eid'];
+            }
             foreach ($par as $k => $v) {
               $info['participant'][$n][$k][$i] = $v[1];
             }
