@@ -365,9 +365,15 @@ function webform_civicrm_form_validate($form, &$form_state) {
   $values = _webform_client_form_submit_flatten($node, webform_civicrm_aval($form_state, 'values:submitted'));
   $submitted = webform_civicrm_enabled_fields($node, $values);
   _webform_civicrm_form_validate($form['submitted'], $form_state, $submitted);
-  if (!empty($node->webform_civicrm['data']['reg_options']['block_form'])
+  if (!empty($node->webform_civicrm['data']['reg_options']['validate'])
   && !empty($node->webform_civicrm['data']['participant'])
   && !empty($node->webform_civicrm['data']['participant_reg_type'])) {
+    // We need data from all pages to validate events
+    if (!empty($form_state['storage']['submitted'])
+    && webform_civicrm_aval($form_state, 'storage:page_num', 1) > 1) {
+      $values += $form_state['storage']['submitted'];
+      $submitted = webform_civicrm_enabled_fields($node, $values);
+    }
     _webform_civicrm_participant_validate($form, $form_state, $submitted);
   }
 }

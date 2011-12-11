@@ -433,7 +433,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
       '#type' => 'select',
       '#title' => t('Show Remaining Space in Events'),
       '#default_value' => webform_civicrm_aval($data, 'reg_options:show_remaining', 0),
-      '#description' => t('Display a message at the top of the form for each event with a registration limit (will also display if an event has ended).'),
+      '#description' => t('Display a message at the top of the form for each event with a registration limit or past end date.'),
       '#options' => array(
         t('Never'),
         'always' => t('Always'),
@@ -626,7 +626,7 @@ function webform_civicrm_process_form_settings(&$vals) {
     }
   }
   if ($created_new_contact) {
-    drupal_set_message(t('Tip: Consider using the clone feature to add multiple similar contacts. (see help for more info)'));
+    drupal_set_message(t('Tip: Consider using the clone feature to add multiple similar contacts. (see help for more info)'), 'status', FALSE);
   }
   foreach ($vals as $key => $val) {
     if (strpos($key, '_number_of_') !== FALSE) {
@@ -1040,8 +1040,8 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       $form['#prefix'] = webform_civicrm_aval($form, '#prefix', '') . '<div class="webform-civicrm-prefix contact-unknown">' . nl2br($settings['prefix_unknown']) . '</div>';
     }
     if ($settings['block_unknown_users']) {
-      $form['#access'] = FALSE;
-      drupal_set_message(t('Sorry, you do not have permission to access this form.'), 'warning');
+      $form['submitted']['#access'] = $form['actions']['#access'] = FALSE;
+      drupal_set_message(t('Sorry, you do not have permission to access this form.'), 'warning', FALSE);
       return;
     }
   }
@@ -1094,12 +1094,12 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       foreach ($events as $eid => $event) {
         if ($event['ended']) {
           if (!empty($reg['show_remaining']) && empty($form_state['input'])) {
-            drupal_set_message(t('Sorry, %event has ended.', array('%event' => $event['title'])), 'warning');
+            drupal_set_message(t('Sorry, %event has ended.', array('%event' => $event['title'])), 'warning', FALSE);
           }
         }
         elseif ($event['full']) {
           if (!empty($reg['show_remaining']) && empty($form_state['input'])) {
-            drupal_set_message('<em>' . $event['title'] . '</em>: ' . $event['full_message'], 'warning');
+            drupal_set_message('<em>' . $event['title'] . '</em>: ' . $event['full_message'], 'warning', FALSE);
           }
         }
         else {
@@ -1109,7 +1109,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
             drupal_set_message(format_plural($event['remaining'],
               '%event has 1 remaining space.',
               '%event has @count remaining spaces.',
-              array('%event' => $event['title'])));
+              array('%event' => $event['title'])), 'status', FALSE);
           }
         }
       }
@@ -1119,7 +1119,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       }
     }
   }
-  
+
   // Form alterations for known contacts
   $count = count($data['contact']);
   foreach ($data['contact'] as $c => $contact) {
@@ -1300,13 +1300,13 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
           $form['name']['#default_value'] = str_replace($i, $new, $form['name']['#default_value']);
           array_unshift($form['#submit'], 'webform_civicrm_contact_clone');
           if (empty($form_state['input'])) {
-            drupal_set_message(t('Press the button below to clone this contact. A new CiviCRM contact will be added to the form with all the settings for contact !num. All fields from within this fieldset will be cloned (be careful, that may include non-contact !num fields).', array('!num' => $i)));
+            drupal_set_message(t('Press the button below to clone this contact. A new CiviCRM contact will be added to the form with all the settings for contact !num. All fields from within this fieldset will be cloned (be careful, that may include non-contact !num fields).', array('!num' => $i)), 'status', FALSE);
           }
         }
       }
       elseif (empty($form_state['input'])) {
         // Clone a single CiviCRM field
-        drupal_set_message(t('You are cloning a CiviCRM component. Refer to the Webform CiviCRM instructions for how to set the key if you want the new field to be processed by CiviCRM. You can also clone an entire contact by clicking the clone button by their fieldset.'));
+        drupal_set_message(t('You are cloning a CiviCRM component. Refer to the Webform CiviCRM instructions for how to set the key if you want the new field to be processed by CiviCRM. You can also clone an entire contact by clicking the clone button by their fieldset.'), 'status', FALSE);
       }
 
       if ($table == 'address' && $key == 'state_province_id') {

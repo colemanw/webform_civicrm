@@ -1070,6 +1070,22 @@ function _webform_civicrm_participant_validate($form, &$form_state, $submitted) 
       }
     }
   }
+  // Subtract events already registered for - this only works with known contacts
+  if ($events && !empty($_SESSION['webform_civicrm_data'][$form['#node']->nid]['cid'])) {
+    $dao = &CRM_Core_DAO::executeQuery("SELECT event_id
+      FROM civicrm_participant p, civicrm_participant_status_type s
+      WHERE s.id = p.status_id AND s.is_counted = 1
+      AND event_id IN (" . implode(',', array_keys($events)) . ")
+      AND contact_id IN (" . implode(',', $_SESSION['webform_civicrm_data'][$form['#node']->nid]['cid']) . ")
+      AND is_test = 0");
+    while ($dao->fetch()) {
+      if (isset($events[$dao->event_id])) {
+        if ((--$events[$dao->event_id]['count']) === 0) {
+          unset($events[$dao->event_id]);
+        }
+      }
+    }
+  }
   webform_civicrm_event_info($events);
   foreach ($events as $eid => $event) {
     if ($event['ended']) {
