@@ -87,7 +87,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       if (empty($id['cid'][$c])) {
         // Don't create contact if we don't have a name or email
         if (empty($contact['contact'][1]['first_name'])
-        && empty($contact['contact'][1]['last_name']) 
+        && empty($contact['contact'][1]['last_name'])
         && empty($contact['contact'][1]['organization_name'])
         && empty($contact['contact'][1]['household_name'])
         && empty($contact['email'][1]['email'])) {
@@ -1061,7 +1061,8 @@ function _webform_civicrm_participant_validate($form, &$form_state, $submitted) 
         $value = is_array($value) ? $value : array($value);
         foreach($value as $val) {
           $eid = explode('-', $val);
-          if (count($eid) == 2 && $eid = $eid[0]) {
+          if (count($eid) == 2 && is_numeric($eid[0]) && $eid[0]) {
+            $eid = $eid[0];
             $events[$eid]['ended'] = TRUE;
             $events[$eid]['title'] = t('this event');
             $events[$eid]['count'] = webform_civicrm_aval($events, "$eid:count", 0) + $add;

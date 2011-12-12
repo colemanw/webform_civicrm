@@ -466,7 +466,8 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
         '#prefix' => "<div id=\"participant-fieldset-$n\" $class>",
         '#suffix' => '</div>',
       );
-      if (!($num = webform_civicrm_aval($data, "participant:{$n}:number_of_participant")) || ($n > 1 && $reg_type == 'all')) {
+      if (!($num = webform_civicrm_aval($data, "participant:{$n}:number_of_participant"))
+      || ($n > 1 && $reg_type == 'all')) {
         $num = 0;
       }
       $form['event']['participants'][$n]['participant_' . $n . '_number_of_participant'] = array(
@@ -933,7 +934,10 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       $dc = $config->defaultContactCountry;
       $js = '
         var stateProvinceDefault = ' . json_encode(webform_civicrm_get_options('state_province', $dc)) . ";
-        var stateProvinceCache = {'default':stateProvinceDefault,'$dc':stateProvinceDefault};
+        var stateProvinceCache = {
+          'default':stateProvinceDefault,
+          '$dc':stateProvinceDefault,
+          '':{'':'" . t('- first choose a country -') . "'}};
         var webformSelectNa = '" . t('- N/A -') . "';
         var webformSelectNone = '" . t('- None -') . "';
         var webformSelectSelect = '" . t('- Select -') . "';";
