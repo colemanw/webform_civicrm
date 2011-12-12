@@ -29,22 +29,28 @@ function webform_civicrm_fill_options(element, data) {
   var value = $(element).val();
   $(element).find('option').remove();
   var dataEmpty = true;
+  var noCountry = false;
   for (key in data) {
+    if (key === '') {
+      noCountry = true;
+    }
     dataEmpty = false;
     break;
   }
   if (!dataEmpty) {
-    if ($(element).hasClass('required')) {
-      var text = webformSelectSelect;
-    }
-    else {
-      var text = webformSelectNone;
-    }
-    if ($(element).hasClass('has-default')) {
-      $(element).removeClass('has-default');
-    }
-    else {
-      $(element).append('<option value="">'+text+'</option>');
+    if (!noCountry) {
+      if ($(element).hasClass('required')) {
+        var text = webformSelectSelect;
+      }
+      else {
+        var text = webformSelectNone;
+      }
+      if ($(element).hasClass('has-default')) {
+        $(element).removeClass('has-default');
+      }
+      else {
+        $(element).append('<option value="">'+text+'</option>');
+      }
     }
     for (key in data) {
       $(element).append('<option value="'+key+'">'+data[key]+'</option>');
