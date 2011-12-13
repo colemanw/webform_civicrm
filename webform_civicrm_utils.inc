@@ -102,12 +102,15 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
             if (substr($table, 0, 2) == 'cg') {
               //TODO pass custom data to deduper
             }
+            // If sharing an address, use the master
             elseif ($table == 'address' && !empty($field[1]['master_id'])) {
               $m = $field[1]['master_id'];
+              // If master address is exposed to the form, use it
               if (!empty($contact[$m]['address'][1])) {
                 $params['civicrm_address'] = $contact[$m]['address'][1];
               }
-              elseif (!empty($id['cid'][$m])) {
+              // Else look up the master contact's address
+              elseif (!empty($updating['cid'][$m])) {
                 $masters = webform_civicrm_api('address', 'get',
                   array('contact_id' => $id['cid'][$m], 'options' => array('sort' => 'is_primary DESC')));
                 if (!empty($masters['values'])) {
@@ -115,7 +118,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
                 }
               }
             }
-            elseif ($table != 'other' && $table != 'relationship') {
+            elseif (in_array($table, array('contact', 'address', 'email', 'phone', 'website'))) {
               $params['civicrm_' . $table] = $field[1];
             }
           }
@@ -391,7 +394,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
                 if ($c == 1 && $data['participant_reg_type'] == 'all') {
                   $registered_by_id[$e][$i] = $result['id'];
                 }
-                // Format custom data for processing
+                // Reformat custom data from nested arrays
                 $custom = array();
                 foreach ($data['participant'][$n] as $key => $vals) {
                   if (substr($key, 0, 2) == 'cg' && isset($vals[$e])) {
