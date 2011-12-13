@@ -102,6 +102,19 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
             if (substr($table, 0, 2) == 'cg') {
               //TODO pass custom data to deduper
             }
+            elseif ($table == 'address' && !empty($field[1]['master_id'])) {
+              $m = $field[1]['master_id'];
+              if (!empty($contact[$m]['address'][1])) {
+                $params['civicrm_address'] = $contact[$m]['address'][1];
+              }
+              elseif (!empty($id['cid'][$m])) {
+                $masters = webform_civicrm_api('address', 'get',
+                  array('contact_id' => $id['cid'][$m], 'options' => array('sort' => 'is_primary DESC')));
+                if (!empty($masters['values'])) {
+                  $params['civicrm_address'] = array_shift($masters['values']);
+                }
+              }
+            }
             elseif ($table != 'other' && $table != 'relationship') {
               $params['civicrm_' . $table] = $field[1];
             }
