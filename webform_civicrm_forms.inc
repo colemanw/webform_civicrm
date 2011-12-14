@@ -247,7 +247,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
   );
   $form['st_message']['message'] = array(
     '#type' => 'textfield',
-    '#title' => t('Message text (displayed as a Drupal status message)'),
+    '#title' => t('Text (displayed as a status message)'),
     '#default_value' => webform_civicrm_aval($settings, 'message', t("You are viewing this form as [display name]. Please {click here if that's not you}.")),
     '#size' => 100,
     '#maxlength' => 255,
@@ -1118,7 +1118,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
         }
       }
       if ($reg['block_form']) {
-        $form['#access'] = FALSE;
+        $form['submitted']['#access'] = $form['actions']['#access'] = FALSE;
         return;
       }
     }
