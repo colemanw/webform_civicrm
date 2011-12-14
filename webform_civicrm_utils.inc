@@ -3,7 +3,7 @@
 /**
  * @file
  * Webform CiviCRM module's utility functions.
- * The functions in this file are all cross-compatible with D6/Civi3 and D7/Civi4
+ * The code in this file is cross-compatible with D6/Civi3 and D7/Civi4
  * Drupal-version-specific functions belong in webform_civicrm_dx_functions.inc
  */
 
@@ -305,7 +305,8 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         }
         if (!empty($add_groups)) {
           // Prepare for sending subscription confirmations
-          $confirmations_sent = $mailing_lists = array();
+          $confirmations_sent = array();
+          $email = '';
           if (!empty($node->webform_civicrm['confirm_subscription'])) {
             // Retrieve this contact's primary email address and perform error-checking
             $result = webform_civicrm_api('email', 'get', array('contact_id' => $cid, 'options' => array('sort' => 'is_primary DESC')));
@@ -319,7 +320,9 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
                 'contact_id' => $cid,
                 'email' => $email,
               );
-              $mailing_lists = webform_civicrm_get_options('mailing_lists');
+              if (!isset($mailing_lists)) {
+                $mailing_lists = webform_civicrm_get_options('mailing_lists');
+              }
             }
           }
           $group_params = array('contact_id' => $cid);
@@ -327,16 +330,21 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
             if (!in_array($gid, $in_groups)) {
               $group_params['group_id'] = $mailer_params['group_id'] = (int) $gid;
               if (isset($mailing_lists[$gid]) && !empty($email)) {
-                webform_civicrm_api('mailing_group', 'event_subscribe', $mailer_params);
-                $confirmations_sent[] = check_plain($mailing_lists[$gid]);
+                $result = webform_civicrm_api('mailing_group', 'event_subscribe', $mailer_params);
+                if (empty($result['is_error'])) {
+                  $confirmations_sent[] = check_plain($mailing_lists[$gid]);
+                }
+                else {
+                  webform_civicrm_api('group_contact', 'create', $group_params);
+                }
               }
               else {
                 webform_civicrm_api('group_contact', 'create', $group_params);
               }
             }
           }
-          if (!empty($confirmations_sent) && $c == 1 && $settings['contact_matching']) {
-            drupal_set_message(t('A confirmation has been sent to your email address, please follow the instructions in that message to finalize your subscription to !groups.', array('!groups' => '<em>' . implode('</em> ' . t('and') . '<em> ', $confirmations_sent) . '</em>')));
+          if ($confirmations_sent) {
+            drupal_set_message(t('A message has been sent to %email to confirm subscription to !groups.', array('%email' => $email, '!groups' => '<em>' . implode('</em> ' . t('and') . ' <em>', $confirmations_sent) . '</em>')));
           }
         }
         // Remove contact from groups if they have unchecked them on the form
