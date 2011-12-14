@@ -1799,7 +1799,7 @@ function webform_civicrm_js_options($key, $str='') {
  */
 function webform_civicrm_aval($haystack, $keys, $default = NULL) {
   foreach (explode(':', $keys) as $key) {
-    if (!is_array($haystack) || !isset($haystack[$key]) || (empty($haystack) && $default !== NULL)) {
+    if (!is_array($haystack) || !isset($haystack[$key]) || (empty($haystack[$key]) && $default !== NULL)) {
       return $default;
     }
     $haystack = $haystack[$key];
