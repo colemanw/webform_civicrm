@@ -947,17 +947,18 @@ function webform_civicrm_fill_values(&$elements, $data, $fields, $submitted) {
            && isset($submitted[$element['#webform_component']['cid']]))) {
         $val = $data[$ent][$c][$table][$n][$name];
         if ($element['#type'] == 'date') {
-          $dates = explode('-', $val);
+          $date = strtotime($val);
           $val = array(
-            'year' => $dates[0],
-            'month' => intval($dates[1]),
-            'day' => intval($dates[2]),
+            'year' => (int) date('Y', $date),
+            'month' => (int) date('m', $date),
+            'day' => (int) date('d', $date),
           );
         }
         elseif (($element['#type'] == 'checkboxes' || !empty($element['#multiple'])) && !is_array($val)) {
           $val = explode($sp, trim($val, $sp));
         }
-        if ($element['#type'] != 'checkboxes' && empty($element['#multiple']) && is_array($val)) {
+        if ($element['#type'] != 'checkboxes' && $element['#type'] != 'date'
+        && empty($element['#multiple']) && is_array($val)) {
           $val = array_pop($val);
         }
         if ($element['#type'] == 'hidden') {
