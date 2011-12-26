@@ -1816,3 +1816,21 @@ function webform_civicrm_aval($haystack, $keys, $default = NULL) {
   // $haystack has been reduced down to the item we want
   return $haystack;
 }
+
+
+/**
+ * Webform submission hooks don't have access to $form_state
+ * So this extra submission handler stores it.
+ */
+function webform_civicrm_storage($form, $form_state = NULL) {
+  static $storage = array();
+  // During form submission, store data for later
+  if (is_array($form)) {
+    $nid = $form['#node']->nid;
+    $storage[$nid] = webform_civicrm_aval($form_state, 'storage:webform_civicrm', array());
+  }
+  // Retrieve stored $form_state
+  elseif (is_numeric($form)) {
+    return webform_civicrm_aval($storage, $form, array());
+  }
+}
