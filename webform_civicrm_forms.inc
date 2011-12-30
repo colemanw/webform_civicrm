@@ -920,7 +920,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   webform_civicrm_add_js('webform_civicrm_webforms.js');
   $form['#validate'][] = 'webform_civicrm_form_validate';
   array_unshift($form['#submit'], 'webform_civicrm_storage');
-
+dsm('alter function called');dsm($form_state);
   civicrm_initialize();
   $config = CRM_Core_Config::singleton();
   $node = $form['#node'];
@@ -948,8 +948,8 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   }
 
   // Early return if the form (or page) was already submitted
-  if (empty($form_state['rebuild']) && !empty($form_state['input'])
-  || webform_civicrm_aval($form_state, 'clicked_button:#id') == 'edit-previous') {
+  if (webform_civicrm_aval($form_state, 'clicked_button:#id') == 'edit-previous'
+  || (empty($form_state['rebuild']) && !empty($form_state['storage']))) {
     webform_civicrm_fill_values($form['submitted'], array(), $fields, array());
     return;
   }
@@ -957,16 +957,15 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   // If this is an edit op, use the original IDs and return
   if (!empty($form['#submission'])) {
     if (isset($form['#submission']->civicrm)) {
-      $_SESSION['webform_civicrm_data'][$node->nid]['cid'] = $form['#submission']->civicrm['contact_id'];
-      $_SESSION['webform_civicrm_data'][$node->nid]['act'][1] = $form['#submission']->civicrm['activity_id'];
+      $form_state['storage']['civicrm']['id']['cid'] = $form['#submission']->civicrm['contact_id'];
+      $form_state['storage']['civicrm']['id']['act'][1] = $form['#submission']->civicrm['activity_id'];
     }
     webform_civicrm_fill_values($form['submitted'], array(), $fields, array());
     return;
   }
-
-  // If this form is already in-process, IDs will be stored in session
-  if (!empty($form_state['input'])) {
-    $id = $_SESSION['webform_civicrm_data'][$node->nid];
+  // If this form is already in-process, IDs will be stored
+  if (!empty($form_state['storage'])) {
+    $id = $form_state['storage']['civicrm']['id'];
   }
   else {
     $args = $_GET;
@@ -1098,18 +1097,18 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       webform_civicrm_event_info($events);
       foreach ($events as $eid => $event) {
         if ($event['ended']) {
-          if (!empty($reg['show_remaining']) && empty($form_state['input'])) {
+          if (!empty($reg['show_remaining']) && empty($form_state[WEBFORM_CIVICRM_FAPI_INPUT]) && empty($form_state['storage'])) {
             drupal_set_message(t('Sorry, %event has ended.', array('%event' => $event['title'])), 'warning', FALSE);
           }
         }
         elseif ($event['full']) {
-          if (!empty($reg['show_remaining']) && empty($form_state['input'])) {
+          if (!empty($reg['show_remaining']) && empty($form_state[WEBFORM_CIVICRM_FAPI_INPUT]) && empty($form_state['storage'])) {
             drupal_set_message('<em>' . $event['title'] . '</em>: ' . $event['full_message'], 'warning', FALSE);
           }
         }
         else {
           $reg['block_form'] = FALSE;
-          if ($event['max_participants'] && empty($form_state['input'])
+          if ($event['max_participants'] && empty($form_state[WEBFORM_CIVICRM_FAPI_INPUT]) && empty($form_state['storage'])
           && ($reg['show_remaining'] == 'always' || intval($reg['show_remaining']) >= $event['remaining'])) {
             drupal_set_message(format_plural($event['remaining'],
               '%event has 1 remaining space.',
@@ -1257,13 +1256,14 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
     if ($settings['prefix_known']) {
       $form['#prefix'] = webform_civicrm_aval($form, '#prefix', '') . '<div class="webform-civicrm-prefix contact-known">' . nl2br(webform_civicrm_replace_tokens($settings['prefix_known'], $info['contact'][1]['contact'][1])) . '</div>';
     }
-    if ($settings['message'] && empty($form_state['input'])) {
+    if ($settings['message'] && empty($form_state[WEBFORM_CIVICRM_FAPI_INPUT]) && empty($form_state['storage'])) {
       webform_civicrm_set_message($settings['message'], $info['contact'][1]['contact'][1]);
     }
   }
 
-  // Store ids in session
-  $_SESSION['webform_civicrm_data'][$node->nid] = $id;
+  // Store ids
+  $form_state['storage']['civicrm']['id'] = $id;
+dsm($form_state);
 
   // Set default values and other attributes for CiviCRM form elements
   // Passing $submitted helps us avoid overwriting values that have been entered on a multi-step form
@@ -1304,12 +1304,12 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
           $form['form_key']['#value'] = implode('_', array($lobo, $new, $ent, $n, $table, $key));
           $form['name']['#default_value'] = str_replace($i, $new, $form['name']['#default_value']);
           array_unshift($form['#submit'], 'webform_civicrm_contact_clone');
-          if (empty($form_state['input'])) {
+          if (empty($form_state[WEBFORM_CIVICRM_FAPI_INPUT])) {
             drupal_set_message(t('Press the button below to clone this contact. A new CiviCRM contact will be added to the form with all the settings for contact !num. All fields from within this fieldset will be cloned (be careful, that may include non-contact !num fields).', array('!num' => $i)), 'status', FALSE);
           }
         }
       }
-      elseif (empty($form_state['input'])) {
+      elseif (empty($form_state[WEBFORM_CIVICRM_FAPI_INPUT])) {
         // Clone a single CiviCRM field
         drupal_set_message(t('You are cloning a CiviCRM component. Refer to the Webform CiviCRM instructions for how to set the key if you want the new field to be processed by CiviCRM. You can also clone an entire contact by clicking the clone button by their fieldset.'), 'status', FALSE);
       }
