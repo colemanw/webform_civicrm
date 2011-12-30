@@ -8,6 +8,8 @@
 
 // FAPI items of type markup use '#value' in D6 and '#markup' in D7
 define('WEBFORM_CIVICRM_MARKUP', '#value');
+// FAPI form_state uses 'post' in D6 and 'input' in D7
+define('WEBFORM_CIVICRM_FAPI_INPUT', 'post');
 
 
 /**

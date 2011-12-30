@@ -17,7 +17,7 @@ module_load_include('inc', 'webform_civicrm', 'webform_civicrm_d' . substr(VERSI
  */
 function webform_civicrm_process_submission($node, &$submission, $op) {
   static $data = array();
-  static $id = array('cid' => array());
+  static $id = array();
   static $update = array();
   $settings = $node->webform_civicrm;
 
@@ -33,13 +33,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
 
     // Retrieve stored ids
-    if (!empty($_SESSION['webform_civicrm_data'][$node->nid])) {
-      $id = $updating = $_SESSION['webform_civicrm_data'][$node->nid];
-      unset($_SESSION['webform_civicrm_data'][$node->nid]);
-      if (empty($_SESSION['webform_civicrm_data'])) {
-        unset($_SESSION['webform_civicrm_data']);
-      }
-    }
+    $id = $updating = webform_civicrm_aval(webform_civicrm_storage($node->nid), 'id');
 
     // If this is an update op, set param for drupal_write_record()
     if (!empty($submission->sid)) {
@@ -267,14 +261,13 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
               webform_civicrm_api('contact', 'create', array('contact_id' => $params['contact_id_a'], 'employer_id' => $params['contact_id_b'], 'contact_type' => 'Individual'));
             }
             $params['relationship_type_id'] = $type;
-            if (isset($params['relationship_permission'])) {
-              $perm = $params['relationship_permission'];
+            if ($perm = webform_civicrm_aval($params, 'relationship_permission')) {
               $params['is_permission_a_b'] = $params['is_permission_b_a'] = $perm == 3 ? 1 : 0;
               if ($perm == 1 || $perm == 2) {
                 $params['is_permission_' . ($perm == 1 ? $a_b . '_' . $b_a : $b_a . '_' . $a_b)] = 1;
               }
-              unset($params['relationship_permission']);
             }
+            unset($params['relationship_permission']);
             webform_civicrm_api('relationship', 'create', $params);
           }
         }
@@ -382,7 +375,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
               continue;
             }
             // Loop through event ids to support multi-valued form elements
-            $events = is_array($params['event_id']) ? $params['event_id'] : array($params['event_id']);
+            $events = (array) $params['event_id'];
             foreach ($events as $i => $params['event_id']) {
               if (!empty($params['event_id'])) {
                 $params['contact_id'] = $cid;
@@ -1048,10 +1041,11 @@ function _webform_civicrm_form_validate($form, &$form_state, $submitted) {
  */
 function _webform_civicrm_participant_validate($form, &$form_state, $submitted) {
   $data = $form['#node']->webform_civicrm['data'];
+  $cids = webform_civicrm_aval($form_state, 'storage:civicrm:id:cid', array());dsm($form_state);
   // Check how many valid contacts we have
   $contacts = array();
   foreach (array_keys($data['contact']) as $c) {
-    if (!empty($_SESSION['webform_civicrm'][$form['#node']->nid]['cid'][$c])
+    if (!empty($cids[$c])
     || !empty($submitted["civicrm_{$c}_contact_1_contact_first_name"])
     || !empty($submitted["civicrm_{$c}_contact_1_contact_last_name"])
     || !empty($submitted["civicrm_{$c}_contact_1_contact_organization_name"])
@@ -1097,12 +1091,12 @@ function _webform_civicrm_participant_validate($form, &$form_state, $submitted) 
     }
   }
   // Subtract events already registered for - this only works with known contacts
-  if ($events && !empty($_SESSION['webform_civicrm_data'][$form['#node']->nid]['cid'])) {
+  if ($events && $cids) {
     $dao = &CRM_Core_DAO::executeQuery("SELECT event_id
       FROM civicrm_participant p, civicrm_participant_status_type s
       WHERE s.id = p.status_id AND s.is_counted = 1
       AND event_id IN (" . implode(',', array_keys($events)) . ")
-      AND contact_id IN (" . implode(',', $_SESSION['webform_civicrm_data'][$form['#node']->nid]['cid']) . ")
+      AND contact_id IN (" . implode(',', $cids) . ")
       AND is_test = 0");
     while ($dao->fetch()) {
       if (isset($events[$dao->event_id])) {
@@ -1815,22 +1809,4 @@ function webform_civicrm_aval($haystack, $keys, $default = NULL) {
   }
   // $haystack has been reduced down to the item we want
   return $haystack;
-}
-
-
-/**
- * Webform submission hooks don't have access to $form_state
- * So this extra submission handler stores it.
- */
-function webform_civicrm_storage($form, $form_state = NULL) {
-  static $storage = array();
-  // During form submission, store data for later
-  if (is_array($form)) {
-    $nid = $form['#node']->nid;
-    $storage[$nid] = webform_civicrm_aval($form_state, 'storage:webform_civicrm', array());
-  }
-  // Retrieve stored $form_state
-  elseif (is_numeric($form)) {
-    return webform_civicrm_aval($storage, $form, array());
-  }
 }
