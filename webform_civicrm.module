@@ -273,7 +273,7 @@ function webform_civicrm_help($section) {
 
 /**
  * Implements hook_webform_component_presave().
- * Alter form key when cloning a contact.
+ * Alter form keys when cloning a contact.
  */
 function webform_civicrm_webform_component_presave(&$component) {
   if ($c = webform_civicrm_contact_clone_storage()) {
@@ -355,10 +355,8 @@ function webform_civicrm_form_validate($form, &$form_state) {
 function webform_civicrm_storage($form, $form_state = NULL) {
   static $storage = array();
   // During form submission, store data for later
-  if (is_array($form)) {
-    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
-    $nid = $form['#node']->nid;
-    $storage[$nid] = webform_civicrm_aval($form_state, 'storage:civicrm', array());
+  if (is_array($form) && !empty($form['#node']->nid) && !empty($form_state['storage']['civicrm'])) {
+    $storage[$form['#node']->nid] = $form_state['storage']['civicrm'];
   }
   // Retrieve stored data
   elseif (is_numeric($form)) {

@@ -920,7 +920,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   webform_civicrm_add_js('webform_civicrm_webforms.js');
   $form['#validate'][] = 'webform_civicrm_form_validate';
   array_unshift($form['#submit'], 'webform_civicrm_storage');
-dsm('alter function called');dsm($form_state);
+
   civicrm_initialize();
   $config = CRM_Core_Config::singleton();
   $node = $form['#node'];
@@ -1263,11 +1263,10 @@ dsm('alter function called');dsm($form_state);
 
   // Store ids
   $form_state['storage']['civicrm']['id'] = $id;
-dsm($form_state);
 
   // Set default values and other attributes for CiviCRM form elements
-  // Passing $submitted helps us avoid overwriting values that have been entered on a multi-step form
-  $submitted = empty($form_state['values']['submitted']) ? array() : $form_state['values']['submitted'];
+  // Passing $submitted helps avoid overwriting values that have been entered on a multi-step form
+  $submitted = webform_civicrm_aval($form_state, 'values:submitted', array());
   webform_civicrm_fill_values($form['submitted'], $info, $fields, $submitted);
 }
 
