@@ -6,6 +6,7 @@ WHAT IT DOES
 -Auto-fill forms for logged in users (as contact 1).
 -Auto-fill for anonymous users too if you send them a personalized link through CiviMail.
 -Create or update an activity when users fill out your form.
+-Register contacts for events
 -Open or update a case.
 -Create relationships between contacts.
 -Share addresses.
@@ -51,7 +52,7 @@ This module allows you to tag contacts and add them to groups when they submit t
 
 CUSTOM DATA
 
--This module can handle (almost) any custom fields you have created for contacts, addresses, or activities. Two exceptions due to their complexity are contact references and files. Custom data for other CRM entities (cases, relationships, etc) are not currently supported.
+-This module can handle (almost) any custom fields you have created for contacts, addresses, event participants, or activities. Two exceptions due to their complexity are contact references and files. Custom data for other CRM entities (cases, relationships, etc.) are not currently supported.
 
 
 EVENT REGISTRATION
@@ -66,7 +67,7 @@ STATE/PROVINCE AND COUNTRY ADDRESS FIELDS
 This module gives approximately the same functionality as core CiviCRM profiles for the state field of an address:
 - If you enable both state and country fields for an address, the state list will dynamically update based on the chosen country.
 - If you enable a state field but not a country field for an address, only states from your site's default country will be shown.
-- If the end-user has scripts disabled, the dynamic state list will degrade to a simple textbox where they may enter the abbreviation. This is why the Webform Components tab shows them as textfields.
+- If the end-user has scripts disabled, the dynamic state list will degrade to a simple textbox where they may enter the abbreviation. This is why the Webform Components tab shows State/Province as a textfield.
 
 - None of the above applies to custom fields. Custom fields of type state/province will be a non-dynamic dropdown list of all "Available states and provinces" you have enabled in CiviCRM's localization settings. This is exact same behavior as on CiviCRM profiles.
 
