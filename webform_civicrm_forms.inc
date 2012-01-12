@@ -360,7 +360,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     );
     foreach ($data['contact'] as $n => $c) {
       $form['act']['case']['activity_fields']['activity_targets']['#options'][$n] = t('Contact !num', array('!num' => $n));
-      if (!isset($settings['activity_subject']) || !empty($c['activity_target'])) {
+      if (!isset($data['activity']) || !empty($c['activity_target'])) {
         $form['act']['case']['activity_fields']['activity_targets']['#default_value'][] = $n;
       }
     }
