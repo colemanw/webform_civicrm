@@ -811,7 +811,6 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
         $field['nid'] = $nid;
         $field['form_key'] = $key;
         $field['weight'] = $i;
-        $field['pid'] = 0;
         if ($n > 1 || $table == 'relationship') {
           if (strpos($field['name'], '#') === FALSE) {
             $field['name'] .= ' ' . $n;
@@ -842,9 +841,6 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
           if (!isset($field['extra']['aslist']) && empty($field['extra']['multiple'])) {
             $field['extra']['aslist'] = 1;
           }
-          elseif (!isset($field['extra']['aslist'])) {
-            $field['extra']['aslist'] = 0;
-          }
           if (is_numeric($lists[$name])) {
             // Lookup defaults for custom fields
             $sql = 'SELECT value FROM civicrm_option_value WHERE is_default AND is_active AND option_group_id = ' . $lists[$name];
@@ -857,10 +853,6 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
         if ($table == 'other' || $field['type'] == 'hidden') {
           unset($field['extra']['description']);
         }
-        if ($field['type'] == 'date') {
-          $field['extra']['timezone'] = 'user';
-          $field['extra']['datepicker'] = 1;
-        }
         // Create fieldsets - for contact and contact-specific event fields only
         if (!empty($vals['create_fieldsets'])
         && $ent != 'activity'
@@ -871,15 +863,15 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
               'form_key' => 'civicrm_' . $c . '_contact_1_fieldset_fieldset',
               'type' => 'fieldset',
               'name' => t('Contact !num', array('!num' => $c)),
-              'pid' => 0,
               'weight' => $i,
-              'extra' => array(),
             );
+            webform_component_defaults($new_set);
             $enabled['civicrm_' . $c . '_contact_1_fieldset_fieldset'] = webform_component_insert($new_set);
           }
           $field['pid'] = $enabled['civicrm_' . $c . '_contact_1_fieldset_fieldset'];
         }
         // Save webform component
+        webform_component_defaults($field);
         $fid = webform_component_insert($field);
         ++$new_fields;
       }
