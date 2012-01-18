@@ -1014,7 +1014,7 @@ function _webform_civicrm_form_validate($form, &$form_state, $submitted) {
             form_error($element, t('Mismatch: "@state" is not a state/province of %country. Please enter a valid state/province abbreviation for %field.', array('@state' => $element['#value'], '%country' => $countries[$country_id], '%field' => $element['#title'])));
           }
         }
-        // Strings don't need any validation
+        // Strings and files don't need any validation
         // For the moment we don't validate links because of CRM-8968
         elseif ($dt !== 'Link' && $dt !== 'String' && $dt !== 'Memo' && $dt !== 'File'
         && CRM_Utils_Type::escape($element['#value'], $dt, FALSE) === NULL) {
@@ -1214,7 +1214,6 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Image'),
       'type' => 'file',
       'extra' => array('width' => 40),
-      'data_type' => 'File',
     );
     $fields['email_email'] = array(
       'name' => t('Email'),
