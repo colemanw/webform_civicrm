@@ -63,6 +63,11 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         if (!empty($fields[$table . '_' . $field]['extra']['multiple'])) {
           $val = $sp . implode($sp, $val) . $sp;
         }
+        elseif ($field == 'image_URL') {
+          if (empty($val[0]) || !($val = webform_civicrm_filepath($val[0]))) {
+            continue;
+          }
+        }
         elseif ($fields[$table . '_' . $field]['type'] == 'date') {
           $val = empty($val[0]) ? '' : str_replace('-', '', $val[0]);
         }
@@ -920,7 +925,7 @@ function webform_civicrm_fill_values(&$elements, $data, $fields, $submitted) {
     }
     // Recurse through nested elements
     webform_civicrm_fill_values($element, $data, $fields, $submitted);
-    if (!empty($element['#type']) && $element['#type'] == 'fieldset') {
+    if (empty($element['#type']) || $element['#type'] == 'fieldset' || $element['#type'] == 'file') {
       continue;
     }
     if ($pieces = webform_civicrm_explode_key($eid)) {
@@ -989,7 +994,7 @@ function _webform_civicrm_form_validate($form, &$form_state, $submitted) {
     if (is_array($form[$key]) && ($element = $form[$key])) {
       _webform_civicrm_form_validate($form[$key], $form_state, $submitted);
       if (!empty($element['#civicrm_data_type'])
-      && substr($element['#type'], 0, 4) === 'text'
+      && substr(webform_civicrm_aval($element, '#type', ''), 0, 4) === 'text'
       && $element['#value'] !== NULL
       && $element['#value'] !== '') {
         $dt = $element['#civicrm_data_type'];
@@ -1011,7 +1016,7 @@ function _webform_civicrm_form_validate($form, &$form_state, $submitted) {
         }
         // Strings don't need any validation
         // For the moment we don't validate links because of CRM-8968
-        elseif ($dt !== 'Link' && $dt !== 'String' && $dt !== 'Memo'
+        elseif ($dt !== 'Link' && $dt !== 'String' && $dt !== 'Memo' && $dt !== 'File'
         && CRM_Utils_Type::escape($element['#value'], $dt, FALSE) === NULL) {
           // Allow data type names to be translated
           switch ($dt) {
@@ -1041,7 +1046,7 @@ function _webform_civicrm_form_validate($form, &$form_state, $submitted) {
  */
 function _webform_civicrm_participant_validate($form, &$form_state, $submitted) {
   $data = $form['#node']->webform_civicrm['data'];
-  $cids = webform_civicrm_aval($form_state, 'storage:civicrm:id:cid', array());dsm($form_state);
+  $cids = webform_civicrm_aval($form_state, 'storage:civicrm:id:cid', array());
   // Check how many valid contacts we have
   $contacts = array();
   foreach (array_keys($data['contact']) as $c) {
@@ -1205,6 +1210,12 @@ function webform_civicrm_get_fields($var = 'fields') {
       'type' => 'select',
       'extra' => array('multiple' => 1),
     );
+    $fields['contact_image_URL'] = array(
+      'name' => t('Image'),
+      'type' => 'file',
+      'extra' => array('width' => 40),
+      'data_type' => 'File',
+    );
     $fields['email_email'] = array(
       'name' => t('Email'),
       'type' => 'email',
@@ -1302,7 +1313,6 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['activity_subject'] = array(
       'name' => t('Activity Subject'),
       'type' => 'textfield',
-      'extra' => array('width' => 60),
     );
     $fields['activity_details'] = array(
       'name' => t('Activity Details'),

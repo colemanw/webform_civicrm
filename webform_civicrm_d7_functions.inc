@@ -74,6 +74,18 @@ function webform_civicrm_ajax_form_item(&$form, $pathstr, $control_element, $con
 
 
 /**
+ * Fetch the path of a file
+ * And format it as a public url that CiviCRM can read
+ */
+function webform_civicrm_filepath($id) {
+  if ($file = file_load($id)) {
+    global $base_url;
+    return str_replace('public://', $base_url . '/' . variable_get('file_public_path', conf_path() . '/files') . '/', str_replace(array('%3A', '%2F'), array(':', '/'), rawurlencode($file->uri)));
+  }
+}
+
+
+/**
  * Theme function to format civicrm options form as a table
  */
 function theme_webform_civicrm_options($variables) {
