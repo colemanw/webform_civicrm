@@ -19,7 +19,7 @@ function webform_civicrm_menu() {
     'page arguments' => array('webform_civicrm_configure_form', 1),
     'access callback' => 'webform_civicrm_form_access',
     'access arguments' => array(1),
-    'file' => 'webform_civicrm_forms.inc',
+    'file' => 'webform_civicrm_admin.inc',
     'weight' => 3,
     'type' => MENU_LOCAL_TASK,
   );
@@ -57,7 +57,7 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
   // Alter back-end webform component edit forms
   if ($form_id == 'webform_component_edit_form'
   && substr($form['form_key']['#default_value'], 0, 7) == 'civicrm') {
-    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
+    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_admin');
     _webform_civicrm_webform_component_form_alter($form, $form_state);
   }
 
@@ -140,7 +140,7 @@ function webform_civicrm_theme() {
  */
 function webform_civicrm_webform_submission_presave($node, &$submission) {
   if (!empty($node->webform_civicrm)) {
-    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
+    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
     webform_civicrm_process_submission($node, $submission, 'presave');
   }
 }
@@ -358,7 +358,7 @@ function webform_civicrm_contact_clone($form, $form_state) {
  * Validation callback for webform submissions.
  */
 function webform_civicrm_form_validate($form, &$form_state) {
-  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
+  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
   civicrm_initialize();
   require_once 'CRM/Utils/Type.php';
   $node = $form['#node'];
