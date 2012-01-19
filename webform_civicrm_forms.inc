@@ -541,7 +541,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     '#group' => 'webform_civicrm',
     '#description' => '<p>' .
     t('To have this form auto-filled for anonymous users, send the following link from CiviMail:') .
-    '<br />' . url('node/' . $node->nid, array('absolute' => TRUE)) . '?cid1={contact.contact_id}&{contact.checksum}</p>',
+    '<br />' . url('node/' . $node->nid, array('absolute' => TRUE)) . '?cid1={contact.contact_id}&amp;{contact.checksum}</p>',
   );
   $form['options']['contact_matching'] = array(
     '#type' => 'checkbox',
@@ -843,8 +843,9 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
           }
           if (is_numeric($lists[$name])) {
             // Lookup defaults for custom fields
-            $sql = 'SELECT value FROM civicrm_option_value WHERE is_default AND is_active AND option_group_id = ' . $lists[$name];
-            $dao = &CRM_Core_DAO::executeQuery($sql);
+            $dao = &CRM_Core_DAO::executeQuery('SELECT value FROM civicrm_option_value
+              WHERE is_default AND is_active AND option_group_id = ' . $lists[$name]);
+            $field['value'] = '';
             while ($dao->fetch()) {
               $field['value'] .= ($field['value'] ? ',' : '') . $dao->value;
             }
@@ -1393,9 +1394,40 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
       }
       // Simplify form for hidden fields
       elseif ($key == 'contact_id' || $key == 'external_identifier') {
-        $form['value']['#type'] = 'hidden';
-        $form['value']['#value'] = 0;
-        $form['#prefix'] = '<p>' . t('There are no configuration options for this hidden field. You can use it for post processing, for example to include a link to the CiviCRM contact in an email.') . '</p>';
+        $form['value']['#value'] = '';
+        $form['value']['#type'] = 'textfield';
+        $form['value']['#disabled'] = TRUE;
+        $form['#prefix'] = '<p>'
+        . t('There are no configuration options for this hidden field. You can use it for post processing, for example to include a link to the CiviCRM contact in an email.')
+        . '</p><p>'
+        . t('The webform token for this field is:')
+        . '<br /><strong>' . webform_civicrm_component_token($node, $form['cid']['#value'])
+        . '</strong><br /><em>'
+        . t('Note: this token will change if you move the field in or out of a fieldset.')
+        . '</em></p>';
+      }
+      // Customize form for checksum element
+      elseif ($key == 'cs') {
+        $form['value']['#title'] = t('Checksum Lifespan');
+        $form['value']['#required'] = TRUE;
+        $form['value']['#type'] = 'textfield';
+        $form['value']['#description'] = t('Enter the number of days before checksum will expire (non-integers are allowed, i.e. 1.5). Enter 0 to never expire.');
+        $form['#validate'][] = 'webform_civicrm_cs_validate';
+        $enabled = webform_civicrm_enabled_fields($node);
+        $form['#prefix'] = '<p>'
+        . t('This field will generate a checksum for contact !num after the form is submitted. You could use it to send a personalized link for anonymous users.', array('!num' => $i))
+        . '</p><p>';
+        if ($cid_field = webform_civicrm_aval($enabled, 'civicrm_' . $i . '_contact_1_contact_contact_id')) {
+          $form['#prefix'] .= t('Example: to link users back to this form, place this line in a webform-generated email:')
+          . '<br /><em>'
+          . url('node/' . $node->nid, array('absolute' => TRUE))
+          . '?cid' . $i . '=' . webform_civicrm_component_token($node, $cid_field)
+          . '&amp;cs=' . webform_civicrm_component_token($node, $form['cid']['#value'])
+          . '</em></p>';
+        }
+        else {
+          $form['#prefix'] .= t('Consider enabling the hidden contact_id field - hashed links usually require this value.') . '</p>';
+        }
       }
       // Autocomplete widget for selecting tags
       if ($key == 'tags') {
@@ -1459,4 +1491,25 @@ function webform_civicrm_js_select($name) {
       <a href="javascript:web_civi_select_reset(\'reset\', ' . "'#$name'" . ')">' . t('Restore') . '</a>
     </div>',
   );
+}
+
+
+/**
+ * Generate a token for a field
+ */
+function webform_civicrm_component_token($node, $cid) {
+  module_load_include('inc', 'webform', 'includes/webform.components');
+  $component = $node->webform['components'][$cid];
+  $parents = webform_component_parent_keys($node, $component);
+  return '%value[' . implode('][', $parents) . ']';
+}
+
+
+/**
+ * Validate checksum lifespan
+ */
+function webform_civicrm_cs_validate($form, &$form_state) {
+  if (!is_numeric($form_state['values']['value']) || $form_state['values']['value'] < 0) {
+    form_error($form['value'], t('Please enter a valid number of days.'));
+  }
 }
