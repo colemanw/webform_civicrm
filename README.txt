@@ -115,6 +115,11 @@ WILL CONTACTS, ACTIVITIES, ETC. BE CREATED RETROACTIVELY IF I ENABLE THIS MODULE
 No. That would require some sort of batch update script, which is not part of this module.
 
 
+WILL WEBFORM SUBMISSIONS BE ALTERED WHEN A CONTACT IS UPDATED IN CIVICRM?
+
+No. Think of each submission record as a snapshot of what was actually entered on the form.
+
+
 ADVANCED USAGE - PASSING IDS IN THE URL
 
 By default, contact 1 is assumed to be the acting user. So if you view a webform while logged-in, you will see your own contact details auto-filled on the form. You can disable that in the "additional options" so that logged in users are always presented with a blank form for entering/updating other contacts. To facilitate working with existing contacts, you can supply ids in the url. The following are supported:
