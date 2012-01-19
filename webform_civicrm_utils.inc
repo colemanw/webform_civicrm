@@ -152,17 +152,25 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
 
       webform_civicrm_save_custom($contact, $cid);
 
-      // Fill values for hidden ID fields
+      // Fill values for hidden ID & CS fields
       $fid = 'civicrm_' . $c . '_contact_1_contact_';
       if (!empty($enabled[$fid . 'contact_id'])) {
         $submission->data[$enabled[$fid . 'contact_id']]['value'] = array($cid);
       }
       if (!empty($enabled[$fid . 'external_identifier']) && !empty($updating['cid'][$c])) {
         $exid = webform_civicrm_api('contact', 'get', array('contact_id' => $cid, 'return.external_identifier' => 1));
-        if (!empty($exid['values'])) {
-          $exid = array_pop($exid['values']);
-          $submission->data[$enabled[$fid . 'external_identifier']]['value'] = array($exid['external_identifier']);
+        $submission->data[$enabled[$fid . 'external_identifier']]['value'] = array(webform_civicrm_aval($exid, "values:$cid:external_identifier"));
+      }
+      if (!empty($enabled[$fid . 'cs'])) {
+        if (empty($params['cs'])) {
+          $life = 'inf';
         }
+        else {
+          $life = intval(24 * $params['cs']);
+        }
+        require_once 'CRM/Contact/BAO/Contact/Utils.php';
+        $cs = CRM_Contact_BAO_Contact_Utils::generateChecksum($cid, NULL, $life);
+        $submission->data[$enabled[$fid . 'cs']]['value'] = array($cs);
       }
 
       // Save location data
@@ -1193,12 +1201,18 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['contact_contact_id'] = array(
       'name' => t('Contact ID'),
       'type' => 'hidden',
-      'extra' => array('description' => t('(hidden field, useful for post-processing)')),
+      'extra' => array('description' => t('(hidden field, use for post-processing)')),
     );
     $fields['contact_external_identifier'] = array(
       'name' => t('External ID'),
       'type' => 'hidden',
-      'extra' => array('description' => t('(hidden field, useful for post-processing)')),
+      'extra' => array('description' => t('(hidden field, use for post-processing)')),
+    );
+    $fields['contact_cs'] = array(
+      'name' => t('Generate Checksum'),
+      'type' => 'hidden',
+      'value' => '7',
+      'extra' => array('description' => t('(hidden field, use to send hashed links)')),
     );
     $fields['contact_preferred_communication_method'] = array(
       'name' => t('Preferred Communication Method(s)'),
@@ -1211,7 +1225,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'extra' => array('multiple' => 1),
     );
     $fields['contact_image_URL'] = array(
-      'name' => t('Image'),
+      'name' => t('Upload Image'),
       'type' => 'file',
       'extra' => array('width' => 40),
     );
@@ -1690,15 +1704,6 @@ function webform_civicrm_activity_find($params) {
   while ($dao->fetch()) {
     return $dao->id;
   }
-}
-
-
-/**
- * Fetch events set in the back-end
- */
-function webform_civicrm_event_count($data) {
-
-  return $events;
 }
 
 
