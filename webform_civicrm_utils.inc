@@ -456,6 +456,21 @@ function webform_civicrm_get_fields($var = 'fields') {
       ),
       'contact_type' => 'individual',
     );
+    $fields['contact_preferred_communication_method'] = array(
+      'name' => t('Preferred Communication Method(s)'),
+      'type' => 'select',
+      'extra' => array('multiple' => 1),
+    );
+    $fields['contact_privacy'] = array(
+      'name' => t('Privacy Preferences'),
+      'type' => 'select',
+      'extra' => array('multiple' => 1),
+    );
+    $fields['contact_image_URL'] = array(
+      'name' => t('Upload Image'),
+      'type' => 'file',
+      'extra' => array('width' => 40),
+    );
     $fields['contact_contact_id'] = array(
       'name' => t('Contact ID'),
       'type' => 'hidden',
@@ -471,21 +486,6 @@ function webform_civicrm_get_fields($var = 'fields') {
       'type' => 'hidden',
       'value' => '7',
       'extra' => array('description' => t('(hidden field, use to send hashed links)')),
-    );
-    $fields['contact_preferred_communication_method'] = array(
-      'name' => t('Preferred Communication Method(s)'),
-      'type' => 'select',
-      'extra' => array('multiple' => 1),
-    );
-    $fields['contact_privacy'] = array(
-      'name' => t('Privacy Preferences'),
-      'type' => 'select',
-      'extra' => array('multiple' => 1),
-    );
-    $fields['contact_image_URL'] = array(
-      'name' => t('Upload Image'),
-      'type' => 'file',
-      'extra' => array('width' => 40),
     );
     $fields['email_email'] = array(
       'name' => t('Email'),
