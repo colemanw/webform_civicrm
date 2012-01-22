@@ -69,17 +69,19 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   }
   else {
     $args = $_GET;
-    if (!empty($args['cid']) && empty($args['cid1'])) {
+    if (isset($args['cid']) && empty($args['cid1'])) {
       $args['cid1'] = $args['cid'];
     }
     $count = count($data['contact']);
     for ($i = 1; $i <= $count; ++$i) {
-      if (!empty($args['cid' . $i]) && is_numeric($cid = $args['cid' . $i])) {
+      if (isset($args['cid' . $i]) && is_numeric($args['cid' . $i])) {
+        $cid = (int) $args['cid' . $i];
         require_once 'CRM/Contact/BAO/Contact/Permission.php';
-        if (CRM_Contact_BAO_Contact_Permission::validateChecksumContact($cid, CRM_Core_DAO::$_nullObject)) {
+        if ($cid === 0 ||
+        CRM_Contact_BAO_Contact_Permission::validateChecksumContact($cid, CRM_Core_DAO::$_nullObject)) {
           $id['cid'][$i] = $cid;
           // Identify contact 1 as acting user if not already logged in
-          if ($i == 1 && user_is_anonymous()) {
+          if ($cid && $i == 1 && user_is_anonymous()) {
             CRM_Core_DAO::executeQuery('SET @civicrm_user_id = %1', array(1 => array($cid, 'Integer')));
           }
         }
@@ -87,7 +89,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
     }
   }
   // If user is logged in, look up the CID
-  if (empty($id['cid'][1]) && $settings['contact_matching'] && $data['contact'][1]['contact'][1]['contact_type'] == 'individual' && $cid = webform_civicrm_user_cid()) {
+  if (!isset($id['cid'][1]) && $settings['contact_matching'] && $data['contact'][1]['contact'][1]['contact_type'] == 'individual' && $cid = webform_civicrm_user_cid()) {
     $id['cid'][1] = $cid;
   }
   if (!empty($args['aid']) && !empty($id['cid']) && is_numeric($args['aid'])) {
@@ -1110,4 +1112,23 @@ function _webform_civicrm_participant_validate($form, &$form_state, $submitted) 
       }
     }
   }
+}
+
+
+/**
+ * Displays the admin-defined message with "not you?" link to known contacts
+ */
+function webform_civicrm_set_message($message, $contact) {
+  $message = webform_civicrm_replace_tokens($message, $contact);
+  preg_match_all('#\{([^}]+)\}#', $message, $matches);
+  if (!empty($matches[0])) {
+    $q = $_GET;
+    unset ($q['cs'], $q['q'], $q['cid']);
+    $q['cid1'] = 0;
+    foreach ($matches[0] as $pos => $match) {
+      $link = l($matches[1][$pos], $_GET['q'], array('query' => $q));
+      $message = str_replace($match, $link, $message);
+    }
+  }
+  drupal_set_message($message);
 }

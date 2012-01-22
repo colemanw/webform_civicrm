@@ -236,7 +236,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
   );
   $form['st_message'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Contact 1 Logout Message'),
+    '#title' => t('"Not You?" Message'),
     '#description' => t('Prompt for users who are logged in as, or following a hashed link for, someone else.'),
     '#group' => 'webform_civicrm',
   );
@@ -547,7 +547,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     '#type' => 'checkbox',
     '#title' => t('Autofill Contact 1 with Current User'),
     '#default_value' => $settings['contact_matching'],
-    '#description' => '<span id="civi-contact-match-on">' . t('Enable this option if users will fill out this form on behalf of themselves. Disable it to allow a logged-in user to enter someone else as contact 1.') . '</span> <span id="civi-contact-match-off">' . t('This option is disabled when contact 1 is not an individual.') . '</span>',
+    '#description' => '<span id="civi-contact-match-on">' . t('Enable this option if users will fill out this form on behalf of themselves. Disable it to allow a logged-in user to enter someone else as contact 1. (This is the same behavior as when visiting the form with cid1=0 in the url)') . '</span> <span id="civi-contact-match-off">' . t('This option is disabled when contact 1 is not an individual.') . '</span>',
   );
   $form['options']['create_fieldsets'] = array(
     '#type' => 'checkbox',
@@ -562,6 +562,10 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     '#description' => t('Recommended. Send a confirmation email before adding contacts to publicly subscribable mailing list groups.') . '<br />' . t('Your public mailing lists:') . ' <em>',
   );
   if ($ml = webform_civicrm_get_options('mailing_lists')) {
+    if (count($ml) > 4) {
+      $ml = array_slice($ml, 0, 4);
+      $ml[] = t('etc.');
+    }
     $form['options']['confirm_subscription']['#description'] .= implode(', ', $ml) . '</em>';
   }
   else {
