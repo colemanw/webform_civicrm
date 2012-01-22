@@ -103,11 +103,11 @@ This module can also generate those keys, allowing you to send a hashed link fro
 To use this feature, enable the "Contact ID" and "Generate Checksum" fields for a contact, then use their token values in the webform's email or redirect options. Click "edit" on the checksum field for a snippet you can copy and paste.
 
 
-ABOUT THE USER MESSAGE
+ABOUT THE "NOT YOU" MESSAGE
 
 This feature exists to help prevent a major CRM headache: If users view your form while logged-in as someone else, or they click to your form by following someone else's personalized link (i.e. from a forwarded email), they will see that person's details on the form. Not given any alternative, they are likely to manually clear those fields and type their own information, which would cause the existing contact to be updated with a different person's details, throwing your contact data into confusion.
 
-When enabled, users will see a configurable message instructing them to "click here" if they are not the intended contact. The link will take the appropriate action (logging them out if they are logged in, or else getting rid of the personalized hash) and bring them to an anonymous version of the form. Make sure anonymous & unknown users have access to the webform if using this feature.
+When enabled, users will see a message instructing them to "click here" if they are not the intended contact. The link will take them to an anonymous version of the form. Make sure unknown users have access to the webform if using this feature. Note that the user will stay logged-in so while webform_civicrm will treat them as as an "unknown" user, they will still have all their usual privledges. (this is the same behavior as if you uncheck the "Autofill Contact 1 with Current User" option on the CiviCRM form settings)
 
 
 CLONING A CONTACT

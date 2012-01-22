@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Webform CiviCRM module's utility functions.
+ * Webform CiviCRM module's common utility functions.
  * The code in this file is cross-compatible with D6/Civi3 and D7/Civi4
  * Drupal-version-specific functions belong in webform_civicrm_dx_functions.inc
  */
@@ -993,28 +993,6 @@ function webform_civicrm_event_info(&$events) {
       }
     }
   }
-}
-
-
-/**
- * Displays the admin-defined message with "not you?" link to known contacts
- */
-function webform_civicrm_set_message($message, $contact) {
-  $message = webform_civicrm_replace_tokens($message, $contact);
-  preg_match_all('#\{([^}]+)\}#', $message, $matches);
-  $path = substr(VERSION, 0, 1) == '6' ? 'logout' : 'user/logout';
-  if ($matches[0]) {
-    foreach ($matches[0] as $pos => $match) {
-      if (user_is_logged_in()) {
-        $link = l($matches[1][$pos], $path, array('query' => array('destination' => $_GET['q'])));
-      }
-      else {
-        $link = l($matches[1][$pos], $_GET['q']);
-      }
-      $message = str_replace($match, $link, $message);
-    }
-  }
-  drupal_set_message($message);
 }
 
 
