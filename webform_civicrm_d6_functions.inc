@@ -16,6 +16,7 @@ define('WEBFORM_CIVICRM_FAPI_INPUT', 'post');
  * Callback to return relevant portion of a form during AHAH processing.
  */
 function webform_civicrm_ahah_callback($key) {
+  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_admin');
   $snippet = webform_civicrm_process_ahah_form();
 
   // Isolate the portion of form to fetch (nested array keys are encoded as a . separated string)
