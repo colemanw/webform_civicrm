@@ -908,19 +908,17 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       if (empty($params['assignee_contact_id'])) {
         unset($params['assignee_contact_id']);
       }
-      if (empty($params['details'])) {
-        $params['details'] = '';
-      }
-      else {
-        $params['details'] = nl2br($params['details']);
-      }
+      $params['details'] = nl2br(webform_civicrm_aval($params, 'details', ''));
       if (empty($params['subject'])) {
         $params['subject'] = $settings['data']['activity'][1]['activity'][1]['subject'];
+      }
+      if (!empty($data['activity'][1]['add_results'])) {
+        module_load_include('inc', 'webform', 'includes/webform.submissions');
+        $params['details'] .= webform_submission_render($node, $submission, NULL, 'html');
       }
       if (!empty($data['activity'][1]['add_link'])) {
         $params['details'] .= '<p>' . l(t('View Webform Submission'), 'node/' . $node->nid . '/submission/' . $submission->sid, array('absolute' => TRUE)) . '</p>';
       }
-      unset($params['add_link']);
       if (!empty($id['act'][1])) {
         $params['id'] = $id['act'][1];
       }
