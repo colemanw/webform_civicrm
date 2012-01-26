@@ -358,6 +358,11 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
       '#title' => t('Include link to webform submission in activity details'),
       '#default_value' => !(empty($data['activity'][1]['add_link']) && isset($data['activity'][1]['add_link'])),
     );
+    $form['act']['case']['activity_fields']['activity_results'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Include entire webform submission in activity details'),
+      '#default_value' => !empty($data['activity'][1]['add_results']),
+    );
     foreach ($data['contact'] as $n => $c) {
       $form['act']['case']['activity_fields']['activity_targets']['#options'][$n] = t('Contact !num', array('!num' => $n));
       if (!isset($data['activity']) || !empty($c['activity_target'])) {
@@ -647,6 +652,7 @@ function webform_civicrm_process_form_settings(&$vals) {
       $data['activity'][1]['activity'][1]['subject'] = $vals['activity_subject'];
       $data['activity'][1]['assignee_group'] = $vals['activity_assignee_group'];
       $data['activity'][1]['add_link'] = $vals['activity_link'];
+      $data['activity'][1]['add_results'] = $vals['activity_results'];
       $data['activity'][1]['existing_activity_status'] = $vals['existing_activity_status'];
     }
     else {
