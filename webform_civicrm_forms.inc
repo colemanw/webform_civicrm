@@ -878,16 +878,18 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
     if (empty($id['case'][1]) && empty($id['act'][1]) && !empty($data['case'][1]) && !empty($id['cid'][1])) {
       $data['case'][1]['case'][1]['contact_id'] = $id['cid'][1];
       $result = webform_civicrm_api('case', 'create', $data['case'][1]['case'][1]);
-      $id['case'][1] = $result['id'];
-      $id['act'][1] = webform_civicrm_activity_find(array(
-        'contact_id' => $id['cid'][1],
-        'activity_type_id' => $data['activity'][1]['activity'][1]['activity_type_id'],
-        'status_id' => $data['activity'][1]['existing_activity_status'],
-        'case_id' => $id['case'][1],
-      ));
+      if (!empty($result['values']['id'])) {
+        webform_civicrm_save_custom($data['case'][1], $result['values']['id'], 'Case');
+        $id['case'][1] = $result['values']['id'];
+        $id['act'][1] = webform_civicrm_activity_find(array(
+          'contact_id' => $id['cid'][1],
+          'activity_type_id' => $data['activity'][1]['activity'][1]['activity_type_id'],
+          'status_id' => $data['activity'][1]['existing_activity_status'],
+          'case_id' => $id['case'][1],
+        ));
+      }
     }
     if (!empty($data['activity'][1])) {
-      $config = CRM_Core_Config::singleton();
       $params = $data['activity'][1]['activity'][1];
       $params['source_contact_id'] = $id['cid'][1];
       $params['activity_date_time'] = date('YmdHis');
@@ -998,8 +1000,7 @@ function _webform_civicrm_form_validate($form, &$form_state, $submitted) {
           }
         }
         // Strings and files don't need any validation
-        // For the moment we don't validate links because of CRM-8968
-        elseif ($dt !== 'Link' && $dt !== 'String' && $dt !== 'Memo' && $dt !== 'File'
+        elseif ($dt !== 'String' && $dt !== 'Memo' && $dt !== 'File'
         && CRM_Utils_Type::escape($element['#value'], $dt, FALSE) === NULL) {
           // Allow data type names to be translated
           switch ($dt) {
@@ -1106,7 +1107,8 @@ function _webform_civicrm_participant_validate($form, &$form_state, $submitted) 
       else {
         form_set_error($eid, format_plural($event['remaining'],
           'Sorry, you tried to register !count people for %event but there is only 1 space remaining.',
-          'Sorry, you tried to register !count people for %event but there are only @count spaces remaining.', array('%event' => $event['title'], '!count' => $event['count'])));
+          'Sorry, you tried to register !count people for %event but there are only @count spaces remaining.',
+          array('%event' => $event['title'], '!count' => $event['count'])));
       }
     }
   }
@@ -1124,7 +1126,7 @@ function webform_civicrm_set_message($message, $contact) {
     unset ($q['cs'], $q['q'], $q['cid']);
     $q['cid1'] = 0;
     foreach ($matches[0] as $pos => $match) {
-      $link = l($matches[1][$pos], $_GET['q'], array('query' => $q));
+      $link = l($matches[1][$pos], $_GET['q'], array('query' => $q, 'alias' => TRUE));
       $message = str_replace($match, $link, $message);
     }
   }

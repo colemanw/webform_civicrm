@@ -65,10 +65,10 @@ th div.form-type-radio {
   display:block;
   font-size:0.8em;
   position:absolute;
-  right:1em;
+  right:5px;
   padding:0.2em 0.5em;
   background-color:white;
-  top:-2em;
+  top:-10px;
   border:1px solid #CCCCCC;
 }
 

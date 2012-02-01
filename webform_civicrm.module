@@ -25,7 +25,7 @@ function webform_civicrm_menu() {
   );
   $items['webform-civicrm/js/%'] = array(
     'page callback' => 'webform_civicrm_js_options',
-    'file' => 'webform_civicrm_forms.inc',
+    'file' => 'webform_civicrm_admin.inc',
     'access callback' => TRUE,
     'page arguments' => array(2),
     'type' => MENU_CALLBACK
