@@ -273,7 +273,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
   }
   $param = NULL;
   if (!empty($data['case'][1]['case'][1]['case_type_id'])) {
-    $form['act']['case_type_id']['#default_value'] = $data['case'][1]['case'][1]['case_type_id'];
+    $case_type = $form['act']['case_type_id']['#default_value'] = $data['case'][1]['case'][1]['case_type_id'];
     $param = '7';
     $form['act']['case']['case_fieldset'] = array(
       '#type' => 'fieldset',
@@ -307,7 +307,27 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
       '#description' => t('Contact ID of "case manager" for newly created cases.'),
       '#default_value' => webform_civicrm_aval($data, 'case:1:case:1:creator_id', webform_civicrm_user_cid()),
     );
-  }
+    foreach ($sets as $sid => $set) {
+      $sid .= '_fieldset';
+      if ($set['entity_type'] == 'case') {
+        if (!empty($set['sub_types']) && !in_array($case_type, $set['sub_types']) && 0) {
+          continue;
+        }
+        $form['act']['case'][$sid] = array(
+          '#type' => 'fieldset',
+          '#title' => $set['label'],
+          '#attributes' => array('id' => $sid, 'class' => webform_civicrm_fapi_class('web-civi-checkbox-set')),
+          'js_select' => webform_civicrm_js_select($sid),
+        );
+        foreach ($set['fields'] as $fid => $field) {
+          if (empty($field['do_not_cache'])) {
+            $fid = 'civicrm_1_case_1_' . $fid;
+            $form['act']['case'][$sid][$fid] = webform_civicrm_configure_form_item($fid, $field, $settings);
+          }
+        }
+      }
+    }
+  }dsm($sets);
   $act_types = webform_civicrm_get_options('activity_type', $param);
   $form['act']['case']['activity_type_id'] = array(
     '#type' => 'select',
@@ -617,8 +637,7 @@ function webform_civicrm_process_form_settings(&$vals) {
         )),
         'activity_target' => isset($vals['activity_targets'][$n]) ? $vals['activity_targets'][$n] : 1,
       );
-      if (isset($vals['civicrm_' . $n . '_contact_1_contact_contact_sub_type'])) {
-        $sub_type = $vals['civicrm_' . $n . '_contact_1_contact_contact_sub_type'];
+      if ($sub_type = webform_civicrm_aval($vals, 'civicrm_' . $n . '_contact_1_contact_contact_sub_type')) {
         if (isset($sub_types[$vals[$n . '_contact_type']][$sub_type])) {
           $data['contact'][$n]['contact'][1]['contact_sub_type'] = $sub_type;
         }
@@ -701,6 +720,7 @@ function webform_civicrm_configure_form_item($fid, $field, $settings) {
       '#type' => 'select',
       '#title' => $field['name'],
       '#options' => $lists[$name],
+      '#multiple' => !empty($field['extra']['multiple']),
       '#default_value' => !empty($field['empty_option']) ? 0 : NULL,
     );
     if (isset($settings[$fid])) {

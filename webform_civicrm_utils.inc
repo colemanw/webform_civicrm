@@ -125,7 +125,7 @@ function webform_civicrm_field_options($key, $format, $data) {
     list($lobo, $c, $ent, $n, $table, $name) = $pieces;
     if ($name == 'contact_sub_type') {
       list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
-      $ret = array($contact_types[$data['contact'][$c]['contact'][1]['contact_type']]) + $sub_types[$data['contact'][$c]['contact'][1]['contact_type']];
+      $ret = $sub_types[$data['contact'][$c]['contact'][1]['contact_type']];
     }
     elseif ($name == 'relationship_type_id') {
       $ret = webform_civicrm_get_contact_relationship_types($data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][$n]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$n]['contact'][1]['contact_sub_type']);
@@ -388,10 +388,10 @@ function webform_civicrm_state_abbr($input, $ret = 'abbreviation', $country_id =
   $sql = "SELECT $ret FROM civicrm_state_province WHERE $input_type = %1";
   $vars = array(1 => array($input, $ret == 'id' ? 'String' : 'Integer'));
   if ($country_id) {
-    $sql .= " AND country_id = %2";
+    $sql .= ' AND country_id = %2';
     $vars[2] = array($country_id, 'Integer');
   }
-  $sql .= " LIMIT 0, 1";
+  $sql .= ' LIMIT 0, 1';
   return CRM_Core_DAO::singleValueQuery($sql, $vars);
 }
 
@@ -423,6 +423,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Type of'),
       'type' => 'select',
       'value' => '0',
+      //'extra' => array('multiple' => 1),
       'expose_list' => TRUE,
       'do_not_cache' => TRUE,
     );
@@ -759,6 +760,9 @@ function webform_civicrm_get_fields($var = 'fields') {
     if (in_array('CiviEvent', $components)) {
       $custom_extends .= ",'participant'";
     }
+    if (in_array('CiviCase', $components)) {
+      $custom_extends .= ",'case'";
+    }
     $sql = "
       SELECT cf.*, cg.title AS custom_group_name, LOWER(cg.extends) AS entity_type, cg.extends_entity_column_id, cg.extends_entity_column_value AS sub_types, cg.is_multiple, cg.max_multiple, cg.id AS custom_group_id
       FROM civicrm_custom_field cf
@@ -774,7 +778,7 @@ function webform_civicrm_get_fields($var = 'fields') {
         else {
           $set = 'cg' . $dao->custom_group_id;
           $sets[$set]['label'] = $dao->custom_group_name;
-          if ($dao->entity_type != 'activity' && $dao->entity_type != 'participant') {
+          if ($dao->entity_type != 'activity' && $dao->entity_type != 'participant' && $dao->entity_type != 'case') {
             $sets[$set]['entity_type'] = 'contact';
             if ($dao->entity_type != 'contact') {
               $sets[$set]['contact_type'] = $dao->entity_type;
@@ -958,10 +962,7 @@ function webform_civicrm_activity_find($params) {
     $sql .= " AND $field = $value";
   }
   $sql .= ' LIMIT 0, 1';
-  $dao = &CRM_Core_DAO::executeQuery($sql);
-  while ($dao->fetch()) {
-    return $dao->id;
-  }
+  return CRM_Core_DAO::singleValueQuery($sql);
 }
 
 
