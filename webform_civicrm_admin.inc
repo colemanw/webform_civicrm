@@ -327,7 +327,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
         }
       }
     }
-  }dsm($sets);
+  }
   $act_types = webform_civicrm_get_options('activity_type', $param);
   $form['act']['case']['activity_type_id'] = array(
     '#type' => 'select',
