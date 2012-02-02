@@ -13,7 +13,7 @@ CiviCRM has the ability to embed a "profile" (set of CRM fields) on a page (i.e.
 - Are not stored in webform-submission results
 - Can't be multi-valued
 - Only work with one contact at a time (the current user)
-- Do not use FAPI so can't be changed with hook_form_alter
+- Do not use FAPI so can't be modified with hook_form_alter
 
 On the other hand, webform_civicrm fields have a few cons:
 - Option lists do not auto-update when the options change in CiviCRM
@@ -46,7 +46,7 @@ GETTING STARTED
 USAGE NOTES
 
 -The webform fields created by this module are ordinary webform fields in almost every way. You can style, rename, nest, or edit them like any other webform field. The only thing special about them is their form key.
--There is no problem mixing CiviCRM and non-CiviCRM fields on a webform. Pagebreaks and fieldsets are fine too.
+-There is no problem mixing CiviCRM and other fields on a webform. Non-CiviCRM fields will be ignored by this module. Pagebreaks and fieldsets are fine too.
 -Your CiviCRM default strict deduping rule is used to decide whether to update an existing contact or create a new one when the form is submitted by an anonymous user.
 
 
@@ -75,12 +75,13 @@ This module allows you to tag contacts and add them to groups when they submit t
 
 CUSTOM DATA
 
--This module can handle (almost) any custom fields you have created for contacts, addresses, event participants, or activities. Two exceptions due to their complexity are contact references and files. Custom data for other CRM entities (cases, relationships, etc.) are not currently supported.
+-This module can handle (almost) any custom fields you have created for contacts, addresses, event participants, cases or activities. Two exceptions due to their complexity are contact references and files. Custom data for other CRM entities (relationships, etc.) are not currently supported.
 
 
 EVENT REGISTRATION
 
 -You can register contacts for events via webform. If your form has multiple contacts on it, you may choose to register them each separately for different events, or all together for the same event(s). If you choose to register them together, CiviCRM will show contact 1 as having registered the others.
+-To allow participants to return to the form and update their registration info later, see the section on sending hashed links from a webform email.
 
 NOTE: It is not currently possible to pay for events via webform.
 

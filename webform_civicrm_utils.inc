@@ -125,7 +125,7 @@ function webform_civicrm_field_options($key, $format, $data) {
     list($lobo, $c, $ent, $n, $table, $name) = $pieces;
     if ($name == 'contact_sub_type') {
       list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
-      $ret = $sub_types[$data['contact'][$c]['contact'][1]['contact_type']];
+      $ret = array($data['contact'][$c]['contact'][1]['contact_type']) + $sub_types[$data['contact'][$c]['contact'][1]['contact_type']];
     }
     elseif ($name == 'relationship_type_id') {
       $ret = webform_civicrm_get_contact_relationship_types($data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][$n]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$n]['contact'][1]['contact_sub_type']);
