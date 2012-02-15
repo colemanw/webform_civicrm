@@ -372,3 +372,34 @@ function webform_civicrm_update_6204() {
 
   return t('Upgrade successful. Note: If you upgraded via drush you will now need to clear all caches with the command drush cc');
 }
+
+/**
+ * Upgrade for CiviCRM 4.1 compatibility.
+ */
+function webform_civicrm_update_6205() {
+  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
+
+  $db = db_query("SELECT * FROM {webform_civicrm_forms}");
+  foreach ($db as $form) {
+    $data = unserialize($form->data);
+    if (!empty($data['activity'][1])) {
+      $data['activity'][1]['details'] = array(
+        'view_link' => !empty($data['activity'][1]['add_link']) ? 'view_link' : 0,
+      );
+      $data['activity'][1]['existing_activity_status'] = empty($data['activity'][1]['existing_activity_status']) ? array() : array($data['activity'][1]['existing_activity_status']);
+    }
+    foreach ($data['contact'] as &$c) {
+      if (empty($c['contact'][1]['contact_sub_type'])) {
+        $c['contact'][1]['contact_sub_type'] = array();
+      }
+      else {
+        $c['contact'][1]['contact_sub_type'] = (array) $c['contact'][1]['contact_sub_type'];
+      }
+    }
+    $form = (array) $form;
+    $form['data'] = $data;
+    drupal_write_record('webform_civicrm_forms', $form, 'nid');
+  }
+
+  return t('Upgrade successful. Note: If you upgraded via drush you will now need to clear all caches with the command drush cc');
+}
