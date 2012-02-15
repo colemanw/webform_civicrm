@@ -112,12 +112,11 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
 
 /**
  * Get options for a specific field
- * @Param $key: field key
- * @Param $format: Can return values as a Webform-style string, or a FAPI style array.
- *                 Specify 'str' or 'arr', matey!
+ * @Param $key: Field key
+ * @Param $context: Where is this being called from?
  * @Param $data: CiviCRM entity data
  */
-function webform_civicrm_field_options($key, $format, $data) {
+function webform_civicrm_field_options($key, $context, $data) {
   $ret = array();
   $fields = webform_civicrm_get_fields();
   $lists = webform_civicrm_get_fields('lists');
@@ -125,7 +124,7 @@ function webform_civicrm_field_options($key, $format, $data) {
     list($lobo, $c, $ent, $n, $table, $name) = $pieces;
     if ($name == 'contact_sub_type') {
       list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
-      $ret = array($contact_types[$data['contact'][$c]['contact'][1]['contact_type']]) + $sub_types[$data['contact'][$c]['contact'][1]['contact_type']];
+      $ret = $sub_types[$data['contact'][$c]['contact'][1]['contact_type']];
     }
     elseif ($name == 'relationship_type_id') {
       $ret = webform_civicrm_get_contact_relationship_types($data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][$n]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$n]['contact'][1]['contact_sub_type']);
@@ -173,7 +172,7 @@ function webform_civicrm_field_options($key, $format, $data) {
       }
     }
   }
-  return $format == 'str' ? webform_civicrm_array2str($ret) : $ret;
+  return $context == 'component_insert' ? webform_civicrm_array2str($ret) : $ret;
 }
 
 
@@ -422,8 +421,7 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['contact_contact_sub_type'] = array(
       'name' => t('Type of'),
       'type' => 'select',
-      'value' => '0',
-      //'extra' => array('multiple' => 1),
+      'extra' => array('multiple' => 1),
       'expose_list' => TRUE,
       'do_not_cache' => TRUE,
     );
@@ -957,9 +955,14 @@ function webform_civicrm_activity_find($params) {
   if (!empty($params['case_id'])) {
     $sql .= ' INNER JOIN civicrm_case_activity ON civicrm_activity.id = civicrm_case_activity.activity_id';
   }
-  $sql .= " WHERE is_current_revision = 1 AND is_deleted = 0 AND civicrm_activity.id IN (SELECT activity_id FROM civicrm_activity_target WHERE target_contact_id = $cid)";
+  $sql .= " WHERE is_current_revision = 1 AND is_deleted = 0 AND (civicrm_activity.id IN (SELECT activity_id FROM civicrm_activity_target WHERE target_contact_id = $cid) OR source_contact_id = $cid)";
   foreach ($params as $field => $value) {
-    $sql .= " AND $field = $value";
+    if ($value && is_array($value)) {
+      $sql .= " AND $field IN (" . implode(',', $value) . ")";
+    }
+    elseif ($value) {
+      $sql .= " AND $field = $value";
+    }
   }
   $sql .= ' LIMIT 0, 1';
   return CRM_Core_DAO::singleValueQuery($sql);

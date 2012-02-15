@@ -441,6 +441,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
   static $id = array();
   static $update = array();
   $settings = $node->webform_civicrm;
+  require_once 'CRM/Core/BAO/Setting.php';
 
   // Presave processing - save contact data
   if ($op == 'presave') {
@@ -482,6 +483,9 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
           continue;
         }
         if (!empty($fields[$table . '_' . $field]['extra']['multiple'])) {
+          if (!empty($data[$ent][$c][$table][$n][$field]) && is_array($data[$ent][$c][$table][$n][$field])) {
+            $val = array_unique(array_merge($val, $data[$ent][$c][$table][$n][$field]));
+          }
           $val = $sp . implode($sp, $val) . $sp;
         }
         elseif ($field == 'image_URL') {
@@ -891,10 +895,17 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
     }
     if (!empty($data['activity'][1])) {
       $params = $data['activity'][1]['activity'][1];
-      $params['source_contact_id'] = $id['cid'][1];
       $params['activity_date_time'] = date('YmdHis');
       if ($cid = webform_civicrm_user_cid()) {
         $params['source_contact_id'] = $cid;
+      }
+      else {
+        foreach($id['cid'] as $cid) {
+          if ($cid) {
+            $params['source_contact_id'] = $cid;
+            break;
+          }
+        }
       }
       $params['target_contact_id'] = array();
       foreach ($data['contact'] as $c => $contact) {
@@ -910,16 +921,20 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       if (empty($params['assignee_contact_id'])) {
         unset($params['assignee_contact_id']);
       }
+      // Format details as html
       $params['details'] = nl2br(webform_civicrm_aval($params, 'details', ''));
       if (empty($params['subject'])) {
         $params['subject'] = $settings['data']['activity'][1]['activity'][1]['subject'];
       }
-      if (!empty($data['activity'][1]['add_results'])) {
+      if (!empty($data['activity'][1]['details']['entire_result'])) {
         module_load_include('inc', 'webform', 'includes/webform.submissions');
         $params['details'] .= webform_submission_render($node, $submission, NULL, 'html');
       }
-      if (!empty($data['activity'][1]['add_link'])) {
-        $params['details'] .= '<p>' . l(t('View Webform Submission'), 'node/' . $node->nid . '/submission/' . $submission->sid, array('absolute' => TRUE)) . '</p>';
+      if (!empty($data['activity'][1]['details']['view_link'])) {
+        $params['details'] .= '<p>' . l(t('View Webform Submission'), 'node/' . $node->nid . '/submission/' . $submission->sid, array('absolute' => TRUE, 'alias' => TRUE)) . '</p>';
+      }
+      if (!empty($data['activity'][1]['details']['edit_link'])) {
+        $params['details'] .= '<p>' . l(t('Edit Submission'), 'node/' . $node->nid . '/submission/' . $submission->sid . '/edit',  array('absolute' => TRUE, 'alias' => TRUE)) . '</p>';
       }
       if (!empty($id['act'][1])) {
         $params['id'] = $id['act'][1];
@@ -937,12 +952,11 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         $id['act'][1] = $result['id'];
         webform_civicrm_save_custom($data['activity'][1], $id['act'][1], 'Activity');
       }
-      if (!empty($config->activityAssigneeNotification)
-      && !empty($id['act'][1])
-      && !empty($params['assignee_contact_id'])) {
+      if (!empty($id['act'][1]) && !empty($params['assignee_contact_id'])
+      && CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'activity_assignee_notification')) {
         // Send email to assignees. TODO: Move to CiviCRM API?
         $assignee = webform_civicrm_api('contact', 'get', array('id' => $params['assignee_contact_id']));
-        $assignee = array_pop($assignee['values']);
+        $assignee = webform_civicrm_aval($assignee, 'values:' . $params['assignee_contact_id']);
         if (!empty($assignee['email'])) {
           $mail = array($assignee['email'] => $assignee);
           //include attachments while sendig a copy of activity.
