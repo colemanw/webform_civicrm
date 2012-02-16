@@ -167,16 +167,24 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
         if (!isset($c['number_of_' . $sid])) {
           $c['number_of_' . $sid] = 0;
         }
-        $pos['contact_' . $n . '_number_of_' . $sid] = array(
+        $set['label'] = $sid == 'relationship' ? t('Relationship') : $set['label'];
+        $selector = array(
           '#type' => 'select',
-          '#title' => t('Number of %type Fields', array('%type' => $sid == 'relationship' ? t('Relationship') : $set['label'])),
           '#default_value' => $c['number_of_' . $sid],
-          '#options' => range(0, $set['max_instances']),
         );
-        if ($hide) {
-          $pos['contact_' . $n . '_number_of_' . $sid]['#prefix'] = '<div class="hidden">';
-          $pos['contact_' . $n . '_number_of_' . $sid]['#suffix'] = '</div>';
+        if ($set['max_instances'] > 1) {
+          $selector['#options'] = range(0, $set['max_instances']);
+          $selector['#title'] = t('Number of %type Fields', array('%type' => $set['label']));
         }
+        else {
+          $selector['#options'] = array(t('No'), t('Yes'));
+          $selector['#title'] = t('Show %type Fields', array('%type' => $set['label']));
+        }
+        if ($hide) {
+          $selector['#prefix'] = '<div class="hidden">';
+          $selector['#suffix'] = '</div>';
+        }
+        $pos['contact_' . $n . '_number_of_' . $sid] = $selector;
         webform_civicrm_ajax_form_item($form, $path, 'contact_' . $n . '_number_of_' . $sid, $n . $sid . '_wrapper');
       }
       else {
@@ -348,7 +356,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     $form['act']['case']['activity_fields']['activity_assignee_group'] = array(
       '#title' => t('Choose Assignee From'),
       '#type' => 'select',
-      '#options' => array(t('- Webform Contacts -')) + webform_civicrm_get_options('groups'),
+      '#options' => array(t('- Webform Contacts -')) + webform_civicrm_get_options('group'),
       '#default_value' => webform_civicrm_aval($data, 'activity:1:assignee_group'),
     );
     webform_civicrm_ajax_form_item($form, 'act:case:activity_fields', 'activity_assignee_group', 'assignee');
@@ -717,7 +725,7 @@ function webform_civicrm_configure_form_item($fid, $field, $settings) {
       if (!empty($field['empty_option'])) {
         $lists[$name] += array($field['empty_option']);
       }
-      $lists[$name] += webform_civicrm_field_options($fid, 'config_form', $settings['data']);
+      $lists[$name] += (array) webform_civicrm_field_options($fid, 'config_form', $settings['data']);
     }
     $item = array(
       '#type' => 'select',
@@ -732,7 +740,7 @@ function webform_civicrm_configure_form_item($fid, $field, $settings) {
     elseif (isset($settings['data'][$ent][$c][$table][$n][$name])) {
       $item['#default_value'] = $settings['data'][$ent][$c][$table][$n][$name];
     }
-    else {
+    elseif (empty($field['extra']['multiple'])) {
       $options = array_keys($lists[$name]);
       $item['#default_value'] = $options[1];
     }
@@ -1112,14 +1120,6 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         else {
           $form['#prefix'] .= t('Consider enabling the hidden contact_id field - hashed links usually require this value.') . '</p>';
         }
-      }
-      // Autocomplete widget for selecting tags
-      if ($key == 'tags') {
-        $form['value']['#title'] = t('Tags');
-        $form['value']['#description'] = t('Enter a comma-separated list of tags to add to contacts who submit this webform.') . '<br />' . t('Use the autocomplete to select existing tags, or you may add new ones.');
-        $form['value']['#type'] = 'textfield';
-        $form['value']['#size'] = 100;
-        $form['value']['#autocomplete_path'] = 'webform-civicrm/js/tags';
       }
     }
   }

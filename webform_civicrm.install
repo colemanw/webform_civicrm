@@ -377,10 +377,22 @@ function webform_civicrm_update_6204() {
  * Upgrade for CiviCRM 4.1 compatibility.
  */
 function webform_civicrm_update_6205() {
+  civicrm_initialize();
   module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
-
+  module_load_include('inc', 'webform', 'includes/webform.components');
+  $db = db_query("SELECT * FROM {webform_component} WHERE form_key LIKE 'civicrm_%%_other_tags' OR form_key LIKE 'civicrm_%%_other_groups_hidden'");
+  $tag = $group = array();
+  foreach ($db as $row) {
+    if ($pieces = webform_civicrm_explode_key($row->form_key)) {
+      list($lobo, $c) = $pieces;
+      $type = strpos($row->form_key, 'groups_hidden') ? 'group' : 'tag';
+      ${$type}[$row->nid][$c] = (array) $row;
+    }
+  }
+  db_query("UPDATE {webform_component} SET form_key = REPLACE(form_key, 'other_groups', 'other_group') WHERE form_key LIKE 'civicrm_%%_other_groups'");
   $db = db_query("SELECT * FROM {webform_civicrm_forms}");
   foreach ($db as $form) {
+    $node = node_load($nid = $form->nid);
     $data = unserialize($form->data);
     if (!empty($data['activity'][1])) {
       $data['activity'][1]['details'] = array(
@@ -388,12 +400,39 @@ function webform_civicrm_update_6205() {
       );
       $data['activity'][1]['existing_activity_status'] = empty($data['activity'][1]['existing_activity_status']) ? array() : array($data['activity'][1]['existing_activity_status']);
     }
-    foreach ($data['contact'] as &$c) {
-      if (empty($c['contact'][1]['contact_sub_type'])) {
-        $c['contact'][1]['contact_sub_type'] = array();
+    foreach ($data['contact'] as &$con) {
+      if (empty($con['contact'][1]['contact_sub_type'])) {
+        $con['contact'][1]['contact_sub_type'] = array();
       }
       else {
-        $c['contact'][1]['contact_sub_type'] = (array) $c['contact'][1]['contact_sub_type'];
+        $con['contact'][1]['contact_sub_type'] = (array) $con['contact'][1]['contact_sub_type'];
+      }
+    }
+    if (!empty($tag[$nid]) || !empty($group[$nid])) {
+      $both = webform_civicrm_aval($tag, $nid, array()) + webform_civicrm_aval($group, $nid, array());
+      foreach ($both as $c => $val) {
+        $data['contact'][$c]['number_of_other'] = 1;
+        if (!empty($tag[$nid][$c])) {
+          $tag_ids = array();
+          $tag_names = drupal_explode_tags($tag[$nid][$c]['value']);
+          foreach ($tag_names as $t) {
+            $result = webform_civicrm_api('tag', 'get', array('name' => $t));
+            if ($tid = webform_civicrm_aval($result, 'id')) {
+              $tag_ids[$tid] = $tid;
+            }
+          }
+          $data['contact'][$c]['other'][1]['tag'] = $tag_ids;
+          webform_component_delete($node, $tag[$nid][$c]);
+        }
+        if (!empty($group[$nid][$c])) {
+          if (empty($group[$nid][$c]['value'])) {
+            $data['contact'][$c]['other'][1]['group'] = array();
+          }
+          else {
+            $data['contact'][$c]['other'][1]['group'] = drupal_map_assoc(explode(',', $group[$nid][$c]['value']));
+          }
+          webform_component_delete($node, $group[$nid][$c]);
+        }
       }
     }
     $form = (array) $form;
@@ -401,5 +440,5 @@ function webform_civicrm_update_6205() {
     drupal_write_record('webform_civicrm_forms', $form, 'nid');
   }
 
-  return t('Upgrade successful. Note: If you upgraded via drush you will now need to clear all caches with the command drush cc');
+  return t('Hidden tag and group fields have been removed, those options are now integrated into the CiviCRM tab of webforms.');
 }
