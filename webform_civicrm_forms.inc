@@ -314,12 +314,15 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       $result = webform_civicrm_api('contact', 'get', array('contact_id' => $cid, 'return.preferred_communication_method' => 1));
       $info['contact'][$c]['contact'][1] += $result['values'][$cid];
     }
-    // Set default values for group field
-    if (isset($enabled['civicrm_' . $c . '_contact_1_other_group'])) {
-      $group = webform_civicrm_api('group_contact', 'get', array('contact_id' => $cid));
-      $info['contact'][$c]['other'][1]['group'] = array();
-      foreach ($group['values'] as $group) {
-        $info['contact'][$c]['other'][1]['group'][] = $group['group_id'];
+    // Set default values for group and tag fields
+    $field = 'civicrm_' . $c . '_contact_1_other_';
+    foreach (array('tag' => 'entity_tag', 'group' => 'group_contact') as $ent => $api) {
+      if (isset($enabled['civicrm_' . $c . '_contact_1_other_' . $ent])) {
+        // Add entity table param to workaround a bug in 4.1.0 api
+        $result = webform_civicrm_api($api, 'get', array('contact_id' => $cid, 'entity_table' => 'civicrm_contact'));
+        foreach (webform_civicrm_aval($result, 'values') as $val) {
+          $info['contact'][$c]['other'][1][$ent][] = $val[$ent . '_id'];
+        }
       }
     }
     // Retrieve participant data
@@ -487,7 +490,9 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
           if (!empty($data[$ent][$c][$table][$n][$field]) && is_array($data[$ent][$c][$table][$n][$field])) {
             $val = array_unique(array_merge($val, $data[$ent][$c][$table][$n][$field]));
           }
-          $val = $sp . implode($sp, $val) . $sp;
+          if ($table != 'other') {
+            $val = $sp . implode($sp, $val) . $sp;
+          }
         }
         elseif ($field == 'image_URL') {
           if (empty($val[0]) || !($val = webform_civicrm_filepath($val[0]))) {
@@ -929,14 +934,14 @@ function webform_civicrm_add_remove($data_type, $entity_type, $node, $id, $add, 
     }
     else {
       $params['entity_id'] = $id;
-      $params['entity_type'] = $entity_type;
+      $params['entity_type'] = 'civicrm_' . $entity_type;
     }
     $fetch = webform_civicrm_api($api, 'get', $params);
     foreach (webform_civicrm_aval($fetch, 'values', array()) as $i) {
       $existing[] = $i[$data_type . '_id'];
       unset($add[$i[$data_type . '_id']]);
     }
-    foreach ($remove as $i) {
+    foreach ($remove as $i => $name) {
       if (!in_array($i, $existing)) {
         unset($remove[$i]);
       }
@@ -944,9 +949,9 @@ function webform_civicrm_add_remove($data_type, $entity_type, $node, $id, $add, 
   }
   if (!empty($add)) {
     // Prepare for sending subscription confirmations
-    if ($entity_type = 'group' && !empty($node->webform_civicrm['confirm_subscription'])) {
+    if ($entity_type == 'group' && !empty($node->webform_civicrm['confirm_subscription'])) {
       // Retrieve this contact's primary email address and perform error-checking
-      $result = webform_civicrm_api('email', 'get', array('contact_id' => $cid, 'options' => array('sort' => 'is_primary DESC')));
+      $result = webform_civicrm_api('email', 'get', array('contact_id' => $id, 'options' => array('sort' => 'is_primary DESC')));
       if (!empty($result['values'])) {
         foreach ($result['values'] as $value) {
           if (($value['is_primary'] || empty($email)) && strpos($value['email'], '@')) {
@@ -954,7 +959,7 @@ function webform_civicrm_add_remove($data_type, $entity_type, $node, $id, $add, 
           }
         }
         $mailer_params = array(
-          'contact_id' => $cid,
+          'contact_id' => $id,
           'email' => $email,
         );
         if (empty($mailing_lists)) {
@@ -964,7 +969,7 @@ function webform_civicrm_add_remove($data_type, $entity_type, $node, $id, $add, 
     }
     foreach ($add as $a) {
       $params[$data_type . '_id'] = $mailer_params['group_id'] = $a;
-      if ($entity_type = 'group' && isset($mailing_lists[$a]) && !empty($email)) {
+      if ($entity_type == 'group' && isset($mailing_lists[$a]) && !empty($email)) {
         $result = webform_civicrm_api('mailing_group', 'event_subscribe', $mailer_params);
         if (empty($result['is_error'])) {
           $confirmations_sent[] = check_plain($mailing_lists[$a]);
@@ -986,9 +991,9 @@ function webform_civicrm_add_remove($data_type, $entity_type, $node, $id, $add, 
     $params[$data_type . '_id'] = $a;
     webform_civicrm_api($api, 'delete', $params);
   }
-  if (!empty($remove) && $entity_type = 'group') {
+  if (!empty($remove) && $data_type == 'group') {
     $display_name = webform_civicrm_api('contact', 'get', array('contact_id' => $id, 'return.display_name' => 1));
-    $display_name = $display_name['values'][$id]['display_name'];
+    $display_name = webform_civicrm_aval($display_name, "values:$id:display_name", t('Contact'));
     drupal_set_message(t('%contact has been removed from !group.', array('%contact' => $display_name, '!group' => '<em>' . implode('</em> ' . t('and') . ' <em>', $remove) . '</em>')));
   }
 }
