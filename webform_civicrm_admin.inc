@@ -178,7 +178,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
         }
         else {
           $selector['#options'] = array(t('No'), t('Yes'));
-          $selector['#title'] = t('Show %type Fields', array('%type' => $set['label']));
+          $selector['#title'] = t('Enable %type Fields', array('%type' => $set['label']));
         }
         if ($hide) {
           $selector['#prefix'] = '<div class="hidden">';
@@ -328,10 +328,8 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
           'js_select' => webform_civicrm_js_select($sid),
         );
         foreach ($set['fields'] as $fid => $field) {
-          if (empty($field['do_not_cache'])) {
-            $fid = 'civicrm_1_case_1_' . $fid;
-            $form['act']['case'][$sid][$fid] = webform_civicrm_configure_form_item($fid, $field, $settings);
-          }
+          $fid = 'civicrm_1_case_1_' . $fid;
+          $form['act']['case'][$sid][$fid] = webform_civicrm_configure_form_item($fid, $field, $settings);
         }
       }
     }
@@ -411,7 +409,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
           'js_select' => webform_civicrm_js_select($sid),
         );
         foreach ($set['fields'] as $fid => $field) {
-          if (empty($field['do_not_cache'])) {
+          if ($fid != 'activity_assignee_contact_id') {
             $fid = 'civicrm_1_activity_1_' . $fid;
             $form['act']['case']['activity_fields'][$sid][$fid] = webform_civicrm_configure_form_item($fid, $field, $settings);
           }
@@ -710,27 +708,22 @@ function webform_civicrm_process_form_settings(&$vals) {
  * Build a field item for the configure form
  */
 function webform_civicrm_configure_form_item($fid, $field, $settings) {
-  static $lists = array();
-  if (!$lists) {
-    $lists = webform_civicrm_get_fields('lists');
-  }
+  $lists = webform_civicrm_get_fields('lists');
   list($lobo, $c, $ent, $n, $table, $name) = explode('_', $fid, 6);
   $field['name'] = str_replace('#', $table == 'relationship' ? $n : '', $field['name']);
 
   // Create dropdown list
   if (!empty($field['expose_list'])) {
-    // Retrieve option list and cache (except for dynamic types)
-    if (!is_array($lists[$name]) || !empty($field['do_not_cache'])) {
-      $lists[$name] = array('create_civicrm_webform_element' => t('-user select-'));
-      if (!empty($field['empty_option'])) {
-        $lists[$name] += array($field['empty_option']);
-      }
-      $lists[$name] += (array) webform_civicrm_field_options($fid, 'config_form', $settings['data']);
+    // Retrieve option list
+    $options = array('create_civicrm_webform_element' => t('-user select-'));
+    if (!empty($field['empty_option'])) {
+      $options += array($field['empty_option']);
     }
+    $options += webform_civicrm_field_options($fid, 'config_form', $settings['data']);
     $item = array(
       '#type' => 'select',
       '#title' => $field['name'],
-      '#options' => $lists[$name],
+      '#options' => $options,
       '#multiple' => !empty($field['extra']['multiple']),
       '#default_value' => !empty($field['empty_option']) ? 0 : NULL,
     );

@@ -17,101 +17,105 @@ module_load_include('inc', 'webform_civicrm', 'webform_civicrm_d' . substr(VERSI
  * @Return array
  */
 function webform_civicrm_get_options($option_group, $param = NULL) {
-  $vars = $ret = array();
-  if ($option_group == 'privacy') {
-    // Privacy options aren't in the database as options; they are all separate contact fields.
-    return array(
-      'do_not_email' => ts('Do not email'),
-      'do_not_phone' => ts('Do not phone'),
-      'do_not_mail' => ts('Do not mail'),
-      'do_not_sms' => ts('Do not sms'),
-      'do_not_trade' => ts('Do not trade'),
-    );
-  }
-  if ($option_group == 'yes_no') {
-    return array(1 => t('Yes'), 0 => t('No'));
-  }
-  if ($option_group == 'country') {
-    $sql = 'SELECT name AS label, id AS value FROM civicrm_country';
-    $config = CRM_Core_Config::singleton();
-    if (!empty($config->countryLimit) && is_array($config->countryLimit)) {
-      $sql .=  ' WHERE id IN (' . implode(',', $config->countryLimit) . ')';
+  static $cache = array();
+  if ($param || empty($cache[$option_group])) {
+    $vars = $ret = array();
+    if ($option_group == 'privacy') {
+      // Privacy options aren't in the database as options; they are all separate contact fields.
+      return array(
+        'do_not_email' => ts('Do not email'),
+        'do_not_phone' => ts('Do not phone'),
+        'do_not_mail' => ts('Do not mail'),
+        'do_not_sms' => ts('Do not sms'),
+        'do_not_trade' => ts('Do not trade'),
+      );
     }
-    $sql .= ' ORDER BY name';
-  }
-  elseif ($option_group == 'state_province') {
-    $value = $param ? 'UPPER(abbreviation)' : 'id';
-    if (!$param || $param == 'default') {
+    if ($option_group == 'yes_no') {
+      return array(1 => t('Yes'), 0 => t('No'));
+    }
+    if ($option_group == 'country') {
+      $sql = 'SELECT name AS label, id AS value FROM civicrm_country';
       $config = CRM_Core_Config::singleton();
-      if (!$param && !empty($config->provinceLimit)) {
-        $param = implode(',', $config->provinceLimit);
+      if (!empty($config->countryLimit) && is_array($config->countryLimit)) {
+        $sql .=  ' WHERE id IN (' . implode(',', $config->countryLimit) . ')';
+      }
+      $sql .= ' ORDER BY name';
+    }
+    elseif ($option_group == 'state_province') {
+      $value = $param ? 'UPPER(abbreviation)' : 'id';
+      if (!$param || $param == 'default') {
+        $config = CRM_Core_Config::singleton();
+        if (!$param && !empty($config->provinceLimit)) {
+          $param = implode(',', $config->provinceLimit);
+        }
+        else {
+          $param = (int) $config->defaultContactCountry;
+        }
       }
       else {
-        $param = (int) $config->defaultContactCountry;
+        $param = (int) $param;
+      }
+      $sql = "SELECT name AS label, $value AS value FROM civicrm_state_province WHERE country_id IN ($param) ORDER BY name";
+    }
+    elseif ($option_group == 'tag') {
+      require_once 'CRM/Core/BAO/Tag.php';
+      // $param is entity type i.e. contact
+      return CRM_Core_BAO_Tag::getTags("civicrm_$param", $ret, NULL, '- ');
+    } 
+    elseif ($option_group == 'group' || $option_group == 'mailing_lists') {
+      $sql = 'SELECT id AS value, title AS label FROM civicrm_group WHERE is_active = 1 AND is_hidden = 0';
+      if ($option_group == 'mailing_lists') {
+        $sql .= " AND group_type LIKE '%2%' AND visibility = 'Public Pages'";
       }
     }
-    else {
-      $param = (int) $param;
+    elseif ($option_group == 'location_type') {
+      $sql = 'SELECT name AS label, id AS value FROM civicrm_location_type WHERE is_active = 1 ORDER BY is_default DESC';
     }
-    $sql = "SELECT name AS label, $value AS value FROM civicrm_state_province WHERE country_id IN ($param) ORDER BY name";
-  }
-  elseif ($option_group == 'tag') {
-    require_once 'CRM/Core/BAO/Tag.php';
-    // $param is entity type i.e. contact
-    return CRM_Core_BAO_Tag::getTags("civicrm_$param", $ret, NULL, '- ');
-  } 
-  elseif ($option_group == 'group' || $option_group == 'mailing_lists') {
-    $sql = 'SELECT id AS value, title AS label FROM civicrm_group WHERE is_active = 1 AND is_hidden = 0';
-    if ($option_group == 'mailing_lists') {
-      $sql .= " AND group_type LIKE '%2%' AND visibility = 'Public Pages'";
+    elseif ($option_group == 'campaign') {
+      $sql = 'SELECT title AS label, id AS value FROM civicrm_campaign WHERE is_active = 1 AND (end_date >= NOW() OR end_date IS NULL) ORDER BY start_date DESC';
     }
-  }
-  elseif ($option_group == 'location_type') {
-    $sql = 'SELECT name AS label, id AS value FROM civicrm_location_type WHERE is_active = 1 ORDER BY is_default DESC';
-  }
-  elseif ($option_group == 'campaign') {
-    $sql = 'SELECT title AS label, id AS value FROM civicrm_campaign WHERE is_active = 1 AND (end_date >= NOW() OR end_date IS NULL) ORDER BY start_date DESC';
-  }
-  elseif ($option_group == 'event') {
-    $sql = "SELECT title AS label, CONCAT(id, '-', event_type_id) AS value FROM civicrm_event WHERE is_template = 0";
-    if (empty($param['show_past_events'])) {
-      $sql .= ' AND (end_date >= NOW() OR end_date IS NULL) AND is_active = 1';
-    }
-    if (is_numeric($param['event_type'])) {
-      $sql .= ' AND event_type_id = ' . $param['event_type'];
-    }
-    $sql .= ' ORDER BY start_date DESC';
-  }
-  elseif ($option_group == 'group_contact') {
-    $result = webform_civicrm_api('contact', 'get', array('group' => array($param => 1), 'return.display_name' => 1, 'rowCount' => 100));
-    if (!empty($result['values'])) {
-      foreach ($result['values'] as $val) {
-        $ret[$val['contact_id']] = $val['display_name'];
+    elseif ($option_group == 'event') {
+      $sql = "SELECT title AS label, CONCAT(id, '-', event_type_id) AS value FROM civicrm_event WHERE is_template = 0";
+      if (empty($param['show_past_events'])) {
+        $sql .= ' AND (end_date >= NOW() OR end_date IS NULL) AND is_active = 1';
       }
+      if (is_numeric($param['event_type'])) {
+        $sql .= ' AND event_type_id = ' . $param['event_type'];
+      }
+      $sql .= ' ORDER BY start_date DESC';
     }
-    return $ret;
-  }
-  else {
-    $sql = 'SELECT value, label FROM civicrm_option_value WHERE is_active <> 0 AND option_group_id = ';
-    if (is_numeric($option_group)) {
-      $sql .= '%1';
-      $vars[1] = array($option_group, 'Integer');
+    elseif ($option_group == 'group_contact') {
+      $result = webform_civicrm_api('contact', 'get', array('group' => array($param => 1), 'return.display_name' => 1, 'rowCount' => 100));
+      if (!empty($result['values'])) {
+        foreach ($result['values'] as $val) {
+          $ret[$val['contact_id']] = $val['display_name'];
+        }
+      }
+      return $ret;
     }
     else {
-      $sql .= '(SELECT id FROM civicrm_option_group WHERE name = %1)';
-      $vars[1] = array($option_group, 'String');
+      $sql = 'SELECT value, label FROM civicrm_option_value WHERE is_active <> 0 AND option_group_id = ';
+      if (is_numeric($option_group)) {
+        $sql .= '%1';
+        $vars[1] = array($option_group, 'Integer');
+      }
+      else {
+        $sql .= '(SELECT id FROM civicrm_option_group WHERE name = %1)';
+        $vars[1] = array($option_group, 'String');
+      }
+      // Exclude reserved activity types
+      if ($option_group == 'activity_type') {
+        $sql .= ' AND (component_id IS NULL' . ($param ? " OR component_id IN ($param))" : ')');
+      }
+      $sql .= ' ORDER BY weight, label';
     }
-    // Exclude reserved activity types
-    if ($option_group == 'activity_type') {
-      $sql .= ' AND (component_id IS NULL' . ($param ? " OR component_id IN ($param))" : ')');
+    $dao = &CRM_Core_DAO::executeQuery($sql, $vars);
+    while ($dao->fetch()) {
+      $ret[$dao->value] = $dao->label;
     }
-    $sql .= ' ORDER BY weight, label';
+    $cache[$option_group] = $ret;
   }
-  $dao = &CRM_Core_DAO::executeQuery($sql, $vars);
-  while ($dao->fetch()) {
-    $ret[$dao->value] = $dao->label;
-  }
-  return $ret;
+  return $cache[$option_group];
 }
 
 
@@ -430,14 +434,12 @@ function webform_civicrm_get_fields($var = 'fields') {
     // Field keys are in the format table_column
     // Use a # sign as a placeholder for field number in the title (or by default it will be appended to the end)
     // Setting 'expose_list' allows the value to be set on the config form
-    // Set 'do_not_cache' if the option list is not static
     // Set label for 'empty_option' for exposed lists that do not require input
     $fields['contact_contact_sub_type'] = array(
       'name' => t('Type of'),
       'type' => 'select',
       'extra' => array('multiple' => 1),
       'expose_list' => TRUE,
-      'do_not_cache' => TRUE,
     );
     foreach (array('organization' => t('Organization Name'), 'legal' => t('Legal Name'), 'household' => t('Household Name')) as $key => $label) {
       $fields['contact_' . $key . '_name'] = array(
@@ -541,7 +543,6 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Share address of'),
       'type' => 'select',
       'expose_list' => TRUE,
-      'do_not_cache' => TRUE,
       'extra' => array('description' => t('Will overwrite address fields with those of the other contact.')),
       'empty_option' => t('- do not share -'),
     );
@@ -605,7 +606,6 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Assign Activity to'),
       'type' => 'select',
       'expose_list' => TRUE,
-      'do_not_cache' => TRUE,
       'empty_option' => t('- no one -')
     );
     if (in_array('CiviCampaign', $components)) {
@@ -620,7 +620,6 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Relationship to Contact #'),
       'type' => 'select',
       'expose_list' => TRUE,
-      'do_not_cache' => TRUE,
       'empty_option' => t('- no relationship -'),
     );
     $fields['relationship_is_active'] = array(
@@ -633,7 +632,6 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Relationship to Contact # Permission'),
       'type' => 'select',
       'expose_list' => TRUE,
-      'do_not_cache' => TRUE,
       'empty_option' => t('- no permissions -'),
     );
     $fields['relationship_start_date'] = array(
