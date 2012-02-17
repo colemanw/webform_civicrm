@@ -734,7 +734,7 @@ function webform_civicrm_configure_form_item($fid, $field, $settings) {
       $item['#default_value'] = $settings['data'][$ent][$c][$table][$n][$name];
     }
     elseif (empty($field['extra']['multiple'])) {
-      $options = array_keys($lists[$name]);
+      $options = array_keys($options);
       $item['#default_value'] = $options[1];
     }
     if (!empty($field['extra']['multiple'])) {
@@ -758,7 +758,7 @@ function webform_civicrm_configure_form_item($fid, $field, $settings) {
       '#default_value' => !empty($settings[$fid]),
     );
   }
-  if (isset($field['extra']['description']) && $d = $field['extra']['description']) {
+  if ($d = webform_civicrm_aval($field, 'extra:description')) {
     $item['#description'] = strlen($d) > 75 ? substr($d, 0, 75) . '...' : $d;
   }
   return $item;

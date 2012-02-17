@@ -610,18 +610,38 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
           $existing = array();
           $result = webform_civicrm_api($location, 'get', array('contact_id' => $cid, 'options' => array('sort' => 'is_primary DESC')));
           if (!empty($result['values'])) {
+            // start array index at 1
             $existing = array_merge(array(array()), $result['values']);
           }
           foreach ($contact[$location] as $i => $params) {
+            // Translate state/prov abbr to id
+            if (!empty($params['state_province_id'])) {
+              if (!($params['state_province_id'] = webform_civicrm_state_abbr($params['state_province_id'], 'id', webform_civicrm_aval($params, 'country_id', $config->defaultContactCountry)))) {
+                $params['state_province_id'] = '';
+              }
+            }
+            // Check if anything was changed, else skip the update
+            if (!empty($existing[$i])) {
+              $same = TRUE;
+              foreach ($params as $param => $val) {
+                if ($val != (string) webform_civicrm_aval($existing[$i], $param, '')) {
+                  $same = FALSE;
+                }
+              }
+              if ($same) {
+                continue;
+              }
+            }
             $empty = FALSE;
             if ($location == 'address') {
-              // Check if nothing was entered
+              // Check if nothing was entered for address
               $empty = (empty($params['street_address'])
-              && empty($params['city'])
-              && empty($params['state_province_id'])
-              && empty($params['country_id'])
-              && empty($params['postal_code'])
-              && empty($params['master_id']));
+                && empty($params['city'])
+                && empty($params['state_province_id'])
+                && empty($params['country_id'])
+                && empty($params['postal_code'])
+                && empty($params['master_id'])
+              );
 
               // Store shared addresses for later since we haven't necessarily processed
               // the contact this address is shared with yet.
@@ -633,18 +653,13 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
                 );
                 continue;
               }
-              unset($params['master_id']);
-              // Translate state/prov abbr to id
-              if (!empty($params['state_province_id'])) {
-                if (!($params['state_province_id'] = webform_civicrm_state_abbr($params['state_province_id'], 'id', webform_civicrm_aval($params, 'country_id', $config->defaultContactCountry)))) {
-                  $params['state_province_id'] = '';
-                }
-              }
+              $params['master_id'] = 'null';
             }
-            // Check if nothing was entered
+            // Check if nothing was entered for website
             elseif ($location == 'website') {
               $empty = empty($params['url']);
             }
+            // Check if nothing was entered for email or phone
             elseif (empty($params[$location])) {
               $empty = TRUE;
             }
