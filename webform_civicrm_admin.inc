@@ -951,11 +951,10 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
   if ($deleted || $created) {
     // Make sure the updated webform is visible to anonymous users.
     cache_clear_all();
-
-    // Clear the entity cache if Entity Cache module is installed.
-    if (module_exists('entitycache')) {
-      cache_clear_all($node->nid, 'cache_entity_node');
-    }
+  }
+  // Clear the entity cache if Entity Cache module is installed.
+  if (module_exists('entitycache')) {
+    cache_clear_all($nid, 'cache_entity_node');
   }
 }
 
