@@ -653,7 +653,8 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
                 );
                 continue;
               }
-              $params['master_id'] = 'null';
+              // Reset calculated values when updating an address
+              $params['master_id'] = $params['geo_code_1'] = $params['geo_code_2'] = 'null';
             }
             // Check if nothing was entered for website
             elseif ($location == 'website') {
