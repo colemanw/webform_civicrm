@@ -68,6 +68,10 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
         $sql .= " AND group_type LIKE '%2%' AND visibility = 'Public Pages'";
       }
     }
+    elseif ($option_group == 'languages') {
+      require_once 'CRM/Core/PseudoConstant.php';
+      return CRM_Core_PseudoConstant::languages();
+    } 
     elseif ($option_group == 'location_type') {
       $sql = 'SELECT name AS label, id AS value FROM civicrm_location_type WHERE is_active = 1 ORDER BY is_default DESC';
     }
@@ -112,6 +116,9 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
     $dao = &CRM_Core_DAO::executeQuery($sql, $vars);
     while ($dao->fetch()) {
       $ret[$dao->value] = $dao->label;
+    }
+    if ($param) {
+      return $ret;
     }
     $cache[$option_group] = $ret;
   }
@@ -481,6 +488,10 @@ function webform_civicrm_get_fields($var = 'fields') {
       'type' => 'select',
       'extra' => array('multiple' => 1),
     );
+    $fields['contact_preferred_language'] = array(
+      'name' => t('Preferred Language'),
+      'type' => 'select',
+    );
     $fields['contact_image_URL'] = array(
       'name' => t('Upload Image'),
       'type' => 'file',
@@ -708,6 +719,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'suffix_id' => 'individual_suffix',
       'gender_id' => 'gender',
       'preferred_communication_method' => 'preferred_communication_method',
+      'preferred_language' => 'languages',
       'privacy' => 'privacy',
       'country_id' => 'country',
       'phone_type_id' => 'phone_type',

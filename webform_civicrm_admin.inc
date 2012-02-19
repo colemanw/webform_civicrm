@@ -49,7 +49,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
             1 => array(
               'contact' => array(1 => array(
                   'contact_type' => 'individual',
-                  'contact_sub_type' => NULL,
+                  'contact_sub_type' => array(),
                 )),
               'activity_target' => 1,
             ),
@@ -640,12 +640,12 @@ function webform_civicrm_process_form_settings(&$vals) {
       $data['contact'][$n] = array(
         'contact' => array(1 => array(
           'contact_type' => $vals[$n . '_contact_type'],
-          'contact_sub_type' => NULL,
+          'contact_sub_type' => array(),
         )),
         'activity_target' => isset($vals['activity_targets'][$n]) ? $vals['activity_targets'][$n] : 1,
       );
       if ($sub_type = webform_civicrm_aval($vals, 'civicrm_' . $n . '_contact_1_contact_contact_sub_type')) {
-        $allowed = array('create_civicrm_webform_element' => 1) + $sub_types[$vals[$n . '_contact_type']];
+        $allowed = $sub_types[$vals[$n . '_contact_type']];
         foreach($sub_type as $sub) {
           if (isset($allowed[$sub])) {
             $data['contact'][$n]['contact'][1]['contact_sub_type'][$sub] = $sub;
