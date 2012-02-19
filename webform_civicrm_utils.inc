@@ -109,9 +109,11 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
       }
       // Exclude reserved activity types
       if ($option_group == 'activity_type') {
-        $sql .= ' AND (component_id IS NULL' . ($param ? " OR component_id IN ($param))" : ')');
+        $sql .= ' AND (component_id IS NULL' . ($param ? " OR component_id IN ($param))" : ') ORDER BY label');
       }
-      $sql .= ' ORDER BY weight, label';
+      else {
+        $sql .= ' ORDER BY weight, label';
+      }
     }
     $dao = &CRM_Core_DAO::executeQuery($sql, $vars);
     while ($dao->fetch()) {
