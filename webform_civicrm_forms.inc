@@ -309,9 +309,14 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
         break;
       }
     }
-    // Preferred communication method is not fetched by default by the api
-    if (isset($enabled['civicrm_' . $c . '_contact_1_contact_preferred_communication_method'])) {
-      $result = webform_civicrm_api('contact', 'get', array('contact_id' => $cid, 'return.preferred_communication_method' => 1));
+    // Communication prefs are not fetched by default by the api
+    if (isset($enabled['civicrm_' . $c . '_contact_1_contact_preferred_communication_method'])
+    || isset($enabled['civicrm_' . $c . '_contact_1_contact_preferred_language'])) {
+      $result = webform_civicrm_api('contact', 'get', array(
+        'contact_id' => $cid,
+        'return.preferred_communication_method' => 1,
+        'return.preferred_language' => 1,
+      ));
       $info['contact'][$c]['contact'][1] += $result['values'][$cid];
     }
     // Set default values for group and tag fields
