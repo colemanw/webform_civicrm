@@ -318,7 +318,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     foreach ($sets as $sid => $set) {
       $sid .= '_fieldset';
       if ($set['entity_type'] == 'case') {
-        if (!empty($set['sub_types']) && !in_array($case_type, $set['sub_types']) && 0) {
+        if (!empty($set['sub_types']) && !in_array($case_type, $set['sub_types'])) {
           continue;
         }
         $form['act']['case'][$sid] = array(
@@ -509,6 +509,11 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
         '#options' => range(0, $sets['participant']['max_instances']),
       );
       webform_civicrm_ajax_form_item($form, "event:participants:{$n}", 'participant_' . $n . '_number_of_participant', 'div');
+      $particpant_extensions = array(
+        1 => 'role_id',
+        2 => 'event_id',
+        3 => 'event_type'
+      );
       for ($e = 1; $e <= $num; ++$e) {
         $fs = "participant_{$n}_event_{$e}_fieldset";
         $form['event']['participants'][$n]['div'][$fs] = array(
@@ -521,28 +526,17 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
             $sid = 'civicrm_' . $n . '_participant_' . $e . '_' . $sid . '_fieldset';
             $class = 'web-civi-checkbox-set';
             if (!empty($set['sub_types'])) {
-              list($event_id, $event_type) = $participant_event_id != 'create_civicrm_webform_element' ? explode('-', $participant_event_id) : array('', webform_civicrm_aval($data, 'reg_options:event_type', ''));
-              switch ($set['extension_of']) {
-                case 1:
-                  if (!in_array($participant_role_id, $set['sub_types'])) {
-                    $class .= ' hidden';
-                  }
-                  $class .= ' extends-condition roleid-';
-                  break;
-                case 2:
-                  if (!in_array($event_id, $set['sub_types'])) {
-                    $class .= ' hidden';
-                  }
-                  $class .= ' extends-condition eventid-';
-                  break;
-                case 3:
-                  if (!in_array($event_type, $set['sub_types'])) {
-                    $class .= ' hidden';
-                  }
-                  $class .= ' extends-condition eventtype-';
-                  break;
+              $role_id = webform_civicrm_aval($data, "participant:$n:particpant:$e:role_id", '');
+              $event_id = webform_civicrm_aval($data, "participant:$n:particpant:$e:event_id", '');
+              $event_type = webform_civicrm_aval($data, 'reg_options:event_type', '');
+              if ($event_id && $event_id !== 'create_civicrm_webform_element') {
+                list($event_id, $event_type) = explode('-', $event_id);
               }
-              $class .= implode('-', $set['sub_types']);
+              $ext = $particpant_extensions[$set['extension_of']];
+              if (!in_array($$ext, $set['sub_types'])) {
+                $class .= ' hidden';
+              }
+              $class .= ' extends-condition ' . str_replace('_', '', $ext) . '-' . implode('-', $set['sub_types']);
             }
             $form['event']['participants'][$n]['div'][$fs][$sid] = array(
               '#type' => 'fieldset',
@@ -925,8 +919,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
           ++$created;
         }
         // Store exposed contact settings that don't create form elements
-        elseif (isset($fields[$table . '_' . $name]['expose_list'])
-        && in_array('create_civicrm_webform_element', $aval) && !empty($val)) {
+        elseif (isset($fields[$table . '_' . $name]['expose_list']) && !empty($val)) {
           $vals['data'][$ent][$c][$table][$n][$name] = $val;
         }
       }

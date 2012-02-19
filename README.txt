@@ -64,11 +64,7 @@ NOTE: Once a webform field is created, the options are set and will not change a
 
 GROUPS AND TAGS
 
-This module allows you to tag contacts and add them to groups when they submit the webform.
-
--ASSIGNING TAGS: From the Webform CiviCRM tab, check the box to enable the Tags field. Click save. Then from the Form Components tab, click the edit button for the Tags component. You may enter as many tags as you wish, separated by commas. If the tags you enter do not already exist in CiviCRM, they will be created for you.
-
--ADDING CONTACTS TO GROUPS: Follow the instructions as for tags. There are two options for Groups -- visible checkboxes on the webform that allow contacts to add themselves to one or more groups of your choosing, and a hidden form element that just adds them. You may use both elements if you wish, to give your users a choice about some groups, but automatically add them to others.
+This module allows you to tag contacts and add them to groups when they submit the webform. Hold down CTRL or SHIFT to select more than one. Groups/tags you choose on the CiviCRM tab will always be added to the contact, and you can also choose -user select- to add a webform element. See "option lists" above.
 
 -OPT-IN CONFIRMATION: In the "additional options" section is a checkbox to enable confirmation emails when contacts are added to public mailing lists. It is recommended that you leave that option enabled in most situations. You may configure the text of the confirmation message using CiviCRM message templates.
 
@@ -118,7 +114,7 @@ This is particularly useful to avoid re-doing all your webform component customi
 - Add a contact to the webform via the CiviCRM tab.
 - Rename, arrange, and customize all the webform fields for that contact. For now, keep them all within the auto-generated fieldset (although you may add add as many sub-fieldsets within the main one as you like, for example to contain their address fields).
 - Click the clone button on the contact's fieldset.
-- All fields within that fieldset (including non-civicrm fields) will be cloned.
+- All fields within that fieldset (including non-civicrm fields!) will be cloned.
 - Note that if there are CiviCRM fields that do not belong to the contact within their fieldset (such as an activity field, or a field belonging to another contact), they will be cloned as well, which would be problematic.
 
 
