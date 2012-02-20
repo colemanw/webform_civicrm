@@ -319,7 +319,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       ));
       $info['contact'][$c]['contact'][1] += $result['values'][$cid];
     }
-    // Set default values for group and tag fields
+    // Retrieve group and tag data
     $field = 'civicrm_' . $c . '_contact_1_other_';
     foreach (array('tag' => 'entity_tag', 'group' => 'group_contact') as $ent => $api) {
       if (isset($enabled['civicrm_' . $c . '_contact_1_other_' . $ent])) {
@@ -441,7 +441,8 @@ function webform_civicrm_fill_values(&$elements, $data, $fields, $submitted) {
 
 
 /**
- * Create/update CiviCRM data
+ * Webform submission handler
+ * Create/update CiviCRM contacts and related data
  * Called by presave, insert and update webform hooks
  * @param $op: Which hook is being called
  */
@@ -970,7 +971,7 @@ function webform_civicrm_add_remove($data_type, $entity_type, $node, $id, $add, 
   }
   if (!empty($add)) {
     // Prepare for sending subscription confirmations
-    if ($entity_type == 'group' && !empty($node->webform_civicrm['confirm_subscription'])) {
+    if ($data_type == 'group' && !empty($node->webform_civicrm['confirm_subscription'])) {
       // Retrieve this contact's primary email address and perform error-checking
       $result = webform_civicrm_api('email', 'get', array('contact_id' => $id, 'options' => array('sort' => 'is_primary DESC')));
       if (!empty($result['values'])) {
@@ -990,7 +991,7 @@ function webform_civicrm_add_remove($data_type, $entity_type, $node, $id, $add, 
     }
     foreach ($add as $a) {
       $params[$data_type . '_id'] = $mailer_params['group_id'] = $a;
-      if ($entity_type == 'group' && isset($mailing_lists[$a]) && !empty($email)) {
+      if ($data_type == 'group' && isset($mailing_lists[$a]) && !empty($email)) {
         $result = webform_civicrm_api('mailing_group', 'event_subscribe', $mailer_params);
         if (empty($result['is_error'])) {
           $confirmations_sent[] = check_plain($mailing_lists[$a]);
