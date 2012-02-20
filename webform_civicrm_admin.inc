@@ -1000,7 +1000,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         $form['value']['#description'] = t('To set a default value, enter the state/province abbreviation in all caps.');
       }
 
-      // Here's a much nicer interface for choosing options than the standard textfields
+      // Here's a much nicer interface for managing options than the standard textfields
       if (array_key_exists($key, webform_civicrm_get_fields('lists'))) {
         webform_civicrm_add_js('webform_civicrm_options.js');
         $element = $node->webform['components'][$form['cid']['#value']];

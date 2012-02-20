@@ -8,12 +8,12 @@ This module extends the Webform module to make it aware of CiviCRM. It will crea
 
 
 COMPARED TO CIVICRM PROFILES
-CiviCRM has the ability to embed a "profile" (set of CRM fields) on a page (i.e. user/register). This works well in some cases, and not others. Compared to webform fields, profile fields:
-- Are less configurable
-- Are not stored in webform-submission results
-- Can't be multi-valued
-- Only work with one contact at a time (the current user)
-- Do not use FAPI so can't be modified with hook_form_alter
+
+CiviCRM has the ability to embed a "profile" (set of CRM fields) on a page (i.e. user/register) or as a standalone form. This works well in some cases, and not others. Compared to profiles, webforms:
+- Are more configurable in display, post-processing, sending emails, etc.
+- Store submission results, which can be displayed with Views
+- Work with mutltiple contacts, addresses, emails, events, etc.
+- Have numerous add-on modules for spam control, layout, and other features
 
 On the other hand, webform_civicrm fields have a few cons:
 - Option lists do not auto-update when the options change in CiviCRM
@@ -64,7 +64,7 @@ NOTE: Once a webform field is created, the options are set and will not change a
 
 GROUPS AND TAGS
 
-This module allows you to tag contacts and add them to groups when they submit the webform. Hold down CTRL or SHIFT to select more than one. Groups/tags you choose on the CiviCRM tab will always be added to the contact, and you can also choose -user select- to add a webform element. See "option lists" above.
+This module allows you to tag contacts and add them to groups when they submit the webform. Hold down CTRL or SHIFT to select more than one. Groups/tags you choose on the CiviCRM tab will always be added to the contact, and you can also choose -user select- to make a webform element. See "option lists" above.
 
 -OPT-IN CONFIRMATION: In the "additional options" section is a checkbox to enable confirmation emails when contacts are added to public mailing lists. It is recommended that you leave that option enabled in most situations. You may configure the text of the confirmation message using CiviCRM message templates.
 
