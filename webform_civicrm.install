@@ -380,19 +380,25 @@ function webform_civicrm_update_6205() {
   civicrm_initialize();
   module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
   module_load_include('inc', 'webform', 'includes/webform.components');
-  $db = db_query("SELECT * FROM {webform_component} WHERE form_key LIKE 'civicrm_%%_other_tags' OR form_key LIKE 'civicrm_%%_other_groups_hidden'");
+  $db = db_query("SELECT * FROM {webform_component} WHERE form_key LIKE 'civicrm_%%_other_tags' OR form_key LIKE 'civicrm_%%_other_group%%'");
   $tag = $group = array();
   foreach ($db as $row) {
     if ($pieces = webform_civicrm_explode_key($row->form_key)) {
-      list($lobo, $c) = $pieces;
-      $type = strpos($row->form_key, 'groups_hidden') ? 'group' : 'tag';
+      list($lobo, $c, $ent, $n, $table, $name) = $pieces;
+      if ($name == 'groups') {
+        if (empty($group[$row->nid][$c])) {
+          $group[$row->nid][$c] = array('value' => '');
+        }
+        continue;
+      }
+      $type = $name == 'groups_hidden' ? 'group' : 'tag';
       ${$type}[$row->nid][$c] = (array) $row;
     }
   }
   db_query("UPDATE {webform_component} SET form_key = REPLACE(form_key, 'other_groups', 'other_group') WHERE form_key LIKE 'civicrm_%%_other_groups'");
   $db = db_query("SELECT * FROM {webform_civicrm_forms}");
   foreach ($db as $form) {
-    $node = node_load($nid = $form->nid);
+    $nid = $form->nid;
     $data = unserialize($form->data);
     if (!empty($data['activity'][1])) {
       $data['activity'][1]['details'] = array(
@@ -409,6 +415,7 @@ function webform_civicrm_update_6205() {
       }
     }
     if (!empty($tag[$nid]) || !empty($group[$nid])) {
+      $node = node_load($nid);
       $both = webform_civicrm_aval($tag, $nid, array()) + webform_civicrm_aval($group, $nid, array());
       foreach ($both as $c => $val) {
         $data['contact'][$c]['number_of_other'] = 1;
@@ -424,7 +431,7 @@ function webform_civicrm_update_6205() {
           $data['contact'][$c]['other'][1]['tag'] = $tag_ids;
           webform_component_delete($node, $tag[$nid][$c]);
         }
-        if (!empty($group[$nid][$c])) {
+        if (!empty($group[$nid][$c]['form_key'])) {
           if (empty($group[$nid][$c]['value'])) {
             $data['contact'][$c]['other'][1]['group'] = array();
           }
