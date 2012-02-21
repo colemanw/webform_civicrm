@@ -1149,7 +1149,7 @@ function _webform_civicrm_participant_validate($form, &$form_state, $submitted) 
   webform_civicrm_event_info($events);
   foreach ($events as $eid => $event) {
     if ($event['ended']) {
-      form_set_error($eid, t('Sorry, you may no longer register for %event.', array('%event' => $event['title'])));
+      form_set_error($eid, t('Sorry, you can no longer register for %event.', array('%event' => $event['title'])));
     }
     elseif ($event['max_participants'] && $event['count'] > $event['remaining']) {
       if (!empty($event['full'])) {
@@ -1174,8 +1174,10 @@ function webform_civicrm_set_message($message, $contact) {
   preg_match_all('#\{([^}]+)\}#', $message, $matches);
   if (!empty($matches[0])) {
     $q = $_GET;
-    unset ($q['cs'], $q['q'], $q['cid']);
-    $q['cid1'] = 0;
+    unset ($q['q'], $q['cs'], $q['cid'], $q['cid1']);
+    if (empty($_GET['cid']) && empty($_GET['cid1'])) {
+      $q['cid1'] = 0;
+    }
     foreach ($matches[0] as $pos => $match) {
       $link = l($matches[1][$pos], $_GET['q'], array('query' => $q, 'alias' => TRUE));
       $message = str_replace($match, $link, $message);
