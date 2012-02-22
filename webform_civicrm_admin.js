@@ -22,8 +22,15 @@ function web_civi_select_reset(op, id) {
       break;
     case 'none':
       $(id).find('input:checkbox').attr('checked', '');
-      $(id).find('select:not([multiple]) option:selected[value="create_civicrm_webform_element"]+option').each(function() {
-        $(this).attr('selected', 'selected');
+      $(id).find('select:not([multiple])').each(function() {
+        if ($(this).val() === 'create_civicrm_webform_element') {
+          $(this).find('option').each(function() {
+            $(this).attr('selected', $(this).attr('defaultSelected'));
+          });
+        }
+        if ($(this).val() === 'create_civicrm_webform_element') {
+          $(this).find('option:first-child+option').attr('selected', 'selected');
+        }
       });
       $(id).find('select[multiple] option').each(function() {
         $(this).attr('selected', '');
