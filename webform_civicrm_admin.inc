@@ -26,7 +26,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     $form['cancel']['#value'] = t('Cancel (go back)');
     return $form;
   }
-  webform_civicrm_add_js('webform_civicrm_forms.js');
+  webform_civicrm_add_js('webform_civicrm_admin.js');
   drupal_add_css(drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_style.css');
   civicrm_initialize();
   require_once 'CRM/Core/BAO/Setting.php';
@@ -1166,9 +1166,9 @@ function webform_civicrm_process_options_selection($form, &$form_state) {
 function webform_civicrm_js_select($name) {
   return array(WEBFORM_CIVICRM_MARKUP =>
     '<div class="web-civi-js-select">
-      <a href="javascript:web_civi_select_reset(\'checked\', ' . "'#$name'" . ')">' . t('Select All') . '</a> |
-      <a href="javascript:web_civi_select_reset(\'\', ' . "'#$name'" . ')">' . t('Select None') . '</a> |
-      <a href="javascript:web_civi_select_reset(\'reset\', ' . "'#$name'" . ')">' . t('Restore') . '</a>
+      <a href="javascript:web_civi_select_reset(' . "'all', '#$name'" . ')">' . t('Select All') . '</a> |
+      <a href="javascript:web_civi_select_reset(' . "'none', '#$name'" . ')">' . t('Select None') . '</a> |
+      <a href="javascript:web_civi_select_reset(' . "'reset', '#$name'" . ')">' . t('Restore') . '</a>
     </div>',
   );
 }
