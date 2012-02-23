@@ -422,7 +422,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
   if (in_array('CiviEvent', $config->enableComponents)) {
     $form['event'] = array(
       '#type' => 'fieldset',
-      '#title' => t('Register Event Participants'),
+      '#title' => t('Event Registration'),
       '#group' => 'webform_civicrm',
     );
     $reg_type = webform_civicrm_aval($data, 'participant_reg_type');
