@@ -61,8 +61,12 @@ th div.form-type-radio {
   display:none;
 }
 
-.js div.web-civi-js-select {
+.js fieldset:hover > div > .web-civi-js-select,
+.js fieldset:hover > .web-civi-js-select {
   display:block;
+}
+
+.js div.web-civi-js-select {
   font-size:0.8em;
   position:absolute;
   right:5px;

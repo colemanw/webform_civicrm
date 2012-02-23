@@ -27,7 +27,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     return $form;
   }
   webform_civicrm_add_js('webform_civicrm_admin.js');
-  drupal_add_css(drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_style.css');
+  drupal_add_css(drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_admin.css');
   civicrm_initialize();
   require_once 'CRM/Core/BAO/Setting.php';
   $config = CRM_Core_Config::singleton();
@@ -970,7 +970,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
     // Is this component a CiviCRM field?
     if (isset($fields[$table . '_' . $key]) ||
       ($lobo == 'civicrm' && $table == 'fieldset')) {
-      drupal_add_css(drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_style.css');
+      drupal_add_css(drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_admin.css');
 
       if (arg(5) != 'clone' || $key == 'fieldset') {
         // Prevent users from editing the form_key and breaking things
