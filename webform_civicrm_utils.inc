@@ -861,7 +861,8 @@ function webform_civicrm_get_fields($var = 'fields') {
  */
 function webform_civicrm_user_cid($id = NULL, $type = 'uf') {
   if (!$id) {
-    return empty($_SESSION['CiviCRM']['userID']) ? NULL : $_SESSION['CiviCRM']['userID'];
+    global $user;
+    $id = $user->uid;
   }
   $result = webform_civicrm_api('uf_match', 'get', array($type . '_id' => $id));
   if (!empty($result['values'])) {
@@ -876,7 +877,7 @@ function webform_civicrm_user_cid($id = NULL, $type = 'uf') {
  */
 function webform_civicrm_explode_key($key) {
   $pieces = explode('_', $key, 6);
-  if (count($pieces) != 6 || $pieces[0] != 'civicrm') {
+  if (count($pieces) != 6 || $pieces[0] !== 'civicrm') {
     return FALSE;
   }
   return $pieces;
