@@ -493,6 +493,7 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['contact_preferred_language'] = array(
       'name' => t('Preferred Language'),
       'type' => 'select',
+      'value' => $config->lcMessages,
     );
     $fields['contact_image_URL'] = array(
       'name' => t('Upload Image'),
@@ -542,6 +543,7 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['address_country_id'] = array(
       'name' => t('Country'),
       'type' => 'select',
+      'value' => $config->defaultContactCountry,
     );
     $fields['address_state_province_id'] = array(
       'name' => t('State/Province'),

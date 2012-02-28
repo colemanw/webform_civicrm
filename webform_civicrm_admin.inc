@@ -872,11 +872,6 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
             $field['extra']['width'] = 20;
           }
 
-          // Set default country
-          if ($name == 'country_id') {
-            $config = CRM_Core_Config::singleton();
-            $field['value'] = $config->defaultContactCountry;
-          }
           // Retrieve option list
           if (isset($lists[$name])) {
             $field['extra']['items'] = webform_civicrm_field_options($key, 'component_insert', $vals['data']);

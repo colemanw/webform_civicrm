@@ -30,7 +30,10 @@ div.form-item-activity-targets div.form-item,
   clear:both;
 }
 
-.hidden, .js #no-js-button-wrapper {
+form .hidden,
+.js #no-js-button-wrapper,
+.web-civi-js-select,
+#civi-contact-match-off {
   display:none;
 }
 
@@ -55,10 +58,6 @@ th div.form-type-radio {
   display:inline;
   margin:0;
   padding:0;
-}
-
-.web-civi-js-select {
-  display:none;
 }
 
 .js fieldset:hover > div > .web-civi-js-select,
