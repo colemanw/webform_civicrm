@@ -102,7 +102,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     '#type' => 'button',
     '#value' => t('Change Form Settings'),
     '#prefix' => '<div id="no-js-button-wrapper" class="messages warning">',
-    '#suffix' => '<div>' . t('You have Javascript disabled, so you will need to click this button after changing any option to see the result.') . '</div></div>',
+    '#suffix' => '<div>' . t('You have Javascript disabled. You will need to click this button after changing any option to see the result.') . '</div></div>',
   );
   $form['webform_civicrm'] = array('#type' => 'vertical_tabs');
 
@@ -149,7 +149,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
         }
       }
       if (!empty($set['sub_types'])) {
-        if (!in_array($c['contact'][1]['contact_sub_type'], $set['sub_types'])) {
+        if (!array_intersect($c['contact'][1]['contact_sub_type'], $set['sub_types'])) {
           $hide = TRUE;
         }
         $pos = &$form['contact_' . $n]['contact_subtype_wrapper']['contact_custom_wrapper'];
@@ -269,7 +269,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     '#description' => t('Create an activity for contacts when this form is submitted?'),
     '#group' => 'webform_civicrm',
   );
-  if (in_array('CiviCase', $config->enableComponents)
+  if (in_array('CiviCase', $config->enableComponents, TRUE)
   && $case_types = webform_civicrm_get_options('case_type')) {
     $form['act']['case_type_id'] = array(
       '#type' => 'select',
@@ -419,7 +419,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
   }
 
   // Event participant settings
-  if (in_array('CiviEvent', $config->enableComponents)) {
+  if (in_array('CiviEvent', $config->enableComponents, TRUE)) {
     $form['event'] = array(
       '#type' => 'fieldset',
       '#title' => t('Event Registration'),

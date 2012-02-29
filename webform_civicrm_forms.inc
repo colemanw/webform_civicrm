@@ -333,7 +333,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
     // Retrieve participant data
     if ($events && ($c == 1 || $data['participant_reg_type'] == 'separate')) {
       $select = array('id', 'event_id', 'role_id', 'status_id');
-      if (in_array('CiviCampaign', $config->enableComponents)) {
+      if (in_array('CiviCampaign', $config->enableComponents, TRUE)) {
         $select[] = 'campaign_id';
       }
       $dao = &CRM_Core_DAO::executeQuery('SELECT ' . implode(',', $select) . " FROM civicrm_participant WHERE contact_id = $cid AND event_id IN (" . implode(',', array_keys($events)) . ")");
@@ -748,7 +748,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         }
       }
       // Process event participation
-      if (in_array('CiviEvent', $config->enableComponents) && !empty($data['participant_reg_type'])) {
+      if (in_array('CiviEvent', $config->enableComponents, TRUE) && !empty($data['participant_reg_type'])) {
         $n = $data['participant_reg_type'] == 'separate' ? $c : 1;
         if ($p = webform_civicrm_aval($data, "participant:$n:participant")) {
           foreach ($p as $e => $params) {
@@ -765,7 +765,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
                 if ($c > 1 && !empty($registered_by_id[$e][$i])) {
                   $params['registered_by_id'] = $registered_by_id[$e][$i];
                 }
-                if (empty($params['campaign_id']) || !in_array('CiviCampaign', $config->enableComponents)) {
+                if (empty($params['campaign_id']) || !in_array('CiviCampaign', $config->enableComponents, TRUE)) {
                   unset($params['campaign_id']);
                 }
                 // Fetch existing participant - can't be done with the API currently
@@ -886,7 +886,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         $params['case_id'] = $id['case'][1];
         $params['medium_id'] = $data['case'][1]['case'][1]['medium_id'];
       }
-      if (empty($params['campaign_id']) || !in_array('CiviCampaign', $config->enableComponents)) {
+      if (empty($params['campaign_id']) || !in_array('CiviCampaign', $config->enableComponents, TRUE)) {
         unset($params['campaign_id']);
       }
       $result = webform_civicrm_api('activity', 'create', $params);
