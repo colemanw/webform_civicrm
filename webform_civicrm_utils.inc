@@ -776,10 +776,10 @@ function webform_civicrm_get_fields($var = 'fields') {
     );
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
     $custom_extends = "'contact','individual','organization','household','address','activity'";
-    if (in_array('CiviEvent', $components)) {
+    if (in_array('CiviEvent', $components, TRUE)) {
       $custom_extends .= ",'participant'";
     }
-    if (in_array('CiviCase', $components)) {
+    if (in_array('CiviCase', $components, TRUE)) {
       $custom_extends .= ",'case'";
     }
     $sql = "
