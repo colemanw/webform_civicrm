@@ -15,7 +15,7 @@ module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
  */
 function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
   $form = array();
-  $form_state['storage']['node'] = $node;
+  $form_state['storage']['nid'] = $node->nid;
 
   // Display confirmtion message before deleting fields
   if (!empty($form_state['storage']['msg'])) {
@@ -764,7 +764,7 @@ function webform_civicrm_configure_form_item($fid, $field, $settings) {
  */
 function webform_civicrm_configure_form_submit($form, &$form_state) {
   $button = $form_state['clicked_button']['#id'];
-  $node = $form_state['storage']['node'];
+  $node = node_load($nid = $form_state['storage']['nid']);
   $vals = webform_civicrm_aval($form_state, 'storage:vals', $form_state['values']);
 
   if ((empty($node->webform_civicrm) && !$vals['nid']) || $button == 'edit-cancel') {
@@ -812,7 +812,6 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
   }
 
   module_load_include('inc', 'webform', 'includes/webform.components');
-  $nid = $node->nid;
   $form_state['redirect'] = 'node/' . $nid . '/webform';
 
   if ($delete_me && $button == 'edit-confirm') {
@@ -831,6 +830,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
   }
   // CiviCRM enabled
   else {
+    webform_ensure_record($node);
     webform_civicrm_process_form_settings($vals);
     list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
     if (!$vals['toggle_message']) {
