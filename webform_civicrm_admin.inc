@@ -388,7 +388,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
         'view_link' => t('Include link to <em>view</em> webform submission in activity details'),
         'edit_link' => t('Include link to <em>edit</em> webform submission in activity details'),
       ),
-      '#default_value' => webform_civicrm_aval($data, 'activity:1:details', array('view_link')),
+      '#default_value' => webform_civicrm_aval($data, 'activity:1:details', array('view_link'), TRUE),
     );
     foreach ($data['contact'] as $n => $c) {
       $form['act']['case']['activity_fields']['activity_targets']['#options'][$n] = t('Contact !num', array('!num' => $n));

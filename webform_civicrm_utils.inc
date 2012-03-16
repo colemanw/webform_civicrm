@@ -1044,15 +1044,19 @@ function webform_civicrm_js_options($key, $str='') {
 
 
 /**
- * Return a value from an array.
+ * Return a value from nested arrays or objects.
  * @param $haystack: the array to search
  * @param $keys: pass a single key, or multiple keys separated by : to get a nested value
- * @param $default: value to return if given array key does not exist or is empty
+ * @param $default: value to return if given array key does not exist
+ * @param $strict: should we use empty or isset to determine if array key exists?
  * @return: found value or default
  */
-function webform_civicrm_aval($haystack, $keys, $default = NULL) {
+function webform_civicrm_aval($haystack, $keys, $default = NULL, $strict = FALSE) {
   foreach (explode(':', $keys) as $key) {
-    if (!is_array($haystack) || !isset($haystack[$key]) || (empty($haystack[$key]) && $default !== NULL)) {
+    if (is_object($haystack)) {
+      $haystack = (array) $haystack;
+    }
+    if (!is_array($haystack) || !isset($haystack[$key]) || (empty($haystack[$key]) && $default !== NULL && !$strict)) {
       return $default;
     }
     $haystack = $haystack[$key];

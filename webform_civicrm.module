@@ -274,6 +274,20 @@ function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = N
 
 
 /**
+ * Implements hook_civicrm_post().
+ * Update submission data when civicrm data is deleted.
+ */
+function webform_civicrm_civicrm_post($op, $type, $id, $obj) {
+  if ($type === 'Activity' && $op === 'delete') {
+    db_update('webform_civicrm_submissions')
+    ->fields(array('activity_id' => 0))
+    ->condition('activity_id', $id)
+    ->execute();
+  }
+}
+
+
+/**
  * FAPI AJAX callback for the configure form.
  */
 function webform_civicrm_configure_form_ajax($form, $form_state) {
