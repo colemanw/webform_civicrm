@@ -259,6 +259,17 @@ function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = N
 
 
 /**
+ * Implements hook_civicrm_post().
+ * Update submission data when civicrm data is deleted.
+ */
+function webform_civicrm_civicrm_post($op, $type, $id, $obj) {
+  if ($type === 'Activity' && $op === 'delete') {
+    db_query('UPDATE {webform_civicrm_submissions} SET activity_id = 0 WHERE activity_id = %d', $id);
+  }
+}
+
+
+/**
  * Implements hook_help().
  */
 function webform_civicrm_help($section) {
