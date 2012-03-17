@@ -134,49 +134,48 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
  * @Param $context: Where is this being called from?
  * @Param $data: CiviCRM entity data
  */
-function webform_civicrm_field_options($key, $context, $data) {
+function webform_civicrm_field_options($field, $context, $data) {
   $ret = array();
-  $fields = webform_civicrm_get_fields();
   $lists = webform_civicrm_get_fields('lists');
-  if ($pieces = webform_civicrm_explode_key($key)) {
+  $fields = webform_civicrm_get_fields();
+  if ($pieces = webform_civicrm_explode_key($field['form_key'])) {
     list($lobo, $c, $ent, $n, $table, $name) = $pieces;
-    $field = $fields[$table . '_' . $name];
-    if ($name == 'contact_sub_type') {
+    $field += $fields[$table . '_' . $name];
+    if ($name === 'contact_sub_type') {
       list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
       $ret = $sub_types[$data['contact'][$c]['contact'][1]['contact_type']];
     }
-    elseif ($name == 'relationship_type_id') {
+    elseif ($name === 'relationship_type_id') {
       $ret = webform_civicrm_get_contact_relationship_types($data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][$n]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$n]['contact'][1]['contact_sub_type']);
     }
-    elseif ($name == 'relationship_permission') {
+    elseif ($name === 'relationship_permission') {
       $ret = array(
         1 => t('Contact !a may view and edit contact !b', array('!a' => $c, '!b' => $n)),
         2 => t('Contact !a may view and edit contact !b', array('!a' => $n, '!b' => $c)),
         3 => t('Both contacts may view and edit each other'),
       );
     }
-    elseif ($name == 'master_id') {
+    elseif ($name === 'master_id') {
       foreach ($data['contact'] as $num => $contact) {
         if ($num != $c) {
           $ret[$num] =  t('Contact !num', array('!num' => $num));
         }
       }
     }
-    elseif ($name == 'tag') {
+    elseif ($name === 'tag') {
       $ret = webform_civicrm_get_options('tag', $ent);
     }
-    elseif ($name == 'status_id' && $table == 'participant') {
+    elseif ($name === 'status_id' && $table === 'participant') {
       require_once 'CRM/Event/PseudoConstant.php';
       $ret = CRM_Event_PseudoConstant::participantStatus(NULL, NULL, 'label');
     }
     elseif (isset($lists[$name])) {
       $param = NULL;
-      if ($name == 'event_id') {
+      if ($name === 'event_id') {
         $param = $data['reg_options'];
       }
-      if (($name == 'assignee_contact_id'
-      && !($param = webform_civicrm_aval($data, 'activity:1:assignee_group')))
-      || $name != 'assignee_contact_id' && webform_civicrm_aval($field, 'data_type') === 'ContactReference') {
+      if (($name === 'assignee_contact_id' && !($param = webform_civicrm_aval($data, 'activity:1:assignee_group')))
+      || (webform_civicrm_aval($field, 'data_type') === 'ContactReference' && !($param = webform_civicrm_aval($field, 'extra:civicrm_group')))) {
         foreach ($data['contact'] as $num => $contact) {
           $ret['#' . $num] =  t('Contact !num', array('!num' => $num));
         }
@@ -843,11 +842,19 @@ function webform_civicrm_get_fields($var = 'fields') {
         elseif ($dao->html_type == 'Select State/Province' || $dao->html_type == 'Multi-Select State/Province') {
           $lists['custom_' . $dao->id] = 'state_province';
         }
-        elseif ($fields[$id]['type'] == 'select') {
-          $lists['custom_' . $dao->id] = 'yes_no';
-        }
         elseif ($fields[$id]['data_type'] == 'ContactReference') {
           $lists['custom_' . $dao->id] = 'group_contact';
+          if (!empty($dao->filter) && ($pos = strpos($dao->filter, 'group=')) !== FALSE) {
+            $len = strlen($dao->filter);
+            $pos += 6;
+            $fields[$id]['extra']['civicrm_group'] = '';
+            while ($pos < $len && is_numeric($dao->filter[$pos])) {
+              $fields[$id]['extra']['civicrm_group'] .= $dao->filter[$pos++];
+            }
+          }
+        }
+        elseif ($fields[$id]['type'] == 'select') {
+          $lists['custom_' . $dao->id] = 'yes_no';
         }
         elseif ($fields[$id]['type'] == 'textarea') {
           $fields[$id]['extra']['cols'] = $dao->note_columns;

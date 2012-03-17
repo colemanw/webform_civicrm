@@ -713,7 +713,8 @@ function webform_civicrm_configure_form_item($fid, $field, $settings) {
     if (!empty($field['empty_option'])) {
       $options += array($field['empty_option']);
     }
-    $options += webform_civicrm_field_options($fid, 'config_form', $settings['data']);
+    $field['form_key'] = $fid;
+    $options += webform_civicrm_field_options($field, 'config_form', $settings['data']);
     $item = array(
       '#type' => 'select',
       '#title' => $field['name'],
@@ -874,7 +875,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
 
           // Retrieve option list
           if (isset($lists[$name])) {
-            $field['extra']['items'] = webform_civicrm_field_options($key, 'component_insert', $vals['data']);
+            $field['extra']['items'] = webform_civicrm_field_options($field, 'component_insert', $vals['data']);
             if (!isset($field['extra']['aslist']) && empty($field['extra']['multiple'])) {
               $field['extra']['aslist'] = 1;
             }
@@ -963,7 +964,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
     list($lobo, $i, $ent, $n, $table, $key) = $pieces;
     $fields = webform_civicrm_get_fields();
     // Is this component a CiviCRM field?
-    if (isset($fields[$table . '_' . $key]) ||
+    if (($field = webform_civicrm_aval($fields, $table . '_' . $key)) ||
       ($lobo == 'civicrm' && $table == 'fieldset')) {
       drupal_add_css(drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_admin.css');
 
@@ -989,13 +990,13 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         drupal_set_message(t('You are cloning a CiviCRM component. Refer to the Webform CiviCRM instructions for how to set the key if you want the new field to be processed by CiviCRM. You can also clone an entire contact by clicking the clone button by their fieldset.'), 'status', FALSE);
       }
 
-      if ($table == 'address' && $key == 'state_province_id') {
+      if ($table === 'address' && $key === 'state_province_id') {
         $form['validation']['maxlength']['#type'] = 'hidden';
         $form['validation']['maxlength']['#value'] = 5;
         $form['value']['#description'] = t('To set a default value, enter the state/province abbreviation in all caps.');
       }
       // For ContactReference fields, choose a group
-      if (webform_civicrm_aval($fields, $table . '_' . $key . ':data_type') === 'ContactReference') {
+      if (webform_civicrm_aval($field, 'data_type') === 'ContactReference') {
         $component = $node->webform['components'][$form['cid']['#value']];
         $form['extra']['civicrm_group'] = array(
           '#type' => 'select',
@@ -1016,7 +1017,8 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
       elseif (array_key_exists($key, webform_civicrm_get_fields('lists'))) {
         webform_civicrm_add_js('webform_civicrm_options.js');
         $element = $node->webform['components'][$form['cid']['#value']];
-        $options = $sort = webform_civicrm_field_options($fid, 'component_edit', $node->webform_civicrm['data']);
+        $field['form_key'] = $fid;
+        $options = $sort = webform_civicrm_field_options($field, 'component_edit', $node->webform_civicrm['data']);
         $defaults_selected = array();
         if (!empty($element['value'])) {
           foreach (explode(',', trim($element['value'])) as $v) {
@@ -1082,7 +1084,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
           '#default_value' => $defaults_selected,
         );
         // Auto set multi-value option for single-valued entities
-        if (empty($fields[$table . '_' . $key]['extra']['multiple'])
+        if (empty($field['extra']['multiple'])
         && $element['type'] != 'hidden' && $key != 'event_id') {
           $form['extra']['multiple']['#type'] = 'hidden';
           $form['extra']['multiple']['#value'] = 0;
@@ -1177,13 +1179,8 @@ function webform_civicrm_process_options_selection($form, &$form_state) {
  */
 function webform_civicrm_process_group_selection($form, &$form_state) {
   $vals = &$form_state['values'];
-  if (empty($vals['extra']['civicrm_group'])) {
-    $node = node_load($vals['nid']);
-    $vals['extra']['items'] = webform_civicrm_field_options($vals['form_key'], 'component_insert', $node->webform_civicrm['data']);
-  }
-  else {
-    $vals['extra']['items'] = webform_civicrm_array2str(webform_civicrm_get_options('group_contact', $vals['extra']['civicrm_group']));
-  }
+  $node = node_load($vals['nid']);
+  $vals['extra']['items'] = webform_civicrm_field_options($vals, 'component_insert', $node->webform_civicrm['data']);
 }
 
 
