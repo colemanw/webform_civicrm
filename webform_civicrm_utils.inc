@@ -174,8 +174,9 @@ function webform_civicrm_field_options($key, $context, $data) {
       if ($name == 'event_id') {
         $param = $data['reg_options'];
       }
-      if ($name == 'assignee_contact_id'
-      && !($param = webform_civicrm_aval($data, 'activity:1:assignee_group'))) {
+      if (($name == 'assignee_contact_id'
+      && !($param = webform_civicrm_aval($data, 'activity:1:assignee_group')))
+      || $name != 'assignee_contact_id' && webform_civicrm_aval($field, 'data_type') === 'ContactReference') {
         foreach ($data['contact'] as $num => $contact) {
           $ret['#' . $num] =  t('Contact !num', array('!num' => $num));
         }
@@ -773,6 +774,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'Multi-Select Country' => array('type' => 'select', 'extra' => array('multiple' => 1)),
       'Select State/Province' => array('type' => 'select'),
       'Multi-Select State/Province' => array('type' => 'select', 'extra' => array('multiple' => 1)),
+      'Autocomplete-Select' => array('type' => 'select'),
     );
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
     $custom_extends = "'contact','individual','organization','household','address','activity'";
@@ -843,6 +845,9 @@ function webform_civicrm_get_fields($var = 'fields') {
         }
         elseif ($fields[$id]['type'] == 'select') {
           $lists['custom_' . $dao->id] = 'yes_no';
+        }
+        elseif ($fields[$id]['data_type'] == 'ContactReference') {
+          $lists['custom_' . $dao->id] = 'group_contact';
         }
         elseif ($fields[$id]['type'] == 'textarea') {
           $fields[$id]['extra']['cols'] = $dao->note_columns;

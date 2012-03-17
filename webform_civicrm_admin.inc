@@ -994,9 +994,26 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         $form['validation']['maxlength']['#value'] = 5;
         $form['value']['#description'] = t('To set a default value, enter the state/province abbreviation in all caps.');
       }
-
+      // For ContactReference fields, choose a group
+      if (webform_civicrm_aval($fields, $table . '_' . $key . ':data_type') === 'ContactReference') {
+        $component = $node->webform['components'][$form['cid']['#value']];
+        $form['extra']['civicrm_group'] = array(
+          '#type' => 'select',
+          '#default_value' => webform_civicrm_aval($component['extra'], 'civicrm_group', 0),
+          '#title' => t('Choose Contact From'),
+          '#options' => array(t('- Webform Contacts -')) + webform_civicrm_get_options('group'),
+          '#description' => t('Group from which this contact reference may be selected'),
+        );
+        $form['extra']['items']['#type'] = 'hidden';
+        $form['extra']['items']['#required'] = FALSE;
+        $form['extra']['options_source']['#access'] = FALSE;
+        $form['extra']['multiple']['#type'] = 'hidden';
+        $form['extra']['multiple']['#value'] = 0;
+        array_unshift($form['#submit'], 'webform_civicrm_process_group_selection');
+      }
+      
       // Here's a much nicer interface for managing options than the standard textfields
-      if (array_key_exists($key, webform_civicrm_get_fields('lists'))) {
+      elseif (array_key_exists($key, webform_civicrm_get_fields('lists'))) {
         webform_civicrm_add_js('webform_civicrm_options.js');
         $element = $node->webform['components'][$form['cid']['#value']];
         $options = $sort = webform_civicrm_field_options($fid, 'component_edit', $node->webform_civicrm['data']);
@@ -1151,6 +1168,21 @@ function webform_civicrm_process_options_selection($form, &$form_state) {
     if (count($items) == 1 && empty($vals['extra']['aslist'])) {
       $vals['extra']['multiple'] = 1;
     }
+  }
+}
+
+
+/**
+ * Custom Processing for CiviCRM ContactReference fields
+ */
+function webform_civicrm_process_group_selection($form, &$form_state) {
+  $vals = &$form_state['values'];
+  if (empty($vals['extra']['civicrm_group'])) {
+    $node = node_load($vals['nid']);
+    $vals['extra']['items'] = webform_civicrm_field_options($vals['form_key'], 'component_insert', $node->webform_civicrm['data']);
+  }
+  else {
+    $vals['extra']['items'] = webform_civicrm_array2str(webform_civicrm_get_options('group_contact', $vals['extra']['civicrm_group']));
   }
 }
 
