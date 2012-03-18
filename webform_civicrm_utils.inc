@@ -140,6 +140,7 @@ function webform_civicrm_field_options($field, $context, $data) {
   $fields = webform_civicrm_get_fields();
   if ($pieces = webform_civicrm_explode_key($field['form_key'])) {
     list($lobo, $c, $ent, $n, $table, $name) = $pieces;
+    // Ensure we have complete info for this field
     $field += $fields[$table . '_' . $name];
     if ($name === 'contact_sub_type') {
       list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
@@ -513,8 +514,7 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['contact_cs'] = array(
       'name' => t('Generate Checksum'),
       'type' => 'hidden',
-      'value' => '7',
-      'extra' => array('description' => t('(hidden field, use to send hashed links)')),
+      'extra' => array('description' => t('(hidden field, use to create hashed links)')),
     );
     $fields['email_email'] = array(
       'name' => t('Email'),

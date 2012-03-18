@@ -23,24 +23,24 @@ On the other hand, webform_civicrm fields have a few cons:
 
 FEATURES
 
--Expose just about any CiviCRM contact, address, email, phone, website, activity, or custom field on a webform
--Auto-fill forms for logged in users (as contact 1).
--Auto-fill for anonymous users too if you send them a personalized link.
--Create or update an activity and/or case when users fill out your form.
--Register contacts for events
--Create relationships and shared addresses between contacts.
+- Expose just about any CiviCRM contact, address, email, phone, website, activity, or custom field on a webform
+- Auto-fill forms for logged in users (as contact 1).
+- Auto-fill for anonymous users too if you send them a personalized link.
+- Create or update an activity and/or case when users fill out your form.
+- Register contacts for events
+- Create relationships and shared addresses between contacts.
 
 
 GETTING STARTED
 
--Enable the module.
--Create a new webform (or go to edit an existing one).
--Click on the CiviCRM tab.
--Drupal 6 users: installing the vertical_tabs module makes the massive civicrm options much more manageable.
- (the vertical tabs interface is already built in to Drupal 7)
--Enable the fields you like, and optionally choose introduction text and other settings.
--Your selected fields will be automatically created for you.
--Customize the webform settings for your new fields however you wish.
+- Enable the module.
+- Create a new webform (or go to edit an existing one).
+- Click on the CiviCRM tab.
+- Drupal 6 users: installing the vertical_tabs module makes the massive civicrm options much more manageable.
+  (the vertical tabs interface is already built in to Drupal 7)
+- Enable the fields you like, and optionally choose introduction text and other settings.
+- Your selected fields will be automatically created for you.
+- Customize the webform settings for your new fields however you wish.
 
 
 USAGE NOTES
@@ -53,11 +53,11 @@ USAGE NOTES
 OPTION LISTS
 
 Any CiviCRM field with options (whether it's a simple yes/no select, your upcoming events, or countries of the world) can be fully customized:
--First create the field on the CiviCRM tab, then visit the Webform tab and click the edit button by that field.
--You can rearrange options by dragging them up and down.
--You can disable options so they don't appear on the form.
--You can set an option to be the default value on the form.
--You can rename options.
+- First create the field on the CiviCRM tab, then visit the Webform tab and click the edit button by that field.
+- You can rearrange options by dragging them up and down.
+- You can disable options so they don't appear on the form.
+- You can set an option to be the default value on the form.
+- You can rename options.
 
 NOTE: Once a webform field is created, the options are set and will not change automatically. So if you update an option list in CiviCRM, the corresponding webform field will not be updated unless you click the edit button as described above and enable the new options.
 
@@ -71,20 +71,22 @@ This module allows you to tag contacts and add them to groups when they submit t
 
 CUSTOM DATA
 
--This module can handle (almost) any custom fields you have created for contacts, addresses, event participants, cases or activities. Two exceptions due to their complexity are contact references and files. Custom data for other CRM entities (relationships, etc.) are not currently supported.
+This module can handle (almost) any custom fields you have created for contacts, addresses, event participants, cases or activities. Note that not every type of component exists in the webform module, or behaves exactly the same as its CiviCRM counterpart, for example a "datetime" field from Civi becomes a simple "date" (no time) in Webform, the "advanced multiselect" becomes a simple "multiselect," "rich text area" becomes a plain text area, etc. But there are some good add-on modules to improve this situation, i.e. "chosen" and "webform_html_textarea."
+
+Files are not yet supported due to their complexity. Custom data for other CRM entities (relationships, etc.) are not currently supported.
 
 
 EVENT REGISTRATION
 
--You can register contacts for events via webform. If your form has multiple contacts on it, you may choose to register them each separately for different events, or all together for the same event(s). If you choose to register them together, CiviCRM will show contact 1 as having registered the others.
--To allow participants to return to the form and update their registration info later, see the section on sending hashed links from a webform email.
+You can register contacts for events via webform. If your form has multiple contacts on it, you may choose to register them each separately for different events, or all together for the same event(s). If you choose to register them together, CiviCRM will show contact 1 as having registered the others.
+To allow participants to return to the form and update their registration info later, see the section on sending hashed links from a webform email.
 
 NOTE: It is not currently possible to pay for events via webform.
 
 
 STATE/PROVINCE AND COUNTRY ADDRESS FIELDS
 
-This module gives approximately the same functionality as core CiviCRM profiles for the state field of an address:
+This module gives similar functionality as core CiviCRM profiles for the state field of an address:
 - If you enable both state and country fields for an address, the state list will dynamically update based on the chosen country.
 - If you enable a state field but not a country field for an address, only states from your site's default country will be shown.
 - If the end-user has scripts disabled, the dynamic state list will degrade to a simple textbox where they may enter the abbreviation. This is why the Webform Components tab shows State/Province as a textfield.
@@ -124,7 +126,7 @@ You can start recording CiviCRM contacts even for an existing webform. This fall
 
 1) You don't have any contact info fields on the form yet (name, address, etc). That's easy, just go to the CiviCRM tab of your webform, check the boxes, and the new fields will be created for you.
 
-2) You already have contact info fields on your form. If people have already been using this form, you don't want to delete those fields because you'd lose data from all existing submissions! Instead, you can get webform_civicrm to start processing those fields by changing their field keys to the ones understood by webform_civicrm. An easy way to find the correct field key is by going to an existing civicrm-enabled webform (or create a dummy one) and copy the field key you are looking for (or see anatomy of a form key, below). Then visit the CiviCRM tab of your webform and you will see that field is enabled.
+2) You already have contact info fields on your form. If people have already been using this form, you might not want to delete those fields because you'd lose their data from all existing submissions. Instead, you can get webform_civicrm to start processing those fields by changing their field keys to the ones understood by webform_civicrm. An easy way to find the correct field key is by going to an existing civicrm-enabled webform (or create a dummy one) and copy the field key you are looking for (or see anatomy of a form key, below). Then visit the CiviCRM tab of your webform and you will see that field is enabled.
 
 
 WILL CONTACTS, ACTIVITIES, ETC. BE CREATED RETROACTIVELY IF I ENABLE THIS MODULE ON AN EXISTING WEBFORM?
@@ -147,6 +149,15 @@ cid1=123 (contact 1's ID; you can also supply cid2 and so on)
 aid=456 (ID of the activity to autofill and update -- specifying an activity from a case works too)
 
 Note that permissions are checked, so these values will be ignored if the acting user doesn't have permission to view that contact. Use a checksum field to identify non-premissioned users. Activity ID will be ignored if no contact is part of the given activity.
+
+
+CHANGING A WEBFORM COMPONENT TYPE
+
+The Webform module has no method for changing a field from one type to another (i.e. turing a textfield into a select, hidden, etc.). But sometimes you may wish to do so with form fields created by this module. The simplist way is:
+- On the webform tab, edit the field and note the field key
+- Delete the field
+- Create a new field of the desired type, giving it the same field key as the one you just deleted
+For more explanation of how this works, see "anatomy of a form key," below. Also note that there are some common sense reasons why some fields would NOT work well if you changed their type - for example, changing a select into textfield is probably a bad idea because the user would be likely to enter a value that is not a valid option.
 
 
 ANATOMY OF A FORM KEY - for geeks only

@@ -873,6 +873,12 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
             $field['extra']['width'] = 20;
           }
 
+          if ($name == 'cs') {
+            require_once 'CRM/Core/BAO/Setting.php';
+            $field['value'] = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME,
+              'checksum_timeout', NULL, 7);
+          }
+
           // Retrieve option list
           if (isset($lists[$name])) {
             $field['extra']['items'] = webform_civicrm_field_options($field, 'component_insert', $vals['data']);
@@ -967,6 +973,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
     if (($field = webform_civicrm_aval($fields, $table . '_' . $key)) ||
       ($lobo == 'civicrm' && $table == 'fieldset')) {
       drupal_add_css(drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_admin.css');
+      $element = $node->webform['components'][$form['cid']['#value']];
 
       if (arg(5) != 'clone' || $key == 'fieldset') {
         // Prevent users from editing the form_key and breaking things
@@ -996,14 +1003,14 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         $form['value']['#description'] = t('To set a default value, enter the state/province abbreviation in all caps.');
       }
       // For ContactReference fields, choose a group
-      if (webform_civicrm_aval($field, 'data_type') === 'ContactReference') {
+      if (webform_civicrm_aval($field, 'data_type') === 'ContactReference' && $element['type'] === 'select') {
         $component = $node->webform['components'][$form['cid']['#value']];
         $form['extra']['civicrm_group'] = array(
           '#type' => 'select',
           '#default_value' => webform_civicrm_aval($component['extra'], 'civicrm_group', 0),
           '#title' => t('Choose Contact From'),
           '#options' => array(t('- Webform Contacts -')) + webform_civicrm_get_options('group'),
-          '#description' => t('Group from which this contact reference may be selected'),
+          '#description' => t('Group from which this contact reference will be selected'),
         );
         $form['extra']['items']['#type'] = 'hidden';
         $form['extra']['items']['#required'] = FALSE;
@@ -1014,11 +1021,10 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
       }
       
       // Here's a much nicer interface for managing options than the standard textfields
-      elseif (array_key_exists($key, webform_civicrm_get_fields('lists'))) {
+      elseif (($element['type'] === 'hidden' || $element['type'] === 'select')
+      && array_key_exists($key, webform_civicrm_get_fields('lists'))) {
         webform_civicrm_add_js('webform_civicrm_options.js');
-        $element = $node->webform['components'][$form['cid']['#value']];
-        $field['form_key'] = $fid;
-        $options = $sort = webform_civicrm_field_options($field, 'component_edit', $node->webform_civicrm['data']);
+        $options = $sort = webform_civicrm_field_options($element, 'component_edit', $node->webform_civicrm['data']);
         $defaults_selected = array();
         if (!empty($element['value'])) {
           foreach (explode(',', trim($element['value'])) as $v) {
@@ -1039,7 +1045,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
             WEBFORM_CIVICRM_MARKUP => '<span class="civicrm-option-name">' . $v . '</span>',
           );
         }
-        if ($element['type'] != 'hidden') {
+        if ($element['type'] !== 'hidden') {
           $form['civicrm_options_fieldset']['#description'] = t('Drag the arrows to re-order these options. Click the "enabled" checkbox to show/remove an item from the form. Set the label as you want it to appear on the form. Check the "default" box for an option to be selected by default when a user views the form.');
           $options_selected = webform_civicrm_str2array($element['extra']['items']);
           // Sort weights. Unselected options will be at the bottom.
@@ -1095,7 +1101,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         array_unshift($form['#submit'], 'webform_civicrm_process_options_selection');
       }
       // Simplify form for hidden fields
-      elseif ($key == 'contact_id' || $key == 'external_identifier') {
+      elseif (($key == 'contact_id' || $key == 'external_identifier') && $element['type'] == 'hidden') {
         $form['value']['#value'] = '';
         $form['value']['#type'] = 'textfield';
         $form['value']['#disabled'] = TRUE;
@@ -1113,7 +1119,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         $form['value']['#title'] = t('Checksum Lifespan');
         $form['value']['#required'] = TRUE;
         $form['value']['#type'] = 'textfield';
-        $form['value']['#description'] = t('Enter the number of days before checksum will expire (non-integers are allowed, i.e. 1.5). Enter 0 to never expire.');
+        $form['value']['#description'] = t('Enter the number of days for which this checksum will be valid. Enter 0 to never expire.');
         $form['#validate'][] = 'webform_civicrm_cs_validate';
         $enabled = webform_civicrm_enabled_fields($node);
         $form['#prefix'] = '<p>'
