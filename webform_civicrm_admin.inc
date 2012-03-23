@@ -20,9 +20,9 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
   // Display confirmtion message before deleting fields
   if (!empty($form_state['storage']['msg'])) {
     $form['#prefix'] = $form_state['storage']['msg'];
-    $form['cancel'] = $form['no_delete'] = $form['confirm'] = array('#type' => 'submit');
-    $form['confirm']['#value'] = t('Remove Fields and Save Settings');
-    $form['no_delete']['#value'] = t('Leave Fields and Save Settings');
+    $form['cancel'] = $form['disable'] = $form['delete'] = array('#type' => 'submit');
+    $form['delete']['#value'] = t('Remove Fields and Save Settings');
+    $form['disable']['#value'] = t('Leave Fields and Save Settings');
     $form['cancel']['#value'] = t('Cancel (go back)');
     return $form;
   }
@@ -815,11 +815,21 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
   module_load_include('inc', 'webform', 'includes/webform.components');
   $form_state['redirect'] = 'node/' . $nid . '/webform';
 
-  if ($delete_me && $button == 'edit-confirm') {
+  if ($delete_me && $button === 'edit-delete') {
     // Delete fields
     foreach ($delete_me as $id) {
       drupal_set_message(t('Deleted field: %name', array('%name' => $node->webform['components'][$id]['name'])));
       webform_component_delete($node, $node->webform['components'][$id]);
+      ++$deleted;
+    }
+  }
+  elseif ($delete_me && $button === 'edit-disable' && $vals['nid']) {
+    // Disable fields
+    foreach ($delete_me as $id) {
+      $field = $node->webform['components'][$id];
+      $field['form_key'] = 'disabled' . substr($field['form_key'], 7);
+      webform_component_update($field);
+      drupal_set_message(t('Disabled field: %name', array('%name' => $field['name'])));
       ++$deleted;
     }
   }
@@ -837,6 +847,14 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
     if (!$vals['toggle_message']) {
       $vals['message'] = '';
     }
+    // Index disabled components, in case user wishes to restore them
+    $disabled = array();
+    foreach (webform_civicrm_aval($node->webform, 'components', array()) as $field) {
+      if (substr($field['form_key'], 0, 9) === 'disabled_') {
+        $field['form_key'] = 'civicrm' . substr($field['form_key'], 8);
+        $disabled[$field['form_key']] = $field;
+      }
+    }
 
     $i = 0;
     $lists = webform_civicrm_get_fields('lists');
@@ -848,8 +866,14 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
         if (is_array($val)) {
           unset($val['create_civicrm_webform_element']);
         }
-        // Add webform components (fields)
         if (!isset($enabled[$key]) && in_array('create_civicrm_webform_element', $aval, TRUE)) {
+          // Restore disabled component
+          if (isset($disabled[$key])) {
+            webform_component_update($disabled[$key]);
+            drupal_set_message(t('Re-enabled field: %name', array('%name' => $disabled[$key]['name'])));
+            continue;
+          }
+          // Add new component
           $field = $fields[$table . '_' . $name];
           $field['nid'] = $nid;
           $field['form_key'] = $key;

@@ -13,7 +13,7 @@ module_load_include('inc', 'webform_civicrm', 'webform_civicrm_d' . substr(VERSI
 /**
  * Get option values from various civicrm tables
  * @Param $option_group: option group name or id
- * @Param $param: some extra info for the query
+ * @Param $param: optional extra info for the query (passing a param will bypass caching)
  * @Return array
  */
 function webform_civicrm_get_options($option_group, $param = NULL) {
@@ -21,7 +21,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
   if ($param || empty($cache[$option_group])) {
     $vars = $ret = array();
     if ($option_group == 'privacy') {
-      // Privacy options aren't in the database as options; they are all separate contact fields.
+      // Privacy options aren't in the database as options; they are separate contact fields.
       return array(
         'do_not_email' => ts('Do not email'),
         'do_not_phone' => ts('Do not phone'),
@@ -89,7 +89,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
       $sql .= ' ORDER BY start_date DESC';
     }
     elseif ($option_group == 'group_contact') {
-      $result = webform_civicrm_api('contact', 'get', array('group' => array($param => 1), 'return.display_name' => 1, 'rowCount' => 100));
+      $result = webform_civicrm_api('contact', 'get', array('group' => array($param => 1), 'return.display_name' => 1, 'rowCount' => 100, 'sort' => 'sort_name ASC'));
       if (!empty($result['values'])) {
         foreach ($result['values'] as $val) {
           $ret[$val['contact_id']] = $val['display_name'];
@@ -130,7 +130,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
 
 /**
  * Get options for a specific field
- * @Param $key: Field key
+ * @Param $field: Webform component array
  * @Param $context: Where is this being called from?
  * @Param $data: CiviCRM entity data
  */
