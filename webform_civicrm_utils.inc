@@ -621,7 +621,8 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Assign Activity to'),
       'type' => 'select',
       'expose_list' => TRUE,
-      'empty_option' => t('- no one -')
+      'empty_option' => t('- no one -'),
+      'data_type' => 'ContactReference',
     );
     if (in_array('CiviCampaign', $components)) {
       $fields['activity_campaign_id'] = array(
