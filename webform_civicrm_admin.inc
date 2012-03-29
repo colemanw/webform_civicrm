@@ -472,7 +472,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
         '0_full' => t('When full - 0 spaces left'),
       ),
     );
-    foreach(array(5, 10, 20, 50, 100, 200, 500, 1000) as $num) {
+    foreach (array(5, 10, 20, 50, 100, 200, 500, 1000) as $num) {
       $form['event']['reg_options']['show_remaining']['#options'][$num] = t('When under !num spaces left', array('!num' => $num));
     }
     $form['event']['reg_options']['validate'] = array(
@@ -640,7 +640,7 @@ function webform_civicrm_process_form_settings(&$vals) {
       );
       if ($sub_type = webform_civicrm_aval($vals, 'civicrm_' . $n . '_contact_1_contact_contact_sub_type')) {
         $allowed = $sub_types[$vals[$n . '_contact_type']];
-        foreach($sub_type as $sub) {
+        foreach ($sub_type as $sub) {
           if (isset($allowed[$sub])) {
             $data['contact'][$n]['contact'][1]['contact_sub_type'][$sub] = $sub;
           }

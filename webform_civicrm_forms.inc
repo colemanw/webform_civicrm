@@ -179,7 +179,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       }
     }
     // Add events exposed to the form
-    foreach($enabled as $field => $fid) {
+    foreach ($enabled as $field => $fid) {
       if (strpos($field, 'participant_event_id')) {
         $options = webform_civicrm_str2array(webform_civicrm_aval($node->webform['components'][$fid], 'extra:items'));
         foreach ($options as $p => $label) {
@@ -339,7 +339,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       $dao = &CRM_Core_DAO::executeQuery('SELECT ' . implode(',', $select) . " FROM civicrm_participant WHERE contact_id = $cid AND event_id IN (" . implode(',', array_keys($events)) . ")");
       while ($dao->fetch()) {
         $par = array();
-        foreach($select as $sel) {
+        foreach ($select as $sel) {
           $par['participant'][1][$sel] = $dao->$sel;
         }
         $par += webform_civicrm_get_custom($dao->id, 'Participant');
@@ -463,6 +463,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
     $data = $settings['data'];
     $sets = webform_civicrm_get_fields('sets');
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
+    $shared_address = array();
 
     // Retrieve stored ids
     $id = $updating = webform_civicrm_aval(webform_civicrm_storage($node->nid), 'id');
@@ -482,49 +483,55 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
     }
 
     // Fill entity arrays with field values
-    foreach ($enabled as $field => $fid) {
+    $contact_ref = array();
+    foreach ($enabled as $field_key => $fid) {
       if (isset($submission->data[$fid]['value'])) {
-        list($lobo, $c, $ent, $n, $table, $field) = explode('_', $field, 6);
+        list($lobo, $c, $ent, $n, $table, $name) = explode('_', $field_key, 6);
+        $field = $fields[$table . '_' . $name];
         $val = $submission->data[$fid]['value'];
-        if ($field == 'privacy') {
+        if ($name === 'privacy') {
           foreach (array_keys(webform_civicrm_str2array($node->webform['components'][$fid]['extra']['items'])) as $key) {
             $data[$ent][$c][$table][$n][$key] = in_array($key, $val);
           }
           continue;
         }
-        if (!empty($fields[$table . '_' . $field]['extra']['multiple'])) {
-          if (!empty($data[$ent][$c][$table][$n][$field]) && is_array($data[$ent][$c][$table][$n][$field])) {
-            $val = array_unique(array_merge($val, $data[$ent][$c][$table][$n][$field]));
+        if (!empty($field['extra']['multiple'])) {
+          if (!empty($data[$ent][$c][$table][$n][$name]) && is_array($data[$ent][$c][$table][$n][$name])) {
+            $val = array_unique(array_merge($val, $data[$ent][$c][$table][$n][$name]));
           }
-          if ($table != 'other') {
+          if ($table !== 'other') {
             $val = $sp . implode($sp, $val) . $sp;
           }
         }
-        elseif ($field == 'image_URL') {
+        elseif ($name === 'image_URL') {
           if (empty($val[0]) || !($val = webform_civicrm_filepath($val[0]))) {
             continue;
           }
         }
-        elseif ($fields[$table . '_' . $field]['type'] == 'date') {
+        elseif ($field['type'] === 'date') {
           $val = empty($val[0]) ? '' : str_replace('-', '', $val[0]);
         }
-        elseif ($field != 'event_id') {
+        elseif ($name !=='event_id') {
           $val = isset($val[0]) ? $val[0] : '';
         }
+        // ContactRef from webform contacts must wait until contact IDs have been processed
+        if ($field['data_type'] === 'ContactReference' && $val && $val[0] === '#') {
+          $contact_ref[$field_key] = substr($val, 1);
+        }
         // Only known contacts are allowed to empty a field
-        if (($val !== '' && $val !== NULL) || !empty($updating['cid'][$c])) {
-          $data[$ent][$c][$table][$n][$field] = $val;
+        elseif (($val !== '' && $val !== NULL) || !empty($updating['cid'][$c])) {
+          $data[$ent][$c][$table][$n][$name] = $val;
         }
       }
     }
-
-    $shared_address = array();
+    // Create/update contacts
     foreach ($data['contact'] as $c => $contact) {
       if (empty($id['cid'][$c])) {
         // Don't create contact if we don't have a name or email
         if (empty($contact['contact'][1]['first_name'])
         && empty($contact['contact'][1]['last_name'])
         && empty($contact['contact'][1]['organization_name'])
+        && empty($contact['contact'][1]['legal_name'])
         && empty($contact['contact'][1]['household_name'])
         && empty($contact['email'][1]['email'])) {
           $id['cid'][$c] = 0;
@@ -574,19 +581,30 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         $params['source'] = $settings['new_contact_source'];
         $result = webform_civicrm_api('contact', 'create', $params);
         if (!empty($result['id'])) {
-          $cid = $id['cid'][$c] = $result['id'];
+          $id['cid'][$c] = $result['id'];
         }
         else {
           $id['cid'][$c] = 0;
-          continue;
         }
       }
       // Update existing contact
       else {
-        $params['contact_id'] = $cid = $id['cid'][$c];
+        $params['contact_id'] = $id['cid'][$c];
         $result = webform_civicrm_api('contact', 'create', $params);
       }
-
+    }
+    // Fill ContactRef fields with contact IDs
+    foreach ($contact_ref as $key => $val) {
+      if (!empty($id['cid'][$val])) {
+        list($lobo, $c, $ent, $n, $table, $name) = explode('_', $field_key, 6);
+        $data[$ent][$c][$table][$n][$name] = $id['cid'][$val];
+      }
+    }
+    // Create/update other data associated with contacts
+    foreach ($data['contact'] as $c => $contact) {
+      if (!($cid = $id['cid'][$c])) {
+        continue;
+      }
       webform_civicrm_save_custom($contact, $cid);
 
       // Fill values for hidden ID & CS fields
@@ -843,7 +861,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         $params['source_contact_id'] = $cid;
       }
       else {
-        foreach($id['cid'] as $cid) {
+        foreach ($id['cid'] as $cid) {
           if ($cid) {
             $params['source_contact_id'] = $cid;
             break;
@@ -855,11 +873,6 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         if (!empty($contact['activity_target']) && !empty($id['cid'][$c])) {
           $params['target_contact_id'][$id['cid'][$c]] = $id['cid'][$c];
         }
-      }
-      // Choose assignee contact ID from webform contacts if a CID was not specified
-      if (!empty($params['assignee_contact_id']) && $params['assignee_contact_id'][0] == '#') {
-        $acid = substr($params['assignee_contact_id'], 1);
-        $params['assignee_contact_id'] = empty($id['cid'][$acid]) ? 0 : $id['cid'][$acid];
       }
       if (empty($params['assignee_contact_id'])) {
         unset($params['assignee_contact_id']);
@@ -1118,7 +1131,7 @@ function _webform_civicrm_participant_validate($form, &$form_state, $submitted) 
       if (in_array($c, $contacts)
       || ($c == 1 && $data['participant_reg_type'] == 'all')) {
         $value = is_array($value) ? $value : array($value);
-        foreach($value as $val) {
+        foreach ($value as $val) {
           $eid = explode('-', $val);
           if (count($eid) == 2 && is_numeric($eid[0]) && $eid[0]) {
             $eid = $eid[0];
@@ -1174,7 +1187,7 @@ function webform_civicrm_set_message($message, $contact) {
   preg_match_all('#\{([^}]+)\}#', $message, $matches);
   if (!empty($matches[0])) {
     $q = $_GET;
-    unset ($q['q'], $q['cs'], $q['cid'], $q['cid1']);
+    unset($q['q'], $q['cs'], $q['cid'], $q['cid1']);
     if (empty($_GET['cid']) && empty($_GET['cid1'])) {
       $q['cid1'] = 0;
     }
