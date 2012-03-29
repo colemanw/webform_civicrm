@@ -73,7 +73,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
       return CRM_Core_PseudoConstant::languages();
     } 
     elseif ($option_group == 'location_type') {
-      $sql = 'SELECT name AS label, id AS value FROM civicrm_location_type WHERE is_active = 1 ORDER BY is_default DESC';
+      $sql = 'SELECT display_name AS label, id AS value FROM civicrm_location_type WHERE is_active = 1 ORDER BY is_default DESC';
     }
     elseif ($option_group == 'campaign') {
       $sql = 'SELECT title AS label, id AS value FROM civicrm_campaign WHERE is_active = 1 AND (end_date >= NOW() OR end_date IS NULL) ORDER BY start_date DESC';
