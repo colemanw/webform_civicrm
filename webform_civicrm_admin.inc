@@ -1027,21 +1027,26 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         $form['value']['#description'] = t('To set a default value, enter the state/province abbreviation in all caps.');
       }
       // For ContactReference fields, choose a group
-      if (webform_civicrm_aval($field, 'data_type') === 'ContactReference' && $element['type'] === 'select') {
-        $component = $node->webform['components'][$form['cid']['#value']];
-        $form['extra']['civicrm_group'] = array(
-          '#type' => 'select',
-          '#default_value' => webform_civicrm_aval($component['extra'], 'civicrm_group', 0),
-          '#title' => t('Choose Contact From'),
-          '#options' => array(t('- Webform Contacts -')) + webform_civicrm_get_options('group'),
-          '#description' => t('Group from which this contact reference will be selected'),
-        );
-        $form['extra']['items']['#type'] = 'hidden';
-        $form['extra']['items']['#required'] = FALSE;
-        $form['extra']['options_source']['#access'] = FALSE;
-        $form['extra']['multiple']['#type'] = 'hidden';
-        $form['extra']['multiple']['#value'] = 0;
-        array_unshift($form['#submit'], 'webform_civicrm_process_group_selection');
+      if (webform_civicrm_aval($field, 'data_type') === 'ContactReference') {
+        if ($element['type'] === 'select') {
+          $component = $node->webform['components'][$form['cid']['#value']];
+          $form['extra']['civicrm_group'] = array(
+            '#type' => 'select',
+            '#default_value' => webform_civicrm_aval($component['extra'], 'civicrm_group', 0),
+            '#title' => t('Choose Contact From'),
+            '#options' => array(t('- Webform Contacts -')) + webform_civicrm_get_options('group'),
+            '#description' => t('Group from which this contact reference will be selected'),
+          );
+          $form['extra']['items']['#type'] = 'hidden';
+          $form['extra']['items']['#required'] = FALSE;
+          $form['extra']['options_source']['#access'] = FALSE;
+          $form['extra']['multiple']['#type'] = 'hidden';
+          $form['extra']['multiple']['#value'] = 0;
+          array_unshift($form['#submit'], 'webform_civicrm_process_group_selection');
+        }
+        else {
+          $form['#prefix'] = '<p>' . t('Enter either a numeric contact id, or #1, #2, etc. to use contact 1, 2, etc. from the webform.') . '</p>';
+        }
       }
       
       // Here's a much nicer interface for managing options than the standard textfields
