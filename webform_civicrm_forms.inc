@@ -515,7 +515,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
           $val = isset($val[0]) ? $val[0] : '';
         }
         // ContactRef from webform contacts must wait until contact IDs have been processed
-        if ($field['data_type'] === 'ContactReference' && $val && $val[0] === '#') {
+        if (webform_civicrm_aval($field, 'data_type') === 'ContactReference' && $val && $val[0] === '#') {
           $contact_ref[$field_key] = substr($val, 1);
         }
         // Only known contacts are allowed to empty a field
@@ -596,7 +596,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
     // Fill ContactRef fields with contact IDs
     foreach ($contact_ref as $key => $val) {
       if (!empty($id['cid'][$val])) {
-        list($lobo, $c, $ent, $n, $table, $name) = explode('_', $field_key, 6);
+        list($lobo, $c, $ent, $n, $table, $name) = explode('_', $key, 6);
         $data[$ent][$c][$table][$n][$name] = $id['cid'][$val];
       }
     }
