@@ -879,11 +879,15 @@ function webform_civicrm_user_cid($id = NULL, $type = 'uf') {
     global $user;
     $id = $user->uid;
   }
+  $site = webform_civicrm_api('domain', 'get', array('is_current' => 1, 'return.id' => 1));
+  $site = webform_civicrm_aval($site, 'id', 1);
   $result = webform_civicrm_api('uf_match', 'get', array($type . '_id' => $id));
-  if (!empty($result['values'])) {
-    $result = array_pop($result['values']);
-    return $type == 'uf' ? $result['contact_id'] : $result['uf_id'];
+  foreach (webform_civicrm_aval($result, 'values', array()) as $val) {
+    if ($val['domain_id'] == $site) {
+      break;
+    }
   }
+  return $type == 'uf' ? $val['contact_id'] : $val['uf_id'];
 }
 
 
