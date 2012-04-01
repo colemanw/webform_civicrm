@@ -668,8 +668,9 @@ function webform_civicrm_get_fields($var = 'fields') {
     );
     if (in_array('CiviEvent', $components)) {
       $fields['participant_event_id'] = array(
-        'name' => t('Event'),
+        'name' => t('Events'),
         'type' => 'select',
+        'extra' => array('multiple' => 1),
         'expose_list' => TRUE,
       );
       $fields['participant_role_id'] = array(

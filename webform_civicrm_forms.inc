@@ -336,7 +336,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       if (in_array('CiviCampaign', $config->enableComponents, TRUE)) {
         $select[] = 'campaign_id';
       }
-      $dao = &CRM_Core_DAO::executeQuery('SELECT ' . implode(',', $select) . " FROM civicrm_participant WHERE contact_id = $cid AND event_id IN (" . implode(',', array_keys($events)) . ")");
+      $dao = &CRM_Core_DAO::executeQuery('SELECT ' . implode(',', $select) . " FROM civicrm_participant WHERE contact_id = $cid AND event_id IN (" . implode(',', array_keys($events)) . ") AND status_id IN (SELECT id FROM civicrm_participant_status_type WHERE class <> 'Negative')");
       while ($dao->fetch()) {
         $par = array();
         foreach ($select as $sel) {
@@ -499,7 +499,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
           if (!empty($data[$ent][$c][$table][$n][$name]) && is_array($data[$ent][$c][$table][$n][$name])) {
             $val = array_unique(array_merge($val, $data[$ent][$c][$table][$n][$name]));
           }
-          if ($table !== 'other') {
+          if ($table !== 'other' && $name !== 'event_id') {
             $val = $sp . implode($sp, $val) . $sp;
           }
         }
@@ -511,7 +511,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         elseif ($field['type'] === 'date') {
           $val = empty($val[0]) ? '' : str_replace('-', '', $val[0]);
         }
-        elseif ($name !=='event_id') {
+        elseif ($name !== 'event_id') {
           $val = isset($val[0]) ? $val[0] : '';
         }
         // ContactRef from webform contacts must wait until contact IDs have been processed
@@ -762,49 +762,71 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         if (!empty($contact['other'][1][$type]) || isset($enabled[$field . $type])) {
           $fid = webform_civicrm_aval($enabled, $field . $type, 0);
           $add = webform_civicrm_aval($contact, "other:1:$type", array());
-          webform_civicrm_add_remove($type, 'contact', $node, $cid, $add, $fid, !empty($updating['cid'][$c]));
+          $remove = empty($updating['cid'][$c]) ? array() : webform_civicrm_remove_fields($node, $fid, $add);
+          webform_civicrm_add_remove($type, 'contact', $node, $cid, $add, $remove);
         }
       }
       // Process event participation
       if (in_array('CiviEvent', $config->enableComponents, TRUE) && !empty($data['participant_reg_type'])) {
         $n = $data['participant_reg_type'] == 'separate' ? $c : 1;
         if ($p = webform_civicrm_aval($data, "participant:$n:participant")) {
+          // Fetch existing participant records
+          $existing = array();
+          $dao = &CRM_CORE_DAO::executeQuery("SELECT id, event_id FROM civicrm_participant WHERE contact_id = $cid AND is_test = 0");
+          while ($dao->fetch()) {
+            $existing[$dao->event_id] = $dao->id;
+          }
           foreach ($p as $e => $params) {
-            if (empty($params['event_id'])) {
-              continue;
-            }
-            // Loop through event ids to support multi-valued form elements
-            $events = (array) $params['event_id'];
-            foreach ($events as $i => $params['event_id']) {
-              if (!empty($params['event_id'])) {
-                $params['contact_id'] = $cid;
-                $params['event_id'] = (int) $params['event_id'];
-                $params['source'] = check_plain($node->title);
-                if ($c > 1 && !empty($registered_by_id[$e][$i])) {
-                  $params['registered_by_id'] = $registered_by_id[$e][$i];
-                }
-                if (empty($params['campaign_id']) || !in_array('CiviCampaign', $config->enableComponents, TRUE)) {
-                  unset($params['campaign_id']);
-                }
-                // Fetch existing participant - can't be done with the API currently
-                if ($existing = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_participant WHERE event_id = {$params['event_id']} AND contact_id = $cid AND is_test = 0 LIMIT 0, 1")) {
-                  $params['id'] = $existing;
-                }
-                $result = webform_civicrm_api('participant', 'create', $params);
-                if ($c == 1 && $data['participant_reg_type'] == 'all') {
-                  $registered_by_id[$e][$i] = $result['id'];
-                }
-                // Reformat custom data from nested arrays
-                $custom = array();
-                foreach ($data['participant'][$n] as $key => $vals) {
-                  if (substr($key, 0, 2) == 'cg' && isset($vals[$e])) {
-                    $custom[$key][1] = $vals[$e];
-                  }
-                }
-                if ($custom) {
-                  webform_civicrm_save_custom($custom, $result['id'], 'Participant');
+            $remove = array();
+            if ($fid = webform_civicrm_aval($enabled, 'civicrm_' . $c . '_participant_' . $e . '_participant_event_id')) {
+              foreach(webform_civicrm_str2array($node->webform['components'][$fid]['extra']['items']) as $eid => $title) {
+                list($eid) = explode('-', $eid);
+                if (isset($existing[$eid])) {
+                  $remove[$eid] = $title;
                 }
               }
+            }
+            if (!empty($params['event_id'])) {
+              // Loop through event ids to support multi-valued form elements
+              $events = (array) $params['event_id'];
+              foreach ($events as $i => $eid) {
+                if (!empty($eid)) {
+                  $params['contact_id'] = $cid;
+                  list($eid) = explode('-', $eid);
+                  $params['event_id'] = $eid;
+                  unset($remove[$eid]);
+                  if (empty($params['campaign_id']) || !in_array('CiviCampaign', $config->enableComponents, TRUE)) {
+                    unset($params['campaign_id']);
+                  }
+                  // Is existing participant?
+                  if (!empty($existing[$eid])) {
+                    $params['id'] = $existing[$params['event_id']];
+                  }
+                  else {
+                    $params['source'] = check_plain($node->title);
+                    if ($c > 1 && !empty($registered_by_id[$e][$i])) {
+                      $params['registered_by_id'] = $registered_by_id[$e][$i];
+                    }
+                  }
+                  $result = webform_civicrm_api('participant', 'create', $params);
+                  if ($c == 1 && $data['participant_reg_type'] == 'all') {
+                    $registered_by_id[$e][$i] = $result['id'];
+                  }
+                  // Reformat custom data from nested arrays
+                  $custom = array();
+                  foreach ($data['participant'][$n] as $key => $vals) {
+                    if (substr($key, 0, 2) == 'cg' && isset($vals[$e])) {
+                      $custom[$key][1] = $vals[$e];
+                    }
+                  }
+                  if ($custom) {
+                    webform_civicrm_save_custom($custom, $result['id'], 'Participant');
+                  }
+                }
+              }
+            }
+            foreach ($remove as $eid => $title) {
+              webform_civicrm_api('participant', 'create', array('status_id' => 4, 'id' => $existing[$eid]));
             }
           }
         }
@@ -941,17 +963,13 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
 
 /**
  * Handle adding/removing multivalued data for a contact/activity/etc.
+ * Currently used only for groups and tags, but written with expansion in mind.
  */
-function webform_civicrm_add_remove($data_type, $entity_type, $node, $id, $add, $fid = 0, $update = FALSE) {
-  $remove = $confirmations_sent = $existing = $params = array();
+function webform_civicrm_add_remove($data_type, $entity_type, $node, $id, $add, $remove = array()) {
+  $confirmations_sent = $existing = $params = array();
   $add = drupal_map_assoc($add);
   static $mailing_lists = array();
-  if (!empty($fid) && $update) {
-    $remove = webform_civicrm_str2array($node->webform['components'][$fid]['extra']['items']);
-    foreach ($add as $i) {
-      unset($remove[$i]);
-    }
-  }
+  
   switch ($data_type) {
     case 'group':
       $api = 'group_contact';
@@ -1031,6 +1049,21 @@ function webform_civicrm_add_remove($data_type, $entity_type, $node, $id, $add, 
     $display_name = webform_civicrm_aval($display_name, "values:$id:display_name", t('Contact'));
     drupal_set_message(t('%contact has been removed from !group.', array('%contact' => $display_name, '!group' => '<em>' . implode('</em> ' . t('and') . ' <em>', $remove) . '</em>')));
   }
+}
+
+
+/**
+ * Fields to remove.
+ */
+function webform_civicrm_remove_fields($node, $fid, $add) {
+  if ($fid) {
+    $remove = webform_civicrm_str2array($node->webform['components'][$fid]['extra']['items']);
+    foreach ($add as $i) {
+      unset($remove[$i]);
+    }
+    return $remove;
+  }
+  return array();
 }
 
 
