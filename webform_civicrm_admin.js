@@ -89,13 +89,15 @@ function web_civi_participant_conditional(fs) {
     var contacts = $('#edit-number-of-contacts').val();
     if (contacts > 1) {
       var types = new Object();
-      for (var i=1; i<=contacts; i++) {
-        var sub_type = $('#edit-civicrm-'+i+'-contact-1-contact-contact-sub-type').val();
-        if (sub_type == 0 || sub_type == 'create_civicrm_webform_element') {
-          sub_type = null;
-        }
-        types[i] = {
-              type: $('#edit-'+i+'-contact-type').val(),
+      for (var c=1; c<=contacts; c++) {
+        var sub_type = [];
+        $('#edit-civicrm-'+c+'-contact-1-contact-contact-sub-type :selected').each(function(i, selected) { 
+          if ($(selected).val() !== 'create_civicrm_webform_element') {
+            sub_type[i] = $(selected).val();
+          }
+        });
+        types[c] = {
+              type: $('#edit-'+c+'-contact-type').val(),
           sub_type: sub_type,
         };
       }
@@ -109,15 +111,15 @@ function web_civi_participant_conditional(fs) {
           var t = webform_civicrm_relationship_data[i];
           if ( (t['type_a'] == contact_a['type'] || !t['type_a'])
             && (t['type_b'] == contact_b['type'] || !t['type_b'])
-            && (t['sub_type_a'] == contact_a['sub_type'] || !t['sub_type_a'])
-            && (t['sub_type_b'] == contact_b['sub_type'] || !t['sub_type_b'])
+            && ($.inArray(t['sub_type_a'], contact_a['sub_type']) > -1 || !t['sub_type_a'])
+            && ($.inArray(t['sub_type_b'], contact_b['sub_type']) > -1 || !t['sub_type_b'])
           ) {
             $(this).append('<option value="'+t['id']+'_a">'+t['label_a_b']+'</option>');
           }
           if ( (t['type_a'] == contact_b['type'] || !t['type_a'])
             && (t['type_b'] == contact_a['type'] || !t['type_b'])
-            && (t['sub_type_a'] == contact_b['sub_type'] || !t['sub_type_a'])
-            && (t['sub_type_b'] == contact_a['sub_type'] || !t['sub_type_b'])
+            && ($.inArray(t['sub_type_a'], contact_b['sub_type']) > -1 || !t['sub_type_a'])
+            && ($.inArray(t['sub_type_b'], contact_a['sub_type']) > -1 || !t['sub_type_b'])
             && (t['name_a_b'] !== t['name_b_a'])
           ) {
             $(this).append('<option value="'+t['id']+'_b">'+t['label_b_a']+'</option>');

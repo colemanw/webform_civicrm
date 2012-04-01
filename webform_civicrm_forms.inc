@@ -827,6 +827,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
             }
             foreach ($remove as $eid => $title) {
               webform_civicrm_api('participant', 'create', array('status_id' => 4, 'id' => $existing[$eid]));
+              drupal_set_message(t('Registration canceled for !event', array('!event' => $title)));
             }
           }
         }
