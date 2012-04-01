@@ -48,21 +48,37 @@ function web_civi_select_reset(op, id) {
 }
 
 function web_civi_participant_conditional(fs) {
-  var splitstr = $(fs + ' .participant_event_id').val().split('-');
   var info = {
     roleid:$(fs + ' .participant_role_id').val(),
-    eventid:splitstr[0],
-    eventtype:splitstr[1]
+    eventid:'0',
+    eventtype:$('#edit-reg-options-event-type').val()
   };
-  if (info['eventid'] === 'create_civicrm_webform_element') {
-    info['eventtype'] = $('#edit-reg-options-event-type').val();
+  var events = [];
+  var i = 0;
+  $(fs + ' .participant_event_id :selected').each(function(a, selected) { 
+    if ($(selected).val() !== 'create_civicrm_webform_element') {
+      events[i++] = $(selected).val();
+    }
+  });
+  for (i in events) {
+    var splitstr = events[i].split('-');
+    if (events.length === 1) {
+      info['eventid'] = splitstr[0];
+    }
+    if (i == 0) {
+      info['eventtype'] = splitstr[1];
+    }
+    else if (info['eventtype'] !== splitstr[1]) {
+      info['eventtype'] = '0';
+    }
   }
+
   $(fs + ' fieldset.extends-condition').each(function(){
     var hide = true;
     classes = $(this).attr('class').split(' ');
     for (cl in classes) {
       var c = classes[cl].split('-');
-      type = c[0];
+      var type = c[0];
       if (type === 'roleid' || type === 'eventtype' || type === 'eventid') {
         for (cid in c) {
           if (c[cid] === info[type]) {
