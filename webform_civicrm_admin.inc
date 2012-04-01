@@ -737,7 +737,7 @@ function webform_civicrm_configure_form_item($fid, $field, $settings) {
       $item['#default_value'] = (array) $item['#default_value'];
       if (isset($settings[$fid]) && !is_array($settings[$fid])
       && isset($settings['data'][$ent][$c][$table][$n][$name])) {
-        $item['#default_value'] += $settings['data'][$ent][$c][$table][$n][$name];
+        $item['#default_value'] += (array) $settings['data'][$ent][$c][$table][$n][$name];
       }
     }
     if ($table == 'address' && $name == 'master_id') {
