@@ -162,17 +162,19 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
     foreach ($data['participant'] as $e => $par) {
       if (!empty($par['participant'])) {
         foreach ($par['participant'] as $n => $p) {
-          if (!empty($p['event_id']) && $p['event_id'] != 'create_civicrm_webform_element') {
-            list($eid) = explode('-', $p['event_id']);
-            if (is_numeric($eid)) {
-              $events[$eid]['ended'] = TRUE;
-              $events[$eid]['title'] = t('this event');
-              $events[$eid]['count'] = webform_civicrm_aval($events, "$eid:count", 0) + 1;
-              $events[$eid]['form'][] = array(
-                'contact' => $e,
-                'num' => $n,
-                'eid' => NULL
-              );
+          if (!empty($p['event_id'])) {
+            // Handle multi-valued event selection
+            foreach ((array) $p['event_id'] as $eid) {
+              if ($eid = (int) $eid) {
+                $events[$eid]['ended'] = TRUE;
+                $events[$eid]['title'] = t('this event');
+                $events[$eid]['count'] = webform_civicrm_aval($events, "$eid:count", 0) + 1;
+                $events[$eid]['form'][] = array(
+                  'contact' => $e,
+                  'num' => $n,
+                  'eid' => NULL
+                );
+              }
             }
           }
         }

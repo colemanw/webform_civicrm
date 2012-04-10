@@ -925,7 +925,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
           // Create fieldsets - for contact and contact-specific event fields only
           if (!empty($vals['create_fieldsets'])
           && $ent != 'activity'
-          && ($ent != 'participant' || webform_civicrm_aval($node->webform_civicrm['data'], 'participant_reg_type') == 'separate')) {
+          && ($ent != 'participant' || webform_civicrm_aval($vals['data'], 'participant_reg_type') == 'separate')) {
             if (!isset($enabled['civicrm_' . $c . '_contact_1_fieldset_fieldset'])) {
               $new_set = array(
                 'nid' => $nid,
@@ -983,11 +983,12 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
  * Called by hook_form_alter() whenever editing a webform component.
  */
 function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
-  // Is this a CiviCRM-enabled webform?
   $node = node_load($form['nid']['#value']);
+  // Is this a CiviCRM-enabled webform?
   if (!empty($node->webform_civicrm)) {
     civicrm_initialize();
     $fid = $form['form_key']['#default_value'];
+    // Is this a civicrm component?
     if (!($pieces = webform_civicrm_explode_key($fid))) {
       return;
     }
