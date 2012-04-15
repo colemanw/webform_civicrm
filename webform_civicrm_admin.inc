@@ -733,7 +733,7 @@ function webform_civicrm_configure_form_item($fid, $field, $settings) {
       $item['#default_value'] = $options[1];
     }
     if (!empty($field['extra']['multiple'])) {
-      $item['#description'] = t('You may choose options here and/or add this element to the webform. If you do both, options selected here will not appear on the form.');
+      $item['#description'] = t('You may set options here and/or add this element to the webform ("user select"). If you do both, options set here will not appear on the form.');
       $item['#default_value'] = (array) $item['#default_value'];
       if (isset($settings[$fid]) && !is_array($settings[$fid])
       && isset($settings['data'][$ent][$c][$table][$n][$name])) {
