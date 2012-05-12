@@ -3,12 +3,7 @@
 /**
  * @file
  * Webform CiviCRM module's common utility functions.
- * The code in this file is cross-compatible with D6/Civi3 and D7/Civi4
- * Drupal-version-specific functions belong in webform_civicrm_dx_functions.inc
  */
-
-// Load drupal-version-specific helper functions
-module_load_include('inc', 'webform_civicrm', 'webform_civicrm_d' . substr(VERSION, 0, 1) . '_functions');
 
 /**
  * Get option values from various civicrm tables
@@ -61,7 +56,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
       require_once 'CRM/Core/BAO/Tag.php';
       // $param is entity type i.e. contact
       return CRM_Core_BAO_Tag::getTags("civicrm_$param", $ret, NULL, '- ');
-    } 
+    }
     elseif ($option_group == 'group' || $option_group == 'mailing_lists') {
       $sql = 'SELECT id AS value, title AS label FROM civicrm_group WHERE is_active = 1 AND is_hidden = 0';
       if ($option_group == 'mailing_lists') {
@@ -71,7 +66,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
     elseif ($option_group == 'languages') {
       require_once 'CRM/Core/PseudoConstant.php';
       return CRM_Core_PseudoConstant::languages();
-    } 
+    }
     elseif ($option_group == 'location_type') {
       $sql = 'SELECT display_name AS label, id AS value FROM civicrm_location_type WHERE is_active = 1 ORDER BY is_default DESC';
     }
@@ -126,7 +121,6 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
   }
   return $cache[$option_group];
 }
-
 
 /**
  * Get options for a specific field
@@ -212,7 +206,6 @@ function webform_civicrm_field_options($field, $context, $data) {
   return $context == 'component_insert' ? webform_civicrm_array2str($ret) : $ret;
 }
 
-
 /**
  * Get contact types and sub-types
  */
@@ -239,7 +232,6 @@ function webform_civicrm_get_contact_types() {
   }
   return array($contact_types, $sub_types);
 }
-
 
 /**
  * Get relationship type data
@@ -269,7 +261,6 @@ function webform_civicrm_get_relationship_types() {
   return $types;
 }
 
-
 /**
  * Get valid relationship types for a given pair of contacts
  */
@@ -293,7 +284,6 @@ function webform_civicrm_get_contact_relationship_types($type_a, $type_b, $sub_t
   }
   return $ret;
 }
-
 
 /**
  * Get custom data for an entity
@@ -343,7 +333,6 @@ function webform_civicrm_get_custom($entity_id, $entity_type = NULL, $normalize 
   return $values;
 }
 
-
 /**
  * Save custom data for an entity
  */
@@ -385,7 +374,6 @@ function webform_civicrm_save_custom($entity, $entity_id, $entity_type = NULL) {
     }
   }
 }
-
 
 /**
  * Get ids or values of enabled CiviCRM fields for a webform.
@@ -430,7 +418,6 @@ function webform_civicrm_state_abbr($input, $ret = 'abbreviation', $country_id =
   $sql .= ' LIMIT 0, 1';
   return CRM_Core_DAO::singleValueQuery($sql, $vars);
 }
-
 
 /**
  * Fetches CiviCRM field data.
@@ -877,7 +864,6 @@ function webform_civicrm_get_fields($var = 'fields') {
   return $$var;
 }
 
-
 /**
  * Lookup a uf ID from contact ID or vice-versa
  * @param $id: uf or contact ID - defaults to current user
@@ -903,7 +889,6 @@ function webform_civicrm_user_cid($id = NULL, $type = 'uf') {
   }
 }
 
-
 /**
  * Explodes form key into an array and verifies that it is in the right format
  */
@@ -914,7 +899,6 @@ function webform_civicrm_explode_key($key) {
   }
   return $pieces;
 }
-
 
 /**
  * Convert a | separated string into an array
@@ -930,7 +914,6 @@ function webform_civicrm_str2array($str) {
   return $ret;
 }
 
-
 /**
  * Convert an array into a | separated string
  */
@@ -941,7 +924,6 @@ function webform_civicrm_array2str($arr) {
   }
   return $str;
 }
-
 
 /**
  * Token replacement for form messages
@@ -963,7 +945,6 @@ function webform_civicrm_replace_tokens($str, $contact) {
   }
   return str_ireplace($tokens, $values, $str);
 }
-
 
 /**
  * Wrapper for all CiviCRM API calls
@@ -995,7 +976,6 @@ function webform_civicrm_api($entity, $operation, $params) {
   return $result;
 }
 
-
 /**
  * Fetch an existing activity for a contact based on activity & case criteria
  * Maybe someday this will be possible through the CiviCRM API
@@ -1019,7 +999,6 @@ function webform_civicrm_activity_find($params) {
   $sql .= ' LIMIT 0, 1';
   return CRM_Core_DAO::singleValueQuery($sql);
 }
-
 
 /**
  * Fetch info and remaining spaces for events
@@ -1051,23 +1030,30 @@ function webform_civicrm_event_info(&$events) {
   }
 }
 
-
 /**
  * Callback to serve AJAX requests.
  */
-function webform_civicrm_js_options($key, $str='') {
+function webform_civicrm_js_options($key, $input = '') {
   // Populate state/prov lists on the fly
   if ($key == 'state_province') {
-    if (!$str || (intval($str) != $str && $str != 'default')) {
-      webform_civicrm_json(array('' => t('- first choose a country -')));
+    if (!$input || (intval($input) != $input && $input != 'default')) {
+      exit(drupal_json_output(array('' => t('- first choose a country -'))));
     }
     civicrm_initialize();
-    webform_civicrm_json(webform_civicrm_get_options('state_province', $str));
-  }
-
-  // Serve AHAH requests for D6
-  if (substr($key, 0, 12) == 'civicrm_ahah' && user_access('access CiviCRM')) {
-    webform_civicrm_ahah_callback($key);
+    exit(drupal_json_output(webform_civicrm_get_options('state_province', $input)));
   }
   return drupal_not_found();
+}
+
+/**
+ * Fetch the path of a file
+ * And format it as a public url that CiviCRM can read
+ */
+function webform_civicrm_filepath($id) {
+  if ($file = file_load($id)) {
+    global $base_url;
+    return str_replace('public://', $base_url . '/' . variable_get('file_public_path', conf_path() . '/files') . '/',
+    // Escape all characters except : and /
+    str_replace(array('%3A', '%2F'), array(':', '/'), rawurlencode($file->uri)));
+  }
 }
