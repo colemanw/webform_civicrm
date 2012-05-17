@@ -242,10 +242,10 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
         $con = $data['contact'][$i];
         if (!empty($con['relationship']) && (($con['contact'][1]['contact_type'] == 'individual' && !empty($id['cid'][$i])) || $i == $c)) {
           foreach ($con['relationship'] as $target => $rel) {
-            if ($rel['relationship_type_id'] == 'ce_b' && !empty($id['cid'][$target])) {
+            if (webform_civicrm_aval($rel, 'relationship_type_id') == 'ce_b' && !empty($id['cid'][$target])) {
               $employee = $id['cid'][$target];
             }
-            elseif ($rel['relationship_type_id'] == 'ce_a' && $target == $c) {
+            elseif (webform_civicrm_aval($rel, 'relationship_type_id') == 'ce_a' && $target == $c) {
               $employee = $id['cid'][$i];
             }
             if ($employee) {
@@ -528,12 +528,13 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
     foreach ($data['contact'] as $c => $contact) {
       if (empty($id['cid'][$c])) {
         // Don't create contact if we don't have a name or email
-        if (empty($contact['contact'][1]['first_name'])
-        && empty($contact['contact'][1]['last_name'])
-        && empty($contact['contact'][1]['organization_name'])
-        && empty($contact['contact'][1]['legal_name'])
-        && empty($contact['contact'][1]['household_name'])
-        && empty($contact['email'][1]['email'])) {
+        $ok = FALSE;
+        foreach (webform_civicrm_required_contact_fields() as $f) {
+          if (!empty($contact[$f['table']][1][$f['name']])) {
+            $ok = TRUE;
+          }
+        }
+        if (!$ok) {
           $id['cid'][$c] = 0;
           continue;
         }

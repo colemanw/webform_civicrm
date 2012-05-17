@@ -83,15 +83,6 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
       }
       $sql .= ' ORDER BY start_date DESC';
     }
-    elseif ($option_group == 'group_contact') {
-      $result = webform_civicrm_api('contact', 'get', array('group' => array($param => 1), 'return.display_name' => 1, 'rowCount' => 100, 'sort' => 'sort_name ASC'));
-      if (!empty($result['values'])) {
-        foreach ($result['values'] as $val) {
-          $ret[$val['contact_id']] = $val['display_name'];
-        }
-      }
-      return $ret;
-    }
     else {
       $sql = 'SELECT value, label FROM civicrm_option_value WHERE is_active <> 0 AND option_group_id = ';
       if (is_numeric($option_group)) {
@@ -164,35 +155,24 @@ function webform_civicrm_field_options($field, $context, $data) {
       require_once 'CRM/Event/PseudoConstant.php';
       $ret = CRM_Event_PseudoConstant::participantStatus(NULL, NULL, 'label');
     }
+    // If this is a contract reference or assignee field, list webform contacts
+    elseif (webform_civicrm_aval($field, 'data_type') === 'ContactReference') {
+      foreach ($data['contact'] as $num => $contact) {
+        $ret['#' . $num] =  t('Contact !num', array('!num' => $num));
+      }
+    }
     elseif (isset($lists[$name])) {
       $param = NULL;
       if ($name === 'event_id') {
         $param = $data['reg_options'];
       }
-      // If this is a contract reference or assignee field, set group id as param
-      if (webform_civicrm_aval($field, 'data_type') === 'ContactReference') {
-        if ($name === 'assignee_contact_id') {
-          $param = webform_civicrm_aval($data, 'activity:1:assignee_group');
-        }
-        else {
-          $param = webform_civicrm_aval($field, 'extra:civicrm_group');
-        }
-        // List webform contacts if no group specified
-        if (!$param) {
-          foreach ($data['contact'] as $num => $contact) {
-            $ret['#' . $num] =  t('Contact !num', array('!num' => $num));
-          }
-        }
-      }
-      if (!$ret) {
-        $ret = webform_civicrm_get_options($lists[$name], $param);
-        // Hack to format money data correctly
-        if (!empty($field['data_type']) && $field['data_type'] === 'Money') {
-          $old = $ret;
-          $ret = array();
-          foreach ($old as $key => $val) {
-            $ret[number_format(str_replace(',', '', $key), 2, '.', '')] = $val;
-          }
+      $ret = webform_civicrm_get_options($lists[$name], $param);
+      // Hack to format money data correctly
+      if (!empty($field['data_type']) && $field['data_type'] === 'Money') {
+        $old = $ret;
+        $ret = array();
+        foreach ($old as $key => $val) {
+          $ret[number_format(str_replace(',', '', $key), 2, '.', '')] = $val;
         }
       }
     }
@@ -446,6 +426,10 @@ function webform_civicrm_get_fields($var = 'fields') {
       'type' => 'select',
       'extra' => array('multiple' => 1),
       'expose_list' => TRUE,
+    );
+    $fields['contact_existing'] = array(
+      'name' => t('Select Existing'),
+      'type' => 'civicrm_contact',
     );
     foreach (array('organization' => t('Organization Name'), 'legal' => t('Legal Name'), 'household' => t('Household Name')) as $key => $label) {
       $fields['contact_' . $key . '_name'] = array(
@@ -734,7 +718,6 @@ function webform_civicrm_get_fields($var = 'fields') {
       'contact_sub_type' => 'contact_sub_type',
       'group' => 'group',
       'tag' => 'tag',
-      'assignee_contact_id' => 'group_contact',
       'status_id' => 'activity_status',
       'event_id' => 'event',
       'role_id' => 'participant_role',
@@ -841,15 +824,8 @@ function webform_civicrm_get_fields($var = 'fields') {
           $lists['custom_' . $dao->id] = 'state_province';
         }
         elseif ($fields[$id]['data_type'] == 'ContactReference') {
-          $lists['custom_' . $dao->id] = 'group_contact';
-          if (!empty($dao->filter) && ($pos = strpos($dao->filter, 'group=')) !== FALSE) {
-            $len = strlen($dao->filter);
-            $pos += 6;
-            $fields[$id]['extra']['civicrm_group'] = '';
-            while ($pos < $len && is_numeric($dao->filter[$pos])) {
-              $fields[$id]['extra']['civicrm_group'] .= $dao->filter[$pos++];
-            }
-          }
+          $fields[$id]['expose_list'] = TRUE;
+          $fields[$id]['empty_option'] = t('- none -');
         }
         elseif ($fields[$id]['type'] == 'select') {
           $lists['custom_' . $dao->id] = 'yes_no';
@@ -887,6 +863,18 @@ function webform_civicrm_user_cid($id = NULL, $type = 'uf') {
     }
     return $type == 'uf' ? $val['contact_id'] : $val['uf_id'];
   }
+}
+
+/**
+ * Fetch contact display name
+ */
+function webform_civicrm_display_name($cid) {
+  if (!$cid) {
+    return '';
+  }
+  civicrm_initialize();
+  $result = webform_civicrm_api('contact', 'get', array('id' => $cid, 'return.display_name' => 1));
+  return webform_civicrm_aval($result, "values:$cid:display_name", '');
 }
 
 /**
@@ -977,6 +965,17 @@ function webform_civicrm_api($entity, $operation, $params) {
 }
 
 /**
+ * At least one of these fields is required to create a contact
+ */
+function webform_civicrm_required_contact_fields() {
+  $ret = array(array('table' => 'email', 'name' => 'email'));
+  foreach (array('first', 'nick', 'last', 'organization', 'household', 'legal') as $name) {
+    $ret[] = array('table' => 'contact', 'name' => $name . '_name');
+  }
+  return $ret;
+}
+
+/**
  * Fetch an existing activity for a contact based on activity & case criteria
  * Maybe someday this will be possible through the CiviCRM API
  */
@@ -1028,21 +1027,6 @@ function webform_civicrm_event_info(&$events) {
       }
     }
   }
-}
-
-/**
- * Callback to serve AJAX requests.
- */
-function webform_civicrm_js_options($key, $input = '') {
-  // Populate state/prov lists on the fly
-  if ($key == 'state_province') {
-    if (!$input || (intval($input) != $input && $input != 'default')) {
-      exit(drupal_json_output(array('' => t('- first choose a country -'))));
-    }
-    civicrm_initialize();
-    exit(drupal_json_output(webform_civicrm_get_options('state_province', $input)));
-  }
-  return drupal_not_found();
 }
 
 /**

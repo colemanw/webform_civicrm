@@ -9,9 +9,8 @@ module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
 
 /**
  * Form to configure CiviCRM options for a Webform
- * Called indirectly from hook_menu() for D7-D6 compatibility
  */
-function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
+function webform_civicrm_configure_form($form, &$form_state, $node) {
   $form = array();
   $form_state['storage']['nid'] = $node->nid;
 
@@ -25,7 +24,7 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
     return $form;
   }
   $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/' . 'webform_civicrm_admin.js';
-  drupal_add_css(drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_admin.css');
+  $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_admin.css';
   civicrm_initialize();
   require_once 'CRM/Core/BAO/Setting.php';
   $config = CRM_Core_Config::singleton();
@@ -349,20 +348,12 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
       '#default_value' => array(),
       '#required' => TRUE,
     );
-    $form['act']['case']['activity_fields']['activity_assignee_group'] = array(
-      '#title' => t('Choose Assignee From'),
-      '#type' => 'select',
-      '#options' => array(t('- Webform Contacts -')) + webform_civicrm_get_options('group'),
-      '#default_value' => webform_civicrm_aval($data, 'activity:1:assignee_group'),
-    );
-    webform_civicrm_ajax_form_item($form, 'act:case:activity_fields', 'activity_assignee_group', 'assignee');
     // Activity assignee
     $fid = 'civicrm_1_activity_1_activity_assignee_contact_id';
-    $form['act']['case']['activity_fields']['assignee'][$fid] = webform_civicrm_configure_form_item($fid, $fields['activity_assignee_contact_id'], $settings);
+    $form['act']['case']['activity_fields'][$fid] = webform_civicrm_configure_form_item($fid, $fields['activity_assignee_contact_id'], $settings);
     if (CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'activity_assignee_notification')) {
-      $form['act']['case']['activity_fields']['assignee'][$fid]['#description'] = t('A copy of this activity will be emailed to the assignee.');
+      $form['act']['case']['activity_fields'][$fid]['#description'] = t('A copy of this activity will be emailed to the assignee.');
     }
-    $form['act']['case']['activity_fields']['assignee']['#suffix'] .= '<div class="clear-block"></div>';
     $form['act']['case']['activity_fields']['existing_activity_status'] = array(
       '#type' => 'select',
       '#title' => t('Update Existing Activity'),
@@ -871,14 +862,15 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
             drupal_set_message(t('Re-enabled field: %name', array('%name' => $disabled[$key]['name'])));
             continue;
           }
-          // Add new component
+          // Prepare new component
           $field = $fields[$table . '_' . $name];
           $field['nid'] = $nid;
           $field['form_key'] = $key;
           $field['weight'] = $i;
+          // Replace the # token with set number (or append to the end if no token)
           if ($n > 1 || $table == 'relationship') {
             if (strpos($field['name'], '#') === FALSE) {
-              $field['name'] .= ' ' . $n;
+              $field['name'] .= " $n";
             }
             else {
               $field['name'] = str_replace('#', $n, $field['name']);
@@ -890,17 +882,20 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
           if ($name == 'contact_sub_type' || $name == 'existing') {
             $field['name'] .= ' ' . $contact_types[$vals['data']['contact'][$c]['contact'][1]['contact_type']];
           }
-
+          // Defaults for existing contact field
+          if ($name == 'existing') {
+            $field['extra']['allow_create'] = webform_civicrm_name_field_exists($vals, $c);
+          }
+          // A width of 20 is more sensible than Drupal's default of 60
           if (($field['type'] == 'textfield' || $field['type'] == 'email') && empty($field['extra']['width'])) {
             $field['extra']['width'] = 20;
           }
-
+          // Default checksum lifespan
           if ($name == 'cs') {
             require_once 'CRM/Core/BAO/Setting.php';
             $field['value'] = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME,
               'checksum_timeout', NULL, 7);
           }
-
           // Retrieve option list
           if (isset($lists[$name])) {
             $field['extra']['items'] = webform_civicrm_field_options($field, 'component_insert', $vals['data']);
@@ -937,8 +932,8 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
             }
             $field['pid'] = $enabled['civicrm_' . $c . '_contact_1_fieldset_fieldset'];
           }
-          // Save webform component
-          webform_component_defaults($field);
+          // Merge defaults and insert webform component
+          webform_component_defaults($field);dsm($field);
           $fid = webform_component_insert($field);
           ++$created;
         }
@@ -995,7 +990,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
     // Is this component a CiviCRM field?
     if (($field = webform_civicrm_aval($fields, $table . '_' . $key)) ||
       ($lobo == 'civicrm' && $table == 'fieldset')) {
-      drupal_add_css(drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_admin.css');
+      $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_admin.css';
       $element = $node->webform['components'][$form['cid']['#value']];
 
       if (arg(5) != 'clone' || $key == 'fieldset') {

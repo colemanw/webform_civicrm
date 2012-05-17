@@ -1,8 +1,11 @@
-(function ($) {
 
-function webform_civicrm_parse_name(name) {
+function webformCivicrmExistingSelect(num, mode, cid) {
+  alert("Selected " + cid + " by " + num + " so " + mode);
+}
+
+function webformCivicrmParseName(name) {
   var pos = name.lastIndexOf('[civicrm_');
-  name = name.slice(1+pos);
+  name = name.slice(1 + pos);
   pos = name.indexOf(']');
   if (pos !== -1) {
     name = name.slice(0, pos);
@@ -10,24 +13,26 @@ function webform_civicrm_parse_name(name) {
   return name;
 }
 
-function webform_civicrm_populate_states(stateSelect, countryId) {
+(function ($) {
+
+function webformCivicrmPopulateStates(stateSelect, countryId) {
   $(stateSelect).attr('disabled', 'disabled');
   if (stateProvinceCache[countryId]) {
-    webform_civicrm_fill_options(stateSelect, stateProvinceCache[countryId]);
+    webformCivicrmFillOptions(stateSelect, stateProvinceCache[countryId]);
   }
   else {
     $.ajax({
       url: '/webform-civicrm/js/state_province/'+countryId,
       dataType: 'json',
       success: function(data) {
-        webform_civicrm_fill_options(stateSelect, data);
+        webformCivicrmFillOptions(stateSelect, data);
         stateProvinceCache[countryId] = data;
       }
     });
   }
 }
 
-function webform_civicrm_fill_options(element, data) {
+function webformCivicrmFillOptions(element, data) {
   var value = $(element).val();
   $(element).find('option').remove();
   var dataEmpty = true;
@@ -66,8 +71,8 @@ function webform_civicrm_fill_options(element, data) {
   $(element).removeAttr('disabled');
 }
 
-function webform_civicrm_shared_address(item, action, speed) {
-  var name = webform_civicrm_parse_name($(item).attr('name'));
+function webformCivicrmSharedAddress(item, action, speed) {
+  var name = webformCivicrmParseName($(item).attr('name'));
   fields = $(item).parents('form.webform-client-form').find('[name*="['+(name.replace('master_id', ''))+'"]').not(item).not('[name*=location_type_id]').not('[type="hidden"]');
   if (action === 'hide') {
     $(fields).not(':hidden').parent().hide(speed);
@@ -84,7 +89,7 @@ $(document).ready(function(){
   $('form.webform-client-form').find('input[name*="_address_state_province_id"][name*="[civicrm_"][type="text"]').each(function(){
     var id = $(this).attr('id');
     var name = $(this).attr('name');
-    var key = webform_civicrm_parse_name(name);
+    var key = webformCivicrmParseName(name);
     var value = $(this).val();
     var countrySelect = $(this).parents('form.webform-client-form').find('[name*="['+(key.replace('state_province','country' ))+']"]');
     var classes = $(this).attr('class').replace('text', 'select');
@@ -102,36 +107,35 @@ $(document).ready(function(){
     if (!countryVal) {
       countryVal = '';
     }
-    webform_civicrm_populate_states($('#'+id), countryVal);
+    webformCivicrmPopulateStates($('#'+id), countryVal);
   });
 
   // Add handler to country field to trigger ajax refresh of corresponding state/prov
   $('form.webform-client-form [name*="_address_country_id]"][name*="[civicrm_"]').change(function(){
-    var name = webform_civicrm_parse_name($(this).attr('name'));
+    var name = webformCivicrmParseName($(this).attr('name'));
     var countryId = $(this).val();
     var stateSelect = $(this).parents('form.webform-client-form').find('select[name*="['+(name.replace('country', 'state_province'))+']"]');
     if (stateSelect.length) {
       $(stateSelect).val('');
-      webform_civicrm_populate_states(stateSelect, countryId);
+      webformCivicrmPopulateStates(stateSelect, countryId);
     }
   });
 
   // Show/hide address fields when sharing an address
   $('form.webform-client-form [name*="_address_master_id"][name*="[civicrm_"]').change(function(){
     if ($(this).val() === '' || ($(this).is(':checkbox:not(:checked)'))) {
-      webform_civicrm_shared_address(this, 'show', 500);
+      webformCivicrmSharedAddress(this, 'show', 500);
     }
     else {
-      webform_civicrm_shared_address(this, 'hide', 500);
+      webformCivicrmSharedAddress(this, 'hide', 500);
     }
   });
   // Hide shared address fields on form load
   $('form.webform-client-form select[name*="_address_master_id"][name*="[civicrm_"], form.webform-client-form [name*="_address_master_id"][name*="[civicrm_"]:checked').each(function() {
     if ($(this).val() !== '') {
-      webform_civicrm_shared_address(this, 'hide');
+      webformCivicrmSharedAddress(this, 'hide');
     }
   });
 
 });
-
 })(jQuery);

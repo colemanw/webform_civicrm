@@ -17,16 +17,13 @@ form #web-civi-help {
   float:right;
 }
 
-form .form-item-activity-targets div.form-item.form-type-checkbox,
-form div.form-item-activity-assignee-group,
-#civicrm-ajax-act-case-activity-fields-assignee {
+form .form-item-activity-targets div.form-item.form-type-checkbox {
   float:left;
   margin-right:1em;
 }
 
 .web-civi-checkbox-set + div,
-form .form-item-activity-targets + div,
-#civicrm-ajax-act-case-activity-fields-assignee + div {
+form .form-item-activity-targets + div{
   clear:both;
 }
 
