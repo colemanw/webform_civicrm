@@ -3,6 +3,8 @@
 /**
  * @file
  * Webform CiviCRM module's front-end form functions.
+ * The functions in this file are all cross-compatible with D6/Civi3 and D7/Civi4
+ * Drupal-version-specific functions belong in webform_civicrm_dx_functions.inc
  */
 
 module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
@@ -15,7 +17,7 @@ module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
  * Set webform default values.
  */
 function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
-  $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/' . 'webform_civicrm_webforms.js';
+  webform_civicrm_add_js('webform_civicrm_webforms.js');
   $form['#validate'][] = 'webform_civicrm_form_validate';
   array_unshift($form['#submit'], 'webform_civicrm_storage');
 
@@ -40,7 +42,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
         var webformSelectNa = '" . t('- N/A -') . "';
         var webformSelectNone = '" . t('- None -') . "';
         var webformSelectSelect = '" . t('- Select -') . "';";
-      drupal_add_js($js, array('type' => 'inline'));
+      webform_civicrm_add_js($js, 'inline');
       break;
     }
   }
@@ -199,18 +201,18 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       webform_civicrm_event_info($events);
       foreach ($events as $eid => $event) {
         if ($event['ended']) {
-          if (!empty($reg['show_remaining']) && empty($form_state['input']) && empty($form_state['storage'])) {
+          if (!empty($reg['show_remaining']) && empty($form_state[WEBFORM_CIVICRM_FAPI_INPUT]) && empty($form_state['storage'])) {
             drupal_set_message(t('Sorry, %event has ended.', array('%event' => $event['title'])), 'warning', FALSE);
           }
         }
         elseif ($event['full']) {
-          if (!empty($reg['show_remaining']) && empty($form_state['input']) && empty($form_state['storage'])) {
+          if (!empty($reg['show_remaining']) && empty($form_state[WEBFORM_CIVICRM_FAPI_INPUT]) && empty($form_state['storage'])) {
             drupal_set_message('<em>' . $event['title'] . '</em>: ' . $event['full_message'], 'warning', FALSE);
           }
         }
         else {
           $reg['block_form'] = FALSE;
-          if ($event['max_participants'] && empty($form_state['input']) && empty($form_state['storage'])
+          if ($event['max_participants'] && empty($form_state[WEBFORM_CIVICRM_FAPI_INPUT]) && empty($form_state['storage'])
           && ($reg['show_remaining'] == 'always' || intval($reg['show_remaining']) >= $event['remaining'])) {
             drupal_set_message(format_plural($event['remaining'],
               '%event has 1 remaining space.',
@@ -242,10 +244,10 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
         $con = $data['contact'][$i];
         if (!empty($con['relationship']) && (($con['contact'][1]['contact_type'] == 'individual' && !empty($id['cid'][$i])) || $i == $c)) {
           foreach ($con['relationship'] as $target => $rel) {
-            if ($rel['relationship_type_id'] == 'ce_b' && !empty($id['cid'][$target])) {
+            if (webform_civicrm_aval($rel, 'relationship_type_id') == 'ce_b' && !empty($id['cid'][$target])) {
               $employee = $id['cid'][$target];
             }
-            elseif ($rel['relationship_type_id'] == 'ce_a' && $target == $c) {
+            elseif (webform_civicrm_aval($rel, 'relationship_type_id') == 'ce_a' && $target == $c) {
               $employee = $id['cid'][$i];
             }
             if ($employee) {
@@ -366,7 +368,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
     if ($settings['prefix_known']) {
       $form['#prefix'] = webform_civicrm_aval($form, '#prefix', '') . '<div class="webform-civicrm-prefix contact-known">' . nl2br(webform_civicrm_replace_tokens($settings['prefix_known'], $info['contact'][1]['contact'][1])) . '</div>';
     }
-    if ($settings['message'] && empty($form_state['input']) && empty($form_state['storage'])) {
+    if ($settings['message'] && empty($form_state[WEBFORM_CIVICRM_FAPI_INPUT]) && empty($form_state['storage'])) {
       webform_civicrm_set_message($settings['message'], $info['contact'][1]['contact'][1]);
     }
   }
@@ -970,7 +972,7 @@ function webform_civicrm_add_remove($data_type, $entity_type, $node, $id, $add, 
   $confirmations_sent = $existing = $params = array();
   $add = drupal_map_assoc($add);
   static $mailing_lists = array();
-
+  
   switch ($data_type) {
     case 'group':
       $api = 'group_contact';
