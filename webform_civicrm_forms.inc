@@ -244,10 +244,10 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
         $con = $data['contact'][$i];
         if (!empty($con['relationship']) && (($con['contact'][1]['contact_type'] == 'individual' && !empty($id['cid'][$i])) || $i == $c)) {
           foreach ($con['relationship'] as $target => $rel) {
-            if ($rel['relationship_type_id'] == 'ce_b' && !empty($id['cid'][$target])) {
+            if (webform_civicrm_aval($rel, 'relationship_type_id') == 'ce_b' && !empty($id['cid'][$target])) {
               $employee = $id['cid'][$target];
             }
-            elseif ($rel['relationship_type_id'] == 'ce_a' && $target == $c) {
+            elseif (webform_civicrm_aval($rel, 'relationship_type_id') == 'ce_a' && $target == $c) {
               $employee = $id['cid'][$i];
             }
             if ($employee) {
