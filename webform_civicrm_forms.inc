@@ -528,7 +528,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
     }
     // Hack for activity assignee contactRef set in back-end
     if ($val = webform_civicrm_aval($data, 'activity:1:activity:1:assignee_contact_id') && $val[0] === '#') {
-      $contact_ref['civicrm_1_activity_1_activity_target_contact_id'] = substr($val, 1);
+      $contact_ref['civicrm_1_activity_1_activity_assignee_contact_id'] = substr($val, 1);
     }
     // Create/update contacts
     foreach ($data['contact'] as $c => $contact) {
