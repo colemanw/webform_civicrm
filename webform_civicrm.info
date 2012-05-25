@@ -1,5 +1,5 @@
 name = Webform CiviCRM Integration
-description = Links Webform submissions with CiviCRM contacts and data.
+description = Links Webform submissions with your CiviCRM database.
 core = 7.x
 package = CiviCRM
 dependencies[] = civicrm

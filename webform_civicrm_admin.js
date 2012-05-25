@@ -1,4 +1,4 @@
-function web_civi_master_id(n, c) {
+function webformCivicrmMasterId(n, c) {
   id = '#edit-civicrm-'+n+'-contact-'+c+'-address-master-id';
 
   switch (jQuery(id).val()) {
@@ -13,7 +13,7 @@ function web_civi_master_id(n, c) {
   }
 }
 
-function web_civi_select_reset(op, id) {
+function webformCivicrmSelectReset(op, id) {
   switch (op) {
     case 'all':
       jQuery(id).find('input:checkbox').attr('checked', 'checked');
@@ -48,7 +48,7 @@ function web_civi_select_reset(op, id) {
   }
 }
 
-function web_civi_participant_conditional(fs) {
+function webformCivicrmParticipantConditional(fs) {
   var info = {
     roleid:jQuery(fs + ' .participant_role_id').val(),
     eventid:'0',
@@ -74,7 +74,7 @@ function web_civi_participant_conditional(fs) {
     }
   }
 
-  jQuery(fs + ' fieldset.extends-condition').each(function(){
+  jQuery(fs + ' fieldset.extends-condition').each(function() {
     var hide = true;
     classes = jQuery(this).attr('class').split(' ');
     for (cl in classes) {
@@ -117,7 +117,7 @@ function web_civi_participant_conditional(fs) {
           sub_type: sub_type,
         };
       }
-      $('select[id$=relationship-relationship-type-id]').each(function(){
+      $('select[id$=relationship-relationship-type-id]').each(function() {
         var selected_option = $(this).val();
         var id = $(this).attr('id').split('-');
         var contact_a = types[id[2]];
@@ -151,53 +151,118 @@ function web_civi_participant_conditional(fs) {
     }
   }
 
-  function webform_civicrm_contact_match_checkbox(){
+  function webformCivicrmContactMatchCheckbox() {
     if($('#edit-1-contact-type').val() == 'individual') {
       $('#civi-contact-match-on').show();
       $('#civi-contact-match-off').hide();
-      $('#edit-contact-matching').removeAttr('disabled');
     }
     else {
       $('#civi-contact-match-on').hide();
       $('#civi-contact-match-off').show();
-      $('#edit-contact-matching').attr('disabled', 'disabled');
     }
   }
+  
+  function webformCivicrmCheckLength(str) {
+    str = Drupal.checkPlain(str);
+    if (str.length > 45) {
+      str = str.substr(0, 43) + '...';
+    }
+    return str;
+  }
+  
+  /**
+   * Summary for vertical tabs.
+   */
+  Drupal.behaviors.webform_civicrmFieldsetSummaries = {
+    attach: function (context) {
+      $('fieldset[id^="edit-contact-"]', context).drupalSetSummary(function (context) {
+        var label = $('select[name$="_contact_type"] option:selected', context).text();
+        if ($('select[name$="_contact_sub_type[]"]', context).val()) {
+          var first = true;
+          $('select[name$="_contact_sub_type[]"] option:selected', context).each(function() {
+            label += (first ? ' (' : ', ') + $.trim($(this).text());
+            first = false;
+          });
+          label += ')';
+        }
+        return label;
+      });
+      $('fieldset#edit-st-message', context).drupalSetSummary(function (context) {
+        if ($('[name="toggle_message"]', context).attr('checked')) {
+          return webformCivicrmCheckLength($('#edit-message', context).val());
+        }
+        else {
+          return Drupal.t('- None -');
+        }
+      });
+      $('fieldset#edit-prefix', context).drupalSetSummary(function (context) {
+        var label = $('[name="prefix_known"]', context).val();
+        if (!(label.length > 0)) {
+          label = $('[name="prefix_unknown"]', context).val();
+        }
+        if (label.length > 0) {
+          return webformCivicrmCheckLength(label);
+        }
+        else {
+          return Drupal.t('- None -');
+        }
+      });
+      $('fieldset#edit-event', context).drupalSetSummary(function (context) {
+        return $('select[name="participant_reg_type"] option:selected', context).text();
+      });
+      $('fieldset#edit-act', context).drupalSetSummary(function (context) {
+        var label = $('select[name="activity_type_id"] option:selected', context).text();
+        if ($('select[name="case_type_id"] option:selected', context).val() > 0) {
+          label = $('select[name="case_type_id"] option:selected', context).text() + ' ' + label;
+        }
+        return label;
+      });
+      $('fieldset#edit-options', context).drupalSetSummary(function (context) {
+        var label = '';
+        $(':checked', context).each(function() {
+          label = (label ? label + ', ' : '') + $.trim($(this).siblings('label').text());
+        });
+        return label;
+      });
+    }
+  };
 
-  $(document).ready( function(){
+  $(document).ready( function() {
 
-    webform_civicrm_contact_match_checkbox();
+    webformCivicrmContactMatchCheckbox();
 
-    $('#edit-nid').change(function(){
-      if( $(this).is(':checked') ){
+    $('#edit-nid').change(function() {
+      if ($(this).is(':checked')) {
         $('#webform-civicrm-configure-form .vertical-tabs').removeAttr('style');
         $('#webform-civicrm-configure-form .vertical-tabs-panes').removeClass('hidden');
-      }else{
+      }
+      else {
         $('#webform-civicrm-configure-form .vertical-tabs').css('opacity', '0.4');
         $('#webform-civicrm-configure-form .vertical-tabs-panes').addClass('hidden');
       }
     }).change();
 
-    $('#edit-toggle-message').change(function(){
-      if( $(this).is(':checked')){
+    $('#edit-toggle-message').change(function() {
+      if($(this).is(':checked')) {
         $('#edit-message').removeAttr('disabled');
-      }else{
+      }
+      else {
         $('#edit-message').attr('disabled','disabled');
       }
     }).change();
 
-    $('select[id*=contact-type], select[id*=contact-sub-type]').change(function(){
+    $('select[id*=contact-type], select[id*=contact-sub-type]').change(function() {
       webform_civicrm_relationship_options();
     });
 
     $('select[id$=address-master-id]').change();
 
-    $('#edit-number-of-contacts').change(function(){
+    $('#edit-number-of-contacts').change(function() {
       $('#webform-civicrm-configure-form')[0].submit();
     });
 
-    $('#edit-1-contact-type').change(function(){
-      webform_civicrm_contact_match_checkbox();
+    $('#edit-1-contact-type').change(function() {
+      webformCivicrmContactMatchCheckbox();
     });
   });
 })(jQuery);
