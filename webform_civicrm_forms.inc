@@ -15,7 +15,7 @@ module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
  * Set webform default values.
  */
 function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
-  $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_webforms.js';
+  $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_forms.js';
   $form['#validate'][] = 'webform_civicrm_form_validate';
   array_unshift($form['#submit'], 'webform_civicrm_storage');
   civicrm_initialize();
@@ -34,10 +34,8 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
         var stateProvinceCache = {
           'default':stateProvinceDefault,
           '$dc':stateProvinceDefault,
-          '':{'':'" . t('- first choose a country -') . "'}};
-        var webformSelectNa = '" . t('- N/A -') . "';
-        var webformSelectNone = '" . t('- None -') . "';
-        var webformSelectSelect = '" . t('- Select -') . "';";
+          '':{'':'" . t('- first choose a country -') . "'}
+        };";
       $form['#attached']['js'][$js] = array('type' => 'inline');
       break;
     }
@@ -375,7 +373,7 @@ function webform_civicrm_fill_values(&$elements, $data, $fields, $submitted) {
     if ($pieces = webform_civicrm_explode_key($eid)) {
       list( , $c, $ent, $n, $table, $name) = $pieces;
       if ($field = webform_civicrm_aval($fields, $table . '_' . $name)) {
-        $element['#attributes']['class'][] = 'civicrm-processed';
+        $element['#attributes']['class'][] = 'civicrm-enabled';
         if (!empty($field['data_type'])) {
           $dt = $element['#civicrm_data_type'] = $field['data_type'];
           // Add CiviCRM JS to link fields
@@ -703,7 +701,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
           }
         }
       }
-      // Process Relationships
+      // Process relationships
       if (!empty($contact['relationship'])) {
         foreach ($contact['relationship'] as $i => $params) {
           if (!empty($params['relationship_type_id']) && !empty($id['cid'][$i])) {

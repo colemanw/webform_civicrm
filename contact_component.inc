@@ -80,7 +80,7 @@ function _webform_edit_civicrm_contact($component) {
     }';
     $js = '
     jQuery(document).ready(function() {
-      var prep = webformCivicrmExistingAdminInit(' . $callback_path . ');
+      var prep = wfCiviContact.init(' . $callback_path . ');
       jQuery("#default-contact-id").tokenInput(' . $callback_path . ', ' . $settings . ');
     });';
     $form['#attached']['js'][$js] = array('type' => 'inline');
@@ -161,7 +161,7 @@ function _webform_edit_civicrm_contact($component) {
     '#parents' => array('extra', 'default'),
   );
   if ($c == 1 && $contact_type == 'individual') {
-    $form['defaults']['default']['#options']['current_user'] = t('Current User');
+    $form['defaults']['default']['#options']['user'] = t('Current User');
   }
   elseif ($c > 1) {
     $form['defaults']['default']['#options']['relationship'] = t('Relationship to Contact 1');
@@ -250,7 +250,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
     );
   }
   list(, $c,) = explode('_', $component['form_key'], 3);
-  $selector = '\'#webform-client-form-' . $component['nid'] . ' :text.civicrm-processed[id$="' . str_replace('_', '-', $component['form_key']) . '"]\'';
+  $selector = '\'#webform-client-form-' . $component['nid'] . ' :text.civicrm-enabled[id$="' . str_replace('_', '-', $component['form_key']) . '"]\'';
   $callback_path = '"' . url('webform-civicrm/js/' . $node->nid . '-' . $component['cid'], array('alias' => TRUE)) . '"';
   if ($component['extra']['widget'] == 'autocomplete') {
     $element['#type'] = 'textfield';
@@ -264,17 +264,19 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
         noResultsText: "' . $component['extra']['none_prompt'] . '",
         searchingText: "' . t('Searching...') . '",
         tokenLimit: 1,
-        onAdd: function(item) {webformCivicrmExistingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, item.id);},
-        onDelete: function(item) {webformCivicrmExistingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, "");},
+        onAdd: function(item) {wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, item.id);},
+        onDelete: function(item) {wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, "");},
         prePopulate: prep
       }';
       $js = '
-      jQuery(document).ready(function() {
-        var toHide = ' . json_encode(array_values($component['extra']['hide_fields'])) . ';
-        var selector = ' . $selector . ';
-        var prep = webformCivicrmExistingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, selector);
-        jQuery(selector).tokenInput(' . $callback_path . ', ' . $settings . ');
-      });';
+      (function ($) {
+        $(document).ready(function() {
+          var toHide = ' . json_encode(array_values($component['extra']['hide_fields'])) . ';
+          var selector = ' . $selector . ';
+          var prep = wfCivi.existingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, selector);
+          jQuery(selector).tokenInput(' . $callback_path . ', ' . $settings . ');
+        });
+      })(jQuery);';
       $element['#attached']['js'][$js] = array('type' => 'inline');
     }
   }
@@ -284,13 +286,15 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
     if ($node) {
       $element['#options'] = webform_civicrm_existing_contact_search($node, $component, $component['extra']['filters']);
       $js = '
-        jQuery(document).ready(function() {
+      (function ($) {
+        $(document).ready(function() {
           var toHide = ' . json_encode(array_values($component['extra']['hide_fields'])) . ';'
           . $selector . '.change(function() {
-            webformCivicrmExistingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, jQuery(this).val());
+            wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, $(this).val());
           });
-          webformCivicrmExistingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide);
-        });';
+          wfCivi.existingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide);
+        });
+      })(jQuery);';
       $element['#attached']['js'][$js] = array('type' => 'inline');
     }
   }
@@ -471,20 +475,6 @@ function webform_civicrm_js_options($key, $input = '') {
     exit(drupal_json_output($data));
   }
   return drupal_access_denied();
-}
-
-/**
- * Check if a name or email field exists for this contact.
- * This determines whether a new contact can be created on the webform.
- */
-function webform_civicrm_name_field_exists($vals, $c) {
-  foreach (webform_civicrm_required_contact_fields() as $f) {
-    $fid = 'civicrm_' . $c . '_contact_1_' . $f['table'] . '_' . $f['name'];
-    if (!empty($vals[$fid])) {
-      return 1;
-    }
-  }
-  return 0;
 }
 
 /**

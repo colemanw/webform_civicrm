@@ -124,7 +124,7 @@ function webform_civicrm_field_options($field, $context, $data) {
   $lists = webform_civicrm_get_fields('lists');
   $fields = webform_civicrm_get_fields();
   if ($pieces = webform_civicrm_explode_key($field['form_key'])) {
-    list($lobo, $c, $ent, $n, $table, $name) = $pieces;
+    list( , $c, $ent, $n, $table, $name) = $pieces;
     // Ensure we have complete info for this field
     $field += $fields[$table . '_' . $name];
     if ($name === 'contact_sub_type') {
@@ -141,9 +141,10 @@ function webform_civicrm_field_options($field, $context, $data) {
         3 => t('Both contacts may view and edit each other'),
       );
     }
-    elseif ($name === 'master_id') {
+    // If this is a contract reference or shared address field, list webform contacts
+    elseif ($name === 'master_id' || webform_civicrm_aval($field, 'data_type') === 'ContactReference') {
       foreach ($data['contact'] as $num => $contact) {
-        if ($num != $c) {
+        if ($num != $c || $name != 'master_id') {
           $ret[$num] =  t('Contact !num', array('!num' => $num));
         }
       }
@@ -154,12 +155,6 @@ function webform_civicrm_field_options($field, $context, $data) {
     elseif ($name === 'status_id' && $table === 'participant') {
       require_once 'CRM/Event/PseudoConstant.php';
       $ret = CRM_Event_PseudoConstant::participantStatus(NULL, NULL, 'label');
-    }
-    // If this is a contract reference or assignee field, list webform contacts
-    elseif (webform_civicrm_aval($field, 'data_type') === 'ContactReference') {
-      foreach ($data['contact'] as $num => $contact) {
-        $ret['#' . $num] =  t('Contact !num', array('!num' => $num));
-      }
     }
     elseif (isset($lists[$name])) {
       $param = NULL;
@@ -357,8 +352,8 @@ function webform_civicrm_save_custom($entity, $entity_id, $entity_type = NULL) {
 
 /**
  * Get ids or values of enabled CiviCRM fields for a webform.
- * @Param $node - node object
- * @Param $submission - if supplied, will match field keys with submitted values
+ * @Param $node: node object
+ * @Param $submission: if supplied, will match field keys with submitted values
  */
 function webform_civicrm_enabled_fields($node, $submission = NULL) {
   $enabled = array();
@@ -371,7 +366,7 @@ function webform_civicrm_enabled_fields($node, $submission = NULL) {
         if ((isset($fields[$id]) || $id == 'fieldset_fieldset')
         && $lobo == 'civicrm' && is_numeric($i) && is_numeric($n)) {
           if ($submission) {
-            $enabled[$c['form_key']] = webform_civicrm_aval($submission, $c['cid']);
+            $enabled[$c['form_key']] = webform_civicrm_aval($submission, $c['cid'], TRUE);
           }
           else {
             $enabled[$c['form_key']] = $c['cid'];
@@ -539,7 +534,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'type' => 'select',
       'expose_list' => TRUE,
       'extra' => array('description' => t('Will overwrite address fields with those of the other contact.')),
-      'empty_option' => t('- do not share -'),
+      'empty_option' => t('- Do Not Share -'),
     );
     $fields['phone_phone'] = array(
       'name' => t('Phone Number'),
@@ -611,7 +606,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Assign Activity to'),
       'type' => 'select',
       'expose_list' => TRUE,
-      'empty_option' => t('- no one -'),
+      'empty_option' => t('- No One -'),
       'data_type' => 'ContactReference',
     );
     if (in_array('CiviCampaign', $components)) {
@@ -619,14 +614,14 @@ function webform_civicrm_get_fields($var = 'fields') {
         'name' => t('Campaign'),
         'type' => 'select',
         'expose_list' => TRUE,
-        'empty_option' => t('- none -'),
+        'empty_option' => t('- None -'),
       );
     }
     $fields['relationship_relationship_type_id'] = array(
       'name' => t('Relationship to Contact #'),
       'type' => 'select',
       'expose_list' => TRUE,
-      'empty_option' => t('- no relationship -'),
+      'empty_option' => t('- No Relationship -'),
     );
     $fields['relationship_is_active'] = array(
       'name' => t('Relationship to Contact # Is Active'),
@@ -638,7 +633,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Relationship to Contact # Permission'),
       'type' => 'select',
       'expose_list' => TRUE,
-      'empty_option' => t('- no permissions -'),
+      'empty_option' => t('- No Permissions -'),
     );
     $fields['relationship_start_date'] = array(
       'name' => t('Relationship to Contact # Start Date'),
@@ -680,7 +675,7 @@ function webform_civicrm_get_fields($var = 'fields') {
           'name' => t('Campaign'),
           'type' => 'select',
           'expose_list' => TRUE,
-          'empty_option' => t('- none -'),
+          'empty_option' => t('- None -'),
         );
       }
     }
@@ -835,7 +830,7 @@ function webform_civicrm_get_fields($var = 'fields') {
         }
         elseif ($fields[$id]['data_type'] == 'ContactReference') {
           $fields[$id]['expose_list'] = TRUE;
-          $fields[$id]['empty_option'] = t('- none -');
+          $fields[$id]['empty_option'] = t('- None -');
         }
         elseif ($fields[$id]['type'] == 'select') {
           $lists['custom_' . $dao->id] = 'yes_no';
@@ -1024,6 +1019,20 @@ function webform_civicrm_event_info(&$events) {
       }
     }
   }
+}
+
+/**
+ * Check if a name or email field exists for this contact.
+ * This determines whether a new contact can be created on the webform.
+ */
+function webform_civicrm_name_field_exists($vals, $c) {
+  foreach (webform_civicrm_required_contact_fields() as $f) {
+    $fid = 'civicrm_' . $c . '_contact_1_' . $f['table'] . '_' . $f['name'];
+    if (!empty($vals[$fid])) {
+      return 1;
+    }
+  }
+  return 0;
 }
 
 /**
