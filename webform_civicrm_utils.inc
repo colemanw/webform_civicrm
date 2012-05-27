@@ -357,7 +357,7 @@ function webform_civicrm_save_custom($entity, $entity_id, $entity_type = NULL) {
  */
 function webform_civicrm_enabled_fields($node, $submission = NULL) {
   $enabled = array();
-  if (!empty($node->webform['components'])) {
+  if (!empty($node->webform['components']) && !empty($node->webform_civicrm)) {
     $fields = webform_civicrm_get_fields();
     foreach ($node->webform['components'] as $c) {
       $exp = explode('_', $c['form_key'], 5);
@@ -423,7 +423,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'expose_list' => TRUE,
     );
     $fields['contact_existing'] = array(
-      'name' => t('Select Existing'),
+      'name' => t('Existing Contact'),
       'type' => 'civicrm_contact',
     );
     foreach (array('organization' => t('Organization Name'), 'legal' => t('Legal Name'), 'household' => t('Household Name')) as $key => $label) {
@@ -736,7 +736,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'phone' => array('entity_type' => 'contact', 'label' => t('Phone'), 'max_instances' => 9),
       'email' => array('entity_type' => 'contact', 'label' => t('Email'), 'max_instances' => 9),
       'website' => array('entity_type' => 'contact', 'label' => t('Website'), 'max_instances' => 9),
-      'activity' => array('entity_type' => 'activity', 'label' => t('Expose Activity Fields')),
+      'activity' => array('entity_type' => 'activity', 'label' => t('Activity')),
       'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship to Contact')),
     );
     if (in_array('CiviEvent', $components)) {
@@ -1042,8 +1042,7 @@ function webform_civicrm_name_field_exists($vals, $c) {
 function webform_civicrm_filepath($id) {
   if ($file = file_load($id)) {
     global $base_url;
-    return str_replace('public://', $base_url . '/' . variable_get('file_public_path', conf_path() . '/files') . '/',
     // Escape all characters except : and /
-    str_replace(array('%3A', '%2F'), array(':', '/'), rawurlencode($file->uri)));
+    return str_replace('public://', $base_url . '/' . variable_get('file_public_path', conf_path() . '/files') . '/', str_replace(array('%3A', '%2F'), array(':', '/'), rawurlencode($file->uri)));
   }
 }

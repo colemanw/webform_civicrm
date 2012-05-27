@@ -59,7 +59,7 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
 
   // Prevent civicrm_contact element from being created directly from webform components form
   elseif ($form_id == 'webform_components_form' && !empty($form['add']['type']['#options'])) {
-    unset($form['add']['type']['#options']['civicrm_contact']);
+    $form['#theme'] = array('webform_civicrm_components_form');
   }
 }
 
@@ -118,6 +118,10 @@ function webform_civicrm_theme() {
     ),
     'webform_civicrm_options' => array(
       'render element' => 'element',
+    ),
+    'webform_civicrm_components_form' => array(
+      'render element' => 'form',
+      'file' => 'webform_civicrm_admin.inc',
     ),
   );
   return $theme;

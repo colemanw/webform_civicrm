@@ -107,7 +107,7 @@ function _webform_edit_civicrm_contact($component) {
     '#description' => '<ul>
       <li>' . t('Autocomplete will suggest names of contacts as the user types. Good for large numbers of contacts.') . '</li>
       <li>' . t('A select list will show all possible contacts in a dropdown menu. Good for small lists.') . '</li>
-      <li>' . t('A hidden element will not allow the user to make a choice.') . '</li>
+      <li>' . t('A hidden element will not allow the user to make a choice. Use in conjunction with a default value setting or a cid passed in the url.') . '</li>
       </ul>',
   );
   $form['display']['search_prompt'] = array(
@@ -148,10 +148,9 @@ function _webform_edit_civicrm_contact($component) {
   $form['defaults'] = array(
     '#type' => 'fieldset',
     '#title' => t('Default value'),
-    '#description' => t('Should the form be pre-populated with an existing contact?') . '<br />',
+    '#description' => t('Should the form be pre-populated with an existing contact? <strong>Note:</strong> This setting will be overridden if a contact id is passed in the url, i.e. !url', array('!url' => "cid$c=123")),
     '#collapsible' => TRUE,
   );
-  $form['defaults']['#description'] .= t('<strong>Note:</strong> This setting will be overridden if a contact id is passed in the url, i.e. !url', array('!url' => "cid$c=123"));
   $form['defaults']['default'] = array(
     '#type' => 'select',
     '#title' => t('Set default contact from'),
@@ -167,6 +166,7 @@ function _webform_edit_civicrm_contact($component) {
     $form['defaults']['default']['#options']['relationship'] = t('Relationship to Contact 1');
     $form['defaults']['default_relationship'] = array(
       '#type' => 'select',
+      '#multiple' => TRUE,
       '#title' => t('Specify Relationship'),
       '#options' => webform_civicrm_get_contact_relationship_types($contact_type, $data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][1]['contact'][1]['contact_sub_type'], $data['contact'][1]['contact'][1]['contact_sub_type']),
       '#default_value' => $component['extra']['default_relationship'],
@@ -191,7 +191,7 @@ function _webform_edit_civicrm_contact($component) {
   $form['filters'] = array(
     '#type' => 'fieldset',
     '#title' => t('Filters'),
-    '#description' => t('Use filters to limit the list of contacts shown to the user.'),
+    '#description' => t('Limits available contacts. <strong>Note:</strong> Filters apply to every widget type and every default contact setting, including cids via url.'),
     '#parents' => array('extra', 'filters'),
     '#tree' => TRUE,
     '#collapsible' => TRUE,
@@ -303,6 +303,14 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
     if (!empty($value[0])) {
       $element['#value'] = $value[0];
     }
+    $js = '
+      (function ($) {
+        $(document).ready(function() {
+          var toHide = ' . json_encode(array_values($component['extra']['hide_fields'])) . ';
+          wfCivi.existingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide);
+        });
+      })(jQuery);';
+    $element['#attached']['js'][$js] = array('type' => 'inline');
   }
   // Enforce uniqueness.
   if ($component['extra']['unique']) {
@@ -507,6 +515,7 @@ function webform_civicrm_autocomplete_access($node, $fid) {
  */
 function webform_civicrm_existing_contact_access($node, $component, $filters, $cid) {
   // Create new contact doesn't require lookup
+  $cid = "$cid";
   if ($cid[0] === '-' && $component['extra']['allow_create']) {
     return TRUE;
   }

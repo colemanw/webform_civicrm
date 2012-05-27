@@ -82,6 +82,8 @@ var wfCivi = (function ($, D) {
    * Private methods.
    */
 
+  var stateProvinceCache = {};
+
   function resetFields(num, nid, clear, op, toHide, speed) {
     $('#webform-client-form-'+nid+' div.form-item.webform-component[id*="civicrm-'+num+'-contact-"]').each(function() {
       var ele = $(this);
@@ -90,16 +92,13 @@ var wfCivi = (function ($, D) {
       var n = name.split('-');
       if (n[0] === 'civicrm' && n[1] == num && n[2] === 'contact' && n[5] !== 'existing') {
         if (clear) {
-          $('input', ele).not(':radio, :checkbox').val('');
+          $(':input', ele).not(':radio, :checkbox').val('');
           $('input:checkbox, input:radio', ele).each(function() {
-            $(this).attr('checked', $(this).attr('defaultChecked'));
-          });
-          $('select option', ele).each(function() {
-            $(this).attr('selected', $(this).attr('defaultSelected'));
+            $(this).attr('checked', '');
           });
           // Trigger chain select when changing country
           if (n[5] === 'country') {
-            $('select.civicrm-processed', ele).change();
+            $('select.civicrm-processed', ele).val(D.settings.webform_civicrm.defaultCountry).change();
           }
         }
         if (op === 'show') {
@@ -170,7 +169,7 @@ var wfCivi = (function ($, D) {
       fillOptions(stateSelect, stateProvinceCache[countryId], stateVal);
     }
     else {
-      $.get('/webform-civicrm/js/state_province/'+countryId, function(data) {
+      $.get(D.settings.webform_civicrm.callbackPath+'/'+countryId, function(data) {
         fillOptions(stateSelect, data, stateVal);
         stateProvinceCache[countryId] = data;
       }, 'json');
@@ -241,6 +240,12 @@ var wfCivi = (function ($, D) {
 
   D.behaviors.webform_civicrmForm = {
     attach: function (context) {
+      if (!stateProvinceCache['default'] && D.settings.webform_civicrm) {
+        stateProvinceCache['default'] = D.settings.webform_civicrm.defaultStates;
+        stateProvinceCache[D.settings.webform_civicrm.defaultCountry] = D.settings.webform_civicrm.defaultStates;
+        stateProvinceCache[''] = {'': D.settings.webform_civicrm.noCountry};
+      }
+
       // Replace state/prov textboxes with dynamic select lists
       $(':text.civicrm-enabled[name*="_address_state_province_id"]', context).each(function(){
         var ele = $(this);

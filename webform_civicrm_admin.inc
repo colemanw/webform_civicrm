@@ -539,7 +539,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#title' => t('Additional Options'),
     '#group' => 'webform_civicrm',
     '#description' => '<p>' .
-    t('To have this form auto-filled for anonymous users, send the following link from CiviMail:') .
+    t('To have this form auto-filled for anonymous users, enable the contact 1 "existing contact" field and send the following link from CiviMail:') .
     '<br /><code>' . url('node/' . $node->nid, array('absolute' => TRUE, 'query' => array('cid1' => ''))) . '{contact.contact_id}&amp;{contact.checksum}</code></p>',
   );
   $form['options']['create_fieldsets'] = array(
@@ -872,7 +872,6 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
   }
 }
 
-
 /**
  * Alter back-end webform component edit forms.
  * Called by hook_form_alter() whenever editing a webform component.
@@ -948,7 +947,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
       // Here's a much nicer interface for managing options than the standard textfields
       elseif (($element['type'] === 'hidden' || $element['type'] === 'select')
       && array_key_exists($key, webform_civicrm_get_fields('lists'))) {
-        $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/' . 'webform_civicrm_options.js';
+        $form['#attached']['js'] = array(drupal_get_path('module', 'webform_civicrm') . '/' . 'webform_civicrm_options.js');
         $options = $sort = webform_civicrm_field_options($element, 'component_edit', $node->webform_civicrm['data']);
         $defaults_selected = array();
         if (!empty($element['value'])) {
@@ -956,6 +955,9 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
             $defaults_selected[] = '_web_civi_option_selected_' . $v;
           }
         }
+        // Get rid of options_element stuff
+        unset($form['items']);
+
         $form['value']['#type'] = 'hidden';
         $form['civicrm_options_fieldset'] = array(
           '#type' => 'fieldset',
@@ -1062,6 +1064,10 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
           $form['#prefix'] .= t('Consider enabling the hidden contact_id field - hashed links usually require this value.') . '</p>';
         }
       }
+      // Alter weights for contact component
+      elseif ($form['type']['#value'] == 'civicrm_contact') {
+        $form['display']['#weight'] = -1;
+      }
     }
   }
 }
@@ -1083,7 +1089,7 @@ function webform_civicrm_component_insert(&$field, &$enabled, $settings) {
   else {
     $field['name'] = str_replace(' #', '', $field['name']);
   }
-  if ($name == 'contact_sub_type' || $name == 'existing') {
+  if ($name == 'contact_sub_type') {
     list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
     $field['name'] .= ' ' . $contact_types[$settings['data']['contact'][$c]['contact'][1]['contact_type']];
   }
@@ -1315,4 +1321,170 @@ function webform_civicrm_disable($nid) {
   db_delete('webform_civicrm_forms')
     ->condition('nid', $nid)
     ->execute();
+}
+
+/**
+ * Theme override for webform components form.
+ *
+ * @param $variables
+ *   Includes the form array.
+ * @return
+ *   Formatted HTML form, ready for display.
+ */
+function theme_webform_civicrm_components_form($variables) {
+  $form = $variables['form'];
+
+  $form['components']['#attached']['library'][] = array('webform', 'admin');
+
+  // TODO: Attach these. See http://drupal.org/node/732022.
+  drupal_add_tabledrag('webform-components', 'order', 'sibling', 'webform-weight');
+  drupal_add_tabledrag('webform-components', 'match', 'parent', 'webform-pid', 'webform-pid', 'webform-cid');
+
+  $node = $form['#node'];
+
+  // CiviCRM processing
+  $enabled = array();
+  unset($form['add']['type']['#options']['civicrm_contact']);
+  if (!empty($node->webform_civicrm)) {
+    civicrm_initialize();
+    $enabled = webform_civicrm_enabled_fields($node);
+    $form['components']['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_admin.css';
+  }
+
+  $header = array(t('Label'), t('Type'), t('Value'), t('Mandatory'), t('Weight'), array('data' => t('Operations'), 'colspan' => 3));
+  $rows = array();
+
+  // Add a row containing form elements for a new item.
+  unset($form['add']['name']['#title'], $form['add_type']['#description']);
+  $form['add']['name']['#attributes']['rel'] = t('New component name');
+  $form['add']['name']['#attributes']['class'] = array('webform-default-value');
+  $form['add']['cid']['#attributes']['class'] = array('webform-cid');
+  $form['add']['pid']['#attributes']['class'] = array('webform-pid');
+  $form['add']['weight']['#attributes']['class'] = array('webform-weight');
+
+  $row_data = array(
+    drupal_render($form['add']['name']),
+    drupal_render($form['add']['type']),
+    '',
+    drupal_render($form['add']['mandatory']),
+    drupal_render($form['add']['cid']) . drupal_render($form['add']['pid']) . drupal_render($form['add']['weight']),
+    array('colspan' => 3, 'data' => drupal_render($form['add']['add'])),
+  );
+  $add_form = array('data' => $row_data, 'class' => array('draggable', 'webform-add-form'));
+  $form_rendered = FALSE;
+
+  if (!empty($node->webform['components'])) {
+    $component_tree = array();
+    $page_count = 1;
+    _webform_components_tree_build($node->webform['components'], $component_tree, 0, $page_count);
+    $component_tree = _webform_components_tree_sort($component_tree);
+    // Build the table rows.
+    function _webform_components_form_rows($node, $cid, $component, $level, &$form, &$rows, &$add_form, $enabled) {
+      // Create presentable values.
+      if (drupal_strlen($component['value']) > 30) {
+        $component['value'] = drupal_substr($component['value'], 0, 30);
+        $component['value'] .= '...';
+      }
+      $component['value'] = check_plain($component['value']);
+
+      // Remove individual titles from the mandatory and weight fields.
+      unset($form['components'][$cid]['mandatory']['#title']);
+      unset($form['components'][$cid]['pid']['#title']);
+      unset($form['components'][$cid]['weight']['#title']);
+
+      // Add special classes for weight and parent fields.
+      $form['components'][$cid]['cid']['#attributes']['class'] = array('webform-cid');
+      $form['components'][$cid]['pid']['#attributes']['class'] = array('webform-pid');
+      $form['components'][$cid]['weight']['#attributes']['class'] = array('webform-weight');
+
+      // Build indentation for this row.
+      $indents = '';
+      for ($n = 1; $n <= $level; $n++) {
+        $indents .= '<div class="indentation">&nbsp;</div>';
+      }
+
+      // CiviCRM additions
+      $clone = t('Clone');
+      $options = array('query' => drupal_get_destination());
+      if ($component['type'] == 'civicrm_contact') {
+        $types = array('autocomplete' => t('Contact - Autocomplete'), 'select' => t('Contact - Select List'), 'hidden' => t('Contact - Hidden'));
+        $type = $types[$component['extra']['widget']];
+      }
+      else {
+        $type = $form['add']['type']['#options'][$component['type']];
+      }
+      if (in_array($cid, $enabled)) {
+        $fields = webform_civicrm_get_fields();
+        $sets = webform_civicrm_get_fields('sets');
+        $class = 'civi-icon';
+        $title = '';
+        list( , $c, $ent, $n, $table, $name) = explode('_', $component['form_key'], 6);
+        if ($component['type'] == 'fieldset') {
+          $title = t('Container for Contact !num', array('!num' => $c));
+          $type = t('Contact !num Fieldset', array('!num' => $c));
+          $clone = t('Clone Contact');
+          $options['attributes']['title'] = t('Add a new contact to the form with the same fields and settings');
+          $class .= ' ' . $node->webform_civicrm['data']['contact'][$c]['contact'][1]['contact_type'];
+        }
+        elseif ($ent == 'contact') {
+          $field_type = ($table == 'contact' || $table == 'other') ? $fields[$table . '_' . $name]['name'] : $sets[$table]['label'];
+          $title = t('Contact !num !type Field', array('!num' => $c, '!type' => $field_type));
+        }
+        else {
+          $title = t('Field for !type', array('!type' => $sets[$table]['label']));
+        }
+        $type = array('data' => '<span class="' . $class . '"> </span>' . $type, 'title' => $title);
+      }
+
+      // Add each component to a table row.
+      $row_data = array(
+        $indents . filter_xss($component['name']),
+        $type,
+        ($component['value'] == '') ? '-' : $component['value'],
+        drupal_render($form['components'][$cid]['mandatory']),
+        drupal_render($form['components'][$cid]['cid']) . drupal_render($form['components'][$cid]['pid']) . drupal_render($form['components'][$cid]['weight']),
+        l(t('Edit'), 'node/' . $node->nid . '/webform/components/' . $cid, array('query' => drupal_get_destination())),
+        l($clone, 'node/' . $node->nid . '/webform/components/' . $cid . '/clone', $options),
+        l(t('Delete'), 'node/' . $node->nid . '/webform/components/' . $cid . '/delete', array('query' => drupal_get_destination())),
+      );
+      $row_class = array('draggable');
+      if (!webform_component_feature($component['type'], 'group')) {
+        $row_class[] = 'tabledrag-leaf';
+      }
+      if ($component['type'] == 'pagebreak') {
+        $row_class[] = 'tabledrag-root';
+        $row_class[] = 'webform-pagebreak';
+        $row_data[0] = array('class' => array('webform-pagebreak'), 'data' => $row_data[0]);
+      }
+      $rows[] = array('data' => $row_data, 'class' => $row_class);
+      if (isset($component['children']) && is_array($component['children'])) {
+        foreach ($component['children'] as $cid => $component) {
+          _webform_components_form_rows($node, $cid, $component, $level + 1, $form, $rows, $add_form, $enabled);
+        }
+      }
+
+      // Add the add form if this was the last edited component.
+      if (isset($_GET['cid']) && $component['cid'] == $_GET['cid'] && $add_form) {
+        $add_form['data'][0] = $indents . $add_form['data'][0];
+        $rows[] = $add_form;
+        $add_form = FALSE;
+      }
+    }
+    foreach ($component_tree['children'] as $cid => $component) {
+      _webform_components_form_rows($node, $cid, $component, 0, $form, $rows, $add_form, $enabled);
+    }
+  }
+  else {
+    $rows[] = array(array('data' => t('No Components, add a component below.'), 'colspan' => 9));
+  }
+
+  // Append the add form if not already printed.
+  if ($add_form) {
+    $rows[] = $add_form;
+  }
+
+  $output = '';
+  $output .= theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'webform-components')));
+  $output .= drupal_render_children($form);
+  return $output;
 }

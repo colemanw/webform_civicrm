@@ -73,7 +73,23 @@ th div.form-type-radio {
   display:block;
 }
 
-.participant_event_id {
-  float:none;
-  clear:both;
+#webform-components-form .civi-icon {
+  background-image:url('icons.png');
+  background-repeat:no-repeat;
+  display:inline-block;
+  width:16px;
+  height:16px;
+  margin-right:4px;
+}
+
+#webform-components-form .civi-icon.individual {
+  background-position:-16px 0;
+}
+
+#webform-components-form .civi-icon.organization {
+  background-position:-48px 0;
+}
+
+#webform-components-form .civi-icon.household {
+  background-position:-31px 0;
 }
