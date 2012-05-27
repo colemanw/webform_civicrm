@@ -1061,6 +1061,9 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
             $defaults_selected[] = '_web_civi_option_selected_' . $v;
           }
         }
+        // Get rid of options_element stuff
+        unset($form['items']);
+
         $form['value']['#type'] = 'hidden';
         $form['civicrm_options_fieldset'] = array(
           '#type' => 'fieldset',
