@@ -250,56 +250,15 @@ function webform_civicrm_get_contact_relationship_types($type_a, $type_b, $sub_t
       $ret[$t['id'] . ($reciprocal ? '_a' : '_r')] = $t['label_a_b'];
     }
     // Reciprocal form - only show if different from above
-    if (($t['type_a'] == $type_b || !$t['type_a'])
+    if ($reciprocal
+    && ($t['type_a'] == $type_b || !$t['type_a'])
     && ($t['type_b'] == $type_a || !$t['type_b'])
     && (in_array($t['sub_type_a'], $sub_type_b) || !$t['sub_type_a'])
-    && (in_array($t['sub_type_b'], $sub_type_a) || !$t['sub_type_b'])
-    && $reciprocal) {
+    && (in_array($t['sub_type_b'], $sub_type_a) || !$t['sub_type_b'])) {
       $ret[$t['id'] . '_b'] = $t['label_b_a'];
     }
   }
   return $ret;
-}
-
-/**
- * Get a contact's relations of certain types
- * @param cid: contact id
- * @param types: array of relationship_type_ids
- */
-function webform_civicrm_find_relations($cid, $types, $current = TRUE) {
-  $found = $allowed = array();
-  $type_ids = '';
-  foreach ($types as $t) {
-    list($type, $a_b) = explode('_', $t);
-    if ($type == 'ce') {
-      
-    }
-    else {
-      $type_ids .= ($type_ids ? ',' : '') . $type;
-      if ($a_b == 'a' || $a_b == 'r') {
-        $allowed[] = $type . '_a';
-      }
-      if ($a_b == 'b' || $a_b == 'r') {
-        $allowed[] = $type . '_b';
-      }
-    }
-  }
-  if ($type_ids) {
-    $sql = "SELECT relationship_type_id, contact_id_a, contact_id_b
-      FROM civicrm_relationship
-      WHERE relationship_type_id IN ($type_ids) AND (contact_id_a = $cid OR contact_id_b = $cid)";
-    if ($current) {
-      $sql .= " AND is_active = 1 AND (end_date > CURDATE() OR end_date IS NULL)";
-    }
-    $dao = &CRM_Core_DAO::executeQuery($sql);
-    while ($dao->fetch()) {
-      $a_b = $dao->contact_id_a == $cid ? 'b' : 'a';
-      if (in_array($dao->relationship_type_id . '_' . $a_b, $allowed)) {
-        $found[] = $dao->{"contact_id_$a_b"};
-      }
-    }
-  }
-  return $found;
 }
 
 /**

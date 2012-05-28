@@ -70,13 +70,6 @@ function webform_civicrm_schema() {
         'default' => '',
         'description' => 'Source label for newly created contacts',
       ),
-      'contact_matching' => array(
-        'description' => 'How to match and autofill for contacts',
-        'type' => 'int',
-        'size' => 'tiny',
-        'not null' => TRUE,
-        'default' => 1,
-      ),
     ),
     'primary key' => array('nid'),
   );
@@ -450,15 +443,82 @@ function webform_civicrm_update_6205() {
 }
 
 /**
- * Upgrade for 3.0
+ * Note: There are differences in how contact references and relationships work in the 3.x branch.
+ * After upgrading you should verify that your activity assignee, current employer, contact ref, and relationship fields still function as expected.
  */
 function todo_webform_civicrm_update_7300() {
   /**
    * TODO:
-   *  Move activity target data
    *  Update contact ref fields
    *  Update activity assignee field
-   *  Add hidden field for matching logged-in user
    *  Delete contact_matching db column
+   *  Alter relationship types
+   *  Current employer
    */
+  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_admin');
+  module_load_include('inc', 'webform_civicrm', 'contact_component');
+  module_load_include('inc', 'webform', 'includes/webform.components');
+  $fields = webform_civicrm_get_fields();
+  $db = db_query("SELECT * FROM {webform_civicrm_forms}");
+  foreach ($db as $form) {
+    $data = unserialize($form->data);
+    $node = node_load($form->nid);
+    $enabled = webform_civicrm_enabled_fields($node);
+
+    // Add existing contact field
+    $field = $fields['contact_existing'];
+    $field['nid'] = $form->nid;
+    $field['form_key'] = 'civicrm_1_contact_1_contact_existing';
+    $field['extra']['default'] = $form['contact_matching'] ? 'user' : '';
+    $field['extra']['hide_fields'] = array();
+    webform_civicrm_component_insert($field, $enabled, $form);
+
+    // Activity target
+    if (!empty($data['activity'][1]['activity'])) {
+      foreach ($data['contact'] as $c => $contact) {
+        if (!empty($contact['activity_target'])) {
+          $data['activity'][1]['activity'][1]['target_contact_id'][$c] = $c;
+        }
+      }
+    }
+
+    // Don't create fieldsets around new hidden contact fields
+    $settings = $form;
+    $settings['create_fieldsets'] = 0;
+
+    // Activity assignee
+    if (!empty($data['activity'][1]['activity'][1]['assignee_contact_id'])) {
+      $val = &$data['activity'][1]['activity'][1]['assignee_contact_id'];
+      if ($val[0] == '#') {
+        $val = substr($val, 1);
+      }
+      else {
+        // Create contact
+        $c = count($data['contact']) + 1;
+        $data['contact'][$c] = array(
+          'contact' => array(1 => array(
+            'contact_type' => 'individual',
+            'contact_sub_type' => array(),
+          )),
+        );
+        // Set existing contact id
+        $field = $fields['contact_existing'];
+        $field['nid'] = $form->nid;
+        $field['form_key'] = 'civicrm_' . $c . '_contact_1_contact_existing';
+        $field['extra']['widget'] = 'hidden';
+        $field['extra']['default'] = 'contact_id';
+        $field['extra']['default_contact_id'] = $val;
+        $field['extra']['hide_fields'] = array();
+        $val = $c;
+        webform_civicrm_component_insert($field, $enabled, $settings);
+      }
+    }
+    
+    // ContactRef fields
+    
+    
+    $form->data = $data;
+    drupal_write_record('webform_civicrm_forms', $form, 'nid');
+  }
+  db_drop_field('webform_civicrm_forms', 'contact_matching');
 }

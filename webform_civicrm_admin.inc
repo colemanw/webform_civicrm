@@ -1102,8 +1102,10 @@ function webform_civicrm_component_insert(&$field, &$enabled, $settings) {
     $field['extra']['allow_create'] = webform_civicrm_name_field_exists($vals, $c);
     if ($c == 1) {
       // Default to hidden field for 1st contact
-      $field['extra']['widget'] = 'hidden';
-      $field['extra']['default'] = 'user';
+      $field['extra'] += array(
+        'widget' => 'hidden',
+        'default' => 'user',
+      );
     }
   }
   // A width of 20 is more sensible than Drupal's default of 60

@@ -172,7 +172,7 @@ function _webform_edit_civicrm_contact($component) {
       '#default_value' => $component['extra']['default_relationship'],
       '#parents' => array('extra', 'default_relationship'),
     );
-    $rtypes = webform_civicrm_get_contact_relationship_types($contact_type, $data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][1]['contact'][1]['contact_sub_type'], $data['contact'][1]['contact'][1]['contact_sub_type']);
+    $rtypes = webform_civicrm_get_contact_relationship_types($contact_type, $data['contact'][1]['contact'][1]['contact_type'], $data['contact'][1]['contact'][1]['contact_sub_type'], $data['contact'][1]['contact'][1]['contact_sub_type']);
     foreach ($rtypes as $k => $v) {
       $form['defaults']['default_relationship']['#options'][$k] = $v . ' ' . t('Contact !num', array('!num' => 1));
     }
@@ -624,6 +624,56 @@ function webform_civicrm_find_contact($node, $component, &$ids) {
   if (!empty($ids[1]) && $c == 1 && user_is_anonymous()) {
     CRM_Core_DAO::executeQuery('SET @civicrm_user_id = %1', array(1 => array($ids[1], 'Integer')));
   }
+}
+
+/**
+ * Get a contact's relations of certain types
+ * @param cid: contact id
+ * @param types: array of relationship_type_ids
+ */
+function webform_civicrm_find_relations($cid, $types, $current = TRUE) {
+  $found = $allowed = array();
+  $cid = (int) $cid;
+  if ($cid) {
+    $type_ids = '';
+    foreach ($types as $t) {
+      list($type, $a_b) = explode('_', $t);
+      if ($type == 'ce') {
+        $sql = "SELECT id, employer_id
+        FROM civicrm_contact 
+        WHERE id = $cid OR employer_id = $cid";
+        $dao = &CRM_Core_DAO::executeQuery($sql);
+        while ($dao->fetch()) {
+          $found[] = $dao->id == $cid ? $dao->employer_id : $dao->id;
+        }
+      }
+      else {
+        $type_ids .= ($type_ids ? ',' : '') . $type;
+        if ($a_b == 'a' || $a_b == 'r') {
+          $allowed[] = $type . '_a';
+        }
+        if ($a_b == 'b' || $a_b == 'r') {
+          $allowed[] = $type . '_b';
+        }
+      }
+    }
+    if ($type_ids) {
+      $sql = "SELECT relationship_type_id, contact_id_a, contact_id_b
+        FROM civicrm_relationship
+        WHERE relationship_type_id IN ($type_ids) AND (contact_id_a = $cid OR contact_id_b = $cid)";
+      if ($current) {
+        $sql .= " AND is_active = 1 AND (end_date > CURDATE() OR end_date IS NULL)";
+      }
+      $dao = &CRM_Core_DAO::executeQuery($sql);
+      while ($dao->fetch()) {
+        $a_b = $dao->contact_id_a == $cid ? 'b' : 'a';
+        if (in_array($dao->relationship_type_id . '_' . $a_b, $allowed)) {
+          $found[] = $dao->{"contact_id_$a_b"};
+        }
+      }
+    }
+  }
+  return $found;
 }
 
 /**
