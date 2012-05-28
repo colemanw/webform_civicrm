@@ -123,20 +123,21 @@ var wfCiviAdmin = (function ($, D) {
         var contact_a = types[id[2]];
         var contact_b = types[id[4]];
         $('option', this).not('[value="0"],[value="create_civicrm_webform_element"]').remove();
-        for (var i in webform_civicrm_relationship_data) {
-          var t = webform_civicrm_relationship_data[i];
+        for (var i in D.settings.webform_civicrm.rTypes) {
+          var t = D.settings.webform_civicrm.rTypes[i];
+          var reciprocal = (t['label_a_b'] != t['label_b_a'] && t['label_b_a'] || t['type_a'] != t['type_b']);
           if ( (t['type_a'] == contact_a['type'] || !t['type_a'])
             && (t['type_b'] == contact_b['type'] || !t['type_b'])
             && ($.inArray(t['sub_type_a'], contact_a['sub_type']) > -1 || !t['sub_type_a'])
             && ($.inArray(t['sub_type_b'], contact_b['sub_type']) > -1 || !t['sub_type_b'])
           ) {
-            $(this).append('<option value="'+t['id']+'_a">'+t['label_a_b']+'</option>');
+            $(this).append('<option value="'+t['id']+(reciprocal ? '_a">' : '_r">')+t['label_a_b']+'</option>');
           }
-          if ( (t['type_a'] == contact_b['type'] || !t['type_a'])
+          if (reciprocal
+            && (t['type_a'] == contact_b['type'] || !t['type_a'])
             && (t['type_b'] == contact_a['type'] || !t['type_b'])
             && ($.inArray(t['sub_type_a'], contact_b['sub_type']) > -1 || !t['sub_type_a'])
             && ($.inArray(t['sub_type_b'], contact_a['sub_type']) > -1 || !t['sub_type_b'])
-            && (t['name_a_b'] !== t['name_b_a'])
           ) {
             $(this).append('<option value="'+t['id']+'_b">'+t['label_b_a']+'</option>');
           }

@@ -74,8 +74,10 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
   $data = $settings['data'];
   $contacts = count($data['contact']);
-  $js = 'var webform_civicrm_relationship_data = ' . json_encode(webform_civicrm_get_relationship_types()) . ';';
-  drupal_add_js($js, array('type' => 'inline'));
+  $form['#attached']['js'][] = array(
+    'data' => array('webform_civicrm' => array('rTypes' => webform_civicrm_get_relationship_types())),
+    'type' => 'setting',
+  );
 
   // Sort fields by set
   foreach ($fields as $fid => $field) {

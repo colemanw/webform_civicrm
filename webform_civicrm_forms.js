@@ -28,8 +28,7 @@ var wfCivi = (function ($, D) {
             names.last += (i > 1 ? ' ' : '') + str;
           }
         }
-        names.organization = names.first + (names.last ? ' ' : '') + names.last;
-        names.household = names.organization;
+        names.organization = names.household = names.first + (names.last ? ' ' : '') + names.last;
         for (i in names) {
           var field = $('#webform-client-form-'+nid+' :input[id$="civicrm-'+num+'-contact-1-contact-'+i+'-name"]');
           if (field.length) {
@@ -51,7 +50,12 @@ var wfCivi = (function ($, D) {
     var field = $(selector);
     var ret = null;
     if (field.length) {
-      var cid = field.attr('defaultValue');
+      if (field.is('select')) {
+        var cid = $('option:selected', field).val();
+      }
+      else {
+        var cid = field.attr('defaultValue');
+      }
       if (cid) {
         if (cid.charAt(0) !== '-') {
           resetFields(num, nid, false, 'hide', toHide, 0);
@@ -59,7 +63,7 @@ var wfCivi = (function ($, D) {
         if (cid == field.attr('data-civicrm-id')) {
           ret = [{id: cid, name: field.attr('data-civicrm-name')}];
         }
-        else {
+        else if (field.is(':text')) {
           // If for some reason the data is not embedded, fetch it from the server
           $.ajax({
             url: path,

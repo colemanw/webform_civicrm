@@ -168,10 +168,14 @@ function _webform_edit_civicrm_contact($component) {
       '#type' => 'select',
       '#multiple' => TRUE,
       '#title' => t('Specify Relationship'),
-      '#options' => webform_civicrm_get_contact_relationship_types($contact_type, $data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][1]['contact'][1]['contact_sub_type'], $data['contact'][1]['contact'][1]['contact_sub_type']),
+      '#options' => array(),
       '#default_value' => $component['extra']['default_relationship'],
       '#parents' => array('extra', 'default_relationship'),
     );
+    $rtypes = webform_civicrm_get_contact_relationship_types($contact_type, $data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][1]['contact'][1]['contact_sub_type'], $data['contact'][1]['contact'][1]['contact_sub_type']);
+    foreach ($rtypes as $k => $v) {
+      $form['defaults']['default_relationship']['#options'][$k] = $v . ' ' . t('Contact !num', array('!num' => 1));
+    }
   }
   $form['defaults']['default_contact_id'] = array(
     '#type' => 'textfield',
@@ -250,7 +254,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
     );
   }
   list(, $c,) = explode('_', $component['form_key'], 3);
-  $selector = '\'#webform-client-form-' . $component['nid'] . ' :text.civicrm-enabled[id$="' . str_replace('_', '-', $component['form_key']) . '"]\'';
+  $selector = '\'#webform-client-form-' . $component['nid'] . ' :input.civicrm-enabled[name*="' . $component['form_key'] . '"]\'';
   $callback_path = '"' . url('webform-civicrm/js/' . $node->nid . '-' . $component['cid'], array('alias' => TRUE)) . '"';
   if ($component['extra']['widget'] == 'autocomplete') {
     $element['#type'] = 'textfield';
@@ -274,7 +278,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
           var toHide = ' . json_encode(array_values($component['extra']['hide_fields'])) . ';
           var selector = ' . $selector . ';
           var prep = wfCivi.existingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, selector);
-          jQuery(selector).tokenInput(' . $callback_path . ', ' . $settings . ');
+          $(selector).tokenInput(' . $callback_path . ', ' . $settings . ');
         });
       })(jQuery);';
       $element['#attached']['js'][$js] = array('type' => 'inline');
@@ -284,15 +288,16 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
     $element['#type'] = 'select';
     $element['#empty_option'] = $component['extra']['search_prompt'];
     if ($node) {
-      $element['#options'] = webform_civicrm_existing_contact_search($node, $component, $component['extra']['filters']);
+      $filters = webform_civicrm_search_filters($component);
+      $element['#options'] = webform_civicrm_existing_contact_search($node, $component, $filters);
       $js = '
       (function ($) {
         $(document).ready(function() {
-          var toHide = ' . json_encode(array_values($component['extra']['hide_fields'])) . ';'
-          . $selector . '.change(function() {
+          var toHide = ' . json_encode(array_values($component['extra']['hide_fields'])) . ';
+          $(' . $selector . ').change(function() {
             wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, $(this).val());
           });
-          wfCivi.existingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide);
+          wfCivi.existingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, ' . $selector . ');
         });
       })(jQuery);';
       $element['#attached']['js'][$js] = array('type' => 'inline');
@@ -307,7 +312,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
       (function ($) {
         $(document).ready(function() {
           var toHide = ' . json_encode(array_values($component['extra']['hide_fields'])) . ';
-          wfCivi.existingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide);
+          wfCivi.existingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, ' . $selector . ');
         });
       })(jQuery);';
     $element['#attached']['js'][$js] = array('type' => 'inline');
@@ -441,7 +446,7 @@ function webform_civicrm_js_options($key, $input = '') {
     }
     $component = $node->webform['components'][$fid];
     $filters = webform_civicrm_search_filters($component);
-    // Bypass filters when choosing contact for hidden field
+    // Bypass filters when choosing contact on component edit form
     if (!empty($_GET['admin']) && webform_civicrm_admin_access($node)) {
       $filters = array('check_permissions' => TRUE);
       $component['extra']['allow_create'] = 0;
@@ -558,6 +563,67 @@ function webform_civicrm_contact_fields($node, $con) {
     }
   }
   return $ret;
+}
+
+/**
+ * Find an existing contact based on matching criteria
+ * Used to autopopulate a webform existing contact field
+ * @param $node: webform node
+ * @param $component: civicrm_contact component
+ * @param $ids: reference all known contact ids for this form
+ */
+function webform_civicrm_find_contact($node, $component, &$ids) {
+  list(, $c,) = explode('_', $component['form_key'], 3);
+  $filters = webform_civicrm_search_filters($component);
+  // Start with the url - that trumps everything.
+  if (isset($_GET["cid$c"]) || ($c == 1 && isset($_GET['cid']))) {
+    $cid = isset($_GET["cid$c"]) ? $_GET["cid$c"] : $_GET['cid'];
+    if (is_numeric($cid)) {
+      $cid = (int) $cid;
+      if ($cid === 0) {
+        $ids[$c] = $cid;
+      }
+      else {
+        require_once 'CRM/Contact/BAO/Contact/Permission.php';
+        if (CRM_Contact_BAO_Contact_Permission::validateChecksumContact($cid, CRM_Core_DAO::$_nullObject)
+        && webform_civicrm_existing_contact_access($node, $component, $filters, $cid) !== FALSE) {
+          $ids[$c] = $cid;
+        }
+      }
+    }
+  }
+  if (!isset($ids[$c])) {
+    switch ($component['extra']['default']) {
+      case 'user':
+        if ($c == 1 && $cid = webform_civicrm_user_cid()) {
+          if (webform_civicrm_existing_contact_access($node, $component, $filters, $cid) !== FALSE) {
+            $ids[$c] = $cid;
+          }
+        }
+        break;
+      case 'contact_id':
+        if ($cid = $component['extra']['default_contact_id']) {
+          if (webform_civicrm_existing_contact_access($node, $component, $filters, $cid) !== FALSE) {
+            $ids[$c] = $cid;
+          }
+        }
+        break;
+      case 'relationship':
+        if (!empty($ids[1])) {
+          foreach (webform_civicrm_find_relations($ids[1], $component['extra']['default_relationship']) as $cid) {
+            if (!in_array($cid, $ids) && webform_civicrm_existing_contact_access($node, $component, $filters, $cid) !== FALSE) {
+              $ids[$c] = $cid;
+              break;
+            }
+          }
+        }
+        break;
+    }
+  }
+  // Identify contact 1 as acting user if not already logged in
+  if (!empty($ids[1]) && $c == 1 && user_is_anonymous()) {
+    CRM_Core_DAO::executeQuery('SET @civicrm_user_id = %1', array(1 => array($ids[1], 'Integer')));
+  }
 }
 
 /**

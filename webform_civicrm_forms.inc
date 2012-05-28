@@ -66,6 +66,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
     $count = count($data['contact']);
     for ($i = 1; $i <= $count; ++$i) {
       if ($existing_component = webform_civicrm_aval($enabled, "civicrm_{$i}_contact_1_contact_existing")) {
+        module_load_include('inc', 'webform_civicrm', 'contact_component');
         webform_civicrm_find_contact($node, $node->webform['components'][$existing_component], $id['cid']);
       }
     }
@@ -718,9 +719,11 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         foreach ($contact['relationship'] as $i => $params) {
           if (!empty($params['relationship_type_id']) && !empty($id['cid'][$i])) {
             list($type, $a_b) = explode('_', $params['relationship_type_id']);
+            $a_b = $a_b == 'r' ? 'a' : $a_b;
             $b_a = $a_b == 'a' ? 'b' : 'a';
             $params['contact_id_' . $a_b] = $cid;
             $params['contact_id_' . $b_a] = $id['cid'][$i];
+            // Current employer
             if ($type == 'ce') {
               foreach (webform_civicrm_get_relationship_types() as $t) {
                 if ($t['name_a_b'] == 'Employee of' && $t['name_b_a'] == 'Employer of' && $t['id'] != 'ce') {
@@ -939,59 +942,6 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       'activity_id' => empty($id['act'][1]) ? 0 : $id['act'][1],
     );
     drupal_write_record('webform_civicrm_submissions', $record, $update);
-  }
-}
-
-/**
- * Find an existing contact based on matching criteria
- * @param $node: webform node
- * @param $component: civicrm_contact component
- * @param $ids: reference all known contact ids for this form
- */
-function webform_civicrm_find_contact($node, $component, &$ids) {
-  module_load_include('inc', 'webform_civicrm', 'contact_component');
-  list(, $c,) = explode('_', $component['form_key'], 3);
-  $filters = webform_civicrm_search_filters($component);
-  // Start with the url - that trumps everything.
-  if (isset($_GET["cid$c"]) || ($c == 1 && isset($_GET['cid']))) {
-    $cid = isset($_GET["cid$c"]) ? $_GET["cid$c"] : $_GET['cid'];
-    if (is_numeric($cid)) {
-      $cid = (int) $cid;
-      if ($cid === 0) {
-        $ids[$c] = $cid;
-      }
-      else {
-        require_once 'CRM/Contact/BAO/Contact/Permission.php';
-        if (CRM_Contact_BAO_Contact_Permission::validateChecksumContact($cid, CRM_Core_DAO::$_nullObject)
-        && webform_civicrm_existing_contact_access($node, $component, $filters, $cid) !== FALSE) {
-          $ids[$c] = $cid;
-        }
-      }
-    }
-  }
-  if (!isset($ids[$c])) {
-    switch ($component['extra']['default']) {
-      case 'user':
-        if ($c == 1 && $cid = webform_civicrm_user_cid()) {
-          if (webform_civicrm_existing_contact_access($node, $component, $filters, $cid) !== FALSE) {
-            $ids[$c] = $cid;
-          }
-        }
-        break;
-      case 'contact_id':
-        if ($cid = $component['extra']['default_contact_id']) {
-          if (webform_civicrm_existing_contact_access($node, $component, $filters, $cid) !== FALSE) {
-            $ids[$c] = $cid;
-          }
-        }
-        break;
-      case 'relationship':
-        break;
-    }
-  }
-  // Identify contact 1 as acting user if not already logged in
-  if (!empty($ids[1]) && $c == 1 && user_is_anonymous()) {
-    CRM_Core_DAO::executeQuery('SET @civicrm_user_id = %1', array(1 => array($ids[1], 'Integer')));
   }
 }
 

@@ -414,6 +414,7 @@ function webform_civicrm_form_validate($form, &$form_state) {
 /**
  * Webform submission hooks don't have access to $form_state
  * So this extra submission handler stores it.
+ * @param $form: form array (to store) or form nid (to retrieve)
  */
 function webform_civicrm_storage($form, $form_state = NULL) {
   static $storage = array();
