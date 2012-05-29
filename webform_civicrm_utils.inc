@@ -890,8 +890,11 @@ function webform_civicrm_user_cid($id = NULL, $type = 'uf') {
     $id = $user->uid;
   }
   // Lookup current domain for multisite support
-  $domain = webform_civicrm_api('domain', 'get', array('current_domain' => 1, 'return.id' => 1));
-  $domain = webform_civicrm_aval($domain, 'id', 1);
+  static $domain = 0;
+  if (!$domain) {
+    $domain = webform_civicrm_api('domain', 'get', array('current_domain' => 1, 'return.id' => 1));
+    $domain = webform_civicrm_aval($domain, 'id', 1);
+  }
   $result = webform_civicrm_api('uf_match', 'get', array($type . '_id' => $id));
   if (!empty($result['values'])) {
     foreach ($result['values'] as $val) {
