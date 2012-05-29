@@ -640,7 +640,7 @@ function webform_civicrm_find_relations($cid, $types, $current = TRUE) {
       list($type, $a_b) = explode('_', $t);
       if ($type == 'ce') {
         $sql = "SELECT id, employer_id
-        FROM civicrm_contact 
+        FROM civicrm_contact
         WHERE id = $cid OR employer_id = $cid";
         $dao = &CRM_Core_DAO::executeQuery($sql);
         while ($dao->fetch()) {

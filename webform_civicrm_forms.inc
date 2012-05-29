@@ -464,12 +464,19 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
     }
 
     // Fill entity arrays with field values
-    $contact_ref = array();
     foreach ($enabled as $field_key => $fid) {
       if (isset($submission->data[$fid]['value'])) {
         list( , $c, $ent, $n, $table, $name) = explode('_', $field_key, 6);
-        if ($name == 'existing') {
+        if ($name === 'existing') {
           continue;
+        }
+        // Ignore values from hidden fields
+        if (!empty($updating['cid'][$c])) {
+          $component = $node->webform['components'][$enabled["civicrm_{$c}_contact_1_contact_existing"]];
+          $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
+          if (in_array($type, $component['extra']['hide_fields'])) {
+            continue;
+          }
         }
         $field = $fields[$table . '_' . $name];
         $val = $submission->data[$fid]['value'];
@@ -500,12 +507,8 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         elseif ($name !== 'event_id') {
           $val = isset($val[0]) ? $val[0] : '';
         }
-        // ContactRef must wait until contact IDs have been processed
-        if (webform_civicrm_aval($field, 'data_type') === 'ContactReference') {
-          $contact_ref[$field_key] = $val;
-        }
         // Only known contacts are allowed to empty a field
-        elseif (($val !== '' && $val !== NULL) || !empty($updating['cid'][$c])) {
+        if (($val !== '' && $val !== NULL) || !empty($updating['cid'][$c])) {
           $data[$ent][$c][$table][$n][$name] = $val;
         }
       }
@@ -581,10 +584,38 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       }
     }
     // Fill ContactRef fields with contact IDs
-    foreach ($contact_ref as $key => $val) {
-      if (!empty($id['cid'][$val])) {
-        list($lobo, $c, $ent, $n, $table, $name) = explode('_', $key, 6);
-        $data[$ent][$c][$table][$n][$name] = $id['cid'][$val];
+    foreach (array('contact', 'participant', 'activity', 'case') as $ent) {
+      foreach (webform_civicrm_aval($data, $ent, array()) as $c => $v1) {
+        if (is_array($v1) && is_numeric($c)) {
+          foreach ($v1 as $table => $v2) {
+            if (is_array($v2)) {
+              foreach ($v2 as $n => $v3) {
+                if (is_array($v3) && is_numeric($n)) {
+                  foreach($v3 as $name => $val) {
+                    if ($val && webform_civicrm_aval($fields, "{$table}_$name:data_type") == 'ContactReference') {
+                      if (is_array($val)) {
+                        $data[$ent][$c][$table][$n][$name] = array();
+                        foreach ($val as $k => $v) {
+                          if (is_numeric($v) && !empty($id['cid'][$v])) {
+                            $data[$ent][$c][$table][$n][$name][] = $id['cid'][$v];
+                          }
+                        }
+                      }
+                      else {
+                        if (!empty($id['cid'][$val])) {
+                          $data[$ent][$c][$table][$n][$name] = $id['cid'][$val];
+                        }
+                        else {
+                          unset($data[$ent][$c][$table][$n][$name]);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
     // Create/update other data associated with contacts
@@ -653,7 +684,6 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
                 && empty($params['postal_code'])
                 && empty($params['master_id'])
               );
-
               // Store shared addresses for later since we haven't necessarily processed
               // the contact this address is shared with yet.
               if (!empty($params['master_id'])) {

@@ -939,7 +939,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
           $form['extra']['options_source']['#access'] = FALSE;
           $form['extra']['multiple']['#type'] = 'hidden';
           $form['extra']['multiple']['#value'] = 0;
-          array_unshift($form['#submit'], 'webform_civicrm_process_group_selection');
+          array_unshift($form['#submit'], '_webform_civicrm_process_group_selection');
         }
         else {
           $form['#prefix'] = '<p>' . t('Enter either a numeric contact id, or #1, #2, etc. to use contact 1, 2, etc. from the webform.') . '</p>';
@@ -1251,17 +1251,6 @@ function webform_civicrm_process_options_selection($form, &$form_state) {
   }
 }
 
-
-/**
- * Custom Processing for CiviCRM ContactReference fields
- */
-function webform_civicrm_process_group_selection($form, &$form_state) {
-  $vals = &$form_state['values'];
-  $node = node_load($vals['nid']);
-  $vals['extra']['items'] = webform_civicrm_field_options($vals, 'component_insert', $node->webform_civicrm['data']);
-}
-
-
 /**
  * Build select all/none js links for a fieldset
  */
@@ -1346,7 +1335,7 @@ function theme_webform_civicrm_components_form($variables) {
 
   $node = $form['#node'];
 
-  // CiviCRM processing
+  // Prepare for CiviCRM processing
   $enabled = array();
   unset($form['add']['type']['#options']['civicrm_contact']);
   if (!empty($node->webform_civicrm)) {
@@ -1428,7 +1417,7 @@ function theme_webform_civicrm_components_form($variables) {
           $type = t('Contact !num Fieldset', array('!num' => $c));
           $clone = t('Clone Contact');
           $options['attributes']['title'] = t('Add a new contact to the form with the same fields and settings');
-          $class .= ' ' . $node->webform_civicrm['data']['contact'][$c]['contact'][1]['contact_type'];
+          $class .= ' fieldset';
         }
         elseif ($ent == 'contact') {
           $field_type = ($table == 'contact' || $table == 'other') ? $fields[$table . '_' . $name]['name'] : $sets[$table]['label'];
@@ -1436,6 +1425,9 @@ function theme_webform_civicrm_components_form($variables) {
         }
         else {
           $title = t('Field for !type', array('!type' => $sets[$table]['label']));
+        }
+        if ($component['type'] == 'civicrm_contact' || $component['type'] == 'fieldset') {
+          $class .= ' ' . $node->webform_civicrm['data']['contact'][$c]['contact'][1]['contact_type'];
         }
         $type = array('data' => '<span class="' . $class . '"> </span>' . $type, 'title' => $title);
       }

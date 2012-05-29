@@ -18,7 +18,7 @@ CiviCRM has the ability to embed a "profile" (set of CRM fields) on a page (i.e.
 On the other hand, webform_civicrm fields have a few cons:
 - Option lists do not auto-update when the options change in CiviCRM
 - Can't be embedded on the user/register or account pages
-- Don't support a few types of custom fields (user ref and file)
+- Don't support a few types of custom fields (relationship fields and file fields)
 
 
 FEATURES
