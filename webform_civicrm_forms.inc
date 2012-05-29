@@ -436,7 +436,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
     // Fetch contact ids from "existing contact" fields
     $id['cid'] = array();
     foreach ($enabled as $field_key => $fid) {
-      if (!empty($submission->data[$fid]['value'][0]) && substr($field_key, -8) == 'existing') {
+      if (!empty($submission->data[$fid]['value'][0]) && is_numeric($submission->data[$fid]['value'][0]) && substr($field_key, -8) == 'existing') {
         module_load_include('inc', 'webform_civicrm', 'contact_component');
         $component = $node->webform['components'][$fid];
         $cid = $submission->data[$fid]['value'][0];

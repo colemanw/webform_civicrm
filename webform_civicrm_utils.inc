@@ -875,7 +875,7 @@ function webform_civicrm_user_cid($id = NULL, $type = 'uf') {
  * Fetch contact display name
  */
 function webform_civicrm_display_name($cid) {
-  if (!$cid) {
+  if (!$cid || !is_numeric($cid)) {
     return '';
   }
   civicrm_initialize();
