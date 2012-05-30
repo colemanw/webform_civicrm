@@ -1030,6 +1030,9 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
       // For ContactReference fields, choose a group
       if (webform_civicrm_aval($field, 'data_type') === 'ContactReference') {
         if ($element['type'] === 'select') {
+          // Get rid of options_element stuff
+          unset($form['items']);
+
           $component = $node->webform['components'][$form['cid']['#value']];
           $form['extra']['civicrm_group'] = array(
             '#type' => 'select',
