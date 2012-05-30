@@ -45,6 +45,16 @@ var wfCiviContact = (function ($, D) {
           }
         });
       }).change();
+      $('#edit-extra-widget', context).once('wf-civi').change(function() {
+        if ($(this).val() == 'hidden') {
+          $('.form-item-extra-search-prompt', context).hide();
+          $('.form-item-extra-show-hidden-contact', context).show();
+        }
+        else {
+          $('.form-item-extra-search-prompt', context).show();
+          $('.form-item-extra-show-hidden-contact', context).hide();
+        }
+      }).change();
     }
   };
 

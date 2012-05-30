@@ -27,6 +27,7 @@ function _webform_defaults_civicrm_contact() {
       'none_prompt' => t('Create new contact'),
       'allow_create' => TRUE,
       'widget' => 'autocomplete',
+      'show_hidden_contact' => 0,
       'unique' => 0,
       'title_display' => 0,
       'description' => '',
@@ -87,27 +88,17 @@ function _webform_edit_civicrm_contact($component) {
     $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/token-input.css';
   }
   $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/contact_component.js';
-  $form['display']['hide_fields'] = array(
-    '#type' => 'select',
-    '#multiple' => TRUE,
-    '#title' => t('Fields to Hide'),
-    '#default_value' => $component['extra']['hide_fields'],
-    '#description' => t('When an existing contact is selected, which fields should the user be allowed to edit and which should be hidden?'),
-    '#options' => webform_civicrm_contact_fields($node, $c),
-    '#weight' => -8,
-    '#parents' => array('extra', 'hide_fields'),
-  );
   $form['display']['widget'] = array(
     '#type' => 'select',
     '#title' => t('Form Widget'),
     '#default_value' => $component['extra']['widget'],
-    '#options' => array('autocomplete' => t('Autocomplete'), 'select' => t('Select List'), 'hidden' => t('Hidden')),
+    '#options' => array('autocomplete' => t('Autocomplete'), 'select' => t('Select List'), 'hidden' => t('Static')),
     '#weight' => -9,
     '#parents' => array('extra', 'widget'),
     '#description' => '<ul>
       <li>' . t('Autocomplete will suggest names of contacts as the user types. Good for large numbers of contacts.') . '</li>
       <li>' . t('A select list will show all possible contacts in a dropdown menu. Good for small lists.') . '</li>
-      <li>' . t('A hidden element will not allow the user to make a choice. Use in conjunction with a default value setting or a cid passed in the url.') . '</li>
+      <li>' . t('A static element will not allow the user to make a choice. Use in conjunction with a default value setting or a cid passed in the url.') . '</li>
       </ul>',
   );
   $form['display']['search_prompt'] = array(
@@ -117,8 +108,7 @@ function _webform_edit_civicrm_contact($component) {
     '#description' => t('Text the user will see before selecting a contact.'),
     '#size' => 60,
     '#maxlength' => 1024,
-    '#weight' => -1,
-    '#required' => TRUE,
+    '#weight' => -7,
     '#parents' => array('extra', 'search_prompt'),
   );
   $form['display']['none_prompt'] = array(
@@ -128,9 +118,27 @@ function _webform_edit_civicrm_contact($component) {
     '#description' => t('If you have exposed a name or email field, this text should prompt the user to create a new contact. Otherwise this text should tell the user that no search results were found.'),
     '#size' => 60,
     '#maxlength' => 1024,
-    '#weight' => 0,
-    '#required' => TRUE,
+    '#weight' => -6,
     '#parents' => array('extra', 'none_prompt'),
+  );
+  $form['display']['show_hidden_contact'] = array(
+    '#type' => 'radios',
+    '#title' => t('Display Contact Name'),
+    '#description' => t('If enabled, this static element will show the contact that has been pre-selected (or else the Create/Not Found Prompt if set). Otherwise the element will not be visible.'),
+    '#options' => array(t('No'), t('Yes')),
+    '#default_value' => $component['extra']['show_hidden_contact'],
+    '#parents' => array('extra', 'show_hidden_contact'),
+    '#weight' => -5,
+  );
+  $form['display']['hide_fields'] = array(
+    '#type' => 'select',
+    '#multiple' => TRUE,
+    '#title' => t('Fields to Hide'),
+    '#default_value' => $component['extra']['hide_fields'],
+    '#description' => t('When an existing contact is selected, which fields should the user be allowed to edit and which should be hidden?'),
+    '#options' => webform_civicrm_contact_fields($node, $c),
+    '#weight' => -4,
+    '#parents' => array('extra', 'hide_fields'),
   );
   $form['validation']['unique'] = array(
     '#type' => 'checkbox',
@@ -256,6 +264,11 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
   list(, $c,) = explode('_', $component['form_key'], 3);
   $selector = '\'#webform-client-form-' . $component['nid'] . ' :input.civicrm-enabled[name*="' . $component['form_key'] . '"]\'';
   $callback_path = '"' . url('webform-civicrm/js/' . $node->nid . '-' . $component['cid'], array('alias' => TRUE)) . '"';
+  $js = '
+      (function ($, D) {
+        D.behaviors.webform_civicrm_' . $node->nid . '_' . $component['cid'] . ' = {
+          attach: function (context) {
+            var toHide = ' . json_encode(array_values($component['extra']['hide_fields'])) . ';';
   if ($component['extra']['widget'] == 'autocomplete') {
     $element['#type'] = 'textfield';
     if ($node) {
@@ -272,15 +285,12 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
         onDelete: function(item) {wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, "");},
         prePopulate: prep
       }';
-      $js = '
-      (function ($) {
-        $(document).ready(function() {
-          var toHide = ' . json_encode(array_values($component['extra']['hide_fields'])) . ';
-          var selector = ' . $selector . ';
-          var prep = wfCivi.existingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, selector);
-          $(selector).tokenInput(' . $callback_path . ', ' . $settings . ');
-        });
-      })(jQuery);';
+      $js .= 'var selector = ' . $selector . ';
+              var prep = wfCivi.existingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, selector);
+              $(selector, context).tokenInput(' . $callback_path . ', ' . $settings . ');
+            }
+          };
+        })(jQuery, Drupal);';
       $element['#attached']['js'][$js] = array('type' => 'inline');
     }
   }
@@ -290,16 +300,13 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
     if ($node) {
       $filters = webform_civicrm_search_filters($component);
       $element['#options'] = webform_civicrm_existing_contact_search($node, $component, $filters);
-      $js = '
-      (function ($) {
-        $(document).ready(function() {
-          var toHide = ' . json_encode(array_values($component['extra']['hide_fields'])) . ';
-          $(' . $selector . ').change(function() {
-            wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, $(this).val());
-          });
-          wfCivi.existingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, ' . $selector . ');
-        });
-      })(jQuery);';
+      $js .= '$(' . $selector . ', context).change(function() {
+                wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, $(this).val());
+              });
+              wfCivi.existingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, ' . $selector . ');
+            }
+          };
+        })(jQuery, Drupal);';
       $element['#attached']['js'][$js] = array('type' => 'inline');
     }
   }
@@ -308,29 +315,54 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
     if (!empty($value[0])) {
       $element['#value'] = $value[0];
     }
-    $js = '
-      (function ($) {
-        $(document).ready(function() {
-          var toHide = ' . json_encode(array_values($component['extra']['hide_fields'])) . ';
-          wfCivi.existingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, ' . $selector . ');
-        });
-      })(jQuery);';
-    $element['#attached']['js'][$js] = array('type' => 'inline');
+    if ($component['extra']['show_hidden_contact']) {
+      $element['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/token-input.css';
+    }
+    if ($component['extra']['hide_fields']) {
+      $js .= 'wfCivi.existingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, ' . $selector . ');
+            }
+          };
+        })(jQuery, Drupal);';
+      $element['#attached']['js'][$js] = array('type' => 'inline');
+    }
   }
   // Enforce uniqueness.
   if ($component['extra']['unique']) {
     $element['#element_validate'][] = 'webform_validate_unique';
   }
+  if ($cid = webform_civicrm_aval($value, 0)) {
+    $element['#default_value'] = $cid;
+  }
+  webform_civicrm_fill_contact_value($node, $component, $element);
 
-  if (!empty($value[0])) {
-    $element['#default_value'] = $cid = $value[0];
-    if ($name = webform_civicrm_existing_contact_access($node, $component, $component['extra']['filters'], $cid)) {
+  return $element;
+}
+
+function webform_civicrm_fill_contact_value($node, $component, &$element) {
+  $cid = webform_civicrm_aval($element, '#default_value');
+  if ($cid && !($element['#type'] == 'hidden' && !$component['extra']['show_hidden_contact'])) {
+    $filters = webform_civicrm_search_filters($component);
+    $name = webform_civicrm_existing_contact_access($node, $component, $filters, $cid);
+    if ($name !== FALSE) {
       $element['#attributes']['data-civicrm-name'] = $name;
       $element['#attributes']['data-civicrm-id'] = $cid;
     }
   }
-
-  return $element;
+  // Show a non-editable choice for hidden fields
+  if ($element['#type'] == 'hidden' && $component['extra']['show_hidden_contact']) {
+    if ((!$cid && $component['extra']['none_prompt']) || ($cid && $name !== FALSE)) {
+      $name = $cid ? $name : $component['extra']['none_prompt'];
+      $class = 'form-item webform-component webform-component-civicrm_contact static';
+      if ($component['extra']['title_display'] == 'inline') {
+        $class .= ' webform-container-inline';
+      }
+      $element['#prefix'] = '<div class="' . $class . '">';
+      if ($component['extra']['title_display'] != 'none') {
+        $element['#prefix'] .= '<label>' . $component['name'] . '</label>';
+      }
+      $element['#prefix'] .= '<ul class="token-input-list"><li class="token-input-token"><p>' . $name . '</p></li></ul></div>';
+    }
+  }
 }
 
 /**
@@ -542,7 +574,7 @@ function webform_civicrm_existing_contact_access($node, $component, $filters, $c
 }
 
 /**
- * Find exposed field sets for a contact
+ * Find exposed field groups for a contact
  */
 function webform_civicrm_contact_fields($node, $con) {
   $ret = array();
@@ -550,8 +582,8 @@ function webform_civicrm_contact_fields($node, $con) {
   $sets['name'] = array('label' => t('Name'));
   foreach ($node->webform['components'] as $f) {
     if ($pieces = webform_civicrm_explode_key($f['form_key'])) {
-      list( , $c, , , $table, $field) = $pieces;
-      if ($c == $con && isset($sets[$table])) {
+      list( , $c, $ent, , $table, $field) = $pieces;
+      if ($ent == 'contact' && $c == $con && isset($sets[$table])) {
         // Separate name from other contact fields
         if ($table == 'contact' && strpos($field, 'name')) {
           $table = 'name';

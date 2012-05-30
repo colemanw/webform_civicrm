@@ -450,16 +450,17 @@ function webform_civicrm_update_6205() {
 function webform_civicrm_update_7300() {
   module_load_include('inc', 'webform_civicrm', 'webform_civicrm_admin');
   module_load_include('inc', 'webform', 'includes/webform.components');
+  civicrm_initialize();
   $fields = webform_civicrm_get_fields();
   $db = db_query("SELECT * FROM {webform_civicrm_forms}");
   foreach ($db as $form) {
     $data = unserialize($form->data);
-    $node = node_load($form->nid);
+    $form = (array) $form;
+    $node = node_load($form['nid']);
     $enabled = webform_civicrm_enabled_fields($node);
-
     // Add existing contact field
     $field = $fields['contact_existing'];
-    $field['nid'] = $form->nid;
+    $field['nid'] = $form['nid'];
     $field['form_key'] = 'civicrm_1_contact_1_contact_existing';
     $field['extra']['default'] = $form['contact_matching'] ? 'user' : '';
     $field['extra']['hide_fields'] = array();
@@ -478,18 +479,19 @@ function webform_civicrm_update_7300() {
     foreach ($data['contact'] as $c => &$contact) {
       if (!empty($contact['relationship'])) {
         foreach ($contact['relationship'] as $n => $rel) {
-          if (!empty($rel['relationship']['relationship_type_id'])) {
-            $r_types = webform_civicrm_field_options(array('form_key' => "civicrm_{$c}_contact_{$n}_relationship_relationship_type_id"), '', $data);
-            $type = $rel['relationship']['relationship_type_id'];
+          if (!empty($rel['relationship_type_id'])) {
+            $r_types = webform_civicrm_field_options(array('form_key' => "civicrm_{$c}_contact_{$n}_relationship_relationship_type_id"), 'config_form', $data);
+            $type = $rel['relationship_type_id'];
             list($r, $a_b) = explode('_', $type);
             if (!isset($r_types[$type]) && isset($r_types[$r . '_r'])) {
-              $contact['relationship'][$n]['relationship']['relationship_type_id'] = $r . '_r';
+              $contact['relationship'][$n]['relationship_type_id'] = $r . '_r';
             }
             // Current employer rel with contact 1
             if ($r == 'ce' && $n == 1) {
               // Add existing contact field
               $field = $fields['contact_existing'];
-              $field['nid'] = $form->nid;
+              $field['nid'] = $form['nid'];
+              $field['weight'] = -255;
               $field['form_key'] = "civicrm_{$c}_contact_1_contact_existing";
               $field['extra']['widget'] = 'hidden';
               $field['extra']['default'] = 'relationship';
@@ -523,8 +525,10 @@ function webform_civicrm_update_7300() {
         );
         // Set existing contact id
         $field = $fields['contact_existing'];
-        $field['nid'] = $form->nid;
+        $field['nid'] = $form['nid'];
         $field['form_key'] = 'civicrm_' . $c . '_contact_1_contact_existing';
+        $field['weight'] = 255;
+        $field['title'] = t('Activity Assignee');
         $field['extra']['widget'] = 'hidden';
         $field['extra']['default'] = 'contact_id';
         $field['extra']['default_contact_id'] = $val;
@@ -562,8 +566,8 @@ function webform_civicrm_update_7300() {
           $field['form_key'] = 'civicrm_' . $c . '_contact_1_contact_existing';
           $field['type'] = 'civicrm_contact';
           $field['extra']['widget'] = 'select';
-          $field['extra']['filters']['group'] = $field['extra']['civicrm_group'];
           webform_component_defaults($field);
+          $field['extra']['filters']['group'] = array($field['extra']['civicrm_group']);
         }
         webform_component_update($field);
       }
@@ -589,7 +593,7 @@ function webform_civicrm_update_7300() {
       }
     }
 
-    $form->data = $data;
+    $form['data'] = $data;
     drupal_write_record('webform_civicrm_forms', $form, 'nid');
   }
   db_drop_field('webform_civicrm_forms', 'contact_matching');

@@ -113,6 +113,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
       '#title' => t('Contact !num', array('!num' => $n)),
       '#description' => $n > 1 ? NULL : t('Primary contact. Usually assumed to be the person filling out the form.') . '<br />' . t('Check the "Existing Contact" box to autofill with the current user (or another contact).'),
       '#group' => 'webform_civicrm',
+      '#attributes' => array('class' => array('contact-icon-' . $c['contact'][1]['contact_type'])),
     );
     $form['contact_' . $n][$n . '_contact_type'] = array(
       '#type' => 'select',
@@ -229,6 +230,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#title' => t('Introduction Text'),
     '#description' => t('This text will appear at the top of the form. You may configure separate messages for known contacts (logged in users, or users following a hashed link from civimail) and unknown (anonymous) users.'),
     '#group' => 'webform_civicrm',
+    '#attributes' => array('class' => array('civi-icon-text')),
   );
   $form['prefix']['prefix_known'] = array(
     '#type' => 'textarea',
@@ -247,6 +249,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#title' => t('"Not You?" Message'),
     '#description' => t('Prompt for users who are logged in as, or following a hashed link for, someone else.'),
     '#group' => 'webform_civicrm',
+    '#attributes' => array('class' => array('civi-icon-message')),
   );
   $form['st_message']['toggle_message'] = array(
     '#type' => 'checkbox',
@@ -268,6 +271,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#title' => t('Create Activity'),
     '#description' => t('Create an activity for contacts when this form is submitted?'),
     '#group' => 'webform_civicrm',
+    '#attributes' => array('class' => array('civi-icon-activity')),
   );
   if (in_array('CiviCase', $config->enableComponents, TRUE)
   && $case_types = webform_civicrm_get_options('case_type')) {
@@ -400,6 +404,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
       '#type' => 'fieldset',
       '#title' => t('Event Registration'),
       '#group' => 'webform_civicrm',
+      '#attributes' => array('class' => array('civi-icon-participant')),
     );
     $reg_type = webform_civicrm_aval($data, 'participant_reg_type');
     $form['event']['participant_reg_type'] = array(
@@ -540,6 +545,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#type' => 'fieldset',
     '#title' => t('Additional Options'),
     '#group' => 'webform_civicrm',
+    '#attributes' => array('class' => array('civi-icon-prefs')),
     '#description' => '<p>' .
     t('To have this form auto-filled for anonymous users, enable the contact 1 "existing contact" field and send the following link from CiviMail:') .
     '<br /><code>' . url('node/' . $node->nid, array('absolute' => TRUE, 'query' => array('cid1' => ''))) . '{contact.contact_id}&amp;{contact.checksum}</code></p>',
@@ -922,28 +928,6 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         $form['validation']['maxlength']['#type'] = 'hidden';
         $form['validation']['maxlength']['#value'] = 5;
         $form['value']['#description'] = t('To set a default value, enter the state/province abbreviation in all caps.');
-      }
-      // For ContactReference fields, choose a group
-      if (webform_civicrm_aval($field, 'data_type') === 'ContactReference') {
-        if ($element['type'] === 'select') {
-          $component = $node->webform['components'][$form['cid']['#value']];
-          $form['extra']['civicrm_group'] = array(
-            '#type' => 'select',
-            '#default_value' => webform_civicrm_aval($component['extra'], 'civicrm_group', 0),
-            '#title' => t('Choose Contact From'),
-            '#options' => array(t('- Webform Contacts -')) + webform_civicrm_get_options('group'),
-            '#description' => t('Group from which this contact reference will be selected'),
-          );
-          $form['extra']['items']['#type'] = 'hidden';
-          $form['extra']['items']['#required'] = FALSE;
-          $form['extra']['options_source']['#access'] = FALSE;
-          $form['extra']['multiple']['#type'] = 'hidden';
-          $form['extra']['multiple']['#value'] = 0;
-          array_unshift($form['#submit'], '_webform_civicrm_process_group_selection');
-        }
-        else {
-          $form['#prefix'] = '<p>' . t('Enter either a numeric contact id, or #1, #2, etc. to use contact 1, 2, etc. from the webform.') . '</p>';
-        }
       }
 
       // Here's a much nicer interface for managing options than the standard textfields

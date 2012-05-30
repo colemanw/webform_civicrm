@@ -393,12 +393,8 @@ function webform_civicrm_fill_values(&$elements, $node, $data, $fields, $submitt
           }
           $element['#default_value'] = $val;
         }
-        if ($name == 'existing' && !empty($element['#default_value'])) {
-          $filters = webform_civicrm_search_filters($element['#webform_component']);
-          if ($name = webform_civicrm_existing_contact_access($node, $element['#webform_component'], $filters, $element['#default_value'])) {
-            $element['#attributes']['data-civicrm-name'] = $name;
-            $element['#attributes']['data-civicrm-id'] = $element['#default_value'];
-          }
+        if ($name == 'existing') {
+          webform_civicrm_fill_contact_value($node, $element['#webform_component'], &$element);
         }
       }
     }

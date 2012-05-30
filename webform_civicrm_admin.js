@@ -165,8 +165,8 @@ var wfCiviAdmin = (function ($, D) {
 
   function CheckLength(str) {
     str = D.checkPlain(str);
-    if (str.length > 45) {
-      str = str.substr(0, 43) + '...';
+    if (str.length > 40) {
+      str = str.substr(0, 38) + '...';
     }
     return str;
   }
@@ -252,7 +252,7 @@ var wfCiviAdmin = (function ($, D) {
         }
       }).change();
 
-      $('select[id*=contact-type], select[id*=contact-sub-type]', context).once('wf-civi').change(function() {
+      $('select[id*=contact-type], select[id*=contact-sub-type]', context).once('wf-civi-relationship').change(function() {
         relationshipOptions();
       });
 
@@ -280,6 +280,34 @@ var wfCiviAdmin = (function ($, D) {
             $('div.form-type-checkbox', fs).hide();
         }
       }).change();
+
+      // Loop through fieldsets and set icon in the tab.
+      // We don't use the once() method because we need the i from the loop
+      $('#webform-civicrm-configure-form fieldset.vertical-tabs-pane').each(function(i) {
+        if (!$(this).hasClass('wf-civi-icon-processed')) {
+          var clas = $(this).attr('class').split(' ');
+          var name = '';
+          for (var c in clas) {
+            var cl = clas[c].split('-');
+            if (cl[1] == 'icon') {
+              if (cl[0] == 'contact') {
+                name = 'name="' + (i + 1) + '_contact_type"'
+              }
+              $('#webform-civicrm-configure-form .vertical-tab-button a').eq(i).prepend('<span class="civi-icon '+cl[2]+'" '+name+'"> </span>');
+              continue;
+            }
+          }
+          $(this).addClass('wf-civi-icon-processed');
+        }
+      });
+
+      $('select[name$="_contact_type"]').once('wf-civi-icon').each(function(index) {
+        $(this).change(function() {
+          var span = $('#webform-civicrm-configure-form .vertical-tab-button span[name="'+$(this).attr('name')+'"]');
+          span.removeClass();
+          span.addClass('civi-icon '+$(this).val());
+        });
+      });
     }
   };
 

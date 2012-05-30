@@ -16,6 +16,12 @@ form ul.token-input-list {
     clear: left;
 }
 
+form .webform-container-inline ul.token-input-list {
+    display: inline-block;
+    position: relative;
+    top: 10px;
+}
+
 form ul.token-input-list li {
     list-style-type: none;
 }

@@ -717,7 +717,9 @@ function webform_civicrm_get_fields($var = 'fields') {
       'phone_type_id' => 'phone_type',
       'location_type_id' => 'location_type',
       'website_type_id' => 'website_type',
-      'master_id' => 'master_id',
+      'master_id' => 'contact',
+      'target_contact_id' => 'contact',
+      'assignee_contact_id' => 'contact',
       'relationship_type_id' => 'relationship_type_id',
       'is_active' => 'yes_no',
       'relationship_permission' => 'relationship_permission',
@@ -830,6 +832,7 @@ function webform_civicrm_get_fields($var = 'fields') {
           $lists['custom_' . $dao->id] = 'state_province';
         }
         elseif ($fields[$id]['data_type'] == 'ContactReference') {
+          $lists['custom_' . $dao->id] = 'contact';
           $fields[$id]['expose_list'] = TRUE;
           $fields[$id]['empty_option'] = t('- None -');
         }
@@ -858,8 +861,11 @@ function webform_civicrm_user_cid($id = NULL, $type = 'uf') {
     $id = $user->uid;
   }
   // Lookup current domain for multisite support
-  $domain = webform_civicrm_api('domain', 'get', array('current_domain' => 1, 'return.id' => 1));
-  $domain = webform_civicrm_aval($domain, 'id', 1);
+  static $domain = 0;
+  if (!$domain) {
+    $domain = webform_civicrm_api('domain', 'get', array('current_domain' => 1, 'return.id' => 1));
+    $domain = webform_civicrm_aval($domain, 'id', 1);
+  }
   $result = webform_civicrm_api('uf_match', 'get', array($type . '_id' => $id));
   if (!empty($result['values'])) {
     foreach ($result['values'] as $val) {
