@@ -880,6 +880,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
     // Open new case if needed.
     if (empty($id['case'][1]) && empty($id['act'][1]) && !empty($data['case'][1]) && !empty($id['cid'][1])) {
       $data['case'][1]['case'][1]['contact_id'] = $id['cid'][1];
+      $data['case'][1]['case'][1]['subject'] = check_plain($node->title);
       $result = webform_civicrm_api('case', 'create', $data['case'][1]['case'][1]);
       if (!empty($result['values']['id'])) {
         webform_civicrm_save_custom($data['case'][1], $result['values']['id'], 'Case');

@@ -1020,17 +1020,18 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
       if ($form['type']['#value'] == 'civicrm_contact') {
         $form['display']['#weight'] = -1;
       }
-      elseif ($field && $field['type'] !== 'civicrm_contact') {
+      // Allow widget to be altered
+      elseif ($field && $field['type'] !== 'civicrm_contact' && empty($_GET['type'])) {
         $widgets = array();
         foreach (webform_components() as $k => $v) {
-          if ($k !== 'civicrm_contact' && $k !== 'civicrm_contact' && empty($v['features']['group'])) {
+          if ($k !== 'civicrm_contact' && $k !== 'pagebreak' && $k !== 'markup' && empty($v['features']['group'])) {
             $widgets[$k] = $v['label'];
           }
         }
         $form['widget'] = array(
           '#type' => 'fieldset',
           '#title' => t('Widget: %type', array('%type' => webform_civicrm_aval($widgets, $form['type']['#value'], t('Unknown')))),
-          '#description' => t('The default widget for this CiviCRM %type field is %widget. You may change it if you wish - for example, a hidden field allows you to set the value without exposing this field to the form.<br />Note: Not all widgets may be compatible with this field - test your form after changing widgets.', array('%type' => $field['name'], '%widget' => webform_civicrm_aval($widgets, $field['type'], t('Disabled')))),
+          '#description' => t('The default widget for this CiviCRM !type field is %widget. You may change it if you wish - for example, a hidden field allows you to set the value without exposing this field to the form.<br />Note: Not all widgets may be compatible with this field - test your form after changing widgets.', array('!type' => $field['name'], '%widget' => webform_civicrm_aval($widgets, $field['type'], t('Disabled')))),
           '#collapsible' => TRUE,
           '#collapsed' => TRUE,
         );
@@ -1042,8 +1043,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         $form['widget']['change_widget'] = array(
           '#type' => 'submit',
           '#value' => t('Change Widget'),
-          //'#limit_validation_errors' => array(),
-          '#submit' => array('webform_civicrm_change_widget'),
+          '#submit' => array('webform_component_edit_form_submit', 'webform_civicrm_change_widget'),
         );
       }
     }
@@ -1296,12 +1296,9 @@ function webform_civicrm_disable($nid) {
  * Alter a webform component type.
  */
 function webform_civicrm_change_widget($form, &$form_state) {
-  $vals = $form_state['values'];
-  $vals['type'] = $vals['widget']['widget'];
-  webform_component_defaults($vals);
-  webform_component_update($vals);
-  $form_state['redirect'] = $_GET['q'];
-  drupal_set_message(t('Form widget has been updated. Test your form to ensure that the new widget works with this CiviCRM field.'));
+  unset($_SESSION['messages']['status']);
+  drupal_set_message(t('Click "Save component" to change this field to %type (or go back to cancel). Test your form to ensure that the new widget works with this CiviCRM field.', array('%type' => $form['widget']['widget']['#options'][$form_state['values']['widget']['widget']])));
+  drupal_goto($_GET['q'], array('query' => array('type' => $form_state['values']['widget']['widget'])));
 }
 
 /**

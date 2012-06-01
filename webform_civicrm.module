@@ -57,8 +57,8 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
     _webform_civicrm_webform_frontend_form_alter($form, $form_state);
   }
 
-  // Prevent civicrm_contact element from being created directly from webform components form
-  elseif ($form_id == 'webform_components_form' && !empty($form['add']['type']['#options'])) {
+  // Override the theme for webform components tab
+  elseif ($form_id == 'webform_components_form') {
     $form['#theme'] = array('webform_civicrm_components_form');
   }
 }
@@ -72,6 +72,18 @@ function webform_civicrm_node_load($nodes, $types) {
     $node = &$nodes[$settings->nid];
     $settings->data = unserialize($settings->data);
     $node->webform_civicrm = (array) $settings;
+    // Allow a comopnent widget to be changed
+    if (!empty($_GET['type']) && arg(0) == 'node' && arg(1) == $node->nid && arg(3) == 'components') {
+      if (!empty($node->webform['components'][arg(4)]) && array_key_exists($_GET['type'], webform_components())) {
+        $node->webform['components'][arg(4)]['type'] = $_GET['type'];
+        webform_component_defaults($node->webform['components'][arg(4)]);
+        if ($_GET['type'] == 'select') {
+          module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
+          civicrm_initialize();
+          $node->webform['components'][arg(4)]['extra']['items'] = webform_civicrm_field_options($node->webform['components'][arg(4)], 'component_insert', $node->webform_civicrm['data']);
+        }
+      }
+    }
   }
 }
 

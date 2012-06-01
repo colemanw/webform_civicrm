@@ -46,14 +46,30 @@ USAGE NOTES
 -There is no problem mixing CiviCRM and other fields on a webform. Non-CiviCRM fields will be ignored by this module. Pagebreaks and fieldsets are fine too.
 
 
-MATCHING EXISTING CONTACTS
+WORKING WITH EXISTING CONTACTS
 
 Enabling the "Existing Contact" field gives you many options for how a contact can be autofilled or selected:
 - Widget: Allows you to determine whether to expose this field to the form as an autocomplete or select element, or hide it and set the value yourself.
 - Default Value: You can have this contact pre-selected on the form based on the current user or other options.
 - Filters: Limits the list of available choices from which this contact may be autofilled or selected.
 
-Note: An "Existing Contact" field is required for any autofilling of a contact, including from the current user or from the url (hashed link). This requirement is new in version 3.
+An "Existing Contact" field will also accept a contact id passed through the url. The following are supported:
+
+cid1=123 (contact 1's ID; you can also supply cid2 and so on as long as those contacts have an "Existing Contact" field)
+
+aid=456 (ID of the activity to autofill and update -- specifying an activity from a case works too)
+
+Note that permissions are checked, so these values will be ignored if the acting user doesn't have permission to view that contact. Use a checksum field to identify non-premissioned users (see section on hased links). The contact ID will also be checked against all filters you have set in the "Existing Contact" field. Activity ID will be ignored if no contact is part of the given activity.
+
+
+CREATING HASHED LINKS
+
+CiviMail has the ability to generate links that have a unique "key" for each person it sends a message to. This module can read those keys and automatically pre-fill the webform for people who follow that link. Your constituents will thank you for not making them fill out their name, address, etc when you already know it. To send out personalized links to your form in CiviMail, simply copy and paste the url provided under "Additional Options" on the CiviCRM tab of your webform into your CiviMail message.
+
+This module can also generate those keys, allowing you to send a hashed link from a webform-generated email, or redirect an anonymous user to another webform or CiviCRM page upon submission. An example use for this would be that upon completion of your webform, the contact will receive an email containing a hashed link directing them back to the form in case they wish to edit their information. Another example would be to redirect them to a CiviCRM contribution page, pre-filled with their contact information.
+To use this feature, enable the "Contact ID" and "Generate Checksum" fields for a contact, then use their token values in the webform's email or redirect options. Click "edit" on the checksum field for a snippet you can copy and paste.
+
+Remember that an "Existing Contact" field is required in order to accept contact IDs passed in the url.
 
 
 OPTION LISTS
@@ -100,14 +116,6 @@ This module gives similar functionality as core CiviCRM profiles for the state f
 - None of the above applies to custom fields. Custom fields of type state/province will be a non-dynamic dropdown list of all "Available states and provinces" you have enabled in CiviCRM's localization settings. This is the same behavior as on CiviCRM profiles.
 
 
-CREATING HASHED LINKS
-
-CiviMail has the ability to generate links that have a unique "key" for each person it sends a message to. This module can read those keys and automatically pre-fill the webform for people who follow that link. Your constituents will thank you for not making them fill out their name, address, etc when you already know it. To send out personalized links to your form in CiviMail, simply copy and paste the url provided under "Additional Options" on the CiviCRM tab of your webform into your CiviMail message.
-
-This module can also generate those keys, allowing you to send a hashed link from a webform-generated email, or redirect an anonymous user to another webform or CiviCRM page upon submission. An example use for this would be that upon completion of your webform, the contact will receive an email containing a hashed link directing them back to the form in case they wish to edit their information. Another example would be to redirect them to a CiviCRM contribution page, pre-filled with their contact information.
-To use this feature, enable the "Contact ID" and "Generate Checksum" fields for a contact, then use their token values in the webform's email or redirect options. Click "edit" on the checksum field for a snippet you can copy and paste.
-
-
 ABOUT THE "NOT YOU" MESSAGE
 
 This feature exists to help prevent a major CRM headache: If users view your form while logged-in as someone else, or they click to your form by following someone else's personalized link (i.e. from a forwarded email), they will see that person's details on the form. Not given any alternative, they are likely to manually clear those fields and type their own information, which would cause the existing contact to be updated with a different person's details, throwing your contact data into confusion.
@@ -144,17 +152,6 @@ WILL WEBFORM SUBMISSIONS BE UPDATED WHEN A CONTACT IS MODIFIED IN CIVICRM?
 
 No. Think of each submission record as a snapshot of what was actually entered on the form. It doesn't necessarily reflect current CRM data.
 But editing an existing webform submission will update the CiviCRM database.
-
-
-ADVANCED USAGE - PASSING IDS IN THE URL
-
-By default, contact 1 is assumed to be the acting user. So if you have enabled the default "Existing Contact" field and view a webform while logged-in, you will see your own contact details auto-filled on the form. You can disable that by changing the "Existing Contact" field to autofill a different contact, provide select options, or just leave the form blank. To facilitate working with existing contacts, you can supply ids in the url (an "Existing Contact" field must be present for said contact for url arguments to be processed). The following are supported:
-
-cid1=123 (contact 1's ID; you can also supply cid2 and so on)
-
-aid=456 (ID of the activity to autofill and update -- specifying an activity from a case works too)
-
-Note that permissions are checked, so these values will be ignored if the acting user doesn't have permission to view that contact. Use a checksum field to identify non-premissioned users. Activity ID will be ignored if no contact is part of the given activity.
 
 
 CHANGING A WEBFORM COMPONENT TYPE
