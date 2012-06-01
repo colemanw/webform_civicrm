@@ -79,7 +79,7 @@ CUSTOM DATA
 
 This module can handle (almost) any custom fields you have created for contacts, addresses, event participants, cases or activities. Note that not every type of widget exists in the webform module, or behaves exactly the same as its CiviCRM counterpart, for example a "datetime" field from Civi becomes a simple "date" (no time) in Webform, the "advanced multiselect" becomes a simple "multiselect," "rich text area" becomes a plain text area, etc. But there are some good add-on modules to improve this situation, i.e. "chosen," "webform_autocomplete," and "webform_html_textarea."
 
-Files are not yet supported due to their complexity. Contributions make this happen are welcomed.
+Files are not yet supported due to their complexity. Contributions to make this happen would be welcomed.
 
 
 EVENT REGISTRATION
@@ -95,9 +95,9 @@ STATE/PROVINCE AND COUNTRY ADDRESS FIELDS
 This module gives similar functionality as core CiviCRM profiles for the state field of an address:
 - If you enable both state and country fields for an address, the state list will dynamically update based on the chosen country.
 - If you enable a state field but not a country field for an address, only states from your site's default country will be shown.
-- If the end-user has scripts disabled, the dynamic state list will degrade to a simple textbox where they may enter the abbreviation. This is why the Webform Components tab shows State/Province as a textfield.
+- If the end-user has scripts disabled, the dynamic state list will degrade to a simple textbox where they may enter the abbreviation.
 
-- None of the above applies to custom fields. Custom fields of type state/province will be a non-dynamic dropdown list of all "Available states and provinces" you have enabled in CiviCRM's localization settings. This is exact same behavior as on CiviCRM profiles.
+- None of the above applies to custom fields. Custom fields of type state/province will be a non-dynamic dropdown list of all "Available states and provinces" you have enabled in CiviCRM's localization settings. This is the same behavior as on CiviCRM profiles.
 
 
 CREATING HASHED LINKS
@@ -121,8 +121,8 @@ This is particularly useful to avoid re-doing all your webform component customi
 
 - Add a contact to the webform via the CiviCRM tab.
 - Rename, arrange, and customize all the webform fields for that contact. For now, keep them all within the auto-generated fieldset (although you may add add as many sub-fieldsets within the main one as you like, for example to contain their address fields).
-- Click the clone button on the contact's fieldset.
-- All fields within that fieldset (including non-civicrm fields!) will be cloned.
+- From the webform tab, click the "Clone contact" button by the contact's fieldset.
+- All fields within that fieldset (including non-civicrm fields) will be cloned.
 - Note that if there are CiviCRM fields that do not belong to the contact within their fieldset (such as an activity field, or a field belonging to another contact), they will be cloned as well, which would be problematic.
 
 
@@ -140,15 +140,15 @@ WILL CONTACTS, ACTIVITIES, ETC. BE CREATED RETROACTIVELY IF I ENABLE THIS MODULE
 No. That would require some sort of batch update script, which is not part of this module.
 
 
-WILL WEBFORM SUBMISSIONS BE ALTERED WHEN A CONTACT IS UPDATED IN CIVICRM?
+WILL WEBFORM SUBMISSIONS BE UPDATED WHEN A CONTACT IS MODIFIED IN CIVICRM?
 
-No. Think of each submission record as a snapshot of what was actually entered on the form.
+No. Think of each submission record as a snapshot of what was actually entered on the form. It doesn't necessarily reflect current CRM data.
 But editing an existing webform submission will update the CiviCRM database.
 
 
 ADVANCED USAGE - PASSING IDS IN THE URL
 
-By default, contact 1 is assumed to be the acting user. So if you view a webform while logged-in, you will see your own contact details auto-filled on the form. You can disable that in the "additional options" so that logged in users are always presented with a blank form for entering/updating other contacts. To facilitate working with existing contacts, you can supply ids in the url. The following are supported:
+By default, contact 1 is assumed to be the acting user. So if you have enabled the default "Existing Contact" field and view a webform while logged-in, you will see your own contact details auto-filled on the form. You can disable that by changing the "Existing Contact" field to autofill a different contact, provide select options, or just leave the form blank. To facilitate working with existing contacts, you can supply ids in the url (an "Existing Contact" field must be present for said contact for url arguments to be processed). The following are supported:
 
 cid1=123 (contact 1's ID; you can also supply cid2 and so on)
 
@@ -159,18 +159,12 @@ Note that permissions are checked, so these values will be ignored if the acting
 
 CHANGING A WEBFORM COMPONENT TYPE
 
-The Webform module has no method for changing a field from one type to another (i.e. turing a textfield into a select, hidden, etc.). But sometimes you may wish to do so with form fields created by this module. The simplist way is:
-- On the webform tab, edit the field and note the field key
-- Delete the field
-- Create a new field of the desired type, giving it the same field key as the one you just deleted
-For more explanation of how this works, see "anatomy of a form key," below. Also note that there are some common sense reasons why some fields would NOT work well if you changed their type - for example, changing a select into textfield is probably a bad idea because the user would be likely to enter a value that is not a valid option.
+The Webform module has no method for changing a field from one type to another (i.e. turing a textfield into a select, hidden, etc.). This module provides an option for doing so on the component edit form. Note that there are some common sense reasons why some fields would NOT work well if you changed their type - for example, changing a select into textfield is probably a bad idea because the user would be likely to enter a value that is not a valid option.
 
 
 ANATOMY OF A FORM KEY - for geeks only
 
-CiviCRM fields are identified by their form key. Understanding form keys can allow you to get creative with your webform elements. You can, for example, create your own webform element with a type of your choosing, give it the appropriate form key and it will be linked to that civicrm field. You can also use this to set an element to be hidden on the form, but still available as an email token.
-
-CiviCRM webform keys all contain 6 pieces, connected by underscores. They are:
+This module uses form keys to identify CiviCRM fields. The convenation for these keys contains 6 pieces, connected by underscores. They are:
 civicrm _ number _ entity _ number _ table _ field_key (note that the 6th piece may itself contain underscores)
 
 For example, the field "civicrm_2_contact_1_address_postal_code" translates to:

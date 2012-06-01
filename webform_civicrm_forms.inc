@@ -24,7 +24,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   $settings = $node->webform_civicrm;
   $data = $settings['data'];
   $fields = webform_civicrm_get_fields();
-  $id['cid'] = $id = $info = $args = array();
+  $id['cid'] = $id = $info = array();
   // JS Cache eliminates the need for most ajax state/province callbacks
   foreach ($data['contact'] as $c) {
     if (!empty($c['number_of_address'])) {
@@ -72,19 +72,19 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
     }
   }
   // Lookup activity if passed in url
-  if (!empty($args['aid']) && !empty($id['cid']) && is_numeric($args['aid'])) {
-    $result = webform_civicrm_api('activity', 'get', array('activity_id' => $args['aid'], 'return.target_contact_id' => 1, 'return.assignee_contact_id' => 1));
-    if (isset($result['values'][$args['aid']])) {
-      $act = $result['values'][$args['aid']];
+  if (!empty($_GET['aid']) && !empty($id['cid']) && is_numeric($_GET['aid'])) {
+    $result = webform_civicrm_api('activity', 'get', array('activity_id' => $_GET['aid'], 'return.target_contact_id' => 1, 'return.assignee_contact_id' => 1));
+    if (isset($result['values'][$_GET['aid']])) {
+      $act = $result['values'][$_GET['aid']];
       $valid = FALSE;
       // Verify that this activity is the right type and that our contacts have some involvement in it
       if ($act['activity_type_id'] == $data['activity'][1]['activity'][1]['activity_type_id']) {
         foreach ($id['cid'] as $cid) {
           if ($act['source_contact_id'] == $cid || in_array($cid, $act['target_contact_id']) || in_array($cid, $act['assignee_contact_id'])) {
-            $activity = array('activity' => array(1 => $result['values'][$args['aid']]));
-            $custom = webform_civicrm_get_custom($args['aid'], 'activity');
+            $activity = array('activity' => array(1 => $result['values'][$_GET['aid']]));
+            $custom = webform_civicrm_get_custom($_GET['aid'], 'activity');
             $info['activity'] = array(1 => ($activity + $custom));
-            $id['act'][1] = $args['aid'];
+            $id['act'][1] = $_GET['aid'];
             break;
           }
         }
@@ -436,7 +436,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         module_load_include('inc', 'webform_civicrm', 'contact_component');
         $component = $node->webform['components'][$fid];
         $cid = $submission->data[$fid]['value'][0];
-        $filters = webform_civicrm_search_filters($component);
+        $filters = webform_civicrm_search_filters($node, $component);
         if (webform_civicrm_existing_contact_access($node, $component, $filters, $cid) !== FALSE) {
           list(, $c,) = explode('_', $field_key, 3);
           $id['cid'][$c] = $cid;

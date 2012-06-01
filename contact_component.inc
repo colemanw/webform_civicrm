@@ -350,7 +350,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
 function webform_civicrm_fill_contact_value($node, $component, &$element) {
   $cid = webform_civicrm_aval($element, '#default_value');
   if ($cid && !($element['#type'] == 'hidden' && !$component['extra']['show_hidden_contact'])) {
-    $filters = webform_civicrm_search_filters($component);
+    $filters = webform_civicrm_search_filters($node, $component);
     $name = webform_civicrm_existing_contact_access($node, $component, $filters, $cid);
     if ($name !== FALSE) {
       $element['#attributes']['data-civicrm-name'] = $name;

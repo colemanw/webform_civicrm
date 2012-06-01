@@ -1017,8 +1017,34 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         }
       }
       // Alter weights for contact component
-      elseif ($form['type']['#value'] == 'civicrm_contact') {
+      if ($form['type']['#value'] == 'civicrm_contact') {
         $form['display']['#weight'] = -1;
+      }
+      elseif ($field && $field['type'] !== 'civicrm_contact') {
+        $widgets = array();
+        foreach (webform_components() as $k => $v) {
+          if ($k !== 'civicrm_contact' && $k !== 'civicrm_contact' && empty($v['features']['group'])) {
+            $widgets[$k] = $v['label'];
+          }
+        }
+        $form['widget'] = array(
+          '#type' => 'fieldset',
+          '#title' => t('Widget: %type', array('%type' => webform_civicrm_aval($widgets, $form['type']['#value'], t('Unknown')))),
+          '#description' => t('The default widget for this CiviCRM %type field is %widget. You may change it if you wish - for example, a hidden field allows you to set the value without exposing this field to the form.<br />Note: Not all widgets may be compatible with this field - test your form after changing widgets.', array('%type' => $field['name'], '%widget' => webform_civicrm_aval($widgets, $field['type'], t('Disabled')))),
+          '#collapsible' => TRUE,
+          '#collapsed' => TRUE,
+        );
+        $form['widget']['widget'] = array(
+          '#type' => 'select',
+          '#options' => $widgets,
+          '#default_value' => $form['type']['#value'],
+        );
+        $form['widget']['change_widget'] = array(
+          '#type' => 'submit',
+          '#value' => t('Change Widget'),
+          //'#limit_validation_errors' => array(),
+          '#submit' => array('webform_civicrm_change_widget'),
+        );
       }
     }
   }
@@ -1267,6 +1293,18 @@ function webform_civicrm_disable($nid) {
 }
 
 /**
+ * Alter a webform component type.
+ */
+function webform_civicrm_change_widget($form, &$form_state) {
+  $vals = $form_state['values'];
+  $vals['type'] = $vals['widget']['widget'];
+  webform_component_defaults($vals);
+  webform_component_update($vals);
+  $form_state['redirect'] = $_GET['q'];
+  drupal_set_message(t('Form widget has been updated. Test your form to ensure that the new widget works with this CiviCRM field.'));
+}
+
+/**
  * Theme override for webform components form.
  *
  * @param $variables
@@ -1348,7 +1386,7 @@ function theme_webform_civicrm_components_form($variables) {
 
       // CiviCRM additions
       $clone = t('Clone');
-      $options = array('query' => drupal_get_destination());
+      $options = array();
       if ($component['type'] == 'civicrm_contact') {
         $types = array(
           'autocomplete' => t('Contact - Autocomplete'),
@@ -1421,9 +1459,9 @@ function theme_webform_civicrm_components_form($variables) {
         ($component['value'] == '') ? '-' : $component['value'],
         drupal_render($form['components'][$cid]['mandatory']),
         drupal_render($form['components'][$cid]['cid']) . drupal_render($form['components'][$cid]['pid']) . drupal_render($form['components'][$cid]['weight']),
-        l(t('Edit'), 'node/' . $node->nid . '/webform/components/' . $cid, array('query' => drupal_get_destination())),
+        l(t('Edit'), 'node/' . $node->nid . '/webform/components/' . $cid),
         l($clone, 'node/' . $node->nid . '/webform/components/' . $cid . '/clone', $options),
-        l(t('Delete'), 'node/' . $node->nid . '/webform/components/' . $cid . '/delete', array('query' => drupal_get_destination())),
+        l(t('Delete'), 'node/' . $node->nid . '/webform/components/' . $cid . '/delete'),
       );
       $row_class = array('draggable');
       if (!webform_component_feature($component['type'], 'group')) {
