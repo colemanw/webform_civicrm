@@ -508,33 +508,37 @@ function webform_civicrm_update_7300() {
     $settings = $form;
     $settings['create_fieldsets'] = 0;
 
-    // Activity assignee
-    if (!empty($data['activity'][1]['activity'][1]['assignee_contact_id'])) {
-      $val = &$data['activity'][1]['activity'][1]['assignee_contact_id'];
-      if ($val[0] == '#') {
-        $val = substr($val, 1);
-      }
-      else {
-        // Create contact
-        $c = count($data['contact']) + 1;
-        $data['contact'][$c] = array(
-          'contact' => array(1 => array(
-            'contact_type' => 'individual',
-            'contact_sub_type' => array(),
-          )),
-        );
-        // Set existing contact id
-        $field = $fields['contact_existing'];
-        $field['nid'] = $form['nid'];
-        $field['form_key'] = 'civicrm_' . $c . '_contact_1_contact_existing';
-        $field['weight'] = 255;
-        $field['title'] = t('Activity Assignee');
-        $field['extra']['widget'] = 'hidden';
-        $field['extra']['default'] = 'contact_id';
-        $field['extra']['default_contact_id'] = $val;
-        $field['extra']['hide_fields'] = array();
-        $val = $c;
-        webform_civicrm_component_insert($field, $enabled, $settings);
+    // Activity assignee & case manager
+    foreach (array('activity' => 'assignee_contact_id', 'case' => 'creator_id') as $table => $name) {
+      if (!empty($data[$table][1][$table][1][$name])) {
+        $val = &$data[$table][1][$table][1][$name];
+        if ($val[0] == '#') {
+          $val = substr($val, 1);
+        }
+        else {
+          // Create contact
+          $c = count($data['contact']) + 1;
+          $data['contact'][$c] = array(
+            'contact' => array(1 => array(
+              'contact_type' => 'individual',
+              'contact_sub_type' => array(),
+            )),
+          );
+          // Set existing contact id
+          $field = $fields['contact_existing'];
+          $field['nid'] = $form['nid'];
+          $field['form_key'] = 'civicrm_' . $c . '_contact_1_contact_existing';
+          $field['weight'] = 255;
+          $field['name'] = $table == 'case' ? t('Case Manager') : t('Activity Assignee');
+          $field['extra']['widget'] = 'hidden';
+          $field['extra']['default'] = 'contact_id';
+          $field['extra']['default_contact_id'] = $val;
+          $field['extra']['hide_fields'] = array();
+          $field['extra']['allow_create'] = 0;
+          $val = $c;
+          webform_component_defaults($field);
+          webform_component_insert($field);
+        }
       }
     }
     // Update some fields
@@ -554,11 +558,18 @@ function webform_civicrm_update_7300() {
         }
         // Big changes if selecting contact by group!
         else {
+          // Get a sample from the group for a hint of this contact's type
+          $result = webform_civicrm_api('contact', 'get', array('rowCount' => 1, 'group' => array($field['extra']['civicrm_group'] => 1), 'return.contact_type' => 1));
+          $type = 'individual';
+          if (!empty($result['values'])) {
+            $result = array_pop($result['values']);
+            $type = strtolower($result['contact_type']);
+          }
           // Create contact
           $c = count($data['contact']) + 1;
           $data['contact'][$c] = array(
             'contact' => array(1 => array(
-              'contact_type' => 'individual',
+              'contact_type' => $type,
               'contact_sub_type' => array(),
             )),
           );
@@ -567,6 +578,7 @@ function webform_civicrm_update_7300() {
           $field['type'] = 'civicrm_contact';
           $field['extra']['widget'] = 'select';
           webform_component_defaults($field);
+          $field['extra']['allow_create'] = 0;
           $field['extra']['filters']['group'] = array($field['extra']['civicrm_group']);
         }
         webform_component_update($field);
@@ -589,6 +601,13 @@ function webform_civicrm_update_7300() {
           $new[$k] = $v;
         }
         $field['extra']['items'] = webform_civicrm_array2str($new);
+        // Default value
+        if (!empty($field['value'])) {
+          list($r, $a_b) = explode('_', $field['value']);
+          if (isset($r_types[$r . '_r'])) {
+            $field['value'] = $r . '_r';
+          }
+        }
         webform_component_update($field);
       }
     }
@@ -597,4 +616,6 @@ function webform_civicrm_update_7300() {
     drupal_write_record('webform_civicrm_forms', $form, 'nid');
   }
   db_drop_field('webform_civicrm_forms', 'contact_matching');
+  cache_clear_all();
+  return t('To complete the upgrade, install the libraries module and the jQuery token input library. Verify that your forms are still working as expected, and enjoy the new contact matching features!');
 }

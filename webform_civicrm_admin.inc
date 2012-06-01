@@ -288,38 +288,6 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   if (!empty($data['case'][1]['case'][1]['case_type_id'])) {
     $case_type = $form['act']['case_type_id']['#default_value'] = $data['case'][1]['case'][1]['case_type_id'];
     $param = '7';
-    $form['act']['case']['case_fieldset'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Case Settings'),
-    );
-    $form['act']['case']['case_fieldset']['case_status_id'] = array(
-      '#type' => 'select',
-      '#title' => t('Case Status'),
-      '#description' => t('If a "@type" case with this status already exists for this contact, the activity will be added to that case. Otherwise a new case will be opened with this status.', array('@type' => $case_types[$data['case'][1]['case'][1]['case_type_id']])),
-      '#options' => webform_civicrm_get_options('case_status'),
-      '#default_value' => webform_civicrm_aval($data, 'case:1:case:1:status_id'),
-    );
-    $form['act']['case']['case_fieldset']['case_medium_id'] = array(
-      '#type' => 'select',
-      '#title' => t('Medium'),
-      '#description' => t('Medium for activities added to cases from this webform.'),
-      '#options' => webform_civicrm_get_options('encounter_medium'),
-      '#default_value' => webform_civicrm_aval($data, 'case:1:case:1:medium_id'),
-    );
-    $form['act']['case']['case_fieldset']['case_subject'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Case Subject'),
-      '#description' => t('Optional subject for "open case" activity for new cases.'),
-      '#default_value' => webform_civicrm_aval($data, 'case:1:case:1:subject', check_plain($node->title)),
-    );
-    $form['act']['case']['case_fieldset']['case_creator_id'] = array(
-      '#type' => 'textfield',
-      '#size' => 5,
-      '#required' => TRUE,
-      '#title' => t('Case Manager ID'),
-      '#description' => t('Contact ID of "case manager" for newly created cases.'),
-      '#default_value' => webform_civicrm_aval($data, 'case:1:case:1:creator_id', webform_civicrm_user_cid()),
-    );
     foreach ($sets as $sid => $set) {
       $sid .= '_fieldset';
       if ($set['entity_type'] == 'case') {
@@ -338,6 +306,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
         }
       }
     }
+    $form['act']['case']['case_fieldset']['civicrm_1_case_1_case_status_id']['#description'] = t('If a "@type" case with this status already exists for this contact, the activity will be added to that case. Otherwise a new case will be opened with this status.', array('@type' => $case_types[$data['case'][1]['case'][1]['case_type_id']]));
   }
   $act_types = webform_civicrm_get_options('activity_type', $param);
   $form['act']['case']['activity_type_id'] = array(
@@ -397,7 +366,6 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
       }
     }
   }
-
   // Event participant settings
   if (in_array('CiviEvent', $config->enableComponents, TRUE)) {
     $form['event'] = array(
@@ -653,13 +621,10 @@ function webform_civicrm_process_form_settings(&$vals) {
     }
   }
   if (!empty($vals['case_type_id'])) {
-    $data['case'] = array(1 => array('case' => array(1 => array('case_type_id' => $vals['case_type_id']))));
-    if (isset($vals['case_subject'])) {
-      $data['case'][1]['case'][1]['subject'] = $vals['case_subject'];
-      $data['case'][1]['case'][1]['status_id'] = $vals['case_status_id'];
-      $data['case'][1]['case'][1]['creator_id'] = $vals['case_creator_id'];
-      $data['case'][1]['case'][1]['medium_id'] = $vals['case_medium_id'];
+    if (empty($data['case'][1])) {
+      $data['case'][1]['case'][1]['creator_id'] = 1;
     }
+    $data['case'][1]['case'][1]['case_type_id'] = $vals['case_type_id'];
   }
   if (isset($vals['participant_reg_type'])) {
     $data['participant_reg_type'] = $vals['participant_reg_type'];
@@ -673,7 +638,6 @@ function webform_civicrm_process_form_settings(&$vals) {
  * Build a field item for the configure form
  */
 function webform_civicrm_configure_form_item($fid, $field, $settings) {
-  $lists = webform_civicrm_get_fields('lists');
   list( , $c, $ent, $n, $table, $name) = explode('_', $fid, 6);
   $field['name'] = str_replace('#', $table == 'relationship' ? $n : '', $field['name']);
 
@@ -723,6 +687,9 @@ function webform_civicrm_configure_form_item($fid, $field, $settings) {
   }
   if ($d = webform_civicrm_aval($field, 'extra:description')) {
     $item['#description'] = strlen($d) > 75 ? substr($d, 0, 75) . '...' : $d;
+  }
+  if ($a = webform_civicrm_aval($field, 'attributes')) {
+    $item['#attributes'] = $a;
   }
   return $item;
 }
@@ -823,7 +790,6 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
     }
 
     $i = 0;
-    $lists = webform_civicrm_get_fields('lists');
     foreach ($vals as $key => $val) {
       if (substr($key, 0, 7) == 'civicrm') {
         ++$i;
@@ -874,7 +840,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
     // Make sure the updated webform is visible to anonymous users.
     cache_clear_all();
   }
-  // Clear the entity cache if Entity Cache module is installed.
+  // Clear the entity cache.
   if (module_exists('entitycache')) {
     cache_clear_all($nid, 'cache_entity_node');
   }
@@ -894,15 +860,15 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
     if (!($pieces = webform_civicrm_explode_key($fid))) {
       return;
     }
-    list($lobo, $i, $ent, $n, $table, $key) = $pieces;
+    list($lobo, $i, $ent, $n, $table, $name) = $pieces;
     $fields = webform_civicrm_get_fields();
     // Is this component a CiviCRM field?
-    if (($field = webform_civicrm_aval($fields, $table . '_' . $key)) ||
+    if (($field = webform_civicrm_aval($fields, $table . '_' . $name)) ||
       ($lobo == 'civicrm' && $table == 'fieldset')) {
       $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_admin.css';
       $element = $node->webform['components'][$form['cid']['#value']];
 
-      if (arg(5) != 'clone' || $key == 'fieldset') {
+      if (arg(5) != 'clone' || $name == 'fieldset') {
         // Prevent users from editing the form_key and breaking things
         $form['form_key']['#disabled'] = TRUE;
         $form['form_key']['#value'] = $fid;
@@ -911,7 +877,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         if (arg(5) == 'clone') {
           $form['submit']['#value'] = t('Clone Contact');
           $new = count($node->webform_civicrm['data']['contact']) + 1;
-          $form['form_key']['#value'] = implode('_', array($lobo, $new, $ent, $n, $table, $key));
+          $form['form_key']['#value'] = implode('_', array($lobo, $new, $ent, $n, $table, $name));
           $form['name']['#default_value'] = str_replace($i, $new, $form['name']['#default_value']);
           array_unshift($form['#submit'], 'webform_civicrm_contact_clone');
           if (empty($form_state['input'])) {
@@ -924,15 +890,15 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         drupal_set_message(t('You are cloning a CiviCRM component. Refer to the Webform CiviCRM instructions for how to set the key if you want the new field to be processed by CiviCRM. You can also clone an entire contact by clicking the clone button by their fieldset.'), 'status', FALSE);
       }
 
-      if ($table === 'address' && $key === 'state_province_id') {
+      if ($table === 'address' && $name === 'state_province_id') {
         $form['validation']['maxlength']['#type'] = 'hidden';
         $form['validation']['maxlength']['#value'] = 5;
-        $form['value']['#description'] = t('To set a default value, enter the state/province abbreviation in all caps.');
+        $form['value']['#description'] = t('To set a default value, enter the state/province abbreviation.');
+        $form['value']['#attributes']['onkeyup'] = 'this.value = this.value.toUpperCase();';
       }
 
-      // Here's a much nicer interface for managing options than the standard textfields
-      elseif (($element['type'] === 'hidden' || $element['type'] === 'select')
-      && array_key_exists($key, webform_civicrm_get_fields('lists'))) {
+      // Interface similar to options_element
+      elseif (($element['type'] === 'hidden' || $element['type'] === 'select') && webform_civicrm_get_list($table, $name)) {
         $form['#attached']['js'] = array(drupal_get_path('module', 'webform_civicrm') . '/' . 'webform_civicrm_options.js');
         $options = $sort = webform_civicrm_field_options($element, 'component_edit', $node->webform_civicrm['data']);
         $defaults_selected = array();
@@ -1004,7 +970,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         );
         // Auto set multi-value option for single-valued entities
         if (empty($field['extra']['multiple'])
-        && $element['type'] != 'hidden' && $key != 'event_id') {
+        && $element['type'] != 'hidden' && $name != 'event_id') {
           $form['extra']['multiple']['#type'] = 'hidden';
           $form['extra']['multiple']['#value'] = 0;
           $form['civicrm_options_fieldset']['civicrm_defaults']['#type'] = 'radios';
@@ -1014,7 +980,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         array_unshift($form['#submit'], 'webform_civicrm_process_options_selection');
       }
       // Simplify form for hidden fields
-      elseif (($key == 'contact_id' || $key == 'external_identifier') && $element['type'] == 'hidden') {
+      elseif (($name == 'contact_id' || $name == 'external_identifier') && $element['type'] == 'hidden') {
         $form['value']['#value'] = '';
         $form['value']['#type'] = 'textfield';
         $form['value']['#disabled'] = TRUE;
@@ -1028,7 +994,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         . '</em></p>';
       }
       // Customize form for checksum element
-      elseif ($key == 'cs') {
+      elseif ($name == 'cs') {
         $form['value']['#title'] = t('Checksum Lifespan');
         $form['value']['#required'] = TRUE;
         $form['value']['#type'] = 'textfield';
@@ -1105,14 +1071,14 @@ function webform_civicrm_component_insert(&$field, &$enabled, $settings) {
   // Retrieve option list
   if ($options = webform_civicrm_field_options($field, 'component_insert', $settings['data'])) {
     $field['extra']['items'] = $options;
-    $lists = webform_civicrm_get_fields('lists');
+    $list = webform_civicrm_get_list($table, $name);
     if (!isset($field['extra']['aslist']) && empty($field['extra']['multiple'])) {
       $field['extra']['aslist'] = 1;
     }
-    if (is_numeric($lists[$name])) {
+    if (is_numeric($list)) {
       // Lookup defaults for custom fields
       $dao = &CRM_Core_DAO::executeQuery('SELECT value FROM civicrm_option_value
-        WHERE is_default AND is_active AND option_group_id = ' . $lists[$name]);
+        WHERE is_default AND is_active AND option_group_id = ' . $list);
       $field['value'] = '';
       while ($dao->fetch()) {
         $field['value'] .= ($field['value'] ? ',' : '') . $dao->value;
@@ -1384,7 +1350,11 @@ function theme_webform_civicrm_components_form($variables) {
       $clone = t('Clone');
       $options = array('query' => drupal_get_destination());
       if ($component['type'] == 'civicrm_contact') {
-        $types = array('autocomplete' => t('Contact - Autocomplete'), 'select' => t('Contact - Select List'), 'hidden' => t('Contact - Hidden'));
+        $types = array(
+          'autocomplete' => t('Contact - Autocomplete'),
+          'select' => t('Contact - Select List'),
+          'hidden' => $component['extra']['show_hidden_contact'] ? t('Contact - Static') : t('Contact - Hidden'),
+        );
         $type = $types[$component['extra']['widget']];
       }
       else {
@@ -1410,10 +1380,38 @@ function theme_webform_civicrm_components_form($variables) {
         else {
           $title = t('Field for !type', array('!type' => $sets[$table]['label']));
         }
+        if ($table === 'address' && $name === 'state_province_id' && $component['type'] === 'textfield') {
+          $type = t('AJAX Select');
+        }
         if ($component['type'] == 'civicrm_contact' || $component['type'] == 'fieldset') {
           $class .= ' ' . $node->webform_civicrm['data']['contact'][$c]['contact'][1]['contact_type'];
         }
         $type = array('data' => '<span class="' . $class . '"> </span>' . $type, 'title' => $title);
+        // Show defaults with labels instead of keys
+        if ($component['type'] == 'civicrm_contact') {
+          if ($component['extra']['default'] == 'contact_id') {
+            $component['value'] = check_plain(webform_civicrm_display_name($component['extra']['default_contact_id']));
+          }
+          elseif ($component['extra']['default'] == 'user') {
+            $component['value'] = t('Current User');
+          }
+          elseif ($component['extra']['default'] == 'auto') {
+            $component['value'] = t('Auto - From Filters');
+          }
+          elseif ($rtype = $component['extra']['default_relationship']) {
+            $component['value'] = t('Relationship to Contact 1');
+          }
+        }
+        elseif ($component['type'] == 'select' && $component['value']) {
+          $items = webform_civicrm_str2array($component['extra']['items']);
+          $val = '';
+          foreach (explode(',', $component['value']) as $v) {
+            if (isset($items[$v])) {
+              $val .= ($val ? ', ' : '') . $items[$v];
+            }
+          }
+          $component['value'] = $val;
+        }
       }
 
       // Add each component to a table row.

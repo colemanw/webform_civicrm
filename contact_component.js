@@ -38,21 +38,26 @@ var wfCiviContact = (function ($, D) {
         var val = $(this).val().replace(/_/g, '-');
         $('#edit-defaults > div > .form-item', context).not('.form-item-extra-default').each(function() {
           if ($(this).hasClass('form-item-extra-default-'+val)) {
-            $(this).show();
+            $(this).removeAttr('style');
           }
           else {
-            $(this).hide();
+            $(this).css('display', 'none');
+            $(':checkbox', this).attr('disabled', 'disabled');
           }
         });
+        if (val === 'auto' || val === 'relationship') {
+          $('.form-item-extra-randomize').removeAttr('style');
+          $('.form-item-extra-randomize :checkbox').removeAttr('disabled');
+        }
       }).change();
       $('#edit-extra-widget', context).once('wf-civi').change(function() {
         if ($(this).val() == 'hidden') {
-          $('.form-item-extra-search-prompt', context).hide();
-          $('.form-item-extra-show-hidden-contact', context).show();
+          $('.form-item-extra-search-prompt', context).css('display', 'none');
+          $('.form-item-extra-show-hidden-contact', context).removeAttr('style');
         }
         else {
-          $('.form-item-extra-search-prompt', context).show();
-          $('.form-item-extra-show-hidden-contact', context).hide();
+          $('.form-item-extra-search-prompt', context).removeAttr('style');
+          $('.form-item-extra-show-hidden-contact', context).css('display', 'none');
         }
       }).change();
     }

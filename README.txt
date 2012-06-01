@@ -18,14 +18,13 @@ CiviCRM has the ability to embed a "profile" (set of CRM fields) on a page (i.e.
 On the other hand, webform_civicrm fields have a few cons:
 - Option lists do not auto-update when the options change in CiviCRM
 - Can't be embedded on the user/register or account pages
-- Don't support a few types of custom fields (relationship fields and file fields)
+- Don't support custom file upload fields
 
 
 FEATURES
 
 - Expose just about any CiviCRM contact, address, email, phone, website, activity, or custom field on a webform
-- Auto-fill forms for logged in users (as contact 1).
-- Auto-fill for anonymous users too if you send them a personalized link.
+- Auto-fill forms from existing contacts based on a number of criteria.
 - Create or update an activity and/or case when users fill out your form.
 - Register contacts for events
 - Create relationships and shared addresses between contacts.
@@ -36,8 +35,6 @@ GETTING STARTED
 - Enable the module.
 - Create a new webform (or go to edit an existing one).
 - Click on the CiviCRM tab.
-- Drupal 6 users: installing the vertical_tabs module makes the massive civicrm options much more manageable.
-  (the vertical tabs interface is already built in to Drupal 7)
 - Enable the fields you like, and optionally choose introduction text and other settings.
 - Your selected fields will be automatically created for you.
 - Customize the webform settings for your new fields however you wish.
@@ -47,7 +44,16 @@ USAGE NOTES
 
 -The webform fields created by this module are ordinary webform fields in almost every way. You can style, rename, nest, or edit them like any other webform field. The only thing special about them is their form key.
 -There is no problem mixing CiviCRM and other fields on a webform. Non-CiviCRM fields will be ignored by this module. Pagebreaks and fieldsets are fine too.
--Your CiviCRM default strict deduping rule is used to decide whether to update an existing contact or create a new one when the form is submitted by an anonymous user.
+
+
+MATCHING EXISTING CONTACTS
+
+Enabling the "Existing Contact" field gives you many options for how a contact can be autofilled or selected:
+- Widget: Allows you to determine whether to expose this field to the form as an autocomplete or select element, or hide it and set the value yourself.
+- Default Value: You can have this contact pre-selected on the form based on the current user or other options.
+- Filters: Limits the list of available choices from which this contact may be autofilled or selected.
+
+Note: An "Existing Contact" field is required for any autofilling of a contact, including from the current user or from the url (hashed link). This requirement is new in version 3.
 
 
 OPTION LISTS
@@ -71,9 +77,9 @@ This module allows you to tag contacts and add them to groups when they submit t
 
 CUSTOM DATA
 
-This module can handle (almost) any custom fields you have created for contacts, addresses, event participants, cases or activities. Note that not every type of component exists in the webform module, or behaves exactly the same as its CiviCRM counterpart, for example a "datetime" field from Civi becomes a simple "date" (no time) in Webform, the "advanced multiselect" becomes a simple "multiselect," "rich text area" becomes a plain text area, etc. But there are some good add-on modules to improve this situation, i.e. "chosen" and "webform_html_textarea."
+This module can handle (almost) any custom fields you have created for contacts, addresses, event participants, cases or activities. Note that not every type of widget exists in the webform module, or behaves exactly the same as its CiviCRM counterpart, for example a "datetime" field from Civi becomes a simple "date" (no time) in Webform, the "advanced multiselect" becomes a simple "multiselect," "rich text area" becomes a plain text area, etc. But there are some good add-on modules to improve this situation, i.e. "chosen," "webform_autocomplete," and "webform_html_textarea."
 
-Files are not yet supported due to their complexity. Custom data for other CRM entities (relationships, etc.) are not currently supported.
+Files are not yet supported due to their complexity. Contributions make this happen are welcomed.
 
 
 EVENT REGISTRATION

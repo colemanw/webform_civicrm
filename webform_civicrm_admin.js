@@ -146,7 +146,7 @@ var wfCiviAdmin = (function ($, D) {
           $(this).val(selected_option);
         }
         else {
-          $(this).val("0");
+          $(this).val("0").change();
         }
       });
     }
@@ -256,8 +256,6 @@ var wfCiviAdmin = (function ($, D) {
         relationshipOptions();
       });
 
-      $('select[id$=address-master-id]', context).change();
-
       $('#edit-number-of-contacts', context).once('wf-civi').change(function() {
         $('#webform-civicrm-configure-form')[0].submit();
       });
@@ -265,6 +263,20 @@ var wfCiviAdmin = (function ($, D) {
       $('#edit-1-contact-type', context).once('wf-civi').change(function() {
         ContactMatchCheckbox();
       });
+
+      $('select[name*="relationship_relationship_type_id"]', context).once('wf-civi').change(function() {
+        var name = $(this).attr('name').replace('relationship_type_id', '');
+        var val = $(this).val().split('_');
+        $(':input[name*="'+name+'"][data-relationship-type]', context).each(function() {
+          var rel = $(this).attr('data-relationship-type').split(',');
+          if ($.inArray(val[0], rel) > -1) {
+            $(this).parent().removeAttr('style');
+          }
+          else {
+            $(this).parent().css('display', 'none');
+          }
+        });
+      }).change();
 
       $('select[name*="address_master_id"]', context).once('wf-civi').change(function() {
         var ele = $(this);

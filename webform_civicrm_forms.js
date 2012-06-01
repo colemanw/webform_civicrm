@@ -9,10 +9,6 @@ var wfCivi = (function ($, D) {
   var pub = {};
 
   pub.existingSelect = function (num, nid, path, toHide, cid) {
-    if (cid.length === 0) {
-      resetFields(num, nid, true, 'show', toHide, 500);
-      return;
-    }
     if (cid.charAt(0) === '-') {
       resetFields(num, nid, true, 'show', toHide, 500);
       // Fill name fields with name typed
@@ -38,12 +34,14 @@ var wfCivi = (function ($, D) {
       }
       return;
     }
-    $('#webform-client-form-'+nid).css('cursor', 'progress');
     resetFields(num, nid, true, 'hide', toHide, 500);
-    $.get(path, {cid: cid, load: 'full'}, function(data) {
-      fillValues(data, nid);
-      $('#webform-client-form-'+nid).removeAttr('style');
-    }, 'json');
+    if (cid) {
+      $('#webform-client-form-'+nid).css('cursor', 'progress');
+      $.get(path, {cid: cid, load: 'full'}, function(data) {
+        fillValues(data, nid);
+        $('#webform-client-form-'+nid).removeAttr('style');
+      }, 'json');
+    }
   };
 
   pub.existingInit = function (num, nid, path, toHide, selector) {
@@ -56,10 +54,10 @@ var wfCivi = (function ($, D) {
       else {
         var cid = field.attr('defaultValue');
       }
+      if (!cid || cid.charAt(0) !== '-') {
+        resetFields(num, nid, false, 'hide', toHide, 0);
+      }
       if (cid) {
-        if (cid.charAt(0) !== '-') {
-          resetFields(num, nid, false, 'hide', toHide, 0);
-        }
         if (cid == field.attr('data-civicrm-id')) {
           ret = [{id: cid, name: field.attr('data-civicrm-name')}];
         }
