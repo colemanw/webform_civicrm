@@ -147,7 +147,9 @@ function webform_civicrm_webform_component_info() {
     'civicrm_contact' => array(
       'label' => t('CiviCRM Contact'),
       'description' => t('Choose existing contact.'),
-      'features' => array(),
+      'features' => array(
+        'email_name' => TRUE,
+      ),
       'file' => 'contact_component.inc',
     ),
   );

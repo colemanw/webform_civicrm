@@ -44,7 +44,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   // Early return if the form (or page) was already submitted
   if (webform_civicrm_aval($form_state, 'clicked_button:#id') == 'edit-previous'
   || (empty($form_state['rebuild']) && !empty($form_state['storage']))) {
-    webform_civicrm_fill_values($form['submitted'], $node, array(), $fields, array());
+    webform_civicrm_fill_values($form['submitted'], $node);
     return;
   }
   // If this is an edit op, use the original IDs and return
@@ -53,7 +53,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       $form_state['storage']['civicrm']['id']['cid'] = $form['#submission']->civicrm['contact_id'];
       $form_state['storage']['civicrm']['id']['act'][1] = $form['#submission']->civicrm['activity_id'];
     }
-    webform_civicrm_fill_values($form['submitted'], $node, array(), $fields, array());
+    webform_civicrm_fill_values($form['submitted'], $node);
     return;
   }
   $enabled = webform_civicrm_enabled_fields($node);
@@ -258,7 +258,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   // Set default values and other attributes for CiviCRM form elements
   // Passing $submitted helps avoid overwriting values that have been entered on a multi-step form
   $submitted = webform_civicrm_aval($form_state, 'values:submitted', array());
-  webform_civicrm_fill_values($form['submitted'], $node, $info, $fields, $submitted);
+  webform_civicrm_fill_values($form['submitted'], $node, $info, $submitted);
 }
 
 /**
@@ -341,25 +341,29 @@ function webform_civicrm_contact_get($node, $enabled, $c, $cid, $exclude = array
 }
 
 /**
- * Recursively walk through form array and set default values for fields based on CiviCRM entity data
+ * Recursively walk through form array and set properties of CiviCRM fields
  * Called by _webform_civicrm_webform_frontend_form_alter() when webform is being viewed
  * @Param $elements: FAPI array
- * @Param $data: Array of CiviCRM data
+ * @Param $node: Object
+ * @Param $data: CiviCRM data to autofill form
+ * @Param $submitted: Existing submission
  */
-function webform_civicrm_fill_values(&$elements, $node, $data, $fields, $submitted) {
+function webform_civicrm_fill_values(&$elements, $node, $data = array(), $submitted = array()) {
   $sp = CRM_Core_DAO::VALUE_SEPARATOR;
+  $fields = webform_civicrm_get_fields();
   foreach ($elements as $eid => &$element) {
     if ($eid[0] == '#' || !is_array($element)) {
       continue;
     }
     // Recurse through nested elements
-    webform_civicrm_fill_values($element, $node, $data, $fields, $submitted);
+    webform_civicrm_fill_values($element, $node, $data, $submitted);
     if (empty($element['#type']) || $element['#type'] == 'fieldset' || $element['#type'] == 'file') {
       continue;
     }
-    if ($pieces = webform_civicrm_explode_key($eid)) {
+    if (!empty($element['#webform_component']) && $pieces = webform_civicrm_explode_key($eid)) {
       list( , $c, $ent, $n, $table, $name) = $pieces;
       if ($field = webform_civicrm_aval($fields, $table . '_' . $name)) {
+        $component = $element['#webform_component'];
         $element['#attributes']['class'][] = 'civicrm-enabled';
         if (!empty($field['data_type'])) {
           $dt = $element['#civicrm_data_type'] = $field['data_type'];
@@ -371,7 +375,7 @@ function webform_civicrm_fill_values(&$elements, $node, $data, $fields, $submitt
         }
         // If the user has already entered a value for this field, don't change it
         if (isset($data[$ent][$c][$table][$n][$name])
-        && !(isset($element['#webform_component']['cid']) && isset($submitted[$element['#webform_component']['cid']]))) {
+        && !(isset($component['cid']) && isset($submitted[$component['cid']]))) {
           $val = $data[$ent][$c][$table][$n][$name];
           if ($element['#type'] == 'date') {
             $date = strtotime($val);
@@ -394,7 +398,27 @@ function webform_civicrm_fill_values(&$elements, $node, $data, $fields, $submitt
           $element['#default_value'] = $val;
         }
         if ($name == 'existing') {
-          webform_civicrm_fill_contact_value($node, $element['#webform_component'], &$element);
+          webform_civicrm_fill_contact_value($node, $component, &$element);
+        }
+        // Provide live options from the Civi DB
+        elseif (!empty($component['extra']['civicrm_live_options']) && isset($element['#options'])) {
+          $new = webform_civicrm_field_options($component, 'live_options', $node->webform_civicrm['data']);
+          $old = $element['#options'];
+          $resave = FALSE;
+          // If an item doesn't exist, we add it. If it's changed, we update it.
+          // But we don't subtract items that have been removed in civi - this prevents
+          // breaking the display of old submissions.
+          foreach ($new as $k => $v) {
+            if (!isset($old[$k]) || $old[$k] != $v) {
+              $old[$k] = $v;
+              $resave = TRUE;
+            }
+          }
+          if ($resave) {
+            $component['extra']['items'] = webform_civicrm_array2str($old);
+            webform_component_update($component);
+          }
+          $element['#options'] = $new;
         }
       }
     }
@@ -588,7 +612,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
               foreach ($v2 as $n => $v3) {
                 if (is_array($v3) && is_numeric($n)) {
                   foreach($v3 as $name => $val) {
-                    if ($val && webform_civicrm_aval($fields, "{$table}_$name:data_type") == 'ContactReference') {
+                    if ($val && webform_civicrm_aval($fields, "{$table}_$name:data_type") === 'ContactReference') {
                       if (is_array($val)) {
                         $data[$ent][$c][$table][$n][$name] = array();
                         foreach ($val as $k => $v) {
@@ -598,11 +622,9 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
                         }
                       }
                       else {
+                        unset($data[$ent][$c][$table][$n][$name]);
                         if (!empty($id['cid'][$val])) {
                           $data[$ent][$c][$table][$n][$name] = $id['cid'][$val];
-                        }
-                        else {
-                          unset($data[$ent][$c][$table][$n][$name]);
                         }
                       }
                     }

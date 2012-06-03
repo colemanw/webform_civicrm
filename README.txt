@@ -15,8 +15,8 @@ CiviCRM has the ability to embed a "profile" (set of CRM fields) on a page (i.e.
 - Work with mutltiple contacts, addresses, emails, events, etc.
 - Have numerous add-on modules for spam control, layout, and other features
 
-On the other hand, webform_civicrm fields have a few cons:
-- Option lists do not auto-update when the options change in CiviCRM
+On the other hand, webform_civicrm fields have a few limitations:
+- Webforms are not CiviCRM profiles and cannot be used in standard CiviCRM workflows
 - Can't be embedded on the user/register or account pages
 - Don't support custom file upload fields
 
@@ -81,7 +81,9 @@ Any CiviCRM field with options (whether it's a simple yes/no select, your upcomi
 - You can set an option to be the default value on the form.
 - You can rename options.
 
-NOTE: Once a webform field is created, the options are set and will not change automatically. So if you update an option list in CiviCRM, the corresponding webform field will not be updated unless you click the edit button as described above and enable the new options.
+The downside of customizable options is that they are static: if you update an option list in CiviCRM, the corresponding webform field will not reflect those changes unless you click the edit button as described above and enable the new options.
+
+Alternately, you can set a field to use "Live Options." This will load the option list from the CiviCRM database every time the form is viewed. Live option lists cannot be customized, but will ensure your form element is up-to-date. Because of the slight performance impact from fetching options from the database with every form view, this setting is best used only with options that have some possibility of changing in the future.
 
 
 GROUPS AND TAGS
@@ -93,7 +95,7 @@ This module allows you to tag contacts and add them to groups when they submit t
 
 CUSTOM DATA
 
-This module can handle (almost) any custom fields you have created for contacts, addresses, event participants, cases or activities. Note that not every type of widget exists in the webform module, or behaves exactly the same as its CiviCRM counterpart, for example a "datetime" field from Civi becomes a simple "date" (no time) in Webform, the "advanced multiselect" becomes a simple "multiselect," "rich text area" becomes a plain text area, etc. But there are some good add-on modules to improve this situation, i.e. "chosen," "webform_autocomplete," and "webform_html_textarea."
+This module can handle (almost) any custom fields you have created for contacts, addresses, event participants, cases, relationships, or activities. Note that not every type of widget exists in the webform module, or behaves exactly the same as its CiviCRM counterpart, for example a "datetime" field from Civi becomes a simple "date" (no time) in Webform, the "advanced multiselect" becomes a simple "multiselect," "rich text area" becomes a plain text area, etc. But there are some good add-on modules to improve this situation, i.e. "chosen," "webform_autocomplete," and "webform_html_textarea."
 
 Files are not yet supported due to their complexity. Contributions to make this happen would be welcomed.
 

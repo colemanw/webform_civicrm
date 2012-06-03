@@ -580,14 +580,14 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['other_group'] = array(
       'name' => t('Groups'),
       'type' => 'select',
-      'extra' => array('multiple' => 1),
+      'extra' => array('multiple' => 1, 'civicrm_live_options' => 1),
       'table' => 'group',
       'expose_list' => TRUE,
     );
     $fields['other_tag'] = array(
       'name' => t('Tags'),
       'type' => 'select',
-      'extra' => array('multiple' => 1),
+      'extra' => array('multiple' => 1, 'civicrm_live_options' => 1),
       'table' => 'tag',
       'expose_list' => TRUE,
     );
@@ -607,7 +607,7 @@ function webform_civicrm_get_fields($var = 'fields') {
     );
     $fields['activity_details'] = array(
       'name' => t('Activity Details'),
-      'type' => 'textarea',
+      'type' => module_exists('webform_html_textarea') ? 'html_textarea' : 'textarea',
     );
     $fields['activity_status_id'] = array(
       'name' => t('Activity Status'),
@@ -628,6 +628,7 @@ function webform_civicrm_get_fields($var = 'fields') {
         'type' => 'select',
         'expose_list' => TRUE,
         'empty_option' => t('- None -'),
+        'extra' => array('civicrm_live_options' => 1),
       );
     }
     if (in_array('CiviCase', $components)) {
@@ -659,6 +660,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'type' => 'select',
       'expose_list' => TRUE,
       'empty_option' => t('- No Relationship -'),
+      'extra' => array('civicrm_live_options' => 1),
     );
     $fields['relationship_is_active'] = array(
       'name' => t('Relationship to Contact # Is Active'),
@@ -692,7 +694,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       $fields['participant_event_id'] = array(
         'name' => t('Events'),
         'type' => 'select',
-        'extra' => array('multiple' => 1),
+        'extra' => array('multiple' => 1, 'civicrm_live_options' => 1),
         'expose_list' => TRUE,
       );
       $fields['participant_role_id'] = array(
@@ -712,6 +714,7 @@ function webform_civicrm_get_fields($var = 'fields') {
           'name' => t('Campaign'),
           'type' => 'select',
           'expose_list' => TRUE,
+          'extra' => array('civicrm_live_options' => 1),
           'empty_option' => t('- None -'),
         );
       }
@@ -740,7 +743,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'phone' => t('phone number'),
       'email' => t('email'),
     );
-    // key: key accepted by civicrm api
+    // key: table_field_name (table can be a * wildcard)
     // value: name of civicrm_option_group
     $lists = array(
       'contact_contact_sub_type' => 'contact_sub_type',
@@ -765,8 +768,8 @@ function webform_civicrm_get_fields($var = 'fields') {
       'activity_status_id' => 'activity_status',
       'case_status_id' => 'case_status',
       'case_medium_id' => 'encounter_medium',
-      '*_event_id' => 'event',
-      '*_role_id' => 'participant_role',
+      'participant_event_id' => 'event',
+      'participant_role_id' => 'participant_role',
       '*_campaign_id' => 'campaign',
     );
 
@@ -789,21 +792,21 @@ function webform_civicrm_get_fields($var = 'fields') {
 
     // Pull custom fields and match to Webform element types
     $custom_types = array(
-      'Select' => array('type' => 'select'),
-      'Multi-Select' => array('type' => 'select', 'extra' => array('multiple' => 1)),
-      'AdvMulti-Select' => array('type' => 'select', 'extra' => array('multiple' => 1)),
-      'Radio' => array('type' => 'select', 'extra' => array('aslist' => 0)),
-      'CheckBox' => array('type' => 'select', 'extra' => array('multiple' => 1)),
+      'Select' => array('type' => 'select', 'extra' => array('civicrm_live_options' => 1)),
+      'Multi-Select' => array('type' => 'select', 'extra' => array('multiple' => 1, 'civicrm_live_options' => 1)),
+      'AdvMulti-Select' => array('type' => 'select', 'extra' => array('multiple' => 1, 'civicrm_live_options' => 1)),
+      'Radio' => array('type' => 'select', 'extra' => array('aslist' => 0, 'civicrm_live_options' => 1)),
+      'CheckBox' => array('type' => 'select', 'extra' => array('multiple' => 1, 'civicrm_live_options' => 1)),
       'Text'  => array('type' => 'textfield'),
       'TextArea' => array('type' => 'textarea'),
-      'RichTextEditor' => array('type' => 'textarea'),
+      'RichTextEditor' => array('type' => module_exists('webform_html_textarea') ? 'html_textarea' : 'textarea'),
       'Select Date' => array('type' => 'date'),
       'Link'  => array('type' => 'textfield'),
       'Select Country' => array('type' => 'select'),
       'Multi-Select Country' => array('type' => 'select', 'extra' => array('multiple' => 1)),
       'Select State/Province' => array('type' => 'select'),
       'Multi-Select State/Province' => array('type' => 'select', 'extra' => array('multiple' => 1)),
-      'Autocomplete-Select' => array('type' => 'select'),
+      'Autocomplete-Select' => array('type' => 'select', 'extra' => array('civicrm_live_options' => 1)),
     );
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
     $custom_extends = "'contact','individual','organization','household','address','activity','relationship'";
