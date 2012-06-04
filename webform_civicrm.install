@@ -140,7 +140,7 @@ function webform_civicrm_update_6101() {
   if ($n > 1) {
     CRM_Core_DAO::executeQuery($sql, $params);
   }
-  return t('@num activity target contacts added.', array('@num' => $c));
+  return st('@num activity target contacts added.', array('@num' => $c));
 }
 
 /**
@@ -265,7 +265,7 @@ function webform_civicrm_update_6200() {
   // Remove activity fields
   db_drop_field('webform_civicrm_forms', 'activity_type_id');
   db_drop_field('webform_civicrm_forms', 'activity_subject');
-  return t('Upgrade to webform_civicrm 2 successful. Note: The field key (machine name) of civicrm-related webform fields has changed. If you were using any of these keys in webform hooks or tokens, please update it to use the new key.');
+  return st('Upgrade to webform_civicrm 2 successful. Note: The field key (machine name) of civicrm-related webform fields has changed. If you were using any of these keys in webform hooks or tokens, please update it to use the new key.');
 }
 
 /**
@@ -340,7 +340,7 @@ function webform_civicrm_update_6203() {
     }
   }
 
-  return t('Upgrade successful. Note: If you upgraded via drush you will now need to clear all caches with the command drush cc');
+  return st('Upgrade successful. Note: If you upgraded via drush you will now need to clear all caches with the command drush cc');
 }
 
 /**
@@ -363,7 +363,7 @@ function webform_civicrm_update_6204() {
     }
   }
 
-  return t('Upgrade successful. Note: If you upgraded via drush you will now need to clear all caches with the command drush cc');
+  return st('Upgrade successful. Note: If you upgraded via drush you will now need to clear all caches with the command drush cc');
 }
 
 /**
@@ -439,7 +439,7 @@ function webform_civicrm_update_6205() {
     drupal_write_record('webform_civicrm_forms', $form, 'nid');
   }
 
-  return t('Hidden tag and group fields have been removed, those options are now integrated into the CiviCRM tab of webforms.');
+  return st('Hidden tag and group fields have been removed, those options are now integrated into the CiviCRM tab of webforms.');
 }
 
 /**
@@ -529,7 +529,7 @@ function webform_civicrm_update_7300() {
           $field['nid'] = $form['nid'];
           $field['form_key'] = 'civicrm_' . $c . '_contact_1_contact_existing';
           $field['weight'] = 255;
-          $field['name'] = $table == 'case' ? t('Case Manager') : t('Activity Assignee');
+          $field['name'] = $table == 'case' ? st('Case Manager') : st('Activity Assignee');
           $field['extra']['widget'] = 'hidden';
           $field['extra']['default'] = 'contact_id';
           $field['extra']['default_contact_id'] = $val;
@@ -616,6 +616,5 @@ function webform_civicrm_update_7300() {
     drupal_write_record('webform_civicrm_forms', $form, 'nid');
   }
   db_drop_field('webform_civicrm_forms', 'contact_matching');
-  cache_clear_all();
-  return t('To complete the upgrade, install the libraries module and the jQuery token input library. Verify that your forms are still working as expected, and enjoy the new contact matching features!');
+  return st('To complete the upgrade, ensure the libraries module is installed, and download the jQuery token input library from http://loopj.com/jquery-tokeninput (extract as "sites/all/libraries/tokeninput"). Verify that your forms are still working as expected, and enjoy the new contact matching features!');
 }

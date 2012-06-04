@@ -81,7 +81,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
       if (is_numeric($param['event_type'])) {
         $sql .= ' AND event_type_id = ' . $param['event_type'];
       }
-      $sql .= ' ORDER BY start_date DESC';
+      $sql .= ' ORDER BY start_date ' . ($param['context'] == 'config_form' ? 'DESC' : '');
     }
     else {
       $sql = 'SELECT value, label FROM civicrm_option_value WHERE is_active <> 0 AND option_group_id = ';
@@ -158,7 +158,7 @@ function webform_civicrm_field_options($field, $context, $data) {
     elseif ($list = webform_civicrm_get_list($table, $name)) {
       $param = NULL;
       if ($name === 'event_id') {
-        $param = $data['reg_options'];
+        $param = $data['reg_options'] + array('context' => $context);
       }
       $ret = webform_civicrm_get_options($list, $param);
       // Hack to format money data correctly

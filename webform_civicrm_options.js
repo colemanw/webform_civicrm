@@ -63,14 +63,14 @@
       
       var defaultName = 'civicrm_options_fieldset[civicrm_defaults]';
       
-      var multiple = $('#edit-extra-multiple:checkbox');
-      if (multiple.length > 0) {
+      var multiple = $('input[name="extra[multiple]"]');
+      if (multiple.is(':checkbox')) {
         multiple.once('wf-civi').change(function() {
           var type = $(this).is(':checked') ? 'checkbox' : 'radio';
           defaultBoxes(type, defaultName);
         }).change();
       }
-      else {
+      else if (multiple.attr('value') !== '1') {
         defaultBoxes('radio', defaultName);
       }
       

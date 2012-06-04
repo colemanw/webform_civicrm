@@ -167,7 +167,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
           list($eid) = explode('-', $p);
           $events[$eid]['ended'] = TRUE;
           $events[$eid]['title'] = $label;
-          list(,$e,,$n) = explode('_', $field);
+          list(, $e, , $n) = explode('_', $field);
           $events[$eid]['form'][] = array(
             'contact' => $e,
             'num' => $n,
@@ -209,10 +209,10 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   // Form alterations for known contacts
   $count = count($data['contact']);
   foreach ($data['contact'] as $c => $contact) {
-    if (!empty($id['cid'][$c])) {
+    if ($cid = webform_civicrm_aval($id['cid'], $c)) {
       // Retrieve contact data
-      $info['contact'][$c] = webform_civicrm_contact_get($node, $enabled, $c, $id['cid'][$c]);
-      $info['contact'][$c]['contact'][1]['existing'] = $id['cid'][$c];
+      $info['contact'][$c] = webform_civicrm_contact_get($node, $enabled, $c, $cid);
+      $info['contact'][$c]['contact'][1]['existing'] = $cid;
       // Retrieve participant data
       if ($events && ($c == 1 || $data['participant_reg_type'] == 'separate')) {
         $select = array('id', 'event_id', 'role_id', 'status_id');
@@ -462,7 +462,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         $cid = $submission->data[$fid]['value'][0];
         $filters = webform_civicrm_search_filters($node, $component);
         if (webform_civicrm_existing_contact_access($node, $component, $filters, $cid) !== FALSE) {
-          list(, $c,) = explode('_', $field_key, 3);
+          list(, $c, ) = explode('_', $field_key, 3);
           $id['cid'][$c] = $cid;
         }
       }
@@ -611,7 +611,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
             if (is_array($v2)) {
               foreach ($v2 as $n => $v3) {
                 if (is_array($v3) && is_numeric($n)) {
-                  foreach($v3 as $name => $val) {
+                  foreach ($v3 as $name => $val) {
                     if ($val && webform_civicrm_aval($fields, "{$table}_$name:data_type") === 'ContactReference') {
                       if (is_array($val)) {
                         $data[$ent][$c][$table][$n][$name] = array();
@@ -816,7 +816,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
           foreach ($p as $e => $params) {
             $remove = array();
             if ($fid = webform_civicrm_aval($enabled, 'civicrm_' . $c . '_participant_' . $e . '_participant_event_id')) {
-              foreach(webform_civicrm_str2array($node->webform['components'][$fid]['extra']['items']) as $eid => $title) {
+              foreach (webform_civicrm_remove_fields($node, $fid) as $eid => $title) {
                 list($eid) = explode('-', $eid);
                 if (isset($existing[$eid])) {
                   $remove[$eid] = $title;
@@ -1088,13 +1088,21 @@ function webform_civicrm_add_remove($data_type, $entity_type, $node, $id, $add, 
 /**
  * Fields to remove.
  */
-function webform_civicrm_remove_fields($node, $fid, $add) {
+function webform_civicrm_remove_fields($node, $fid, $add = array()) {
   if ($fid) {
-    $remove = webform_civicrm_str2array($node->webform['components'][$fid]['extra']['items']);
-    foreach ($add as $i) {
-      unset($remove[$i]);
+    $field = $node->webform['components'][$fid];
+    if ($field['type'] = 'select') {
+      if (empty($field['extra']['civicrm_live_options'])) {
+        $remove = webform_civicrm_str2array($node->webform['components'][$fid]['extra']['items']);
+      }
+      else {
+        $remove = webform_civicrm_field_options($field, 'live_options', $node->webform_civicrm['data']);
+      }
+      foreach ($add as $i) {
+        unset($remove[$i]);
+      }
+      return $remove;
     }
-    return $remove;
   }
   return array();
 }

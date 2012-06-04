@@ -21,7 +21,7 @@ function _webform_defaults_civicrm_contact() {
     'extra' => array(
       'search_prompt' => t('- Search for existing contact -'),
       'none_prompt' => t('+ Create new contact +'),
-      'allow_create' => 1,
+      'allow_create' => 0,
       'widget' => 'autocomplete',
       'show_hidden_contact' => 0,
       'unique' => 0,
@@ -266,7 +266,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
       '#translatable' => array('title', 'description'),
     );
   }
-  list(, $c,) = explode('_', $component['form_key'], 3);
+  list(, $c, ) = explode('_', $component['form_key'], 3);
   $selector = '\'#webform-client-form-' . $component['nid'] . ' :input.civicrm-enabled[name*="' . $component['form_key'] . '"]\'';
   $callback_path = '"' . url('webform-civicrm/js/' . $node->nid . '-' . $component['cid'], array('alias' => TRUE)) . '"';
   $js = '
@@ -605,7 +605,7 @@ function webform_civicrm_contact_fields($node, $con) {
  * @param $ids: reference all known contact ids for this form
  */
 function webform_civicrm_find_contact($node, $component, &$ids) {
-  list(, $c,) = explode('_', $component['form_key'], 3);
+  list(, $c, ) = explode('_', $component['form_key'], 3);
   $filters = webform_civicrm_search_filters($node, $component);
   // Start with the url - that trumps everything.
   if (isset($_GET["cid$c"]) || ($c == 1 && isset($_GET['cid']))) {
