@@ -128,12 +128,17 @@ function webform_civicrm_theme() {
       'render element' => 'element',
       'template' => 'webform-results-submissions',
     ),
-    'webform_civicrm_options' => array(
-      'render element' => 'element',
-    ),
+    // Override the main webform components form
     'webform_civicrm_components_form' => array(
       'render element' => 'form',
       'file' => 'webform_civicrm_admin.inc',
+    ),
+    'webform_civicrm_options' => array(
+      'render element' => 'element',
+    ),
+    'static_contact_element' => array(
+      'render element' => 'element',
+      'file' => 'contact_component.inc',
     ),
   );
   return $theme;

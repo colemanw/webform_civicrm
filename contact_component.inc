@@ -19,8 +19,8 @@ function _webform_defaults_civicrm_contact() {
     'value' => '',
     'mandatory' => 0,
     'extra' => array(
-      'search_prompt' => t('- Search for existing contact -'),
-      'none_prompt' => t('+ Create new contact +'),
+      'search_prompt' => '',
+      'none_prompt' => '',
       'allow_create' => 0,
       'widget' => 'autocomplete',
       'show_hidden_contact' => 0,
@@ -255,7 +255,6 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
   $element = array(
     '#weight' => $component['weight'],
     '#attributes' => $component['extra']['attributes'],
-    '#theme_wrappers' => array('webform_element'),
   );
   if ($component['extra']['widget'] != 'hidden') {
     $element += array(
@@ -264,6 +263,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
       '#required' => $component['mandatory'],
       '#description' => $filter ? _webform_filter_descriptions($component['extra']['description'], $node) : $component['extra']['description'],
       '#translatable' => array('title', 'description'),
+      '#theme_wrappers' => array('webform_element'),
     );
   }
   list(, $c, ) = explode('_', $component['form_key'], 3);
@@ -330,6 +330,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
         })(jQuery, Drupal);';
       $element['#attached']['js'][$js] = array('type' => 'inline');
     }
+    $element['#theme_wrappers'] = array('static_contact_element');
   }
   // Enforce uniqueness.
   if ($component['extra']['unique']) {
@@ -344,29 +345,22 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
 }
 
 function webform_civicrm_fill_contact_value($node, $component, &$element) {
-  $cid = webform_civicrm_aval($element, '#default_value');
-  if ($cid && !($element['#type'] == 'hidden' && !$component['extra']['show_hidden_contact'])) {
+  if ($element['#type'] == 'hidden' && !$component['extra']['show_hidden_contact']) {
+    return;
+  }
+  if ($cid = webform_civicrm_aval($element, '#default_value')) {
     $filters = webform_civicrm_search_filters($node, $component);
     $name = webform_civicrm_existing_contact_access($node, $component, $filters, $cid);
     if ($name !== FALSE) {
       $element['#attributes']['data-civicrm-name'] = $name;
       $element['#attributes']['data-civicrm-id'] = $cid;
     }
-  }
-  // Show a non-editable choice for hidden fields
-  if ($element['#type'] == 'hidden' && $component['extra']['show_hidden_contact']) {
-    if ((!$cid && $component['extra']['none_prompt']) || ($cid && $name !== FALSE)) {
-      $name = $cid ? $name : $component['extra']['none_prompt'];
-      $class = 'form-item webform-component webform-component-civicrm_contact static';
-      if ($component['extra']['title_display'] == 'inline') {
-        $class .= ' webform-container-inline';
-      }
-      $element['#prefix'] = '<div class="' . $class . '">';
-      if ($component['extra']['title_display'] != 'none') {
-        $element['#prefix'] .= '<label>' . $component['name'] . '</label>';
-      }
-      $element['#prefix'] .= '<ul class="token-input-list"><li class="token-input-token"><p>' . $name . '</p></li></ul></div>';
+    else {
+      unset($cid);
     }
+  }
+  if (!$cid && $element['#type'] == 'hidden' && $component['extra']['none_prompt']) {
+    $element['#attributes']['data-civicrm-name'] = $component['extra']['none_prompt'];
   }
 }
 
@@ -731,4 +725,55 @@ function webform_civicrm_search_filters($node, $component) {
     }
   }
   return $params;
+}
+
+/**
+ * Theme a static contact element
+ */
+function theme_static_contact_element($vars) {
+  $element = $vars['element'];
+  $component = $element['#webform_component'];
+
+  // All elements using this for display only are given the "display" type.
+  if (isset($element['#format']) && $element['#format'] == 'html') {
+    $type = 'display';
+  }
+  else {
+    $type = 'civicrm_contact';
+  }
+
+  // Convert the parents array into a string, excluding the "submitted" wrapper.
+  $nested_level = $element['#parents'][0] == 'submitted' ? 1 : 0;
+  $parents = str_replace('_', '-', implode('--', array_slice($element['#parents'], $nested_level)));
+
+  $wrapper_classes = array(
+   'form-item',
+   'webform-component',
+   'webform-component-' . $type,
+   'static',
+  );
+
+  if ($component['extra']['title_display'] === 'inline') {
+    $wrapper_classes[] = 'webform-container-inline';
+  }
+
+  $output = '<div class="' . implode(' ', $wrapper_classes) . '" id="webform-component-' . $parents . '">' . "\n";
+
+  // Display static value in addition to hidden field
+  if ($type == 'civicrm_contact' && !empty($element['#attributes']['data-civicrm-name'])) {
+
+    if ($component['extra']['title_display'] != 'none') {
+      $output .= ' <label for="' . $element['#id'] . '">' . check_plain($component['name']) . "</label>\n";
+    }
+
+    $output .= '<ul class="token-input-list"><li class="token-input-token"><p>' . $element['#attributes']['data-civicrm-name'] . "</p></li></ul>\n";
+
+    if (!empty($component['extra']['description'])) {
+      $output .= ' <div class="description">' . filter_xss($component['extra']['description']) . "</div>\n";
+    }
+  }
+
+  $output .= $element['#children'] . "\n</div>\n";
+
+  return $output;
 }

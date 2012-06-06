@@ -593,6 +593,12 @@ function webform_civicrm_process_form_settings(&$vals) {
             'contact_sub_type' => array(),
           )),
       );
+      // Set defaults for new contact
+      $vals += array(
+        'civicrm_' . $c . '_contact_1_contact_first_name' => 'create_civicrm_webform_element',
+        'civicrm_' . $c . '_contact_1_contact_last_name' => 'create_civicrm_webform_element',
+        'civicrm_' . $c . '_contact_1_contact_existing' => 'create_civicrm_webform_element',
+      );
       // Add as activity target
       if (isset($vals['activity_subject'])) {
         $vals['civicrm_1_activity_1_activity_target_contact_id']["$c"] = "$c";
@@ -1103,6 +1109,8 @@ function webform_civicrm_component_insert(&$field, &$enabled, $settings) {
   if ($name == 'existing') {
     $vals = $enabled + $settings;
     $field['extra']['allow_create'] = webform_civicrm_name_field_exists($vals, $c);
+    $field['extra']['search_prompt'] = t('- Search for existing contact -');
+    $field['extra']['none_prompt'] = t('+ Create new contact +');
     if ($c == 1) {
       // Default to hidden field for 1st contact
       $field['extra'] += array(

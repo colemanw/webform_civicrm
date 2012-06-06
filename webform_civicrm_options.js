@@ -74,15 +74,17 @@
         defaultBoxes('radio', defaultName);
       }
       
+      $('a.tabledrag-handle').not('.live-options-hide a').wrap('<div class="live-options-hide" />');
+      
       $('input[name="extra[civicrm_live_options]"]').once('wf-civi').change(function() {
         if ($(this).is(':checked')) {
           switch ($(this).attr('value')) {
             case "0":
-              $('.live-options-hide, .tabledrag-handle').show();
+              $('.live-options-hide').show();
               $('.live-options-show').hide();
               break;
             case "1":
-              $('.live-options-hide, .tabledrag-handle').hide();
+              $('.live-options-hide').hide();
               $('.live-options-show').show();
               $('input.civicrm-enabled, input.select-all-civi-options').attr('checked', 'checked');
               $('input.civicrm-enabled').change();

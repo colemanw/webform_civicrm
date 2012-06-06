@@ -2,6 +2,6 @@ name = Webform CiviCRM Integration
 description = Links Webform submissions with your CiviCRM database.
 core = 7.x
 package = CiviCRM
-dependencies[] = civicrm
-dependencies[] = webform
+dependencies[] = civicrm (>=4.1)
+dependencies[] = webform (3.x)
 dependencies[] = libraries

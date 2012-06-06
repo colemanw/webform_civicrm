@@ -1,4 +1,4 @@
-/* Example tokeninput style #1: Token vertical list*/
+/* tokeninput vertical list - modified for webform_civicrm */
 form ul.token-input-list {
     overflow: hidden; 
     height: auto !important; 
@@ -45,6 +45,10 @@ form li.token-input-token {
     font-weight: bold;
     cursor: default;
     display: block;
+}
+
+form .webform-component.static li.token-input-token {
+    background-color: #D9E4C9;
 }
 
 form li.token-input-token p {
