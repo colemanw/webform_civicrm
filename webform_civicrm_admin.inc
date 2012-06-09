@@ -1105,9 +1105,9 @@ function webform_civicrm_component_insert(&$field, &$enabled, $settings) {
     $field['name'] .= ' ' . $contact_types[$settings['data']['contact'][$c]['contact'][1]['contact_type']];
   }
   // Defaults for existing contact field
-  // Set the allow_create flag based on presense of name or email fields
   if ($name == 'existing') {
     $vals = $enabled + $settings;
+    // Set the allow_create flag based on presence of name or email fields
     $field['extra']['allow_create'] = webform_civicrm_name_field_exists($vals, $c);
     $field['extra']['search_prompt'] = t('- Search for existing contact -');
     $field['extra']['none_prompt'] = t('+ Create new contact +');
@@ -1392,6 +1392,7 @@ function theme_webform_civicrm_components_form($variables) {
     $component_tree = _webform_components_tree_sort($component_tree);
     // Build the table rows.
     function _webform_components_form_rows($node, $cid, $component, $level, &$form, &$rows, &$add_form, $enabled) {
+
       // CiviCRM additions
       $clone = t('Clone');
       $options = array();

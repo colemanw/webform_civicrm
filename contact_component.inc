@@ -71,7 +71,7 @@ function _webform_edit_civicrm_contact($component) {
     $settings = '{
       queryParam: "str",
       hintText: "' . t('Choose @type', array('@type' => $contact_types[$contact_type])) . '",
-      noResultsText: "' . t('None found') . '",
+      noResultsText: "' . t('Not found') . '",
       searchingText: "' . t('Searching...') . '",
       tokenLimit: 1,
       prePopulate: prep
@@ -190,7 +190,7 @@ function _webform_edit_civicrm_contact($component) {
     '#parents' => array('extra', 'default_contact_id'),
   );
   if ($cid = $component['extra']['default_contact_id']) {
-    if ($name = webform_civicrm_existing_contact_access($node, $component, array('check_permissions' => TRUE), $cid)) {
+    if ($name = webform_civicrm_contact_access($component, array('check_permissions' => 1), $cid)) {
       $form['defaults']['default_contact_id']['#default_value'] = $cid;
       $form['defaults']['default_contact_id']['#attributes'] = array(
         'data-civicrm-name' => $name,
@@ -304,7 +304,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
     $element['#empty_option'] = $component['extra']['search_prompt'];
     if ($node) {
       $filters = webform_civicrm_search_filters($node, $component);
-      $element['#options'] = webform_civicrm_existing_contact_search($node, $component, $filters);
+      $element['#options'] = webform_civicrm_contact_search($node, $component, $filters);
       $js .= '$(' . $selector . ', context).change(function() {
                 wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, $(this).val());
               });
@@ -350,7 +350,7 @@ function webform_civicrm_fill_contact_value($node, $component, &$element) {
   }
   if ($cid = webform_civicrm_aval($element, '#default_value')) {
     $filters = webform_civicrm_search_filters($node, $component);
-    $name = webform_civicrm_existing_contact_access($node, $component, $filters, $cid);
+    $name = webform_civicrm_contact_access($component, $filters, $cid);
     if ($name !== FALSE) {
       $element['#attributes']['data-civicrm-name'] = $name;
       $element['#attributes']['data-civicrm-id'] = $cid;
@@ -409,7 +409,7 @@ function _webform_csv_data_civicrm_contact($component, $export_options, $value) 
 /**
  * Returns a list of contacts based on component settings.
  */
-function webform_civicrm_existing_contact_search($node, $component, $params, $str = NULL) {
+function webform_civicrm_contact_search($node, $component, $params, $str = NULL) {
   if (empty($node->webform_civicrm)) {
     return array();
   }
@@ -476,16 +476,16 @@ function webform_civicrm_js_options($key, $input = '') {
     $filters = webform_civicrm_search_filters($node, $component);
     // Bypass filters when choosing contact on component edit form
     if (!empty($_GET['admin']) && webform_civicrm_admin_access($node)) {
-      $filters = array('check_permissions' => TRUE);
+      $filters = array('check_permissions' => 1, 'is_deleted' => 0);
       $component['extra']['allow_create'] = 0;
     }
     // Autocomplete contact names
     if (!empty($_GET['str'])) {
-      exit(drupal_json_output(webform_civicrm_existing_contact_search($node, $component, $filters, $_GET['str'])));
+      exit(drupal_json_output(webform_civicrm_contact_search($node, $component, $filters, $_GET['str'])));
     }
     // Load contact by id
     $data = array();
-    if ($name = webform_civicrm_existing_contact_access($node, $component, $filters, $_GET['cid'])) {
+    if ($name = webform_civicrm_contact_access($component, $filters, $_GET['cid'])) {
       if ($_GET['load'] == 'name') {
         if ($_GET['cid'][0] === '-') {
           $data = '<em><i>' . $component['extra']['none_prompt'] . '</i></em>';
@@ -544,9 +544,9 @@ function webform_civicrm_autocomplete_access($node, $fid) {
 }
 
 /**
- * Access callback. Check if user should be allowed to load a contact.
+ * Load contact name if user has permission. Else return FALSE.
  */
-function webform_civicrm_existing_contact_access($node, $component, $filters, $cid) {
+function webform_civicrm_contact_access($component, $filters, $cid) {
   // Create new contact doesn't require lookup
   $cid = "$cid";
   if ($cid[0] === '-' && $component['extra']['allow_create']) {
@@ -555,16 +555,11 @@ function webform_civicrm_existing_contact_access($node, $component, $filters, $c
   if (!is_numeric($cid)) {
     return FALSE;
   }
-  // First fetch contact name
-  $result = webform_civicrm_api('contact', 'get', array('id' => $cid, 'return.display_name' => TRUE));
-  if ($name = webform_civicrm_aval($result, 'values:' . $cid . ':display_name')) {
-    // Then run it through contact search with the same filters as the user has
-    $filters['display_name'] = '"' . $name . '"';
-    $filters['return.display_name'] = TRUE;
-    $result = webform_civicrm_api('contact', 'get', $filters);
-    return isset($result['values'][$cid]) ? $name : FALSE;
-  }
-  return FALSE;
+  $filters['id'] = $cid;
+  $filters['is_deleted'] = 0;
+  // Fetch contact name with filters applied
+  $result = webform_civicrm_api('contact', 'get', $filters);
+  return webform_civicrm_aval($result, 'values:' . $cid . ':display_name', FALSE, TRUE);
 }
 
 /**
@@ -612,7 +607,7 @@ function webform_civicrm_find_contact($node, $component, &$ids) {
       else {
         require_once 'CRM/Contact/BAO/Contact/Permission.php';
         if (CRM_Contact_BAO_Contact_Permission::validateChecksumContact($cid, CRM_Core_DAO::$_nullObject)
-        && webform_civicrm_existing_contact_access($node, $component, $filters, $cid) !== FALSE) {
+        && webform_civicrm_contact_access($component, $filters, $cid) !== FALSE) {
           $ids[$c] = $cid;
         }
       }
@@ -637,16 +632,19 @@ function webform_civicrm_find_contact($node, $component, &$ids) {
         }
         break;
       case 'auto':
-        $component['allow_create'] = FALSE;
-        $found = webform_civicrm_existing_contact_search($node, $component, $filters);
+        $component['extra']['allow_create'] = FALSE;
+        $found = array_keys(webform_civicrm_contact_search($node, $component, $filters));
         break;
     }
     if ($component['extra']['randomize']) {
       shuffle($found);
     }
+    $explicit = array('user', 'contact_id');
     foreach ($found as $cid) {
-      if (!in_array($cid, $ids)) {
-        if ($component['extra']['default'] == 'auto' || webform_civicrm_existing_contact_access($node, $component, $filters, $cid) !== FALSE) {
+      // Don't pick the same contact twice unless explicitly told to do so
+      if (!in_array($cid, $ids) || in_array($component['extra']['default'], $explicit)) {
+        // Check filters except for 'auto' which already applied them
+        if ($component['extra']['default'] == 'auto' || webform_civicrm_contact_access($component, $filters, $cid) !== FALSE) {
           $ids[$c] = $cid;
           break;
         }
@@ -713,7 +711,7 @@ function webform_civicrm_find_relations($cid, $types, $current = TRUE) {
  * Format filters for the contact get api
  */
 function webform_civicrm_search_filters($node, $component) {
-  $params = array();
+  $params = array('is_deleted' => 0);
   list(, $c, ) = explode('_', $component['form_key'], 3);
   $params['contact_type'] = $node->webform_civicrm['data']['contact'][$c]['contact'][1]['contact_type'];
   foreach ($component['extra']['filters'] as $key => $val) {

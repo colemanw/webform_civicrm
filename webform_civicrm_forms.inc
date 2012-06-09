@@ -461,7 +461,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         $component = $node->webform['components'][$fid];
         $cid = $submission->data[$fid]['value'][0];
         $filters = webform_civicrm_search_filters($node, $component);
-        if (webform_civicrm_existing_contact_access($node, $component, $filters, $cid) !== FALSE) {
+        if (webform_civicrm_contact_access($component, $filters, $cid) !== FALSE) {
           list(, $c, ) = explode('_', $field_key, 3);
           $id['cid'][$c] = $cid;
         }
