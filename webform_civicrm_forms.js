@@ -8,7 +8,7 @@ var wfCivi = (function ($, D) {
    */
   var pub = {};
 
-  pub.existingSelect = function (num, nid, path, toHide, cid) {
+  pub.existingSelect = function (num, nid, path, toHide, cid, fetch) {
     if (cid.charAt(0) === '-') {
       resetFields(num, nid, true, 'show', toHide, 500);
       // Fill name fields with name typed
@@ -35,7 +35,7 @@ var wfCivi = (function ($, D) {
       return;
     }
     resetFields(num, nid, true, 'hide', toHide, 500);
-    if (cid) {
+    if (cid && fetch) {
       $('#webform-client-form-'+nid).css('cursor', 'progress');
       $.get(path, {cid: cid, load: 'full'}, function(data) {
         fillValues(data, nid);
@@ -110,7 +110,7 @@ var wfCivi = (function ($, D) {
         else {
           var type = (n[6] === 'name') ? 'name' : n[4];
           if ($.inArray(type, toHide) >= 0) {
-            ele.hide(speed);
+            ele.hide(speed, function() {ele.css('display', 'none');});
             $(':input', ele).attr('disabled', 'disabled');
           }
         }
@@ -223,7 +223,7 @@ var wfCivi = (function ($, D) {
     var name = parseName($(item).attr('name'));
     fields = $(item).parents('form.webform-client-form').find('[name*="['+(name.replace('master_id', ''))+'"]').not(item).not('[name*=location_type_id]').not('[type="hidden"]');
     if (action === 'hide') {
-      fields.not(':hidden').parent().hide(speed);
+      fields.parent().hide(speed, function() {$(this).css('display', 'none');});
       fields.attr('disabled', 'disabled');
     }
     else {

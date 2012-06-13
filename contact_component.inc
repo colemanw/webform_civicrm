@@ -252,6 +252,7 @@ function _webform_edit_civicrm_contact($component) {
 function _webform_render_civicrm_contact($component, $value = NULL, $filter = TRUE) {
   $node = isset($component['nid']) ? node_load($component['nid']) : NULL;
   civicrm_initialize();
+  list(, $c, ) = explode('_', $component['form_key'], 3);
   $element = array(
     '#weight' => $component['weight'],
     '#attributes' => $component['extra']['attributes'],
@@ -265,8 +266,13 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
       '#translatable' => array('title', 'description'),
       '#theme_wrappers' => array('webform_element'),
     );
+    // See if there are any fields to fetch via ajax
+    $other_fields = webform_civicrm_contact_fields($node, $c);
+    foreach ($component['extra']['hide_fields'] as $h) {
+      unset($other_fields[$h]);
+    }
+    $ajax = $other_fields ? 'true' : 'false';
   }
-  list(, $c, ) = explode('_', $component['form_key'], 3);
   $selector = '\'#webform-client-form-' . $component['nid'] . ' :input.civicrm-enabled[name*="' . $component['form_key'] . '"]\'';
   $callback_path = '"' . url('webform-civicrm/js/' . $node->nid . '-' . $component['cid'], array('alias' => TRUE)) . '"';
   $js = '
@@ -274,64 +280,71 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
         D.behaviors.webform_civicrm_' . $node->nid . '_' . $component['cid'] . ' = {
           attach: function (context) {
             var toHide = ' . json_encode(array_values($component['extra']['hide_fields'])) . ';';
-  if ($component['extra']['widget'] == 'autocomplete') {
-    $element['#type'] = 'textfield';
-    if ($node) {
-      $path = libraries_get_path('tokeninput');
-      $element['#attached']['js'][] = $path . '/src/jquery.tokeninput.js';
-      $element['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/token-input.css';
-      $settings = '{
-        queryParam: "str",
-        hintText: "' . $component['extra']['search_prompt'] . '",
-        noResultsText: "' . $component['extra']['none_prompt'] . '",
-        searchingText: "' . t('Searching...') . '",
-        tokenLimit: 1,
-        onAdd: function(item) {wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, item.id);},
-        onDelete: function(item) {wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, "");},
-        prePopulate: prep
-      }';
-      $js .= 'var selector = ' . $selector . ';
-              var prep = wfCivi.existingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, selector);
-              $(selector, context).tokenInput(' . $callback_path . ', ' . $settings . ');
-            }
-          };
-        })(jQuery, Drupal);';
-      $element['#attached']['js'][$js] = array('type' => 'inline');
-    }
+
+  // Render component based on type
+  switch ($component['extra']['widget']) {
+
+    case 'autocomplete':
+      $element['#type'] = 'textfield';
+      if ($node) {
+        $path = libraries_get_path('tokeninput');
+        $element['#attached']['js'][] = $path . '/src/jquery.tokeninput.js';
+        $element['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/token-input.css';
+        $settings = '{
+          queryParam: "str",
+          hintText: "' . $component['extra']['search_prompt'] . '",
+          noResultsText: "' . $component['extra']['none_prompt'] . '",
+          searchingText: "' . t('Searching...') . '",
+          tokenLimit: 1,
+          onAdd: function(item) {wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, item.id,' . $ajax . ');},
+          onDelete: function(item) {wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, "", false);},
+          prePopulate: prep
+        }';
+        $js .= 'var selector = ' . $selector . ';
+                var prep = wfCivi.existingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, selector);
+                $(selector, context).tokenInput(' . $callback_path . ', ' . $settings . ');
+              }
+            };
+          })(jQuery, Drupal);';
+        $element['#attached']['js'][$js] = array('type' => 'inline');
+      }
+      break;
+
+    case 'select':
+      $element['#type'] = 'select';
+      $element['#empty_option'] = $component['extra']['search_prompt'];
+      if ($node) {
+        $filters = webform_civicrm_search_filters($node, $component);
+        $element['#options'] = webform_civicrm_contact_search($node, $component, $filters);
+        $js .= '$(' . $selector . ', context).change(function() {
+                  wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, $(this).val(),' . $ajax . ');
+                });
+                wfCivi.existingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, ' . $selector . ');
+              }
+            };
+          })(jQuery, Drupal);';
+        $element['#attached']['js'][$js] = array('type' => 'inline');
+      }
+      break;
+
+    case 'hidden':
+      $element['#type'] = 'hidden';
+      if (!empty($value[0])) {
+        $element['#value'] = $value[0];
+      }
+      if ($component['extra']['show_hidden_contact']) {
+        $element['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/token-input.css';
+      }
+      if ($component['extra']['hide_fields'] && $node) {
+        $js .= 'wfCivi.existingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, ' . $selector . ');
+              }
+            };
+          })(jQuery, Drupal);';
+        $element['#attached']['js'][$js] = array('type' => 'inline');
+      }
+      $element['#theme_wrappers'] = array('static_contact_element');
   }
-  elseif ($component['extra']['widget'] == 'select') {
-    $element['#type'] = 'select';
-    $element['#empty_option'] = $component['extra']['search_prompt'];
-    if ($node) {
-      $filters = webform_civicrm_search_filters($node, $component);
-      $element['#options'] = webform_civicrm_contact_search($node, $component, $filters);
-      $js .= '$(' . $selector . ', context).change(function() {
-                wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, $(this).val());
-              });
-              wfCivi.existingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, ' . $selector . ');
-            }
-          };
-        })(jQuery, Drupal);';
-      $element['#attached']['js'][$js] = array('type' => 'inline');
-    }
-  }
-  else {
-    $element['#type'] = 'hidden';
-    if (!empty($value[0])) {
-      $element['#value'] = $value[0];
-    }
-    if ($component['extra']['show_hidden_contact']) {
-      $element['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/token-input.css';
-    }
-    if ($component['extra']['hide_fields']) {
-      $js .= 'wfCivi.existingInit(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, ' . $selector . ');
-            }
-          };
-        })(jQuery, Drupal);';
-      $element['#attached']['js'][$js] = array('type' => 'inline');
-    }
-    $element['#theme_wrappers'] = array('static_contact_element');
-  }
+
   // Enforce uniqueness.
   if ($component['extra']['unique']) {
     $element['#element_validate'][] = 'webform_validate_unique';
@@ -481,7 +494,11 @@ function webform_civicrm_js_options($key, $input = '') {
     }
     // Autocomplete contact names
     if (!empty($_GET['str'])) {
-      exit(drupal_json_output(webform_civicrm_contact_search($node, $component, $filters, $_GET['str'])));
+      $output = NULL;
+      if ($str = trim($_GET['str'])) {
+        $output = drupal_json_output(webform_civicrm_contact_search($node, $component, $filters, $str));
+      }
+      exit($output);
     }
     // Load contact by id
     $data = array();
@@ -549,8 +566,8 @@ function webform_civicrm_autocomplete_access($node, $fid) {
 function webform_civicrm_contact_access($component, $filters, $cid) {
   // Create new contact doesn't require lookup
   $cid = "$cid";
-  if ($cid[0] === '-' && $component['extra']['allow_create']) {
-    return TRUE;
+  if ($cid[0] === '-' && !empty($component['extra']['allow_create']) && !empty($component['extra']['none_prompt'])) {
+    return $component['extra']['none_prompt'];
   }
   if (!is_numeric($cid)) {
     return FALSE;
