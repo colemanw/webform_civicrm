@@ -36,10 +36,10 @@ var wfCivi = (function ($, D) {
     }
     resetFields(num, nid, true, 'hide', toHide, 500);
     if (cid && fetch) {
-      $('#webform-client-form-'+nid).css('cursor', 'progress');
+      $('#webform-client-form-'+nid).addClass('contact-loading');
       $.get(path, {cid: cid, load: 'full'}, function(data) {
         fillValues(data, nid);
-        $('#webform-client-form-'+nid).removeAttr('style');
+        $('#webform-client-form-'+nid).removeClass('contact-loading');
       }, 'json');
     }
   };

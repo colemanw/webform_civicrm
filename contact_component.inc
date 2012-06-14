@@ -59,6 +59,8 @@ function _webform_edit_civicrm_contact($component) {
   $data = $node->webform_civicrm['data'];
   list(, $c, ) = explode('_', $component['form_key'], 3);
   $contact_type = $data['contact'][$c]['contact'][1]['contact_type'];
+  $allow_create = webform_civicrm_name_field_exists(webform_civicrm_enabled_fields($node), $c);
+
   // Check for required library
   $path = libraries_get_path('tokeninput');
   if (!is_file(DRUPAL_ROOT . '/' . $path . '/src/jquery.tokeninput.js')) {
@@ -85,6 +87,7 @@ function _webform_edit_civicrm_contact($component) {
     $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/token-input.css';
   }
   $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/contact_component.js';
+
   $form['display']['widget'] = array(
     '#type' => 'select',
     '#title' => t('Form Widget'),
@@ -98,6 +101,7 @@ function _webform_edit_civicrm_contact($component) {
       <li>' . t('A static element will not allow the user to make a choice. Use in conjunction with a default value setting or a cid passed in the url.') . '</li>
       </ul>',
   );
+  $form['display']['#description'] = '<em>' . ($allow_create ? t('<strong>Contact Creation: Enabled</strong> - this contact has name/email fields on the webform.') : t('<strong>Contact Creation: Disabled</strong> - no name/email fields for this contact on the webform.')) . '</em>';
   $form['display']['search_prompt'] = array(
     '#type' => 'textfield',
     '#title' => t('Search Prompt'),
@@ -110,9 +114,9 @@ function _webform_edit_civicrm_contact($component) {
   );
   $form['display']['none_prompt'] = array(
     '#type' => 'textfield',
-    '#title' => t('Create/Not Found Prompt'),
+    '#title' => $allow_create ? t('Create Prompt') : t('Not Found Prompt'),
     '#default_value' => $component['extra']['none_prompt'],
-    '#description' => t('If you have exposed a name or email field, this text should prompt the user to create a new contact. Otherwise this text should tell the user that no search results were found.'),
+    '#description' => $allow_create ? t('This text should prompt the user to create a new contact.') : t('This text should tell the user that no search results were found.'),
     '#size' => 60,
     '#maxlength' => 1024,
     '#weight' => -6,
@@ -148,7 +152,7 @@ function _webform_edit_civicrm_contact($component) {
   );
   $form['extra']['allow_create'] = array(
     '#type' => 'hidden',
-    '#value' => webform_civicrm_name_field_exists(webform_civicrm_enabled_fields($node), $c),
+    '#value' => $allow_create,
   );
   $form['defaults'] = array(
     '#type' => 'fieldset',

@@ -121,3 +121,7 @@ div.token-input-dropdown ul li.token-input-selected-dropdown-item {
     background-color: #d0efa0;
 }
 
+form.contact-loading, 
+form.contact-loading * {
+    cursor: progress !important;
+}
