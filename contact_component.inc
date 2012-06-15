@@ -60,6 +60,12 @@ function _webform_edit_civicrm_contact($component) {
   list(, $c, ) = explode('_', $component['form_key'], 3);
   $contact_type = $data['contact'][$c]['contact'][1]['contact_type'];
   $allow_create = webform_civicrm_name_field_exists(webform_civicrm_enabled_fields($node), $c);
+  if ($allow_create && $component['extra']['none_prompt'] == t('- None Found -')) {
+    $component['extra']['none_prompt'] = t('+ Create new contact +');
+  }
+  elseif (!$allow_create && $component['extra']['none_prompt'] == t('+ Create new contact +')) {
+    $component['extra']['none_prompt'] = t('- None Found -');
+  }
 
   // Check for required library
   $path = libraries_get_path('tokeninput');

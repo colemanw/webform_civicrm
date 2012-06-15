@@ -1108,9 +1108,9 @@ function webform_civicrm_component_insert(&$field, &$enabled, $settings) {
   if ($name == 'existing') {
     $vals = $enabled + $settings;
     // Set the allow_create flag based on presence of name or email fields
-    $field['extra']['allow_create'] = webform_civicrm_name_field_exists($vals, $c);
+    $field['extra']['allow_create'] = $a = webform_civicrm_name_field_exists($vals, $c);
     $field['extra']['search_prompt'] = t('- Search for existing contact -');
-    $field['extra']['none_prompt'] = t('+ Create new contact +');
+    $field['extra']['none_prompt'] = $a ? t('+ Create new contact +') : t('- None Found -');
     if ($c == 1) {
       // Default to hidden field for 1st contact
       $field['extra'] += array(
