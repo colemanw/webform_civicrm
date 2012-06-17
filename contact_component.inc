@@ -57,15 +57,11 @@ function _webform_edit_civicrm_contact($component) {
   }
   list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
   $data = $node->webform_civicrm['data'];
+  $enabled = webform_civicrm_enabled_fields($node);
   list(, $c, ) = explode('_', $component['form_key'], 3);
   $contact_type = $data['contact'][$c]['contact'][1]['contact_type'];
-  $allow_create = webform_civicrm_name_field_exists(webform_civicrm_enabled_fields($node), $c);
-  if ($allow_create && $component['extra']['none_prompt'] == t('- None Found -')) {
-    $component['extra']['none_prompt'] = t('+ Create new contact +');
-  }
-  elseif (!$allow_create && $component['extra']['none_prompt'] == t('+ Create new contact +')) {
-    $component['extra']['none_prompt'] = t('- None Found -');
-  }
+  webform_civicrm_existing_component_update($component, $enabled);
+  $allow_create = $component['extra']['allow_create'];
 
   // Check for required library
   $path = libraries_get_path('tokeninput');
@@ -322,7 +318,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
 
     case 'select':
       $element['#type'] = 'select';
-      $element['#empty_option'] = $component['extra']['search_prompt'];
+      $element['#options'] = array();
       if ($node) {
         $filters = webform_civicrm_search_filters($node, $component);
         $element['#options'] = webform_civicrm_contact_search($node, $component, $filters);
@@ -334,6 +330,10 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
             };
           })(jQuery, Drupal);';
         $element['#attached']['js'][$js] = array('type' => 'inline');
+      }
+      // Display empty option unless there are no results
+      if (!$component['extra']['allow_create'] || count($element['#options']) > 1) {
+        $element['#empty_option'] = $component['extra'][$element['#options'] ? 'search_prompt' : 'none_prompt'];
       }
       break;
 
@@ -367,19 +367,26 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
   return $element;
 }
 
+/**
+ * Lookup contact name from ID, verify permissions, and attach as html data.
+ * Used when rendering or altering a CiviCRM contact field
+ */
 function webform_civicrm_fill_contact_value($node, $component, &$element) {
   if ($element['#type'] == 'hidden' && !$component['extra']['show_hidden_contact']) {
     return;
   }
   if ($cid = webform_civicrm_aval($element, '#default_value')) {
-    $filters = webform_civicrm_search_filters($node, $component);
-    $name = webform_civicrm_contact_access($component, $filters, $cid);
-    if ($name !== FALSE) {
-      $element['#attributes']['data-civicrm-name'] = $name;
-      $element['#attributes']['data-civicrm-id'] = $cid;
-    }
-    else {
-      unset($cid);
+    // Don't lookup same contact again
+    if (webform_civicrm_aval($element, '#attributes:data-civicrm-id') != $cid) {
+      $filters = webform_civicrm_search_filters($node, $component);
+      $name = webform_civicrm_contact_access($component, $filters, $cid);
+      if ($name !== FALSE) {
+        $element['#attributes']['data-civicrm-name'] = $name;
+        $element['#attributes']['data-civicrm-id'] = $cid;
+      }
+      else {
+        unset($cid);
+      }
     }
   }
   if (!$cid && $element['#type'] == 'hidden' && $component['extra']['none_prompt']) {
@@ -611,6 +618,19 @@ function webform_civicrm_contact_fields($node, $con) {
     }
   }
   return $ret;
+}
+
+/**
+ * Update existing component if other fields have been added or removed
+ */
+function webform_civicrm_existing_component_update(&$component, $enabled) {
+  list(, $c, ) = explode('_', $component['form_key'], 3);
+  $allow_create = webform_civicrm_name_field_exists($enabled, $c);
+  if ($allow_create != $component['extra']['allow_create']) {
+    $component['extra']['none_prompt'] = $allow_create ? t('+ Create new contact +') : t('- None Found -');
+    $component['extra']['allow_create'] = $allow_create;
+    webform_component_update($component);
+  }
 }
 
 /**

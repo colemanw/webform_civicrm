@@ -716,7 +716,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
   unset($form_state['storage']);
 
   civicrm_initialize();
-  $delete_me = $enabled = webform_civicrm_enabled_fields($node);
+  $delete_me = $enabled = $existing = webform_civicrm_enabled_fields($node);
   $created = $deleted = 0;
   $fields = webform_civicrm_get_fields();
   $sets = webform_civicrm_get_fields('sets');
@@ -734,7 +734,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
   if ($delete_me && $button == 'edit-submit') {
     $msg = '<p>' . t('These existing fields are no longer needed for CiviCRM processing based on your new form settings.') . '</p><ul>';
     foreach ($delete_me as $key => $id) {
-      list($lobo, $c, $ent, $n, $table, $name) = explode('_', $key, 6);
+      list(, $c, $ent, $n, $table, $name) = explode('_', $key, 6);
       $info = '';
       if ($ent == 'contact' || $ent == 'participant') {
         $info = '<em>' . t('Contact !num', array('!num' => $c));
@@ -753,24 +753,30 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
   }
 
   module_load_include('inc', 'webform', 'includes/webform.components');
+  module_load_include('inc', 'webform_civicrm', 'contact_component');
   $form_state['redirect'] = 'node/' . $nid . '/webform';
 
-  if ($delete_me && $button === 'edit-delete') {
-    // Delete fields
-    foreach ($delete_me as $id) {
-      drupal_set_message(t('Deleted field: %name', array('%name' => $node->webform['components'][$id]['name'])));
-      webform_component_delete($node, $node->webform['components'][$id]);
-      ++$deleted;
-    }
-  }
-  elseif ($delete_me && $button === 'edit-disable' && $vals['nid']) {
-    // Disable fields
+  // Delete/disable fields
+  if ($button === 'edit-delete' || ($button === 'edit-disable' && $vals['nid'])) {
     foreach ($delete_me as $id) {
       $field = $node->webform['components'][$id];
-      $field['form_key'] = 'disabled' . substr($field['form_key'], 7);
-      webform_component_update($field);
-      drupal_set_message(t('Disabled field: %name', array('%name' => $field['name'])));
+      unset($enabled[$field['form_key']]);
       ++$deleted;
+      if ($button === 'edit-delete') {
+        webform_component_delete($node, $field);
+      }
+      else {
+        $field['form_key'] = 'disabled' . substr($field['form_key'], 7);
+        webform_component_update($field);
+      }
+    }
+    if ($deleted == 1) {
+      $p = array('%name' => $field['name']);
+      drupal_set_message($button === 'edit-delete' ? t('Deleted field: %name', $p) : t('Disabled field: %name', $p));
+    }
+    else {
+      $p = array('!n' => $deleted);
+      drupal_set_message($button === 'edit-delete' ? t('Deleted !n fields.', $p) : t('Disabled !n fields.', $p));
     }
   }
 
@@ -779,6 +785,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
     webform_civicrm_disable($nid);
     drupal_set_message(t('CiviCRM processing for this form is now disabled.'));
   }
+
   // CiviCRM enabled
   else {
     webform_ensure_record($node);
@@ -786,7 +793,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
     if (!$vals['toggle_message']) {
       $vals['message'] = '';
     }
-    // Index disabled components, in case user wishes to restore them
+    // Index disabled components
     $disabled = array();
     foreach (webform_civicrm_aval($node->webform, 'components', array()) as $field) {
       if (substr($field['form_key'], 0, 9) === 'disabled_') {
@@ -808,16 +815,18 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
           // Restore disabled component
           if (isset($disabled[$key])) {
             webform_component_update($disabled[$key]);
+            $enabled[$key] = $disabled[$key]['cid'];
             drupal_set_message(t('Re-enabled field: %name', array('%name' => $disabled[$key]['name'])));
-            continue;
           }
           // Create new component
-          $field = $fields[$table . '_' . $name];
-          $field['nid'] = $nid;
-          $field['form_key'] = $key;
-          $field['weight'] = $i;
-          webform_civicrm_component_insert($field, $enabled, $vals);
-          ++$created;
+          else {
+            $field = $fields[$table . '_' . $name];
+            $field['nid'] = $nid;
+            $field['form_key'] = $key;
+            $field['weight'] = $i;
+            webform_civicrm_component_insert($field, $enabled, $vals);
+            ++$created;
+          }
         }
         // Store exposed contact settings that don't create form elements
         elseif (isset($fields[$table . '_' . $name]['expose_list']) && !empty($val)) {
@@ -832,20 +841,26 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
       drupal_set_message(t('Created !num new fields.', array('!num' => $created)));
     }
 
-    // Write/update record
+    // Create record
     if (empty($node->webform_civicrm)) {
       drupal_write_record('webform_civicrm_forms', $vals);
       drupal_set_message(t('CiviCRM processing for this form is now enabled.'));
     }
+    // Update record
     else {
       drupal_write_record('webform_civicrm_forms', $vals, 'nid');
       drupal_set_message(t('Your CiviCRM form settings have been updated.'));
     }
   }
-  if ($deleted || $created) {
-    // Make sure the updated webform is visible to anonymous users.
-    cache_clear_all();
+  // Update existing contact fields
+  foreach ($existing as $fid => $id) {
+    if (substr($fid, -8) === 'existing') {
+      webform_civicrm_existing_component_update($node->webform['components'][$id], $enabled);
+    }
   }
+  // Make sure the webform is updated for anonymous users.
+  cache_clear_all();
+
   // Clear the entity cache.
   if (module_exists('entitycache')) {
     cache_clear_all($nid, 'cache_entity_node');
@@ -866,25 +881,25 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
     if (!($pieces = webform_civicrm_explode_key($fid))) {
       return;
     }
-    list($lobo, $i, $ent, $n, $table, $name) = $pieces;
+    list(, $i, $ent, $n, $table, $name) = $pieces;
     $fields = webform_civicrm_get_fields();
     // Is this component a CiviCRM field?
-    if (($field = webform_civicrm_aval($fields, $table . '_' . $name)) ||
-      ($lobo == 'civicrm' && $table == 'fieldset')) {
+    if (($field = webform_civicrm_aval($fields, $table . '_' . $name)) || $table == 'fieldset') {
       $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_admin.css';
       $element = $node->webform['components'][$form['cid']['#value']];
 
-      if (arg(5) != 'clone' || $name == 'fieldset') {
+      if (empty($form['clone']['#value']) || $name == 'fieldset') {
         // Prevent users from editing the form_key and breaking things
         $form['form_key']['#disabled'] = TRUE;
         $form['form_key']['#value'] = $fid;
         $form['form_key']['#description'] = t('Automatically set for use by CiviCRM processing.');
         // Clone an entire contact when cloning their fieldset
-        if (arg(5) == 'clone') {
+        if (!empty($form['clone']['#value'])) {
           $form['submit']['#value'] = t('Clone Contact');
           $new = count($node->webform_civicrm['data']['contact']) + 1;
-          $form['form_key']['#value'] = implode('_', array($lobo, $new, $ent, $n, $table, $name));
+          $form['form_key']['#value'] = implode('_', array('civicrm', $new, $ent, $n, $table, $name));
           $form['name']['#default_value'] = str_replace($i, $new, $form['name']['#default_value']);
+          ++$form['position']['weight']['#default_value'];
           array_unshift($form['#submit'], 'webform_civicrm_contact_clone');
           if (empty($form_state['input'])) {
             drupal_set_message(t('Press the button below to clone this contact. A new CiviCRM contact will be added to the form with all the settings for contact !num. All fields from within this fieldset will be cloned (be careful, that may include non-contact !num fields).', array('!num' => $i)), 'status', FALSE);
@@ -1109,7 +1124,7 @@ function webform_civicrm_component_insert(&$field, &$enabled, $settings) {
     $vals = $enabled + $settings;
     // Set the allow_create flag based on presence of name or email fields
     $field['extra']['allow_create'] = $a = webform_civicrm_name_field_exists($vals, $c);
-    $field['extra']['search_prompt'] = t('- Search for existing contact -');
+    $field['extra']['search_prompt'] = t('- Choose existing contact -');
     $field['extra']['none_prompt'] = $a ? t('+ Create new contact +') : t('- None Found -');
     if ($c == 1) {
       // Default to hidden field for 1st contact
@@ -1168,7 +1183,7 @@ function webform_civicrm_component_insert(&$field, &$enabled, $settings) {
   }
   // Merge defaults and create webform component
   webform_component_defaults($field);
-  return webform_component_insert($field);
+  $enabled[$field['form_key']] = webform_component_insert($field);
 }
 
 /**

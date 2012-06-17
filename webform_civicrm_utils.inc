@@ -1080,10 +1080,10 @@ function webform_civicrm_event_info(&$events) {
  * Check if a name or email field exists for this contact.
  * This determines whether a new contact can be created on the webform.
  */
-function webform_civicrm_name_field_exists($vals, $c) {
+function webform_civicrm_name_field_exists($enabled, $c) {
   foreach (webform_civicrm_required_contact_fields() as $f) {
     $fid = 'civicrm_' . $c . '_contact_1_' . $f['table'] . '_' . $f['name'];
-    if (!empty($vals[$fid])) {
+    if (!empty($enabled[$fid])) {
       return 1;
     }
   }

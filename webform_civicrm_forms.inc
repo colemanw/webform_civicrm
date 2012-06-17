@@ -1200,7 +1200,7 @@ function _webform_civicrm_participant_validate($form, &$form_state, $submitted) 
   // Add events selected by user
   foreach ($submitted as $field => $value) {
     if (strpos($field, 'participant_event_id')) {
-      list($lobo, $c, $ent, $n, $table, $key) = webform_civicrm_explode_key($field);
+      list(, $c, $ent, $n, $table, $key) = webform_civicrm_explode_key($field);
       if (in_array($c, $contacts)
       || ($c == 1 && $data['participant_reg_type'] == 'all')) {
         $value = is_array($value) ? $value : array($value);
