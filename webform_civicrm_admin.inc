@@ -67,7 +67,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     unset($form_state['storage']['vals']);
   }
   // Merge in existing fields
-  $existing = array_keys(webform_civicrm_enabled_fields($node));
+  $existing = array_keys(webform_civicrm_enabled_fields($node, NULL, TRUE));
   $settings += array_fill_keys($existing, 'create_civicrm_webform_element');
 
   $tokens = '<strong>' . t('Contact 1 Tokens:') . '</strong> [' . implode('], [', webform_civicrm_get_fields('tokens')) . '].';
@@ -716,7 +716,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
   unset($form_state['storage']);
 
   civicrm_initialize();
-  $delete_me = $enabled = $existing = webform_civicrm_enabled_fields($node);
+  $delete_me = $enabled = $existing = webform_civicrm_enabled_fields($node, NULL, TRUE);
   $created = $deleted = 0;
   $fields = webform_civicrm_get_fields();
   $sets = webform_civicrm_get_fields('sets');
@@ -775,8 +775,8 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
       drupal_set_message($button === 'edit-delete' ? t('Deleted field: %name', $p) : t('Disabled field: %name', $p));
     }
     else {
-      $p = array('!n' => $deleted);
-      drupal_set_message($button === 'edit-delete' ? t('Deleted !n fields.', $p) : t('Disabled !n fields.', $p));
+      $p = array('!num' => $deleted);
+      drupal_set_message($button === 'edit-delete' ? t('Deleted !num fields.', $p) : t('Disabled !num fields.', $p));
     }
   }
 
@@ -947,7 +947,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         if ($element['type'] === 'select') {
           $form['civicrm_options_fieldset']['civicrm_live_options'] = array(
             '#type' => 'radios',
-            '#options' => array(t('<strong>Static Options</strong> (fully configurable)'), t('<strong>Live Options</strong> (automatically load from the CiviCRM database)')),
+            '#options' => array(t('<strong>Static Options</strong> (fully configurable)'), t('<strong>Live Options</strong> (update automatically)')),
             '#default_value' => (int) !empty($element['extra']['civicrm_live_options']),
             '#parents' => array('extra', 'civicrm_live_options'),
           );
@@ -955,7 +955,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
             '#markup' => '<p><div class="live-options-hide">' .
               t('Drag the arrows to re-order these options. Click the "enabled" checkbox to show/remove an item from the form. Set the label as you want it to appear on the form.') .
               '</div><div class="live-options-show">' .
-              t('You cannot control the presentation of live options. They will be loaded from the database every time the form is displayed.') .
+              t('You cannot control the presentation of live options. They will be loaded from the CiviCRM database every time the form is displayed.') .
               '</div><div>' .
               t('Check the "default" box for an option to be selected by default when a user views the form.') .
               '</div></p>',
@@ -1124,7 +1124,6 @@ function webform_civicrm_component_insert(&$field, &$enabled, $settings) {
     $vals = $enabled + $settings;
     // Set the allow_create flag based on presence of name or email fields
     $field['extra']['allow_create'] = $a = webform_civicrm_name_field_exists($vals, $c);
-    $field['extra']['search_prompt'] = t('- Choose existing contact -');
     $field['extra']['none_prompt'] = $a ? t('+ Create new contact +') : t('- None Found -');
     if ($c == 1) {
       // Default to hidden field for 1st contact
@@ -1167,22 +1166,25 @@ function webform_civicrm_component_insert(&$field, &$enabled, $settings) {
   // Create fieldsets - for contact and contact-specific event fields only
   if (!empty($settings['create_fieldsets']) && $ent != 'activity'
   && ($ent != 'participant' || webform_civicrm_aval($settings['data'], 'participant_reg_type') == 'separate')) {
-    if (!isset($enabled['civicrm_' . $c . '_contact_1_fieldset_fieldset'])) {
+    $sid = 'civicrm_' . $c . '_contact_1_fieldset_fieldset';
+    if (!isset($enabled[$sid])) {
+      // Create webform fieldset for this contact
       $new_set = array(
         'nid' => $field['nid'],
-        'form_key' => 'civicrm_' . $c . '_contact_1_fieldset_fieldset',
+        'form_key' => $sid,
         'type' => 'fieldset',
         'name' => t('Contact !num', array('!num' => $c)),
         'weight' => $c,
       );
-      // Merge defaults and create webform fieldset
-      webform_component_defaults($new_set);
-      $enabled['civicrm_' . $c . '_contact_1_fieldset_fieldset'] = webform_component_insert($new_set);
+      $new_set += webform_component_invoke('fieldset', 'defaults');
+      $enabled[$sid] = webform_component_insert($new_set);
     }
-    $field['pid'] = $enabled['civicrm_' . $c . '_contact_1_fieldset_fieldset'];
+    $field['pid'] = $enabled[$sid];
   }
   // Merge defaults and create webform component
-  webform_component_defaults($field);
+  if ($defaults = webform_component_invoke($field['type'], 'defaults')) {
+    $field += $defaults;
+  }
   $enabled[$field['form_key']] = webform_component_insert($field);
 }
 

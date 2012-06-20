@@ -367,10 +367,11 @@ function webform_civicrm_save_custom($entity, $entity_id, $entity_type = NULL) {
  * Get ids or values of enabled CiviCRM fields for a webform.
  * @Param $node: node object
  * @Param $submission: if supplied, will match field keys with submitted values
+ * @Param $show_all: get every field even if it is not active
  */
-function webform_civicrm_enabled_fields($node, $submission = NULL) {
+function webform_civicrm_enabled_fields($node, $submission = NULL, $show_all = FALSE) {
   $enabled = array();
-  if (!empty($node->webform['components']) && !empty($node->webform_civicrm)) {
+  if (!empty($node->webform['components']) && (!empty($node->webform_civicrm) || $show_all)) {
     $fields = webform_civicrm_get_fields();
     foreach ($node->webform['components'] as $c) {
       $exp = explode('_', $c['form_key'], 5);
@@ -378,6 +379,9 @@ function webform_civicrm_enabled_fields($node, $submission = NULL) {
         list($lobo, $i, $ent, $n, $id) = $exp;
         if ((isset($fields[$id]) || ($id == 'fieldset_fieldset' && isset($node->webform_civicrm['data']['contact'][$i])))
         && $lobo == 'civicrm' && is_numeric($i) && is_numeric($n)) {
+          if (!$show_all && ($ent == 'contact' || $ent == 'participant') && empty($node->webform_civicrm['data']['contact'][$i])) {
+            continue;
+          }
           if ($submission) {
             $enabled[$c['form_key']] = webform_civicrm_aval($submission, $c['cid'], TRUE);
           }
@@ -438,6 +442,9 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['contact_existing'] = array(
       'name' => t('Existing Contact'),
       'type' => 'civicrm_contact',
+      'extra' => array(
+        'search_prompt' => t('- Choose existing contact -'),
+      ),
     );
     foreach (array('organization' => t('Organization Name'), 'legal' => t('Legal Name'), 'household' => t('Household Name')) as $key => $label) {
       $fields['contact_' . $key . '_name'] = array(
@@ -792,10 +799,10 @@ function webform_civicrm_get_fields($var = 'fields') {
 
     // Pull custom fields and match to Webform element types
     $custom_types = array(
-      'Select' => array('type' => 'select', 'extra' => array('civicrm_live_options' => 1)),
-      'Multi-Select' => array('type' => 'select', 'extra' => array('multiple' => 1, 'civicrm_live_options' => 1)),
+      'Select' => array('type' => 'select'),
+      'Multi-Select' => array('type' => 'select', 'extra' => array('multiple' => 1)),
       'AdvMulti-Select' => array('type' => 'select', 'extra' => array('multiple' => 1, 'civicrm_live_options' => 1)),
-      'Radio' => array('type' => 'select', 'extra' => array('aslist' => 0, 'civicrm_live_options' => 1)),
+      'Radio' => array('type' => 'select', 'extra' => array('aslist' => 0)),
       'CheckBox' => array('type' => 'select', 'extra' => array('multiple' => 1, 'civicrm_live_options' => 1)),
       'Text'  => array('type' => 'textfield'),
       'TextArea' => array('type' => 'textarea'),
@@ -806,7 +813,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'Multi-Select Country' => array('type' => 'select', 'extra' => array('multiple' => 1)),
       'Select State/Province' => array('type' => 'select'),
       'Multi-Select State/Province' => array('type' => 'select', 'extra' => array('multiple' => 1)),
-      'Autocomplete-Select' => array('type' => 'select', 'extra' => array('civicrm_live_options' => 1)),
+      'Autocomplete-Select' => array('type' => 'select'),
     );
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
     $custom_extends = "'contact','individual','organization','household','address','activity','relationship'";
@@ -825,11 +832,11 @@ function webform_civicrm_get_fields($var = 'fields') {
     $dao = &CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {
       if (isset($custom_types[$dao->html_type])) {
+        $set = 'cg' . $dao->custom_group_id;
         if ($dao->entity_type == 'address' || $dao->entity_type == 'relationship') {
           $set = $dao->entity_type;
         }
-        else {
-          $set = 'cg' . $dao->custom_group_id;
+        elseif (!isset($sets[$set])) {
           $sets[$set]['label'] = $dao->custom_group_name;
           if ($dao->entity_type != 'activity' && $dao->entity_type != 'participant' && $dao->entity_type != 'case') {
             $sets[$set]['entity_type'] = 'contact';
@@ -854,7 +861,6 @@ function webform_civicrm_get_fields($var = 'fields') {
           }
         }
         $id = $set . '_custom_' . $dao->id;
-        $label = drupal_strtolower($dao->label);
         $fields[$id] = $custom_types[$dao->html_type];
         $fields[$id]['name'] = $dao->label;
         $fields[$id]['mandatory'] = $dao->is_required;
@@ -872,12 +878,15 @@ function webform_civicrm_get_fields($var = 'fields') {
         }
         elseif ($og = $dao->option_group_id) {
           $lists[$set . '_custom_' . $dao->id] = $og;
+          $fields[$id]['extra']['civicrm_live_options'] = 1;
         }
         elseif ($dao->html_type == 'Select Country' || $dao->html_type == 'Multi-Select Country') {
           $lists[$set . '_custom_' . $dao->id] = 'country';
+          $fields[$id]['extra']['civicrm_live_options'] = 1;
         }
         elseif ($dao->html_type == 'Select State/Province' || $dao->html_type == 'Multi-Select State/Province') {
           $lists[$set . '_custom_' . $dao->id] = 'state_province';
+          $fields[$id]['extra']['civicrm_live_options'] = 1;
         }
         elseif ($fields[$id]['data_type'] == 'ContactReference') {
           $lists[$set . '_custom_' . $dao->id] = 'contact';

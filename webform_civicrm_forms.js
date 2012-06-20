@@ -44,8 +44,7 @@ var wfCivi = (function ($, D) {
     }
   };
 
-  pub.existingInit = function (num, nid, path, toHide, selector) {
-    var field = $(selector);
+  pub.existingInit = function (field, num, nid, path, toHide) {
     var ret = null;
     if (field.length) {
       if (field.is('select')) {
