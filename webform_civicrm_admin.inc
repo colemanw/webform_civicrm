@@ -89,7 +89,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#title' => t('Enable CiviCRM Processing'),
     '#default_value' => !empty($settings['nid']),
     '#return_value' => $node->nid,
-    '#description' => '<ul><li>' . t('Contacts will be created or updated when users submit this webform.') . '</li></ul>',
+    '#description' => t('Contacts will be created or updated when users submit this webform.'),
     '#suffix' => '<a id="web-civi-help" class="module-link module-link-help" href="http://drupal.org/node/1615380" target="_blank">' . t('Webform CiviCRM Help') . '</a>',
   );
   $form['number_of_contacts'] = array(
@@ -1142,6 +1142,11 @@ function webform_civicrm_component_insert(&$field, &$enabled, $settings) {
     require_once 'CRM/Core/BAO/Setting.php';
     $field['value'] = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME,
       'checksum_timeout', NULL, 7);
+  }
+  // Support html_textarea module
+  if ($field['type'] == 'html_textarea') {
+    $field['value']['format'] = filter_default_format();
+    $field['value']['value'] = '';
   }
   // Retrieve option list
   if ($options = webform_civicrm_field_options($field, 'component_insert', $settings['data'])) {
