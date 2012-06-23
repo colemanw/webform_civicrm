@@ -152,17 +152,6 @@ var wfCiviAdmin = (function ($, D) {
     }
   }
 
-  function ContactMatchCheckbox() {
-    if($('#edit-1-contact-type').val() == 'individual') {
-      $('#civi-contact-match-on').show();
-      $('#civi-contact-match-off').hide();
-    }
-    else {
-      $('#civi-contact-match-on').hide();
-      $('#civi-contact-match-off').show();
-    }
-  }
-
   function CheckLength(str) {
     str = D.checkPlain(str);
     if (str.length > 40) {
@@ -228,8 +217,6 @@ var wfCiviAdmin = (function ($, D) {
         return label;
       });
 
-      ContactMatchCheckbox();
-
       $('#edit-nid', context).once('wf-civi').change(function() {
         if ($(this).is(':checked')) {
           $('#webform-civicrm-configure-form .vertical-tabs, .form-item-number-of-contacts').removeAttr('style');
@@ -258,10 +245,6 @@ var wfCiviAdmin = (function ($, D) {
 
       $('#edit-number-of-contacts', context).once('wf-civi').change(function() {
         $('#webform-civicrm-configure-form')[0].submit();
-      });
-
-      $('#edit-1-contact-type', context).once('wf-civi').change(function() {
-        ContactMatchCheckbox();
       });
 
       $('select[name*="relationship_relationship_type_id"]', context).once('wf-civi').change(function() {

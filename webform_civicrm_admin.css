@@ -5,48 +5,38 @@ form .web-civi-checkbox-set {
 
 form .web-civi-checkbox-set .form-item {
   float:left;
-  margin-left:1em;
-  min-width:15em;
-}
-
-.web-civi-checkbox-set .form-item div.description {
-  max-width: 20em;
+  width:18em;
+  padding-right:1.5em;
 }
 
 form #web-civi-help {
   float:right;
 }
 
-form .form-item-activity-targets div.form-item.form-type-checkbox {
-  float:left;
-  margin-right:1em;
-}
-
-.web-civi-checkbox-set + div,
-form .form-item-activity-targets + div{
+.web-civi-checkbox-set + div {
   clear:both;
 }
 
 form .hidden,
-.js #no-js-button-wrapper,
-.web-civi-js-select,
-#civi-contact-match-off {
+.js #no-js-button-wrapper {
   display:none;
 }
 
-#webform-civicrm-configure-form .form-item label {
+#webform-civicrm-configure-form .form-type-checkbox label,
+#webform-civicrm-configure-form .number-of .form-item label,
+#webform-civicrm-configure-form .form-item-number-of-contacts label {
   display:inline;
+}
+
+#webform-civicrm-configure-form .contact-type-select {
+  float:left;
+  margin-right:3em;
 }
 
 th div.form-type-radio {
   display:inline;
   margin:0;
   padding:0;
-}
-
-.js fieldset:hover > div > .web-civi-js-select,
-.js fieldset:hover > .web-civi-js-select {
-  display:block;
 }
 
 .web-civi-js-select {
@@ -57,6 +47,12 @@ th div.form-type-radio {
   background-color:white;
   top:-10px;
   border:1px solid #CCCCCC;
+  display:none;
+}
+
+.js fieldset:hover > div > .web-civi-js-select,
+.js fieldset:hover > .web-civi-js-select {
+  display:block;
 }
 
 .web-civi-js-select a:hover {

@@ -616,18 +616,41 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Activity Details'),
       'type' => module_exists('webform_html_textarea') ? 'html_textarea' : 'textarea',
     );
-    $fields['activity_status_id'] = array(
-      'name' => t('Activity Status'),
-      'type' => 'select',
-      'value' => '2',
-      'expose_list' => TRUE,
-    );
+    foreach (array('status' => t('Activity Status'), 'priority' => t('Activity Priority')) as $key => $label) {
+      $fields['activity_' . $key . '_id'] = array(
+        'name' => $label,
+        'type' => 'select',
+        'value' => '2',
+        'expose_list' => TRUE,
+      );
+    }
     $fields['activity_assignee_contact_id'] = array(
       'name' => t('Assign Activity to'),
       'type' => 'select',
       'expose_list' => TRUE,
       'empty_option' => t('- No One -'),
       'data_type' => 'ContactReference',
+    );
+    $fields['activity_location'] = array(
+      'name' => t('Activity Location'),
+      'type' => 'textfield',
+    );
+    $fields['activity_duration'] = array(
+      'name' => t('Duration'),
+      'type' => 'number',
+      'extra' => array(
+        'description' => t('Total time spent on this activity (in minutes).'),
+        'field_suffix' => t('min.'),
+        'min' => 0,
+        'step' => 5,
+        'integer' => 1,
+      ),
+    );
+    $fields['activity_engagement_level'] = array(
+      'name' => t('Engagement Level'),
+      'type' => 'select',
+      'empty_option' => t('- None -'),
+      'expose_list' => TRUE,
     );
     if (in_array('CiviCampaign', $components)) {
       $fields['activity_campaign_id'] = array(
@@ -767,12 +790,14 @@ function webform_civicrm_get_fields($var = 'fields') {
       'address_master_id' => 'contact_address',
       'activity_target_contact_id' => 'contact',
       'activity_assignee_contact_id' => 'contact',
+      'activity_status_id' => 'activity_status',
+      'activity_priority_id' => 'priority',
+      '*_engagement_level' => 'engagement_index',
       'relationship_relationship_type_id' => 'relationship_type_id',
       'relationship_is_active' => 'yes_no',
       'relationship_relationship_permission' => 'relationship_permission',
       '*_group' => 'group',
       '*_tag' => 'tag',
-      'activity_status_id' => 'activity_status',
       'case_status_id' => 'case_status',
       'case_medium_id' => 'encounter_medium',
       'participant_event_id' => 'event',
