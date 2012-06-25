@@ -44,7 +44,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   // Early return if the form (or page) was already submitted
   if (webform_civicrm_aval($form_state, 'triggering_element:#id') == 'edit-previous'
   || (empty($form_state['rebuild']) && !empty($form_state['storage']))) {
-    webform_civicrm_fill_values($form['submitted'], $node);
+    webform_civicrm_fill_form($form['submitted'], $node);
     return;
   }
   // If this is an edit op, use the original IDs and return
@@ -53,7 +53,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       $form_state['civicrm']['id']['cid'] = $form['#submission']->civicrm['contact_id'];
       $form_state['civicrm']['id']['act'][1] = $form['#submission']->civicrm['activity_id'];
     }
-    webform_civicrm_fill_values($form['submitted'], $node);
+    webform_civicrm_fill_form($form['submitted'], $node);
     return;
   }
   $enabled = webform_civicrm_enabled_fields($node);
@@ -258,7 +258,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   // Set default values and other attributes for CiviCRM form elements
   // Passing $submitted helps avoid overwriting values that have been entered on a multi-step form
   $submitted = webform_civicrm_aval($form_state, 'values:submitted', array());
-  webform_civicrm_fill_values($form['submitted'], $node, $info, $submitted);
+  webform_civicrm_fill_form($form['submitted'], $node, $info, $submitted);
 }
 
 /**
@@ -348,7 +348,7 @@ function webform_civicrm_contact_get($node, $enabled, $c, $cid, $exclude = array
  * @Param $data: CiviCRM data to autofill form
  * @Param $submitted: Existing submission
  */
-function webform_civicrm_fill_values(&$elements, $node, $data = array(), $submitted = array()) {
+function webform_civicrm_fill_form(&$elements, $node, $data = array(), $submitted = array()) {
   $sp = CRM_Core_DAO::VALUE_SEPARATOR;
   $fields = webform_civicrm_get_fields();
   foreach ($elements as $eid => &$element) {
@@ -356,12 +356,16 @@ function webform_civicrm_fill_values(&$elements, $node, $data = array(), $submit
       continue;
     }
     // Recurse through nested elements
-    webform_civicrm_fill_values($element, $node, $data, $submitted);
+    webform_civicrm_fill_form($element, $node, $data, $submitted);
     if (empty($element['#type']) || $element['#type'] == 'fieldset' || $element['#type'] == 'file') {
       continue;
     }
     if (!empty($element['#webform_component']) && $pieces = webform_civicrm_explode_key($eid)) {
       list( , $c, $ent, $n, $table, $name) = $pieces;
+      // Separate out time fields
+      if (substr($name, -8) === 'timepart') {
+        $name = str_replace('_timepart', '', $name);
+      }
       if ($field = webform_civicrm_aval($fields, $table . '_' . $name)) {
         $component = $element['#webform_component'];
         $element['#attributes']['class'][] = 'civicrm-enabled';
@@ -377,15 +381,8 @@ function webform_civicrm_fill_values(&$elements, $node, $data = array(), $submit
         if (isset($data[$ent][$c][$table][$n][$name])
         && !(isset($component['cid']) && isset($submitted[$component['cid']]))) {
           $val = $data[$ent][$c][$table][$n][$name];
-          if ($element['#type'] == 'date') {
-            $date = strtotime($val);
-            $val = array(
-              'year' => (int) date('Y', $date),
-              'month' => (int) date('m', $date),
-              'day' => (int) date('d', $date),
-            );
-          }
-          elseif (($element['#type'] == 'checkboxes' || !empty($element['#multiple'])) && !is_array($val)) {
+
+          if (($element['#type'] == 'checkboxes' || !empty($element['#multiple'])) && !is_array($val)) {
             $val = explode($sp, trim($val, $sp));
           }
           if ($element['#type'] != 'checkboxes' && $element['#type'] != 'date'
@@ -461,6 +458,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         $component = $node->webform['components'][$fid];
         $cid = $submission->data[$fid]['value'][0];
         $filters = webform_civicrm_search_filters($node, $component);
+        // Verify access to this contact
         if (webform_civicrm_contact_access($component, $filters, $cid) !== FALSE) {
           list(, $c, ) = explode('_', $field_key, 3);
           $id['cid'][$c] = $cid;
@@ -523,9 +521,23 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         }
         elseif ($field['type'] === 'date') {
           $val = empty($val[0]) ? '' : str_replace('-', '', $val[0]);
+          // Add time field value
+          $time = webform_civicrm_aval($data, "$ent:$c:$table:$n:$name", '');
+          // Remove default date if it has been added
+          if (strlen($time) == 14) {
+            $time = substr($time, -6);
+          }
+          $val .= $time;
         }
         elseif ($name !== 'event_id') {
           $val = isset($val[0]) ? $val[0] : '';
+        }
+        // Fudge together date and time fields
+        if ($field['type'] === 'time' && substr($name, -8) === 'timepart') {
+          $name = str_replace('_timepart', '', $name);
+          // Add date (default to today)
+          $date = webform_civicrm_aval($data, "$ent:$c:$table:$n:$name", date('Ymd'));
+          $val = $date . str_replace(':', '', $val);
         }
         // Only known contacts are allowed to empty a field
         if (($val !== '' && $val !== NULL) || !empty($updating['cid'][$c])) {
@@ -917,7 +929,6 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
     }
     if (!empty($data['activity'][1])) {
       $params = $data['activity'][1]['activity'][1];
-      $params['activity_date_time'] = date('YmdHis');
       if ($cid = webform_civicrm_user_cid()) {
         $params['source_contact_id'] = $cid;
       }

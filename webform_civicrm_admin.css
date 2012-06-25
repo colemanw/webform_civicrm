@@ -3,7 +3,8 @@ form .web-civi-checkbox-set {
   position:relative;
 }
 
-form .web-civi-checkbox-set .form-item {
+form .web-civi-checkbox-set .form-item,
+#webform-civicrm-configure-form .contact-type-select {
   float:left;
   width:18em;
   padding-right:1.5em;
@@ -26,11 +27,6 @@ form .hidden,
 #webform-civicrm-configure-form .number-of .form-item label,
 #webform-civicrm-configure-form .form-item-number-of-contacts label {
   display:inline;
-}
-
-#webform-civicrm-configure-form .contact-type-select {
-  float:left;
-  margin-right:3em;
 }
 
 th div.form-type-radio {

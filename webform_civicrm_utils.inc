@@ -635,6 +635,14 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Activity Location'),
       'type' => 'textfield',
     );
+    $fields['activity_activity_date_time'] = array(
+      'name' => t('Activity Date'),
+      'type' => 'date',
+    );
+    $fields['activity_activity_date_time_timepart'] = array(
+      'name' => t('Activity Time'),
+      'type' => 'time',
+    );
     $fields['activity_duration'] = array(
       'name' => t('Duration'),
       'type' => 'number',
@@ -709,7 +717,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'type' => 'date',
       'extra' => array(
         'start_date' => '-50 years',
-        'end_date' => '+50 years',
+        'end_date' => '+10 years',
       ),
     );
     $fields['relationship_end_date'] = array(
@@ -717,7 +725,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'type' => 'date',
       'extra' => array(
         'start_date' => '-50 years',
-        'end_date' => '+50 years',
+        'end_date' => '+10 years',
       ),
     );
     if (in_array('CiviEvent', $components)) {
@@ -900,6 +908,15 @@ function webform_civicrm_get_fields($var = 'fields') {
         if ($fields[$id]['type'] == 'date') {
           $fields[$id]['extra']['start_date'] = ($dao->start_date_years ? '-' . $dao->start_date_years : '-50') . ' years';
           $fields[$id]['extra']['end_date'] = ($dao->end_date_years ? '+' . $dao->end_date_years : '+50') . ' years';
+          // Add "time" component for datetime fields
+          if (!empty($dao->time_format)) {
+            $fields[$id]['name'] .= ' - ' . t('date');
+            $fields[$id . '_timepart'] = array(
+              'name' => $dao->label . ' - ' . t('time'),
+              'type' => 'time',
+              'extra' => array('hourformat' => $dao->time_format == 1 ? '12-hour' : '24-hour'),
+            );
+          }
         }
         elseif ($og = $dao->option_group_id) {
           $lists[$set . '_custom_' . $dao->id] = $og;
