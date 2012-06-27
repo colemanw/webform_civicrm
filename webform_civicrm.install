@@ -543,12 +543,21 @@ function webform_civicrm_update_7300() {
       if (webform_civicrm_aval($fields, "{$table}_$name:data_type") == 'ContactReference') {
         // No big changes if selecting from webform contacts, just strip the # symbols
         if (empty($field['extra']['civicrm_group'])) {
-          $old = webform_civicrm_str2array($field['extra']['items']);
-          $new = array();
-          foreach ($old as $k => $v) {
-            $new[substr($k, 1)] = $v;
+          $field['value'] = str_replace('#', '', $field['value']);
+          // Hidden fields are no longer needed for referencing a webform contact
+          if ($field['type'] === 'hidden') {
+            $data[$ent][$c][$table][$n][$name] = $field['value'];
+            webform_component_delete($field);
+            continue;
           }
-          $field['extra']['items'] = webform_civicrm_array2str($new);
+          if (!empty($field['extra']['items'])) {
+            $old = webform_civicrm_str2array($field['extra']['items']);
+            $new = array();
+            foreach ($old as $k => $v) {
+              $new[substr($k, 1)] = $v;
+            }
+            $field['extra']['items'] = webform_civicrm_array2str($new);
+          }
         }
         // Big changes if selecting contact by group!
         elseif ($field['type'] === 'select') {
@@ -584,21 +593,23 @@ function webform_civicrm_update_7300() {
       // Update relationship type ids
       elseif ($name == 'relationship_type_id') {
         $r_types = webform_civicrm_field_options($field, '', $data);
-        $old = webform_civicrm_str2array($field['extra']['items']);
-        $new = array();
-        foreach ($old as $k => $v) {
-          if (!isset($r_types[$k])) {
-            list($r, $a_b) = explode('_', $k);
-            if (isset($r_types[$r . '_r'])) {
-              $k = $r . '_r';
+        if (!empty($field['extra']['items'])) {
+          $old = webform_civicrm_str2array($field['extra']['items']);
+          $new = array();
+          foreach ($old as $k => $v) {
+            if (!isset($r_types[$k])) {
+              list($r, $a_b) = explode('_', $k);
+              if (isset($r_types[$r . '_r'])) {
+                $k = $r . '_r';
+              }
+              else {
+                continue;
+              }
             }
-            else {
-              continue;
-            }
+            $new[$k] = $v;
           }
-          $new[$k] = $v;
+          $field['extra']['items'] = webform_civicrm_array2str($new);
         }
-        $field['extra']['items'] = webform_civicrm_array2str($new);
         // Default value
         if (!empty($field['value'])) {
           list($r, $a_b) = explode('_', $field['value']);

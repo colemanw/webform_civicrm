@@ -343,6 +343,7 @@ function webform_civicrm_webform_component_presave(&$component) {
   if ($c = webform_civicrm_contact_clone_storage()) {
     $component['form_key'] = str_replace($c['old'], $c['new'], $component['form_key']);
     if ($component['type'] == 'civicrm_contact') {
+      // Only contact 1 can be the current user
       if (webform_civicrm_aval($component, 'extra:default') == 'user') {
         unset($component['extra']['default']);
       }
