@@ -487,18 +487,31 @@ function webform_civicrm_update_7300() {
             if (!isset($r_types[$type]) && isset($r_types[$r . '_r'])) {
               $contact['relationship'][$n]['relationship_type_id'] = $r . '_r';
             }
-            // Current employer rel with contact 1
-            if ($r == 'ce' && $n == 1) {
-              // Add existing contact field
-              $field = $fields['contact_existing'];
-              $field['nid'] = $form['nid'];
-              $field['weight'] = -255;
-              $field['form_key'] = "civicrm_{$c}_contact_1_contact_existing";
-              $field['extra']['widget'] = 'hidden';
-              $field['extra']['default'] = 'relationship';
-              $field['extra']['default_relationship'] = $type;
-              $field['extra']['hide_fields'] = array();
-              webform_civicrm_component_insert($field, $enabled, $form);
+            // Change current employer rel
+            if ($r == 'ce') {
+              // Get regular employer rel type
+              foreach (webform_civicrm_get_relationship_types() as $e_type => $r) {
+                if ($r['name_a_b'] == 'Employee of') {
+                  break;
+                }
+              }
+              $contact['relationship'][$n]['relationship_type_id'] = $e_type . '_' . $a_b;
+              $i = $a_b == 'a' ? $c : $n;
+              $e = $a_b == 'a' ? $n : $c;
+              $data['contact'][$i]['contact'][1]['employer_id'] = $e;
+              if ($n == 1 && empty($enabled["civicrm_{$c}_contact_1_contact_existing"])) {
+                // Add existing contact field
+                $field = $fields['contact_existing'];
+                $field['name'] = $a_b == 'a' ? t('Employee') : t('Employer');
+                $field['nid'] = $form['nid'];
+                $field['weight'] = -255;
+                $field['form_key'] = "civicrm_{$c}_contact_1_contact_existing";
+                $field['extra']['widget'] = 'hidden';
+                $field['extra']['default'] = 'relationship';
+                $field['extra']['default_relationship'] = array($e_type . '_' . $a_b);
+                $field['extra']['hide_fields'] = array();
+                webform_civicrm_component_insert($field, $enabled, $form);
+              }
             }
           }
         }
@@ -545,9 +558,9 @@ function webform_civicrm_update_7300() {
         if (empty($field['extra']['civicrm_group'])) {
           $field['value'] = str_replace('#', '', $field['value']);
           // Hidden fields are no longer needed for referencing a webform contact
-          if ($field['type'] === 'hidden') {
+          if ($field['type'] == 'hidden') {
             $data[$ent][$c][$table][$n][$name] = $field['value'];
-            webform_component_delete($field);
+            webform_component_delete($node, $field);
             continue;
           }
           if (!empty($field['extra']['items'])) {

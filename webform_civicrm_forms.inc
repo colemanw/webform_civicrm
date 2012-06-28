@@ -593,6 +593,10 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         }
       }
       $params = $contact['contact'][1];
+
+      // Current employer must wait for ContactRef ids to be filled
+      unset($params['employer_id']);
+
       $params['contact_type'] = ucfirst($params['contact_type']);
       if (empty($params['contact_sub_type'])) {
         unset($params['contact_sub_type']);
@@ -653,6 +657,15 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       if (!($cid = $id['cid'][$c])) {
         continue;
       }
+      // Save current employer
+      if (!empty($contact['contact'][1]['employer_id'])) {
+        webform_civicrm_api('contact', 'create', array(
+          'contact_id' => $cid,
+          'contact_type' => ucfirst($contact['contact'][1]['contact_type']),
+          'employer_id' => $contact['contact'][1]['employer_id'],
+        ));
+      }
+      // Save custom data
       webform_civicrm_save_custom($contact, $cid);
 
       // Fill values for hidden ID & CS fields
@@ -783,16 +796,6 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
             $b_a = $a_b == 'a' ? 'b' : 'a';
             $params['contact_id_' . $a_b] = $cid;
             $params['contact_id_' . $b_a] = $id['cid'][$i];
-            // Current employer
-            if ($type == 'ce') {
-              foreach (webform_civicrm_get_relationship_types() as $t) {
-                if ($t['name_a_b'] == 'Employee of' && $t['name_b_a'] == 'Employer of' && $t['id'] != 'ce') {
-                  $type = $t['id'];
-                  break;
-                }
-              }
-              webform_civicrm_api('contact', 'create', array('contact_id' => $params['contact_id_a'], 'employer_id' => $params['contact_id_b'], 'contact_type' => 'Individual'));
-            }
             $params['relationship_type_id'] = $type;
             if ($perm = webform_civicrm_aval($params, 'relationship_permission')) {
               $params['is_permission_a_b'] = $params['is_permission_b_a'] = $perm == 3 ? 1 : 0;

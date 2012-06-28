@@ -142,9 +142,12 @@ function webform_civicrm_field_options($field, $context, $data) {
     }
     // If this is a contract reference or shared address field, list webform contacts
     elseif ($name === 'master_id' || webform_civicrm_aval($field, 'data_type') === 'ContactReference') {
+      $contact_type = webform_civicrm_get_list($table, $name);
       foreach ($data['contact'] as $num => $contact) {
         if ($num != $c || $name != 'master_id') {
-          $ret[$num] =  t('Contact !num', array('!num' => $num));
+          if ($contact_type == 'contact' || $contact_type == $contact['contact'][1]['contact_type']) {
+            $ret[$num] =  t('Contact !num', array('!num' => $num));
+          }
         }
       }
     }
@@ -235,13 +238,6 @@ function webform_civicrm_get_relationship_types() {
     while ($dao->fetch()) {
       foreach ($f as $field) {
         $types[$dao->id][$field] = $dao->{$field};
-      }
-      // Create a pseudo relationship type for "current employer"
-      if ($dao->name_a_b == 'Employee of' && $dao->name_b_a == 'Employer of') {
-        $types['ce'] = $types[$dao->id];
-        $types['ce']['id'] = 'ce';
-        $types['ce']['label_a_b'] = t('Current Employee of');
-        $types['ce']['label_b_a'] = t('Current Employer of');
       }
     }
   }
@@ -511,6 +507,14 @@ function webform_civicrm_get_fields($var = 'fields') {
       'type' => 'hidden',
       'extra' => array('description' => t('(hidden field, use to create hashed links)')),
     );
+    $fields['contact_employer_id'] = array(
+      'name' => t('Current Employer'),
+      'type' => 'select',
+      'expose_list' => TRUE,
+      'empty_option' => t('None'),
+      'data_type' => 'ContactReference',
+      'contact_type' => 'individual',
+    );
     $fields['email_email'] = array(
       'name' => t('Email'),
       'type' => 'email',
@@ -554,7 +558,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'type' => 'select',
       'expose_list' => TRUE,
       'extra' => array('description' => t('Will overwrite address fields with those of the other contact.')),
-      'empty_option' => t('- Do Not Share -'),
+      'empty_option' => t('Do Not Share'),
     );
     $fields['phone_phone'] = array(
       'name' => t('Phone Number'),
@@ -628,7 +632,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Assign Activity to'),
       'type' => 'select',
       'expose_list' => TRUE,
-      'empty_option' => t('- No One -'),
+      'empty_option' => t('No One'),
       'data_type' => 'ContactReference',
     );
     $fields['activity_location'] = array(
@@ -657,7 +661,7 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['activity_engagement_level'] = array(
       'name' => t('Engagement Level'),
       'type' => 'select',
-      'empty_option' => t('- None -'),
+      'empty_option' => t('None'),
       'expose_list' => TRUE,
     );
     if (in_array('CiviCampaign', $components)) {
@@ -665,7 +669,7 @@ function webform_civicrm_get_fields($var = 'fields') {
         'name' => t('Campaign'),
         'type' => 'select',
         'expose_list' => TRUE,
-        'empty_option' => t('- None -'),
+        'empty_option' => t('None'),
         'extra' => array('civicrm_live_options' => 1),
       );
     }
@@ -697,7 +701,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Relationship to Contact #'),
       'type' => 'select',
       'expose_list' => TRUE,
-      'empty_option' => t('- No Relationship -'),
+      'empty_option' => t('No Relationship'),
       'extra' => array('civicrm_live_options' => 1),
     );
     $fields['relationship_is_active'] = array(
@@ -710,7 +714,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Relationship to Contact # Permission'),
       'type' => 'select',
       'expose_list' => TRUE,
-      'empty_option' => t('- No Permissions -'),
+      'empty_option' => t('No Permissions'),
     );
     $fields['relationship_start_date'] = array(
       'name' => t('Relationship to Contact # Start Date'),
@@ -753,7 +757,7 @@ function webform_civicrm_get_fields($var = 'fields') {
           'type' => 'select',
           'expose_list' => TRUE,
           'extra' => array('civicrm_live_options' => 1),
-          'empty_option' => t('- None -'),
+          'empty_option' => t('None'),
         );
       }
     }
@@ -791,11 +795,12 @@ function webform_civicrm_get_fields($var = 'fields') {
       'contact_preferred_communication_method' => 'preferred_communication_method',
       'contact_preferred_language' => 'languages',
       'contact_privacy' => 'privacy',
+      'contact_employer_id' => 'organization',
       '*_country_id' => 'country',
       'phone_phone_type_id' => 'phone_type',
       '*_location_type_id' => 'location_type',
       'website_website_type_id' => 'website_type',
-      'address_master_id' => 'contact_address',
+      'address_master_id' => 'contact',
       'activity_target_contact_id' => 'contact',
       'activity_assignee_contact_id' => 'contact',
       'activity_status_id' => 'activity_status',
@@ -933,7 +938,7 @@ function webform_civicrm_get_fields($var = 'fields') {
         elseif ($fields[$id]['data_type'] == 'ContactReference') {
           $lists[$set . '_custom_' . $dao->id] = 'contact';
           $fields[$id]['expose_list'] = TRUE;
-          $fields[$id]['empty_option'] = t('- None -');
+          $fields[$id]['empty_option'] = t('None');
         }
         elseif ($fields[$id]['type'] == 'select') {
           $lists[$set . '_custom_' . $dao->id] = 'yes_no';

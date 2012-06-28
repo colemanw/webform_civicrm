@@ -654,9 +654,6 @@ function webform_civicrm_configure_form_item($fid, $field, $settings) {
   if (!empty($field['expose_list'])) {
     // Retrieve option list
     $options = array('create_civicrm_webform_element' => t('- User Select -'));
-    if (!empty($field['empty_option'])) {
-      $options += array($field['empty_option']);
-    }
     $field['form_key'] = $fid;
     $options += webform_civicrm_field_options($field, 'config_form', $settings['data']);
     $item = array(
@@ -666,16 +663,25 @@ function webform_civicrm_configure_form_item($fid, $field, $settings) {
       '#multiple' => !empty($field['extra']['multiple']),
       '#default_value' => !empty($field['empty_option']) ? 0 : NULL,
     );
+    if (isset($field['empty_option'])) {
+      $item['#empty_option'] = '- ' . $field['empty_option'] . ' -';
+      $item['#empty_value'] = 0;
+    }
+    // 4 ways to get default value...
+    // 1: Based on current form state
     if (isset($settings[$fid])) {
       $item['#default_value'] = $settings[$fid];
     }
+    // 2: Based on saved settings
     elseif (isset($settings['data'][$ent][$c][$table][$n][$name])) {
       $item['#default_value'] = $settings['data'][$ent][$c][$table][$n][$name];
     }
+    // 3: Based on field default
     elseif (isset($field['value'])) {
       $item['#default_value'] = $field['value'];
     }
-    elseif (empty($field['extra']['multiple'])) {
+    // 4: For mandatory fields like phone type, default to the first option
+    elseif (empty($field['extra']['multiple']) && !isset($field['empty_option'])) {
       $options = array_keys($options);
       $item['#default_value'] = $options[1];
     }
@@ -1197,7 +1203,13 @@ function webform_civicrm_component_insert(&$field, &$enabled, $settings) {
   if ($defaults = webform_component_invoke($field['type'], 'defaults')) {
     $field += $defaults;
   }
-  $enabled[$field['form_key']] = webform_component_insert($field);
+  if (isset($enabled[$field['form_key']])) {
+    $field['cid'] = $enabled[$field['form_key']];
+    webform_component_update($field);
+  }
+  else {
+    $enabled[$field['form_key']] = webform_component_insert($field);
+  }
 }
 
 /**
