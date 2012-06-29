@@ -123,11 +123,6 @@ function webform_civicrm_node_delete($node) {
  */
 function webform_civicrm_theme() {
   $theme = array(
-    // Override webform-results-submissions.tpl.php
-    'webform_results_submissions' => array(
-      'render element' => 'element',
-      'template' => 'webform-results-submissions',
-    ),
     // Override the main webform components form
     'webform_civicrm_components_form' => array(
       'render element' => 'form',
@@ -346,6 +341,45 @@ function webform_civicrm_webform_component_presave(&$component) {
       // Only contact 1 can be the current user
       if (webform_civicrm_aval($component, 'extra:default') == 'user') {
         unset($component['extra']['default']);
+      }
+    }
+  }
+}
+
+/**
+ * Add CiviCRM names to webform submission results table.
+ */
+function webform_civicrm_preprocess_webform_results_submissions(&$variables){
+  if (count($variables['table']['#rows']) && !empty($variables['node']->webform_civicrm)) {
+    $access = user_access('access CiviCRM');
+    $temp = $variables['table']['#header'];
+    $variables['table']['#header'] = array();
+    // Move name to position 2
+    foreach ($temp as $k => $v) {
+      $variables['table']['#header'][] = $v;
+      if ($k == 1) {
+        $variables['table']['#header'][] = t('Name');
+      }
+    }
+    foreach ($variables['table']['#rows'] as &$row) {
+      $name = '';
+      $sid = $row[0];
+      if (!empty($variables['submissions'][$sid]->civicrm['contact_id'][1])) {
+        $data = $variables['submissions'][$sid]->civicrm;
+        if (($name = $data['display_name']) !== '') {
+          if ($access) {
+            $name = l($name, 'civicrm/contact/view', array('query' => array('reset' => 1, 'cid' => $data['contact_id'][1]), 'alias' => TRUE));
+          }
+        }
+      }
+      $temp = $row;
+      $row = array();
+      // Move name to position 2
+      foreach ($temp as $k => $v) {
+        $row[] = $v;
+        if ($k == 1) {
+          $row[] = $name;
+        }
       }
     }
   }
