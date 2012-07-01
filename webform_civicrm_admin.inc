@@ -1056,15 +1056,19 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         $form['#validate'][] = 'webform_civicrm_cs_validate';
         $enabled = webform_civicrm_enabled_fields($node);
         $form['#prefix'] = '<p>'
-        . t('This field will generate a checksum for contact !num after the form is submitted. You could use it to send a personalized link for anonymous users.', array('!num' => $i))
+        . t('This field will generate a checksum for contact !num after the form is submitted. You could use its webform token to create a personalized link for anonymous users.', array('!num' => $i))
         . '</p><p>';
         if ($cid_field = webform_civicrm_aval($enabled, 'civicrm_' . $i . '_contact_1_contact_contact_id')) {
           $form['#prefix'] .= t('Example: to link users back to this form, place this line in a webform-generated email:')
-          . '<br /><em>'
-          . url('node/' . $node->nid, array('absolute' => TRUE))
-          . '?cid' . $i . '=' . webform_civicrm_component_token($node, $cid_field)
+          . '<br /><code>'
+          . url('node/' . $node->nid, array('absolute' => TRUE)) . '?cid' . $i . '=';
+          $form['#prefix'] .= $hash = webform_civicrm_component_token($node, $cid_field)
           . '&amp;cs=' . webform_civicrm_component_token($node, $form['cid']['#value'])
-          . '</em></p>';
+          . '</code></p>';
+          $form['#prefix'] .= '<p>' . t('Example: to redirect to a contribution page, paste this into the redirect field on the Webform "Form Settings" tab (change id from 1 to the real id of your contribution page):')
+          . '<br /><code>'
+          . 'civicrm/contribute/transact?reset=1&amp;id=1'
+          . '&amp;cid=' . $hash;
         }
         else {
           $form['#prefix'] .= t('Consider enabling the hidden contact_id field - hashed links usually require this value.') . '</p>';
