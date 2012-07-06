@@ -488,7 +488,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         if ($name === 'existing') {
           continue;
         }
-        // Ignore values from hidden fields
+        // Ignore values from fields hidden by existing contact component
         if (!empty($updating['cid'][$c])) {
           $component = $node->webform['components'][$enabled["civicrm_{$c}_contact_1_contact_existing"]];
           $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
@@ -497,6 +497,10 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
           }
         }
         $field = $fields[$table . '_' . $name];
+        // Ignore values from hidden fields
+        if ($field['type'] == 'hidden') {
+          continue;
+        }
         $val = $submission->data[$fid]['value'];
         if ($name === 'privacy') {
           foreach (array_keys(webform_civicrm_str2array($node->webform['components'][$fid]['extra']['items'])) as $key) {
@@ -510,7 +514,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
             $val = array_unique(array_merge($val, $data[$ent][$c][$table][$n][$name]));
           }
           // Implode data that will be stored as a string
-          if ($table !== 'other' && $name !== 'event_id' && webform_civicrm_aval($field, 'data_type') != 'ContactReference') {
+          if ($table !== 'other' && $name !== 'event_id' && $name !== 'contact_sub_type' && webform_civicrm_aval($field, 'data_type') != 'ContactReference') {
             $val = $sp . implode($sp, $val) . $sp;
           }
         }
@@ -615,6 +619,20 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       }
       // Update existing contact
       else {
+        // Merge existing contact sub_types that are not exposed to the form
+        // Todo: shouldn't this be done for all multivalued data?
+        if (!empty($params['contact_sub_type'])) {
+          $existing = webform_civicrm_api('contact', 'get', array('id' => $id['cid'][$c], 'return.contact_sub_type' => 1));
+          $existing = drupal_map_assoc(webform_civicrm_aval($existing, 'values:' . $id['cid'][$c] . ':contact_sub_type', array()));
+          // Only known contacts are allowed to empty a field
+          if (!empty($updating['cid'][$c])) {
+            $fid = webform_civicrm_aval($enabled, "civicrm_{$c}_contact_1_contact_contact_sub_type");
+            foreach (webform_civicrm_remove_fields($node, $fid) as $rem) {
+              unset($existing[$rem]);
+            }
+          }
+          $params['contact_sub_type'] = array_unique(array_merge($params['contact_sub_type'], $existing));
+        }
         $params['contact_id'] = $id['cid'][$c];
         $result = webform_civicrm_api('contact', 'create', $params);
       }
@@ -1100,12 +1118,12 @@ function webform_civicrm_add_remove($data_type, $entity_type, $node, $id, $add, 
 
 
 /**
- * Fields to remove.
+ * Determine which options should to removed because they were unchecked on the webform.
  */
 function webform_civicrm_remove_fields($node, $fid, $add = array()) {
   if ($fid) {
     $field = $node->webform['components'][$fid];
-    if ($field['type'] = 'select') {
+    if ($field['type'] == 'select') {
       if (empty($field['extra']['civicrm_live_options'])) {
         $remove = webform_civicrm_str2array($node->webform['components'][$fid]['extra']['items']);
       }

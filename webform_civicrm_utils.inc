@@ -432,7 +432,7 @@ function webform_civicrm_get_fields($var = 'fields') {
     $fields['contact_contact_sub_type'] = array(
       'name' => t('Type of'),
       'type' => 'select',
-      'extra' => array('multiple' => 1),
+      'extra' => array('multiple' => 1, 'civicrm_live_options' => 1),
       'expose_list' => TRUE,
     );
     $fields['contact_existing'] = array(
@@ -839,9 +839,9 @@ function webform_civicrm_get_fields($var = 'fields') {
     $custom_types = array(
       'Select' => array('type' => 'select'),
       'Multi-Select' => array('type' => 'select', 'extra' => array('multiple' => 1)),
-      'AdvMulti-Select' => array('type' => 'select', 'extra' => array('multiple' => 1, 'civicrm_live_options' => 1)),
+      'AdvMulti-Select' => array('type' => 'select', 'extra' => array('multiple' => 1)),
       'Radio' => array('type' => 'select', 'extra' => array('aslist' => 0)),
-      'CheckBox' => array('type' => 'select', 'extra' => array('multiple' => 1, 'civicrm_live_options' => 1)),
+      'CheckBox' => array('type' => 'select', 'extra' => array('multiple' => 1)),
       'Text'  => array('type' => 'textfield'),
       'TextArea' => array('type' => 'textarea'),
       'RichTextEditor' => array('type' => module_exists('webform_html_textarea') ? 'html_textarea' : 'textarea'),
