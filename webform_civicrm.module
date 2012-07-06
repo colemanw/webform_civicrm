@@ -284,7 +284,7 @@ function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = N
     ->condition('contact_id', '%-' . $old_id . '-%', 'LIKE')
     ->execute();
     // Update contact reference field data
-    db_query("UPDATE webform_submitted_data d, webform_component c SET d.data = :new
+    db_query("UPDATE {webform_submitted_data} d, {webform_component} c SET d.data = :new
       WHERE d.data = :old AND d.cid = c.cid AND d.nid = c.nid AND c.type = 'civicrm_contact'",
       array(':new' => $new_id, ':old' => $old_id)
     );
