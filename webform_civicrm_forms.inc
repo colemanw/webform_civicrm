@@ -162,8 +162,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
     // Add events exposed to the form
     foreach ($enabled as $field => $fid) {
       if (strpos($field, 'participant_event_id')) {
-        $options = webform_civicrm_str2array(webform_civicrm_aval($node->webform['components'][$fid], 'extra:items'));
-        foreach ($options as $p => $label) {
+        foreach (webform_civicrm_exposed_options($node, $fid) as $p => $label) {
           list($eid) = explode('-', $p);
           $events[$eid]['ended'] = TRUE;
           $events[$eid]['title'] = $label;
@@ -503,7 +502,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         }
         $val = $submission->data[$fid]['value'];
         if ($name === 'privacy') {
-          foreach (array_keys(webform_civicrm_str2array($node->webform['components'][$fid]['extra']['items'])) as $key) {
+          foreach (array_keys(webform_civicrm_exposed_options($node, $fid)) as $key) {
             $data[$ent][$c][$table][$n][$key] = in_array($key, $val);
           }
           continue;
@@ -514,7 +513,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
             $val = array_unique(array_merge($val, $data[$ent][$c][$table][$n][$name]));
           }
           // Implode data that will be stored as a string
-          if ($table !== 'other' && $name !== 'event_id' && $name !== 'contact_sub_type' && webform_civicrm_aval($field, 'data_type') != 'ContactReference') {
+          if ($table !== 'other' && $name !== 'event_id' && $table !== 'contact' && webform_civicrm_aval($field, 'data_type') != 'ContactReference') {
             $val = $sp . implode($sp, $val) . $sp;
           }
         }
@@ -602,9 +601,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       unset($params['employer_id']);
 
       $params['contact_type'] = ucfirst($params['contact_type']);
-      if (empty($params['contact_sub_type'])) {
-        unset($params['contact_sub_type']);
-      }
+
       // Create new contact
       if (empty($id['cid'][$c])) {
         unset($params['contact_id']);
@@ -619,19 +616,32 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       }
       // Update existing contact
       else {
-        // Merge existing contact sub_types that are not exposed to the form
-        // Todo: shouldn't this be done for all multivalued data?
-        if (!empty($params['contact_sub_type'])) {
-          $existing = webform_civicrm_api('contact', 'get', array('id' => $id['cid'][$c], 'return.contact_sub_type' => 1));
-          $existing = drupal_map_assoc(webform_civicrm_aval($existing, 'values:' . $id['cid'][$c] . ':contact_sub_type', array()));
-          // Only known contacts are allowed to empty a field
-          if (!empty($updating['cid'][$c])) {
-            $fid = webform_civicrm_aval($enabled, "civicrm_{$c}_contact_1_contact_contact_sub_type");
-            foreach (webform_civicrm_remove_fields($node, $fid) as $rem) {
-              unset($existing[$rem]);
+        // Fetch existing multivalued fields
+        $fetch = $multi = array();
+        foreach ($fields as $fid => $field) {
+          if (!empty($field['extra']['multiple']) && substr($fid, 0, 7) == 'contact') {
+            list(, $name) = explode('_', $fid, 2);
+            if ($name != 'privacy' && isset($params[$name])) {
+              $fetch["return.$name"] = 1;
+              $multi[] = $name;
             }
           }
-          $params['contact_sub_type'] = array_unique(array_merge($params['contact_sub_type'], $existing));
+        }
+        // Merge data from existing multivalued fields
+        if ($multi) {
+          $existing = webform_civicrm_api('contact', 'get', array('id' => $id['cid'][$c]) + $fetch);
+          $existing = webform_civicrm_aval($existing, 'values:' . $id['cid'][$c], array());
+          foreach ($multi as $name) {
+            $exist = drupal_map_assoc(webform_civicrm_aval($existing, $name, array()));
+            // Only known contacts are allowed to empty a field
+            if (!empty($updating['cid'][$c])) {
+              $fid = webform_civicrm_aval($enabled, "civicrm_{$c}_contact_1_contact_$name");
+              foreach (webform_civicrm_exposed_options($node, $fid) as $k => $v) {
+                unset($exist[$k]);
+              }
+            }
+            $params[$name] = array_unique(array_merge($params[$name], $exist));
+          }
         }
         $params['contact_id'] = $id['cid'][$c];
         $result = webform_civicrm_api('contact', 'create', $params);
@@ -832,7 +842,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         if (!empty($contact['other'][1][$type]) || isset($enabled[$field . $type])) {
           $fid = webform_civicrm_aval($enabled, $field . $type, 0);
           $add = webform_civicrm_aval($contact, "other:1:$type", array());
-          $remove = empty($updating['cid'][$c]) ? array() : webform_civicrm_remove_fields($node, $fid, $add);
+          $remove = empty($updating['cid'][$c]) ? array() : webform_civicrm_exposed_options($node, $fid, $add);
           webform_civicrm_add_remove($type, 'contact', $node, $cid, $add, $remove);
         }
       }
@@ -849,7 +859,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
           foreach ($p as $e => $params) {
             $remove = array();
             if ($fid = webform_civicrm_aval($enabled, 'civicrm_' . $c . '_participant_' . $e . '_participant_event_id')) {
-              foreach (webform_civicrm_remove_fields($node, $fid) as $eid => $title) {
+              foreach (webform_civicrm_exposed_options($node, $fid) as $eid => $title) {
                 list($eid) = explode('-', $eid);
                 if (isset($existing[$eid])) {
                   $remove[$eid] = $title;
@@ -1116,29 +1126,29 @@ function webform_civicrm_add_remove($data_type, $entity_type, $node, $id, $add, 
   }
 }
 
-
 /**
- * Determine which options should to removed because they were unchecked on the webform.
+ * Determine which options exist on the webform.
  */
-function webform_civicrm_remove_fields($node, $fid, $add = array()) {
+function webform_civicrm_exposed_options($node, $fid, $exclude = array()) {
   if ($fid) {
     $field = $node->webform['components'][$fid];
     if ($field['type'] == 'select') {
+      // Fetch static options
       if (empty($field['extra']['civicrm_live_options'])) {
-        $remove = webform_civicrm_str2array($node->webform['components'][$fid]['extra']['items']);
+        $exposed = webform_civicrm_str2array($node->webform['components'][$fid]['extra']['items']);
       }
+      // Fetch live options
       else {
-        $remove = webform_civicrm_field_options($field, 'live_options', $node->webform_civicrm['data']);
+        $exposed = webform_civicrm_field_options($field, 'live_options', $node->webform_civicrm['data']);
       }
-      foreach ($add as $i) {
-        unset($remove[$i]);
+      foreach ($exclude as $i) {
+        unset($exposed[$i]);
       }
-      return $remove;
+      return $exposed;
     }
   }
   return array();
 }
-
 
 /**
  * Recursive validation callback for webform submissions.

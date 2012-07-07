@@ -23,6 +23,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     $form['cancel']['#value'] = t('Cancel (go back)');
     return $form;
   }
+
   $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/' . 'webform_civicrm_admin.js';
   $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_admin.css';
   civicrm_initialize();
@@ -790,6 +791,9 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
       $p = array('!num' => $deleted);
       drupal_set_message($button === 'edit-delete' ? t('Deleted !num fields.', $p) : t('Disabled !num fields.', $p));
     }
+    if ($button === 'edit-disable') {
+      drupal_set_message(t('Disabled fields will still be processed as normal Webform fields, but they will not be autofilled from or saved to the CiviCRM database.'));
+    }
   }
 
   // Disable CiviCRM for this form
@@ -1108,6 +1112,11 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
           '#type' => 'submit',
           '#value' => t('Change Widget'),
           '#submit' => array('webform_component_edit_form_submit', 'webform_civicrm_change_widget'),
+          '#states' => array(
+            'invisible' => array(
+              'select[name="widget[widget]"]' => array('value' => $form['type']['#value']),
+            ),
+          )
         );
       }
     }
@@ -1449,6 +1458,14 @@ function theme_webform_civicrm_components_form($variables) {
         );
         $type = $types[$component['extra']['widget']];
       }
+      elseif ($component['type'] == 'select') {
+        if ($component['extra']['aslist']) {
+          $type = $component['extra']['multiple'] ? t('Multi-select') : t('Select');
+        }
+        else {
+          $type = $component['extra']['multiple'] ? t('Checkboxes') : t('Radio buttons');
+        }
+      }
       else {
         $type = $form['add']['type']['#options'][$component['type']];
       }
@@ -1480,7 +1497,7 @@ function theme_webform_civicrm_components_form($variables) {
           $class .= ' ' . $node->webform_civicrm['data']['contact'][$c]['contact'][1]['contact_type'];
         }
         if ($component['type'] == 'select') {
-          $type = empty($component['extra']['civicrm_live_options']) ? t('Static options') : t('Live options');
+          $type .= ' (' . (empty($component['extra']['civicrm_live_options']) ? t('static') : t('live')) . ')';
         }
         // Show defaults with labels instead of keys
         if ($component['type'] == 'civicrm_contact') {

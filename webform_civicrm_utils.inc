@@ -1059,6 +1059,15 @@ function webform_civicrm_api($entity, $operation, $params) {
     'check_permissions' => FALSE,
     'version' => 3
   );
+  // Workaround the multivalued option issue until it's resolved in core
+  if ($entity == 'contact' && $operation == 'create') {
+    $sp = CRM_Core_DAO::VALUE_SEPARATOR;
+    foreach ($params as &$val) {
+      if (is_array($val)) {
+        $val = $val ? $sp . implode($sp, $val) . $sp : '';
+      }
+    }
+  }
   $result = civicrm_api($entity, $operation, $params);
   if (!empty($result['is_error'])) {
     $bt = debug_backtrace();
