@@ -52,8 +52,11 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
     if (isset($form['#submission']->civicrm)) {
       $form_state['civicrm']['id']['cid'] = $form['#submission']->civicrm['contact_id'];
       $form_state['civicrm']['id']['act'][1] = $form['#submission']->civicrm['activity_id'];
+      foreach ($form_state['civicrm']['id']['cid'] as $c => $cid) {
+        $info['contact'][$c]['contact'][1]['existing'] = $cid;
+      }
     }
-    webform_civicrm_fill_form($form['submitted'], $node);
+    webform_civicrm_fill_form($form['submitted'], $node, $info);
     return;
   }
   $enabled = webform_civicrm_enabled_fields($node);
@@ -450,17 +453,19 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
     $id = webform_civicrm_aval(webform_civicrm_storage($node->nid), 'id');
 
     // Fetch contact ids from "existing contact" fields
-    $id['cid'] = array();
     foreach ($enabled as $field_key => $fid) {
-      if (!empty($submission->data[$fid]['value'][0]) && is_numeric($submission->data[$fid]['value'][0]) && substr($field_key, -8) == 'existing') {
-        module_load_include('inc', 'webform_civicrm', 'contact_component');
-        $component = $node->webform['components'][$fid];
-        $cid = $submission->data[$fid]['value'][0];
-        $filters = webform_civicrm_search_filters($node, $component);
-        // Verify access to this contact
-        if (webform_civicrm_contact_access($component, $filters, $cid) !== FALSE) {
-          list(, $c, ) = explode('_', $field_key, 3);
-          $id['cid'][$c] = $cid;
+      if (substr($field_key, -8) == 'existing') {
+        list(, $c, ) = explode('_', $field_key, 3);
+        $id['cid'][$c] = 0;
+        if (!empty($submission->data[$fid]['value'][0]) && is_numeric($submission->data[$fid]['value'][0])) {
+          module_load_include('inc', 'webform_civicrm', 'contact_component');
+          $component = $node->webform['components'][$fid];
+          $cid = $submission->data[$fid]['value'][0];
+          $filters = webform_civicrm_search_filters($node, $component);
+          // Verify access to this contact
+          if (webform_civicrm_contact_access($component, $filters, $cid) !== FALSE) {
+            $id['cid'][$c] = $cid;
+          }
         }
       }
     }
@@ -488,7 +493,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
           continue;
         }
         // Ignore values from fields hidden by existing contact component
-        if (!empty($updating['cid'][$c])) {
+        if (!empty($updating['cid'][$c]) && isset($enabled["civicrm_{$c}_contact_1_contact_existing"])) {
           $component = $node->webform['components'][$enabled["civicrm_{$c}_contact_1_contact_existing"]];
           $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
           if (in_array($type, $component['extra']['hide_fields'])) {
@@ -532,7 +537,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
           }
           $val .= $time;
         }
-        elseif ($name !== 'event_id') {
+        else {
           $val = isset($val[0]) ? $val[0] : '';
         }
         // Fudge together date and time fields
@@ -869,12 +874,12 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
             if (!empty($params['event_id'])) {
               // Loop through event ids to support multi-valued form elements
               $events = (array) $params['event_id'];
+              $params['contact_id'] = $cid;
               foreach ($events as $i => $eid) {
                 if (!empty($eid)) {
-                  $params['contact_id'] = $cid;
                   list($eid) = explode('-', $eid);
                   $params['event_id'] = $eid;
-                  unset($remove[$eid]);
+                  unset($remove[$eid], $params['registered_by_id'], $params['id'], $params['source']);
                   if (empty($params['campaign_id']) || !in_array('CiviCampaign', $config->enableComponents, TRUE)) {
                     unset($params['campaign_id']);
                   }

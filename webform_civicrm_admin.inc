@@ -602,7 +602,6 @@ function webform_civicrm_process_form_settings(&$vals) {
       $vals += array(
         'civicrm_' . $c . '_contact_1_contact_first_name' => 'create_civicrm_webform_element',
         'civicrm_' . $c . '_contact_1_contact_last_name' => 'create_civicrm_webform_element',
-        'civicrm_' . $c . '_contact_1_contact_existing' => 'create_civicrm_webform_element',
       );
       // Add as activity target
       if (isset($vals['activity_subject'])) {
