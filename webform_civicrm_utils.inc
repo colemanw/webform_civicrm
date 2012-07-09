@@ -13,7 +13,7 @@
  */
 function webform_civicrm_get_options($option_group, $param = NULL) {
   static $cache = array();
-  if ($param || empty($cache[$option_group])) {
+  if ($param || !isset($cache[$option_group])) {
     $vars = $ret = array();
     if ($option_group == 'privacy') {
       // Privacy options aren't in the database as options; they are separate contact fields.
@@ -102,9 +102,27 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
       }
     }
     $dao = &CRM_Core_DAO::executeQuery($sql, $vars);
-    while ($dao->fetch()) {
-      $ret[$dao->value] = $dao->label;
+
+    // Localise the country/province names if in an non-en_US locale
+    if ($option_group == 'state_province' || $option_group == 'country') {
+      while ($dao->fetch()) {
+        $ret[$dao->value] = $dao->label;
+      }
+      $tsLocale = CRM_Utils_System::getUFLocale();
+      if ($tsLocale != '' and $tsLocale != 'en_US') {
+        $context = ($option_group == 'state_province' ? 'province' : 'country');
+        $i18n =& CRM_Core_I18n::singleton();
+        $i18n->localizeArray($ret, array('context' => $context));
+        CRM_Utils_Array::asort($ret);
+      }
     }
+    // Localize other options using ts()
+    else {
+      while ($dao->fetch()) {
+        $ret[$dao->value] = ts($dao->label);
+      }
+    }
+    // Do not cache if param is set
     if ($param) {
       return $ret;
     }
@@ -191,9 +209,7 @@ function webform_civicrm_get_list($table, $name) {
   if (isset($lists[$table . '_' . $name])) {
     return $lists[$table . '_' . $name];
   }
-  if (isset($lists['*_' . $name])) {
-    return $lists['*_' . $name];
-  }
+  return webform_civicrm_aval($lists, "*_$name");
 }
 
 /**
@@ -503,7 +519,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'extra' => array('description' => t('(hidden field, use for post-processing)')),
     );
     $fields['contact_cs'] = array(
-      'name' => t('Generate Checksum'),
+      'name' => t('Checksum'),
       'type' => 'hidden',
       'extra' => array('description' => t('(hidden field, use to create hashed links)')),
     );

@@ -872,17 +872,24 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
               }
             }
             if (!empty($params['event_id'])) {
+              $params['contact_id'] = $cid;
+              if (empty($params['campaign_id']) || !in_array('CiviCampaign', $config->enableComponents, TRUE)) {
+                unset($params['campaign_id']);
+              }
+              // Reformat custom data from nested arrays
+              $custom = array();
+              foreach ($data['participant'][$n] as $key => $vals) {
+                if (substr($key, 0, 2) == 'cg' && isset($vals[$e])) {
+                  $custom[$key][1] = $vals[$e];
+                }
+              }
               // Loop through event ids to support multi-valued form elements
               $events = (array) $params['event_id'];
-              $params['contact_id'] = $cid;
               foreach ($events as $i => $eid) {
                 if (!empty($eid)) {
                   list($eid) = explode('-', $eid);
                   $params['event_id'] = $eid;
                   unset($remove[$eid], $params['registered_by_id'], $params['id'], $params['source']);
-                  if (empty($params['campaign_id']) || !in_array('CiviCampaign', $config->enableComponents, TRUE)) {
-                    unset($params['campaign_id']);
-                  }
                   // Is existing participant?
                   if (!empty($existing[$eid])) {
                     $params['id'] = $existing[$params['event_id']];
@@ -894,15 +901,9 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
                     }
                   }
                   $result = webform_civicrm_api('participant', 'create', $params);
-                  if ($c == 1 && $data['participant_reg_type'] == 'all') {
+                  // When registering contact 1, store id to apply to other contacts
+                  if ($c == 1) {
                     $registered_by_id[$e][$i] = $result['id'];
-                  }
-                  // Reformat custom data from nested arrays
-                  $custom = array();
-                  foreach ($data['participant'][$n] as $key => $vals) {
-                    if (substr($key, 0, 2) == 'cg' && isset($vals[$e])) {
-                      $custom[$key][1] = $vals[$e];
-                    }
                   }
                   if ($custom) {
                     webform_civicrm_save_custom($custom, $result['id'], 'Participant');
