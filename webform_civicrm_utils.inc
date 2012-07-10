@@ -103,7 +103,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
     }
     $dao = &CRM_Core_DAO::executeQuery($sql, $vars);
 
-    // Localise the country/province names if in an non-en_US locale
+    // Localize the country/province names if in an non-en_US locale
     if ($option_group == 'state_province' || $option_group == 'country') {
       while ($dao->fetch()) {
         $ret[$dao->value] = $dao->label;
