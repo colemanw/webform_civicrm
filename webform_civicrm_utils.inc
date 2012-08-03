@@ -113,7 +113,12 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
         $context = ($option_group == 'state_province' ? 'province' : 'country');
         $i18n =& CRM_Core_I18n::singleton();
         $i18n->localizeArray($ret, array('context' => $context));
-        CRM_Utils_Array::asort($ret);
+        if (method_exists('CRM_Utils_Array', 'asort')) {
+          CRM_Utils_Array::asort($ret);
+        }
+        else {
+          asort($ret);
+        }
       }
     }
     // Localize other options using ts()

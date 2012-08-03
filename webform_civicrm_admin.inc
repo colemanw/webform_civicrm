@@ -271,16 +271,14 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   );
 
   // Case and activity settings
+  $case_enabled = in_array('CiviCase', $config->enableComponents, TRUE) && ($case_types = webform_civicrm_get_options('case_type'));
   $form['act'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Create Activity'),
-    '#description' => t('Create an activity for contacts when this form is submitted?'),
+    '#title' => $case_enabled ? t('Activity + Case') : t('Create Activity'),
     '#group' => 'webform_civicrm',
     '#attributes' => array('class' => array('civi-icon-activity')),
   );
-  if (in_array('CiviCase', $config->enableComponents, TRUE)
-  && $case_types = webform_civicrm_get_options('case_type')) {
-    $form['act']['#title'] = t('Activity + Case');
+  if ($case_enabled) {
     $form['act']['case_type_id'] = array(
       '#type' => 'select',
       '#title' => t('CiviCase Type'),
@@ -289,29 +287,22 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     );
     webform_civicrm_ajax_form_item($form, 'act', 'case_type_id', 'case');
   }
-  $param = NULL;
-  if (!empty($data['case'][1]['case'][1]['case_type_id'])) {
+  $param = $case_type = $activity_type = NULL;
+  if ($case_enabled && !empty($data['case'][1]['case'][1]['case_type_id'])) {
     $case_type = $form['act']['case_type_id']['#default_value'] = $data['case'][1]['case'][1]['case_type_id'];
     $param = '7';
-    foreach ($sets as $sid => $set) {
-      $sid .= '_fieldset';
-      if ($set['entity_type'] == 'case') {
-        if (!empty($set['sub_types']) && !in_array($case_type, $set['sub_types'])) {
-          continue;
-        }
-        $form['act']['case'][$sid] = array(
-          '#type' => 'fieldset',
-          '#title' => $set['label'],
-          '#attributes' => array('id' => $sid, 'class' => array('web-civi-checkbox-set')),
-          'js_select' => webform_civicrm_js_select($sid),
-        );
-        foreach ($set['fields'] as $fid => $field) {
-          $fid = 'civicrm_1_case_1_' . $fid;
-          $form['act']['case'][$sid][$fid] = webform_civicrm_configure_form_item($fid, $field, $settings);
-        }
-      }
-    }
-    $form['act']['case']['case_fieldset']['civicrm_1_case_1_case_status_id']['#description'] = t('If a "@type" case with this status already exists for this contact, the activity will be added to that case. Otherwise a new case will be opened with this status.', array('@type' => $case_types[$data['case'][1]['case'][1]['case_type_id']]));
+    $form['act']['case']['case_fields'] = array(
+      '#type' => 'fieldset',
+      '#title' => $case_types[$case_type] . ' ' . t('Case'),
+    );
+    $form['act']['case']['case_fields']['existing_case_status'] = array(
+      '#type' => 'select',
+      '#title' => t('Update Existing Case'),
+      '#description' => t('If a "@type" case with this status already exists for this contact, the activity will be added to that case. Otherwise a new case will be opened with this status.', array('@type' => $case_types[$case_type])),
+      '#options' => webform_civicrm_get_options('case_status'),
+      '#default_value' => webform_civicrm_aval($data, 'case:1:existing_case_status', array()),
+      '#multiple' => TRUE,
+    );
   }
   $act_types = webform_civicrm_get_options('activity_type', $param);
   $form['act']['case']['activity_type_id'] = array(
@@ -320,9 +311,10 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#options' => array(t('- No Activity -')) + $act_types,
   );
   webform_civicrm_ajax_form_item($form, 'act:case', 'activity_type_id', 'activity_fields');
-  if (isset($data['activity'][1]['activity'][1]['activity_type_id'])
-    && isset($act_types[$data['activity'][1]['activity'][1]['activity_type_id']])) {
-    $form['act']['case']['activity_type_id']['#default_value'] = $settings['activity_type_id'] = $data['activity'][1]['activity'][1]['activity_type_id'];
+  if (isset($data['activity'][1]['activity'][1]['activity_type_id']) && isset($act_types[$data['activity'][1]['activity'][1]['activity_type_id']])) {
+    $form['act']['case']['activity_fields']['#type'] = 'fieldset';
+    $form['act']['case']['activity_fields']['#title'] = $act_types[$settings['activity_type_id']] . ' ' . t('Activity');
+    $activity_type = $form['act']['case']['activity_type_id']['#default_value'] = $settings['activity_type_id'] = $data['activity'][1]['activity'][1]['activity_type_id'];
     $form['act']['case']['activity_fields']['existing_activity_status'] = array(
       '#type' => 'select',
       '#title' => t('Update Existing Activity'),
@@ -348,26 +340,27 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
       ),
       '#default_value' => webform_civicrm_aval($data, 'activity:1:details', array('view_link'), TRUE),
     );
-    foreach ($sets as $sid => $set) {
-      $sid .= '_fieldset';
-      if ($set['entity_type'] == 'activity') {
-        if (!empty($set['sub_types']) && !in_array($settings['activity_type_id'], $set['sub_types'])) {
-          continue;
+
+  }
+  foreach ($sets as $sid => $set) {
+    $sid .= '_fieldset';
+    $ent = $set['entity_type'];
+    if (($ent == 'activity' && $type = $activity_type) || ($ent == 'case' && $type = $case_type)) {
+      if ((!empty($set['sub_types']) && !in_array($type, $set['sub_types'])) || empty($set['fields'])) {
+        continue;
+      }
+      $form['act']['case'][$ent . '_fields'][$sid] = array(
+        '#type' => 'fieldset',
+        '#title' => $set['label'],
+        '#attributes' => array('id' => $sid, 'class' => array('web-civi-checkbox-set')),
+        'js_select' => webform_civicrm_js_select($sid),
+      );
+      foreach ($set['fields'] as $fid => $field) {
+        if ($fid == 'activity_assignee_contact_id' && CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'activity_assignee_notification')) {
+          $field['#description'] = t('A copy of this activity will be emailed to the assignee.');
         }
-        $form['act']['case']['activity_fields'][$sid] = array(
-          '#type' => 'fieldset',
-          '#title' => $set['label'],
-          '#attributes' => array('id' => $sid, 'class' => array('web-civi-checkbox-set')),
-          'js_select' => webform_civicrm_js_select($sid),
-        );
-        foreach ($set['fields'] as $fid => $field) {
-          if ($fid == 'activity_assignee_contact_id'
-          && CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'activity_assignee_notification')) {
-            $field['#description'] = t('A copy of this activity will be emailed to the assignee.');
-          }
-          $fid = 'civicrm_1_activity_1_' . $fid;
-          $form['act']['case']['activity_fields'][$sid][$fid] = webform_civicrm_configure_form_item($fid, $field, $settings);
-        }
+        $fid = "civicrm_1_{$ent}_1_$fid";
+        $form['act']['case'][$ent . '_fields'][$sid][$fid] = webform_civicrm_configure_form_item($fid, $field, $settings);
       }
     }
   }
@@ -610,6 +603,7 @@ function webform_civicrm_process_form_settings(&$vals) {
       drupal_set_message(t('Tip: Consider using the clone feature to add multiple similar contacts. (see help for more info)'), 'status', FALSE);
     }
   }
+  // Store "number of foo for bar" fields, i.e. number of email for contact 1
   foreach ($vals as $key => $val) {
     if (strpos($key, '_number_of_') !== FALSE) {
       list($ent, $c, $k) = explode('_', $key, 3);
@@ -634,6 +628,7 @@ function webform_civicrm_process_form_settings(&$vals) {
       $data['case'][1]['case'][1]['creator_id'] = 1;
     }
     $data['case'][1]['case'][1]['case_type_id'] = $vals['case_type_id'];
+    $data['case'][1]['existing_case_status'] = $vals['existing_case_status'];
   }
   if (isset($vals['participant_reg_type'])) {
     $data['participant_reg_type'] = $vals['participant_reg_type'];
@@ -667,7 +662,7 @@ function webform_civicrm_configure_form_item($fid, $field, $settings) {
       $item['#empty_option'] = '- ' . $field['empty_option'] . ' -';
       $item['#empty_value'] = 0;
     }
-    // 4 ways to get default value...
+    // Four ways to get default value...
     // 1: Based on current form state
     if (isset($settings[$fid])) {
       $item['#default_value'] = $settings[$fid];
