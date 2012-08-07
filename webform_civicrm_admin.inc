@@ -274,7 +274,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   $case_enabled = in_array('CiviCase', $config->enableComponents, TRUE) && ($case_types = webform_civicrm_get_options('case_type'));
   $form['act'] = array(
     '#type' => 'fieldset',
-    '#title' => $case_enabled ? t('Activity + Case') : t('Create Activity'),
+    '#title' => $case_enabled ? t('Activity/Case') : t('Activity'),
     '#group' => 'webform_civicrm',
     '#attributes' => array('class' => array('civi-icon-activity')),
   );
@@ -287,38 +287,44 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     );
     webform_civicrm_ajax_form_item($form, 'act', 'case_type_id', 'case');
   }
-  $param = $case_type = $activity_type = NULL;
+  $case_type = $activity_type = NULL;
   if ($case_enabled && !empty($data['case'][1]['case'][1]['case_type_id'])) {
     $case_type = $form['act']['case_type_id']['#default_value'] = $data['case'][1]['case'][1]['case_type_id'];
-    $param = '7';
+    $case_type_name = $case_types[$case_type];
     $form['act']['case']['case_fields'] = array(
       '#type' => 'fieldset',
-      '#title' => $case_types[$case_type] . ' ' . t('Case'),
+      '#title' => $case_type_name . ' ' . t('Case'),
     );
     $form['act']['case']['case_fields']['existing_case_status'] = array(
       '#type' => 'select',
       '#title' => t('Update Existing Case'),
-      '#description' => t('If a "@type" case with this status already exists for this contact, the activity will be added to that case. Otherwise a new case will be opened with this status.', array('@type' => $case_types[$case_type])),
+      '#description' => t('If any of the above options are selected and a %type case with that status already exists for the client, it will be autofilled and updated.', array('%type' => $case_type_name)),
       '#options' => webform_civicrm_get_options('case_status'),
       '#default_value' => webform_civicrm_aval($data, 'case:1:existing_case_status', array()),
       '#multiple' => TRUE,
     );
+    require_once('CRM/Case/XMLProcessor/Process.php');
+    $case_info = new CRM_Case_XMLProcessor_Process();
+    $act_types = $case_info->get($case_type_name, 'ActivityTypes');
   }
-  $act_types = webform_civicrm_get_options('activity_type', $param);
+  else {
+    $act_types = webform_civicrm_get_options('activity_type');
+  }
   $form['act']['case']['activity_type_id'] = array(
     '#type' => 'select',
     '#title' => t('Activity Type'),
     '#options' => array(t('- No Activity -')) + $act_types,
   );
   webform_civicrm_ajax_form_item($form, 'act:case', 'activity_type_id', 'activity_fields');
-  if (isset($data['activity'][1]['activity'][1]['activity_type_id']) && isset($act_types[$data['activity'][1]['activity'][1]['activity_type_id']])) {
+  if (!empty($data['activity'][1]['activity'][1]['activity_type_id']) && isset($act_types[$data['activity'][1]['activity'][1]['activity_type_id']])) {
     $form['act']['case']['activity_fields']['#type'] = 'fieldset';
-    $form['act']['case']['activity_fields']['#title'] = $act_types[$settings['activity_type_id']] . ' ' . t('Activity');
     $activity_type = $form['act']['case']['activity_type_id']['#default_value'] = $settings['activity_type_id'] = $data['activity'][1]['activity'][1]['activity_type_id'];
+    $form['act']['case']['activity_fields']['#title'] = $act_types[$activity_type] . ' ' . t('Activity');
+
     $form['act']['case']['activity_fields']['existing_activity_status'] = array(
       '#type' => 'select',
       '#title' => t('Update Existing Activity'),
-      '#description' => t('If a "@type" activity with this status already exists for contact 1, it will be updated. Otherwise a new one will be created.', array('@type' => $act_types[$settings['activity_type_id']])),
+      '#description' => t('If any of the above options are selected and a %type activity with that status already exists for !ent, it will be autofilled and updated.', array('!ent' => $case_type ? t('the case') : t('contact 1'), '%type' => $act_types[$settings['activity_type_id']])),
       '#options' => webform_civicrm_get_options('activity_status'),
       '#default_value' => webform_civicrm_aval($data, 'activity:1:existing_activity_status', array()),
       '#multiple' => TRUE,
@@ -340,7 +346,6 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
       ),
       '#default_value' => webform_civicrm_aval($data, 'activity:1:details', array('view_link'), TRUE),
     );
-
   }
   foreach ($sets as $sid => $set) {
     $sid .= '_fieldset';
@@ -357,7 +362,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
       );
       foreach ($set['fields'] as $fid => $field) {
         if ($fid == 'activity_assignee_contact_id' && CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'activity_assignee_notification')) {
-          $field['#description'] = t('A copy of this activity will be emailed to the assignee.');
+          $field['extra']['description'] = t('A copy of this activity will be emailed to the assignee.');
         }
         $fid = "civicrm_1_{$ent}_1_$fid";
         $form['act']['case'][$ent . '_fields'][$sid][$fid] = webform_civicrm_configure_form_item($fid, $field, $settings);
@@ -1188,7 +1193,7 @@ function webform_civicrm_component_insert(&$field, &$enabled, $settings) {
     unset($field['extra']['description']);
   }
   // Create fieldsets - for contact and contact-specific event fields only
-  if (!empty($settings['create_fieldsets']) && $ent != 'activity'
+  if (!empty($settings['create_fieldsets']) && $ent != 'activity' && $ent != 'case'
   && ($ent != 'participant' || webform_civicrm_aval($settings['data'], 'participant_reg_type') == 'separate')) {
     $sid = 'civicrm_' . $c . '_contact_1_fieldset_fieldset';
     if (!isset($enabled[$sid])) {

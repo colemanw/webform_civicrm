@@ -88,6 +88,13 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
             $custom = webform_civicrm_get_custom($_GET['aid'], 'activity');
             $info['activity'] = array(1 => ($activity + $custom));
             $id['act'][1] = $_GET['aid'];
+            if (!empty($data['case'][1])) {
+              $result = webform_civicrm_api('case', 'get', array('activity_id' => $id['act'][1]));
+              if ($id['case'][1] = webform_civicrm_aval($result, 'id')) {
+                $custom = webform_civicrm_get_custom($id['case'][1], 'case');
+                $info['case'] = array(1 => (array('case' => array(1 => $result['values'][$result['id']])) + $custom));
+              }
+            }
             break;
           }
         }
@@ -96,25 +103,29 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   }
   // Search for case & activity
   else {
-    if (!empty($data['case'][1]['case'][1]['status_id']) && !empty($id['cid'][1])) {
+    if (!empty($data['case'][1]['existing_case_status']) && !empty($data['case'][1]['case'][1]['client_id'])) {
+      foreach ((array) $data['case'][1]['case'][1]['client_id'] as $client) {
       $result = webform_civicrm_api('case', 'get', array('client_id' => $id['cid'][1]));
-      if (!empty($result['values'])) {
-        foreach ($result['values'] as $case) {
-          if ($case['status_id'] == $data['case'][1]['case'][1]['status_id'] && empty($case['is_deleted']) && $case['case_type_id'] == $data['case'][1]['case'][1]['case_type_id']) {
+        foreach (webform_civicrm_aval($result, 'values', array()) as $case) {
+          if (in_array($case['status_id'], $data['case'][1]['existing_case_status']) && empty($case['is_deleted']) && $case['case_type_id'] == $data['case'][1]['case'][1]['case_type_id']) {
             $id['case'][1] = $case['id'];
-            break;
+            $custom = webform_civicrm_get_custom($id['case'][1], 'case');
+            $info['case'] = array(1 => (array('case' => array(1 => $case)) + $custom));
+            break 2;
           }
         }
       }
     }
     if (!empty($data['activity'][1]['existing_activity_status']) && !empty($id['cid'][1])) {
       $params = array(
-        'contact_id' => $id['cid'][1],
         'activity_type_id' => $data['activity'][1]['activity'][1]['activity_type_id'],
         'status_id' => $data['activity'][1]['existing_activity_status'],
       );
       if (!empty($id['case'][1])) {
         $params['case_id'] = $id['case'][1];
+      }
+      else {
+        $params['contact_id'] = $id['cid'][1];
       }
       if ($id['act'][1] = webform_civicrm_activity_find($params)) {
         $result = webform_civicrm_api('activity', 'get', array('activity_id' => $id['act'][1]));
@@ -621,7 +632,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       }
       // Update existing contact
       else {
-        // Fetch existing multivalued fields
+        // Fetch data from existing multivalued fields
         $fetch = $multi = array();
         foreach ($fields as $fid => $field) {
           if (!empty($field['extra']['multiple']) && substr($fid, 0, 7) == 'contact') {

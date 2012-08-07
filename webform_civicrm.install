@@ -643,3 +643,24 @@ function webform_civicrm_update_7300() {
   drupal_set_message($msg, 'warning');
   return $msg;
 }
+
+/**
+ * Update case features.
+ */
+function webform_civicrm_update_7301() {
+  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
+
+  $db = db_query("SELECT * FROM {webform_civicrm_forms}");
+  foreach ($db as $form) {
+    $data = unserialize($form->data);
+    if (!empty($data['case'][1])) {
+      $data['case'][1]['existing_case_status'] = (array) webform_civicrm_aval($data['case'][1], 'case:1:status_id');
+      $data['case'][1]['case'][1]['client_id'] = 1;
+      $form = (array) $form;
+      $form['data'] = $data;
+      drupal_write_record('webform_civicrm_forms', $form, 'nid');
+    }
+  }
+
+  return st('Upgrade successful.');
+}

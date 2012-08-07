@@ -695,6 +695,16 @@ function webform_civicrm_get_fields($var = 'fields') {
       );
     }
     if (in_array('CiviCase', $components)) {
+      require_once 'CRM/Case/XMLProcessor/Process.php';
+      $case_info = new CRM_Case_XMLProcessor_Process();
+      $fields['case_client_id'] = array(
+        'name' => t('Case Client'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'extra' => array('mandatory' => 1, 'multiple' => $case_info->getAllowMultipleCaseClients()),
+        'data_type' => 'ContactReference',
+        'value' => 1,
+      );
       $fields['case_status_id'] = array(
         'name' => t('Case Status'),
         'type' => 'select',
@@ -832,6 +842,8 @@ function webform_civicrm_get_fields($var = 'fields') {
       'relationship_relationship_permission' => 'relationship_permission',
       '*_group' => 'group',
       '*_tag' => 'tag',
+      'case_client_id' => 'contact',
+      'case_creator_id' => 'contact',
       'case_status_id' => 'case_status',
       'case_medium_id' => 'encounter_medium',
       'participant_event_id' => 'event',
@@ -1113,13 +1125,16 @@ function webform_civicrm_required_contact_fields() {
  * Maybe someday this will be possible through the CiviCRM API
  */
 function webform_civicrm_activity_find($params) {
-  $cid = $params['contact_id'];
+  $cid = webform_civicrm_aval($params, 'contact_id');
   unset($params['contact_id']);
   $sql = 'SELECT civicrm_activity.id FROM civicrm_activity';
   if (!empty($params['case_id'])) {
     $sql .= ' INNER JOIN civicrm_case_activity ON civicrm_activity.id = civicrm_case_activity.activity_id';
   }
-  $sql .= " WHERE is_current_revision = 1 AND is_deleted = 0 AND (civicrm_activity.id IN (SELECT activity_id FROM civicrm_activity_target WHERE target_contact_id = $cid) OR source_contact_id = $cid)";
+  $sql .= " WHERE is_current_revision = 1 AND is_deleted = 0";
+  if ($cid) {
+    $sql .= " AND (civicrm_activity.id IN (SELECT activity_id FROM civicrm_activity_target WHERE target_contact_id = $cid) OR source_contact_id = $cid)";
+  }
   foreach ($params as $field => $value) {
     if ($value && is_array($value)) {
       $sql .= " AND $field IN (" . implode(',', $value) . ")";
