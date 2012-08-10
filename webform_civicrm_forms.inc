@@ -107,7 +107,8 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       foreach ((array) $data['case'][1]['case'][1]['client_id'] as $client) {
       $result = webform_civicrm_api('case', 'get', array('client_id' => $id['cid'][1]));
         foreach (webform_civicrm_aval($result, 'values', array()) as $case) {
-          if (in_array($case['status_id'], $data['case'][1]['existing_case_status']) && empty($case['is_deleted']) && $case['case_type_id'] == $data['case'][1]['case'][1]['case_type_id']) {
+          $case_type_id = explode(',', $case['case_type_id']);
+          if (in_array($case['status_id'], $data['case'][1]['existing_case_status']) && empty($case['is_deleted']) && in_array($data['case'][1]['case'][1]['case_type_id'], $case_type_id)) {
             $id['case'][1] = $case['id'];
             $custom = webform_civicrm_get_custom($id['case'][1], 'case');
             $info['case'] = array(1 => (array('case' => array(1 => $case)) + $custom));
@@ -959,20 +960,26 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
   elseif (empty($submission->is_draft)) {
     $config = CRM_Core_Config::singleton();
 
-    // Open new case if needed.
-    if (empty($id['case'][1]) && empty($id['act'][1]) && !empty($data['case'][1]) && !empty($id['cid'][1])) {
-      $data['case'][1]['case'][1]['contact_id'] = $id['cid'][1];
-      $data['case'][1]['case'][1]['subject'] = check_plain($node->title);
+    // Save case.
+    if (!empty($data['case'][1]) && !empty($data['case'][1]['case'][1]['client_id'])) {
+      if (empty($id['case'][1])) {
+        $data['case'][1]['case'][1]['subject'] = check_plain($node->title);
+      }
+      else {
+        $data['case'][1]['case'][1]['id'] = $id['case'][1];
+        unset($data['case'][1]['case'][1]['creator_id'], $data['case'][1]['case'][1]['case_type_id']);
+      }
       $result = webform_civicrm_api('case', 'create', $data['case'][1]['case'][1]);
       if (!empty($result['values']['id'])) {
         webform_civicrm_save_custom($data['case'][1], $result['values']['id'], 'Case');
         $id['case'][1] = $result['values']['id'];
-        $id['act'][1] = webform_civicrm_activity_find(array(
-          'contact_id' => $id['cid'][1],
-          'activity_type_id' => $data['activity'][1]['activity'][1]['activity_type_id'],
-          'status_id' => $data['activity'][1]['existing_activity_status'],
-          'case_id' => $id['case'][1],
-        ));
+        if (empty($id['act'][1])) {
+          $id['act'][1] = webform_civicrm_activity_find(array(
+            'activity_type_id' => $data['activity'][1]['activity'][1]['activity_type_id'],
+            'status_id' => $data['activity'][1]['existing_activity_status'],
+            'case_id' => $id['case'][1],
+          ));
+        }
       }
     }
     if (!empty($data['activity'][1])) {
