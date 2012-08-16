@@ -587,6 +587,7 @@ function webform_civicrm_contact_access($component, $filters, $cid) {
   }
   $filters['id'] = $cid;
   $filters['is_deleted'] = 0;
+  $filters['return.display_name'] = 1;
   // Fetch contact name with filters applied
   $result = webform_civicrm_api('contact', 'get', $filters);
   return webform_civicrm_aval($result, 'values:' . $cid . ':display_name', FALSE, TRUE);
@@ -769,19 +770,15 @@ function webform_civicrm_search_filters($node, $component) {
 }
 
 /**
- * Theme a static contact element
+ * Theme the wrapper for a static contact element
+ * Includes normal webform theme wrappers plus a tokeninput-style name field
  */
 function theme_static_contact_element($vars) {
   $element = $vars['element'];
   $component = $element['#webform_component'];
 
   // All elements using this for display only are given the "display" type.
-  if (isset($element['#format']) && $element['#format'] == 'html') {
-    $type = 'display';
-  }
-  else {
-    $type = 'civicrm_contact';
-  }
+  $type = webform_civicrm_aval($element, '#format') == 'html' ? 'display' : 'civicrm_contact';
 
   // Convert the parents array into a string, excluding the "submitted" wrapper.
   $nested_level = $element['#parents'][0] == 'submitted' ? 1 : 0;
@@ -814,7 +811,5 @@ function theme_static_contact_element($vars) {
     }
   }
 
-  $output .= $element['#children'] . "\n</div>\n";
-
-  return $output;
+  return $output . $element['#children'] . "\n</div>\n";
 }

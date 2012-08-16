@@ -1233,24 +1233,28 @@ function _webform_civicrm_form_validate($form, &$form_state, $submitted) {
  */
 function _webform_civicrm_participant_validate($form, &$form_state, $submitted) {
   $data = $form['#node']->webform_civicrm['data'];
-  $cids = webform_civicrm_aval($form_state, 'civicrm:id:cid', array());
+  $contacts = $cids = array();
   // Check how many valid contacts we have
-  $contacts = array();
   foreach (array_keys($data['contact']) as $c) {
-    if (!empty($cids[$c])
-    || !empty($submitted["civicrm_{$c}_contact_1_contact_first_name"])
-    || !empty($submitted["civicrm_{$c}_contact_1_contact_last_name"])
-    || !empty($submitted["civicrm_{$c}_contact_1_contact_organization_name"])
-    || !empty($submitted["civicrm_{$c}_contact_1_contact_household_name"])
-    || !empty($submitted["civicrm_{$c}_contact_1_email_email"])) {
-      $contacts[] = $c;
+    // Check if we have a contact_id
+    if (!empty($submitted["civicrm_{$c}_contact_1_contact_existing"])) {
+      $cids[] = $contacts[$c] = $submitted["civicrm_{$c}_contact_1_contact_existing"];
+    }
+    // Or else see if enough info was entered to create a contact
+    else {
+      foreach (webform_civicrm_required_contact_fields() as $table => $name) {
+        if (!empty($submitted["civicrm_{$c}_contact_1_{$table}_$name"])) {
+          $contacts[$c] = 0;
+          break;
+        }
+      }
     }
   }
   $events = array();
   $add = $data['participant_reg_type'] == 'all' ? count($contacts) : 1;
   // Fetch events set in back-end
   foreach ($data['participant'] as $c => $par) {
-    if (!empty($par['participant']) && in_array($c, $contacts)) {
+    if (!empty($par['participant']) && isset($contacts[$c])) {
       foreach ($par['participant'] as $p) {
         if (!empty($p['event_id']) && $p['event_id'] != 'create_civicrm_webform_element') {
           list($eid) = explode('-', $p['event_id']);
@@ -1266,9 +1270,8 @@ function _webform_civicrm_participant_validate($form, &$form_state, $submitted) 
   // Add events selected by user
   foreach ($submitted as $field => $value) {
     if (strpos($field, 'participant_event_id')) {
-      list(, $c, $ent, $n, $table, $key) = webform_civicrm_explode_key($field);
-      if (in_array($c, $contacts)
-      || ($c == 1 && $data['participant_reg_type'] == 'all')) {
+      list(, $c) = webform_civicrm_explode_key($field);
+      if (isset($contacts[$c]) || ($c == 1 && $data['participant_reg_type'] == 'all')) {
         $value = is_array($value) ? $value : array($value);
         foreach ($value as $val) {
           $eid = explode('-', $val);
