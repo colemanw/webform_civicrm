@@ -721,6 +721,7 @@ function webform_civicrm_find_relations($cid, $types, $current = TRUE) {
         while ($dao->fetch()) {
           $found[] = $dao->id == $cid ? $dao->employer_id : $dao->id;
         }
+        $dao->free();
       }
       else {
         $type_ids .= ($type_ids ? ',' : '') . $type;
@@ -746,6 +747,7 @@ function webform_civicrm_find_relations($cid, $types, $current = TRUE) {
           $found[] = $dao->{"contact_id_$a_b"};
         }
       }
+      $dao->free();
     }
   }
   return $found;
@@ -757,7 +759,7 @@ function webform_civicrm_find_relations($cid, $types, $current = TRUE) {
 function webform_civicrm_search_filters($node, $component) {
   $params = array('is_deleted' => 0);
   list(, $c, ) = explode('_', $component['form_key'], 3);
-  $params['contact_type'] = $node->webform_civicrm['data']['contact'][$c]['contact'][1]['contact_type'];
+  $params['contact_type'] = ucfirst($node->webform_civicrm['data']['contact'][$c]['contact'][1]['contact_type']);
   foreach ($component['extra']['filters'] as $key => $val) {
     if (!empty($val)) {
       if ($key === 'tag' || $key === 'group') {

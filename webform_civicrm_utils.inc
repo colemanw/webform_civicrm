@@ -127,6 +127,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
         $ret[$dao->value] = ts($dao->label);
       }
     }
+    $dao->free();
     // Do not cache if param is set
     if ($param) {
       return $ret;
@@ -240,6 +241,7 @@ function webform_civicrm_get_contact_types() {
         $sub_types[strtolower($dao->name)] = array();
       }
     }
+    $dao->free();
   }
   return array($contact_types, $sub_types);
 }
@@ -261,6 +263,7 @@ function webform_civicrm_get_relationship_types() {
         $types[$dao->id][$field] = $dao->{$field};
       }
     }
+    $dao->free();
   }
   return $types;
 }
@@ -982,6 +985,7 @@ function webform_civicrm_get_fields($var = 'fields') {
         }
       }
     }
+    $dao->free();
   }
   return $$var;
 }
@@ -1174,6 +1178,7 @@ function webform_civicrm_event_info(&$events) {
         }
       }
     }
+    $dao->free();
   }
 }
 

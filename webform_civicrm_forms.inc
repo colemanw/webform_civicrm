@@ -285,8 +285,8 @@ function webform_civicrm_contact_get($node, $enabled, $c, $cid, $exclude = array
   foreach (array('contact', 'address', 'email', 'phone', 'website') as $field) {
     if ((!empty($contact['number_of_' . $field]) && !in_array($field, $exclude)) || $field == 'contact') {
       $params = array('contact_id' => $cid);
-      if ($field != 'contact') {
-        $params['sort'] = 'is_primary DESC';
+      if ($field != 'contact' && $field != 'website') {
+        $params['options']['sort'] = 'is_primary DESC';
       }
       $result = webform_civicrm_api($field, 'get', $params);
       if (!empty($result['values'])) {
@@ -738,7 +738,11 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       foreach (array('address', 'email', 'phone', 'website') as $location) {
         if (!empty($contact[$location])) {
           $existing = array();
-          $result = webform_civicrm_api($location, 'get', array('contact_id' => $cid, 'sort' => 'is_primary DESC'));
+          $params = array('contact_id' => $cid);
+          if ($location != 'website') {
+            $params['options'] = array('sort' => 'is_primary DESC');
+          }
+          $result = webform_civicrm_api($location, 'get', $params);
           if (!empty($result['values'])) {
             // start array index at 1
             $existing = array_merge(array(array()), $result['values']);
@@ -811,10 +815,12 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
               }
               continue;
             }
-            if ($location != 'website' && empty($params['location_type_id'])) {
-              $params['location_type_id'] = webform_civicrm_aval($existing, $i . ':location_type_id', 1);
+            if ($location != 'website') {
+              if (empty($params['location_type_id'])) {
+                $params['location_type_id'] = webform_civicrm_aval($existing, $i . ':location_type_id', 1);
+              }
+              $params['is_primary'] = $i == 1 ? 1 : 0;
             }
-            $params['is_primary'] = $i == 1 ? 1 : 0;
             $result = webform_civicrm_api($location, 'create', $params);
             if ($location == 'address' && empty($result['is_error'])) {
               // Process custom data for address
@@ -935,7 +941,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
     foreach ($shared_address as $cid => $shared) {
       foreach ($shared as $i => $addr) {
         if (!empty($id['cid'][$addr['mc']])) {
-          $masters = webform_civicrm_api('address', 'get', array('contact_id' => $id['cid'][$addr['mc']], 'sort' => 'is_primary DESC'));
+          $masters = webform_civicrm_api('address', 'get', array('contact_id' => $id['cid'][$addr['mc']], 'options' =>array('sort' => 'is_primary DESC')));
           if (!empty($masters['values'])) {
             $masters = array_values($masters['values']);
             // Pick the address with the same location type; default to primary.
@@ -1103,7 +1109,7 @@ function webform_civicrm_add_remove($data_type, $entity_type, $node, $id, $add, 
     // Prepare for sending subscription confirmations
     if ($data_type == 'group' && !empty($node->webform_civicrm['confirm_subscription'])) {
       // Retrieve this contact's primary email address and perform error-checking
-      $result = webform_civicrm_api('email', 'get', array('contact_id' => $id, 'sort' => 'is_primary DESC'));
+      $result = webform_civicrm_api('email', 'get', array('contact_id' => $id, 'options' => array('sort' => 'is_primary DESC')));
       if (!empty($result['values'])) {
         foreach ($result['values'] as $value) {
           if (($value['is_primary'] || empty($email)) && strpos($value['email'], '@')) {
@@ -1241,13 +1247,8 @@ function _webform_civicrm_participant_validate($form, &$form_state, $submitted) 
       $cids[] = $contacts[$c] = $submitted["civicrm_{$c}_contact_1_contact_existing"];
     }
     // Or else see if enough info was entered to create a contact
-    else {
-      foreach (webform_civicrm_required_contact_fields() as $table => $name) {
-        if (!empty($submitted["civicrm_{$c}_contact_1_{$table}_$name"])) {
-          $contacts[$c] = 0;
-          break;
-        }
-      }
+    elseif (webform_civicrm_name_field_exists($submitted, $c)) {
+      $contacts[$c] = 0;
     }
   }
   $events = array();
@@ -1300,6 +1301,7 @@ function _webform_civicrm_participant_validate($form, &$form_state, $submitted) 
         }
       }
     }
+    $dao->free();
   }
   webform_civicrm_event_info($events);
   foreach ($events as $eid => $event) {
