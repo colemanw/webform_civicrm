@@ -341,12 +341,16 @@ function webform_civicrm_contact_get($node, $enabled, $c, $cid, $exclude = array
   }
   // Retrieve group and tag data
   if (!in_array('other', $exclude)) {
-    $field = 'civicrm_' . $c . '_contact_1_other_';
-    foreach (array('tag' => 'entity_tag', 'group' => 'group_contact') as $ent => $api) {
-      if (isset($enabled['civicrm_' . $c . '_contact_1_other_' . $ent])) {
-        $result = webform_civicrm_api($api, 'get', array('contact_id' => $cid));
+    $prefix = 'civicrm_' . $c . '_contact_1_other_';
+    $api = array('tag' => 'entity_tag', 'group' => 'group_contact');
+    foreach (array_keys($enabled) as $fid) {
+      // This way we support multiple tag fields (for tagsets)
+      if (strpos($fid, $prefix . 'tag') !== FALSE || $fid == $prefix . 'group') {
+        list(, , , , , $ent) = explode('_', $fid);
+        list(, , , , , $field) = explode('_', $fid, 6);
+        $result = webform_civicrm_api($api[$ent], 'get', array('contact_id' => $cid));
         foreach (webform_civicrm_aval($result, 'values') as $val) {
-          $info['other'][1][$ent][] = $val[$ent . '_id'];
+          $info['other'][1][$field][] = $val[$ent . '_id'];
         }
       }
     }
@@ -860,13 +864,16 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         }
       }
       // Process groups & tags
-      $field = 'civicrm_' . $c . '_contact_1_other_';
-      foreach (array('group', 'tag') as $type) {
-        if (!empty($contact['other'][1][$type]) || isset($enabled[$field . $type])) {
-          $fid = webform_civicrm_aval($enabled, $field . $type, 0);
-          $add = webform_civicrm_aval($contact, "other:1:$type", array());
-          $remove = empty($updating['cid'][$c]) ? array() : webform_civicrm_exposed_options($node, $fid, $add);
-          webform_civicrm_add_remove($type, 'contact', $node, $cid, $add, $remove);
+      foreach ($fields as $fid => $field) {
+        list($set, $type) = explode('_', $fid, 2);
+        if ($set == 'other') {
+          $field_name = 'civicrm_' . $c . '_contact_1_' . $fid;
+          if (!empty($contact['other'][1][$type]) || isset($enabled[$field_name])) {
+            $fid = webform_civicrm_aval($enabled, $field_name, 0);
+            $add = webform_civicrm_aval($contact, "other:1:$type", array());
+            $remove = empty($updating['cid'][$c]) ? array() : webform_civicrm_exposed_options($node, $fid, $add);
+            webform_civicrm_add_remove($field['table'], 'contact', $node, $cid, $add, $remove);
+          }
         }
       }
       // Process event participation

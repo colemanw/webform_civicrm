@@ -54,8 +54,8 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
     }
     elseif ($option_group == 'tag') {
       require_once 'CRM/Core/BAO/Tag.php';
-      // $param is entity type i.e. contact
-      return CRM_Core_BAO_Tag::getTags("civicrm_$param", $ret, NULL, '- ');
+      // $param must contain entity i.e. contact and optionally a tagset id
+      return CRM_Core_BAO_Tag::getTags("civicrm_{$param['entity']}", $ret, webform_civicrm_aval($param, 'tagset'), '- ');
     }
     elseif ($option_group == 'group' || $option_group == 'mailing_lists') {
       $sql = 'SELECT id AS value, title AS label FROM civicrm_group WHERE is_active = 1 AND is_hidden = 0';
@@ -175,9 +175,6 @@ function webform_civicrm_field_options($field, $context, $data) {
         }
       }
     }
-    elseif ($name === 'tag') {
-      $ret = webform_civicrm_get_options('tag', $ent);
-    }
     elseif ($name === 'status_id' && $table === 'participant') {
       require_once 'CRM/Event/PseudoConstant.php';
       $ret = CRM_Event_PseudoConstant::participantStatus(NULL, NULL, 'label');
@@ -186,6 +183,13 @@ function webform_civicrm_field_options($field, $context, $data) {
       $param = NULL;
       if ($name === 'event_id') {
         $param = $data['reg_options'] + array('context' => $context);
+      }
+      if ($list === 'tag') {
+        $split = explode('_', $name);
+        $param = array(
+          'entity' => $ent,
+          'tagset' => webform_civicrm_aval($split, 1)
+        );
       }
       $ret = webform_civicrm_get_options($list, $param);
       // Hack to format money data correctly
@@ -446,8 +450,43 @@ function webform_civicrm_get_fields($var = 'fields') {
   static $sets = array();
 
   if (!$fields) {
+    require_once 'CRM/Core/BAO/Tag.php';
     $config = CRM_Core_Config::singleton();
     $components = $config->enableComponents;
+
+    // key: table_field_name (table can be a * wildcard)
+    // value: name of civicrm_option_group
+    $lists = array(
+      'contact_contact_sub_type' => 'contact_sub_type',
+      'contact_prefix_id' => 'individual_prefix',
+      'contact_suffix_id' => 'individual_suffix',
+      'contact_gender_id' => 'gender',
+      'contact_preferred_communication_method' => 'preferred_communication_method',
+      'contact_preferred_language' => 'languages',
+      'contact_privacy' => 'privacy',
+      'contact_employer_id' => 'organization',
+      '*_country_id' => 'country',
+      'phone_phone_type_id' => 'phone_type',
+      '*_location_type_id' => 'location_type',
+      'website_website_type_id' => 'website_type',
+      'address_master_id' => 'contact',
+      'activity_target_contact_id' => 'contact',
+      'activity_assignee_contact_id' => 'contact',
+      'activity_status_id' => 'activity_status',
+      'activity_priority_id' => 'priority',
+      '*_engagement_level' => 'engagement_index',
+      'relationship_relationship_type_id' => 'relationship_type_id',
+      'relationship_is_active' => 'yes_no',
+      'relationship_relationship_permission' => 'relationship_permission',
+      '*_group' => 'group',
+      'case_client_id' => 'contact',
+      'case_creator_id' => 'contact',
+      'case_status_id' => 'case_status',
+      'case_medium_id' => 'encounter_medium',
+      'participant_event_id' => 'event',
+      'participant_role_id' => 'participant_role',
+      '*_campaign_id' => 'campaign',
+    );
 
     // Field keys are in the format table_column
     // Use a # sign as a placeholder for field number in the title (or by default it will be appended to the end)
@@ -619,13 +658,21 @@ function webform_civicrm_get_fields($var = 'fields') {
       'table' => 'group',
       'expose_list' => TRUE,
     );
-    $fields['other_tag'] = array(
-      'name' => t('Tags'),
-      'type' => 'select',
-      'extra' => array('multiple' => 1, 'civicrm_live_options' => 1),
-      'table' => 'tag',
-      'expose_list' => TRUE,
-    );
+    $tagsets = array('' => t('Tags')) + CRM_Core_BAO_Tag::getTagSet('civicrm_contact');
+    foreach ($tagsets as $pid => $name) {
+      // Ensure getTagSet is actually returning ids, per CRM-10685 added to CiviCRM 4.1.6
+      if ($pid === 0) {
+        break;
+      }
+      $fields['other_tag' . ($pid ? "_$pid" : '')] = array(
+        'name' => $name,
+        'type' => 'select',
+        'extra' => array('multiple' => 1, 'civicrm_live_options' => 1),
+        'table' => 'tag',
+        'expose_list' => TRUE,
+      );
+      $lists['*_tag' . ($pid ? "_$pid" : '')] = 'tag';
+    }
     $fields['activity_target_contact_id'] = array(
       'name' => t('Activity Participants'),
       'type' => 'select',
@@ -818,40 +865,6 @@ function webform_civicrm_get_fields($var = 'fields') {
       'world_region' => t('world region'),
       'phone' => t('phone number'),
       'email' => t('email'),
-    );
-    // key: table_field_name (table can be a * wildcard)
-    // value: name of civicrm_option_group
-    $lists = array(
-      'contact_contact_sub_type' => 'contact_sub_type',
-      'contact_prefix_id' => 'individual_prefix',
-      'contact_suffix_id' => 'individual_suffix',
-      'contact_gender_id' => 'gender',
-      'contact_preferred_communication_method' => 'preferred_communication_method',
-      'contact_preferred_language' => 'languages',
-      'contact_privacy' => 'privacy',
-      'contact_employer_id' => 'organization',
-      '*_country_id' => 'country',
-      'phone_phone_type_id' => 'phone_type',
-      '*_location_type_id' => 'location_type',
-      'website_website_type_id' => 'website_type',
-      'address_master_id' => 'contact',
-      'activity_target_contact_id' => 'contact',
-      'activity_assignee_contact_id' => 'contact',
-      'activity_status_id' => 'activity_status',
-      'activity_priority_id' => 'priority',
-      '*_engagement_level' => 'engagement_index',
-      'relationship_relationship_type_id' => 'relationship_type_id',
-      'relationship_is_active' => 'yes_no',
-      'relationship_relationship_permission' => 'relationship_permission',
-      '*_group' => 'group',
-      '*_tag' => 'tag',
-      'case_client_id' => 'contact',
-      'case_creator_id' => 'contact',
-      'case_status_id' => 'case_status',
-      'case_medium_id' => 'encounter_medium',
-      'participant_event_id' => 'event',
-      'participant_role_id' => 'participant_role',
-      '*_campaign_id' => 'campaign',
     );
 
     $sets = array(

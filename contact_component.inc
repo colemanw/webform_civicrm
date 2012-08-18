@@ -239,7 +239,7 @@ function _webform_edit_civicrm_contact($component) {
     '#type' => 'select',
     '#multiple' => TRUE,
     '#title' => t('Tags'),
-    '#options' => webform_civicrm_get_options('tag', 'contact'),
+    '#options' => webform_civicrm_get_options('tag', array('entity' => 'contact')),
     '#default_value' => $component['extra']['filters']['tag'],
     '#description' => t('Listed contacts must be have at least one of the selected tags (leave blank to not filter by tag).'),
   );
