@@ -345,11 +345,14 @@ function webform_civicrm_contact_get($node, $enabled, $c, $cid, $exclude = array
     $api = array('tag' => 'entity_tag', 'group' => 'group_contact');
     foreach (array_keys($enabled) as $fid) {
       // This way we support multiple tag fields (for tagsets)
-      if (strpos($fid, $prefix . 'tag') !== FALSE || $fid == $prefix . 'group') {
+      if (strpos($fid, $prefix) !== FALSE) {
         list(, , , , , $ent) = explode('_', $fid);
         list(, , , , , $field) = explode('_', $fid, 6);
-        $result = webform_civicrm_api($api[$ent], 'get', array('contact_id' => $cid));
-        foreach (webform_civicrm_aval($result, 'values') as $val) {
+        // Cheap way to avoid fetching the same data twice from the api
+        if (!is_array($api[$ent])) {
+          $api[$ent] = webform_civicrm_api($api[$ent], 'get', array('contact_id' => $cid));
+        }
+        foreach (webform_civicrm_aval($api[$ent], 'values') as $val) {
           $info['other'][1][$field][] = $val[$ent . '_id'];
         }
       }
@@ -395,29 +398,13 @@ function webform_civicrm_fill_form(&$elements, $node, $data = array(), $submitte
             $element['#attributes']['onfocus'] = "if (this.value == '') {this.value = 'http://';}";
           }
         }
-        // If the user has already entered a value for this field, don't change it
-        if (isset($data[$ent][$c][$table][$n][$name])
-        && !(isset($component['cid']) && isset($submitted[$component['cid']]))) {
-          $val = $data[$ent][$c][$table][$n][$name];
-
-          if (($element['#type'] == 'checkboxes' || !empty($element['#multiple'])) && !is_array($val)) {
-            $val = explode($sp, trim($val, $sp));
-          }
-          if ($element['#type'] != 'checkboxes' && $element['#type'] != 'date'
-          && empty($element['#multiple']) && is_array($val)) {
-            $val = array_pop($val);
-          }
-          if ($element['#type'] == 'hidden') {
-            $element['#value'] = $val;
-          }
-          $element['#default_value'] = $val;
-        }
         if ($name == 'existing') {
           webform_civicrm_fill_contact_value($node, $component, &$element);
         }
         // Provide live options from the Civi DB
         elseif (!empty($component['extra']['civicrm_live_options']) && isset($element['#options'])) {
-          $new = webform_civicrm_field_options($component, 'live_options', $node->webform_civicrm['data']);
+          $params = array('extra' => webform_civicrm_aval($field, 'extra', array())) + $component;
+          $new = webform_civicrm_field_options($params, 'live_options', $node->webform_civicrm['data']);
           $old = $element['#options'];
           $resave = FALSE;
           // If an item doesn't exist, we add it. If it's changed, we update it.
@@ -434,6 +421,34 @@ function webform_civicrm_fill_form(&$elements, $node, $data = array(), $submitte
             webform_component_update($component);
           }
           $element['#options'] = $new;
+        }
+        // If the user has already entered a value for this field, don't change it
+        if (isset($data[$ent][$c][$table][$n][$name])
+        && !(isset($component['cid']) && isset($submitted[$component['cid']]))) {
+          $val = $data[$ent][$c][$table][$n][$name];
+          if (($element['#type'] == 'checkboxes' || !empty($element['#multiple'])) && !is_array($val)) {
+            $val = explode($sp, trim($val, $sp));
+          }
+          if ($element['#type'] != 'checkboxes' && $element['#type'] != 'date'
+          && empty($element['#multiple']) && is_array($val)) {
+            // If there's more than one value for a non-multi field, pick the most appropriate
+            if (!empty($element['#options'])) {
+              foreach ($element['#options'] as $k => $v) {
+                if (in_array($k, $val)) {
+                  $val = $k;
+                  break;
+                }
+              }
+            }
+            else {
+              $val = array_pop($val);
+            }
+          }
+          if ($element['#type'] == 'hidden') {
+            $element['#value'] = $val;
+          }
+          // Set default value
+          $element['#default_value'] = $val;
         }
       }
     }
@@ -1164,7 +1179,7 @@ function webform_civicrm_add_remove($data_type, $entity_type, $node, $id, $add, 
 }
 
 /**
- * Determine which options exist on the webform.
+ * For a given field, determine which options exist on the webform.
  */
 function webform_civicrm_exposed_options($node, $fid, $exclude = array()) {
   if ($fid) {

@@ -178,7 +178,7 @@ function webform_civicrm_webform_submission_insert($node, $submission) {
 
 /**
  * Implements hook_webform_submission_update().
- * Final submission processing - saves activity and updates webform_civicrm record.
+ * Submission update processing - updates civicrm data and webform_civicrm record.
  */
 function webform_civicrm_webform_submission_update($node, $submission) {
   if (!empty($node->webform_civicrm)) {
