@@ -15,10 +15,10 @@ module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
  * Set webform default values.
  */
 function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
+  civicrm_initialize();
   $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_forms.js';
   $form['#validate'][] = 'webform_civicrm_form_validate';
   array_unshift($form['#submit'], 'webform_civicrm_storage');
-  civicrm_initialize();
   $config = CRM_Core_Config::singleton();
   $node = $form['#node'];
   $settings = $node->webform_civicrm;
@@ -462,15 +462,14 @@ function webform_civicrm_fill_form(&$elements, $node, $data = array(), $submitte
  * @param $op: Which hook is being called
  */
 function webform_civicrm_process_submission($node, &$submission, $op) {
+  civicrm_initialize();
   static $data = array();
   static $id = array();
   static $update = array();
   $settings = $node->webform_civicrm;
-  require_once 'CRM/Core/BAO/Setting.php';
 
   // Presave processing - save contact data
   if ($op == 'presave') {
-    civicrm_initialize();
     $config = CRM_Core_Config::singleton();
     require_once 'CRM/Core/BAO/CustomValueTable.php';
     $enabled = webform_civicrm_enabled_fields($node);
@@ -1057,18 +1056,20 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         $id['act'][1] = $result['id'];
         webform_civicrm_save_custom($data['activity'][1], $id['act'][1], 'Activity');
       }
-      if (!empty($id['act'][1]) && !empty($params['assignee_contact_id'])
-      && CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'activity_assignee_notification')) {
-        // Send email to assignees. TODO: Move to CiviCRM API?
-        $assignee = webform_civicrm_api('contact', 'get', array('id' => $params['assignee_contact_id']));
-        $assignee = webform_civicrm_aval($assignee, 'values:' . $params['assignee_contact_id']);
-        if (!empty($assignee['email'])) {
-          $mail = array($assignee['email'] => $assignee);
-          //include attachments while sendig a copy of activity.
-          require_once 'CRM/Core/BAO/File.php';
-          $attachments = &CRM_Core_BAO_File::getEntityFile('civicrm_activity', $id['act'][1]);
-          require_once 'CRM/Case/BAO/Case.php';
-          $result = CRM_Case_BAO_Case::sendActivityCopy(NULL, $id['act'][1], $mail, $attachments, NULL);
+      if (!empty($id['act'][1]) && !empty($params['assignee_contact_id'])) {
+        require_once 'CRM/Core/BAO/Setting.php';
+        if (CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'activity_assignee_notification')) {
+          // Send email to assignees. TODO: Move to CiviCRM API?
+          $assignee = webform_civicrm_api('contact', 'get', array('id' => $params['assignee_contact_id']));
+          $assignee = webform_civicrm_aval($assignee, 'values:' . $params['assignee_contact_id']);
+          if (!empty($assignee['email'])) {
+            $mail = array($assignee['email'] => $assignee);
+            // Include attachments while sendig a copy of activity.
+            require_once 'CRM/Core/BAO/File.php';
+            $attachments = &CRM_Core_BAO_File::getEntityFile('civicrm_activity', $id['act'][1]);
+            require_once 'CRM/Case/BAO/Case.php';
+            $result = CRM_Case_BAO_Case::sendActivityCopy(NULL, $id['act'][1], $mail, $attachments, NULL);
+          }
         }
       }
     }
