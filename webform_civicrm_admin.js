@@ -137,7 +137,7 @@ var wfCiviAdmin = (function ($, D) {
       }
     });
   }
-  
+
   // Change employer options on-the-fly when contact types are altered
   function employerOptions() {
     var options = '';
@@ -148,10 +148,22 @@ var wfCiviAdmin = (function ($, D) {
         options += '<option value="'+c+'">'+name+'</option>';
       }
     });
-    $('select[id$=contact-employer-id] option').not('[value="0"],[value="create_civicrm_webform_element"]').remove();
-    $('select[id$=contact-employer-id]').append(options);
+    $('select[id$=contact-employer-id]').each(function() {
+      var val = $(this).val();
+      $('option', this).not('[value=0],[value=create_civicrm_webform_element]').remove();
+      if (options.length > 0) {
+        $(this).append(options).val(val).removeAttr('disabled').removeAttr('style');
+        $(this).parent().removeAttr('title');
+        $('option[value=0]', this).text(Drupal.t('- None -'));
+      }
+      else {
+        $(this).val(0).attr('disabled', 'disabled').css('color', 'gray');
+        $(this).parent().attr('title', Drupal.t('To create an employer relationship, first add an organization-type contact to the webform.'));
+        $('option[value=0]', this).text(Drupal.t('- first add an org -'));
+      }
+    });
   }
-  
+
   // Fetch current contact type settings
   function contactTypes() {
     var contacts = $('#edit-number-of-contacts').val();
@@ -186,6 +198,9 @@ var wfCiviAdmin = (function ($, D) {
 
   D.behaviors.webform_civicrmAdmin = {
     attach: function (context) {
+
+      employerOptions();
+
       // Summaries for vertical tabs
       $('fieldset[id^="edit-contact-"]', context).once('wf-civi').drupalSetSummary(function (context) {
         var label = $('select[name$="_contact_type"] option:selected', context).text();
@@ -204,7 +219,7 @@ var wfCiviAdmin = (function ($, D) {
           return CheckLength($('#edit-message', context).val());
         }
         else {
-          return D.t('- None -');
+          return Drupal.t('- None -');
         }
       });
       $('fieldset#edit-prefix', context).once('wf-civi').drupalSetSummary(function (context) {
@@ -216,7 +231,7 @@ var wfCiviAdmin = (function ($, D) {
           return CheckLength(label);
         }
         else {
-          return D.t('- None -');
+          return Drupal.t('- None -');
         }
       });
       $('fieldset#edit-event', context).once('wf-civi').drupalSetSummary(function (context) {
@@ -318,9 +333,7 @@ var wfCiviAdmin = (function ($, D) {
 
       // Respond to contact type changing
       $('select[name$="_contact_type"]').once('contact-type').change(function() {
-        // Change icon
         $('#webform-civicrm-configure-form .vertical-tab-button span[name="'+$(this).attr('name')+'"]').removeClass().addClass('civi-icon '+$(this).val());
-        // Change employer options
         employerOptions();
       });
     }
