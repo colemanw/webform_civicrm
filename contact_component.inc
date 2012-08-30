@@ -394,17 +394,37 @@ function webform_civicrm_fill_contact_value($node, $component, &$element) {
  * Implements _webform_display_component().
  */
 function _webform_display_civicrm_contact($component, $value, $format = 'html') {
+  $display = empty($value[0]) ? '' : webform_civicrm_display_name($value[0]);
+  if ($format == 'html' && $display && user_access('access CiviCRM')) {
+    $display = l($display, 'civicrm/contact/view', array(
+      'alias' => TRUE,
+      'query' => array(
+        'reset' => 1,
+        'cid' => $value[0],
+      ),
+    ));
+  }
   return array(
     '#title' => $component['name'],
     '#weight' => $component['weight'],
-    '#theme' => 'webform_display_textfield',
+    '#theme' => 'display_civicrm_contact',
     '#theme_wrappers' => $format == 'html' ? array('webform_element') : array('webform_element_text'),
     '#field_prefix' => '',
     '#field_suffix' => '',
     '#format' => $format,
-    '#value' => empty($value[0]) ? '' : webform_civicrm_display_name($value[0]),
+    '#value' => $display,
     '#translatable' => array('title'),
   );
+}
+
+/**
+ * Format the output of data for this component.
+ */
+function theme_display_civicrm_contact($variables) {
+  $element = $variables['element'];
+  $prefix = $element['#format'] == 'html' ? '' : $element['#field_prefix'];
+  $suffix = $element['#format'] == 'html' ? '' : $element['#field_suffix'];
+  return $element['#value'] !== '' ? ($prefix . $element['#value'] . $suffix) : ' ';
 }
 
 /**

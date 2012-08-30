@@ -1040,7 +1040,7 @@ function webform_civicrm_display_name($cid) {
   }
   civicrm_initialize();
   $result = webform_civicrm_api('contact', 'get', array('id' => $cid, 'return.display_name' => 1, 'is_deleted' => 0));
-  return webform_civicrm_aval($result, "values:$cid:display_name", '');
+  return check_plain(webform_civicrm_aval($result, "values:$cid:display_name", ''));
 }
 
 /**

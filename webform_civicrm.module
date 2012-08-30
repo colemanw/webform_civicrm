@@ -111,7 +111,8 @@ function webform_civicrm_node_delete($node) {
     db_delete('webform_civicrm_forms')
     ->condition('nid', $node->nid)
     ->execute();
-    // Submissions have already been deleted from webform_submissions table, so we'll do the opposite of a join to find them
+    // Submissions have already been deleted from webform_submissions table
+    // So we'll do the opposite of a join to find them
     db_delete('webform_civicrm_submissions')
     ->where('sid NOT IN (SELECT sid FROM {webform_submissions})')
     ->execute();
@@ -123,13 +124,16 @@ function webform_civicrm_node_delete($node) {
  */
 function webform_civicrm_theme() {
   $theme = array(
-    // Override the main webform components form
     'webform_civicrm_components_form' => array(
       'render element' => 'form',
       'file' => 'webform_civicrm_admin.inc',
     ),
     'webform_civicrm_options' => array(
       'render element' => 'element',
+    ),
+    'display_civicrm_contact' => array(
+      'render element' => 'element',
+      'file' => 'contact_component.inc',
     ),
     'static_contact_element' => array(
       'render element' => 'element',
