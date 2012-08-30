@@ -112,22 +112,24 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       }
     }
     if ((!empty($id['cid'][1]) && empty($data['case'][1])) || (!empty($data['case'][1]) && !empty($id['case'][1]))) {
-      $params = array(
-        'activity_type_id' => $data['activity'][1]['activity'][1]['activity_type_id'],
-        'status_id' => $data['activity'][1]['existing_activity_status'],
-      );
-      if (!empty($data['case'][1])) {
-        $params['case_id'] = $id['case'][1];
-      }
-      else {
-        $params['contact_id'] = $id['cid'][1];
-      }
-      $id['act'][1] = webform_civicrm_activity_find($params);
-      if ($id['act'][1]) {
-        $result = webform_civicrm_api('activity', 'get', array('activity_id' => $id['act'][1]));
-        $activity = array('activity' => array(1 => $result['values'][$id['act'][1]]));
-        $custom = webform_civicrm_get_custom($id['act'][1], 'activity');
-        $info['activity'] = array(1 => ($activity + $custom));
+      if (!empty($data['activity'][1]['existing_activity_status'])) {
+        $params = array(
+          'activity_type_id' => $data['activity'][1]['activity'][1]['activity_type_id'],
+          'status_id' => $data['activity'][1]['existing_activity_status'],
+        );
+        if (!empty($data['case'][1])) {
+          $params['case_id'] = $id['case'][1];
+        }
+        else {
+          $params['contact_id'] = $id['cid'][1];
+        }
+        $id['act'][1] = webform_civicrm_activity_find($params);
+        if ($id['act'][1]) {
+          $result = webform_civicrm_api('activity', 'get', array('activity_id' => $id['act'][1]));
+          $activity = array('activity' => array(1 => $result['values'][$id['act'][1]]));
+          $custom = webform_civicrm_get_custom($id['act'][1], 'activity');
+          $info['activity'] = array(1 => ($activity + $custom));
+        }
       }
     }
   }
@@ -1013,7 +1015,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       }
     }
     // Process activity
-    if (!empty($data['activity'][1])) {
+    if (!empty($data['activity'][1]['activity'])) {
       // Search for activity
       if ((!empty($id['cid'][1]) && empty($data['case'][1])) || (!empty($data['case'][1]) && !empty($id['case'][1]))) {
         $params = array(
