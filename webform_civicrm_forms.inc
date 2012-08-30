@@ -767,6 +767,20 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
                 $params['state_province_id'] = '';
               }
             }
+            // Update drupal email address
+            if ($location == 'email' && !empty($params['email']) && $i == 1) {
+              $uid = webform_civicrm_user_cid($cid, 'contact');
+              if ($uid) {
+                $user = user_load($uid);
+                if ($params['email'] != $user->mail) {
+                  // Verify this email is unique before saving it to user
+                  $args = array(':mail' => $params['email']);
+                  if (!(db_query("SELECT count(uid) FROM {users} WHERE mail = :mail", $args)->fetchField())) {
+                    user_save($user, array('mail' => $params['email']));
+                  }
+                }
+              }
+            }
             // Check if anything was changed, else skip the update
             if (!empty($existing[$i])) {
               $same = TRUE;
@@ -809,13 +823,6 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
             // Check if nothing was entered for email or phone
             elseif (empty($params[$location])) {
               $empty = TRUE;
-            }
-            elseif ($location == 'email' && $i == 1 && $uid = webform_civicrm_user_cid($cid, 'contact')) {
-              // Update drupal email address
-              $user = user_load($uid);
-              if ($params['email'] != $user->mail) {
-                user_save($user, array('mail' => $params['email']));
-              }
             }
             $params['contact_id'] = $cid;
             if (!empty($existing[$i])) {
