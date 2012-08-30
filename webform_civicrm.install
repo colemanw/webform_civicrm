@@ -656,8 +656,7 @@ function webform_civicrm_update_7301() {
     if (!empty($data['case'][1])) {
       $data['case'][1]['existing_case_status'] = (array) webform_civicrm_aval($data['case'][1], 'case:1:status_id');
       $data['case'][1]['case'][1]['client_id'] = 1;
-      $form = (array) $form;
-      $form['data'] = $data;
+      $form->data = $data;
       drupal_write_record('webform_civicrm_forms', $form, 'nid');
     }
   }

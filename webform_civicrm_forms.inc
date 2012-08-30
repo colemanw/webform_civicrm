@@ -398,9 +398,6 @@ function webform_civicrm_fill_form(&$elements, $node, $data = array(), $submitte
             $element['#attributes']['onfocus'] = "if (this.value == '') {this.value = 'http://';}";
           }
         }
-        if ($name == 'existing') {
-          webform_civicrm_fill_contact_value($node, $component, &$element);
-        }
         // Provide live options from the Civi DB
         elseif (!empty($component['extra']['civicrm_live_options']) && isset($element['#options'])) {
           $params = array('extra' => webform_civicrm_aval($field, 'extra', array())) + $component;
@@ -449,6 +446,9 @@ function webform_civicrm_fill_form(&$elements, $node, $data = array(), $submitte
           }
           // Set default value
           $element['#default_value'] = $val;
+        }
+        if ($name == 'existing') {
+          webform_civicrm_fill_contact_value($node, $component, &$element);
         }
       }
     }
