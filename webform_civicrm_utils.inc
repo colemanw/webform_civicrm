@@ -1142,26 +1142,56 @@ function webform_civicrm_required_contact_fields() {
  * Maybe someday this will be possible through the CiviCRM API
  */
 function webform_civicrm_activity_find($params) {
-  $cid = webform_civicrm_aval($params, 'contact_id');
-  unset($params['contact_id']);
-  $sql = 'SELECT civicrm_activity.id FROM civicrm_activity';
-  if (!empty($params['case_id'])) {
-    $sql .= ' INNER JOIN civicrm_case_activity ON civicrm_activity.id = civicrm_case_activity.activity_id';
-  }
-  $sql .= " WHERE is_current_revision = 1 AND is_deleted = 0";
-  if ($cid) {
-    $sql .= " AND (civicrm_activity.id IN (SELECT activity_id FROM civicrm_activity_target WHERE target_contact_id = $cid) OR source_contact_id = $cid)";
-  }
-  foreach ($params as $field => $value) {
-    if ($value && is_array($value)) {
-      $sql .= " AND $field IN (" . implode(',', $value) . ")";
+  if (!empty($params['status_id'])) {
+    $cid = webform_civicrm_aval($params, 'contact_id');
+    unset($params['contact_id']);
+    $sql = 'SELECT civicrm_activity.id FROM civicrm_activity';
+    if (!empty($params['case_id'])) {
+      $sql .= ' INNER JOIN civicrm_case_activity ON civicrm_activity.id = civicrm_case_activity.activity_id';
     }
-    elseif ($value) {
-      $sql .= " AND $field = $value";
+    $sql .= " WHERE is_current_revision = 1 AND is_deleted = 0";
+    if ($cid) {
+      $sql .= " AND (civicrm_activity.id IN (SELECT activity_id FROM civicrm_activity_target WHERE target_contact_id = $cid) OR source_contact_id = $cid)";
+    }
+    foreach ($params as $field => $value) {
+      if ($value && is_array($value)) {
+        $sql .= " AND $field IN (" . implode(',', $value) . ")";
+      }
+      elseif ($value) {
+        $sql .= " AND $field = $value";
+      }
+    }
+    $sql .= ' LIMIT 0, 1';
+    return CRM_Core_DAO::singleValueQuery($sql);
+  }
+}
+
+/**
+ * Fetch an existing case for client(s)
+ * Based on status_id and case_type_id
+ * @param $params: Array of case info in standard webform_civicrm format
+ * @param $ids: Passed if client id refers to a contact number and not a contact id
+ */
+function webform_civicrm_case_find($params, $ids = NULL) {
+  foreach ((array) $params['case'][1]['client_id'] as $client_id) {
+    if ($ids !== NULL) {
+      $client_id = webform_civicrm_aval($ids, "cid:$client_id");
+    }
+    if ($client_id) {
+      $result = webform_civicrm_api('case', 'get', array('client_id' => $client_id));
+      foreach (webform_civicrm_aval($result, 'values', array()) as $case) {
+        if (empty($case['is_deleted']) && in_array($case['status_id'], $params['existing_case_status'])) {
+          $case_types = $case['case_type_id'];
+          if (is_string($case_types)) {
+            $case_types = explode(',', $case_types);
+          }
+          if (in_array($params['case'][1]['case_type_id'], $case_types)) {
+            return $case;
+          }
+        }
+      }
     }
   }
-  $sql .= ' LIMIT 0, 1';
-  return CRM_Core_DAO::singleValueQuery($sql);
 }
 
 /**
