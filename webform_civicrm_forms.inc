@@ -584,10 +584,14 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
     foreach ($data['contact'] as $c => $contact) {
       if (empty($id['cid'][$c])) {
         // Don't create contact if we don't have a name or email
-        $ok = FALSE;
+        $ok = $has_name = FALSE;
         foreach (webform_civicrm_required_contact_fields() as $f) {
           if (!empty($contact[$f['table']][1][$f['name']])) {
             $ok = TRUE;
+            if ($f['table'] == 'contact') {
+              $has_name = TRUE;
+              break;
+            }
           }
         }
         if (!$ok) {
@@ -638,6 +642,10 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       if (empty($id['cid'][$c])) {
         unset($params['contact_id']);
         $params['source'] = $settings['new_contact_source'];
+        // If creating contact with no name, set email as display name
+        if (!$has_name) {
+          $params['display_name'] = $contact['email'][1]['email'];
+        }
         $result = webform_civicrm_api('contact', 'create', $params);
         if (!empty($result['id'])) {
           $id['cid'][$c] = $result['id'];
