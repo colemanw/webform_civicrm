@@ -445,7 +445,7 @@ function webform_civicrm_fill_form(&$elements, $node, $data = array(), $submitte
           $element['#default_value'] = $val;
         }
         if ($name == 'existing') {
-          webform_civicrm_fill_contact_value($node, $component, &$element);
+          webform_civicrm_fill_contact_value($node, $component, $element);
         }
       }
     }
