@@ -582,16 +582,13 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
     }
     // Create/update contacts
     foreach ($data['contact'] as $c => $contact) {
+      $contact_type = $contact['contact'][1]['contact_type'];
       if (empty($id['cid'][$c])) {
         // Don't create contact if we don't have a name or email
-        $ok = $has_name = FALSE;
-        foreach (webform_civicrm_required_contact_fields() as $f) {
+        $ok = FALSE;
+        foreach (webform_civicrm_required_contact_fields($contact_type) as $f) {
           if (!empty($contact[$f['table']][1][$f['name']])) {
             $ok = TRUE;
-            if ($f['table'] == 'contact') {
-              $has_name = TRUE;
-              break;
-            }
           }
         }
         if (!$ok) {
@@ -627,7 +624,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
             }
           }
         }
-        if ($dupes = CRM_Dedupe_Finder::dupesByParams($params, ucfirst($contact['contact'][1]['contact_type']))) {
+        if ($dupes = CRM_Dedupe_Finder::dupesByParams($params, ucfirst($contact_type))) {
           $id['cid'][$c] = $dupes[0];
         }
       }
@@ -636,15 +633,17 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       // Current employer must wait for ContactRef ids to be filled
       unset($params['employer_id']);
 
-      $params['contact_type'] = ucfirst($params['contact_type']);
+      // CiviCRM API is too picky about this, imho
+      $params['contact_type'] = ucfirst($contact_type);
 
       // Create new contact
       if (empty($id['cid'][$c])) {
         unset($params['contact_id']);
         $params['source'] = $settings['new_contact_source'];
-        // If creating contact with no name, set email as display name
-        if (!$has_name) {
-          $params['display_name'] = $contact['email'][1]['email'];
+        // If creating individual with no first/last name,
+        // set display name to avoid API mandatory fields error
+        if ($contact_type == 'individual' && empty($params['first_name']) && empty($params['last_name'])) {
+          $params['display_name'] = empty($params['nick_name']) ? $contact['email'][1]['email'] : $params['nick_name'];
         }
         $result = webform_civicrm_api('contact', 'create', $params);
         if (!empty($result['id'])) {
@@ -726,10 +725,10 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         continue;
       }
       // Save current employer
-      if (!empty($contact['contact'][1]['employer_id'])) {
+      if ($contact_type == 'individual' && !empty($contact['contact'][1]['employer_id'])) {
         webform_civicrm_api('contact', 'create', array(
           'contact_id' => $cid,
-          'contact_type' => ucfirst($contact['contact'][1]['contact_type']),
+          'contact_type' => 'Individual',
           'employer_id' => $contact['contact'][1]['employer_id'],
         ));
       }
@@ -1296,13 +1295,13 @@ function _webform_civicrm_participant_validate($form, &$form_state, $submitted) 
   $data = $form['#node']->webform_civicrm['data'];
   $contacts = $cids = array();
   // Check how many valid contacts we have
-  foreach (array_keys($data['contact']) as $c) {
+  foreach ($data['contact'] as $c => $contact) {
     // Check if we have a contact_id
     if (!empty($submitted["civicrm_{$c}_contact_1_contact_existing"])) {
       $cids[] = $contacts[$c] = $submitted["civicrm_{$c}_contact_1_contact_existing"];
     }
     // Or else see if enough info was entered to create a contact
-    elseif (webform_civicrm_name_field_exists($submitted, $c)) {
+    elseif (webform_civicrm_name_field_exists($submitted, $c, $contact['contact'][1]['contact_type'])) {
       $contacts[$c] = 0;
     }
   }

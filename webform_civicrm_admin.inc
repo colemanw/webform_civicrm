@@ -870,7 +870,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
   // Update existing contact fields
   foreach ($existing as $fid => $id) {
     if (substr($fid, -8) === 'existing') {
-      webform_civicrm_existing_component_update($node->webform['components'][$id], $enabled);
+      webform_civicrm_existing_component_update($node->webform['components'][$id], $enabled, $vals['data']);
     }
   }
   // Make sure the webform is updated for anonymous users.
@@ -1127,6 +1127,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
  */
 function webform_civicrm_component_insert(&$field, &$enabled, $settings) {
   list(, $c, $ent, $n, $table, $name) = explode('_', $field['form_key'], 6);
+  $contact_type = $settings['data']['contact'][$c]['contact'][1]['contact_type'];
   // Replace the # token with set number (or append to the end if no token)
   if ($n > 1 || $table == 'relationship') {
     if (strpos($field['name'], '#') === FALSE) {
@@ -1141,13 +1142,13 @@ function webform_civicrm_component_insert(&$field, &$enabled, $settings) {
   }
   if ($name == 'contact_sub_type') {
     list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
-    $field['name'] .= ' ' . $contact_types[$settings['data']['contact'][$c]['contact'][1]['contact_type']];
+    $field['name'] .= ' ' . $contact_types[$contact_type];
   }
   // Defaults for existing contact field
   if ($name == 'existing') {
     $vals = $enabled + $settings;
     // Set the allow_create flag based on presence of name or email fields
-    $field['extra']['allow_create'] = $a = webform_civicrm_name_field_exists($vals, $c);
+    $field['extra']['allow_create'] = $a = webform_civicrm_name_field_exists($vals, $c, $contact_type);
     $field['extra']['none_prompt'] = $a ? t('+ Create new contact +') : t('- None Found -');
     if ($c == 1) {
       // Default to hidden field for 1st contact

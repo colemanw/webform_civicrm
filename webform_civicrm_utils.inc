@@ -1127,14 +1127,32 @@ function webform_civicrm_api($entity, $operation, $params) {
 }
 
 /**
+ * Check if a name or email field exists for this contact.
+ * This determines whether a new contact can be created on the webform.
+ */
+function webform_civicrm_name_field_exists($enabled, $c, $contact_type) {
+  foreach (webform_civicrm_required_contact_fields($contact_type) as $f) {
+    $fid = 'civicrm_' . $c . '_contact_1_' . $f['table'] . '_' . $f['name'];
+    if (!empty($enabled[$fid])) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/**
  * At least one of these fields is required to create a contact
  */
-function webform_civicrm_required_contact_fields() {
-  $ret = array(array('table' => 'email', 'name' => 'email'));
-  foreach (array('first', 'nick', 'last', 'organization', 'household', 'legal') as $name) {
-    $ret[] = array('table' => 'contact', 'name' => $name . '_name');
+function webform_civicrm_required_contact_fields($contact_type) {
+  if ($contact_type == 'individual') {
+    return array(
+      array('table' => 'email', 'name' => 'email'),
+      array('table' => 'contact', 'name' => 'first_name'),
+      array('table' => 'contact', 'name' => 'last_name'),
+      array('table' => 'contact', 'name' => 'nick_name'),
+    );
   }
-  return $ret;
+  return array(array('table' => 'contact', 'name' => $contact_type . '_name'));
 }
 
 /**
@@ -1223,20 +1241,6 @@ function webform_civicrm_event_info(&$events) {
     }
     $dao->free();
   }
-}
-
-/**
- * Check if a name or email field exists for this contact.
- * This determines whether a new contact can be created on the webform.
- */
-function webform_civicrm_name_field_exists($enabled, $c) {
-  foreach (webform_civicrm_required_contact_fields() as $f) {
-    $fid = 'civicrm_' . $c . '_contact_1_' . $f['table'] . '_' . $f['name'];
-    if (!empty($enabled[$fid])) {
-      return 1;
-    }
-  }
-  return 0;
 }
 
 /**
