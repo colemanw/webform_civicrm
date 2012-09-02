@@ -894,7 +894,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
       webform_civicrm_existing_component_update($node->webform['components'][$id], $enabled, $vals['data']);
     }
   }
-  // Make sure the webform is updated for anonymous users.
+  // Make sure the updates are visible to anonymous users.
   cache_clear_all();
 
   // Clear the entity cache.
@@ -955,6 +955,8 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
       }
 
       // Interface similar to options_element
+      // but with the important difference that options already exist in the civi db
+      // so this interface does not allow create/delete of options
       elseif (($element['type'] === 'hidden' || $element['type'] === 'select') && webform_civicrm_get_list($table, $name)) {
         $form['#attached']['js'] = array(drupal_get_path('module', 'webform_civicrm') . '/' . 'webform_civicrm_options.js');
         $options = $sort = webform_civicrm_field_options($element, 'component_edit', $node->webform_civicrm['data']);
@@ -1494,7 +1496,7 @@ function theme_webform_civicrm_components_form($variables) {
         $fields = webform_civicrm_get_fields();
         $sets = webform_civicrm_get_fields('sets');
         $class = 'civi-icon';
-        $title = '';
+        $title = $clone = '';
         list( , $c, $ent, $n, $table, $name) = explode('_', $component['form_key'], 6);
         $field = webform_civicrm_aval($fields, $table . '_' . $name, array('type' => 'fieldset'));
         if ($component['type'] == 'fieldset') {
@@ -1584,7 +1586,7 @@ function theme_webform_civicrm_components_form($variables) {
         drupal_render($form['components'][$cid]['mandatory']),
         drupal_render($form['components'][$cid]['cid']) . drupal_render($form['components'][$cid]['pid']) . drupal_render($form['components'][$cid]['weight']),
         l(t('Edit'), 'node/' . $node->nid . '/webform/components/' . $cid),
-        l($clone, 'node/' . $node->nid . '/webform/components/' . $cid . '/clone', $options),
+        $clone ? l($clone, 'node/' . $node->nid . '/webform/components/' . $cid . '/clone', $options) : ' ',
         l(t('Delete'), 'node/' . $node->nid . '/webform/components/' . $cid . '/delete'),
       );
       $row_class = array('draggable');
