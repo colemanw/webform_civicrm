@@ -725,7 +725,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         continue;
       }
       // Save current employer
-      if ($contact_type == 'individual' && !empty($contact['contact'][1]['employer_id'])) {
+      if ($contact['contact'][1]['contact_type'] == 'individual' && !empty($contact['contact'][1]['employer_id'])) {
         webform_civicrm_api('contact', 'create', array(
           'contact_id' => $cid,
           'contact_type' => 'Individual',
