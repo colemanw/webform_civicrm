@@ -391,7 +391,7 @@ function webform_civicrm_save_custom($entity, $entity_id, $entity_type = NULL) {
  * Get ids or values of enabled CiviCRM fields for a webform.
  * @Param $node: node object
  * @Param $submission: if supplied, will match field keys with submitted values
- * @Param $show_all: get every field even if it is not active
+ * @Param $show_all: get every field even if it belongs to a contact that does not exist
  */
 function webform_civicrm_enabled_fields($node, $submission = NULL, $show_all = FALSE) {
   $enabled = array();
