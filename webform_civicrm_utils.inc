@@ -401,8 +401,7 @@ function webform_civicrm_enabled_fields($node, $submission = NULL, $show_all = F
       $exp = explode('_', $c['form_key'], 5);
       if (count($exp) == 5) {
         list($lobo, $i, $ent, $n, $id) = $exp;
-        if ((isset($fields[$id]) || ($id == 'fieldset_fieldset' && isset($node->webform_civicrm['data']['contact'][$i])))
-        && $lobo == 'civicrm' && is_numeric($i) && is_numeric($n)) {
+        if ((isset($fields[$id]) || $id == 'fieldset_fieldset') && $lobo == 'civicrm' && is_numeric($i) && is_numeric($n)) {
           if (!$show_all && ($ent == 'contact' || $ent == 'participant') && empty($node->webform_civicrm['data']['contact'][$i])) {
             continue;
           }
