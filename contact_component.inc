@@ -38,7 +38,7 @@ function _webform_defaults_civicrm_contact() {
         'contact_sub_type' => 0,
         'group' => array(),
         'tag' => array(),
-        'check_permissions' => 0,
+        'check_permissions' => 1,
       ),
     ),
   );
