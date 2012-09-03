@@ -643,7 +643,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         // If creating individual with no first/last name,
         // set display name to avoid API mandatory fields error
         if ($contact_type == 'individual' && empty($params['first_name']) && empty($params['last_name'])) {
-          $params['display_name'] = empty($params['nick_name']) ? $contact['email'][1]['email'] : $params['nick_name'];
+          $params['display_name'] = $params['sort_name'] = empty($params['nick_name']) ? $contact['email'][1]['email'] : $params['nick_name'];
         }
         $result = webform_civicrm_api('contact', 'create', $params);
         if (!empty($result['id'])) {
