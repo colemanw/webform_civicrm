@@ -641,7 +641,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         unset($params['contact_id']);
         $params['source'] = $settings['new_contact_source'];
         // If creating individual with no first/last name,
-        // set display name to avoid API mandatory fields error
+        // set display name and sort_name
         if ($contact_type == 'individual' && empty($params['first_name']) && empty($params['last_name'])) {
           $params['display_name'] = $params['sort_name'] = empty($params['nick_name']) ? $contact['email'][1]['email'] : $params['nick_name'];
         }
