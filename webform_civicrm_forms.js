@@ -54,7 +54,7 @@ var wfCivi = (function ($, D) {
         var cid = field.attr('defaultValue');
       }
       if (!cid || cid.charAt(0) !== '-') {
-        resetFields(num, nid, false, 'hide', toHide, 0);
+        resetFields(num, nid, false, 'hide', toHide);
       }
       if (cid) {
         if (cid == field.attr('data-civicrm-id')) {
@@ -250,7 +250,7 @@ var wfCivi = (function ($, D) {
       }
 
       // Replace state/prov textboxes with dynamic select lists
-      $(':text.civicrm-enabled[name*="_address_state_province_id"]', context).each(function(){
+      $('input:text.civicrm-enabled[name*="_address_state_province_id"]', context).each(function(){
         var ele = $(this);
         var id = ele.attr('id');
         var name = ele.attr('name');
