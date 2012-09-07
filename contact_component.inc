@@ -730,11 +730,16 @@ function webform_civicrm_find_contact($node, $component, &$ids) {
 function webform_civicrm_find_relations($cid, $types, $current = TRUE) {
   $found = $allowed = array();
   $cid = (int) $cid;
+  static $employer_type = 0;
   if ($cid) {
+    if (!$employer_type && $current) {
+      $employer_type = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_relationship_type WHERE name_a_b = 'Employee of'");
+    }
     $type_ids = '';
     foreach ($types as $t) {
       list($type, $a_b) = explode('_', $t);
-      if ($type == 'ce') {
+      // Put current employer first in the list
+      if ($type == $employer_type && $current) {
         $sql = "SELECT id, employer_id
         FROM civicrm_contact
         WHERE id = $cid OR employer_id = $cid";
@@ -744,14 +749,12 @@ function webform_civicrm_find_relations($cid, $types, $current = TRUE) {
         }
         $dao->free();
       }
-      else {
-        $type_ids .= ($type_ids ? ',' : '') . $type;
-        if ($a_b == 'a' || $a_b == 'r') {
-          $allowed[] = $type . '_a';
-        }
-        if ($a_b == 'b' || $a_b == 'r') {
-          $allowed[] = $type . '_b';
-        }
+      $type_ids .= ($type_ids ? ',' : '') . $type;
+      if ($a_b == 'a' || $a_b == 'r') {
+        $allowed[] = $type . '_a';
+      }
+      if ($a_b == 'b' || $a_b == 'r') {
+        $allowed[] = $type . '_b';
       }
     }
     if ($type_ids) {
@@ -765,7 +768,8 @@ function webform_civicrm_find_relations($cid, $types, $current = TRUE) {
       while ($dao->fetch()) {
         $a_b = $dao->contact_id_a == $cid ? 'b' : 'a';
         if (in_array($dao->relationship_type_id . '_' . $a_b, $allowed)) {
-          $found[] = $dao->{"contact_id_$a_b"};
+          $c = $dao->{"contact_id_$a_b"};
+          $found[$c] = $c;
         }
       }
       $dao->free();
