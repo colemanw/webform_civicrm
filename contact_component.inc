@@ -642,12 +642,14 @@ function webform_civicrm_contact_fields($node, $con) {
  */
 function webform_civicrm_existing_component_update(&$component, $enabled, $data) {
   list(, $c, ) = explode('_', $component['form_key'], 3);
-  $contact_type = $data['contact'][$c]['contact'][1]['contact_type'];
-  $allow_create = webform_civicrm_name_field_exists($enabled, $c, $contact_type);
-  if ($allow_create != $component['extra']['allow_create']) {
-    $component['extra']['none_prompt'] = $allow_create ? t('+ Create new contact +') : t('- None Found -');
-    $component['extra']['allow_create'] = $allow_create;
-    webform_component_update($component);
+  if (!empty($data['contact'][$c])) {
+    $contact_type = $data['contact'][$c]['contact'][1]['contact_type'];
+    $allow_create = webform_civicrm_name_field_exists($enabled, $c, $contact_type);
+    if ($allow_create != $component['extra']['allow_create']) {
+      $component['extra']['none_prompt'] = $allow_create ? t('+ Create new contact +') : t('- None Found -');
+      $component['extra']['allow_create'] = $allow_create;
+      webform_component_update($component);
+    }
   }
 }
 
