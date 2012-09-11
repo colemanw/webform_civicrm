@@ -454,8 +454,9 @@ function webform_civicrm_update_7300() {
   $fields = webform_civicrm_get_fields();
   $db = db_query("SELECT * FROM {webform_civicrm_forms}");
   foreach ($db as $form) {
-    $data = unserialize($form->data);
     $form = (array) $form;
+    $form['data'] = unserialize($form['data']);
+    $data = &$form['data'];
     $node = node_load($form['nid']);
     $enabled = webform_civicrm_enabled_fields($node);
     // Add existing contact field
@@ -633,8 +634,6 @@ function webform_civicrm_update_7300() {
         webform_component_update($field);
       }
     }
-
-    $form['data'] = $data;
     drupal_write_record('webform_civicrm_forms', $form, 'nid');
   }
   db_drop_field('webform_civicrm_forms', 'contact_matching');

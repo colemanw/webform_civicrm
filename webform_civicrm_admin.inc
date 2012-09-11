@@ -818,7 +818,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
 
   // Disable CiviCRM for this form
   if (!$vals['nid']) {
-    webform_civicrm_disable($nid);
+    wf_crm_disable($nid);
     drupal_set_message(t('CiviCRM processing for this form is now disabled.'));
   }
 
@@ -1397,7 +1397,7 @@ function webform_civicrm_ajax_form_item(&$form, $pathstr, $control_element, $con
 /**
  * Delete civicrm settings for a webform.
  */
-function webform_civicrm_disable($nid) {
+function wf_crm_disable($nid) {
   db_delete('webform_civicrm_forms')
     ->condition('nid', $nid)
     ->execute();
