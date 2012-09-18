@@ -599,7 +599,7 @@ function webform_civicrm_autocomplete_access($node, $fid) {
 function webform_civicrm_contact_access($component, $filters, $cid) {
   // Create new contact doesn't require lookup
   $cid = "$cid";
-  if ($cid[0] === '-' && !empty($component['extra']['allow_create']) && !empty($component['extra']['none_prompt'])) {
+  if ($cid && $cid[0] === '-' && !empty($component['extra']['allow_create']) && !empty($component['extra']['none_prompt'])) {
     return $component['extra']['none_prompt'];
   }
   if (!is_numeric($cid)) {
