@@ -24,6 +24,7 @@ form .webform-container-inline ul.token-input-list {
 
 form ul.token-input-list li {
     list-style-type: none;
+    list-style-image: none;
 }
 
 form ul.token-input-list li input {
