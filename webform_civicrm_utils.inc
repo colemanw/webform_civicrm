@@ -1010,9 +1010,16 @@ function webform_civicrm_get_fields($var = 'fields') {
  * With no arguments passed in, this function will return the contact_id of the current logged-in user
  */
 function webform_civicrm_user_cid($id = NULL, $type = 'uf') {
+  static $current_user = NULL;
   if (!$id) {
+    if ($current_user !== NULL) {
+      return $current_user;
+    }
     global $user;
-    $id = $user->uid;
+    $id = $user_lookup = $user->uid;
+  }
+  if (!$id || !is_numeric($id)) {
+    return NULL;
   }
   // Lookup current domain for multisite support
   static $domain = 0;
@@ -1026,6 +1033,9 @@ function webform_civicrm_user_cid($id = NULL, $type = 'uf') {
       if ($val['domain_id'] == $domain) {
         break;
       }
+    }
+    if (!empty($user_lookup)) {
+      $current_user = $val['contact_id'];
     }
     return $type == 'uf' ? $val['contact_id'] : $val['uf_id'];
   }

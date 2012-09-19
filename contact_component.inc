@@ -608,6 +608,10 @@ function webform_civicrm_contact_access($component, $filters, $cid) {
   $filters['id'] = $cid;
   $filters['is_deleted'] = 0;
   $filters['return.display_name'] = 1;
+  // A contact always has permission to view self
+  if ($cid == webform_civicrm_user_cid()) {
+    $filters['check_permissions'] = FALSE;
+  }
   // Fetch contact name with filters applied
   $result = webform_civicrm_api('contact', 'get', $filters);
   return webform_civicrm_aval($result, 'values:' . $cid . ':display_name', FALSE, TRUE);
