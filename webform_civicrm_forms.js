@@ -282,7 +282,7 @@ var wfCivi = (function ($, D) {
 
       // Show/hide address fields when sharing an address
       $('form.webform-client-form .civicrm-enabled[name*="_address_master_id"]').once('civicrm').change(function(){
-        if ($(this).val() === '' || ($(this).is(':checkbox:not(:checked)'))) {
+        if ($(this).val() === '' || ($(this).is('input:checkbox:not(:checked)'))) {
           sharedAddress(this, 'show', 500);
         }
         else {
