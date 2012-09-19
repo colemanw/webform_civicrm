@@ -453,7 +453,7 @@ function webform_civicrm_get_fields($var = 'fields') {
     $config = CRM_Core_Config::singleton();
     $components = $config->enableComponents;
 
-    // key: table_field_name (table can be a * wildcard)
+    // key: table_fieldname (table can be a * wildcard)
     // value: name of civicrm_option_group
     $lists = array(
       'contact_contact_sub_type' => 'contact_sub_type',
