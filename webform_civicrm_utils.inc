@@ -484,6 +484,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'case_medium_id' => 'encounter_medium',
       'participant_event_id' => 'event',
       'participant_role_id' => 'participant_role',
+      'participant_status_id' => 'participant_status',
       '*_campaign_id' => 'campaign',
     );
 
