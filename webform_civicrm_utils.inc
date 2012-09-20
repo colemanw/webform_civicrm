@@ -93,7 +93,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
         $sql .= '(SELECT id FROM civicrm_option_group WHERE name = %1)';
         $vars[1] = array($option_group, 'String');
       }
-      // Exclude reserved activity types
+      // Exclude component activity types
       if ($option_group == 'activity_type') {
         $sql .= ' AND (component_id IS NULL' . ($param ? " OR component_id IN ($param))" : ') ORDER BY label');
       }

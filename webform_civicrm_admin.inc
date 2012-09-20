@@ -269,7 +269,6 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#maxlength' => 255,
     '#description' => t('Enclose your "not you" link text in curly brackets {like this}.') . '<p>' . $tokens . '</p>',
   );
-
   // Case and activity settings
   $case_enabled = in_array('CiviCase', $config->enableComponents, TRUE) && ($case_types = webform_civicrm_get_options('case_type'));
   $form['act'] = array(
@@ -308,7 +307,12 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     $act_types = $case_info->get($case_type_name, 'ActivityTypes');
   }
   else {
-    $act_types = webform_civicrm_get_options('activity_type');
+    $param = NULL;
+    // Include campaign types
+    if (in_array('CiviCampaign', $config->enableComponents, TRUE)) {
+      $param = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_component WHERE name = 'CiviCampaign'");
+    }
+    $act_types = webform_civicrm_get_options('activity_type', $param);
   }
   $form['act']['case']['activity_type_id'] = array(
     '#type' => 'select',
