@@ -1007,18 +1007,23 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
           $id['case'][1] = $case['id'];
         }
       }
-      // Save case
-      if (empty($id['case'][1])) {
+      // Default subject
+      if (empty($id['case'][1]) && empty($data['case'][1]['case'][1]['subject'])) {
         $data['case'][1]['case'][1]['subject'] = check_plain($node->title);
       }
-      else {
+      if (!empty($id['case'][1])) {
         $data['case'][1]['case'][1]['id'] = $id['case'][1];
         unset($data['case'][1]['case'][1]['creator_id'], $data['case'][1]['case'][1]['case_type_id']);
       }
+      // Save case
       $result = webform_civicrm_api('case', 'create', $data['case'][1]['case'][1]);
-      if (!empty($result['values']['id'])) {
-        webform_civicrm_save_custom($data['case'][1], $result['values']['id'], 'Case');
-        $id['case'][1] = $result['values']['id'];
+      // Legacy API cruft - TODO: remove these 3 lines when dropping Civi 4.2 support
+      if (!empty($result['values']['id']) && empty($result['id'])) {
+        $result['id'] = $result['values']['id'];
+      }
+      if (!empty($result['id'])) {
+        webform_civicrm_save_custom($data['case'][1], $result['id'], 'Case');
+        $id['case'][1] = $result['id'];
       }
     }
     // Process activity
