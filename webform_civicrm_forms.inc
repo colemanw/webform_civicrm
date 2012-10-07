@@ -687,38 +687,8 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       }
     }
     // Fill ContactRef fields with contact IDs
-    foreach (array('contact', 'participant', 'activity', 'case') as $ent) {
-      foreach (webform_civicrm_aval($data, $ent, array()) as $c => $v1) {
-        if (is_array($v1) && is_numeric($c)) {
-          foreach ($v1 as $table => $v2) {
-            if (is_array($v2)) {
-              foreach ($v2 as $n => $v3) {
-                if (is_array($v3) && is_numeric($n)) {
-                  foreach ($v3 as $name => $val) {
-                    if ($val && webform_civicrm_aval($fields, "{$table}_$name:data_type") === 'ContactReference') {
-                      if (is_array($val)) {
-                        $data[$ent][$c][$table][$n][$name] = array();
-                        foreach ($val as $k => $v) {
-                          if (is_numeric($v) && !empty($id['cid'][$v])) {
-                            $data[$ent][$c][$table][$n][$name][] = $id['cid'][$v];
-                          }
-                        }
-                      }
-                      else {
-                        unset($data[$ent][$c][$table][$n][$name]);
-                        if (!empty($id['cid'][$val])) {
-                          $data[$ent][$c][$table][$n][$name] = $id['cid'][$val];
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+    webform_civicrm_fill_contact_ref($data, $data, $id['cid'], 0);
+
     // Create/update other data associated with contacts
     foreach ($data['contact'] as $c => $contact) {
       if (!($cid = $id['cid'][$c])) {
@@ -1376,6 +1346,42 @@ function _webform_civicrm_participant_validate($form, &$form_state, $submitted) 
           'Sorry, you tried to register !count people for %event but there is only 1 space remaining.',
           'Sorry, you tried to register !count people for %event but there are only @count spaces remaining.',
           array('%event' => $event['title'], '!count' => $event['count'])));
+      }
+    }
+  }
+}
+
+/**
+ * Recursive function to fill ContactRef fields with contact IDs
+ */
+function webform_civicrm_fill_contact_ref(&$data, $values, $cids, $depth) {
+  $order = array('ent', 'c', 'table', 'n', 'name');
+  static $ent = '';
+  static $c = '';
+  static $table = '';
+  static $n = '';
+  foreach ($values as $key => $val) {
+    ${$order[$depth]} = $key;
+    if ($depth < 4 && is_array($val)) {
+      webform_civicrm_fill_contact_ref($data, $val, $cids, $depth + 1);
+    }
+    elseif ($depth == 4 && $val) {
+      $fields = webform_civicrm_get_fields();
+      if (webform_civicrm_aval($fields, "{$table}_$name:data_type") === 'ContactReference') {
+        if (is_array($val)) {
+          $data[$ent][$c][$table][$n][$name] = array();
+          foreach ($val as $k => $v) {
+            if (is_numeric($v) && !empty($cids[$v])) {
+              $data[$ent][$c][$table][$n][$name][] = $cids[$v];
+            }
+          }
+        }
+        else {
+          unset($data[$ent][$c][$table][$n][$name]);
+          if (!empty($cids[$val])) {
+            $data[$ent][$c][$table][$n][$name] = $cids[$val];
+          }
+        }
       }
     }
   }
