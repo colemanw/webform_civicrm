@@ -687,7 +687,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       }
     }
     // Fill ContactRef fields with contact IDs
-    webform_civicrm_fill_contact_ref($data, $data, $id['cid'], 0);
+    webform_civicrm_fill_contact_ref($data, $data, $id['cid']);
 
     // Create/update other data associated with contacts
     foreach ($data['contact'] as $c => $contact) {
@@ -841,20 +841,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
       if (!empty($contact['relationship'])) {
         foreach ($contact['relationship'] as $i => $params) {
           if (!empty($params['relationship_type_id']) && !empty($id['cid'][$i])) {
-            list($type, $a_b) = explode('_', $params['relationship_type_id']);
-            $a_b = $a_b == 'r' ? 'a' : $a_b;
-            $b_a = $a_b == 'a' ? 'b' : 'a';
-            $params['contact_id_' . $a_b] = $cid;
-            $params['contact_id_' . $b_a] = $id['cid'][$i];
-            $params['relationship_type_id'] = $type;
-            if ($perm = webform_civicrm_aval($params, 'relationship_permission')) {
-              $params['is_permission_a_b'] = $params['is_permission_b_a'] = $perm == 3 ? 1 : 0;
-              if ($perm == 1 || $perm == 2) {
-                $params['is_permission_' . ($perm == 1 ? $a_b . '_' . $b_a : $b_a . '_' . $a_b)] = 1;
-              }
-            }
-            unset($params['relationship_permission']);
-            webform_civicrm_api('relationship', 'create', $params);
+            webform_civicrm_process_relationship($params, $cid, $id['cid'][$i]);
           }
         }
       }
@@ -1186,7 +1173,7 @@ function webform_civicrm_add_remove($data_type, $entity_type, $node, $id, $add, 
 }
 
 /**
- * For a given field, determine which options exist on the webform.
+ * For a given field, find the options that are exposed to the webform.
  */
 function webform_civicrm_exposed_options($node, $fid, $exclude = array()) {
   if ($fid) {
@@ -1353,8 +1340,9 @@ function _webform_civicrm_participant_validate($form, &$form_state, $submitted) 
 
 /**
  * Recursive function to fill ContactRef fields with contact IDs
+ * Called during webform submission
  */
-function webform_civicrm_fill_contact_ref(&$data, $values, $cids, $depth) {
+function webform_civicrm_fill_contact_ref(&$data, $values, $cids, $depth = 0) {
   $order = array('ent', 'c', 'table', 'n', 'name');
   static $ent = '';
   static $c = '';
@@ -1384,6 +1372,52 @@ function webform_civicrm_fill_contact_ref(&$data, $values, $cids, $depth) {
         }
       }
     }
+  }
+}
+
+/**
+ * Dispatch function to add/update relationship for a pair of contacts
+ * Called during webform submission
+ */
+function webform_civicrm_process_relationship($params, $cid1, $cid2) {
+  if ($cid1 != $cid2) {
+    list($type, $side) = explode('_', $params['relationship_type_id']);
+    $a = $side == 'r' ? 'a' : $side;
+    $b = $a == 'a' ? 'b' : 'a';
+    $sql = "SELECT * FROM civicrm_relationship
+      WHERE relationship_type_id = $type
+      AND ((contact_id_$a = $cid1 AND contact_id_$b = $cid2)";
+    if ($side == 'r') {
+      $sql .= " OR (contact_id_$a = $cid2 AND contact_id_$b = $cid1)";
+    }
+    $sql .= ") LIMIT 1";
+    $dao = CRM_Core_DAO::executeQuery($sql);
+    if ($dao->fetch()) {
+      foreach ((array) $dao as $k => $v) {
+        if ($k[0] != '_' && $k != 'N' && !isset($params[$k])) {
+          $params[$k] = $v;
+        }
+      }
+      // Swap if reciprocal relationship is saved the other way in the db
+      if ($side == 'r' && $params["contact_id_$a"] != $cid1) {
+        list($a, $b) = array($b, $a);
+      }
+    }
+    else {
+      $params["contact_id_$a"] = $cid1;
+      $params["contact_id_$b"] = $cid2;
+    }
+    $dao->free();
+    $params['relationship_type_id'] = $type;
+    if (!empty($params['relationship_permission'])) {
+      $perm = $params['relationship_permission'];
+      $params['is_permission_a_b'] = $params['is_permission_b_a'] = $perm == 3 ? 1 : 0;
+      if ($perm == 1 || $perm == 2) {
+        $params['is_permission_' . ($perm == 1 ? $a . '_' . $b : $b . '_' . $a)] = 1;
+      }
+    }
+    unset($params['relationship_permission']);
+    webform_civicrm_api('relationship', 'create', $params);
   }
 }
 
