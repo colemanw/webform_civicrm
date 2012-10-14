@@ -1382,13 +1382,15 @@ function webform_civicrm_fill_contact_ref(&$data, $values, $cids, $depth = 0) {
 function webform_civicrm_process_relationship($params, $cid1, $cid2) {
   if ($cid1 != $cid2) {
     list($type, $side) = explode('_', $params['relationship_type_id']);
-    $a = $side == 'r' ? 'a' : $side;
-    $b = $a == 'a' ? 'b' : 'a';
+    // Swap contacts if this is an inverse relationship
+    if ($side == 'b') {
+      list($cid1, $cid2) = array($cid2, $cid1);
+    }
     $sql = "SELECT * FROM civicrm_relationship
       WHERE relationship_type_id = $type
-      AND ((contact_id_$a = $cid1 AND contact_id_$b = $cid2)";
+      AND ((contact_id_a = $cid1 AND contact_id_b = $cid2)";
     if ($side == 'r') {
-      $sql .= " OR (contact_id_$a = $cid2 AND contact_id_$b = $cid1)";
+      $sql .= " OR (contact_id_a = $cid2 AND contact_id_b = $cid1)";
     }
     $sql .= ") LIMIT 1";
     $dao = CRM_Core_DAO::executeQuery($sql);
@@ -1398,14 +1400,14 @@ function webform_civicrm_process_relationship($params, $cid1, $cid2) {
           $params[$k] = $v;
         }
       }
-      // Swap if reciprocal relationship is saved the other way in the db
-      if ($side == 'r' && $params["contact_id_$a"] != $cid1) {
-        list($a, $b) = array($b, $a);
+      // Swap contacts if reciprocal relationship is saved the other way in the db
+      if ($side == 'r' && $params['contact_id_a'] != $cid1) {
+        list($cid1, $cid2) = array($cid2, $cid1);
       }
     }
     else {
-      $params["contact_id_$a"] = $cid1;
-      $params["contact_id_$b"] = $cid2;
+      $params['contact_id_a'] = $cid1;
+      $params['contact_id_b'] = $cid2;
     }
     $dao->free();
     $params['relationship_type_id'] = $type;
@@ -1413,7 +1415,7 @@ function webform_civicrm_process_relationship($params, $cid1, $cid2) {
       $perm = $params['relationship_permission'];
       $params['is_permission_a_b'] = $params['is_permission_b_a'] = $perm == 3 ? 1 : 0;
       if ($perm == 1 || $perm == 2) {
-        $params['is_permission_' . ($perm == 1 ? $a . '_' . $b : $b . '_' . $a)] = 1;
+        $params['is_permission_' . ($perm == 1 ? 'a_b' : 'b_a')] = 1;
       }
     }
     unset($params['relationship_permission']);
