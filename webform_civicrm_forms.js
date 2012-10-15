@@ -37,7 +37,10 @@ var wfCivi = (function ($, D) {
     resetFields(num, nid, true, 'hide', toHide, 500);
     if (cid && fetch) {
       $('#webform-client-form-'+nid).addClass('contact-loading');
-      $.get(path, {cid: cid, load: 'full'}, function(data) {
+      var params = getCids(nid);
+      params.load = 'full';
+      params.cid = cid;
+      $.get(path, params, function(data) {
         fillValues(data, nid);
         $('#webform-client-form-'+nid).removeClass('contact-loading');
       }, 'json');
@@ -239,6 +242,18 @@ var wfCivi = (function ($, D) {
       $(stateSelect).val('');
       populateStates(stateSelect, countryId, stateVal);
     }
+  }
+
+  function getCids(nid) {
+    var cids = $('#webform-client-form-'+nid).data('civicrm-ids') || {};
+    $('#webform-client-form-'+nid+' .civicrm-enabled:input[name$="_contact_1_contact_existing]"]').each(function() {
+      var cid = $(this).val();
+      if (cid) {
+        var n = parseName($(this).attr('name')).split('_');
+        cids['cid' + n[1]] = cid;
+      }
+    });
+    return cids;
   }
 
   D.behaviors.webform_civicrmForm = {

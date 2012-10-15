@@ -549,7 +549,14 @@ function webform_civicrm_js_options($key, $input = '') {
         module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
         $enabled = webform_civicrm_enabled_fields($node);
         list(, $c, ) = explode('_', $component['form_key'], 3);
-        $contact = webform_civicrm_contact_get($node, $enabled, $c, $_GET['cid'], $component['extra']['hide_fields']);
+        $cids = array();
+        foreach ($_GET as $k => $v) {
+          if (substr($k, 0, 3) == 'cid' && $v && is_numeric($v)) {
+            $cids[substr($k, 3)] = (int) $v;
+          }
+          $cids[$n] = (int) $_GET['cid'];
+        }
+        $contact = webform_civicrm_contact_get($node, $enabled, $c, $cids, $component['extra']['hide_fields']);
         // Flatten data into simple form keys & values
         foreach ($enabled as $fid => $f) {
           list(, $i, $ent, $n, $table, $field) = explode('_', $fid, 6);

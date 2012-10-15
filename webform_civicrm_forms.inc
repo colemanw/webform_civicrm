@@ -41,6 +41,19 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       break;
     }
   }
+  $enabled = webform_civicrm_enabled_fields($node);
+  // Keep track of cids across multipage forms
+  if (!empty($form_state['values']['submitted']) && webform_civicrm_aval($form_state, 'webform:page_count') > 1) {
+    foreach ($enabled as $k => $v) {
+      if (substr($k, -8) == 'existing' && !empty($form_state['values']['submitted'][$v])) {
+        list(, $c) = explode('_', $k);
+        $cid_data["cid$c"] = $form_state['values']['submitted'][$v];
+      }
+    }
+    if (!empty($cid_data)) {
+      $form['#attributes']['data-civicrm-ids'] = json_encode($cid_data);
+    }
+  }
   // Early return if the form (or page) was already submitted
   if (webform_civicrm_aval($form_state, 'triggering_element:#id') == 'edit-previous'
   || (empty($form_state['rebuild']) && !empty($form_state['storage']))) {
@@ -59,7 +72,6 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
     webform_civicrm_fill_form($form['submitted'], $node, $info);
     return;
   }
-  $enabled = webform_civicrm_enabled_fields($node);
   // If this form is already in-process, IDs will be stored
   if (!empty($form_state['civicrm'])) {
     $id = $form_state['civicrm']['id'];
@@ -222,7 +234,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   foreach ($data['contact'] as $c => $contact) {
     if ($cid = webform_civicrm_aval($id['cid'], $c)) {
       // Retrieve contact data
-      $info['contact'][$c] = webform_civicrm_contact_get($node, $enabled, $c, $cid);
+      $info['contact'][$c] = webform_civicrm_contact_get($node, $enabled, $c, $id['cid']);
       $info['contact'][$c]['contact'][1]['existing'] = $cid;
       // Retrieve participant data
       if ($events && ($c == 1 || $data['participant_reg_type'] == 'separate')) {
@@ -276,9 +288,11 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
  * Fetch all relevant data for a given contact
  * Used to load contacts for pre-filling a webform, and also to fill in a contact via ajax
  */
-function webform_civicrm_contact_get($node, $enabled, $c, $cid, $exclude = array()) {
+function webform_civicrm_contact_get($node, $enabled, $c, $cids, $exclude = array()) {
   $info = array();
-  $contact = $node->webform_civicrm['data']['contact'][$c];
+  $cid = $cids[$c];
+  $data = $node->webform_civicrm['data'];
+  $contact = $data['contact'][$c];
   foreach (array('contact', 'address', 'email', 'phone', 'website') as $field) {
     if ((!empty($contact['number_of_' . $field]) && !in_array($field, $exclude)) || $field == 'contact') {
       $params = array('contact_id' => $cid);
@@ -351,6 +365,38 @@ function webform_civicrm_contact_get($node, $enabled, $c, $cid, $exclude = array
         }
         foreach (webform_civicrm_aval($api[$ent], 'values') as $val) {
           $info['other'][1][$field][] = $val[$ent . '_id'];
+        }
+      }
+    }
+  }
+  // Retrieve relationship data
+  if (!in_array('relationship', $exclude) && !empty($contact['number_of_relationship'])) {
+    $enabled = webform_civicrm_enabled_fields($node);
+    for ($r = 1; $r <= $contact['number_of_relationship']; ++$r) {
+      if (!empty($cids[$r])) {
+        if (!empty($contact['relationship'][$r]['relationship_type_id'])) {
+          $types = array($contact['relationship'][$r]['relationship_type_id']);
+        }
+        else {
+          $types = array_keys(webform_civicrm_exposed_options($node, $enabled["civicrm_{$c}_contact_{$r}_relationship_relationship_type_id"]));
+        }
+      }
+      $rel = webform_civicrm_relationship_get($types, $cid, $cids[$r]);
+      if ($rel) {
+        $info['relationship'][$r] = $rel;
+        // Fetch custom data
+        $test = "civicrm_{$c}_contact_{$r}_relationship_custom_";
+        $len = strlen($test);
+        foreach ($enabled as $k => $v) {
+          if (substr($k, 0, $len) == $test) {
+            $custom = webform_civicrm_api('custom_value', 'get', array('entity_id' => $rel['id'], 'entity_table' => 'Relationship'));
+            foreach ($custom['values'] as $k => $v) {
+              if (isset($v[0])) {
+                $info['relationship'][$r]["custom_$k"] = $v[0];
+              }
+            }
+            break;
+          }
         }
       }
     }
@@ -1386,30 +1432,18 @@ function webform_civicrm_process_relationship($params, $cid1, $cid2) {
     if ($side == 'b') {
       list($cid1, $cid2) = array($cid2, $cid1);
     }
-    $sql = "SELECT * FROM civicrm_relationship
-      WHERE relationship_type_id = $type
-      AND ((contact_id_a = $cid1 AND contact_id_b = $cid2)";
-    if ($side == 'r') {
-      $sql .= " OR (contact_id_a = $cid2 AND contact_id_b = $cid1)";
-    }
-    $sql .= ") LIMIT 1";
-    $dao = CRM_Core_DAO::executeQuery($sql);
-    if ($dao->fetch()) {
-      foreach ((array) $dao as $k => $v) {
-        if ($k[0] != '_' && $k != 'N' && !isset($params[$k])) {
-          $params[$k] = $v;
-        }
-      }
+    $existing = webform_civicrm_relationship_get(array($params['relationship_type_id']), $cid1, $cid2);
+    if ($existing) {
       // Swap contacts if reciprocal relationship is saved the other way in the db
-      if ($side == 'r' && $params['contact_id_a'] != $cid1) {
+      if ($side == 'r' && $existing['contact_id_a'] != $cid1) {
         list($cid1, $cid2) = array($cid2, $cid1);
       }
+      $params += $existing;
     }
     else {
       $params['contact_id_a'] = $cid1;
       $params['contact_id_b'] = $cid2;
     }
-    $dao->free();
     $params['relationship_type_id'] = $type;
     if (!empty($params['relationship_permission'])) {
       $perm = $params['relationship_permission'];
@@ -1421,6 +1455,44 @@ function webform_civicrm_process_relationship($params, $cid1, $cid2) {
     unset($params['relationship_permission']);
     webform_civicrm_api('relationship', 'create', $params);
   }
+}
+
+/**
+ * Fetch relationship for a pair of contacts
+ */
+function webform_civicrm_relationship_get($r_types, $cid1, $cid2) {
+  $found = array();
+  if ($r_types && $cid1 && $cid2) {
+    $types = array();
+    foreach ($r_types as $r_type) {
+      list($type, $side) = explode('_', $r_type);
+      $types[] = $type;
+    }
+    $sql = "SELECT * FROM civicrm_relationship
+      WHERE relationship_type_id IN (" . implode(',', $types) . ") 
+      AND ((contact_id_a = $cid1 AND contact_id_b = $cid2) OR (contact_id_a = $cid2 AND contact_id_b = $cid1))
+      ORDER BY is_active DESC, IF(end_date, 1, 0), end_date DESC";
+    $dao = CRM_Core_DAO::executeQuery($sql);
+    while ($dao->fetch()) {
+      $type = $dao->relationship_type_id;
+      $side = $dao->contact_id_a == $cid1 ? 'a' : 'b';
+      if (in_array("{$type}_$side", $r_types) || in_array("{$type}_r", $r_types)) {
+        foreach ((array) $dao as $k => $v) {
+          if ($k[0] != '_' && $k != 'N') {
+            $found[$k] = $v;
+          }
+        }
+        $found['relationship_type_id'] = in_array("{$type}_r", $r_types) ? "{$type}_r" : "{$type}_$side";
+        $found['relationship_permission'] = $found['is_permission_b_a'] ? 2 : 0;
+        if ($found['is_permission_a_b']) {
+          $found['relationship_permission']++;
+        }
+        break;
+      }
+    }
+    $dao->free();
+  }
+  return $found;
 }
 
 /**

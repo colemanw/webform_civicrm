@@ -288,10 +288,12 @@ var wfCiviAdmin = (function ($, D) {
         $(':input[name*="'+name+'"][data-relationship-type]', context).each(function() {
           var rel = $(this).attr('data-relationship-type').split(',');
           if ($.inArray(val[0], rel) > -1) {
+            $(this).removeAttr('disabled');
             $(this).parent().removeAttr('style');
           }
           else {
             $(this).parent().css('display', 'none');
+            $(this).attr('disabled', 'disabled');
           }
         });
       }).change();
