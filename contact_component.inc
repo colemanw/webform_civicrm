@@ -554,7 +554,7 @@ function wf_crm_js_options($key, $input = '') {
           if (substr($k, 0, 3) == 'cid' && $v && is_numeric($v)) {
             $cids[substr($k, 3)] = (int) $v;
           }
-          $cids[$n] = (int) $_GET['cid'];
+          $cids[$c] = (int) $_GET['cid'];
         }
         $contact = wf_crm_contact_get($node, $enabled, $c, $cids, $component['extra']['hide_fields']);
         // Flatten data into simple form keys & values
