@@ -194,7 +194,7 @@ function webform_civicrm_update_6200() {
   // Match field keys to new format
   civicrm_initialize();
   module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
-  $fields = webform_civicrm_get_fields();
+  $fields = wf_crm_get_fields();
   $match = $contacts = $update = array();
   // Create matching table
   foreach ($fields as $key => $field) {
@@ -335,7 +335,7 @@ function webform_civicrm_update_6203() {
     $db = db_query('SELECT DISTINCT data FROM {webform_submitted_data} WHERE ' . $where);
     foreach ($db as $row) {
       if ($row->data && is_numeric($row->data)) {
-        db_query('UPDATE {webform_submitted_data} SET data = \'' . webform_civicrm_state_abbr($row->data) . '\' WHERE data = ' . $row->data . ' AND (' . $where . ')');
+        db_query('UPDATE {webform_submitted_data} SET data = \'' . wf_crm_state_abbr($row->data) . '\' WHERE data = ' . $row->data . ' AND (' . $where . ')');
       }
     }
   }
@@ -355,7 +355,7 @@ function webform_civicrm_update_6204() {
     if (isset($data['event_type'])) {
       $data['reg_options'] = array(
         'event_type' => $data['event_type'],
-        'show_past_events' => webform_civicrm_aval($data, 'show_past_events', 0),
+        'show_past_events' => wf_crm_aval($data, 'show_past_events', 0),
       );
       $form = (array) $form;
       $form['data'] = $data;
@@ -376,7 +376,7 @@ function webform_civicrm_update_6205() {
   $db = db_query("SELECT * FROM {webform_component} WHERE form_key LIKE 'civicrm_%%_other_tags' OR form_key LIKE 'civicrm_%%_other_group%%'");
   $tag = $group = array();
   foreach ($db as $row) {
-    if ($pieces = webform_civicrm_explode_key($row->form_key)) {
+    if ($pieces = wf_crm_explode_key($row->form_key)) {
       list( , $c, $ent, $n, $table, $name) = $pieces;
       if ($name == 'groups') {
         if (empty($group[$row->nid][$c])) {
@@ -409,15 +409,15 @@ function webform_civicrm_update_6205() {
     }
     if (!empty($tag[$nid]) || !empty($group[$nid])) {
       $node = node_load($nid);
-      $both = webform_civicrm_aval($tag, $nid, array()) + webform_civicrm_aval($group, $nid, array());
+      $both = wf_crm_aval($tag, $nid, array()) + wf_crm_aval($group, $nid, array());
       foreach ($both as $c => $val) {
         $data['contact'][$c]['number_of_other'] = 1;
         if (!empty($tag[$nid][$c])) {
           $tag_ids = array();
           $tag_names = drupal_explode_tags($tag[$nid][$c]['value']);
           foreach ($tag_names as $t) {
-            $result = webform_civicrm_api('tag', 'get', array('name' => $t));
-            if ($tid = webform_civicrm_aval($result, 'id')) {
+            $result = wf_civicrm_api('tag', 'get', array('name' => $t));
+            if ($tid = wf_crm_aval($result, 'id')) {
               $tag_ids[$tid] = $tid;
             }
           }
@@ -451,14 +451,14 @@ function webform_civicrm_update_7300() {
   module_load_include('inc', 'webform_civicrm', 'contact_component');
   module_load_include('inc', 'webform', 'includes/webform.components');
   civicrm_initialize();
-  $fields = webform_civicrm_get_fields();
+  $fields = wf_crm_get_fields();
   $db = db_query("SELECT * FROM {webform_civicrm_forms}");
   foreach ($db as $form) {
     $form = (array) $form;
     $form['data'] = unserialize($form['data']);
     $data = &$form['data'];
     $node = node_load($form['nid']);
-    $enabled = webform_civicrm_enabled_fields($node);
+    $enabled = wf_crm_enabled_fields($node);
     // Add existing contact field
     $field = $fields['contact_existing'];
     $field['nid'] = $form['nid'];
@@ -466,7 +466,7 @@ function webform_civicrm_update_7300() {
     $field['weight'] = -255;
     $field['extra']['default'] = $form['contact_matching'] ? 'user' : '';
     $field['extra']['hide_fields'] = array();
-    webform_civicrm_component_insert($field, $enabled, $form);
+    wf_crm_component_insert($field, $enabled, $form);
 
     // Activity target
     if (!empty($data['activity'][1]['activity'])) {
@@ -482,7 +482,7 @@ function webform_civicrm_update_7300() {
       if (!empty($contact['relationship'])) {
         foreach ($contact['relationship'] as $n => $rel) {
           if (!empty($rel['relationship_type_id'])) {
-            $r_types = webform_civicrm_field_options(array('form_key' => "civicrm_{$c}_contact_{$n}_relationship_relationship_type_id"), 'config_form', $data);
+            $r_types = wf_crm_field_options(array('form_key' => "civicrm_{$c}_contact_{$n}_relationship_relationship_type_id"), 'config_form', $data);
             $type = $rel['relationship_type_id'];
             list($r, $a_b) = explode('_', $type);
             if (!isset($r_types[$type]) && isset($r_types[$r . '_r'])) {
@@ -491,7 +491,7 @@ function webform_civicrm_update_7300() {
             // Change current employer rel
             if ($r == 'ce') {
               // Get regular employer rel type
-              foreach (webform_civicrm_get_relationship_types() as $e_type => $r) {
+              foreach (wf_crm_get_relationship_types() as $e_type => $r) {
                 if ($r['name_a_b'] == 'Employee of') {
                   break;
                 }
@@ -511,7 +511,7 @@ function webform_civicrm_update_7300() {
                 $field['extra']['default'] = 'relationship';
                 $field['extra']['default_relationship'] = array($e_type . '_' . $a_b);
                 $field['extra']['hide_fields'] = array();
-                webform_civicrm_component_insert($field, $enabled, $form);
+                wf_crm_component_insert($field, $enabled, $form);
               }
             }
           }
@@ -551,10 +551,10 @@ function webform_civicrm_update_7300() {
     }
     // Update some fields
     foreach ($enabled as $key => $field_id) {
-      list( , $c, $ent, $n, $table, $name) = webform_civicrm_explode_key($key);
+      list( , $c, $ent, $n, $table, $name) = wf_crm_explode_key($key);
       $field = $node->webform['components'][$field_id];
       // Convert ContactRef fields to real contacts
-      if (webform_civicrm_aval($fields, "{$table}_$name:data_type") == 'ContactReference') {
+      if (wf_crm_aval($fields, "{$table}_$name:data_type") == 'ContactReference') {
         // No big changes if selecting from webform contacts, just strip the # symbols
         if (empty($field['extra']['civicrm_group'])) {
           $field['value'] = str_replace('#', '', $field['value']);
@@ -565,19 +565,19 @@ function webform_civicrm_update_7300() {
             continue;
           }
           if (!empty($field['extra']['items'])) {
-            $old = webform_civicrm_str2array($field['extra']['items']);
+            $old = wf_crm_str2array($field['extra']['items']);
             $new = array();
             foreach ($old as $k => $v) {
               $new[substr($k, 1)] = $v;
             }
-            $field['extra']['items'] = webform_civicrm_array2str($new);
+            $field['extra']['items'] = wf_crm_array2str($new);
           }
         }
         // Big changes if selecting contact by group!
         elseif ($field['type'] === 'select') {
           $group = $field['extra']['civicrm_group'];
           // Get a sample from the group for a hint of this contact's type
-          $result = webform_civicrm_api('contact', 'get', array('rowCount' => 1, 'group' => array($group => 1), 'return.contact_type' => 1));
+          $result = wf_civicrm_api('contact', 'get', array('rowCount' => 1, 'group' => array($group => 1), 'return.contact_type' => 1));
           $type = 'individual';
           if (!empty($result['values'])) {
             $result = array_pop($result['values']);
@@ -606,9 +606,9 @@ function webform_civicrm_update_7300() {
       }
       // Update relationship type ids
       elseif ($name == 'relationship_type_id') {
-        $r_types = webform_civicrm_field_options($field, '', $data);
+        $r_types = wf_crm_field_options($field, '', $data);
         if (!empty($field['extra']['items'])) {
-          $old = webform_civicrm_str2array($field['extra']['items']);
+          $old = wf_crm_str2array($field['extra']['items']);
           $new = array();
           foreach ($old as $k => $v) {
             if (!isset($r_types[$k])) {
@@ -622,7 +622,7 @@ function webform_civicrm_update_7300() {
             }
             $new[$k] = $v;
           }
-          $field['extra']['items'] = webform_civicrm_array2str($new);
+          $field['extra']['items'] = wf_crm_array2str($new);
         }
         // Default value
         if (!empty($field['value'])) {
@@ -653,7 +653,7 @@ function webform_civicrm_update_7301() {
   foreach ($db as $form) {
     $data = unserialize($form->data);
     if (!empty($data['case'][1])) {
-      $data['case'][1]['existing_case_status'] = (array) webform_civicrm_aval($data['case'][1], 'case:1:status_id');
+      $data['case'][1]['existing_case_status'] = (array) wf_crm_aval($data['case'][1], 'case:1:status_id');
       $data['case'][1]['case'][1]['client_id'] = 1;
       $form->data = $data;
       drupal_write_record('webform_civicrm_forms', $form, 'nid');

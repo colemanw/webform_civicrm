@@ -10,7 +10,7 @@ module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
 /**
  * Form to configure CiviCRM options for a Webform
  */
-function webform_civicrm_configure_form($form, &$form_state, $node) {
+function wf_crm_configure_form($form, &$form_state, $node) {
   $form = array();
   $form_state['storage']['nid'] = $node->nid;
 
@@ -30,8 +30,8 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   require_once 'CRM/Core/BAO/Setting.php';
   $config = CRM_Core_Config::singleton();
 
-  $fields = webform_civicrm_get_fields();
-  $sets = webform_civicrm_get_fields('sets');
+  $fields = wf_crm_get_fields();
+  $sets = wf_crm_get_fields('sets');
 
   // Initialize form on first view
   if (empty($form_state['values']))  {
@@ -63,20 +63,20 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   }
   // On rebuilding the form
   else {
-    $settings = webform_civicrm_aval($form_state['storage'], 'vals', $form_state['values']);
-    webform_civicrm_process_form_settings($settings);
+    $settings = wf_crm_aval($form_state['storage'], 'vals', $form_state['values']);
+    wf_crm_process_form_settings($settings);
     unset($form_state['storage']['vals']);
   }
   // Merge in existing fields
-  $existing = array_keys(webform_civicrm_enabled_fields($node, NULL, TRUE));
+  $existing = array_keys(wf_crm_enabled_fields($node, NULL, TRUE));
   $settings += array_fill_keys($existing, 'create_civicrm_webform_element');
 
-  $tokens = '<strong>' . t('Contact 1 Tokens:') . '</strong> [' . implode('], [', webform_civicrm_get_fields('tokens')) . '].';
-  list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
+  $tokens = '<strong>' . t('Contact 1 Tokens:') . '</strong> [' . implode('], [', wf_crm_get_fields('tokens')) . '].';
+  list($contact_types, $sub_types) = wf_crm_get_contact_types();
   $data = $settings['data'];
   $contacts = count($data['contact']);
   $form['#attached']['js'][] = array(
-    'data' => array('webform_civicrm' => array('rTypes' => webform_civicrm_get_relationship_types())),
+    'data' => array('webform_civicrm' => array('rTypes' => wf_crm_get_relationship_types())),
     'type' => 'setting',
   );
 
@@ -124,15 +124,15 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
       '#prefix' => '<div class="contact-type-select">',
       '#suffix' => '</div>',
     );
-    webform_civicrm_ajax_form_item($form, 'contact_' . $n, $n . '_contact_type', 'contact_subtype_wrapper');
+    wf_crm_ajax_item($form, 'contact_' . $n, $n . '_contact_type', 'contact_subtype_wrapper');
 
     // Contact sub-type
     $fid = 'civicrm_' . $n . '_contact_1_contact_contact_sub_type';
     if (!empty($sub_types[$c['contact'][1]['contact_type']])) {
-      $field = webform_civicrm_configure_form_item($fid, $fields['contact_contact_sub_type'], $settings);
+      $field = wf_crm_configure_form_item($fid, $fields['contact_contact_sub_type'], $settings);
       $field['#title'] .= ' ' . $contact_types[$c['contact'][1]['contact_type']];
       $form['contact_' . $n]['contact_subtype_wrapper'][$fid] = $field;
-      webform_civicrm_ajax_form_item($form, 'contact_' . $n . ':contact_subtype_wrapper', $fid, 'contact_custom_wrapper');
+      wf_crm_ajax_item($form, 'contact_' . $n . ':contact_subtype_wrapper', $fid, 'contact_custom_wrapper');
     }
     // If no sub-types
     else {
@@ -191,7 +191,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
           $selector['#title'] = t('Enable %type Fields', array('%type' => $set['label']));
         }
         $pos['contact_' . $n . '_number_of_' . $sid] = $selector;
-        webform_civicrm_ajax_form_item($form, $path, 'contact_' . $n . '_number_of_' . $sid, $n . $sid . '_wrapper');
+        wf_crm_ajax_item($form, $path, 'contact_' . $n . '_number_of_' . $sid, $n . $sid . '_wrapper');
       }
       else {
         $c['number_of_' . $sid] = 1;
@@ -202,7 +202,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
           '#type' => 'fieldset',
           '#title' => $set['label'],
           '#attributes' => array('id' => $fsid, 'class' => array('web-civi-checkbox-set')),
-          'js_select' => webform_civicrm_js_select($fsid),
+          'js_select' => wf_crm_js_select($fsid),
         );
         if ((isset($set['max_instances']) && $set['max_instances'] > 1) || $sid == 'relationship') {
           $fieldset['#title'] .= ' ' . $i;
@@ -217,7 +217,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
             continue;
           }
           $fid = 'civicrm_' . $n . '_contact_' . $i . '_' . $fid;
-          $fieldset[$fid] = webform_civicrm_configure_form_item($fid, $field, $settings);
+          $fieldset[$fid] = wf_crm_configure_form_item($fid, $field, $settings);
         }
         if (isset($set['max_instances'])) {
           $pos[$n . $sid . '_wrapper'][$n . $sid . $i . '_fieldset'] = $fieldset;
@@ -240,13 +240,13 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   $form['prefix']['prefix_known'] = array(
     '#type' => 'textarea',
     '#title' => t('Introduction text for known contacts'),
-    '#default_value' => webform_civicrm_aval($settings, 'prefix_known'),
+    '#default_value' => wf_crm_aval($settings, 'prefix_known'),
     '#description' => $tokens,
   );
   $form['prefix']['prefix_unknown'] = array(
     '#type' => 'textarea',
     '#title' => t('Introduction text for unknown contacts'),
-    '#default_value' => webform_civicrm_aval($settings, 'prefix_unknown'),
+    '#default_value' => wf_crm_aval($settings, 'prefix_unknown'),
     '#description' => t('No tokens available for unknown contacts.'),
   );
   $form['st_message'] = array(
@@ -264,13 +264,13 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
   $form['st_message']['message'] = array(
     '#type' => 'textfield',
     '#title' => t('Text (displayed as a status message)'),
-    '#default_value' => webform_civicrm_aval($settings, 'message', t("You are viewing this form as [display name]. Please {click here if that's not you}.")),
+    '#default_value' => wf_crm_aval($settings, 'message', t("You are viewing this form as [display name]. Please {click here if that's not you}.")),
     '#size' => 100,
     '#maxlength' => 255,
     '#description' => t('Enclose your "not you" link text in curly brackets {like this}.') . '<p>' . $tokens . '</p>',
   );
   // Case and activity settings
-  $case_enabled = in_array('CiviCase', $config->enableComponents, TRUE) && ($case_types = webform_civicrm_get_options('case_type'));
+  $case_enabled = in_array('CiviCase', $config->enableComponents, TRUE) && ($case_types = wf_crm_get_options('case_type'));
   $form['act'] = array(
     '#type' => 'fieldset',
     '#title' => $case_enabled ? t('Activity/Case') : t('Activity'),
@@ -284,7 +284,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
       '#description' => t('Is this activity part of a case?'),
       '#options' => array(t('- No Case -')) + $case_types,
     );
-    webform_civicrm_ajax_form_item($form, 'act', 'case_type_id', 'case');
+    wf_crm_ajax_item($form, 'act', 'case_type_id', 'case');
   }
   $case_type = $activity_type = NULL;
   if ($case_enabled && !empty($data['case'][1]['case'][1]['case_type_id'])) {
@@ -298,8 +298,8 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
       '#type' => 'select',
       '#title' => t('Update Existing Case'),
       '#description' => t('If any of the above options are selected and a %type case with that status already exists for the client, it will be autofilled and updated.', array('%type' => $case_type_name)),
-      '#options' => webform_civicrm_get_options('case_status'),
-      '#default_value' => webform_civicrm_aval($data, 'case:1:existing_case_status', array()),
+      '#options' => wf_crm_get_options('case_status'),
+      '#default_value' => wf_crm_aval($data, 'case:1:existing_case_status', array()),
       '#multiple' => TRUE,
     );
     require_once('CRM/Case/XMLProcessor/Process.php');
@@ -312,14 +312,14 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     if (in_array('CiviCampaign', $config->enableComponents, TRUE)) {
       $param = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_component WHERE name = 'CiviCampaign'");
     }
-    $act_types = webform_civicrm_get_options('activity_type', $param);
+    $act_types = wf_crm_get_options('activity_type', $param);
   }
   $form['act']['case']['activity_type_id'] = array(
     '#type' => 'select',
     '#title' => t('Activity Type'),
     '#options' => array(t('- No Activity -')) + $act_types,
   );
-  webform_civicrm_ajax_form_item($form, 'act:case', 'activity_type_id', 'activity_fields');
+  wf_crm_ajax_item($form, 'act:case', 'activity_type_id', 'activity_fields');
   if (!empty($data['activity'][1]['activity'][1]['activity_type_id']) && isset($act_types[$data['activity'][1]['activity'][1]['activity_type_id']])) {
     $form['act']['case']['activity_fields']['#type'] = 'fieldset';
     $activity_type = $form['act']['case']['activity_type_id']['#default_value'] = $settings['activity_type_id'] = $data['activity'][1]['activity'][1]['activity_type_id'];
@@ -329,8 +329,8 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
       '#type' => 'select',
       '#title' => t('Update Existing Activity'),
       '#description' => t('If any of the above options are selected and a %type activity with that status already exists for !ent, it will be autofilled and updated.', array('!ent' => $case_type ? t('the case') : t('contact 1'), '%type' => $act_types[$settings['activity_type_id']])),
-      '#options' => webform_civicrm_get_options('activity_status'),
-      '#default_value' => webform_civicrm_aval($data, 'activity:1:existing_activity_status', array()),
+      '#options' => wf_crm_get_options('activity_status'),
+      '#default_value' => wf_crm_aval($data, 'activity:1:existing_activity_status', array()),
       '#multiple' => TRUE,
     );
     $form['act']['case']['activity_fields']['activity_subject'] = array(
@@ -339,7 +339,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
       '#maxlength' => 255,
       '#required' => TRUE,
       '#description' => t('You can override this default by allowing users to enter a subject (enable "Activity Subject" field below)'),
-      '#default_value' => webform_civicrm_aval($data, 'activity:1:activity:1:subject', check_plain($node->title)),
+      '#default_value' => wf_crm_aval($data, 'activity:1:activity:1:subject', check_plain($node->title)),
     );
     $form['act']['case']['activity_fields']['activity_details'] = array(
       '#type' => 'checkboxes',
@@ -348,7 +348,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
         'view_link' => t('Include link to <em>view</em> webform submission in activity details'),
         'edit_link' => t('Include link to <em>edit</em> webform submission in activity details'),
       ),
-      '#default_value' => webform_civicrm_aval($data, 'activity:1:details', array('view_link'), TRUE),
+      '#default_value' => wf_crm_aval($data, 'activity:1:details', array('view_link'), TRUE),
     );
   }
   foreach ($sets as $sid => $set) {
@@ -362,14 +362,14 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
         '#type' => 'fieldset',
         '#title' => $set['label'],
         '#attributes' => array('id' => $sid, 'class' => array('web-civi-checkbox-set')),
-        'js_select' => webform_civicrm_js_select($sid),
+        'js_select' => wf_crm_js_select($sid),
       );
       foreach ($set['fields'] as $fid => $field) {
         if ($fid == 'activity_assignee_contact_id' && CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'activity_assignee_notification')) {
           $field['extra']['description'] = t('A copy of this activity will be emailed to the assignee.');
         }
         $fid = "civicrm_1_{$ent}_1_$fid";
-        $form['act']['case'][$ent . '_fields'][$sid][$fid] = webform_civicrm_configure_form_item($fid, $field, $settings);
+        $form['act']['case'][$ent . '_fields'][$sid][$fid] = wf_crm_configure_form_item($fid, $field, $settings);
       }
     }
   }
@@ -381,7 +381,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
       '#group' => 'webform_civicrm',
       '#attributes' => array('class' => array('civi-icon-participant')),
     );
-    $reg_type = webform_civicrm_aval($data, 'participant_reg_type');
+    $reg_type = wf_crm_aval($data, 'participant_reg_type');
     $form['event']['participant_reg_type'] = array(
       '#type' => 'select',
       '#title' => t('Registration Method'),
@@ -395,8 +395,8 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     $form['event']['event_type'] = array(
       '#type' => 'select',
       '#title' => t('Show Events of Type'),
-      '#options' => array('any' => t('- Any Type -')) + webform_civicrm_get_options('event_type'),
-      '#default_value' => webform_civicrm_aval($data, 'reg_options:event_type', 'any'),
+      '#options' => array('any' => t('- Any Type -')) + wf_crm_get_options('event_type'),
+      '#default_value' => wf_crm_aval($data, 'reg_options:event_type', 'any'),
       '#prefix' => '<div id="event-reg-options-wrapper"><div class="web-civi-checkbox-set">',
       '#parents' => array('reg_options', 'event_type'),
       '#tree' => TRUE,
@@ -404,7 +404,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     $form['event']['show_past_events'] = array(
       '#type' => 'checkbox',
       '#title' => t('Show Past Events'),
-      '#default_value' => (bool) webform_civicrm_aval($data, 'reg_options:show_past_events'),
+      '#default_value' => (bool) wf_crm_aval($data, 'reg_options:show_past_events'),
       '#suffix' => '</div>',
       '#parents' => array('reg_options', 'show_past_events'),
       '#tree' => TRUE,
@@ -420,7 +420,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     $form['event']['reg_options']['show_remaining'] = array(
       '#type' => 'select',
       '#title' => t('Show Remaining Space in Events'),
-      '#default_value' => webform_civicrm_aval($data, 'reg_options:show_remaining', 0),
+      '#default_value' => wf_crm_aval($data, 'reg_options:show_remaining', 0),
       '#description' => t('Display a message at the top of the form for each event with a registration limit or past end date.'),
       '#options' => array(
         t('Never'),
@@ -434,25 +434,25 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     $form['event']['reg_options']['validate'] = array(
       '#type' => 'checkbox',
       '#title' => t('Prevent Registration for Past/Full Events'),
-      '#default_value' => (bool) webform_civicrm_aval($data, 'reg_options:validate'),
+      '#default_value' => (bool) wf_crm_aval($data, 'reg_options:validate'),
       '#description' => t('Will not allow the form to be submitted if user registers for an event that is ended or full.'),
     );
     $form['event']['reg_options']['block_form'] = array(
       '#type' => 'checkbox',
       '#title' => t('Block Form Access when Event(s) are Full/Ended'),
-      '#default_value' => (bool) webform_civicrm_aval($data, 'reg_options:block_form'),
+      '#default_value' => (bool) wf_crm_aval($data, 'reg_options:block_form'),
       '#description' => t('Hide webform if all the events for the form are full or ended.'),
     );
-    webform_civicrm_ajax_form_item($form, 'event', 'participant_reg_type', 'participants');
-    webform_civicrm_ajax_form_item($form, 'event', 'event_type', 'participants');
-    webform_civicrm_ajax_form_item($form, 'event', 'show_past_events', 'participants');
+    wf_crm_ajax_item($form, 'event', 'participant_reg_type', 'participants');
+    wf_crm_ajax_item($form, 'event', 'event_type', 'participants');
+    wf_crm_ajax_item($form, 'event', 'show_past_events', 'participants');
 
     for ($n = 1; $reg_type && (($n <= $contacts && $reg_type != 'all') || $n == 1); ++$n) {
       $form['event']['participants'][$n] = array(
         '#type' => 'fieldset',
         '#title' => $reg_type == 'all' ? t('Registration') : t('Contact !num', array('!num' => $n)),
       );
-      if (!($num = webform_civicrm_aval($data, "participant:{$n}:number_of_participant"))
+      if (!($num = wf_crm_aval($data, "participant:{$n}:number_of_participant"))
       || ($n > 1 && $reg_type == 'all')) {
         $num = 0;
       }
@@ -464,7 +464,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
         '#prefix' => '<div class="number-of">',
         '#suffix' => '</div>',
       );
-      webform_civicrm_ajax_form_item($form, "event:participants:{$n}", 'participant_' . $n . '_number_of_participant', 'div');
+      wf_crm_ajax_item($form, "event:participants:{$n}", 'participant_' . $n . '_number_of_participant', 'div');
       $particpant_extensions = array(
         1 => 'role_id',
         2 => 'event_id',
@@ -482,9 +482,9 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
             $sid = 'civicrm_' . $n . '_participant_' . $e . '_' . $sid . '_fieldset';
             $class = 'web-civi-checkbox-set';
             if (!empty($set['sub_types'])) {
-              $role_id = webform_civicrm_aval($data, "participant:$n:particpant:$e:role_id", '');
-              $event_id = webform_civicrm_aval($data, "participant:$n:particpant:$e:event_id", '');
-              $event_type = webform_civicrm_aval($data, 'reg_options:event_type', '');
+              $role_id = wf_crm_aval($data, "participant:$n:particpant:$e:role_id", '');
+              $event_id = wf_crm_aval($data, "participant:$n:particpant:$e:event_id", '');
+              $event_type = wf_crm_aval($data, 'reg_options:event_type', '');
               if ($event_id && $event_id !== 'create_civicrm_webform_element') {
                 list($event_id, $event_type) = explode('-', $event_id);
               }
@@ -498,15 +498,15 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
               '#type' => 'fieldset',
               '#title' => $set['label'],
               '#attributes' => array('id' => $sid, 'class' => array($class)),
-              'js_select' => webform_civicrm_js_select($sid),
+              'js_select' => wf_crm_js_select($sid),
             );
             foreach ($set['fields'] as $fid => $field) {
               $id = 'civicrm_' . $n . '_participant_' . $e . '_' . $fid;
-              $item = webform_civicrm_configure_form_item($id, $field, $settings);
+              $item = wf_crm_configure_form_item($id, $field, $settings);
               if ($fid == 'participant_event_id' || $fid == 'participant_role_id') {
                 $item['#attributes']['onchange'] = "wfCiviAdmin.participantConditional('#$fs');";
                 $item['#attributes']['class'] = array($fid);
-                $$fid = webform_civicrm_aval($item, '#default_value');
+                $$fid = wf_crm_aval($item, '#default_value');
               }
               $form['event']['participants'][$n]['div'][$fs][$sid][$id] = $item;
             }
@@ -537,7 +537,7 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
     '#default_value' => (bool) $settings['confirm_subscription'],
     '#description' => t('Recommended. Send a confirmation email before adding contacts to publicly subscribable mailing list groups.') . '<br />' . t('Your public mailing lists:') . ' <em>',
   );
-  if ($ml = webform_civicrm_get_options('mailing_lists')) {
+  if ($ml = wf_crm_get_options('mailing_lists')) {
     if (count($ml) > 4) {
       $ml = array_slice($ml, 0, 4);
       $ml[] = t('etc.');
@@ -571,9 +571,9 @@ function webform_civicrm_configure_form($form, &$form_state, $node) {
 /**
  * Build the $data array for webform settings; called while rebuilding or post-processing the configure form.
  */
-function webform_civicrm_process_form_settings(&$vals) {
+function wf_crm_process_form_settings(&$vals) {
   $data = array('contact' => array());
-  list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
+  list($contact_types, $sub_types) = wf_crm_get_contact_types();
   for ($c = 1; $c <= $vals['number_of_contacts']; ++$c) {
     // Contact settings
     if (isset($vals[$c . '_contact_type'])) {
@@ -583,7 +583,7 @@ function webform_civicrm_process_form_settings(&$vals) {
           'contact_sub_type' => array(),
         )),
       );
-      if ($sub_type = webform_civicrm_aval($vals, 'civicrm_' . $c . '_contact_1_contact_contact_sub_type')) {
+      if ($sub_type = wf_crm_aval($vals, 'civicrm_' . $c . '_contact_1_contact_contact_sub_type')) {
         $allowed = $sub_types[$vals[$c . '_contact_type']];
         foreach ($sub_type as $sub) {
           if (isset($allowed[$sub])) {
@@ -650,7 +650,7 @@ function webform_civicrm_process_form_settings(&$vals) {
 /**
  * Build a field item for the configure form
  */
-function webform_civicrm_configure_form_item($fid, $field, $settings) {
+function wf_crm_configure_form_item($fid, $field, $settings) {
   list( , $c, $ent, $n, $table, $name) = explode('_', $fid, 6);
   $field['name'] = str_replace('#', $table == 'relationship' ? $n : '', $field['name']);
 
@@ -659,7 +659,7 @@ function webform_civicrm_configure_form_item($fid, $field, $settings) {
     // Retrieve option list
     $options = array('create_civicrm_webform_element' => t('- User Select -'));
     $field['form_key'] = $fid;
-    $options += webform_civicrm_field_options($field, 'config_form', $settings['data']);
+    $options += wf_crm_field_options($field, 'config_form', $settings['data']);
     $item = array(
       '#type' => 'select',
       '#title' => $field['name'],
@@ -707,10 +707,10 @@ function webform_civicrm_configure_form_item($fid, $field, $settings) {
       '#default_value' => !empty($settings[$fid]),
     );
   }
-  if ($d = webform_civicrm_aval($field, 'extra:description')) {
+  if ($d = wf_crm_aval($field, 'extra:description')) {
     $item['#description'] = strlen($d) > 75 ? substr($d, 0, 75) . '...' : $d;
   }
-  if ($a = webform_civicrm_aval($field, 'attributes')) {
+  if ($a = wf_crm_aval($field, 'attributes')) {
     $item['#attributes'] = $a;
   }
   return $item;
@@ -719,10 +719,10 @@ function webform_civicrm_configure_form_item($fid, $field, $settings) {
 /**
  * Submission handler, saves CiviCRM options for a Webform node
  */
-function webform_civicrm_configure_form_submit($form, &$form_state) {
+function wf_crm_configure_form_submit($form, &$form_state) {
   $button = $form_state['clicked_button']['#id'];
   $node = node_load($nid = $form_state['storage']['nid']);
-  $vals = webform_civicrm_aval($form_state, 'storage:vals', $form_state['values']);
+  $vals = wf_crm_aval($form_state, 'storage:vals', $form_state['values']);
 
   if ((empty($node->webform_civicrm) && !$vals['nid']) || $button == 'edit-cancel') {
     $form_state['rebuild'] = TRUE;
@@ -732,14 +732,14 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
   unset($form_state['storage']);
 
   civicrm_initialize();
-  $delete_me = $enabled = $existing = webform_civicrm_enabled_fields($node, NULL, TRUE);
+  $delete_me = $enabled = $existing = wf_crm_enabled_fields($node, NULL, TRUE);
   $created = $deleted = 0;
-  $fields = webform_civicrm_get_fields();
-  $sets = webform_civicrm_get_fields('sets');
+  $fields = wf_crm_get_fields();
+  $sets = wf_crm_get_fields('sets');
 
   // Fields to delete
   foreach ($enabled as $key => $val) {
-    $val = (array) webform_civicrm_aval($vals, $key);
+    $val = (array) wf_crm_aval($vals, $key);
     if ((in_array('create_civicrm_webform_element', $val, TRUE) && $vals['nid'])
     || strpos($key, 'fieldset') !== FALSE) {
       unset($delete_me[$key]);
@@ -829,13 +829,13 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
   // CiviCRM enabled
   else {
     webform_ensure_record($node);
-    webform_civicrm_process_form_settings($vals);
+    wf_crm_process_form_settings($vals);
     if (!$vals['toggle_message']) {
       $vals['message'] = '';
     }
     // Index disabled components
     $disabled = array();
-    foreach (webform_civicrm_aval($node->webform, 'components', array()) as $field) {
+    foreach (wf_crm_aval($node->webform, 'components', array()) as $field) {
       if (substr($field['form_key'], 0, 9) === 'disabled_') {
         $field['form_key'] = 'civicrm' . substr($field['form_key'], 8);
         $disabled[$field['form_key']] = $field;
@@ -864,7 +864,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
             $field['nid'] = $nid;
             $field['form_key'] = $key;
             $field['weight'] = $i;
-            webform_civicrm_component_insert($field, $enabled, $vals);
+            wf_crm_component_insert($field, $enabled, $vals);
             ++$created;
           }
         }
@@ -895,7 +895,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
   // Update existing contact fields
   foreach ($existing as $fid => $id) {
     if (substr($fid, -8) === 'existing') {
-      webform_civicrm_existing_component_update($node->webform['components'][$id], $enabled, $vals['data']);
+      wf_crm_update_existing_component($node->webform['components'][$id], $enabled, $vals['data']);
     }
   }
   // Make sure the updates are visible to anonymous users.
@@ -911,20 +911,20 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
  * Alter back-end webform component edit forms.
  * Called by hook_form_alter() whenever editing a webform component.
  */
-function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
+function _wf_crm_webform_component_form_alter(&$form, $form_state) {
   $node = node_load($form['nid']['#value']);
   // Is this a CiviCRM-enabled webform?
   if (!empty($node->webform_civicrm)) {
     civicrm_initialize();
     $fid = $form['form_key']['#default_value'];
     // Is this a civicrm component?
-    if (!($pieces = webform_civicrm_explode_key($fid))) {
+    if (!($pieces = wf_crm_explode_key($fid))) {
       return;
     }
     list(, $i, $ent, $n, $table, $name) = $pieces;
-    $fields = webform_civicrm_get_fields();
+    $fields = wf_crm_get_fields();
     // Is this component a CiviCRM field?
-    if (($field = webform_civicrm_aval($fields, $table . '_' . $name)) || $table == 'fieldset') {
+    if (($field = wf_crm_aval($fields, $table . '_' . $name)) || $table == 'fieldset') {
       $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_admin.css';
       $element = $node->webform['components'][$form['cid']['#value']];
 
@@ -940,7 +940,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
           $form['form_key']['#value'] = implode('_', array('civicrm', $new, $ent, $n, $table, $name));
           $form['name']['#default_value'] = str_replace($i, $new, $form['name']['#default_value']);
           ++$form['position']['weight']['#default_value'];
-          array_unshift($form['#submit'], 'webform_civicrm_contact_clone');
+          array_unshift($form['#submit'], 'wf_crm_contact_clone');
           if (empty($form_state['input'])) {
             drupal_set_message(t('Press the button below to clone this contact. A new CiviCRM contact will be added to the form with all the settings for contact !num. All fields from within this fieldset will be cloned (be careful, that may include non-contact !num fields).', array('!num' => $i)), 'status', FALSE);
           }
@@ -961,9 +961,9 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
       // Interface similar to options_element
       // but with the important difference that options already exist in the civi db
       // so this interface does not allow create/delete of options
-      elseif (($element['type'] === 'hidden' || $element['type'] === 'select') && webform_civicrm_get_list($table, $name)) {
+      elseif (($element['type'] === 'hidden' || $element['type'] === 'select') && wf_crm_get_list($table, $name)) {
         $form['#attached']['js'] = array(drupal_get_path('module', 'webform_civicrm') . '/' . 'webform_civicrm_options.js');
-        $options = $sort = webform_civicrm_field_options($element, 'component_edit', $node->webform_civicrm['data']);
+        $options = $sort = wf_crm_field_options($element, 'component_edit', $node->webform_civicrm['data']);
         $defaults_selected = array();
         if (!empty($element['value'])) {
           foreach (explode(',', trim($element['value'])) as $v) {
@@ -1002,7 +1002,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
               t('Check the "default" box for an option to be selected by default when a user views the form.') .
               '</div></p>',
           );
-          $options_selected = webform_civicrm_str2array($element['extra']['items']);
+          $options_selected = wf_crm_str2array($element['extra']['items']);
           // Sort weights. Unselected options will be at the bottom.
           $option_keys = $option_selected_keys = array();
           foreach ($options_selected as $k => $v) {
@@ -1061,7 +1061,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
           $form['extra']['multiple']['#type'] = 'hidden';
           $form['extra']['multiple']['#value'] = (int) !empty($field['extra']['multiple']);
         }
-        array_unshift($form['#submit'], 'webform_civicrm_process_options_selection');
+        array_unshift($form['#submit'], 'wf_crm_process_options_selection');
       }
       // Simplify form for hidden fields
       elseif (($name === 'contact_id' || $name === 'external_identifier') && $element['type'] === 'hidden') {
@@ -1072,7 +1072,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         . t('There are no configuration options for this hidden field. You can use it for post processing, for example to include a link to the CiviCRM contact in an email.')
         . '</p><p>'
         . t('The webform token for this field is:')
-        . '<br /><strong>' . webform_civicrm_component_token($node, $form['cid']['#value'])
+        . '<br /><strong>' . wf_crm_component_token($node, $form['cid']['#value'])
         . '</strong><br /><em>'
         . t('Note: this token will change if you move the field in or out of a fieldset.')
         . '</em></p>';
@@ -1083,17 +1083,17 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         $form['value']['#required'] = TRUE;
         $form['value']['#type'] = 'textfield';
         $form['value']['#description'] = t('Enter the number of days for which this checksum will be valid. Enter 0 to never expire.');
-        $form['#validate'][] = 'webform_civicrm_cs_validate';
-        $enabled = webform_civicrm_enabled_fields($node);
+        $form['#validate'][] = 'wf_crm_cs_validate';
+        $enabled = wf_crm_enabled_fields($node);
         $form['#prefix'] = '<p>'
         . t('This field will generate a checksum for contact !num after the form is submitted. You could use its webform token to create a personalized link for anonymous users.', array('!num' => $i))
         . '</p><p>';
-        if ($cid_field = webform_civicrm_aval($enabled, 'civicrm_' . $i . '_contact_1_contact_contact_id')) {
+        if ($cid_field = wf_crm_aval($enabled, 'civicrm_' . $i . '_contact_1_contact_contact_id')) {
           $form['#prefix'] .= t('Example: to link users back to this form, place this line in a webform-generated email:')
           . '<br /><code>'
           . url('node/' . $node->nid, array('absolute' => TRUE)) . '?cid' . $i . '=';
-          $form['#prefix'] .= $hash = webform_civicrm_component_token($node, $cid_field)
-          . '&amp;cs=' . webform_civicrm_component_token($node, $form['cid']['#value'])
+          $form['#prefix'] .= $hash = wf_crm_component_token($node, $cid_field)
+          . '&amp;cs=' . wf_crm_component_token($node, $form['cid']['#value'])
           . '</code></p>';
           $form['#prefix'] .= '<p>' . t('Example: to redirect to a contribution page, paste this into the redirect field on the Webform "Form Settings" tab (change id from 1 to the real id of your contribution page):')
           . '<br /><code>'
@@ -1124,8 +1124,8 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         }
         $form['widget'] = array(
           '#type' => 'fieldset',
-          '#title' => t('Widget: %type', array('%type' => webform_civicrm_aval($widgets, $form['type']['#value'], t('Unknown')))),
-          '#description' => t('The default widget for this %type field is %widget. You may change it if you wish - for example, a hidden field allows you to set the value without exposing this field to the form.<br />Note: Not all widgets may be compatible with this CiviCRM field - test your form after changing widgets.', array('%type' => str_replace('#', '', $field['name']), '%widget' => webform_civicrm_aval($widgets, $field['type'], t('Disabled')))),
+          '#title' => t('Widget: %type', array('%type' => wf_crm_aval($widgets, $form['type']['#value'], t('Unknown')))),
+          '#description' => t('The default widget for this %type field is %widget. You may change it if you wish - for example, a hidden field allows you to set the value without exposing this field to the form.<br />Note: Not all widgets may be compatible with this CiviCRM field - test your form after changing widgets.', array('%type' => str_replace('#', '', $field['name']), '%widget' => wf_crm_aval($widgets, $field['type'], t('Disabled')))),
           '#collapsible' => TRUE,
           '#collapsed' => TRUE,
         );
@@ -1137,7 +1137,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
         $form['widget']['change_widget'] = array(
           '#type' => 'submit',
           '#value' => t('Change Widget'),
-          '#submit' => array('webform_component_edit_form_submit', 'webform_civicrm_change_widget'),
+          '#submit' => array('webform_component_edit_form_submit', 'wf_crm_change_widget'),
           '#states' => array(
             'invisible' => array(
               'select[name="widget[widget]"]' => array('value' => $form['type']['#value']),
@@ -1152,7 +1152,7 @@ function _webform_civicrm_webform_component_form_alter(&$form, $form_state) {
 /**
  * Add a CiviCRM field to a webform
  */
-function webform_civicrm_component_insert(&$field, &$enabled, $settings) {
+function wf_crm_component_insert(&$field, &$enabled, $settings) {
   list(, $c, $ent, $n, $table, $name) = explode('_', $field['form_key'], 6);
   $contact_type = $settings['data']['contact'][$c]['contact'][1]['contact_type'];
   // Replace the # token with set number (or append to the end if no token)
@@ -1168,14 +1168,14 @@ function webform_civicrm_component_insert(&$field, &$enabled, $settings) {
     $field['name'] = str_replace(' #', '', $field['name']);
   }
   if ($name == 'contact_sub_type') {
-    list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
+    list($contact_types, $sub_types) = wf_crm_get_contact_types();
     $field['name'] .= ' ' . $contact_types[$contact_type];
   }
   // Defaults for existing contact field
   if ($name == 'existing') {
     $vals = $enabled + $settings;
     // Set the allow_create flag based on presence of name or email fields
-    $field['extra']['allow_create'] = $a = webform_civicrm_name_field_exists($vals, $c, $contact_type);
+    $field['extra']['allow_create'] = $a = wf_crm_name_field_exists($vals, $c, $contact_type);
     $field['extra']['none_prompt'] = $a ? t('+ Create new contact +') : t('- None Found -');
     if ($c == 1) {
       // Default to hidden field for 1st contact
@@ -1201,9 +1201,9 @@ function webform_civicrm_component_insert(&$field, &$enabled, $settings) {
     $field['value']['value'] = '';
   }
   // Retrieve option list
-  if ($options = webform_civicrm_field_options($field, 'component_insert', $settings['data'])) {
+  if ($options = wf_crm_field_options($field, 'component_insert', $settings['data'])) {
     $field['extra']['items'] = $options;
-    $list = webform_civicrm_get_list($table, $name);
+    $list = wf_crm_get_list($table, $name);
     if (!isset($field['extra']['aslist']) && empty($field['extra']['multiple'])) {
       $field['extra']['aslist'] = 1;
     }
@@ -1222,7 +1222,7 @@ function webform_civicrm_component_insert(&$field, &$enabled, $settings) {
   }
   // Create fieldsets - for contact and contact-specific event fields only
   if (!empty($settings['create_fieldsets']) && $ent != 'activity' && $ent != 'case'
-  && ($ent != 'participant' || webform_civicrm_aval($settings['data'], 'participant_reg_type') == 'separate')) {
+  && ($ent != 'participant' || wf_crm_aval($settings['data'], 'participant_reg_type') == 'separate')) {
     $sid = 'civicrm_' . $c . '_contact_1_fieldset_fieldset';
     if (!isset($enabled[$sid])) {
       // Create webform fieldset for this contact
@@ -1304,7 +1304,7 @@ function theme_webform_civicrm_options($variables) {
 /**
  * Custom Processing for CiviCRM webform component option lists
  */
-function webform_civicrm_process_options_selection($form, &$form_state) {
+function wf_crm_process_options_selection($form, &$form_state) {
   $vals = &$form_state['values'];
   $vals['value'] = '';
   foreach ($vals['civicrm_options_fieldset']['civicrm_defaults'] as $k) {
@@ -1335,9 +1335,9 @@ function webform_civicrm_process_options_selection($form, &$form_state) {
     else {
       civicrm_initialize();
       $node = node_load($vals['nid']);
-      $items = webform_civicrm_field_options($vals, 'live_options', $node->webform_civicrm['data']);
-      $items += webform_civicrm_str2array($vals['extra']['items']);
-      $vals['extra']['items'] = webform_civicrm_array2str($items);
+      $items = wf_crm_field_options($vals, 'live_options', $node->webform_civicrm['data']);
+      $items += wf_crm_str2array($vals['extra']['items']);
+      $vals['extra']['items'] = wf_crm_array2str($items);
     }
   }
 }
@@ -1345,7 +1345,7 @@ function webform_civicrm_process_options_selection($form, &$form_state) {
 /**
  * Build select all/none js links for a fieldset
  */
-function webform_civicrm_js_select($name) {
+function wf_crm_js_select($name) {
   return array('#markup' =>
     '<div class="web-civi-js-select">
       <a href="javascript:wfCiviAdmin.selectReset(' . "'all', '#$name'" . ')">' . t('Select All') . '</a> |
@@ -1358,7 +1358,7 @@ function webform_civicrm_js_select($name) {
 /**
  * Look-up the webform token for a field
  */
-function webform_civicrm_component_token($node, $cid) {
+function wf_crm_component_token($node, $cid) {
   module_load_include('inc', 'webform', 'includes/webform.components');
   $component = $node->webform['components'][$cid];
   $parents = webform_component_parent_keys($node, $component);
@@ -1368,7 +1368,7 @@ function webform_civicrm_component_token($node, $cid) {
 /**
  * Validate checksum lifespan
  */
-function webform_civicrm_cs_validate($form, &$form_state) {
+function wf_crm_cs_validate($form, &$form_state) {
   if (!is_numeric($form_state['values']['value']) || $form_state['values']['value'] < 0) {
     form_error($form['value'], t('Please enter a valid number of days.'));
   }
@@ -1381,12 +1381,12 @@ function webform_civicrm_cs_validate($form, &$form_state) {
  * @param $control_element: str. Array key of the existing element to add ajax behavior to
  * @param $container: str. Array key of the container to be created
  */
-function webform_civicrm_ajax_form_item(&$form, $pathstr, $control_element, $container) {
+function wf_crm_ajax_item(&$form, $pathstr, $control_element, $container) {
   eval('$snippet = &$form[\'' . str_replace(':', "']['", $pathstr) . "'];");
   $pathstr .= ':' . $container;
   $id = 'civicrm-ajax-' . str_replace(array(':', '_'), '-', $pathstr);
   $snippet[$control_element]['#ajax'] = array(
-    'callback' => 'webform_civicrm_configure_form_ajax',
+    'callback' => 'wf_crm_configure_form_ajax',
     'pathstr' => $pathstr,
     'wrapper' => $id,
     'effect' => 'fade',
@@ -1410,7 +1410,7 @@ function wf_crm_disable($nid) {
 /**
  * Alter a webform component type.
  */
-function webform_civicrm_change_widget($form, &$form_state) {
+function wf_crm_change_widget($form, &$form_state) {
   unset($_SESSION['messages']['status']);
   drupal_set_message(t('Click "Save component" to change this field to %type (or go back to cancel). Test your form to ensure that the new widget works with this CiviCRM field.', array('%type' => $form['widget']['widget']['#options'][$form_state['values']['widget']['widget']])));
   drupal_goto($_GET['q'], array('query' => array('type' => $form_state['values']['widget']['widget'])));
@@ -1440,7 +1440,7 @@ function theme_webform_civicrm_components_form($variables) {
   unset($form['add']['type']['#options']['civicrm_contact']);
   if (!empty($node->webform_civicrm)) {
     civicrm_initialize();
-    $enabled = webform_civicrm_enabled_fields($node);
+    $enabled = wf_crm_enabled_fields($node);
     $form['components']['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_admin.css';
   }
 
@@ -1497,12 +1497,12 @@ function theme_webform_civicrm_components_form($variables) {
         $type = $form['add']['type']['#options'][$component['type']];
       }
       if (in_array($cid, $enabled)) {
-        $fields = webform_civicrm_get_fields();
-        $sets = webform_civicrm_get_fields('sets');
+        $fields = wf_crm_get_fields();
+        $sets = wf_crm_get_fields('sets');
         $class = 'civi-icon';
         $title = $clone = '';
         list( , $c, $ent, $n, $table, $name) = explode('_', $component['form_key'], 6);
-        $field = webform_civicrm_aval($fields, $table . '_' . $name, array('type' => 'fieldset'));
+        $field = wf_crm_aval($fields, $table . '_' . $name, array('type' => 'fieldset'));
         if ($component['type'] == 'fieldset') {
           $title = t('Container for Contact !num', array('!num' => $c));
           $type = t('Contact !num Fieldset', array('!num' => $c));
@@ -1529,7 +1529,7 @@ function theme_webform_civicrm_components_form($variables) {
         // Show defaults with labels instead of keys
         if ($component['type'] == 'civicrm_contact') {
           if ($component['extra']['default'] == 'contact_id') {
-            $component['value'] = check_plain(webform_civicrm_display_name($component['extra']['default_contact_id']));
+            $component['value'] = check_plain(wf_crm_display_name($component['extra']['default_contact_id']));
           }
           elseif ($component['extra']['default'] == 'user') {
             $component['value'] = t('Current User');
@@ -1543,10 +1543,10 @@ function theme_webform_civicrm_components_form($variables) {
         }
         elseif ($component['value'] && $field['type'] == 'select') {
           if ($component['type'] == 'select') {
-            $items = webform_civicrm_str2array($component['extra']['items']);
+            $items = wf_crm_str2array($component['extra']['items']);
           }
           else {
-            $items = webform_civicrm_field_options($component, 'components_form', $node->webform_civicrm['data']);
+            $items = wf_crm_field_options($component, 'components_form', $node->webform_civicrm['data']);
           }
           $val = '';
           foreach (explode(',', $component['value']) as $v) {
@@ -1621,7 +1621,7 @@ function theme_webform_civicrm_components_form($variables) {
     }
   }
   else {
-    $message = webform_civicrm_admin_access($node) ? t('Add a webform component below, or click the CiviCRM tab to add CRM fields.') : t('No Components, add a component below.');
+    $message = wf_crm_admin_access($node) ? t('Add a webform component below, or click the CiviCRM tab to add CRM fields.') : t('No Components, add a component below.');
     $rows[] = array(array('data' => $message, 'colspan' => 9));
   }
 

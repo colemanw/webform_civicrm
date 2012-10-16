@@ -11,7 +11,7 @@
  * @Param $param: optional extra info for the query (passing a param will bypass caching)
  * @Return array
  */
-function webform_civicrm_get_options($option_group, $param = NULL) {
+function wf_crm_get_options($option_group, $param = NULL) {
   static $cache = array();
   if ($param || !isset($cache[$option_group])) {
     $vars = $ret = array();
@@ -55,7 +55,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
     elseif ($option_group == 'tag') {
       require_once 'CRM/Core/BAO/Tag.php';
       // $param must contain entity i.e. contact and optionally a tagset id
-      return CRM_Core_BAO_Tag::getTags("civicrm_{$param['entity']}", $ret, webform_civicrm_aval($param, 'tagset'), '- ');
+      return CRM_Core_BAO_Tag::getTags("civicrm_{$param['entity']}", $ret, wf_crm_aval($param, 'tagset'), '- ');
     }
     elseif ($option_group == 'group' || $option_group == 'mailing_lists') {
       $sql = 'SELECT id AS value, title AS label FROM civicrm_group WHERE is_active = 1 AND is_hidden = 0';
@@ -143,19 +143,19 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
  * @Param $context: Where is this being called from?
  * @Param $data: CiviCRM entity data
  */
-function webform_civicrm_field_options($field, $context, $data) {
+function wf_crm_field_options($field, $context, $data) {
   $ret = array();
-  $fields = webform_civicrm_get_fields();
-  if ($pieces = webform_civicrm_explode_key($field['form_key'])) {
+  $fields = wf_crm_get_fields();
+  if ($pieces = wf_crm_explode_key($field['form_key'])) {
     list( , $c, $ent, $n, $table, $name) = $pieces;
     // Ensure we have complete info for this field
     $field += $fields[$table . '_' . $name];
     if ($name === 'contact_sub_type') {
-      list($contact_types, $sub_types) = webform_civicrm_get_contact_types();
+      list($contact_types, $sub_types) = wf_crm_get_contact_types();
       $ret = $sub_types[$data['contact'][$c]['contact'][1]['contact_type']];
     }
     elseif ($name === 'relationship_type_id') {
-      $ret = webform_civicrm_get_contact_relationship_types($data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][$n]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$n]['contact'][1]['contact_sub_type']);
+      $ret = wf_crm_get_contact_relationship_types($data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][$n]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$n]['contact'][1]['contact_sub_type']);
     }
     elseif ($name === 'relationship_permission') {
       $ret = array(
@@ -165,8 +165,8 @@ function webform_civicrm_field_options($field, $context, $data) {
       );
     }
     // If this is a contract reference or shared address field, list webform contacts
-    elseif ($name === 'master_id' || webform_civicrm_aval($field, 'data_type') === 'ContactReference') {
-      $contact_type = webform_civicrm_get_list($table, $name);
+    elseif ($name === 'master_id' || wf_crm_aval($field, 'data_type') === 'ContactReference') {
+      $contact_type = wf_crm_get_list($table, $name);
       foreach ($data['contact'] as $num => $contact) {
         if ($num != $c || $name != 'master_id') {
           if ($contact_type == 'contact' || $contact_type == $contact['contact'][1]['contact_type']) {
@@ -179,7 +179,7 @@ function webform_civicrm_field_options($field, $context, $data) {
       require_once 'CRM/Event/PseudoConstant.php';
       $ret = CRM_Event_PseudoConstant::participantStatus(NULL, NULL, 'label');
     }
-    elseif ($list = webform_civicrm_get_list($table, $name)) {
+    elseif ($list = wf_crm_get_list($table, $name)) {
       $param = NULL;
       if ($name === 'event_id') {
         $param = $data['reg_options'] + array('context' => $context);
@@ -188,10 +188,10 @@ function webform_civicrm_field_options($field, $context, $data) {
         $split = explode('_', $name);
         $param = array(
           'entity' => $ent,
-          'tagset' => webform_civicrm_aval($split, 1)
+          'tagset' => wf_crm_aval($split, 1)
         );
       }
-      $ret = webform_civicrm_get_options($list, $param);
+      $ret = wf_crm_get_options($list, $param);
       // Hack to format money data correctly
       if (!empty($field['data_type']) && $field['data_type'] === 'Money') {
         $old = $ret;
@@ -203,29 +203,29 @@ function webform_civicrm_field_options($field, $context, $data) {
     }
     // Remove options that were set behind the scenes
     if ($context != 'config_form' && !empty($field['extra']['multiple']) && !empty($field['expose_list'])) {
-      foreach (webform_civicrm_aval($data, "$ent:$c:$table:$n:$name", array()) as $key => $val) {
+      foreach (wf_crm_aval($data, "$ent:$c:$table:$n:$name", array()) as $key => $val) {
         unset($ret[$key]);
       }
     }
   }
-  return $context == 'component_insert' ? webform_civicrm_array2str($ret) : $ret;
+  return $context == 'component_insert' ? wf_crm_array2str($ret) : $ret;
 }
 
 /**
  * Get id of the option list for a field
  */
-function webform_civicrm_get_list($table, $name) {
-  $lists = webform_civicrm_get_fields('lists');
+function wf_crm_get_list($table, $name) {
+  $lists = wf_crm_get_fields('lists');
   if (isset($lists[$table . '_' . $name])) {
     return $lists[$table . '_' . $name];
   }
-  return webform_civicrm_aval($lists, "*_$name");
+  return wf_crm_aval($lists, "*_$name");
 }
 
 /**
  * Get contact types and sub-types
  */
-function webform_civicrm_get_contact_types() {
+function wf_crm_get_contact_types() {
   static $contact_types = array();
   static $sub_types = array();
   if (!$contact_types) {
@@ -253,7 +253,7 @@ function webform_civicrm_get_contact_types() {
 /**
  * Get relationship type data
  */
-function webform_civicrm_get_relationship_types() {
+function wf_crm_get_relationship_types() {
   static $types = array();
   if (!$types) {
     $f = array('id', 'name_a_b', 'name_b_a', 'label_a_b', 'label_b_a', 'type_a', 'type_b', 'sub_type_a', 'sub_type_b');
@@ -275,9 +275,9 @@ function webform_civicrm_get_relationship_types() {
 /**
  * Get valid relationship types for a given pair of contacts
  */
-function webform_civicrm_get_contact_relationship_types($type_a, $type_b, $sub_type_a, $sub_type_b) {
+function wf_crm_get_contact_relationship_types($type_a, $type_b, $sub_type_a, $sub_type_b) {
   $ret = array();
-  foreach (webform_civicrm_get_relationship_types() as $t) {
+  foreach (wf_crm_get_relationship_types() as $t) {
     $reciprocal = ($t['label_a_b'] != $t['label_b_a'] && $t['label_b_a'] || $t['type_a'] != $t['type_b']);
     if (($t['type_a'] == $type_a || !$t['type_a'])
     && ($t['type_b'] == $type_b || !$t['type_b'])
@@ -300,12 +300,12 @@ function webform_civicrm_get_contact_relationship_types($type_a, $type_b, $sub_t
 /**
  * Get custom data for an entity
  */
-function webform_civicrm_get_custom($entity_id, $entity_type = NULL, $normalize = TRUE) {
+function wf_crm_get_custom($entity_id, $entity_type = NULL, $normalize = TRUE) {
   static $parents = array();
   if (empty($parents)) {
     require_once 'CRM/Core/BAO/CustomValueTable.php';
     // Create matching table to sort fields by group
-    foreach (webform_civicrm_get_fields() as $key => $value) {
+    foreach (wf_crm_get_fields() as $key => $value) {
       list($group, $field) = explode('_', $key, 2);
       if (substr($field, 0, 7) == 'custom_') {
         $parents[$field] = $group;
@@ -348,8 +348,8 @@ function webform_civicrm_get_custom($entity_id, $entity_type = NULL, $normalize 
 /**
  * Save custom data for an entity
  */
-function webform_civicrm_save_custom($entity, $entity_id, $entity_type = NULL) {
-  $existing = webform_civicrm_get_custom($entity_id, $entity_type, FALSE);
+function wf_crm_save_custom($entity, $entity_id, $entity_type = NULL) {
+  $existing = wf_crm_get_custom($entity_id, $entity_type, FALSE);
   $params = array('entityID' => $entity_id);
   foreach ($entity as $table => $values) {
     if (substr($table, 0, 2) == 'cg' && is_array($values)) {
@@ -393,10 +393,10 @@ function webform_civicrm_save_custom($entity, $entity_id, $entity_type = NULL) {
  * @Param $submission: if supplied, will match field keys with submitted values
  * @Param $show_all: get every field even if it belongs to a contact that does not exist
  */
-function webform_civicrm_enabled_fields($node, $submission = NULL, $show_all = FALSE) {
+function wf_crm_enabled_fields($node, $submission = NULL, $show_all = FALSE) {
   $enabled = array();
   if (!empty($node->webform['components']) && (!empty($node->webform_civicrm) || $show_all)) {
-    $fields = webform_civicrm_get_fields();
+    $fields = wf_crm_get_fields();
     foreach ($node->webform['components'] as $c) {
       $exp = explode('_', $c['form_key'], 5);
       if (count($exp) == 5) {
@@ -406,7 +406,7 @@ function webform_civicrm_enabled_fields($node, $submission = NULL, $show_all = F
             continue;
           }
           if ($submission) {
-            $enabled[$c['form_key']] = webform_civicrm_aval($submission, $c['cid'], TRUE);
+            $enabled[$c['form_key']] = wf_crm_aval($submission, $c['cid'], TRUE);
           }
           else {
             $enabled[$c['form_key']] = $c['cid'];
@@ -422,7 +422,7 @@ function webform_civicrm_enabled_fields($node, $submission = NULL, $show_all = F
 /**
  * Match a state/province id to its abbr. and vice-versa
  */
-function webform_civicrm_state_abbr($input, $ret = 'abbreviation', $country_id = NULL) {
+function wf_crm_state_abbr($input, $ret = 'abbreviation', $country_id = NULL) {
   $input_type = $ret == 'id' ? 'abbreviation' : 'id';
   $sql = "SELECT $ret FROM civicrm_state_province WHERE $input_type = %1";
   $vars = array(1 => array($input, $ret == 'id' ? 'String' : 'Integer'));
@@ -442,7 +442,7 @@ function webform_civicrm_state_abbr($input, $ret = 'abbreviation', $country_id =
  * @Return lists: Option lists keyed to option_group name
  * @Return sets: Info on fieldsets (tables)
  */
-function webform_civicrm_get_fields($var = 'fields') {
+function wf_crm_get_fields($var = 'fields') {
   static $fields = array();
   static $tokens = array();
   static $lists = array();
@@ -1009,7 +1009,7 @@ function webform_civicrm_get_fields($var = 'fields') {
  * @param $type: what type of ID is supplied
  * With no arguments passed in, this function will return the contact_id of the current logged-in user
  */
-function webform_civicrm_user_cid($id = NULL, $type = 'uf') {
+function wf_crm_user_cid($id = NULL, $type = 'uf') {
   static $current_user = NULL;
   if (!$id) {
     if ($current_user !== NULL) {
@@ -1024,10 +1024,10 @@ function webform_civicrm_user_cid($id = NULL, $type = 'uf') {
   // Lookup current domain for multisite support
   static $domain = 0;
   if (!$domain) {
-    $domain = webform_civicrm_api('domain', 'get', array('current_domain' => 1, 'return.id' => 1));
-    $domain = webform_civicrm_aval($domain, 'id', 1);
+    $domain = wf_civicrm_api('domain', 'get', array('current_domain' => 1, 'return.id' => 1));
+    $domain = wf_crm_aval($domain, 'id', 1);
   }
-  $result = webform_civicrm_api('uf_match', 'get', array($type . '_id' => $id));
+  $result = wf_civicrm_api('uf_match', 'get', array($type . '_id' => $id));
   if (!empty($result['values'])) {
     foreach ($result['values'] as $val) {
       if ($val['domain_id'] == $domain) {
@@ -1044,19 +1044,19 @@ function webform_civicrm_user_cid($id = NULL, $type = 'uf') {
 /**
  * Fetch contact display name
  */
-function webform_civicrm_display_name($cid) {
+function wf_crm_display_name($cid) {
   if (!$cid || !is_numeric($cid)) {
     return '';
   }
   civicrm_initialize();
-  $result = webform_civicrm_api('contact', 'get', array('id' => $cid, 'return.display_name' => 1, 'is_deleted' => 0));
-  return check_plain(webform_civicrm_aval($result, "values:$cid:display_name", ''));
+  $result = wf_civicrm_api('contact', 'get', array('id' => $cid, 'return.display_name' => 1, 'is_deleted' => 0));
+  return check_plain(wf_crm_aval($result, "values:$cid:display_name", ''));
 }
 
 /**
  * Explodes form key into an array and verifies that it is in the right format
  */
-function webform_civicrm_explode_key($key) {
+function wf_crm_explode_key($key) {
   $pieces = explode('_', $key, 6);
   if (count($pieces) != 6 || $pieces[0] !== 'civicrm') {
     return FALSE;
@@ -1067,7 +1067,7 @@ function webform_civicrm_explode_key($key) {
 /**
  * Convert a | separated string into an array
  */
-function webform_civicrm_str2array($str) {
+function wf_crm_str2array($str) {
   $ret = array();
   if ($str) {
     foreach (explode("\n", trim($str)) as $row) {
@@ -1081,7 +1081,7 @@ function webform_civicrm_str2array($str) {
 /**
  * Convert an array into a | separated string
  */
-function webform_civicrm_array2str($arr) {
+function wf_crm_array2str($arr) {
   $str = '';
   foreach ($arr as $k => $v) {
     $str .= ($str ? "\n" : '') . $k . '|' . $v;
@@ -1092,9 +1092,9 @@ function webform_civicrm_array2str($arr) {
 /**
  * Token replacement for form messages
  */
-function webform_civicrm_replace_tokens($str, $contact) {
+function wf_crm_replace_tokens($str, $contact) {
   $sp = CRM_Core_DAO::VALUE_SEPARATOR;
-  $tokens = webform_civicrm_get_fields('tokens');
+  $tokens = wf_crm_get_fields('tokens');
   $values = array();
   foreach ($tokens as $k => &$t) {
     if (empty($contact[$k])) {
@@ -1114,7 +1114,7 @@ function webform_civicrm_replace_tokens($str, $contact) {
  * Wrapper for all CiviCRM API calls
  * For consistency, future-proofing, and error handling
  */
-function webform_civicrm_api($entity, $operation, $params) {
+function wf_civicrm_api($entity, $operation, $params) {
   $params += array(
     'check_permissions' => FALSE,
     'version' => 3
@@ -1140,8 +1140,8 @@ function webform_civicrm_api($entity, $operation, $params) {
  * Check if a name or email field exists for this contact.
  * This determines whether a new contact can be created on the webform.
  */
-function webform_civicrm_name_field_exists($enabled, $c, $contact_type) {
-  foreach (webform_civicrm_required_contact_fields($contact_type) as $f) {
+function wf_crm_name_field_exists($enabled, $c, $contact_type) {
+  foreach (wf_crm_required_contact_fields($contact_type) as $f) {
     $fid = 'civicrm_' . $c . '_contact_1_' . $f['table'] . '_' . $f['name'];
     if (!empty($enabled[$fid])) {
       return 1;
@@ -1153,7 +1153,7 @@ function webform_civicrm_name_field_exists($enabled, $c, $contact_type) {
 /**
  * At least one of these fields is required to create a contact
  */
-function webform_civicrm_required_contact_fields($contact_type) {
+function wf_crm_required_contact_fields($contact_type) {
   if ($contact_type == 'individual') {
     return array(
       array('table' => 'email', 'name' => 'email'),
@@ -1169,9 +1169,9 @@ function webform_civicrm_required_contact_fields($contact_type) {
  * Fetch an existing activity for a contact based on activity & case criteria
  * Maybe someday this will be possible through the CiviCRM API
  */
-function webform_civicrm_activity_find($params) {
+function wf_crm_activity_find($params) {
   if (!empty($params['status_id'])) {
-    $cid = webform_civicrm_aval($params, 'contact_id');
+    $cid = wf_crm_aval($params, 'contact_id');
     unset($params['contact_id']);
     $sql = 'SELECT civicrm_activity.id FROM civicrm_activity';
     if (!empty($params['case_id'])) {
@@ -1200,14 +1200,14 @@ function webform_civicrm_activity_find($params) {
  * @param $params: Array of case info in standard webform_civicrm format
  * @param $ids: Passed if client id refers to a contact number and not a contact id
  */
-function webform_civicrm_case_find($params, $ids = NULL) {
+function wf_crm_case_find($params, $ids = NULL) {
   foreach ((array) $params['case'][1]['client_id'] as $client_id) {
     if ($ids !== NULL) {
-      $client_id = webform_civicrm_aval($ids, "cid:$client_id");
+      $client_id = wf_crm_aval($ids, "cid:$client_id");
     }
     if ($client_id) {
-      $result = webform_civicrm_api('case', 'get', array('client_id' => $client_id));
-      foreach (webform_civicrm_aval($result, 'values', array()) as $case) {
+      $result = wf_civicrm_api('case', 'get', array('client_id' => $client_id));
+      foreach (wf_crm_aval($result, 'values', array()) as $case) {
         if (empty($case['is_deleted']) && in_array($case['status_id'], $params['existing_case_status'])) {
           $case_types = $case['case_type_id'];
           if (is_string($case_types)) {
@@ -1225,7 +1225,7 @@ function webform_civicrm_case_find($params, $ids = NULL) {
 /**
  * Fetch info and remaining spaces for events
  */
-function webform_civicrm_event_info(&$events) {
+function wf_crm_event_info(&$events) {
   if (!empty($events)) {
     require_once 'CRM/Event/BAO/Participant.php';
     $now = time();
@@ -1257,7 +1257,7 @@ function webform_civicrm_event_info(&$events) {
  * Fetch the path of a file
  * And format it as a public url that CiviCRM can read
  */
-function webform_civicrm_filepath($id) {
+function wf_crm_filepath($id) {
   if ($file = file_load($id)) {
     global $base_url;
     // Escape all characters except : and /
