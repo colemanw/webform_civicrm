@@ -851,6 +851,9 @@ function wf_crm_configure_form_submit($form, &$form_state) {
         if (is_array($val)) {
           unset($val['create_civicrm_webform_element']);
         }
+        elseif ($val == 'create_civicrm_webform_element') {
+          $val = '';
+        }
         if (!isset($enabled[$key]) && in_array('create_civicrm_webform_element', $aval, TRUE)) {
           // Restore disabled component
           if (isset($disabled[$key])) {

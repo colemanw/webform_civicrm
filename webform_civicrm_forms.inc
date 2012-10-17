@@ -375,10 +375,10 @@ function wf_crm_contact_get($node, $enabled, $c, $cids, $exclude = array()) {
       $types = array();
       $prefix = "civicrm_{$c}_contact_{$r}_relationship_";
       if (!empty($cids[$r])) {
-        if (!empty($contact['relationship'][$r]['relationship_type_id'])) {
+        if (!empty($contact['relationship'][$r]['relationship_type_id']) && $contact['relationship'][$r]['relationship_type_id'] != 'create_civicrm_webform_element') {
           $types = array($contact['relationship'][$r]['relationship_type_id']);
         }
-        elseif (!empty($enabled[$prefix . 'relationship_type_id'])) {
+        if (!empty($enabled[$prefix . 'relationship_type_id'])) {
           $types = array_keys(wf_crm_exposed_options($node, $enabled[$prefix . 'relationship_type_id']));
         }
       }
