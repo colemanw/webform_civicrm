@@ -23,7 +23,7 @@ function webform_civicrm_menu() {
     'type' => MENU_LOCAL_TASK,
   );
   $items['webform-civicrm/js/%'] = array(
-    'page callback' => 'wf_crm_js_options',
+    'page callback' => 'wf_crm_ajax',
     'file' => 'contact_component.inc',
     'access callback' => TRUE,
     'page arguments' => array(2),

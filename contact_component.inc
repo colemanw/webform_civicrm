@@ -479,6 +479,7 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
       }
     }
     if (count($ret) < $limit && $component['extra']['allow_create']) {
+      // HTML hack to get prompt to show up different than search results
       $ret[] = array('id' => "-$str", 'name' => '<em><i>' . $component['extra']['none_prompt'] . '</i></em>');
     }
   }
@@ -499,7 +500,7 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
 /**
  * Callback to serve AJAX requests.
  */
-function wf_crm_js_options($key, $input = '') {
+function wf_crm_ajax($key, $input = '') {
   civicrm_initialize();
   // Populate state/prov lists on the fly
   if ($key == 'state_province') {
@@ -538,6 +539,7 @@ function wf_crm_js_options($key, $input = '') {
     if ($name = wf_crm_contact_access($component, $filters, $_GET['cid'])) {
       if ($_GET['load'] == 'name') {
         if ($_GET['cid'][0] === '-') {
+          // HTML hack to get prompt to show up different than search results
           $data = '<em><i>' . $component['extra']['none_prompt'] . '</i></em>';
         }
         else {
