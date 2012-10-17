@@ -539,7 +539,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
   );
   if ($ml = wf_crm_get_options('mailing_lists')) {
     if (count($ml) > 4) {
-      $ml = array_slice($ml, 0, 4);
+      $ml = array_slice($ml, 0, 3);
       $ml[] = t('etc.');
     }
     $form['options']['confirm_subscription']['#description'] .= implode(', ', $ml) . '</em>';

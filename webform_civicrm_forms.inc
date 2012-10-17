@@ -1410,7 +1410,9 @@ function wf_crm_relationship_get($r_types, $cid1, $cid2) {
     while ($dao->fetch()) {
       $type = $dao->relationship_type_id;
       $side = $dao->contact_id_a == $cid1 ? 'a' : 'b';
+      // Verify this is the correct orientation for the relationship
       if (in_array("{$type}_$side", $r_types) || in_array("{$type}_r", $r_types)) {
+        // Discard metadata from the query
         foreach ((array) $dao as $k => $v) {
           if ($k[0] != '_' && $k != 'N') {
             $found[$k] = $v;
