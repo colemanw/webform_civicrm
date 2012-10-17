@@ -1362,22 +1362,14 @@ function _wf_crm_fill_contact_ref(&$data, $values, $cids, $depth = 0) {
 function wf_crm_process_relationship($params, $cid1, $cid2) {
   if ($cid1 != $cid2) {
     list($type, $side) = explode('_', $params['relationship_type_id']);
+    $existing = wf_crm_relationship_get(array($params['relationship_type_id']), $cid1, $cid2);
     // Swap contacts if this is an inverse relationship
-    if ($side == 'b') {
+    if ($side == 'b' || ($existing && $existing['contact_id_a'] != $cid1)) {
       list($cid1, $cid2) = array($cid2, $cid1);
     }
-    $existing = wf_crm_relationship_get(array($params['relationship_type_id']), $cid1, $cid2);
-    if ($existing) {
-      // Swap contacts if reciprocal relationship is saved the other way in the db
-      if ($side == 'r' && $existing['contact_id_a'] != $cid1) {
-        list($cid1, $cid2) = array($cid2, $cid1);
-      }
-      $params += $existing;
-    }
-    else {
-      $params['contact_id_a'] = $cid1;
-      $params['contact_id_b'] = $cid2;
-    }
+    $params += $existing;
+    $params['contact_id_a'] = $cid1;
+    $params['contact_id_b'] = $cid2;
     $params['relationship_type_id'] = $type;
     if (!empty($params['relationship_permission'])) {
       $perm = $params['relationship_permission'];
