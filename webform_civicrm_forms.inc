@@ -293,6 +293,7 @@ function wf_crm_contact_get($node, $enabled, $c, $cids, $exclude = array()) {
   $cid = $cids[$c];
   $data = $node->webform_civicrm['data'];
   $contact = $data['contact'][$c];
+  $prefix = 'civicrm_' . $c . '_contact_1_';
   foreach (array('contact', 'address', 'email', 'phone', 'website') as $field) {
     if ((!empty($contact['number_of_' . $field]) && !in_array($field, $exclude)) || $field == 'contact') {
       $params = array('contact_id' => $cid);
@@ -339,8 +340,7 @@ function wf_crm_contact_get($node, $enabled, $c, $cids, $exclude = array()) {
     }
   }
   // Communication prefs are not fetched by default by the api
-  if (isset($enabled['civicrm_' . $c . '_contact_1_contact_preferred_communication_method'])
-  || isset($enabled['civicrm_' . $c . '_contact_1_contact_preferred_language'])) {
+  if (isset($enabled[$prefix . 'contact_preferred_communication_method']) || isset($enabled[$prefix . 'contact_preferred_language'])) {
     if (!in_array('contact', $exclude)) {
       $result = wf_civicrm_api('contact', 'get', array(
         'contact_id' => $cid,
@@ -352,11 +352,10 @@ function wf_crm_contact_get($node, $enabled, $c, $cids, $exclude = array()) {
   }
   // Retrieve group and tag data
   if (!in_array('other', $exclude)) {
-    $prefix = 'civicrm_' . $c . '_contact_1_other_';
     $api = array('tag' => 'entity_tag', 'group' => 'group_contact');
     foreach (array_keys($enabled) as $fid) {
       // This way we support multiple tag fields (for tagsets)
-      if (strpos($fid, $prefix) !== FALSE) {
+      if (strpos($fid, $prefix . 'other') !== FALSE) {
         list(, , , , , $ent) = explode('_', $fid);
         list(, , , , , $field) = explode('_', $fid, 6);
         // Cheap way to avoid fetching the same data twice from the api
@@ -373,22 +372,23 @@ function wf_crm_contact_get($node, $enabled, $c, $cids, $exclude = array()) {
   if (!in_array('relationship', $exclude) && !empty($contact['number_of_relationship'])) {
     $enabled = wf_crm_enabled_fields($node);
     for ($r = 1; $r <= $contact['number_of_relationship']; ++$r) {
+      $types = array();
+      $prefix = "civicrm_{$c}_contact_{$r}_relationship_";
       if (!empty($cids[$r])) {
         if (!empty($contact['relationship'][$r]['relationship_type_id'])) {
           $types = array($contact['relationship'][$r]['relationship_type_id']);
         }
-        else {
-          $types = array_keys(wf_crm_exposed_options($node, $enabled["civicrm_{$c}_contact_{$r}_relationship_relationship_type_id"]));
+        elseif (!empty($enabled[$prefix . 'relationship_type_id'])) {
+          $types = array_keys(wf_crm_exposed_options($node, $enabled[$prefix . 'relationship_type_id']));
         }
       }
       $rel = wf_crm_relationship_get($types, $cid, $cids[$r]);
       if ($rel) {
         $info['relationship'][$r] = $rel;
         // Fetch custom data
-        $test = "civicrm_{$c}_contact_{$r}_relationship_custom_";
-        $len = strlen($test);
+        $len = strlen($prefix . 'custom_');
         foreach ($enabled as $k => $v) {
-          if (substr($k, 0, $len) == $test) {
+          if (substr($k, 0, $len) == $prefix . 'custom_') {
             $custom = wf_civicrm_api('custom_value', 'get', array('entity_id' => $rel['id'], 'entity_table' => 'Relationship'));
             foreach ($custom['values'] as $k => $v) {
               if (isset($v[0])) {
