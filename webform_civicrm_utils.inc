@@ -1264,3 +1264,28 @@ function wf_crm_filepath($id) {
     return str_replace('public://', $base_url . '/' . variable_get('file_public_path', conf_path() . '/files') . '/', str_replace(array('%3A', '%2F'), array(':', '/'), rawurlencode($file->uri)));
   }
 }
+
+/**
+ * Get or set a value from a webform submission
+ * Adds backward-compatibility with webform version 3
+ */
+function wf_crm_sub_value(&$submission, $fid, $value = NULL) {
+  // Webform 3 style
+  if (isset($submission->data[$fid]['value'])) {
+    $field =& $submission->data[$fid]['value'];
+  }
+  // Webform 4 style
+  elseif (isset($submission->data[$fid])) {
+    $field =& $submission->data[$fid];
+  }
+  else {
+    return array();
+  }
+  if (is_array($value)) {
+    $field = array_values($value);
+  }
+  elseif ($value !== NULL) {
+    $field[0] = $value;
+  }
+  return $field;
+}

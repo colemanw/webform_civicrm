@@ -3,5 +3,5 @@ description = Links Webform submissions with your CiviCRM database.
 core = 7.x
 package = CiviCRM
 dependencies[] = civicrm (>=4.1)
-dependencies[] = webform (3.x)
+dependencies[] = webform (>3.9)
 dependencies[] = libraries

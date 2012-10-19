@@ -529,10 +529,10 @@ function wf_crm_process_submission($node, &$submission, $op) {
       if (substr($field_key, -8) == 'existing') {
         list(, $c, ) = explode('_', $field_key, 3);
         $id['cid'][$c] = 0;
-        if (!empty($submission->data[$fid]['value'][0]) && is_numeric($submission->data[$fid]['value'][0])) {
+        $cid = wf_crm_aval(wf_crm_sub_value($submission, $fid), 0);
+        if ($cid && is_numeric($cid)) {
           module_load_include('inc', 'webform_civicrm', 'contact_component');
           $component = $node->webform['components'][$fid];
-          $cid = $submission->data[$fid]['value'][0];
           $filters = wf_crm_search_filters($node, $component);
           // Verify access to this contact
           if (wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
@@ -688,11 +688,11 @@ function wf_crm_process_submission($node, &$submission, $op) {
       // Fill values for hidden ID & CS fields
       $fid = 'civicrm_' . $c . '_contact_1_contact_';
       if (!empty($enabled[$fid . 'contact_id'])) {
-        $submission->data[$enabled[$fid . 'contact_id']]['value'] = array($cid);
+        wf_crm_sub_value($submission, $enabled[$fid . 'contact_id'], $cid);
       }
       if (!empty($enabled[$fid . 'external_identifier']) && !empty($updating['cid'][$c])) {
         $exid = wf_civicrm_api('contact', 'get', array('contact_id' => $cid, 'return.external_identifier' => 1));
-        $submission->data[$enabled[$fid . 'external_identifier']]['value'] = array(wf_crm_aval($exid, "values:$cid:external_identifier"));
+        wf_crm_sub_value($submission, $enabled[$fid . 'external_identifier'], wf_crm_aval($exid, "values:$cid:external_identifier"));
       }
       if (!empty($enabled[$fid . 'cs'])) {
         if (empty($params['cs'])) {
@@ -703,7 +703,7 @@ function wf_crm_process_submission($node, &$submission, $op) {
         }
         require_once 'CRM/Contact/BAO/Contact/Utils.php';
         $cs = CRM_Contact_BAO_Contact_Utils::generateChecksum($cid, NULL, $life);
-        $submission->data[$enabled[$fid . 'cs']]['value'] = array($cs);
+        wf_crm_sub_value($submission, $enabled[$fid . 'cs'], $cs);
       }
 
       // Save location data
@@ -1428,7 +1428,8 @@ function _wf_crm_form_data(&$data, $enabled, $submission, $updating, $node) {
   $sp = CRM_Core_DAO::VALUE_SEPARATOR;
   $fields = wf_crm_get_fields();
   foreach ($enabled as $field_key => $fid) {
-    if (isset($submission->data[$fid]['value'])) {
+    $val = wf_crm_sub_value($submission, $fid);
+    if ($val) {
       list( , $c, $ent, $n, $table, $name) = explode('_', $field_key, 6);
       if ($name === 'existing') {
         continue;
@@ -1446,7 +1447,6 @@ function _wf_crm_form_data(&$data, $enabled, $submission, $updating, $node) {
       if ($field['type'] == 'hidden') {
         continue;
       }
-      $val = $submission->data[$fid]['value'];
       if ($name === 'privacy') {
         foreach (array_keys(wf_crm_exposed_options($node, $fid)) as $key) {
           $data[$ent][$c][$table][$n][$key] = in_array($key, $val);
