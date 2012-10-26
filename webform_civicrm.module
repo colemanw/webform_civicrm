@@ -389,8 +389,8 @@ function webform_civicrm_form_validate($form, &$form_state) {
 function webform_civicrm_storage($form, $form_state = NULL) {
   static $storage = array();
   // During form submission, store data for later
-  if (is_array($form) && !empty($form['#node']->nid) && !empty($form_state['storage']['civicrm'])) {
-    $storage[$form['#node']->nid] = $form_state['storage']['civicrm'];
+  if (is_array($form) && !empty($form['#node']->nid) && !empty($form_state['civicrm'])) {
+    $storage[$form['#node']->nid] = $form_state['civicrm'];
   }
   // Retrieve stored data
   elseif (is_numeric($form)) {

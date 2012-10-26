@@ -57,15 +57,15 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   // If this is an edit op, use the original IDs and return
   if (isset($form['#submission']->sid)) {
     if (isset($form['#submission']->civicrm)) {
-      $form_state['storage']['civicrm']['id']['cid'] = $form['#submission']->civicrm['contact_id'];
-      $form_state['storage']['civicrm']['id']['act'][1] = $form['#submission']->civicrm['activity_id'];
+      $form_state['civicrm']['id']['cid'] = $form['#submission']->civicrm['contact_id'];
+      $form_state['civicrm']['id']['act'][1] = $form['#submission']->civicrm['activity_id'];
     }
     webform_civicrm_fill_values($form['submitted'], array(), $fields, array());
     return;
   }
   // If this form is already in-process, IDs will be stored
-  if (!empty($form_state['storage'])) {
-    $id = $form_state['storage']['civicrm']['id'];
+  if (!empty($form_state['civicrm'])) {
+    $id = $form_state['civicrm']['id'];
   }
   else {
     $args = $_GET;
@@ -374,7 +374,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
   }
 
   // Store ids
-  $form_state['storage']['civicrm']['id'] = $id;
+  $form_state['civicrm']['id'] = $id;
 
   // Set default values and other attributes for CiviCRM form elements
   // Passing $submitted helps avoid overwriting values that have been entered on a multi-step form
@@ -1135,7 +1135,7 @@ function _webform_civicrm_form_validate($form, &$form_state, $submitted) {
  */
 function _webform_civicrm_participant_validate($form, &$form_state, $submitted) {
   $data = $form['#node']->webform_civicrm['data'];
-  $cids = webform_civicrm_aval($form_state, 'storage:civicrm:id:cid', array());
+  $cids = webform_civicrm_aval($form_state, 'civicrm:id:cid', array());
   // Check how many valid contacts we have
   $contacts = array();
   foreach (array_keys($data['contact']) as $c) {
