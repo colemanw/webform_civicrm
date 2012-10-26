@@ -46,8 +46,10 @@ var wfCiviContact = (function ($, D) {
           }
         });
         if (val === 'auto' || val === 'relationship') {
-          $('.form-item-extra-randomize').removeAttr('style');
-          $('.form-item-extra-randomize :checkbox').removeAttr('disabled');
+          $('.form-item-extra-randomize, .form-item-extra-dupes-allowed')
+            .removeAttr('style')
+            .find(':checkbox')
+            .removeAttr('disabled');
         }
       }).change();
       $('#edit-extra-widget', context).once('wf-civi').change(function() {

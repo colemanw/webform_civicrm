@@ -34,6 +34,7 @@ function _webform_defaults_civicrm_contact() {
       'default' => '',
       'default_contact_id' => '',
       'default_relationship' => '',
+      'dupes_allowed' => FALSE,
       'filters' => array(
         'contact_sub_type' => 0,
         'group' => array(),
@@ -178,7 +179,7 @@ function _webform_edit_civicrm_contact($component) {
     $form['defaults']['default_relationship'] = array(
       '#type' => 'select',
       '#multiple' => TRUE,
-      '#title' => t('Specify Relationship'),
+      '#title' => t('Specify Relationship(s)'),
       '#options' => array(),
       '#default_value' => $component['extra']['default_relationship'],
       '#parents' => array('extra', 'default_relationship'),
@@ -203,6 +204,15 @@ function _webform_edit_civicrm_contact($component) {
         'data-civicrm-id' => $cid,
       );
     }
+  }
+  if ($c > 1) {
+    $form['defaults']['dupes_allowed'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Allow Duplicate Autofill'),
+      '#default_value' => $component['extra']['dupes_allowed'],
+      '#parents' => array('extra', 'dupes_allowed'),
+      '#description' => t('Check this box to allow a contact to be selected even if they already autofilled a prior field on the form. (For example, if contact 1 was autofilled with Bob Smith, should this field also be allowed to select Bob Smith?)'),
+    );
   }
   $form['defaults']['randomize'] = array(
     '#type' => 'checkbox',
@@ -697,13 +707,12 @@ function wf_crm_find_contact($node, $component, &$ids) {
     $found = array();
     switch ($component['extra']['default']) {
       case 'user':
-        if ($c == 1 && $cid = wf_crm_user_cid()) {
-          $found = array($cid);
-        }
+        $cid = wf_crm_user_cid();
+        $found = ($c == 1 && $cid) ? array($cid) : array();
         break;
       case 'contact_id':
-        if ($cid = $component['extra']['default_contact_id']) {
-          $found = array($cid);
+        if ($component['extra']['default_contact_id']) {
+          $found = array($component['extra']['default_contact_id']);
         }
         break;
       case 'relationship':
@@ -719,10 +728,15 @@ function wf_crm_find_contact($node, $component, &$ids) {
     if ($component['extra']['randomize']) {
       shuffle($found);
     }
-    $explicit = array('user', 'contact_id');
+    if (in_array($component['extra']['default'], array('user', 'contact_id'))) {
+      $dupes_allowed = TRUE;
+    }
+    else {
+      $dupes_allowed = $component['extra']['dupes_allowed'];
+    }
     foreach ($found as $cid) {
       // Don't pick the same contact twice unless explicitly told to do so
-      if (!in_array($cid, $ids) || in_array($component['extra']['default'], $explicit)) {
+      if (!in_array($cid, $ids) || $dupes_allowed) {
         // Check filters except for 'auto' which already applied them
         if ($component['extra']['default'] == 'auto' || wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
           $ids[$c] = $cid;
