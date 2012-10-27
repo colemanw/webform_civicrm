@@ -431,9 +431,11 @@ function webform_civicrm_fill_values(&$elements, $data, $fields, $submitted) {
           && empty($element['#multiple']) && is_array($val)) {
             $val = array_pop($val);
           }
-          if ($element['#type'] == 'hidden') {
+          // Set value for "secure value" elements
+          if ($element['#type'] == 'value') {
             $element['#value'] = $val;
           }
+          // Set default value
           $element['#default_value'] = $val;
         }
       }
