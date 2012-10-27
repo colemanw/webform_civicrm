@@ -484,6 +484,7 @@ function wf_crm_fill_form(&$elements, $node, $data = array(), $submitted = array
               $val = array_pop($val);
             }
           }
+          // Set value for "secure value" elements
           if ($element['#type'] == 'value') {
             $element['#value'] = $val;
           }
