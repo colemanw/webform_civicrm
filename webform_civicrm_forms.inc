@@ -484,7 +484,7 @@ function wf_crm_fill_form(&$elements, $node, $data = array(), $submitted = array
               $val = array_pop($val);
             }
           }
-          if ($element['#type'] == 'hidden') {
+          if ($element['#type'] == 'hidden' || $element['#type'] == 'value') {
             $element['#value'] = $val;
           }
           // Set default value
