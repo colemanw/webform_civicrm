@@ -489,7 +489,9 @@ function wf_crm_fill_form(&$elements, $node, $data = array(), $submitted = array
             $element['#value'] = $val;
           }
           // Set default value
-          $element['#default_value'] = $val;
+          else {
+            $element['#default_value'] = $val;
+          }
         }
         if ($name == 'existing') {
           wf_crm_fill_contact_value($node, $component, $element);
