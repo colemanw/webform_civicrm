@@ -436,7 +436,9 @@ function webform_civicrm_fill_values(&$elements, $data, $fields, $submitted) {
             $element['#value'] = $val;
           }
           // Set default value
-          $element['#default_value'] = $val;
+          else {
+            $element['#default_value'] = $val;
+          }
         }
       }
     }
