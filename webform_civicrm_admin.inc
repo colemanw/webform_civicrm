@@ -1540,7 +1540,7 @@ function theme_webform_civicrm_components_form($variables) {
           elseif ($component['extra']['default'] == 'auto') {
             $component['value'] = t('Auto - From Filters');
           }
-          elseif ($rtype = $component['extra']['default_relationship']) {
+          elseif ($component['extra']['default'] == 'relationship' && $component['extra']['default_relationship']) {
             $component['value'] = t('Relationship to Contact 1');
           }
         }
