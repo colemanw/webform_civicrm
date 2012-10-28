@@ -1145,6 +1145,9 @@ function _wf_crm_webform_component_form_alter(&$form, $form_state) {
             'invisible' => array(
               'select[name="widget[widget]"]' => array('value' => $form['type']['#value']),
             ),
+            'disabled' => array(
+              'select[name="widget[widget]"]' => array('value' => $form['type']['#value']),
+            ),
           )
         );
       }
