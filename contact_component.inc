@@ -378,10 +378,15 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
  * Used when rendering or altering a CiviCRM contact field
  */
 function wf_crm_fill_contact_value($node, $component, &$element) {
-  if ($element['#type'] == 'hidden' && !$component['extra']['show_hidden_contact']) {
-    return;
+  $cid = wf_crm_aval($element, '#default_value', '');
+  if ($element['#type'] == 'hidden') {
+    // User may not change this value for hidden fields
+    $element['#value'] = $cid;
+    if (!$component['extra']['show_hidden_contact']) {
+      return;
+    }
   }
-  if ($cid = wf_crm_aval($element, '#default_value')) {
+  if ($cid) {
     // Don't lookup same contact again
     if (wf_crm_aval($element, '#attributes:data-civicrm-id') != $cid) {
       $filters = wf_crm_search_filters($node, $component);
