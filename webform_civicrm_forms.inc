@@ -14,7 +14,7 @@ module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
  * Block users who should not have access.
  * Set webform default values.
  */
-function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
+function _wf_crm_frontend_form_alter(&$form, &$form_state) {
   civicrm_initialize();
   $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_forms.js';
   $form['#validate'][] = 'wf_crm_validate';
@@ -406,7 +406,7 @@ function wf_crm_contact_get($node, $enabled, $c, $cids, $exclude = array()) {
 
 /**
  * Recursively walk through form array and set properties of CiviCRM fields
- * Called by _webform_civicrm_webform_frontend_form_alter() when webform is being viewed
+ * Called by _wf_crm_frontend_form_alter() when webform is being viewed
  * @Param $elements: FAPI array
  * @Param $node: Object
  * @Param $data: CiviCRM data to autofill form

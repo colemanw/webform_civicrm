@@ -47,14 +47,14 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
   if ($form_id == 'webform_component_edit_form'
   && substr($form['form_key']['#default_value'], 0, 7) == 'civicrm') {
     module_load_include('inc', 'webform_civicrm', 'webform_civicrm_admin');
-    _wf_crm_webform_component_form_alter($form, $form_state);
+    _wf_crm_component_form_alter($form, $form_state);
   }
 
   // Alter front-end of webforms
   elseif (strpos($form_id, 'webform_client_form_') !== FALSE
   && !empty($form['#node']->webform_civicrm)) {
     module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
-    _webform_civicrm_webform_frontend_form_alter($form, $form_state);
+    _wf_crm_frontend_form_alter($form, $form_state);
   }
 
   // Override the theme for webform components tab

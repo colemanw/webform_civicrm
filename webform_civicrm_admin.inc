@@ -914,7 +914,7 @@ function wf_crm_configure_form_submit($form, &$form_state) {
  * Alter back-end webform component edit forms.
  * Called by hook_form_alter() whenever editing a webform component.
  */
-function _wf_crm_webform_component_form_alter(&$form, $form_state) {
+function _wf_crm_component_form_alter(&$form, $form_state) {
   $node = node_load($form['nid']['#value']);
   // Is this a CiviCRM-enabled webform?
   if (!empty($node->webform_civicrm)) {
@@ -963,7 +963,7 @@ function _wf_crm_webform_component_form_alter(&$form, $form_state) {
 
       // Interface similar to options_element
       // but with the important difference that options already exist in the civi db
-      // so this interface does not allow create/delete of options
+      // so this does not allow create/delete of options
       elseif (($element['type'] === 'hidden' || $element['type'] === 'select') && wf_crm_get_list($table, $name)) {
         $form['#attached']['js'] = array(drupal_get_path('module', 'webform_civicrm') . '/' . 'webform_civicrm_options.js');
         $options = $sort = wf_crm_field_options($element, 'component_edit', $node->webform_civicrm['data']);
@@ -973,7 +973,7 @@ function _wf_crm_webform_component_form_alter(&$form, $form_state) {
             $defaults_selected[] = '_web_civi_option_selected_' . $v;
           }
         }
-        // Get rid of options_element stuff
+        // Get rid of stuff related to options_element module 
         unset($form['items']);
 
         $form['value']['#type'] = 'hidden';
