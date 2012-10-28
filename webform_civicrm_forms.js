@@ -96,7 +96,7 @@ var wfCivi = (function ($, D) {
       }
       else {
         $(':visible', container).hide();
-        container.append('<input type="submit" class="form-submit ajax-processed civicrm-remove-image" value="' + Drupal.t('Remove') + '" onclick="wfCivi.clearImage(\'' + field + '\'); return false;">');
+        container.append('<input type="submit" class="form-submit ajax-processed civicrm-remove-image" value="' + Drupal.t('Change Image') + '" onclick="wfCivi.clearImage(\'' + field + '\'); return false;">');
       }
       container.prepend('<img class="civicrm-contact-image" alt="' + Drupal.t('Contact Image') + '" src="' + url + '" />');
     }
@@ -122,7 +122,8 @@ var wfCivi = (function ($, D) {
       var n = name.split('-');
       if (n[0] === 'civicrm' && n[1] == num && n[2] === 'contact' && n[5] !== 'existing') {
         if (clear) {
-          $(':input', ele).not(':radio, :checkbox').val('');
+          $(':input', ele).not(':radio, :checkbox, :button, :submit').val('');
+          $('.civicrm-remove-image', ele).click();
           $('input:checkbox, input:radio', ele).each(function() {
             $(this).attr('checked', '');
           });
@@ -148,6 +149,13 @@ var wfCivi = (function ($, D) {
 
   function fillValues(data, nid) {
     for (var fid in data) {
+      // Handle contact image
+      if (fid.slice(-9) == 'image-URL') {
+        if (data[fid].length > 0) {
+          pub.contactImage(fid, data[fid]);
+        }
+        continue;
+      }
       // First try to find a single element - works for textfields and selects
       var ele = $('#webform-client-form-'+nid+' :input.civicrm-enabled[id$="'+fid+'"]');
       if (ele.length > 0) {
