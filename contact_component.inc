@@ -257,7 +257,7 @@ function _webform_edit_civicrm_contact($component) {
     '#type' => 'checkbox',
     '#title' => t('Enforce Permissions'),
     '#default_value' => $component['extra']['filters']['check_permissions'],
-    '#description' => t('Only show contacts the acting user has permission to see in CiviCRM.'),
+    '#description' => t('Only show contacts the acting user has permission to see in CiviCRM.') . '<br />' . t('WARNING: Keeping this option enabled is highly recommended unless you are effectively controlling access by another method.'),
   );
   return $form;
 }
@@ -623,6 +623,7 @@ function wf_crm_autocomplete_access($node, $fid) {
 function wf_crm_contact_access($component, $filters, $cid) {
   // Create new contact doesn't require lookup
   $cid = "$cid";
+  list(, $c, ) = explode('_', $component['form_key'], 3);
   if ($cid && $cid[0] === '-' && !empty($component['extra']['allow_create']) && !empty($component['extra']['none_prompt'])) {
     return $component['extra']['none_prompt'];
   }
@@ -636,9 +637,21 @@ function wf_crm_contact_access($component, $filters, $cid) {
   if ($cid == wf_crm_user_cid()) {
     $filters['check_permissions'] = FALSE;
   }
+  if (!empty($filters['check_permissions'])) {
+    // If we have a valid checksum for this contact, bypass other permission checks
+    if (wf_crm_aval($_GET, "cid$c") == $cid || $c == 1 && wf_crm_aval($_GET, "cid") == $cid) {
+      require_once 'CRM/Contact/BAO/Contact/Utils.php'; 
+      if (!empty($_GET['cs']) && $c == 1 && CRM_Contact_BAO_Contact_Utils::validChecksum($cid, $_GET['cs'])) {
+        $filters['check_permissions'] = FALSE;
+      }
+      elseif (!empty($_GET["cs$c"]) && CRM_Contact_BAO_Contact_Utils::validChecksum($cid, $_GET["cs$c"])) {
+        $filters['check_permissions'] = FALSE;
+      }
+    }
+  }
   // Fetch contact name with filters applied
   $result = wf_civicrm_api('contact', 'get', $filters);
-  return wf_crm_aval($result, 'values:' . $cid . ':display_name', FALSE, TRUE);
+  return wf_crm_aval($result, "values:$cid:display_name", FALSE, TRUE);
 }
 
 /**
@@ -700,9 +713,7 @@ function wf_crm_find_contact($node, $component, &$ids) {
         $ids[$c] = $cid;
       }
       else {
-        require_once 'CRM/Contact/BAO/Contact/Permission.php';
-        if (CRM_Contact_BAO_Contact_Permission::validateChecksumContact($cid, CRM_Core_DAO::$_nullObject)
-        && wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
+        if (wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
           $ids[$c] = $cid;
         }
       }

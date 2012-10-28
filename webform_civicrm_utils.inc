@@ -550,11 +550,13 @@ function wf_crm_get_fields($var = 'fields') {
       'type' => 'select',
       'value' => $config->lcMessages,
     );
-    $fields['contact_image_URL'] = array(
-      'name' => t('Upload Image'),
-      'type' => 'file',
-      'extra' => array('width' => 40),
-    );
+    if (array_key_exists('file', webform_components())) {
+      $fields['contact_image_URL'] = array(
+        'name' => t('Upload Image'),
+        'type' => 'file',
+        'extra' => array('width' => 40),
+      );
+    }
     $fields['contact_contact_id'] = array(
       'name' => t('Contact ID'),
       'type' => 'hidden',
@@ -1288,4 +1290,13 @@ function wf_crm_sub_value(&$submission, $fid, $value = NULL) {
     $field[0] = $value;
   }
   return $field;
+}
+
+
+/**
+ * Returns the major version of Webform module
+ */
+function wf_crm_webform_version() {
+  module_load_include('install', 'webform');
+  return function_exists('webform_update_7401') ? 4 : 3;
 }

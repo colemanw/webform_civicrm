@@ -706,12 +706,8 @@ function wf_crm_process_submission($node, &$submission, $op) {
         wf_crm_sub_value($submission, $enabled[$fid . 'external_identifier'], wf_crm_aval($exid, "values:$cid:external_identifier"));
       }
       if (!empty($enabled[$fid . 'cs'])) {
-        if (empty($params['cs'])) {
-          $life = 'inf';
-        }
-        else {
-          $life = intval(24 * $params['cs']);
-        }
+        $cs = wf_crm_sub_value($submission, $enabled[$fid . 'cs']);
+        $life = !empty($cs[0]) ? intval(24 * $cs[0]) : 'inf';
         require_once 'CRM/Contact/BAO/Contact/Utils.php';
         $cs = CRM_Contact_BAO_Contact_Utils::generateChecksum($cid, NULL, $life);
         wf_crm_sub_value($submission, $enabled[$fid . 'cs'], $cs);

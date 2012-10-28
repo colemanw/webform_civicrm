@@ -1095,20 +1095,19 @@ function _wf_crm_component_form_alter(&$form, $form_state) {
           $form['#prefix'] .= t('Example: to link users back to this form, place this line in a webform-generated email:')
           . '<br /><code>'
           . url('node/' . $node->nid, array('absolute' => TRUE)) . '?cid' . $i . '=';
-          $form['#prefix'] .= $hash = wf_crm_component_token($node, $cid_field)
-          . '&amp;cs=' . wf_crm_component_token($node, $form['cid']['#value'])
+          $form['#prefix'] .= wf_crm_component_token($node, $cid_field)
+          . '&amp;cs' . $i . '=' . wf_crm_component_token($node, $form['cid']['#value'])
           . '</code></p>';
           $form['#prefix'] .= '<p>' . t('Example: to redirect to a contribution page, paste this into the redirect field on the Webform "Form Settings" tab (change id from 1 to the real id of your contribution page):')
           . '<br /><code>'
           . 'civicrm/contribute/transact?reset=1&amp;id=1'
-          . '&amp;cid=' . $hash;
+          . '&amp;cid=' . wf_crm_component_token($node, $cid_field)
+          . '&amp;cs=' . wf_crm_component_token($node, $form['cid']['#value'])
+          . '</code></p>';
         }
         else {
           $form['#prefix'] .= t('Consider enabling the hidden contact_id field - hashed links usually require this value.') . '</p>';
         }
-      }
-      if ($element['type'] == 'hidden') {
-        $form['display']['#description'] = t('Use <em>Secure value</em> with a <em>Default value</em> to predefine the value for this field. The value you set here will be passed to CiviCRM for every form submission.<br />Use <em>Hidden element</em> without a <em>Default value</em> to collect information from CiviCRM for use in post-processing, for example if you hide a contact name on the form, it will be filled by CiviCRM (for known contacts) and you can use it post-submission in an email token.');
       }
       // Alter weights for contact component
       if ($form['type']['#value'] == 'civicrm_contact') {
@@ -1368,7 +1367,10 @@ function wf_crm_component_token($node, $cid) {
   module_load_include('inc', 'webform', 'includes/webform.components');
   $component = $node->webform['components'][$cid];
   $parents = webform_component_parent_keys($node, $component);
-  return '%value[' . implode('][', $parents) . ']';
+  if (wf_crm_webform_version() == 3) {
+    return '%value[' . implode('][', $parents) . ']';
+  }
+  return '[submission:values:' . implode(':', $parents) . ':nolabel]';
 }
 
 /**

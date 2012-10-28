@@ -81,7 +81,7 @@ var wfCivi = (function ($, D) {
     }
     return ret;
   };
-  
+
   pub.contactImage = function(field, url) {
     var container = $('div.civicrm-enabled[id$=' + field.replace(/_/g, '-').toLowerCase() + ']');
     if (container.length > 0) {
@@ -101,7 +101,7 @@ var wfCivi = (function ($, D) {
       container.prepend('<img class="civicrm-contact-image" alt="' + Drupal.t('Contact Image') + '" src="' + url + '" />');
     }
   }
-  
+
   pub.clearImage = function(field) {
     var container = $('div.civicrm-enabled[id$=' + field.replace(/_/g, '-').toLowerCase() + ']');
     $('.civicrm-remove-image, .civicrm-contact-image', container).remove();
