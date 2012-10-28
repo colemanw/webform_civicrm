@@ -17,6 +17,7 @@ module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
 function _wf_crm_frontend_form_alter(&$form, &$form_state) {
   civicrm_initialize();
   $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_forms.js';
+  $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_forms.css';
   $form['#validate'][] = 'wf_crm_validate';
   array_unshift($form['#submit'], 'wf_crm_storage');
   $config = CRM_Core_Config::singleton();
@@ -421,7 +422,7 @@ function wf_crm_fill_form(&$elements, $node, $data = array(), $submitted = array
     }
     // Recurse through nested elements
     wf_crm_fill_form($element, $node, $data, $submitted);
-    if (empty($element['#type']) || $element['#type'] == 'fieldset' || $element['#type'] == 'file') {
+    if (empty($element['#type']) || $element['#type'] == 'fieldset') {
       continue;
     }
     if (!empty($element['#webform_component']) && $pieces = wf_crm_explode_key($eid)) {
@@ -484,8 +485,15 @@ function wf_crm_fill_form(&$elements, $node, $data = array(), $submitted = array
               $val = array_pop($val);
             }
           }
+          // Set data for contact image
+          if ($name == 'image_URL') {
+            if ($val && in_array($element['#type'], array('file', 'managed_file'))) {
+              $js = "jQuery(document).ready(function() {wfCivi.contactImage('$eid', '$val')});";
+              $element['#attached']['js'][$js] = array('type' => 'inline');
+            }
+          }
           // Set value for "secure value" elements
-          if ($element['#type'] == 'value') {
+          elseif ($element['#type'] == 'value') {
             $element['#value'] = $val;
           }
           // Set default value

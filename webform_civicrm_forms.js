@@ -81,6 +81,32 @@ var wfCivi = (function ($, D) {
     }
     return ret;
   };
+  
+  pub.contactImage = function(field, url) {
+    var container = $('div.civicrm-enabled[id$=' + field.replace(/_/g, '-').toLowerCase() + ']');
+    if (container.length > 0) {
+      if ($('.file', container).length > 0) {
+        if ($('.file', container).is(':visible')) {
+          $('.file', container).hide();
+          url = $('.file', container).find('a').attr('href');
+        }
+        else {
+          return;
+        }
+      }
+      else {
+        $(':visible', container).hide();
+        container.append('<input type="submit" class="form-submit ajax-processed civicrm-remove-image" value="' + Drupal.t('Remove') + '" onclick="wfCivi.clearImage(\'' + field + '\'); return false;">');
+      }
+      container.prepend('<img class="civicrm-contact-image" alt="' + Drupal.t('Contact Image') + '" src="' + url + '" />');
+    }
+  }
+  
+  pub.clearImage = function(field) {
+    var container = $('div.civicrm-enabled[id$=' + field.replace(/_/g, '-').toLowerCase() + ']');
+    $('.civicrm-remove-image, .civicrm-contact-image', container).remove();
+    $('input[type=file], input[type=submit]', container).show();
+  }
 
   /**
    * Private methods.
@@ -309,6 +335,11 @@ var wfCivi = (function ($, D) {
         if ($(this).val() !== '') {
           sharedAddress(this, 'hide');
         }
+      });
+
+      // Handle image file fields
+      $('div.civicrm-enabled[id$=contact-1-contact-image-url]:has(.file)', context).each(function() {
+        pub.contactImage($(this).attr('id'));
       });
     }
   };
