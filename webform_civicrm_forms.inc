@@ -701,6 +701,9 @@ function wf_crm_process_submission($node, &$submission, $op) {
       if (!empty($enabled[$fid . 'contact_id'])) {
         wf_crm_sub_value($submission, $enabled[$fid . 'contact_id'], $cid);
       }
+      if (!empty($enabled[$fid . 'existing'])) {
+        wf_crm_sub_value($submission, $enabled[$fid . 'existing'], $cid);
+      }
       if (!empty($enabled[$fid . 'external_identifier']) && !empty($updating['cid'][$c])) {
         $exid = wf_civicrm_api('contact', 'get', array('contact_id' => $cid, 'return.external_identifier' => 1));
         wf_crm_sub_value($submission, $enabled[$fid . 'external_identifier'], wf_crm_aval($exid, "values:$cid:external_identifier"));
