@@ -505,11 +505,13 @@ function webform_civicrm_get_fields($var = 'fields') {
       'type' => 'select',
       'value' => $config->lcMessages,
     );
-    $fields['contact_image_URL'] = array(
-      'name' => t('Upload Image'),
-      'type' => 'file',
-      'extra' => array('width' => 40),
-    );
+    if (array_key_exists('file', webform_components())) {
+      $fields['contact_image_URL'] = array(
+        'name' => t('Upload Image'),
+        'type' => 'file',
+        'extra' => array('width' => 40),
+      );
+    }
     $fields['contact_contact_id'] = array(
       'name' => t('Contact ID'),
       'type' => 'hidden',

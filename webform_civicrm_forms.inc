@@ -78,7 +78,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
         $cid = (int) $args['cid' . $i];
         require_once 'CRM/Contact/BAO/Contact/Permission.php';
         if ($cid === 0 ||
-        CRM_Contact_BAO_Contact_Permission::validateChecksumContact($cid, CRM_Core_DAO::$_nullObject)) {
+        CRM_Contact_BAO_Contact_Permission::validateChecksumContact($cid, CRM_Core_DAO::$_nullObject, FALSE)) {
           $id['cid'][$i] = $cid;
           // Identify contact 1 as acting user if not already logged in
           if ($cid && $i == 1 && user_is_anonymous()) {
