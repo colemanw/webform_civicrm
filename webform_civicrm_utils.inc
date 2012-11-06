@@ -1292,6 +1292,18 @@ function wf_crm_sub_value(&$submission, $fid, $value = NULL) {
   return $field;
 }
 
+/**
+ * Returns the children of a webform component
+ */
+function _wf_crm_child_components($nid, $id) {
+  return db_select('webform_component', 'c')
+    ->fields('c')
+    ->condition('nid', $nid)
+    ->condition('pid', $id)
+    ->countQuery()
+    ->execute()
+    ->fetchField();
+}
 
 /**
  * Returns the major version of Webform module

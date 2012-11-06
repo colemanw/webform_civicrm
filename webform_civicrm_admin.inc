@@ -802,16 +802,8 @@ function wf_crm_configure_form_submit($form, &$form_state) {
       foreach ($enabled as $key => $id) {
         if (substr($key, -8) == 'fieldset') {
           list(, $c, $ent, $i) = explode('_', $key);
-          if ($ent == 'contact' && $i == 1 && $c > $vals['number_of_contacts']) {
-            // Check if this fieldset still contains anything
-            $children = db_select('webform_component', 'c')
-              ->fields('c')
-              ->condition('nid', $node->nid)
-              ->condition('pid', $id)
-              ->countQuery()
-              ->execute()
-              ->fetchField();
-            if(!$children) {
+          if ($ent == 'contact' && $i == 1 && (!$vals['nid'] || $c > $vals['number_of_contacts'])) {
+            if (!_wf_crm_child_components($node->nid, $id)) {
               webform_component_delete($node, $node->webform['components'][$id]);
             }
           }
@@ -894,11 +886,11 @@ function wf_crm_configure_form_submit($form, &$form_state) {
       drupal_write_record('webform_civicrm_forms', $vals, 'nid');
       drupal_set_message(t('Your CiviCRM form settings have been updated.'));
     }
-  }
-  // Update existing contact fields
-  foreach ($existing as $fid => $id) {
-    if (substr($fid, -8) === 'existing') {
-      wf_crm_update_existing_component($node->webform['components'][$id], $enabled, $vals['data']);
+    // Update existing contact fields
+    foreach ($existing as $fid => $id) {
+      if (substr($fid, -8) === 'existing') {
+        wf_crm_update_existing_component($node->webform['components'][$id], $enabled, $vals['data']);
+      }
     }
   }
   // Make sure the updates are visible to anonymous users.
@@ -1182,7 +1174,7 @@ function wf_crm_component_insert(&$field, &$enabled, $settings) {
     // Set the allow_create flag based on presence of name or email fields
     $field['extra']['allow_create'] = $a = wf_crm_name_field_exists($vals, $c, $contact_type);
     $field['extra']['none_prompt'] = $a ? t('+ Create new contact +') : t('- None Found -');
-    if ($c == 1) {
+    if ($c == 1 && $contact_type == 'individual') {
       // Default to hidden field for 1st contact
       $field['extra'] += array(
         'widget' => 'hidden',
