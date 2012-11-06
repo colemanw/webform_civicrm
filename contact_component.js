@@ -62,6 +62,13 @@ var wfCiviContact = (function ($, D) {
           $('.form-item-extra-show-hidden-contact', context).css('display', 'none');
         }
       }).change();
+
+      // Warning if enforce permissions is disabled
+      $('#webform-component-edit-form', context).once('wf-civi').submit(function() {
+        if (!$('input[name="extra[filters][check_permissions]"]').is(':checked')) {
+          return confirm(Drupal.t('Warning: You are disabling CiviCRM permission checks for this contact. Anyone with access to this webform will be able to view any contact in the database (who meets the filter criteria) by typing their contact id in the URL.'));
+        }
+      });
     }
   };
 
