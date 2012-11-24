@@ -380,7 +380,8 @@ function wf_crm_save_custom($entity, $entity_id, $entity_type = NULL) {
         $single_param = array('entityID' => $entity_id, $k => $v);
         $result = CRM_Core_BAO_CustomValueTable::setValues($single_param);
         if (!empty($result['is_error'])) {
-          watchdog('webform_civicrm', 'The CiviCRM "CustomValueTable::setValues" function returned the error: "%msg" when called by line !line of !file with the following parameters: "!params"', array('%msg' => $result['error_message'], '!line' => $bt[0]['line'], '!file' => array_pop(explode('/', $bt[0]['file'])), '!params' => print_r($single_param, TRUE)), WATCHDOG_ERROR);
+          $file = explode('/', $bt[0]['file']);
+          watchdog('webform_civicrm', 'The CiviCRM "CustomValueTable::setValues" function returned the error: "%msg" when called by line !line of !file with the following parameters: "!params"', array('%msg' => $result['error_message'], '!line' => $bt[0]['line'], '!file' => array_pop($file), '!params' => print_r($single_param, TRUE)), WATCHDOG_ERROR);
         }
       }
     }
@@ -1133,7 +1134,8 @@ function wf_civicrm_api($entity, $operation, $params) {
   $result = civicrm_api($entity, $operation, $params);
   if (!empty($result['is_error'])) {
     $bt = debug_backtrace();
-    watchdog('webform_civicrm', 'The CiviCRM "%function" API function returned the error: "%msg" when called by line !line of !file with the following parameters: "!params"', array('%function' => $entity . ' ' . $operation, '%msg' => $result['error_message'], '!line' => $bt[0]['line'], '!file' => array_pop(explode('/', $bt[0]['file'])), '!params' => print_r($params, TRUE)), WATCHDOG_ERROR);
+    $file = explode('/', $bt[0]['file']);
+    watchdog('webform_civicrm', 'The CiviCRM "%function" API function returned the error: "%msg" when called by line !line of !file with the following parameters: "!params"', array('%function' => $entity . ' ' . $operation, '%msg' => $result['error_message'], '!line' => $bt[0]['line'], '!file' => array_pop($file), '!params' => print_r($params, TRUE)), WATCHDOG_ERROR);
   }
   return $result;
 }
