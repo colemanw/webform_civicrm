@@ -993,18 +993,30 @@ function wf_crm_process_submission($node, &$submission, $op) {
       }
       // Save activity
       $params = $data['activity'][1]['activity'][1];
-      $cid = wf_crm_user_cid();
-      if ($cid) {
-        $params['source_contact_id'] = $cid;
+      // Existing activity - set id
+      if (!empty($id['act'][1])) {
+        $params['id'] = $id['act'][1];
       }
+      // New activity - set case id and source_contact
       else {
-        foreach ($id['cid'] as $cid) {
-          if ($cid) {
-            $params['source_contact_id'] = $cid;
-            break;
+        if (!empty($id['case'][1])) {
+          $params['case_id'] = $id['case'][1];
+          $params['medium_id'] = $data['case'][1]['case'][1]['medium_id'];
+        }
+        $cid = wf_crm_user_cid();
+        if ($cid) {
+          $params['source_contact_id'] = $cid;
+        }
+        else {
+          foreach ($id['cid'] as $cid) {
+            if ($cid) {
+              $params['source_contact_id'] = $cid;
+              break;
+            }
           }
         }
       }
+      // Can't pass an empty contact id to the api
       if (empty($params['assignee_contact_id'])) {
         unset($params['assignee_contact_id']);
       }
@@ -1022,13 +1034,6 @@ function wf_crm_process_submission($node, &$submission, $op) {
       }
       if (!empty($data['activity'][1]['details']['edit_link'])) {
         $params['details'] .= '<p>' . l(t('Edit Submission'), 'node/' . $node->nid . '/submission/' . $submission->sid . '/edit',  array('absolute' => TRUE, 'alias' => TRUE)) . '</p>';
-      }
-      if (!empty($id['act'][1])) {
-        $params['id'] = $id['act'][1];
-      }
-      elseif (!empty($id['case'][1])) {
-        $params['case_id'] = $id['case'][1];
-        $params['medium_id'] = $data['case'][1]['case'][1]['medium_id'];
       }
       if (empty($params['campaign_id']) || !in_array('CiviCampaign', $config->enableComponents, TRUE)) {
         unset($params['campaign_id']);
