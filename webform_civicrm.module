@@ -34,6 +34,9 @@ function webform_civicrm_menu() {
 
 /**
  * Access callback to determine if user can see the CiviCRM tab of a webform.
+ *
+ * @param $node
+ *   Node object
  */
 function wf_crm_admin_access($node) {
   return (node_access('update', $node) && user_access('access CiviCRM'));
@@ -121,6 +124,8 @@ function webform_civicrm_node_delete($node) {
 
 /**
  * Implements hook_theme().
+ *
+ * @return array
  */
 function webform_civicrm_theme() {
   $theme = array(
@@ -145,6 +150,8 @@ function webform_civicrm_theme() {
 
 /**
  * Implements hook_webform_component_info().
+ *
+ * @return array
  */
 function webform_civicrm_webform_component_info() {
   return array(
@@ -392,10 +399,16 @@ function webform_civicrm_preprocess_webform_results_submissions(&$variables){
 
 /**
  * Return a value from nested arrays or objects.
- * @param $haystack: the array to search
- * @param $keys: pass a single key, or multiple keys separated by : to get a nested value
- * @param $default: value to return if given array key does not exist
- * @param $strict: should we use empty or isset to determine if array key exists?
+ *
+ * @param $haystack
+ *   The array to search
+ * @param $keys
+ *   Pass a single key, or multiple keys separated by : to get a nested value
+ * @param $default
+ *   Value to return if given array key does not exist
+ * @param $strict
+ *   Should we use empty or isset to determine if array key exists?
+ *
  * @return: found value or default
  */
 function wf_crm_aval($haystack, $keys, $default = NULL, $strict = FALSE) {
@@ -414,6 +427,9 @@ function wf_crm_aval($haystack, $keys, $default = NULL, $strict = FALSE) {
 
 /**
  * Store info while a clone operation is running.
+ *
+ * @param $input
+ *   Data to store
  */
 function wf_crm_contact_clone_storage($input = NULL) {
   static $storage = NULL;
@@ -478,7 +494,11 @@ function wf_crm_validate($form, &$form_state) {
 /**
  * Webform submission hooks don't have access to $form_state
  * So this extra submission handler stores it.
- * @param $form: form array (to store) or form nid (to retrieve)
+ *
+ * @param $form
+ *   FAPI form array (to store) or form nid (to retrieve)
+ * @param $form_state
+ *   FAPI form_state array
  */
 function wf_crm_storage($form, $form_state = NULL) {
   static $storage = array();

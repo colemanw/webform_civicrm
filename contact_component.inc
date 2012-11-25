@@ -376,6 +376,13 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
 /**
  * Lookup contact name from ID, verify permissions, and attach as html data.
  * Used when rendering or altering a CiviCRM contact field
+ *
+ * @param $node
+ *   Node object
+ * @param $component
+ *   Webform component
+ * @param $element
+ *   FAPI form element (reference)
  */
 function wf_crm_fill_contact_value($node, $component, &$element) {
   $cid = wf_crm_aval($element, '#default_value', '');
@@ -433,6 +440,7 @@ function _webform_display_civicrm_contact($component, $value, $format = 'html') 
 }
 
 /**
+ * Theme function.
  * Format the output of data for this component.
  */
 function theme_display_civicrm_contact($variables) {
@@ -469,6 +477,17 @@ function _webform_csv_data_civicrm_contact($component, $export_options, $value) 
 
 /**
  * Returns a list of contacts based on component settings.
+ *
+ * @param $node
+ *   Node object
+ * @param $component
+ *   Webform component
+ * @param $params
+ *   Contact get params (filters)
+ * @param $str
+ *   Search string (used during autocomplete)
+ *
+ * @return array
  */
 function wf_crm_contact_search($node, $component, $params, $str = NULL) {
   if (empty($node->webform_civicrm)) {
@@ -514,6 +533,13 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
 
 /**
  * Callback to serve AJAX requests.
+ * 
+ * @param $key
+ *   Type of AJAX request
+ * @param $input
+ *   User input
+ * 
+ * Prints json output
  */
 function wf_crm_ajax($key, $input = '') {
   civicrm_initialize();
@@ -594,6 +620,11 @@ function wf_crm_ajax($key, $input = '') {
 
 /**
  * Access callback. Check if user has permission to view autocomplete results.
+ *
+ * @param $node
+ *   Node object
+ * @param $fid
+ *   Webform component id
  */
 function wf_crm_autocomplete_access($node, $fid) {
   global $user;
@@ -619,6 +650,13 @@ function wf_crm_autocomplete_access($node, $fid) {
 
 /**
  * Load contact name if user has permission. Else return FALSE.
+ *
+ * @param $component
+ *   Webform component of type 'civicrm_contact'
+ * @param $filters
+ *   Contact get params
+ * @param $cid
+ *   Contact id
  */
 function wf_crm_contact_access($component, $filters, $cid) {
   // Create new contact doesn't require lookup
@@ -640,7 +678,7 @@ function wf_crm_contact_access($component, $filters, $cid) {
   if (!empty($filters['check_permissions'])) {
     // If we have a valid checksum for this contact, bypass other permission checks
     if (wf_crm_aval($_GET, "cid$c") == $cid || $c == 1 && wf_crm_aval($_GET, "cid") == $cid) {
-      require_once 'CRM/Contact/BAO/Contact/Utils.php'; 
+      require_once 'CRM/Contact/BAO/Contact/Utils.php';
       if (!empty($_GET['cs']) && $c == 1 && CRM_Contact_BAO_Contact_Utils::validChecksum($cid, $_GET['cs'])) {
         $filters['check_permissions'] = FALSE;
       }
@@ -656,6 +694,11 @@ function wf_crm_contact_access($component, $filters, $cid) {
 
 /**
  * Find exposed field groups for a contact
+ *
+ * @param $node
+ *   Node object
+ * @param $con
+ *   Contact #
  */
 function wf_crm_contact_fields($node, $con) {
   $ret = array();
@@ -680,6 +723,13 @@ function wf_crm_contact_fields($node, $con) {
 
 /**
  * Update existing component if other fields have been added or removed
+ *
+ * @param $component
+ *   Webform component of type 'civicrm_contact' (reference)
+ * @param $enabled
+ *   Array of enabled fields
+ * @param $data
+ *   Array of crm entity data
  */
 function wf_crm_update_existing_component(&$component, $enabled, $data) {
   list(, $c, ) = explode('_', $component['form_key'], 3);
@@ -697,9 +747,13 @@ function wf_crm_update_existing_component(&$component, $enabled, $data) {
 /**
  * Find an existing contact based on matching criteria
  * Used to autopopulate a webform existing contact field
- * @param $node: webform node
- * @param $component: civicrm_contact component
- * @param $ids: reference all known contact ids for this form
+ * 
+ * @param $node
+ *   Webform node object
+ * @param $component
+ *   Webform component of type 'civicrm_contact'
+ * @param $ids
+ *   Reference all known contact ids for this form
  */
 function wf_crm_find_contact($node, $component, &$ids) {
   list(, $c, ) = explode('_', $component['form_key'], 3);
@@ -769,8 +823,15 @@ function wf_crm_find_contact($node, $component, &$ids) {
 
 /**
  * Get a contact's relations of certain types
- * @param cid: contact id
- * @param types: array of relationship_type_ids
+ * 
+ * @param cid
+ *   Contact id
+ * @param types
+ *   Array of relationship_type_ids
+ * @param $current
+ *   Limit to current & enabled relations?
+ * 
+ * @return array
  */
 function wf_crm_find_relations($cid, $types, $current = TRUE) {
   $found = $allowed = array();
@@ -825,6 +886,14 @@ function wf_crm_find_relations($cid, $types, $current = TRUE) {
 
 /**
  * Format filters for the contact get api
+ * 
+ * @param $node
+ *   Webform node object
+ * @param $component
+ *   Webform component of type 'civicrm_contact'
+ * 
+ * @return array
+ *   Api params
  */
 function wf_crm_search_filters($node, $component) {
   $params = array('is_deleted' => 0);

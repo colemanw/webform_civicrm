@@ -8,6 +8,7 @@
 module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
 
 /**
+ * Drupal form builder callback
  * Form to configure CiviCRM options for a Webform
  */
 function wf_crm_configure_form($form, &$form_state, $node) {
@@ -141,7 +142,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
         '#value' => array(),
       );
     }
-    
+
     $form['contact_' . $n]['contact_subtype_wrapper']['clear'] = array(
       '#markup' => '<div class="clearfix"> </div>',
     );
@@ -570,6 +571,9 @@ function wf_crm_configure_form($form, &$form_state, $node) {
 
 /**
  * Build the $data array for webform settings; called while rebuilding or post-processing the configure form.
+ *
+ * @param $vals
+ *   form_state[values] reference
  */
 function wf_crm_process_form_settings(&$vals) {
   $data = array('contact' => array());
@@ -646,9 +650,18 @@ function wf_crm_process_form_settings(&$vals) {
   $vals['data'] = $data;
 }
 
-
 /**
  * Build a field item for the configure form
+ *
+ * @param $fid: string
+ *   civicrm field id
+ * @param $field: array
+ *   Webform field info
+ * @param $settings
+ *   webform_civicrm configuration for this form
+ *
+ * @return array
+ *   FAPI form item array for the configure form
  */
 function wf_crm_configure_form_item($fid, $field, $settings) {
   list( , $c, $ent, $n, $table, $name) = explode('_', $fid, 6);
@@ -965,7 +978,7 @@ function _wf_crm_component_form_alter(&$form, $form_state) {
             $defaults_selected[] = '_web_civi_option_selected_' . $v;
           }
         }
-        // Get rid of stuff related to options_element module 
+        // Get rid of stuff related to options_element module
         unset($form['items']);
 
         $form['value']['#type'] = 'hidden';
@@ -1148,6 +1161,13 @@ function _wf_crm_component_form_alter(&$form, $form_state) {
 
 /**
  * Add a CiviCRM field to a webform
+ *
+ * @param $field: array
+ *   Webform field info
+ * @param $enabled: array
+ *   Array of enabled fields (reference)
+ * @param $settings
+ *   webform_civicrm configuration for this form
  */
 function wf_crm_component_insert(&$field, &$enabled, $settings) {
   list(, $c, $ent, $n, $table, $name) = explode('_', $field['form_key'], 6);
@@ -1250,7 +1270,8 @@ function wf_crm_component_insert(&$field, &$enabled, $settings) {
 }
 
 /**
- * Theme function to format civicrm options form as a table
+ * Drupal theme callback
+ * Format civicrm options form as a table
  */
 function theme_webform_civicrm_options($variables) {
   $element = $variables['element'];
@@ -1299,6 +1320,7 @@ function theme_webform_civicrm_options($variables) {
 }
 
 /**
+ * Drupal FAPI form submit callback
  * Custom Processing for CiviCRM webform component option lists
  */
 function wf_crm_process_options_selection($form, &$form_state) {
@@ -1376,10 +1398,15 @@ function wf_crm_cs_validate($form, &$form_state) {
 
 /**
  * Add an ajax container to a form, and set an existing form element to control it
- * @param $form: the entire form
- * @param $pathstr: a : separated string of nested array keys leading to the relevant form snippet
- * @param $control_element: str. Array key of the existing element to add ajax behavior to
- * @param $container: str. Array key of the container to be created
+ *
+ * @param $form
+ *   The entire form
+ * @param $pathstr
+ *   A : separated string of nested array keys leading to the relevant form snippet
+ * @param $control_element: str
+ *   Array key of the existing element to add ajax behavior to
+ * @param $container: str
+ *   Array key of the container to be created
  */
 function wf_crm_ajax_item(&$form, $pathstr, $control_element, $container) {
   eval('$snippet = &$form[\'' . str_replace(':', "']['", $pathstr) . "'];");
@@ -1400,6 +1427,9 @@ function wf_crm_ajax_item(&$form, $pathstr, $control_element, $container) {
 
 /**
  * Delete civicrm settings for a webform.
+ *
+ * @param $nid
+ *   Webform node id
  */
 function wf_crm_disable($nid) {
   db_delete('webform_civicrm_forms')
@@ -1408,6 +1438,7 @@ function wf_crm_disable($nid) {
 }
 
 /**
+ * Drupal FAPI form submit callback
  * Alter a webform component type.
  */
 function wf_crm_change_widget($form, &$form_state) {

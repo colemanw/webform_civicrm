@@ -7,9 +7,13 @@
 
 /**
  * Get option values from various civicrm tables
- * @Param $option_group: option group name or id
- * @Param $param: optional extra info for the query (passing a param will bypass caching)
- * @Return array
+ *
+ * @param $option_group
+ *   Option group name or id
+ * @param $param
+ *   Optional extra info for the query (passing a param will bypass caching)
+ *
+ * @return array
  */
 function wf_crm_get_options($option_group, $param = NULL) {
   static $cache = array();
@@ -139,9 +143,15 @@ function wf_crm_get_options($option_group, $param = NULL) {
 
 /**
  * Get options for a specific field
- * @Param $field: Webform component array
- * @Param $context: Where is this being called from?
- * @Param $data: CiviCRM entity data
+ *
+ * @param $field
+ *   Webform component array
+ * @param $context
+ *   Where is this being called from?
+ * @param $data
+ *   Array of crm entity data
+ *
+ * @return array
  */
 function wf_crm_field_options($field, $context, $data) {
   $ret = array();
@@ -213,6 +223,13 @@ function wf_crm_field_options($field, $context, $data) {
 
 /**
  * Get id of the option list for a field
+ *
+ * @param $table
+ *   CiviCRM table this field belongs to
+ * @param $name
+ *   Field name
+ *
+ * @return string
  */
 function wf_crm_get_list($table, $name) {
   $lists = wf_crm_get_fields('lists');
@@ -224,6 +241,8 @@ function wf_crm_get_list($table, $name) {
 
 /**
  * Get contact types and sub-types
+ *
+ * @return array
  */
 function wf_crm_get_contact_types() {
   static $contact_types = array();
@@ -252,6 +271,8 @@ function wf_crm_get_contact_types() {
 
 /**
  * Get relationship type data
+ *
+ * @return array
  */
 function wf_crm_get_relationship_types() {
   static $types = array();
@@ -274,6 +295,17 @@ function wf_crm_get_relationship_types() {
 
 /**
  * Get valid relationship types for a given pair of contacts
+ *
+ * @param $type_a
+ *   Contact type
+ * @param $type_b
+ *   Contact type
+ * @param $sub_type_a
+ *   Contact sub-type
+ * @param $sub_type_b
+ *   Contact sub-type
+ *
+ * @return array
  */
 function wf_crm_get_contact_relationship_types($type_a, $type_b, $sub_type_a, $sub_type_b) {
   $ret = array();
@@ -299,6 +331,15 @@ function wf_crm_get_contact_relationship_types($type_a, $type_b, $sub_type_a, $s
 
 /**
  * Get custom data for an entity
+ *
+ * @param $entity_id
+ *   Numeric id of entity
+ * @param $entity_type
+ *   Type of crm entity. 'contact' is assumed
+ * @param $normalize
+ *   Whether to normalize the output
+ *
+ * @return array
  */
 function wf_crm_get_custom($entity_id, $entity_type = NULL, $normalize = TRUE) {
   static $parents = array();
@@ -347,6 +388,13 @@ function wf_crm_get_custom($entity_id, $entity_type = NULL, $normalize = TRUE) {
 
 /**
  * Save custom data for an entity
+ *
+ * @param $entity
+ *   Array of values
+ * @param $entity_id
+ *   Numeric id of entity
+ * @param $entity_type
+ *   Type of crm entity. 'contact' is assumed
  */
 function wf_crm_save_custom($entity, $entity_id, $entity_type = NULL) {
   $existing = wf_crm_get_custom($entity_id, $entity_type, FALSE);
@@ -390,9 +438,15 @@ function wf_crm_save_custom($entity, $entity_id, $entity_type = NULL) {
 
 /**
  * Get ids or values of enabled CiviCRM fields for a webform.
- * @Param $node: node object
- * @Param $submission: if supplied, will match field keys with submitted values
- * @Param $show_all: get every field even if it belongs to a contact that does not exist
+ *
+ * @param $node
+ *   Node object
+ * @param $submission
+ *   (optional) if supplied, will match field keys with submitted values
+ * @param $show_all
+ *   (optional) if true, get every field even if it belongs to a contact that does not exist
+ *
+ * @return array of enabled fields
  */
 function wf_crm_enabled_fields($node, $submission = NULL, $show_all = FALSE) {
   $enabled = array();
@@ -422,6 +476,15 @@ function wf_crm_enabled_fields($node, $submission = NULL, $show_all = FALSE) {
 
 /**
  * Match a state/province id to its abbr. and vice-versa
+ *
+ * @param $input
+ *   User input (state province id or abbr)
+ * @param $ret
+ *   String: 'abbreviation' or 'id'
+ * @param $country_id
+ *   Int: (optional) must be supplied if fetching id from abbr
+ *
+ * @return string or integer
  */
 function wf_crm_state_abbr($input, $ret = 'abbreviation', $country_id = NULL) {
   $input_type = $ret == 'id' ? 'abbreviation' : 'id';
@@ -437,11 +500,15 @@ function wf_crm_state_abbr($input, $ret = 'abbreviation', $country_id = NULL) {
 
 /**
  * Fetches CiviCRM field data.
- * @Param $var: name of variable to return: fields, tokens, lists, or sets
- * @Return fields: The CiviCRM contact fields this module supports
- * @Return tokens: Available tokens keyed to field ids
- * @Return lists: Option lists keyed to option_group name
- * @Return sets: Info on fieldsets (tables)
+ *
+ * @param $var
+ *   Name of variable to return: fields, tokens, lists, or sets
+ *
+ * @return array
+ *   fields: The CiviCRM contact fields this module supports
+ *   tokens: Available tokens keyed to field ids
+ *   lists: Option lists keyed to option_group name
+ *   sets: Info on fieldsets (tables)
  */
 function wf_crm_get_fields($var = 'fields') {
   static $fields = array();
@@ -1008,9 +1075,12 @@ function wf_crm_get_fields($var = 'fields') {
 
 /**
  * Lookup a uf ID from contact ID or vice-versa
- * @param $id: uf or contact ID - defaults to current user
- * @param $type: what type of ID is supplied
  * With no arguments passed in, this function will return the contact_id of the current logged-in user
+ *
+ * @param $id
+ *   (optional) uf or contact ID - defaults to current user
+ * @param $type
+ *   (optional) what type of ID is supplied - defaults to user id
  */
 function wf_crm_user_cid($id = NULL, $type = 'uf') {
   static $current_user = NULL;
@@ -1046,6 +1116,11 @@ function wf_crm_user_cid($id = NULL, $type = 'uf') {
 
 /**
  * Fetch contact display name
+ *
+ * @param $cid
+ *   Contact id
+ *
+ * @return string
  */
 function wf_crm_display_name($cid) {
   if (!$cid || !is_numeric($cid)) {
@@ -1058,6 +1133,11 @@ function wf_crm_display_name($cid) {
 
 /**
  * Explodes form key into an array and verifies that it is in the right format
+ *
+ * @param $key
+ *   Webform component field key (string)
+ *
+ * @return array or NULL
  */
 function wf_crm_explode_key($key) {
   $pieces = explode('_', $key, 6);
@@ -1069,6 +1149,12 @@ function wf_crm_explode_key($key) {
 
 /**
  * Convert a | separated string into an array
+ *
+ * @param $str
+ *   String representation of key => value select options
+ *
+ * @return
+ *   Array of select options
  */
 function wf_crm_str2array($str) {
   $ret = array();
@@ -1083,6 +1169,12 @@ function wf_crm_str2array($str) {
 
 /**
  * Convert an array into a | separated string
+ *
+ * @param $arr
+ *   Array of select options
+ *
+ * @return
+ *   String representation of key => value select options
  */
 function wf_crm_array2str($arr) {
   $str = '';
@@ -1094,6 +1186,11 @@ function wf_crm_array2str($arr) {
 
 /**
  * Token replacement for form messages
+ *
+ * @param $str
+ *   Raw message with tokens
+ * @param $contact
+ *   CiviCRM contact array
  */
 function wf_crm_replace_tokens($str, $contact) {
   $sp = CRM_Core_DAO::VALUE_SEPARATOR;
@@ -1116,6 +1213,16 @@ function wf_crm_replace_tokens($str, $contact) {
 /**
  * Wrapper for all CiviCRM API calls
  * For consistency, future-proofing, and error handling
+ *
+ * @param $entity
+ *   API entity
+ * @param $operation
+ *   API operation
+ * @param $params
+ *   API params
+ *
+ * @return
+ *   Result of API call
  */
 function wf_civicrm_api($entity, $operation, $params) {
   $params += array(
@@ -1143,6 +1250,13 @@ function wf_civicrm_api($entity, $operation, $params) {
 /**
  * Check if a name or email field exists for this contact.
  * This determines whether a new contact can be created on the webform.
+ *
+ * @param $enabled
+ *   Array of enabled fields
+ * @param $c
+ *   Contact #
+ * @param $contact_type
+ *   Contact type
  */
 function wf_crm_name_field_exists($enabled, $c, $contact_type) {
   foreach (wf_crm_required_contact_fields($contact_type) as $f) {
@@ -1156,6 +1270,11 @@ function wf_crm_name_field_exists($enabled, $c, $contact_type) {
 
 /**
  * At least one of these fields is required to create a contact
+ *
+ * @param $contact_type
+ *   string: contact type
+ *
+ * @return array of fields
  */
 function wf_crm_required_contact_fields($contact_type) {
   if ($contact_type == 'individual') {
@@ -1172,6 +1291,9 @@ function wf_crm_required_contact_fields($contact_type) {
 /**
  * Fetch an existing activity for a contact based on activity & case criteria
  * Maybe someday this will be possible through the CiviCRM API
+ *
+ * @param $params
+ *   Array of activity & case info
  */
 function wf_crm_activity_find($params) {
   if (!empty($params['status_id'])) {
@@ -1201,8 +1323,11 @@ function wf_crm_activity_find($params) {
 /**
  * Fetch an existing case for client(s)
  * Based on status_id and case_type_id
- * @param $params: Array of case info in standard webform_civicrm format
- * @param $ids: Passed if client id refers to a contact number and not a contact id
+ *
+ * @param $params
+ *   Array of case info in standard webform_civicrm format
+ * @param $ids
+ *   Passed if client id refers to a contact number and not a contact id
  */
 function wf_crm_case_find($params, $ids = NULL) {
   foreach ((array) $params['case'][1]['client_id'] as $client_id) {
@@ -1228,6 +1353,9 @@ function wf_crm_case_find($params, $ids = NULL) {
 
 /**
  * Fetch info and remaining spaces for events
+ *
+ * @param $events
+ *   Array of event info to fill (reference)
  */
 function wf_crm_event_info(&$events) {
   if (!empty($events)) {
@@ -1260,6 +1388,12 @@ function wf_crm_event_info(&$events) {
 /**
  * Fetch the path of a file
  * And format it as a public url that CiviCRM can read
+ *
+ * @param $id
+ *   Drupal file id
+ *
+ * @return
+ *   string: url of file
  */
 function wf_crm_filepath($id) {
   if ($file = file_load($id)) {
@@ -1271,7 +1405,17 @@ function wf_crm_filepath($id) {
 
 /**
  * Get or set a value from a webform submission
- * Adds backward-compatibility with webform version 3
+ * Maintains backward-compatibility with webform version 3
+ *
+ * @param $submission
+ *   Webform submission object (reference)
+ * @param $fid
+ *   Numeric webform component id
+ * @param $value
+ *   Value to set - leave empty to get a value rather than setting it
+ *
+ * @return
+ *   array: field value
  */
 function wf_crm_sub_value(&$submission, $fid, $value = NULL) {
   // Webform 3 style
@@ -1309,6 +1453,9 @@ function _wf_crm_child_components($nid, $id) {
 
 /**
  * Returns the major version of Webform module
+ *
+ * @return
+ *   int: 3 or 4
  */
 function wf_crm_webform_version() {
   module_load_include('install', 'webform');
