@@ -589,6 +589,7 @@ function wf_crm_ajax($key, $input = '') {
       }
       // Fetch entire contact to populate form via ajax
       if ($_GET['load'] == 'full') {
+        $sp = CRM_Core_DAO::VALUE_SEPARATOR;
         module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
         $enabled = wf_crm_enabled_fields($node);
         list(, $c, ) = explode('_', $component['form_key'], 3);
@@ -607,7 +608,11 @@ function wf_crm_ajax($key, $input = '') {
             $type = ($table == 'contact' && strpos($field, 'name')) ? 'name' : $table;
             // Exclude blank and hidden fields to save bandwidth
             if ($contact[$table][$n][$field] !== '' && $contact[$table][$n][$field] !== array() && !in_array($type, $component['extra']['hide_fields'])) {
-              $data[str_replace('_', '-', $fid)] = $contact[$table][$n][$field];
+              $val = $contact[$table][$n][$field];
+              if (strpos($val, $sp) !== FALSE) {
+                $val = explode($sp, trim($val, $sp));
+              }
+              $data[str_replace('_', '-', $fid)] = $val;
             }
           }
         }

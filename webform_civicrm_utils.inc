@@ -337,7 +337,7 @@ function wf_crm_get_contact_relationship_types($type_a, $type_b, $sub_type_a, $s
  * @param $entity_type
  *   Type of crm entity. 'contact' is assumed
  * @param $normalize
- *   Whether to normalize the output
+ *   Default true: if true shift all arrays to start at index 1
  *
  * @return array
  */
