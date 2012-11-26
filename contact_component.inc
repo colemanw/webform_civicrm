@@ -609,7 +609,8 @@ function wf_crm_ajax($key, $input = '') {
             // Exclude blank and hidden fields to save bandwidth
             if ($contact[$table][$n][$field] !== '' && $contact[$table][$n][$field] !== array() && !in_array($type, $component['extra']['hide_fields'])) {
               $val = $contact[$table][$n][$field];
-              if (strpos($val, $sp) !== FALSE) {
+              // Explode multivalue strings
+              if (is_string($val) && strpos($val, $sp) !== FALSE) {
                 $val = explode($sp, trim($val, $sp));
               }
               $data[str_replace('_', '-', $fid)] = $val;
