@@ -532,7 +532,7 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
 }
 
 /**
- * Callback to serve AJAX requests.
+ * Drupal page callback to serve AJAX requests.
  * 
  * @param $key
  *   Type of AJAX request

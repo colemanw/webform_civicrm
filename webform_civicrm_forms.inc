@@ -1547,9 +1547,9 @@ function _wf_crm_form_data(&$data, $enabled, $submission, $updating, $node) {
   $fields = wf_crm_get_fields();
   foreach ($enabled as $field_key => $fid) {
     $val = wf_crm_sub_value($submission, $fid);
-    if ($val) {
+    if ($val !== FALSE) {
       list( , $c, $ent, $n, $table, $name) = explode('_', $field_key, 6);
-      if ($name === 'existing') {
+      if ($name === 'existing' || $name === 'fieldset') {
         continue;
       }
       // Ignore values from fields hidden by existing contact component
@@ -1565,6 +1565,7 @@ function _wf_crm_form_data(&$data, $enabled, $submission, $updating, $node) {
       if ($field['type'] == 'hidden') {
         continue;
       }
+      // Translate privacy options into seperate values
       if ($name === 'privacy') {
         foreach (array_keys(wf_crm_exposed_options($node, $fid)) as $key) {
           $data[$ent][$c][$table][$n][$key] = in_array($key, $val);

@@ -1427,7 +1427,7 @@ function wf_crm_sub_value(&$submission, $fid, $value = NULL) {
     $field =& $submission->data[$fid];
   }
   else {
-    return array();
+    return NULL;
   }
   if (is_array($value)) {
     $field = array_values($value);
