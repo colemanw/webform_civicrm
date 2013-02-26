@@ -467,7 +467,7 @@ function webform_civicrm_get_fields($var = 'fields') {
         'contact_type' => $key == 'household' ? 'household' : 'organization',
       );
     }
-    foreach (array('first_name' => t('First Name'), 'nick_name' => t('Nick Name'), 'middle_name' => t('Middle Name'), 'last_name' => t('Last Name'), 'job_title' => t('Job Title')) as $key => $label) {
+    foreach (array('first_name' => t('First Name'), 'nick_name' => t('Nickname'), 'middle_name' => t('Middle Name'), 'last_name' => t('Last Name'), 'job_title' => t('Job Title')) as $key => $label) {
       $fields['contact_' . $key] = array(
         'name' => $label,
         'type' => 'textfield',
@@ -709,7 +709,7 @@ function webform_civicrm_get_fields($var = 'fields') {
     $tokens = array(
       'display_name' => t('display name'),
       'first_name' => t('first name'),
-      'nick_name' => t('nick name'),
+      'nick_name' => t('nickname'),
       'middle_name' => t('middle name'),
       'last_name' => t('last name'),
       'individual_prefix' => t('name prefix'),
