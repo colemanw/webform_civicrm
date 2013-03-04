@@ -1463,16 +1463,19 @@ function wf_crm_process_relationship($params, $cid1, $cid2) {
   if ($cid1 != $cid2) {
     list($type, $side) = explode('_', $params['relationship_type_id']);
     $existing = wf_crm_relationship_get(array($params['relationship_type_id']), $cid1, $cid2);
+    $perm = wf_crm_aval($params, 'relationship_permission');
     // Swap contacts if this is an inverse relationship
     if ($side == 'b' || ($existing && $existing['contact_id_a'] != $cid1)) {
       list($cid1, $cid2) = array($cid2, $cid1);
+      if ($perm == 1 || $perm == 2) {
+        $perm = $perm == 1 ? 2 : 1;
+      }
     }
     $params += $existing;
     $params['contact_id_a'] = $cid1;
     $params['contact_id_b'] = $cid2;
     $params['relationship_type_id'] = $type;
-    if (!empty($params['relationship_permission'])) {
-      $perm = $params['relationship_permission'];
+    if ($perm) {
       $params['is_permission_a_b'] = $params['is_permission_b_a'] = $perm == 3 ? 1 : 0;
       if ($perm == 1 || $perm == 2) {
         $params['is_permission_' . ($perm == 1 ? 'a_b' : 'b_a')] = 1;
