@@ -92,7 +92,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     '#default_value' => !empty($settings['nid']),
     '#return_value' => $node->nid,
     '#description' => t('Contacts will be created or updated when users submit this webform.'),
-    '#suffix' => '<a id="web-civi-help" class="module-link module-link-help" href="http://drupal.org/node/1615380" target="_blank">' . t('Webform CiviCRM Help') . '</a>',
+    '#prefix' => '<a id="web-civi-help" class="module-link module-link-help" href="http://drupal.org/node/1615380" target="_blank">' . t('Webform CiviCRM Help') . '</a>',
   );
   $form['number_of_contacts'] = array(
     '#type' => 'select',

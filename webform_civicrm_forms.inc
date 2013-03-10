@@ -724,7 +724,7 @@ function wf_crm_process_submission($node, &$submission, $op) {
         ));
       }
       // Save custom data
-      wf_crm_save_custom($contact, $cid);
+      wf_crm_save_custom($contact, $cid, 'Contact', !empty($updating['cid'][$c]));
 
       // Fill values for hidden ID & CS fields
       $fid = 'civicrm_' . $c . '_contact_1_contact_';

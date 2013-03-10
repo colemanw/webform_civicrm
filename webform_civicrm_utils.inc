@@ -394,9 +394,12 @@ function wf_crm_get_custom($entity_id, $entity_type = NULL, $normalize = TRUE) {
  * @param $entity_id
  *   Numeric id of entity
  * @param $entity_type
- *   Type of crm entity. 'contact' is assumed
+ *   Type of crm entity, e.g. "Contact"
+ * @param $known
+ *   Is this a known record (as opposed to a contact matched via dedupe rules)? 
+ *   We only allow saving blank fields for known contacts.
  */
-function wf_crm_save_custom($entity, $entity_id, $entity_type = NULL) {
+function wf_crm_save_custom($entity, $entity_id, $entity_type, $known = TRUE) {
   $existing = wf_crm_get_custom($entity_id, $entity_type, FALSE);
   $params = array('entityID' => $entity_id);
   foreach ($entity as $table => $values) {
@@ -413,7 +416,10 @@ function wf_crm_save_custom($entity, $entity_id, $entity_type = NULL) {
           $suf = --$insert;
         }
         foreach ($custom as $k => $v) {
-          $params[$k . '_' . $suf] = $v;
+          // Only save if this is not blank or data already exists and record is known
+          if ($v !== '' || ($suf > 0 && $known)) {
+            $params[$k . '_' . $suf] = $v;
+          }
         }
       }
     }
