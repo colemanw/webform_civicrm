@@ -703,6 +703,13 @@ function wf_crm_get_fields($var = 'fields') {
       'name' => t('Phone Number'),
       'type' => 'textfield',
     );
+    $fields['phone_phone_ext'] = array(
+      'name' => t('Phone Extension'),
+      'type' => 'textfield',
+      'extra' => array(
+        'width' => 4,
+      ),
+    );
     $fields['phone_phone_type_id'] = array(
       'name' => t('Phone # Type'),
       'type' => 'select',
