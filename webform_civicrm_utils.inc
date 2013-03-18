@@ -56,6 +56,12 @@ function wf_crm_get_options($option_group, $param = NULL) {
       }
       $sql = "SELECT name AS label, $value AS value FROM civicrm_state_province WHERE country_id IN ($param) ORDER BY name";
     }
+    elseif ($option_group == 'county') {
+      if (!$param) {
+        return array();
+      }
+      $sql = "SELECT name AS label, id AS value FROM civicrm_county WHERE state_province_id = $param ORDER BY name";
+    }
     elseif ($option_group == 'tag') {
       require_once 'CRM/Core/BAO/Tag.php';
       // $param must contain entity i.e. contact and optionally a tagset id
@@ -67,7 +73,7 @@ function wf_crm_get_options($option_group, $param = NULL) {
         $sql .= " AND group_type LIKE '%2%' AND visibility = 'Public Pages'";
       }
     }
-    elseif ($option_group == 'languages' || $option_group == 'county') {
+    elseif ($option_group == 'languages') {
       require_once 'CRM/Core/PseudoConstant.php';
       return CRM_Core_PseudoConstant::$option_group();
     }
@@ -496,7 +502,11 @@ function wf_crm_state_abbr($input, $ret = 'abbreviation', $country_id = NULL) {
   $input_type = $ret == 'id' ? 'abbreviation' : 'id';
   $sql = "SELECT $ret FROM civicrm_state_province WHERE $input_type = %1";
   $vars = array(1 => array($input, $ret == 'id' ? 'String' : 'Integer'));
-  if ($country_id) {
+  if ($ret === 'id') {
+    if (!$country_id || $country_id === 'default') {
+      $config = CRM_Core_Config::singleton();
+      $country_id = (int) $config->defaultContactCountry;
+    }
     $sql .= ' AND country_id = %2';
     $vars[2] = array($country_id, 'Integer');
   }
@@ -680,12 +690,13 @@ function wf_crm_get_fields($var = 'fields') {
       ),
     );
     $fields['address_county_id'] = array(
-      'name' => t('County/District'),
-      'type' => 'select',
+      'name' => t('District/County'),
+      'type' => 'textfield',
     );
     $fields['address_country_id'] = array(
       'name' => t('Country'),
       'type' => 'select',
+      'extra' => array('civicrm_live_options' => 1),
       'value' => $config->defaultContactCountry,
     );
     $fields['address_state_province_id'] = array(

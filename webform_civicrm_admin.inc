@@ -1126,8 +1126,10 @@ function _wf_crm_component_form_alter(&$form, $form_state) {
             $widgets[$k] = $v['label'];
           }
         }
-        if ($form['type']['#value'] == 'textfield' && $table === 'address' && $name === 'state_province_id') {
-          $widgets['textfield'] = t('Textfield / AJAX Select');
+        if ($form['type']['#value'] == 'textfield' && $table === 'address') {
+          if ($name === 'state_province_id' || $name === 'county_id') {
+            $widgets['textfield'] = t('Textfield / AJAX Select');
+          }
         }
         $form['widget'] = array(
           '#type' => 'fieldset',
@@ -1548,8 +1550,10 @@ function theme_webform_civicrm_components_form($variables) {
         else {
           $title = t('Field for !type', array('!type' => $sets[$table]['label']));
         }
-        if ($table === 'address' && $name === 'state_province_id' && $component['type'] === 'textfield') {
-          $type = t('AJAX Select');
+        if ($table === 'address' && $component['type'] === 'textfield') {
+          if ($name === 'state_province_id' || $name === 'county_id') {
+            $type = t('AJAX Select');
+          }
         }
         if ($component['type'] == 'civicrm_contact' || $component['type'] == 'fieldset') {
           $class .= ' ' . $node->webform_civicrm['data']['contact'][$c]['contact'][1]['contact_type'];

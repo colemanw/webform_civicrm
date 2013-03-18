@@ -550,6 +550,13 @@ function wf_crm_ajax($key, $input = '') {
     }
     exit(drupal_json_output(wf_crm_get_options('state_province', $input)));
   }
+  elseif ($key == 'county') {
+    if (strpos($input, '-')) {
+      list($state, $country) = explode('-', $input);
+      $state_id = wf_crm_state_abbr($state, 'id', $country);
+      exit(drupal_json_output(wf_crm_get_options('county', $state_id)));
+    }
+  }
   // Populate contact autocomplete
   elseif (strpos($key, '-')) {
     if (empty($_GET['str']) && (empty($_GET['load']) || empty($_GET['cid']))) {

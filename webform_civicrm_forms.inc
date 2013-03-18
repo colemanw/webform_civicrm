@@ -38,7 +38,7 @@ function _wf_crm_frontend_form_alter(&$form, &$form_state) {
         'defaultCountry' => $config->defaultContactCountry,
         'defaultStates' => wf_crm_get_options('state_province', $config->defaultContactCountry),
         'noCountry' => t('- First Choose a Country -'),
-        'callbackPath' => url('webform-civicrm/js/state_province', array('alias' => TRUE)),
+        'callbackPath' => url('webform-civicrm/js', array('alias' => TRUE)),
       );
       $form['#attached']['js'][] = array(
         'data' => array('webform_civicrm' => $js_vars),
