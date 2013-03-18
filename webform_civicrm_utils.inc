@@ -67,9 +67,9 @@ function wf_crm_get_options($option_group, $param = NULL) {
         $sql .= " AND group_type LIKE '%2%' AND visibility = 'Public Pages'";
       }
     }
-    elseif ($option_group == 'languages') {
+    elseif ($option_group == 'languages' || $option_group == 'county') {
       require_once 'CRM/Core/PseudoConstant.php';
-      return CRM_Core_PseudoConstant::languages();
+      return CRM_Core_PseudoConstant::$option_group();
     }
     elseif ($option_group == 'location_type') {
       $sql = 'SELECT display_name AS label, id AS value FROM civicrm_location_type WHERE is_active = 1 ORDER BY is_default DESC';
@@ -539,6 +539,7 @@ function wf_crm_get_fields($var = 'fields') {
       'contact_privacy' => 'privacy',
       'contact_employer_id' => 'organization',
       '*_country_id' => 'country',
+      '*_county_id' => 'county',
       'phone_phone_type_id' => 'phone_type',
       '*_location_type_id' => 'location_type',
       'website_website_type_id' => 'website_type',
@@ -677,6 +678,10 @@ function wf_crm_get_fields($var = 'fields') {
         'width' => 5,
         'description' => t('+4 digits of Zip Code'),
       ),
+    );
+    $fields['address_county_id'] = array(
+      'name' => t('County/District'),
+      'type' => 'select',
     );
     $fields['address_country_id'] = array(
       'name' => t('Country'),
