@@ -83,6 +83,15 @@ function wf_crm_get_options($option_group, $param = NULL) {
     elseif ($option_group == 'campaign') {
       $sql = 'SELECT title AS label, id AS value FROM civicrm_campaign WHERE is_active = 1 AND (end_date >= NOW() OR end_date IS NULL) ORDER BY start_date DESC';
     }
+    elseif ($option_group == 'contribution_page') {
+      $sql = 'SELECT title AS label, id AS value FROM civicrm_contribution_page WHERE is_active = 1 ORDER BY title';
+    }
+    elseif ($option_group == 'payment_processor') {
+      $sql = 'SELECT name AS label, id AS value FROM civicrm_payment_processor
+        WHERE is_active = 1 AND is_test <> 1
+        ORDER BY name';
+      //$vars[1] = array($param, 'Integer');
+    }
     elseif ($option_group == 'event') {
       $sql = "SELECT title AS label, CONCAT(id, '-', event_type_id) AS value FROM civicrm_event WHERE is_template = 0";
       if (empty($param['show_past_events'])) {
@@ -93,6 +102,7 @@ function wf_crm_get_options($option_group, $param = NULL) {
       }
       $sql .= ' ORDER BY start_date ' . ($param['context'] == 'config_form' ? 'DESC' : '');
     }
+    
     else {
       $sql = 'SELECT value, label FROM civicrm_option_value WHERE is_active <> 0 AND option_group_id = ';
       if (is_numeric($option_group)) {
@@ -199,6 +209,9 @@ function wf_crm_field_options($field, $context, $data) {
       $param = NULL;
       if ($name === 'event_id') {
         $param = $data['reg_options'] + array('context' => $context);
+      }
+      elseif ($name == 'payment_processor') {
+        $param = $data['contribution'][1]['contribution'][1]['contribution_page_id'];
       }
       if ($list === 'tag') {
         $split = explode('_', $name);
@@ -570,6 +583,8 @@ function wf_crm_get_fields($var = 'fields') {
       'participant_event_id' => 'event',
       'participant_role_id' => 'participant_role',
       'participant_status_id' => 'participant_status',
+      'contribution_page_id' => 'contribution_page',
+      'contribution_payment_processor' => 'payment_processor',
       '*_campaign_id' => 'campaign',
     );
 
@@ -941,7 +956,19 @@ function wf_crm_get_fields($var = 'fields') {
         );
       }
     }
-
+    if (in_array('CiviContribute', $components)) {
+      $fields['contribution_total_amount'] = array(
+        'name' => t('Contribution Amount'),
+        'type' => 'textfield',
+      );
+      $fields['contribution_payment_processor'] = array(
+        'name' => t('Payment Processor'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'extra' => array('civicrm_live_options' => 1),
+        'empty_option' => t('Offline Payment'),
+      );
+    }
     $tokens = array(
       'display_name' => t('display name'),
       'first_name' => t('first name'),
@@ -982,6 +1009,9 @@ function wf_crm_get_fields($var = 'fields') {
     if (in_array('CiviEvent', $components)) {
       $sets['participant'] = array('entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9);
     }
+    if (in_array('CiviContribute', $components)) {
+      $sets['contribution'] = array('entity_type' => 'contribution', 'label' => t('Contribution'));
+    }
 
     // Pull custom fields and match to Webform element types
     $custom_types = array(
@@ -1009,6 +1039,9 @@ function wf_crm_get_fields($var = 'fields') {
     if (in_array('CiviCase', $components, TRUE)) {
       $custom_extends .= ",'case'";
     }
+    if (in_array('CiviContribute', $components, TRUE)) {
+      $custom_extends .= ",'contribution'";
+    }
     $sql = "
       SELECT cf.*, cg.title AS custom_group_name, LOWER(cg.extends) AS entity_type, cg.extends_entity_column_id, cg.extends_entity_column_value AS sub_types, cg.is_multiple, cg.max_multiple, cg.id AS custom_group_id
       FROM civicrm_custom_field cf
@@ -1024,7 +1057,7 @@ function wf_crm_get_fields($var = 'fields') {
         }
         elseif (!isset($sets[$set])) {
           $sets[$set]['label'] = $dao->custom_group_name;
-          if ($dao->entity_type != 'activity' && $dao->entity_type != 'participant' && $dao->entity_type != 'case') {
+          if ($dao->entity_type != 'activity' && $dao->entity_type != 'participant' && $dao->entity_type != 'case' && $dao->entity_type != 'contribution') {
             $sets[$set]['entity_type'] = 'contact';
             if ($dao->entity_type != 'contact') {
               $sets[$set]['contact_type'] = $dao->entity_type;

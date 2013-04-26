@@ -244,6 +244,9 @@ var wfCiviAdmin = (function ($, D) {
         }
         return label;
       });
+      $('fieldset#edit-contribution', context).once('wf-civi').drupalSetSummary(function (context) {
+        return $('select[name="contribution_page_id"] option:selected', context).text();
+      });
       $('fieldset#edit-options', context).once('wf-civi').drupalSetSummary(function (context) {
         var label = '';
         $(':checked', context).each(function() {
