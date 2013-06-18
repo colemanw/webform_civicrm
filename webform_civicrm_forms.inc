@@ -1556,10 +1556,12 @@ function _wf_crm_form_data(&$data, $enabled, $submission, $updating, $node) {
         continue;
       }
       // Ignore values from fields hidden by existing contact component
-      if (!empty($updating['cid'][$c]) && isset($enabled["civicrm_{$c}_contact_1_contact_existing"])) {
+      if (isset($enabled["civicrm_{$c}_contact_1_contact_existing"]) && !is_numeric(wf_crm_sub_value($submission, $enabled["civicrm_{$c}_contact_1_contact_existing"]))) {
         $component = $node->webform['components'][$enabled["civicrm_{$c}_contact_1_contact_existing"]];
         $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
         if (in_array($type, $component['extra']['hide_fields'])) {
+          // Remove the value from the webform submission
+          wf_crm_sub_value($submission, $fid, is_array($val) ? array() : '');
           continue;
         }
       }

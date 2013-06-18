@@ -133,14 +133,12 @@ var wfCivi = (function ($, D) {
           }
         }
         if (op === 'show') {
-          $(':input', ele).removeAttr('disabled');
           ele.show(speed);
         }
         else {
           var type = (n[6] === 'name') ? 'name' : n[4];
           if ($.inArray(type, toHide) >= 0) {
             ele.hide(speed, function() {ele.css('display', 'none');});
-            $(':input', ele).attr('disabled', 'disabled');
           }
         }
       }
