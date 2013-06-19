@@ -1561,7 +1561,7 @@ function _wf_crm_form_data(&$data, $enabled, $submission, $updating, $node) {
         $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
         if (in_array($type, $component['extra']['hide_fields'])) {
           // Remove the value from the webform submission
-          wf_crm_sub_value($submission, $fid, is_array($val) ? array() : '');
+          wf_crm_sub_value($submission, $fid, array(NULL));
           continue;
         }
       }
