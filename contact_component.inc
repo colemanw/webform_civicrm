@@ -82,9 +82,9 @@ function _webform_edit_civicrm_contact($component) {
       prePopulate: prep
     }';
     $js = '
-    jQuery(document).ready(function() {
+    jQuery(function($) {
       var prep = wfCiviContact.init(' . $callback_path . ');
-      jQuery("#default-contact-id").tokenInput(' . $callback_path . ', ' . $settings . ');
+      $("#default-contact-id").tokenInput(' . $callback_path . ', ' . $settings . ');
     });';
     $form['#attached']['js'][$js] = array('type' => 'inline');
     $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/token-input.css';

@@ -512,7 +512,7 @@ function wf_crm_fill_form(&$elements, $node, $data = array(), $submitted = array
           // Set data for contact image
           if ($name == 'image_URL') {
             if ($val && in_array($element['#type'], array('file', 'managed_file'))) {
-              $js = "jQuery(document).ready(function() {wfCivi.contactImage('$eid', '$val')});";
+              $js = "jQuery(function() {wfCivi.contactImage('$eid', '$val')});";
               $element['#attached']['js'][$js] = array('type' => 'inline');
             }
           }
