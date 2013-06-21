@@ -1351,7 +1351,7 @@ function wf_crm_activity_find($params) {
 
 /**
  * Fetch an existing case for client(s)
- * Based on status_id and case_type_id
+ * Based on url param or status_id and case_type_id
  *
  * @param $params
  *   Array of case info in standard webform_civicrm format
@@ -1359,20 +1359,47 @@ function wf_crm_activity_find($params) {
  *   Passed if client id refers to a contact number and not a contact id
  */
 function wf_crm_case_find($params, $ids = NULL) {
-  foreach ((array) $params['case'][1]['client_id'] as $client_id) {
-    if ($ids !== NULL) {
-      $client_id = wf_crm_aval($ids, "cid:$client_id");
-    }
-    if ($client_id) {
-      $result = wf_civicrm_api('case', 'get', array('client_id' => $client_id));
-      foreach (wf_crm_aval($result, 'values', array()) as $case) {
-        if (empty($case['is_deleted']) && in_array($case['status_id'], $params['existing_case_status'])) {
-          $case_types = $case['case_type_id'];
-          if (is_string($case_types)) {
-            $case_types = explode(',', $case_types);
-          }
-          if (in_array($params['case'][1]['case_type_id'], $case_types)) {
+  // Look for case id passed in url 
+  if (!empty($_GET['caseid']) && is_numeric($_GET['caseid'])) {
+    $result = wf_civicrm_api('case', 'get', array('case_id' => $_GET['caseid']));
+    if (isset($result['values'][$_GET['caseid']])) {
+      $case = $result['values'][$_GET['caseid']];
+      // Verify that case is correct type and user has access to this case 
+      if ($case['case_type_id'] == $params['case'][1]['case_type_id']) {
+        // Respect admin privledges
+        if (user_access('access all cases and activities')) {
+          return $case;
+        }
+        $case_cids = array();
+        foreach ($case['contacts'] as $contact) {
+          $case_cids[] = $contact['contact_id'];
+        }
+        foreach ((array) wf_crm_aval($ids, 'cid', $params['case'][1]['client_id']) as $cid) {
+          if (in_array($cid, $case_cids)) {
+            // User is involved in the case therefore the found case is correct
             return $case;
+          }
+        }
+      }
+    }
+  }
+  // Match existing case based on client and status
+  if (!empty($params['existing_case_status']) && !empty($params['case'][1]['client_id'])) {
+    foreach ((array) $params['case'][1]['client_id'] as $client_id) {
+      if ($ids !== NULL) {
+        $client_id = wf_crm_aval($ids, "cid:$client_id");
+      }
+      if ($client_id) {
+        $result = wf_civicrm_api('case', 'get', array('client_id' => $client_id));
+        foreach (wf_crm_aval($result, 'values', array()) as $case) {
+          if (empty($case['is_deleted']) && in_array($case['status_id'], $params['existing_case_status'])) {
+            $case_types = $case['case_type_id'];
+            if (is_string($case_types)) {
+              $case_types = explode(',', $case_types);
+            }
+            if (in_array($params['case'][1]['case_type_id'], $case_types)) {
+              return $case;
+            }
           }
         }
       }

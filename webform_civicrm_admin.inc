@@ -298,7 +298,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     $form['act']['case']['case_fields']['existing_case_status'] = array(
       '#type' => 'select',
       '#title' => t('Update Existing Case'),
-      '#description' => t('If any of the above options are selected and a %type case with that status already exists for the client, it will be autofilled and updated.', array('%type' => $case_type_name)),
+      '#description' => t('If any of the above options are selected and a %type case with that status already exists for the client, it will be autofilled and updated.', array('%type' => $case_type_name)) . '<br />' . t('Note: a case can also be autofilled by passing "caseid" in the url.'),
       '#options' => wf_crm_get_options('case_status'),
       '#default_value' => wf_crm_aval($data, 'case:1:existing_case_status', array()),
       '#multiple' => TRUE,
@@ -329,7 +329,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     $form['act']['case']['activity_fields']['existing_activity_status'] = array(
       '#type' => 'select',
       '#title' => t('Update Existing Activity'),
-      '#description' => t('If any of the above options are selected and a %type activity with that status already exists for !ent, it will be autofilled and updated.', array('!ent' => $case_type ? t('the case') : t('contact 1'), '%type' => $act_types[$settings['activity_type_id']])),
+      '#description' => t('If any of the above options are selected and a %type activity with that status already exists for !ent, it will be autofilled and updated.', array('!ent' => $case_type ? t('the case') : t('contact 1'), '%type' => $act_types[$settings['activity_type_id']])) . '<br />' . t('Note: an activity can also be autofilled by passing "aid" in the url.'),
       '#options' => wf_crm_get_options('activity_status'),
       '#default_value' => wf_crm_aval($data, 'activity:1:existing_activity_status', array()),
       '#multiple' => TRUE,

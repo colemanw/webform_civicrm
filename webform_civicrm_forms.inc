@@ -121,11 +121,12 @@ function _wf_crm_frontend_form_alter(&$form, &$form_state) {
   }
   // Search for case & activity
   else {
-    if (!empty($data['case'][1]['existing_case_status']) && !empty($data['case'][1]['case'][1]['client_id'])) {
+    if (!empty($data['case'][1])) {
       $case = wf_crm_case_find($data['case'][1], $id);
       if ($case) {
         $id['case'][1] = $case['id'];
         $custom = wf_crm_get_custom($case['id'], 'case');
+        // Add case to $info in standard webform_civicrm format
         $info['case'] = array(1 => (array('case' => array(1 => $case)) + $custom));
       }
     }
