@@ -1321,7 +1321,7 @@ function _wf_crm_participant_validate($form, &$form_state, $submitted) {
   // Check how many valid contacts we have
   foreach ($data['contact'] as $c => $contact) {
     // Check if we have a contact_id
-    if (!empty($submitted["civicrm_{$c}_contact_1_contact_existing"])) {
+    if (is_numeric(wf_crm_aval($submitted, "civicrm_{$c}_contact_1_contact_existing"))) {
       $cids[] = $contacts[$c] = $submitted["civicrm_{$c}_contact_1_contact_existing"];
     }
     // Or else see if enough info was entered to create a contact
