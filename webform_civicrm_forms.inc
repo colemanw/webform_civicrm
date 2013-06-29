@@ -1553,17 +1553,22 @@ function _wf_crm_form_data(&$data, $enabled, $submission, $updating, $node) {
     $val = wf_crm_sub_value($submission, $fid);
     if ($val !== FALSE) {
       list( , $c, $ent, $n, $table, $name) = explode('_', $field_key, 6);
+      // Fieldsets and existing contact fields are not CRM data, so ignore
       if ($name === 'existing' || $name === 'fieldset') {
         continue;
       }
       // Ignore values from fields hidden by existing contact component
-      if (isset($enabled["civicrm_{$c}_contact_1_contact_existing"]) && !is_numeric(wf_crm_sub_value($submission, $enabled["civicrm_{$c}_contact_1_contact_existing"]))) {
+      if ($ent == 'contact' && isset($enabled["civicrm_{$c}_contact_1_contact_existing"])) {
         $component = $node->webform['components'][$enabled["civicrm_{$c}_contact_1_contact_existing"]];
-        $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
-        if (in_array($type, $component['extra']['hide_fields'])) {
-          // Remove the value from the webform submission
-          wf_crm_sub_value($submission, $fid, array(NULL));
-          continue;
+        $existing_contact_val = wf_crm_sub_value($submission, $component['cid']);
+        // Fields should be hidden if value is empty (no selection) or a numeric contact id
+        if (!$existing_contact_val[0] || is_numeric($existing_contact_val[0])) {
+          $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
+          if (in_array($type, $component['extra']['hide_fields'])) {
+            // Remove the value from the webform submission
+            wf_crm_sub_value($submission, $fid, array(NULL));
+            continue;
+          }
         }
       }
       $field = $fields[$table . '_' . $name];
