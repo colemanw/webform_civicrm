@@ -21,6 +21,7 @@ function _webform_defaults_civicrm_contact() {
     'extra' => array(
       'search_prompt' => '',
       'none_prompt' => '',
+      'results_display' => array('display_name'),
       'allow_create' => 0,
       'widget' => 'autocomplete',
       'show_hidden_contact' => 0,
@@ -124,6 +125,20 @@ function _webform_edit_civicrm_contact($component) {
     '#maxlength' => 1024,
     '#weight' => -6,
     '#parents' => array('extra', 'none_prompt'),
+  );
+  $form['display']['results_display_fieldset'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Display Name Format'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    'results_display' => array(
+      '#type' => 'checkboxes',
+      '#title' => t("Field(s) to display the contact"),
+      '#required' => TRUE,
+      '#default_value' => $component['extra']['results_display'],
+      '#options' => wf_crm_results_display_options(),
+      '#parents' => array('extra', 'results_display'),
+    ),
   );
   $form['display']['show_hidden_contact'] = array(
     '#type' => 'radios',
@@ -495,10 +510,10 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
   }
   $limit = $str ? 12 : 200;
   $ret = array();
+  $display = $component['extra']['results_display'];
   $params += array(
     'rowCount' => $limit,
     'sort' => 'sort_name',
-    'return.display_name' => TRUE,
   );
   if ($str) {
     require_once 'CRM/Utils/Type.php';
@@ -507,9 +522,9 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
   $result = wf_civicrm_api('contact', 'get', $params);
   // Autocomplete results
   if ($str) {
-    foreach (wf_crm_aval($result, 'values', array()) as $val) {
-      if (!empty($val['display_name'])) {
-        $ret[] = array('id' => $val['id'], 'name' => $val['display_name']);
+    foreach (wf_crm_aval($result, 'values', array()) as $contact) {
+      if ($name = wf_crm_format_contact($contact, $display)) {
+        $ret[] = array('id' => $contact['id'], 'name' => $name);
       }
     }
     if (count($ret) < $limit && $component['extra']['allow_create']) {
@@ -522,9 +537,9 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
     if ($component['extra']['allow_create']) {
       $ret['-'] = $component['extra']['none_prompt'];
     }
-    foreach (wf_crm_aval($result, 'values', array()) as $val) {
-      if (!empty($val['display_name'])) {
-        $ret[$val['id']] = $val['display_name'];
+    foreach (wf_crm_aval($result, 'values', array()) as $contact) {
+      if ($name = wf_crm_format_contact($contact, $display)) {
+        $ret[$contact['id']] = $name;
       }
     }
   }
@@ -576,11 +591,10 @@ function wf_crm_ajax($key, $input = '') {
     }
     // Autocomplete contact names
     if (!empty($_GET['str'])) {
-      $output = NULL;
       if ($str = trim($_GET['str'])) {
-        $output = drupal_json_output(wf_crm_contact_search($node, $component, $filters, $str));
+        drupal_json_output(wf_crm_contact_search($node, $component, $filters, $str));
       }
-      exit($output);
+      exit();
     }
     // Load contact by id
     $data = array();
@@ -626,9 +640,10 @@ function wf_crm_ajax($key, $input = '') {
         }
       }
     }
-    exit(drupal_json_output($data));
+    drupal_json_output($data);
+    exit();
   }
-  return drupal_access_denied();
+  drupal_access_denied();
 }
 
 /**
@@ -638,6 +653,8 @@ function wf_crm_ajax($key, $input = '') {
  *   Node object
  * @param $fid
  *   Webform component id
+ *
+ * @return bool
  */
 function wf_crm_autocomplete_access($node, $fid) {
   global $user;
@@ -670,6 +687,8 @@ function wf_crm_autocomplete_access($node, $fid) {
  *   Contact get params
  * @param $cid
  *   Contact id
+ *
+ * @return bool|string
  */
 function wf_crm_contact_access($component, $filters, $cid) {
   // Create new contact doesn't require lookup
@@ -683,7 +702,6 @@ function wf_crm_contact_access($component, $filters, $cid) {
   }
   $filters['id'] = $cid;
   $filters['is_deleted'] = 0;
-  $filters['return.display_name'] = 1;
   // A contact always has permission to view self
   if ($cid == wf_crm_user_cid()) {
     $filters['check_permissions'] = FALSE;
@@ -702,7 +720,25 @@ function wf_crm_contact_access($component, $filters, $cid) {
   }
   // Fetch contact name with filters applied
   $result = wf_civicrm_api('contact', 'get', $filters);
-  return wf_crm_aval($result, "values:$cid:display_name", FALSE, TRUE);
+  return wf_crm_format_contact(wf_crm_aval($result, "values:$cid"), $component['extra']['results_display']);
+}
+
+/**
+ * @param array $contact
+ * @param array $display_fields
+ * @return bool|string
+ */
+function wf_crm_format_contact($contact, $display_fields) {
+  if (!$contact) {
+    return FALSE;
+  }
+  $display = array();
+  foreach ($display_fields as $field) {
+    if ($field && !empty($contact[$field])) {
+      $display[] = $contact[$field];
+    }
+  }
+  return implode(' :: ', $display);
 }
 
 /**
@@ -712,6 +748,8 @@ function wf_crm_contact_access($component, $filters, $cid) {
  *   Node object
  * @param $con
  *   Contact #
+ *
+ * @return array
  */
 function wf_crm_contact_fields($node, $con) {
   $ret = array();
@@ -966,4 +1004,29 @@ function theme_static_contact_element($vars) {
   }
 
   return $output . $element['#children'] . "\n</div>\n";
+}
+
+/**
+ * Returns a list of fields that can be shown in an "Existing Contact" field display
+ * In the future we could use api.getfields for this, but it also returns a lot of stuff we don't want
+ *
+ * @return array
+ */
+function wf_crm_results_display_options() {
+  $options = array(
+    'display_name' => t("Display Name"),
+    'sort_name' => t("Sort Name"),
+    'organization_name' => t("Organization Name"),
+    'job_title' => t("Job Title"),
+    'id' => t("Contact ID"),
+    'external_identifier' => t("External ID"),
+    'email' => t("Email"),
+    'city' => t("City"),
+    'county' => t("County"),
+    'state_province' => t("State/Province"),
+    'Country' => t("Country"),
+    'postal_code' => t("Postal Code"),
+    'phone' => t("Phone"),
+  );
+  return $options;
 }
