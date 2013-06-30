@@ -338,6 +338,15 @@ var wfCiviAdmin = (function ($, D) {
         $('#wf-crm-configure-form .vertical-tab-button span[name="'+$(this).attr('name')+'"]').removeClass().addClass('civi-icon '+$(this).val());
         employerOptions();
       });
+
+      // Change activity subject to match survey/petition
+      $('select[name$="_activity_survey_id"]', context).once('wf-civi').change(function() {
+        var val = $(this).val();
+        if (val != '0' && val != 'create_civicrm_webform_element') {
+          var label = $(this).find('option[value=' + val + ']').text();
+          $('#wf-crm-configure-form input[name=activity_subject]').val(label);
+        }
+      });
     }
   };
 

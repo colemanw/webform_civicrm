@@ -1064,6 +1064,9 @@ function wf_crm_process_submission($node, &$submission, $op) {
       if (empty($params['campaign_id']) || !in_array('CiviCampaign', $config->enableComponents, TRUE)) {
         unset($params['campaign_id']);
       }
+      if (!empty($data['activity'][1]['activity'][1]['survey_id'])) {
+        $params['source_record_id'] = $data['activity'][1]['activity'][1]['survey_id'];
+      }
       $result = wf_civicrm_api('activity', 'create', $params);
 
       if (!empty($result['id'])) {

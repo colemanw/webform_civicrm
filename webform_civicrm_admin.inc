@@ -288,6 +288,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     wf_crm_ajax_item($form, 'act', 'case_type_id', 'case');
   }
   $case_type = $activity_type = NULL;
+  $campaign_act_types = array();
   if ($case_enabled && !empty($data['case'][1]['case'][1]['case_type_id'])) {
     $case_type = $form['act']['case_type_id']['#default_value'] = $data['case'][1]['case'][1]['case_type_id'];
     $case_type_name = $case_types[$case_type];
@@ -308,12 +309,13 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     $act_types = $case_info->get($case_type_name, 'ActivityTypes');
   }
   else {
-    $param = NULL;
+    $act_types = wf_crm_get_options('activity_type');
     // Include campaign types
     if (in_array('CiviCampaign', $config->enableComponents, TRUE)) {
-      $param = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_component WHERE name = 'CiviCampaign'");
+      $campaign_act_types = wf_crm_get_options('activity_type', 'CiviCampaign');
+      $act_types += $campaign_act_types;
+      asort($act_types);
     }
-    $act_types = wf_crm_get_options('activity_type', $param);
   }
   $form['act']['case']['activity_type_id'] = array(
     '#type' => 'select',
@@ -369,8 +371,22 @@ function wf_crm_configure_form($form, &$form_state, $node) {
         if ($fid == 'activity_assignee_contact_id' && CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'activity_assignee_notification')) {
           $field['extra']['description'] = t('A copy of this activity will be emailed to the assignee.');
         }
-        $fid = "civicrm_1_{$ent}_1_$fid";
-        $form['act']['case'][$ent . '_fields'][$sid][$fid] = wf_crm_configure_form_item($fid, $field, $settings);
+        if ($fid !== 'activity_survey_id') {
+          $complete_fid = "civicrm_1_{$ent}_1_$fid";
+          $form_item = wf_crm_configure_form_item($complete_fid, $field, $settings);
+          $form['act']['case'][$ent . '_fields'][$sid][$complete_fid] = $form_item;
+
+          // If the activity type is part of CiviCampaign
+          // then attach an AJAX select box for the survey/petition ID
+          if (isset($campaign_act_types[$activity_type]) && $fid === 'activity_campaign_id') {
+            $pathstr = 'act:case:activity_fields:' . $sid;
+            wf_crm_ajax_item($form, $pathstr, $complete_fid, 'campaign_fields');
+            $survey_fid = 'activity_survey_id';
+            $complete_survey_fid = "civicrm_1_{$ent}_1_{$survey_fid}";
+            $survey_form_item = wf_crm_configure_form_item($complete_survey_fid, $sets['activity']['fields']['activity_survey_id'], $settings);
+            $form['act']['case']['activity_fields'][$sid]['campaign_fields'][$complete_survey_fid] = $survey_form_item;
+          }
+        }
       }
     }
   }
@@ -635,6 +651,12 @@ function wf_crm_process_form_settings(&$vals) {
     else {
       $data['activity'][1]['activity'][1]['target_contact_id'] = range(1, $vals['number_of_contacts']);
     }
+  }
+  if (!empty($vals['civicrm_1_activity_1_activity_campaign_id'])) {
+    $data['activity'][1]['activity'][1]['activity_campaign_id'] = $vals['civicrm_1_activity_1_activity_campaign_id'];
+  }
+  if (!empty($vals['civicrm_1_activity_1_activity_survey_id'])) {
+    $data['activity'][1]['activity'][1]['activity_survey_id'] = $vals['civicrm_1_activity_1_activity_survey_id'];
   }
   if (!empty($vals['case_type_id'])) {
     if (empty($data['case'][1])) {

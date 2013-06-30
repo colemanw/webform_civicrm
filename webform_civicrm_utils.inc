@@ -83,6 +83,18 @@ function wf_crm_get_options($option_group, $param = NULL) {
     elseif ($option_group == 'campaign') {
       $sql = 'SELECT title AS label, id AS value FROM civicrm_campaign WHERE is_active = 1 AND (end_date >= NOW() OR end_date IS NULL) ORDER BY start_date DESC';
     }
+    elseif ($option_group == 'survey') {
+      $sql = 'SELECT title AS label, id AS value FROM civicrm_survey WHERE is_active = 1';
+      if (!empty($param['activity_campaign_id'])) {
+        $sql .= ' AND campaign_id = %1';
+        $vars[1] = array($param['activity_campaign_id'], 'Integer');
+      }
+      if (!empty($param['activity_type_id'])) {
+        $sql .= ' AND activity_type_id = %2';
+        $vars[2] = array($param['activity_type_id'], 'Integer');
+      }
+      $sql .= ' ORDER BY title';
+    }
     elseif ($option_group == 'event') {
       $sql = "SELECT title AS label, CONCAT(id, '-', event_type_id) AS value FROM civicrm_event WHERE is_template = 0";
       if (empty($param['show_past_events'])) {
@@ -105,7 +117,12 @@ function wf_crm_get_options($option_group, $param = NULL) {
       }
       // Exclude component activity types
       if ($option_group == 'activity_type') {
-        $sql .= ' AND (component_id IS NULL' . ($param ? " OR component_id IN ($param))" : ') ORDER BY label');
+        if (!$param) {
+          $sql .= ' AND component_id IS NULL ORDER BY label';
+        }
+        else {
+          $sql .= " AND component_id = (SELECT id FROM civicrm_component WHERE name = '$param')";
+        }
       }
       else {
         $sql .= ' ORDER BY weight, label';
@@ -199,6 +216,9 @@ function wf_crm_field_options($field, $context, $data) {
       $param = NULL;
       if ($name === 'event_id') {
         $param = $data['reg_options'] + array('context' => $context);
+      }
+      elseif ($name === 'survey_id') {
+        $param = wf_crm_aval($data, 'activity:1:activity:1');
       }
       if ($list === 'tag') {
         $split = explode('_', $name);
@@ -571,6 +591,7 @@ function wf_crm_get_fields($var = 'fields') {
       'participant_role_id' => 'participant_role',
       'participant_status_id' => 'participant_status',
       '*_campaign_id' => 'campaign',
+      '*_survey_id' => 'survey',
     );
 
     // Field keys are in the format table_column
@@ -837,6 +858,13 @@ function wf_crm_get_fields($var = 'fields') {
     if (in_array('CiviCampaign', $components)) {
       $fields['activity_campaign_id'] = array(
         'name' => t('Campaign'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'empty_option' => t('None'),
+        'extra' => array('civicrm_live_options' => 1),
+      );
+      $fields['activity_survey_id'] = array(
+        'name' => t('Survey/Petition'),
         'type' => 'select',
         'expose_list' => TRUE,
         'empty_option' => t('None'),
