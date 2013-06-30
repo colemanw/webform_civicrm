@@ -422,7 +422,7 @@ function wf_crm_fill_contact_value($node, $component, &$element) {
       }
     }
   }
-  if (!$cid && $element['#type'] == 'hidden' && $component['extra']['none_prompt']) {
+  if (empty($cid) && $element['#type'] == 'hidden' && $component['extra']['none_prompt']) {
     $element['#attributes']['data-civicrm-name'] = $component['extra']['none_prompt'];
   }
 }
@@ -561,15 +561,18 @@ function wf_crm_ajax($key, $input = '') {
   // Populate state/prov lists on the fly
   if ($key == 'state_province') {
     if (!$input || (intval($input) != $input && $input != 'default')) {
-      exit(drupal_json_output(array('' => t('- first choose a country -'))));
+      drupal_json_output(array('' => t('- first choose a country -')));
+      exit();
     }
-    exit(drupal_json_output(wf_crm_get_options('state_province', $input)));
+    drupal_json_output(wf_crm_get_options('state_province', $input));
+    exit();
   }
   elseif ($key == 'county') {
     if (strpos($input, '-')) {
       list($state, $country) = explode('-', $input);
       $state_id = wf_crm_state_abbr($state, 'id', $country);
-      exit(drupal_json_output(wf_crm_get_options('county', $state_id)));
+      drupal_json_output(wf_crm_get_options('county', $state_id));
+      exit();
     }
   }
   // Populate contact autocomplete
@@ -668,6 +671,7 @@ function wf_crm_autocomplete_access($node, $fid) {
     return FALSE;
   }
   if (variable_get('webform_submission_access_control', 1)) {
+    $allowed_roles = array();
     foreach ($node->webform['roles'] as $rid) {
       $allowed_roles[$rid] = isset($user->roles[$rid]) ? TRUE : FALSE;
     }

@@ -1461,7 +1461,7 @@ function wf_crm_change_widget($form, &$form_state) {
  *
  * @param $variables
  *   Includes the form array.
- * @return
+ * @return string
  *   Formatted HTML form, ready for display.
  */
 function theme_webform_civicrm_components_form($variables) {
@@ -1504,7 +1504,6 @@ function theme_webform_civicrm_components_form($variables) {
     array('colspan' => 3, 'data' => drupal_render($form['add']['add'])),
   );
   $add_form = array('data' => $row_data, 'class' => array('draggable', 'webform-add-form'));
-  $form_rendered = FALSE;
 
   if (!empty($node->webform['components'])) {
     $component_tree = array();
@@ -1540,7 +1539,7 @@ function theme_webform_civicrm_components_form($variables) {
         $fields = wf_crm_get_fields();
         $sets = wf_crm_get_fields('sets');
         $class = 'civi-icon';
-        $title = $clone = '';
+        $clone = '';
         list( , $c, $ent, $n, $table, $name) = explode('_', $component['form_key'], 6);
         $field = wf_crm_aval($fields, $table . '_' . $name, array('type' => 'fieldset'));
         if ($component['type'] == 'fieldset') {

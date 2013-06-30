@@ -384,7 +384,7 @@ function wf_crm_get_custom($entity_id, $entity_type = NULL, $normalize = TRUE) {
   }
   if ($normalize) {
     // Normalize array keys
-    foreach ($values as $key => &$value) {
+    foreach ($values as &$value) {
       array_unshift($value, 0);
       unset($value[0]);
     }
@@ -414,7 +414,7 @@ function wf_crm_save_custom($entity, $entity_id, $entity_type, $known = TRUE) {
         $existing[$table] = array();
       }
       $insert = 0;
-      foreach ($values as $offset => $custom) {
+      foreach ($values as $custom) {
         if ($id = each($existing[$table])) {
           $suf = $id['key'];
         }
@@ -1110,6 +1110,7 @@ function wf_crm_get_fields($var = 'fields') {
  *   (optional) uf or contact ID - defaults to current user
  * @param $type
  *   (optional) what type of ID is supplied - defaults to user id
+ * @return null
  */
 function wf_crm_user_cid($id = NULL, $type = 'uf') {
   static $current_user = NULL;
@@ -1179,11 +1180,10 @@ function wf_crm_explode_key($key) {
 /**
  * Convert a | separated string into an array
  *
- * @param $str
+ * @param string $str
  *   String representation of key => value select options
  *
- * @return
- *   Array of select options
+ * @return array of select options
  */
 function wf_crm_str2array($str) {
   $ret = array();
@@ -1199,10 +1199,10 @@ function wf_crm_str2array($str) {
 /**
  * Convert an array into a | separated string
  *
- * @param $arr
+ * @param array $arr
  *   Array of select options
  *
- * @return
+ * @return string
  *   String representation of key => value select options
  */
 function wf_crm_array2str($arr) {
@@ -1220,6 +1220,7 @@ function wf_crm_array2str($arr) {
  *   Raw message with tokens
  * @param $contact
  *   CiviCRM contact array
+ * @return mixed
  */
 function wf_crm_replace_tokens($str, $contact) {
   $sp = CRM_Core_DAO::VALUE_SEPARATOR;
@@ -1243,14 +1244,14 @@ function wf_crm_replace_tokens($str, $contact) {
  * Wrapper for all CiviCRM API calls
  * For consistency, future-proofing, and error handling
  *
- * @param $entity
+ * @param string $entity
  *   API entity
- * @param $operation
+ * @param string $operation
  *   API operation
- * @param $params
+ * @param array $params
  *   API params
  *
- * @return
+ * @return array
  *   Result of API call
  */
 function wf_civicrm_api($entity, $operation, $params) {
@@ -1286,6 +1287,7 @@ function wf_civicrm_api($entity, $operation, $params) {
  *   Contact #
  * @param $contact_type
  *   Contact type
+ * @return int
  */
 function wf_crm_name_field_exists($enabled, $c, $contact_type) {
   foreach (wf_crm_required_contact_fields($contact_type) as $f) {
@@ -1323,6 +1325,7 @@ function wf_crm_required_contact_fields($contact_type) {
  *
  * @param $params
  *   Array of activity & case info
+ * @return string
  */
 function wf_crm_activity_find($params) {
   if (!empty($params['status_id'])) {
@@ -1448,8 +1451,7 @@ function wf_crm_event_info(&$events) {
  * @param $id
  *   Drupal file id
  *
- * @return
- *   string: url of file
+ * @return string|void: url of file if found
  */
 function wf_crm_filepath($id) {
   if ($file = file_load($id)) {
@@ -1470,8 +1472,7 @@ function wf_crm_filepath($id) {
  * @param $value
  *   Value to set - leave empty to get a value rather than setting it
  *
- * @return
- *   array: field value
+ * @return array|null field value if found
  */
 function wf_crm_sub_value(&$submission, $fid, $value = NULL) {
   // Webform 3 style
@@ -1510,8 +1511,7 @@ function _wf_crm_child_components($nid, $id) {
 /**
  * Returns the major version of Webform module
  *
- * @return
- *   int: 3 or 4
+ * @return int 3 or 4
  */
 function wf_crm_webform_version() {
   module_load_include('install', 'webform');

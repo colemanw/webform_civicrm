@@ -100,13 +100,13 @@ var wfCivi = (function ($, D) {
       }
       container.prepend('<img class="civicrm-contact-image" alt="' + Drupal.t('Contact Image') + '" src="' + url + '" />');
     }
-  }
+  };
 
   pub.clearImage = function(field) {
     var container = $('div.civicrm-enabled[id$=' + field.replace(/_/g, '-').toLowerCase() + ']');
     $('.civicrm-remove-image, .civicrm-contact-image', container).remove();
     $('input[type=file], input[type=submit]', container).show();
-  }
+  };
 
   /**
    * Private methods.
@@ -272,7 +272,7 @@ var wfCivi = (function ($, D) {
 
   function sharedAddress(item, action, speed) {
     var name = parseName($(item).attr('name'));
-    fields = $(item).parents('form.webform-client-form').find('[name*="['+(name.replace('master_id', ''))+'"]').not('[name*=location_type_id]').not('[name*=master_id]').not('[type="hidden"]');
+    var fields = $(item).parents('form.webform-client-form').find('[name*="['+(name.replace('master_id', ''))+'"]').not('[name*=location_type_id]').not('[name*=master_id]').not('[type="hidden"]');
     if (action === 'hide') {
       fields.parent().hide(speed, function() {$(this).css('display', 'none');});
       fields.attr('disabled', 'disabled');

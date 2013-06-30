@@ -43,7 +43,7 @@ var wfCiviAdmin = (function ($, D) {
         break;
     }
     $('select', context).change();
-  }
+  };
 
   pub.participantConditional = function (fs) {
     var info = {
@@ -95,7 +95,7 @@ var wfCiviAdmin = (function ($, D) {
         $(this).show(300);
       }
     });
-  }
+  };
 
   /**
    * Private methods.
@@ -177,7 +177,7 @@ var wfCiviAdmin = (function ($, D) {
       });
       types[c] = {
             type: $('#edit-'+c+'-contact-type').val(),
-        sub_type: sub_type,
+        sub_type: sub_type
       };
     }
     return types
@@ -326,7 +326,7 @@ var wfCiviAdmin = (function ($, D) {
                 name = 'name="' + (i + 1) + '_contact_type"'
               }
               $('#wf-crm-configure-form .vertical-tab-button a').eq(i).prepend('<span class="civi-icon '+cl[2]+'" '+name+'"> </span>');
-              continue;
+              return false;
             }
           }
           $(this).addClass('wf-civi-icon-processed');
