@@ -712,8 +712,10 @@ function wf_crm_contact_access($component, $filters, $cid) {
   }
   if (!empty($filters['check_permissions'])) {
     // If we have a valid checksum for this contact, bypass other permission checks
+    // For legacy reasons we support "cid" param as an alias of "cid1"
     if (wf_crm_aval($_GET, "cid$c") == $cid || $c == 1 && wf_crm_aval($_GET, "cid") == $cid) {
       require_once 'CRM/Contact/BAO/Contact/Utils.php';
+      // For legacy reasons we support "cs" param as an alias of "cs1"
       if (!empty($_GET['cs']) && $c == 1 && CRM_Contact_BAO_Contact_Utils::validChecksum($cid, $_GET['cs'])) {
         $filters['check_permissions'] = FALSE;
       }
@@ -728,6 +730,8 @@ function wf_crm_contact_access($component, $filters, $cid) {
 }
 
 /**
+ * Display a contact based on chosen fields
+ *
  * @param array $contact
  * @param array $display_fields
  * @return bool|string
@@ -1012,7 +1016,7 @@ function theme_static_contact_element($vars) {
 
 /**
  * Returns a list of fields that can be shown in an "Existing Contact" field display
- * In the future we could use api.getfields for this, but it also returns a lot of stuff we don't want
+ * In the future we could use api.getfields for this, but that also returns a lot of stuff we don't want
  *
  * @return array
  */
