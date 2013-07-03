@@ -940,6 +940,10 @@ function wf_crm_get_fields($var = 'fields') {
         'end_date' => '+10 years',
       ),
     );
+    $fields['relationship_description'] = array(
+      'name' => t('Relationship to Contact # Description'),
+      'type' => 'textarea',
+    );
     if (in_array('CiviEvent', $components)) {
       $fields['participant_event_id'] = array(
         'name' => t('Events'),
