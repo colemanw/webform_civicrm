@@ -17,7 +17,7 @@ function _webform_defaults_civicrm_contact() {
     'pid' => 0,
     'weight' => 0,
     'value' => '',
-    'mandatory' => 0,
+    'required' => 0,
     'extra' => array(
       'search_prompt' => '',
       'none_prompt' => '',
@@ -294,7 +294,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
     $element += array(
       '#title' => $filter ? _webform_filter_xss($component['name']) : $component['name'],
       '#title_display' => $component['extra']['title_display'] ? $component['extra']['title_display'] : 'before',
-      '#required' => $component['mandatory'],
+      '#required' => $component['required'],
       '#description' => $filter ? _webform_filter_descriptions($component['extra']['description'], $node) : $component['extra']['description'],
       '#translatable' => array('title', 'description'),
       '#theme_wrappers' => array('webform_element'),

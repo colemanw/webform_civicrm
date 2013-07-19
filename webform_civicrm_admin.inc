@@ -717,7 +717,7 @@ function wf_crm_configure_form_item($fid, $field, $settings) {
     elseif (isset($field['value'])) {
       $item['#default_value'] = $field['value'];
     }
-    // 4: For mandatory fields like phone type, default to the first option
+    // 4: For required fields like phone type, default to the first option
     elseif (empty($field['extra']['multiple']) && !isset($field['empty_option'])) {
       $options = array_keys($options);
       $item['#default_value'] = $options[1];

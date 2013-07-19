@@ -872,7 +872,7 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Case Client'),
         'type' => 'select',
         'expose_list' => TRUE,
-        'extra' => array('mandatory' => 1, 'multiple' => $case_info->getAllowMultipleCaseClients()),
+        'extra' => array('required' => 1, 'multiple' => $case_info->getAllowMultipleCaseClients()),
         'data_type' => 'ContactReference',
         'value' => 1,
       );
@@ -1075,7 +1075,7 @@ function wf_crm_get_fields($var = 'fields') {
         $id = $set . '_custom_' . $dao->id;
         $fields[$id] = $custom_types[$dao->html_type];
         $fields[$id]['name'] = $dao->label;
-        $fields[$id]['mandatory'] = $dao->is_required;
+        $fields[$id]['required'] = $dao->is_required;
         $fields[$id]['extra']['description'] = $dao->help_pre;
         $fields[$id]['value'] = str_replace($sp, ',', trim($dao->default_value, $sp));
         $fields[$id]['data_type'] = $dao->data_type;
