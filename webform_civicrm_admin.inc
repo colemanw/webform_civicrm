@@ -1412,9 +1412,7 @@ function wf_crm_component_token($node, $cid) {
   module_load_include('inc', 'webform', 'includes/webform.components');
   $component = $node->webform['components'][$cid];
   $parents = webform_component_parent_keys($node, $component);
-  if (wf_crm_webform_version() == 3) {
-    return '%value[' . implode('][', $parents) . ']';
-  }
+
   return '[submission:values:' . implode(':', $parents) . ':nolabel]';
 }
 

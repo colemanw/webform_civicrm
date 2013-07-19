@@ -1495,7 +1495,6 @@ function wf_crm_filepath($id) {
 
 /**
  * Get or set a value from a webform submission
- * Maintains backward-compatibility with webform version 3
  *
  * @param $submission
  *   Webform submission object (reference)
@@ -1507,17 +1506,10 @@ function wf_crm_filepath($id) {
  * @return array|null field value if found
  */
 function wf_crm_sub_value(&$submission, $fid, $value = NULL) {
-  // Webform 3 style
-  if (isset($submission->data[$fid]['value'])) {
-    $field =& $submission->data[$fid]['value'];
-  }
-  // Webform 4 style
-  elseif (isset($submission->data[$fid])) {
-    $field =& $submission->data[$fid];
-  }
-  else {
+  if (!isset($submission->data[$fid])) {
     return NULL;
   }
+  $field =& $submission->data[$fid];
   if (is_array($value)) {
     $field = array_values($value);
   }
@@ -1538,14 +1530,4 @@ function _wf_crm_child_components($nid, $id) {
     ->countQuery()
     ->execute()
     ->fetchField();
-}
-
-/**
- * Returns the major version of Webform module
- *
- * @return int 3 or 4
- */
-function wf_crm_webform_version() {
-  module_load_include('install', 'webform');
-  return function_exists('webform_update_7401') ? 4 : 3;
 }
