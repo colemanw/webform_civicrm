@@ -552,7 +552,6 @@ function wf_crm_process_submission($node, &$submission, $op) {
   // Presave processing - save contact data
   if ($op == 'presave') {
     $config = CRM_Core_Config::singleton();
-    require_once 'CRM/Core/BAO/CustomValueTable.php';
     $enabled = wf_crm_enabled_fields($node);
     $fields = wf_crm_get_fields();
     $data = $settings['data'];
@@ -613,7 +612,6 @@ function wf_crm_process_submission($node, &$submission, $op) {
           continue;
         }
         // Search for an existing contact using default strict rule
-        require_once 'CRM/Dedupe/Finder.php';
         $params = array('check_permission' => FALSE);
         foreach ($contact as $table => $field) {
           if (is_array($field) && !empty($field[1])) {
@@ -737,7 +735,6 @@ function wf_crm_process_submission($node, &$submission, $op) {
       if (!empty($enabled[$fid . 'cs'])) {
         $cs = wf_crm_sub_value($submission, $enabled[$fid . 'cs']);
         $life = !empty($cs[0]) ? intval(24 * $cs[0]) : 'inf';
-        require_once 'CRM/Contact/BAO/Contact/Utils.php';
         $cs = CRM_Contact_BAO_Contact_Utils::generateChecksum($cid, NULL, $life);
         wf_crm_sub_value($submission, $enabled[$fid . 'cs'], $cs);
       }
@@ -990,10 +987,6 @@ function wf_crm_process_submission($node, &$submission, $op) {
       }
       // Save case
       $result = wf_civicrm_api('case', 'create', $data['case'][1]['case'][1]);
-      // Legacy API cruft - TODO: remove these 3 lines when dropping Civi 4.2 support
-      if (!empty($result['values']['id']) && empty($result['id'])) {
-        $result['id'] = $result['values']['id'];
-      }
       if (!empty($result['id'])) {
         wf_crm_save_custom($data['case'][1], $result['id'], 'Case');
         $id['case'][1] = $result['id'];
@@ -1074,7 +1067,6 @@ function wf_crm_process_submission($node, &$submission, $op) {
         wf_crm_save_custom($data['activity'][1], $id['act'][1], 'Activity');
       }
       if (!empty($id['act'][1]) && !empty($params['assignee_contact_id'])) {
-        require_once 'CRM/Core/BAO/Setting.php';
         if (CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'activity_assignee_notification')) {
           // Send email to assignees. TODO: Move to CiviCRM API?
           $assignee = wf_civicrm_api('contact', 'get', array('id' => $params['assignee_contact_id']));
@@ -1082,9 +1074,7 @@ function wf_crm_process_submission($node, &$submission, $op) {
           if (!empty($assignee['email'])) {
             $mail = array($assignee['email'] => $assignee);
             // Include attachments while sendig a copy of activity.
-            require_once 'CRM/Core/BAO/File.php';
             $attachments = &CRM_Core_BAO_File::getEntityFile('civicrm_activity', $id['act'][1]);
-            require_once 'CRM/Case/BAO/Case.php';
             CRM_Case_BAO_Case::sendActivityCopy(NULL, $id['act'][1], $mail, $attachments, NULL);
           }
         }

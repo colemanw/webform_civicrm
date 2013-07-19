@@ -28,7 +28,6 @@ function wf_crm_configure_form($form, &$form_state, $node) {
   $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/' . 'webform_civicrm_admin.js';
   $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_admin.css';
   civicrm_initialize();
-  require_once 'CRM/Core/BAO/Setting.php';
   $config = CRM_Core_Config::singleton();
 
   $fields = wf_crm_get_fields();
@@ -304,7 +303,6 @@ function wf_crm_configure_form($form, &$form_state, $node) {
       '#default_value' => wf_crm_aval($data, 'case:1:existing_case_status', array()),
       '#multiple' => TRUE,
     );
-    require_once('CRM/Case/XMLProcessor/Process.php');
     $case_info = new CRM_Case_XMLProcessor_Process();
     $act_types = $case_info->get($case_type_name, 'ActivityTypes');
   }
@@ -1239,7 +1237,6 @@ function wf_crm_component_insert(&$field, &$enabled, $settings) {
   }
   // Default checksum lifespan
   if ($name == 'cs') {
-    require_once 'CRM/Core/BAO/Setting.php';
     $field['value'] = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME,
       'checksum_timeout', NULL, 7);
   }

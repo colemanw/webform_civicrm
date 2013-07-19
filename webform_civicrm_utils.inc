@@ -63,7 +63,6 @@ function wf_crm_get_options($option_group, $param = NULL) {
       $sql = "SELECT name AS label, id AS value FROM civicrm_county WHERE state_province_id = $param ORDER BY name";
     }
     elseif ($option_group == 'tag') {
-      require_once 'CRM/Core/BAO/Tag.php';
       // $param must contain entity i.e. contact and optionally a tagset id
       return CRM_Core_BAO_Tag::getTags("civicrm_{$param['entity']}", $ret, wf_crm_aval($param, 'tagset'), '- ');
     }
@@ -74,7 +73,6 @@ function wf_crm_get_options($option_group, $param = NULL) {
       }
     }
     elseif ($option_group == 'languages') {
-      require_once 'CRM/Core/PseudoConstant.php';
       return CRM_Core_PseudoConstant::$option_group();
     }
     elseif ($option_group == 'location_type') {
@@ -209,7 +207,6 @@ function wf_crm_field_options($field, $context, $data) {
       }
     }
     elseif ($name === 'status_id' && $table === 'participant') {
-      require_once 'CRM/Event/PseudoConstant.php';
       $ret = CRM_Event_PseudoConstant::participantStatus(NULL, NULL, 'label');
     }
     elseif ($list = wf_crm_get_list($table, $name)) {
@@ -370,7 +367,6 @@ function wf_crm_get_contact_relationship_types($type_a, $type_b, $sub_type_a, $s
 function wf_crm_get_custom($entity_id, $entity_type = NULL, $normalize = TRUE) {
   static $parents = array();
   if (empty($parents)) {
-    require_once 'CRM/Core/BAO/CustomValueTable.php';
     // Create matching table to sort fields by group
     foreach (wf_crm_get_fields() as $key => $value) {
       list($group, $field) = explode('_', $key, 2);
@@ -553,7 +549,6 @@ function wf_crm_get_fields($var = 'fields') {
   static $sets = array();
 
   if (!$fields) {
-    require_once 'CRM/Core/BAO/Tag.php';
     $config = CRM_Core_Config::singleton();
     $components = $config->enableComponents;
 
@@ -872,7 +867,6 @@ function wf_crm_get_fields($var = 'fields') {
       );
     }
     if (in_array('CiviCase', $components)) {
-      require_once 'CRM/Case/XMLProcessor/Process.php';
       $case_info = new CRM_Case_XMLProcessor_Process();
       $fields['case_client_id'] = array(
         'name' => t('Case Client'),
@@ -1450,7 +1444,6 @@ function wf_crm_case_find($params, $ids = NULL) {
  */
 function wf_crm_event_info(&$events) {
   if (!empty($events)) {
-    require_once 'CRM/Event/BAO/Participant.php';
     $now = time();
     // Fetch event info
     $dao = &CRM_Core_DAO::executeQuery('SELECT id, title, end_date, max_participants
