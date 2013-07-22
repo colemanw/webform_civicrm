@@ -963,7 +963,7 @@ function _wf_crm_component_form_alter(&$form, $form_state) {
         $form['form_key']['#description'] = t('Automatically set for use by CiviCRM processing.');
         // Clone an entire contact when cloning their fieldset
         if (!empty($form['clone']['#value'])) {
-          $form['submit']['#value'] = t('Clone Contact');
+          $form['actions']['submit']['#value'] = t('Clone Contact');
           $new = count($node->webform_civicrm['data']['contact']) + 1;
           $form['form_key']['#value'] = implode('_', array('civicrm', $new, $ent, $n, $table, $name));
           $form['name']['#default_value'] = str_replace($i, $new, $form['name']['#default_value']);
