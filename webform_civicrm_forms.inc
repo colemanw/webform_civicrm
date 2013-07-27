@@ -35,7 +35,7 @@ function _wf_crm_frontend_form_alter(&$form, &$form_state) {
     if (!empty($c['number_of_address'])) {
       $js_vars = array(
         'defaultCountry' => $config->defaultContactCountry,
-        'defaultStates' => wf_crm_get_options('state_province', $config->defaultContactCountry),
+        'defaultStates' => wf_crm_get_states($config->defaultContactCountry),
         'noCountry' => t('- First Choose a Country -'),
         'callbackPath' => url('webform-civicrm/js', array('alias' => TRUE)),
       );
@@ -321,9 +321,9 @@ function wf_crm_contact_get($node, $enabled, $c, $cids, $exclude = array()) {
       if (!empty($result['values'])) {
         $result = array_merge(array(0), array_values($result['values']));
         unset($result[0]);
-        if ($field == 'contact') {
+        if ($field == 'contact' && isset($enabled[$prefix . 'contact_privacy'])) {
           // Privacy fields
-          foreach (array_keys(wf_crm_get_options('privacy')) as $key) {
+          foreach (array_keys(wf_crm_field_options($node->webform['components'][$enabled[$prefix . 'contact_privacy']], 'contact_get', $data)) as $key) {
             if (!empty($result[1][$key])) {
               $result[1]['privacy'][] = $key;
             }
@@ -1164,7 +1164,7 @@ function wf_crm_add_remove($data_type, $entity_type, $node, $id, $add, $remove =
           'email' => $email,
         );
         if (empty($mailing_lists)) {
-          $mailing_lists = wf_crm_get_options('mailing_lists');
+          $mailing_lists = wf_civicrm_apivalues('group', 'get', array('visibility' => 'Public Pages', 'group_type' => 2), 'title');
         }
       }
     }
@@ -1262,9 +1262,9 @@ function _wf_crm_validate($form, &$form_state, $submitted) {
             $config = CRM_Core_Config::singleton();
             $country_id = $config->defaultContactCountry;
           }
-          $states = wf_crm_get_options('state_province', $country_id);
+          $states = wf_crm_get_states($country_id);
           if ($states && !array_key_exists(strtoupper($element['#value']), $states)) {
-            $countries = wf_crm_get_options('country');
+            $countries = wf_civicrm_apivalues('address', 'getoptions', array('field' => 'country_id'));
             form_error($element, t('Mismatch: "@state" is not a state/province of %country. Please enter a valid state/province abbreviation for %field.', array('@state' => $element['#value'], '%country' => $countries[$country_id], '%field' => $element['#title'])));
           }
         }

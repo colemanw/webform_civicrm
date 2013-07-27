@@ -125,7 +125,7 @@ function webform_civicrm_node_delete($node) {
  */
 function webform_civicrm_theme() {
   $theme = array(
-    'webform_civicrm_options' => array(
+    'webform_civicrm_options_table' => array(
       'render element' => 'element',
     ),
     'display_civicrm_contact' => array(

@@ -6,170 +6,13 @@
  */
 
 /**
- * Get option values from various civicrm tables
- *
- * @param $option_group
- *   Option group name or id
- * @param $param
- *   Optional extra info for the query (passing a param will bypass caching)
- *
- * @return array
- */
-function wf_crm_get_options($option_group, $param = NULL) {
-  static $cache = array();
-  if ($param || !isset($cache[$option_group])) {
-    $vars = $ret = array();
-    if ($option_group == 'privacy') {
-      // Privacy options aren't in the database as options; they are separate contact fields.
-      return array(
-        'do_not_email' => ts('Do not email'),
-        'do_not_phone' => ts('Do not phone'),
-        'do_not_mail' => ts('Do not mail'),
-        'do_not_sms' => ts('Do not sms'),
-        'do_not_trade' => ts('Do not trade'),
-      );
-    }
-    if ($option_group == 'yes_no') {
-      return array(1 => t('Yes'), 0 => t('No'));
-    }
-    if ($option_group == 'country') {
-      $sql = 'SELECT name AS label, id AS value FROM civicrm_country';
-      $config = CRM_Core_Config::singleton();
-      if (!empty($config->countryLimit) && is_array($config->countryLimit)) {
-        $sql .=  ' WHERE id IN (' . implode(',', $config->countryLimit) . ')';
-      }
-      $sql .= ' ORDER BY name';
-    }
-    elseif ($option_group == 'state_province') {
-      $value = $param ? 'UPPER(abbreviation)' : 'id';
-      if (!$param || $param == 'default') {
-        $config = CRM_Core_Config::singleton();
-        if (!$param && !empty($config->provinceLimit)) {
-          $param = implode(',', $config->provinceLimit);
-        }
-        else {
-          $param = (int) $config->defaultContactCountry;
-        }
-      }
-      else {
-        $param = (int) $param;
-      }
-      $sql = "SELECT name AS label, $value AS value FROM civicrm_state_province WHERE country_id IN ($param) ORDER BY name";
-    }
-    elseif ($option_group == 'county') {
-      if (!$param) {
-        return array();
-      }
-      $sql = "SELECT name AS label, id AS value FROM civicrm_county WHERE state_province_id = $param ORDER BY name";
-    }
-    elseif ($option_group == 'tag') {
-      // $param must contain entity i.e. contact and optionally a tagset id
-      return CRM_Core_BAO_Tag::getTags("civicrm_{$param['entity']}", $ret, wf_crm_aval($param, 'tagset'), '- ');
-    }
-    elseif ($option_group == 'group' || $option_group == 'mailing_lists') {
-      $sql = 'SELECT id AS value, title AS label FROM civicrm_group WHERE is_active = 1 AND is_hidden = 0';
-      if ($option_group == 'mailing_lists') {
-        $sql .= " AND group_type LIKE '%2%' AND visibility = 'Public Pages'";
-      }
-    }
-    elseif ($option_group == 'languages') {
-      return CRM_Core_PseudoConstant::$option_group();
-    }
-    elseif ($option_group == 'location_type') {
-      $sql = 'SELECT display_name AS label, id AS value FROM civicrm_location_type WHERE is_active = 1 ORDER BY is_default DESC';
-    }
-    elseif ($option_group == 'campaign') {
-      $sql = 'SELECT title AS label, id AS value FROM civicrm_campaign WHERE is_active = 1 AND (end_date >= NOW() OR end_date IS NULL) ORDER BY start_date DESC';
-    }
-    elseif ($option_group == 'survey') {
-      $sql = 'SELECT title AS label, id AS value FROM civicrm_survey WHERE is_active = 1';
-      if (!empty($param['activity_campaign_id'])) {
-        $sql .= ' AND campaign_id = %1';
-        $vars[1] = array($param['activity_campaign_id'], 'Integer');
-      }
-      if (!empty($param['activity_type_id'])) {
-        $sql .= ' AND activity_type_id = %2';
-        $vars[2] = array($param['activity_type_id'], 'Integer');
-      }
-      $sql .= ' ORDER BY title';
-    }
-    elseif ($option_group == 'event') {
-      $sql = "SELECT title AS label, CONCAT(id, '-', event_type_id) AS value FROM civicrm_event WHERE is_template = 0";
-      if (empty($param['show_past_events'])) {
-        $sql .= ' AND (end_date >= NOW() OR end_date IS NULL) AND is_active = 1';
-      }
-      if (is_numeric($param['event_type'])) {
-        $sql .= ' AND event_type_id = ' . $param['event_type'];
-      }
-      $sql .= ' ORDER BY start_date ' . ($param['context'] == 'config_form' ? 'DESC' : '');
-    }
-    else {
-      $sql = 'SELECT value, label FROM civicrm_option_value WHERE is_active <> 0 AND option_group_id = ';
-      if (is_numeric($option_group)) {
-        $sql .= '%1';
-        $vars[1] = array($option_group, 'Integer');
-      }
-      else {
-        $sql .= '(SELECT id FROM civicrm_option_group WHERE name = %1)';
-        $vars[1] = array($option_group, 'String');
-      }
-      // Exclude component activity types
-      if ($option_group == 'activity_type') {
-        if (!$param) {
-          $sql .= ' AND component_id IS NULL ORDER BY label';
-        }
-        else {
-          $sql .= " AND component_id = (SELECT id FROM civicrm_component WHERE name = '$param')";
-        }
-      }
-      else {
-        $sql .= ' ORDER BY weight, label';
-      }
-    }
-    $dao = &CRM_Core_DAO::executeQuery($sql, $vars);
-
-    // Localize the country/province names if in an non-en_US locale
-    if ($option_group == 'state_province' || $option_group == 'country') {
-      while ($dao->fetch()) {
-        $ret[$dao->value] = $dao->label;
-      }
-      $tsLocale = CRM_Utils_System::getUFLocale();
-      if ($tsLocale != '' and $tsLocale != 'en_US') {
-        $context = ($option_group == 'state_province' ? 'province' : 'country');
-        $i18n =& CRM_Core_I18n::singleton();
-        $i18n->localizeArray($ret, array('context' => $context));
-        if (method_exists('CRM_Utils_Array', 'asort')) {
-          CRM_Utils_Array::asort($ret);
-        }
-        else {
-          asort($ret);
-        }
-      }
-    }
-    // Localize other options using ts()
-    else {
-      while ($dao->fetch()) {
-        $ret[$dao->value] = ts($dao->label);
-      }
-    }
-    $dao->free();
-    // Do not cache if param is set
-    if ($param) {
-      return $ret;
-    }
-    $cache[$option_group] = $ret;
-  }
-  return $cache[$option_group];
-}
-
-/**
  * Get options for a specific field
  *
- * @param $field
+ * @param array $field
  *   Webform component array
- * @param $context
+ * @param string $context
  *   Where is this being called from?
- * @param $data
+ * @param array $data
  *   Array of crm entity data
  *
  * @return array
@@ -197,7 +40,7 @@ function wf_crm_field_options($field, $context, $data) {
     }
     // If this is a contract reference or shared address field, list webform contacts
     elseif ($name === 'master_id' || wf_crm_aval($field, 'data_type') === 'ContactReference') {
-      $contact_type = wf_crm_get_list($table, $name);
+      $contact_type = wf_crm_aval($field, 'reference_contact_type', 'contact');
       foreach ($data['contact'] as $num => $contact) {
         if ($num != $c || $name != 'master_id') {
           if ($contact_type == 'contact' || $contact_type == $contact['contact'][1]['contact_type']) {
@@ -206,25 +49,44 @@ function wf_crm_field_options($field, $context, $data) {
         }
       }
     }
-    elseif ($name === 'status_id' && $table === 'participant') {
-      $ret = CRM_Event_PseudoConstant::participantStatus(NULL, NULL, 'label');
+    elseif ($name == 'privacy') {
+      // In reality there is no contact field 'privacy' so this is not a real option list.
+      // These are actually 5 separate contact fields that this module munges into 1 for better usability.
+      $ret = array(
+        'do_not_email' => ts('Do not email'),
+        'do_not_phone' => ts('Do not phone'),
+        'do_not_mail' => ts('Do not mail'),
+        'do_not_sms' => ts('Do not sms'),
+        'do_not_trade' => ts('Do not trade'),
+      );
     }
-    elseif ($list = wf_crm_get_list($table, $name)) {
-      $param = NULL;
-      if ($name === 'event_id') {
-        $param = $data['reg_options'] + array('context' => $context);
-      }
-      elseif ($name === 'survey_id') {
-        $param = wf_crm_aval($data, 'activity:1:activity:1');
-      }
-      if ($list === 'tag') {
+    elseif ($table === 'other') {
+      if ($field['table'] === 'tag') {
         $split = explode('_', $name);
-        $param = array(
-          'entity' => $ent,
-          'tagset' => wf_crm_aval($split, 1)
-        );
+        $ret = CRM_Core_BAO_Tag::getTags("civicrm_{$ent}", $ret, wf_crm_aval($split, 1), '- ');
       }
-      $ret = wf_crm_get_options($list, $param);
+      elseif ($field['table'] === 'group') {
+        $ret = wf_civicrm_apivalues('group', 'get', array('is_hidden' => 0), 'title');
+      }
+    }
+    elseif ($name === 'survey_id') {
+      $ret = wf_crm_get_surveys(wf_crm_aval($data, 'activity:1:activity:1', array()));
+    }
+    elseif ($name == 'event_id') {
+      $ret = wf_crm_get_events($data['reg_options'], $context);
+    }
+    // Aside from the above special cases, most lists can be fetched from api.getoptions
+    else {
+      // Custom fields - use main entity
+      if (substr($table, 0, 2) == 'cg') {
+        $table = $ent;
+      }
+      // This field is technically in the wrong place. Maybe fixme
+      if ($table == 'case' && $name == 'medium_id') {
+        $table = 'activity';
+      }
+      $ret = wf_civicrm_apivalues($table, 'getoptions', array('field' => $name));
+
       // Hack to format money data correctly
       if (!empty($field['data_type']) && $field['data_type'] === 'Money') {
         $old = $ret;
@@ -245,21 +107,113 @@ function wf_crm_field_options($field, $context, $data) {
 }
 
 /**
- * Get id of the option list for a field
- *
- * @param $table
- *   CiviCRM table this field belongs to
- * @param $name
- *   Field name
- *
- * @return string
+ * Get list of states.
+ * FIXME use the api for this.
+ * @param null $param
  */
-function wf_crm_get_list($table, $name) {
-  $lists = wf_crm_get_fields('lists');
-  if (isset($lists[$table . '_' . $name])) {
-    return $lists[$table . '_' . $name];
+function wf_crm_get_states($param = NULL) {
+  $value = $param ? 'UPPER(abbreviation)' : 'id';
+  if (!$param || $param == 'default') {
+    $config = CRM_Core_Config::singleton();
+    if (!$param && !empty($config->provinceLimit)) {
+      $param = implode(',', $config->provinceLimit);
+    }
+    else {
+      $param = (int) $config->defaultContactCountry;
+    }
   }
-  return wf_crm_aval($lists, "*_$name");
+  else {
+    $param = (int) $param;
+  }
+  $sql = "SELECT name AS label, $value AS value FROM civicrm_state_province WHERE country_id IN ($param) ORDER BY name";
+  $dao = CRM_Core_DAO::executeQuery($sql);
+  while ($dao->fetch()) {
+    $ret[$dao->value] = $dao->label;
+  }
+  // Localize the state/province names if in an non-en_US locale
+  $tsLocale = CRM_Utils_System::getUFLocale();
+  if ($tsLocale != '' and $tsLocale != 'en_US') {
+    $i18n = CRM_Core_I18n::singleton();
+    $i18n->localizeArray($ret, array('context' => 'province'));
+    CRM_Utils_Array::asort($ret);
+  }
+  return $ret;
+}
+
+/**
+ * Get list of events.
+ * FIXME use the api for this.
+ *
+ * @param $param
+ * @param $context
+ * @return array
+ */
+function wf_crm_get_events($param, $context) {
+  $ret = array();
+  $sql = "SELECT title AS label, CONCAT(id, '-', event_type_id) AS value FROM civicrm_event WHERE is_template = 0";
+  if (empty($param['show_past_events'])) {
+    $sql .= ' AND (end_date >= NOW() OR end_date IS NULL) AND is_active = 1';
+  }
+  if (is_numeric($param['event_type'])) {
+    $sql .= ' AND event_type_id = ' . $param['event_type'];
+  }
+  $sql .= ' ORDER BY start_date ' . ($context == 'config_form' ? 'DESC' : '');
+  $dao = CRM_Core_DAO::executeQuery($sql);
+  while ($dao->fetch()) {
+    $ret[$dao->value] = $dao->label;
+  }
+  return $ret;
+}
+
+/**
+ * Get list of surveys
+ * @param array $act
+ *
+ * @return array
+ */
+function wf_crm_get_surveys($act = array()) {
+  $params = array();
+  if (!empty($act['activity_campaign_id'])) {
+    $params['campaign_id'] = $act['activity_campaign_id'];
+  }
+  if (!empty($act['activity_type_id'])) {
+    $params['activity_type_id'] = $act['activity_type_id'];
+  }
+  return wf_civicrm_apivalues('survey', 'get', $params, 'title');
+}
+
+/**
+ * Get list of activities
+ * @param string $case_type_name
+ *
+ * @return array
+ */
+function wf_crm_get_activity_types($case_type_name = NULL) {
+  // Return activities only appropriate to this case
+  if ($case_type_name) {
+    $case_info = new CRM_Case_XMLProcessor_Process();
+    return $case_info->get($case_type_name, 'ActivityTypes');
+  }
+  // Fetch activity types from the api
+  $params = array(
+    'option_group_id' => 'activity_type',
+    'is_active' => 1,
+    'options' => array(
+      'order' => 'label',
+    ),
+  );
+  // Include campaign types if CiviCampaign is enabled
+  $comp = CRM_Core_Component::getEnabledComponents();
+  $campaign_type = wf_crm_aval($comp, 'CiviCampaign:componentID');
+
+  $ret = array();
+  foreach (wf_civicrm_apivalues('option_value', 'get', $params) as $val) {
+    if (empty($val['component_id']) || $val['component_id'] == $campaign_type) {
+      $ret[$val['id']] = $val['label'];
+    }
+  }
+
+  return $ret;
 }
 
 /**
@@ -552,8 +506,7 @@ function wf_crm_get_fields($var = 'fields') {
     $config = CRM_Core_Config::singleton();
     $components = $config->enableComponents;
 
-    // key: table_fieldname (table can be a * wildcard)
-    // value: name of civicrm_option_group
+    // TODO: Remove - we no longer use $lists in version 4
     $lists = array(
       'contact_contact_sub_type' => 'contact_sub_type',
       'contact_prefix_id' => 'individual_prefix',
@@ -680,6 +633,7 @@ function wf_crm_get_fields($var = 'fields') {
       'empty_option' => t('None'),
       'data_type' => 'ContactReference',
       'contact_type' => 'individual',
+      'reference_contact_type' => 'organization'
     );
     $fields['email_email'] = array(
       'name' => t('Email'),
@@ -775,10 +729,6 @@ function wf_crm_get_fields($var = 'fields') {
     );
     $tagsets = array('' => t('Tags')) + CRM_Core_BAO_Tag::getTagSet('civicrm_contact');
     foreach ($tagsets as $pid => $name) {
-      // Ensure getTagSet is actually returning ids, per CRM-10685 added to CiviCRM 4.1.6
-      if ($pid === 0) {
-        break;
-      }
       $fields['other_tag' . ($pid ? "_$pid" : '')] = array(
         'name' => $name,
         'type' => 'select',
@@ -786,7 +736,6 @@ function wf_crm_get_fields($var = 'fields') {
         'table' => 'tag',
         'expose_list' => TRUE,
       );
-      $lists['*_tag' . ($pid ? "_$pid" : '')] = 'tag';
     }
     $fields['activity_target_contact_id'] = array(
       'name' => t('Activity Participants'),
@@ -1097,25 +1046,12 @@ function wf_crm_get_fields($var = 'fields') {
             );
           }
         }
-        elseif ($og = $dao->option_group_id) {
-          $lists[$set . '_custom_' . $dao->id] = $og;
-          $fields[$id]['extra']['civicrm_live_options'] = 1;
-        }
-        elseif ($dao->html_type == 'Select Country' || $dao->html_type == 'Multi-Select Country') {
-          $lists[$set . '_custom_' . $dao->id] = 'country';
-          $fields[$id]['extra']['civicrm_live_options'] = 1;
-        }
-        elseif ($dao->html_type == 'Select State/Province' || $dao->html_type == 'Multi-Select State/Province') {
-          $lists[$set . '_custom_' . $dao->id] = 'state_province';
-          $fields[$id]['extra']['civicrm_live_options'] = 1;
-        }
         elseif ($fields[$id]['data_type'] == 'ContactReference') {
-          $lists[$set . '_custom_' . $dao->id] = 'contact';
           $fields[$id]['expose_list'] = TRUE;
           $fields[$id]['empty_option'] = t('None');
         }
-        elseif ($fields[$id]['type'] == 'select') {
-          $lists[$set . '_custom_' . $dao->id] = 'yes_no';
+        elseif ($fields[$id]['data_type'] !== 'Boolean' && $fields[$id]['type'] == 'select') {
+          $fields[$id]['extra']['civicrm_live_options'] = 1;
         }
         elseif ($fields[$id]['type'] == 'textarea') {
           $fields[$id]['extra']['cols'] = $dao->note_columns;
@@ -1301,6 +1237,33 @@ function wf_civicrm_api($entity, $operation, $params) {
     watchdog('webform_civicrm', 'The CiviCRM "%function" API function returned the error: "%msg" when called by line !line of !file with the following parameters: "!params"', array('%function' => $entity . ' ' . $operation, '%msg' => $result['error_message'], '!line' => $bt[0]['line'], '!file' => array_pop($file), '!params' => print_r($params, TRUE)), WATCHDOG_ERROR);
   }
   return $result;
+}
+
+/**
+ * Get the values from an api call
+ *
+ * @param string $entity
+ *   API entity
+ * @param string $operation
+ *   API operation
+ * @param array $params
+ *   API params
+ * @param null $value
+ *   Reduce each result to this single value
+ *
+ * @return array
+ *   Values from API call
+ */
+function wf_civicrm_apivalues($entity, $operation, $params = array(), $value = NULL) {
+  $params += array('options' => array());
+  $params['options'] += array('limit' => 9999);
+  $ret = wf_crm_aval(wf_civicrm_api($entity, $operation, $params), 'values', array());
+  if ($value) {
+    foreach ($ret as &$values) {
+      $values = wf_crm_aval($values, $value);
+    }
+  }
+  return $ret;
 }
 
 /**

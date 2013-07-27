@@ -256,7 +256,7 @@ function _webform_edit_civicrm_contact($component) {
     '#type' => 'select',
     '#multiple' => TRUE,
     '#title' => t('Groups'),
-    '#options' => wf_crm_get_options('group'),
+    '#options' => wf_civicrm_apivalues('group', 'get', array('is_hidden' => 0), 'title'),
     '#default_value' => $component['extra']['filters']['group'],
     '#description' => t('Listed contacts must be members of at least one of the selected groups (leave blank to not filter by group).'),
   );
@@ -264,7 +264,7 @@ function _webform_edit_civicrm_contact($component) {
     '#type' => 'select',
     '#multiple' => TRUE,
     '#title' => t('Tags'),
-    '#options' => wf_crm_get_options('tag', array('entity' => 'contact')),
+    '#options' => CRM_Core_BAO_Tag::getTags("civicrm_contact", $ret, NULL, '- '),
     '#default_value' => $component['extra']['filters']['tag'],
     '#description' => t('Listed contacts must be have at least one of the selected tags (leave blank to not filter by tag).'),
   );
@@ -563,14 +563,17 @@ function wf_crm_ajax($key, $input = '') {
       drupal_json_output(array('' => t('- first choose a country -')));
       exit();
     }
-    drupal_json_output(wf_crm_get_options('state_province', $input));
+    drupal_json_output(wf_crm_get_states($input));
     exit();
   }
   elseif ($key == 'county') {
     if (strpos($input, '-')) {
       list($state, $country) = explode('-', $input);
-      $state_id = wf_crm_state_abbr($state, 'id', $country);
-      drupal_json_output(wf_crm_get_options('county', $state_id));
+      $params = array(
+        'field' => 'county_id',
+        'state_province_id' => wf_crm_state_abbr($state, 'id', $country)
+      );
+      drupal_json_output(wf_civicrm_apivalues('address', 'getoptions', $params));
       exit();
     }
   }

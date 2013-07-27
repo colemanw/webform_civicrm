@@ -270,14 +270,17 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     '#description' => t('Enclose your "not you" link text in curly brackets {like this}.') . '<p>' . $tokens . '</p>',
   );
   // Case and activity settings
-  $case_enabled = in_array('CiviCase', $config->enableComponents, TRUE) && ($case_types = wf_crm_get_options('case_type'));
+  $case_types = array();
+  if (in_array('CiviCase', $config->enableComponents, TRUE)) {
+    $case_types = wf_civicrm_apivalues('case', 'getoptions', array('field' => 'case_type_id'));
+  }
   $form['act'] = array(
     '#type' => 'fieldset',
-    '#title' => $case_enabled ? t('Activity/Case') : t('Activity'),
+    '#title' => $case_types ? t('Activity/Case') : t('Activity'),
     '#group' => 'webform_civicrm',
     '#attributes' => array('class' => array('civi-icon-activity')),
   );
-  if ($case_enabled) {
+  if ($case_types) {
     $form['act']['case_type_id'] = array(
       '#type' => 'select',
       '#title' => t('CiviCase Type'),
@@ -286,9 +289,9 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     );
     wf_crm_ajax_item($form, 'act', 'case_type_id', 'case');
   }
-  $case_type = $activity_type = NULL;
+  $case_type = $activity_type = $case_type_name = NULL;
   $campaign_act_types = array();
-  if ($case_enabled && !empty($data['case'][1]['case'][1]['case_type_id'])) {
+  if ($case_types && !empty($data['case'][1]['case'][1]['case_type_id'])) {
     $case_type = $form['act']['case_type_id']['#default_value'] = $data['case'][1]['case'][1]['case_type_id'];
     $case_type_name = $case_types[$case_type];
     $form['act']['case']['case_fields'] = array(
@@ -299,22 +302,12 @@ function wf_crm_configure_form($form, &$form_state, $node) {
       '#type' => 'select',
       '#title' => t('Update Existing Case'),
       '#description' => t('If any of the above options are selected and a %type case with that status already exists for the client, it will be autofilled and updated.', array('%type' => $case_type_name)) . '<br />' . t('Note: a case can also be autofilled by passing "caseid" in the url.'),
-      '#options' => wf_crm_get_options('case_status'),
+      '#options' => wf_civicrm_apivalues('case', 'getoptions', array('field' => 'status_id')),
       '#default_value' => wf_crm_aval($data, 'case:1:existing_case_status', array()),
       '#multiple' => TRUE,
     );
-    $case_info = new CRM_Case_XMLProcessor_Process();
-    $act_types = $case_info->get($case_type_name, 'ActivityTypes');
   }
-  else {
-    $act_types = wf_crm_get_options('activity_type');
-    // Include campaign types
-    if (in_array('CiviCampaign', $config->enableComponents, TRUE)) {
-      $campaign_act_types = wf_crm_get_options('activity_type', 'CiviCampaign');
-      $act_types += $campaign_act_types;
-      asort($act_types);
-    }
-  }
+  $act_types = wf_crm_get_activity_types($case_type_name);
   $form['act']['case']['activity_type_id'] = array(
     '#type' => 'select',
     '#title' => t('Activity Type'),
@@ -330,7 +323,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
       '#type' => 'select',
       '#title' => t('Update Existing Activity'),
       '#description' => t('If any of the above options are selected and a %type activity with that status already exists for !ent, it will be autofilled and updated.', array('!ent' => $case_type ? t('the case') : t('contact 1'), '%type' => $act_types[$settings['activity_type_id']])) . '<br />' . t('Note: an activity can also be autofilled by passing "aid" in the url.'),
-      '#options' => wf_crm_get_options('activity_status'),
+      '#options' => wf_civicrm_apivalues('activity', 'getoptions', array('field' => 'status_id')),
       '#default_value' => wf_crm_aval($data, 'activity:1:existing_activity_status', array()),
       '#multiple' => TRUE,
     );
@@ -410,7 +403,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     $form['event']['event_type'] = array(
       '#type' => 'select',
       '#title' => t('Show Events of Type'),
-      '#options' => array('any' => t('- Any Type -')) + wf_crm_get_options('event_type'),
+      '#options' => array('any' => t('- Any Type -')) + wf_civicrm_apivalues('event', 'getoptions', array('field' => 'event_type_id')),
       '#default_value' => wf_crm_aval($data, 'reg_options:event_type', 'any'),
       '#prefix' => '<div id="event-reg-options-wrapper"><div class="web-civi-checkbox-set">',
       '#parents' => array('reg_options', 'event_type'),
@@ -552,7 +545,8 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     '#default_value' => (bool) $settings['confirm_subscription'],
     '#description' => t('Recommended. Send a confirmation email before adding contacts to publicly subscribable mailing list groups.') . '<br />' . t('Your public mailing lists:') . ' <em>',
   );
-  if ($ml = wf_crm_get_options('mailing_lists')) {
+  $ml = wf_civicrm_apivalues('group', 'get', array('is_hidden' => 0, 'visibility' => 'Public Pages', 'group_type' => 2), 'title');
+  if ($ml) {
     if (count($ml) > 4) {
       $ml = array_slice($ml, 0, 3);
       $ml[] = t('etc.');
@@ -986,118 +980,11 @@ function _wf_crm_component_form_alter(&$form, $form_state) {
         $form['value']['#attributes']['onkeyup'] = 'this.value = this.value.toUpperCase();';
       }
 
-      // Interface similar to options_element
-      // but with the important difference that options already exist in the civi db
-      // so this does not allow create/delete of options
-      elseif (($element['type'] === 'hidden' || $element['type'] === 'select') && wf_crm_get_list($table, $name)) {
-        $form['#attached']['js'] = array(drupal_get_path('module', 'webform_civicrm') . '/' . 'webform_civicrm_options.js');
-        $options = $sort = wf_crm_field_options($element, 'component_edit', $node->webform_civicrm['data']);
-        $defaults_selected = array();
-        if (!empty($element['value'])) {
-          foreach (explode(',', trim($element['value'])) as $v) {
-            $defaults_selected[] = '_web_civi_option_selected_' . $v;
-          }
-        }
-        // Get rid of stuff related to options_element module
-        unset($form['items']);
-
-        $form['value']['#type'] = 'hidden';
-        $form['civicrm_options_fieldset'] = array(
-          '#type' => 'fieldset',
-          '#title' => t('Options'),
-          '#theme' => 'webform_civicrm_options',
-        );
-        $option_keys = array();
-        foreach ($options as $k => $v) {
-          $option_keys['_web_civi_option_selected_' . $k] = '';
-          $form['civicrm_options_fieldset']['civicrm_option_name_' . $k] = array(
-            '#markup' => '<span class="civicrm-option-name">' . $v . '</span>',
-          );
-        }
-        if ($element['type'] === 'select') {
-          $form['civicrm_options_fieldset']['civicrm_live_options'] = array(
-            '#type' => 'radios',
-            '#options' => array(t('<strong>Static Options</strong> (fully configurable)'), t('<strong>Live Options</strong> (update automatically)')),
-            '#default_value' => (int) !empty($element['extra']['civicrm_live_options']),
-            '#parents' => array('extra', 'civicrm_live_options'),
-          );
-          $form['civicrm_options_fieldset']['intro'] = array(
-            '#markup' => '<p><div class="live-options-hide">' .
-              t('Drag the arrows to re-order these options. Click the "enabled" checkbox to show/remove an item from the form. Set the label as you want it to appear on the form.') .
-              '</div><div class="live-options-show">' .
-              t('You cannot control the presentation of live options. They will be loaded from the CiviCRM database every time the form is displayed.') .
-              '</div><div>' .
-              t('Check the "default" box for an option to be selected by default when a user views the form.') .
-              '</div></p>',
-          );
-          // Special instructions for contact reference fields
-          if (wf_crm_aval($field, 'data_type') == 'ContactReference') {
-            $form['civicrm_options_fieldset']['intro'] = array(
-              '#markup' => '<p>' . t('This is a contact reference field. It points to another contact on the webform. You can configure how that contact is presented by editing their "Existing Contact" field.') . '</p>' .
-              '<p>' . t("Note: In most cases it is not desireable to have the selection of webform contacts exposed to the end-user so you may wish to set this field's value on the CiviCRM tab instead.") . '</p>',
-            );
-          }
-          $options_selected = wf_crm_str2array($element['extra']['items']);
-          // Sort weights. Unselected options will be at the bottom.
-          $option_keys = $option_selected_keys = array();
-          foreach ($options_selected as $k => $v) {
-            if (isset($options[$k])) {
-              $option_keys['_web_civi_option_selected_' . $k] = '';
-              $option_selected_keys[] = '_web_civi_option_selected_' . $k;
-              unset($sort[$k]);
-            }
-          }
-          foreach ($sort as $k => $v) {
-            $option_keys['_web_civi_option_selected_' . $k] = '';
-          }
-          $form['extra']['items']['#type'] = 'hidden';
-          $form['extra']['items']['#required'] = FALSE;
-          $form['extra']['items']['#value'] = $element['extra']['items'];
-          $form['extra']['options_source']['#access'] = FALSE;
-          $form['civicrm_options_fieldset']['civicrm_options'] = array(
-            '#type' => 'checkboxes',
-            '#required' => TRUE,
-            '#options' => $option_keys,
-            '#default_value' => $option_selected_keys,
-          );
-          $w = 0;
-          foreach ($option_keys as $k => $v) {
-            $k = str_replace('_web_civi_option_selected_', '', $k);
-            $form['civicrm_options_fieldset']['civicrm_option_label_' . $k] = array(
-              '#type' => 'textfield',
-              '#size' => 30,
-              '#default_value' => !empty($options_selected[$k]) ? $options_selected[$k] : $options[$k],
-            );
-            $form['civicrm_options_fieldset']['civicrm_option_weight_' . $k] = array(
-              '#type' => 'textfield',
-              '#size' => 3,
-              '#default_value' => ++$w,
-            );
-          }
-        }
-        $form['civicrm_options_fieldset']['civicrm_defaults'] = array(
-          '#type' => 'checkboxes',
-          '#options' => array('' => '') + $option_keys,
-          '#default_value' => $defaults_selected,
-        );
-        // Auto set multi-value option for single-valued entities
-        if (empty($field['extra']['multiple']) && $element['type'] === 'select') {
-          $form['extra']['multiple']['#type'] = 'hidden';
-          $form['extra']['multiple']['#value'] = 0;
-        }
-        // Restore multiple checkbox in case options_element module removed it
-        elseif ($element['type'] === 'select') {
-          $form['extra']['multiple']['#type'] = 'checkbox';
-          $form['extra']['multiple']['#title'] = t('Multiple');
-          $form['extra']['multiple']['#description'] = t('Check this option if the user should be allowed to choose multiple values.');
-          $form['extra']['multiple']['#default_value'] = !empty($element['extra']['multiple']);
-        }
-        else {
-          $form['extra']['multiple']['#type'] = 'hidden';
-          $form['extra']['multiple']['#value'] = (int) !empty($field['extra']['multiple']);
-        }
-        array_unshift($form['#submit'], 'wf_crm_process_options_selection');
+      // Interface for managing options
+      elseif (($element['type'] === 'hidden' || $element['type'] === 'select')) {
+        wf_crm_options_table($form, $node, $element, $field);
       }
+
       // Simplify form for hidden fields
       elseif (($name === 'contact_id' || $name === 'external_identifier') && $element['type'] === 'hidden') {
         $form['value']['#value'] = '';
@@ -1248,18 +1135,12 @@ function wf_crm_component_insert(&$field, &$enabled, $settings) {
   // Retrieve option list
   if ($options = wf_crm_field_options($field, 'component_insert', $settings['data'])) {
     $field['extra']['items'] = $options;
-    $list = wf_crm_get_list($table, $name);
     if (!isset($field['extra']['aslist']) && empty($field['extra']['multiple'])) {
       $field['extra']['aslist'] = 1;
     }
-    if (is_numeric($list)) {
+    if (substr($name, 0, 7) == 'custom_') {
       // Lookup defaults for custom fields
-      $dao = &CRM_Core_DAO::executeQuery('SELECT value FROM civicrm_option_value
-        WHERE is_default AND is_active AND option_group_id = ' . $list);
-      $field['value'] = '';
-      while ($dao->fetch()) {
-        $field['value'] .= ($field['value'] ? ',' : '') . $dao->value;
-      }
+      $field['value'] = wf_crm_custom_field_default(substr($name, 7));
     }
   }
   if ($table == 'other' || $field['type'] == 'hidden') {
@@ -1298,10 +1179,150 @@ function wf_crm_component_insert(&$field, &$enabled, $settings) {
 }
 
 /**
+ * Retrieve defaults for a custom field
+ * @param int $id
+ * @return string
+ */
+function wf_crm_custom_field_default($id) {
+  $val = '';
+  if ($id && is_numeric($id)) {
+    $dao = CRM_Core_DAO::executeQuery("SELECT value FROM civicrm_option_value
+      WHERE is_default AND is_active AND option_group_id = (SELECT option_group_id FROM civicrm_custom_field WHERE id = $id)");
+    while ($dao->fetch()) {
+      $val .= ($val ? ',' : '') . $dao->value;
+    }
+    $dao->free();
+  }
+  return $val;
+}
+
+/**
+ * Interface similar to options_element module
+ * but with the important difference that options already exist in the civi db
+ * so this does not allow create/delete of options
+ * @param array $form
+ * @param stdClass $node
+ * @param array $element
+ * @param array $field
+ */
+function wf_crm_options_table(&$form, $node, $element, $field) {
+  $options = $sort = wf_crm_field_options($element, 'component_edit', $node->webform_civicrm['data']);
+  if ($options) {
+    $form['#attached']['js'] = array(drupal_get_path('module', 'webform_civicrm') . '/' . 'webform_civicrm_options.js');
+
+    $defaults_selected = array();
+    if (!empty($element['value'])) {
+      foreach (explode(',', trim($element['value'])) as $v) {
+        $defaults_selected[] = '_web_civi_option_selected_' . $v;
+      }
+    }
+    // Get rid of stuff related to options_element module
+    unset($form['items']);
+
+    $form['value']['#type'] = 'hidden';
+    $form['civicrm_options_fieldset'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Options'),
+      '#theme' => 'webform_civicrm_options_table',
+    );
+    $option_keys = array();
+    foreach ($options as $k => $v) {
+      $option_keys['_web_civi_option_selected_' . $k] = '';
+      $form['civicrm_options_fieldset']['civicrm_option_name_' . $k] = array(
+        '#markup' => '<span class="civicrm-option-name">' . $v . '</span>',
+      );
+    }
+    if ($element['type'] === 'select') {
+      $form['civicrm_options_fieldset']['civicrm_live_options'] = array(
+        '#type' => 'radios',
+        '#options' => array(t('<strong>Static Options</strong> (fully configurable)'), t('<strong>Live Options</strong> (update automatically)')),
+        '#default_value' => (int) !empty($element['extra']['civicrm_live_options']),
+        '#parents' => array('extra', 'civicrm_live_options'),
+      );
+      $form['civicrm_options_fieldset']['intro'] = array(
+        '#markup' => '<p><div class="live-options-hide">' .
+        t('Drag the arrows to re-order these options. Click the "enabled" checkbox to show/remove an item from the form. Set the label as you want it to appear on the form.') .
+        '</div><div class="live-options-show">' .
+        t('You cannot control the presentation of live options. They will be loaded from the CiviCRM database every time the form is displayed.') .
+        '</div><div>' .
+        t('Check the "default" box for an option to be selected by default when a user views the form.') .
+        '</div></p>',
+      );
+      // Special instructions for contact reference fields
+      if (wf_crm_aval($field, 'data_type') == 'ContactReference') {
+        $form['civicrm_options_fieldset']['intro'] = array(
+          '#markup' => '<p>' . t('This is a contact reference field. It points to another contact on the webform. You can configure how that contact is presented by editing their "Existing Contact" field.') . '</p>' .
+          '<p>' . t("Note: In most cases it is not desireable to have the selection of webform contacts exposed to the end-user so you may wish to set this field's value on the CiviCRM tab instead.") . '</p>',
+        );
+      }
+      $options_selected = wf_crm_str2array($element['extra']['items']);
+      // Sort weights. Unselected options will be at the bottom.
+      $option_keys = $option_selected_keys = array();
+      foreach ($options_selected as $k => $v) {
+        if (isset($options[$k])) {
+          $option_keys['_web_civi_option_selected_' . $k] = '';
+          $option_selected_keys[] = '_web_civi_option_selected_' . $k;
+          unset($sort[$k]);
+        }
+      }
+      foreach ($sort as $k => $v) {
+        $option_keys['_web_civi_option_selected_' . $k] = '';
+      }
+      $form['extra']['items']['#type'] = 'hidden';
+      $form['extra']['items']['#required'] = FALSE;
+      $form['extra']['items']['#value'] = $element['extra']['items'];
+      $form['extra']['options_source']['#access'] = FALSE;
+      $form['civicrm_options_fieldset']['civicrm_options'] = array(
+        '#type' => 'checkboxes',
+        '#required' => TRUE,
+        '#options' => $option_keys,
+        '#default_value' => $option_selected_keys,
+      );
+      $w = 0;
+      foreach ($option_keys as $k => $v) {
+        $k = str_replace('_web_civi_option_selected_', '', $k);
+        $form['civicrm_options_fieldset']['civicrm_option_label_' . $k] = array(
+          '#type' => 'textfield',
+          '#size' => 30,
+          '#default_value' => !empty($options_selected[$k]) ? $options_selected[$k] : $options[$k],
+        );
+        $form['civicrm_options_fieldset']['civicrm_option_weight_' . $k] = array(
+          '#type' => 'textfield',
+          '#size' => 3,
+          '#default_value' => ++$w,
+        );
+      }
+    }
+    $form['civicrm_options_fieldset']['civicrm_defaults'] = array(
+      '#type' => 'checkboxes',
+      '#options' => array('' => '') + $option_keys,
+      '#default_value' => $defaults_selected,
+    );
+    // Auto set multi-value option for single-valued entities
+    if (empty($field['extra']['multiple']) && $element['type'] === 'select') {
+      $form['extra']['multiple']['#type'] = 'hidden';
+      $form['extra']['multiple']['#value'] = 0;
+    }
+    // Restore multiple checkbox in case options_element module removed it
+    elseif ($element['type'] === 'select') {
+      $form['extra']['multiple']['#type'] = 'checkbox';
+      $form['extra']['multiple']['#title'] = t('Multiple');
+      $form['extra']['multiple']['#description'] = t('Check this option if the user should be allowed to choose multiple values.');
+      $form['extra']['multiple']['#default_value'] = !empty($element['extra']['multiple']);
+    }
+    else {
+      $form['extra']['multiple']['#type'] = 'hidden';
+      $form['extra']['multiple']['#value'] = (int) !empty($field['extra']['multiple']);
+    }
+    array_unshift($form['#submit'], 'wf_crm_process_options_selection');
+  }
+}
+
+/**
  * Drupal theme callback
  * Format civicrm options form as a table
  */
-function theme_webform_civicrm_options($variables) {
+function theme_webform_civicrm_options_table($variables) {
   $element = $variables['element'];
   $element['civicrm_defaults']['']['#attributes']['class'][] = 'select-all-civi-defaults';
   $default_box = drupal_render($element['civicrm_defaults']['']);
