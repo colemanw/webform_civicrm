@@ -523,6 +523,40 @@ function wf_crm_configure_form($form, &$form_state, $node) {
       }
     }
   }
+  // Contribution settings
+  if (in_array('CiviContribute', $config->enableComponents, TRUE)) {
+    $form['contribution'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Contribution'),
+      '#group' => 'webform_civicrm',
+      '#description' => t('Select a contribution page and its billing fields will be embedded on this form.'),
+      '#attributes' => array('class' => array('civi-icon-contribution')),
+    );
+    $form['contribution']['contribution_page_id'] = array(
+      '#type' => 'select',
+      '#title' => t('Contribution Page'),
+      '#options' => array(t('- None -')) + wf_crm_get_options('contribution_page'),
+      '#default_value' => wf_crm_aval($data, 'contribution:contribution_page_id'),
+    );
+    wf_crm_ajax_item($form, 'contribution', 'contribution_page_id', 'contribution_fields');
+    if (!empty($data['contribution'][1]['contribution'][1]['contribution_page_id'])) {
+      foreach ($sets as $sid => $set) {
+        if ($set['entity_type'] == 'contribution') {
+          foreach ($set['fields'] as $fid => $field) {
+            $fid = "civicrm_1_contribution_1_$fid";
+            $form['contribution']['contribution_fields'][$fid] = wf_crm_configure_form_item($fid, $field, $settings);
+          }
+        }
+      }
+    }
+  }
+
+
+
+
+
+
+
   // Configure additional options
   $form['options'] = array(
     '#type' => 'fieldset',
@@ -660,6 +694,9 @@ function wf_crm_process_form_settings(&$vals) {
   if (isset($vals['participant_reg_type'])) {
     $data['participant_reg_type'] = $vals['participant_reg_type'];
     $data['reg_options'] = $vals['reg_options'];
+  }
+  if (!empty($vals['contribution_page_id'])) {
+    $data['contribution'][1]['contribution'][1]['contribution_page_id'] = $vals['contribution_page_id'];
   }
   $vals['data'] = $data;
 }

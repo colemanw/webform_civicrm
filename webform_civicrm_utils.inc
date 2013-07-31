@@ -880,7 +880,19 @@ function wf_crm_get_fields($var = 'fields') {
         );
       }
     }
-
+    if (in_array('CiviContribute', $components)) {
+      $fields['contribution_total_amount'] = array(
+        'name' => t('Contribution Amount'),
+        'type' => 'textfield',
+      );
+      $fields['contribution_payment_processor'] = array(
+        'name' => t('Payment Processor'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'extra' => array('civicrm_live_options' => 1),
+        'empty_option' => t('Offline Payment'),
+      );
+    }
     $tokens = array(
       'display_name' => t('display name'),
       'first_name' => t('first name'),
@@ -921,6 +933,9 @@ function wf_crm_get_fields($var = 'fields') {
     if (in_array('CiviEvent', $components)) {
       $sets['participant'] = array('entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9);
     }
+    if (in_array('CiviContribute', $components)) {
+      $sets['contribution'] = array('entity_type' => 'contribution', 'label' => t('Contribution'));
+    }
 
     // Pull custom fields and match to Webform element types
     $custom_types = array(
@@ -948,6 +963,9 @@ function wf_crm_get_fields($var = 'fields') {
     if (in_array('CiviCase', $components, TRUE)) {
       $custom_extends .= ",'case'";
     }
+    if (in_array('CiviContribute', $components, TRUE)) {
+      $custom_extends .= ",'contribution'";
+    }
     $sql = "
       SELECT cf.*, cg.title AS custom_group_name, LOWER(cg.extends) AS entity_type, cg.extends_entity_column_id, cg.extends_entity_column_value AS sub_types, cg.is_multiple, cg.max_multiple, cg.id AS custom_group_id
       FROM civicrm_custom_field cf
@@ -963,7 +981,7 @@ function wf_crm_get_fields($var = 'fields') {
         }
         elseif (!isset($sets[$set])) {
           $sets[$set]['label'] = $dao->custom_group_name;
-          if ($dao->entity_type != 'activity' && $dao->entity_type != 'participant' && $dao->entity_type != 'case') {
+          if ($dao->entity_type != 'activity' && $dao->entity_type != 'participant' && $dao->entity_type != 'case' && $dao->entity_type != 'contribution') {
             $sets[$set]['entity_type'] = 'contact';
             if ($dao->entity_type != 'contact') {
               $sets[$set]['contact_type'] = $dao->entity_type;

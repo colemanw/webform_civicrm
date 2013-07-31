@@ -30,21 +30,32 @@ function _wf_crm_frontend_form_alter(&$form, &$form_state) {
   $settings = $node->webform_civicrm;
   $data = $settings['data'];
   $id['cid'] = $id = $info = array();
+  // Variables to push to the client-side
+  $js_vars = array();
   // JS Cache eliminates the need for most ajax state/province callbacks
   foreach ($data['contact'] as $c) {
     if (!empty($c['number_of_address'])) {
-      $js_vars = array(
+      $js_vars += array(
         'defaultCountry' => $config->defaultContactCountry,
         'defaultStates' => wf_crm_get_states($config->defaultContactCountry),
         'noCountry' => t('- First Choose a Country -'),
         'callbackPath' => url('webform-civicrm/js', array('alias' => TRUE)),
       );
-      $form['#attached']['js'][] = array(
-        'data' => array('webform_civicrm' => $js_vars),
-        'type' => 'setting',
-      );
       break;
     }
+  }
+  // Preprocess contribution page
+  if (!empty($data['contribution'])) {
+    CRM_Core_Resources::singleton()->addCoreResources();
+    $page_id = $data['contribution'][1]['contribution'][1]['contribution_page_id'];
+    $key = CRM_Core_Key::get('CRM_Contribute_Controller_Contribution', TRUE);
+    $js_vars['contributionCallback'] = url('civicrm/contribute/transact', array('query' => array('reset' => 1, 'id' => $page_id, 'qfKey' => $key, 'snippet' => 4, 'type' => 1), 'alias' => TRUE));
+  }
+  if ($js_vars) {
+    $form['#attached']['js'][] = array(
+      'data' => array('webform_civicrm' => $js_vars),
+      'type' => 'setting',
+    );
   }
   $enabled = wf_crm_enabled_fields($node);
   // Keep track of cids across multipage forms
