@@ -183,7 +183,7 @@ function wf_crm_get_surveys($act = array()) {
 }
 
 /**
- * Get list of activities
+ * Get list of activity types
  * @param string $case_type_name
  *
  * @return array
@@ -505,42 +505,6 @@ function wf_crm_get_fields($var = 'fields') {
   if (!$fields) {
     $config = CRM_Core_Config::singleton();
     $components = $config->enableComponents;
-
-    // TODO: Remove - we no longer use $lists in version 4
-    $lists = array(
-      'contact_contact_sub_type' => 'contact_sub_type',
-      'contact_prefix_id' => 'individual_prefix',
-      'contact_suffix_id' => 'individual_suffix',
-      'contact_gender_id' => 'gender',
-      'contact_preferred_communication_method' => 'preferred_communication_method',
-      'contact_preferred_language' => 'languages',
-      'contact_privacy' => 'privacy',
-      'contact_employer_id' => 'organization',
-      '*_country_id' => 'country',
-      '*_county_id' => 'county',
-      'phone_phone_type_id' => 'phone_type',
-      '*_location_type_id' => 'location_type',
-      'website_website_type_id' => 'website_type',
-      'address_master_id' => 'contact',
-      'activity_target_contact_id' => 'contact',
-      'activity_assignee_contact_id' => 'contact',
-      'activity_status_id' => 'activity_status',
-      'activity_priority_id' => 'priority',
-      '*_engagement_level' => 'engagement_index',
-      'relationship_relationship_type_id' => 'relationship_type_id',
-      'relationship_is_active' => 'yes_no',
-      'relationship_relationship_permission' => 'relationship_permission',
-      '*_group' => 'group',
-      'case_client_id' => 'contact',
-      'case_creator_id' => 'contact',
-      'case_status_id' => 'case_status',
-      'case_medium_id' => 'encounter_medium',
-      'participant_event_id' => 'event',
-      'participant_role_id' => 'participant_role',
-      'participant_status_id' => 'participant_status',
-      '*_campaign_id' => 'campaign',
-      '*_survey_id' => 'survey',
-    );
 
     // Field keys are in the format table_column
     // Use a # sign as a placeholder for field number in the title (or by default it will be appended to the end)

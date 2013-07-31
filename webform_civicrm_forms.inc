@@ -361,8 +361,7 @@ function wf_crm_contact_get($node, $enabled, $c, $cids, $exclude = array()) {
     if (!in_array('contact', $exclude)) {
       $result = wf_civicrm_api('contact', 'get', array(
         'contact_id' => $cid,
-        'return.preferred_communication_method' => 1,
-        'return.preferred_language' => 1,
+        'return' => array('preferred_communication_method', 'preferred_language'),
       ));
       $info['contact'][1] += $result['values'][$cid];
     }
@@ -697,7 +696,7 @@ function wf_crm_process_submission($node, &$submission, $op) {
             $params[$name] = array_unique(array_merge($params[$name], $exist));
           }
         }
-        $params['contact_id'] = $id['cid'][$c];
+        $params['id'] = $id['cid'][$c];
         wf_civicrm_api('contact', 'create', $params);
       }
     }
@@ -712,7 +711,7 @@ function wf_crm_process_submission($node, &$submission, $op) {
       // Save current employer
       if ($contact['contact'][1]['contact_type'] == 'individual' && !empty($contact['contact'][1]['employer_id'])) {
         wf_civicrm_api('contact', 'create', array(
-          'contact_id' => $cid,
+          'id' => $cid,
           'contact_type' => 'Individual',
           'employer_id' => $contact['contact'][1]['employer_id'],
         ));
