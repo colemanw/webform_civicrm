@@ -488,23 +488,44 @@ function wf_crm_state_abbr($input, $ret = 'abbreviation', $country_id = NULL) {
  * Fetches CiviCRM field data.
  *
  * @param $var
- *   Name of variable to return: fields, tokens, lists, or sets
+ *   Name of variable to return: fields, tokens, or sets
  *
  * @return array
  *   fields: The CiviCRM contact fields this module supports
  *   tokens: Available tokens keyed to field ids
- *   lists: Option lists keyed to option_group name
- *   sets: Info on fieldsets (tables)
+ *   sets: Info on fieldsets (entities)
  */
 function wf_crm_get_fields($var = 'fields') {
   static $fields = array();
-  static $tokens = array();
-  static $lists = array();
-  static $sets = array();
+  static $tokens;
+  static $sets;
 
   if (!$fields) {
     $config = CRM_Core_Config::singleton();
     $components = $config->enableComponents;
+
+    $sets = array(
+      'contact' => array('entity_type' => 'contact', 'label' => t('Contact Fields')),
+      'other' => array('entity_type' => 'contact', 'label' => t('Tags and Groups'), 'max_instances' => 1),
+      'address' => array('entity_type' => 'contact', 'label' => t('Address'), 'max_instances' => 9),
+      'phone' => array('entity_type' => 'contact', 'label' => t('Phone'), 'max_instances' => 9),
+      'email' => array('entity_type' => 'contact', 'label' => t('Email'), 'max_instances' => 9),
+      'website' => array('entity_type' => 'contact', 'label' => t('Website'), 'max_instances' => 9),
+      'activity' => array('entity_type' => 'activity', 'label' => t('Activity')),
+      'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship to Contact')),
+    );
+    if (in_array('CiviCase', $components)) {
+      $sets['case'] = array('entity_type' => 'case', 'label' => t('Case Settings'));
+    }
+    if (in_array('CiviEvent', $components)) {
+      $sets['participant'] = array('entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9);
+    }
+    if (in_array('CiviContribute', $components)) {
+      $sets['contribution'] = array('entity_type' => 'contribution', 'label' => t('Contribution'));
+    }
+    if (in_array('CiviMember', $components)) {
+      $sets['membership'] = array('entity_type' => 'membership', 'label' => t('Membership'));
+    }
 
     // Field keys are in the format table_column
     // Use a # sign as a placeholder for field number in the title (or by default it will be appended to the end)
@@ -763,22 +784,6 @@ function wf_crm_get_fields($var = 'fields') {
       'empty_option' => t('None'),
       'expose_list' => TRUE,
     );
-    if (in_array('CiviCampaign', $components)) {
-      $fields['activity_campaign_id'] = array(
-        'name' => t('Campaign'),
-        'type' => 'select',
-        'expose_list' => TRUE,
-        'empty_option' => t('None'),
-        'extra' => array('civicrm_live_options' => 1),
-      );
-      $fields['activity_survey_id'] = array(
-        'name' => t('Survey/Petition'),
-        'type' => 'select',
-        'expose_list' => TRUE,
-        'empty_option' => t('None'),
-        'extra' => array('civicrm_live_options' => 1),
-      );
-    }
     if (in_array('CiviCase', $components)) {
       $case_info = new CRM_Case_XMLProcessor_Process();
       $fields['case_client_id'] = array(
@@ -870,15 +875,20 @@ function wf_crm_get_fields($var = 'fields') {
         'expose_list' => TRUE,
         'value' => '1',
       );
-      if (in_array('CiviCampaign', $components)) {
-        $fields['participant_campaign_id'] = array(
-          'name' => t('Campaign'),
-          'type' => 'select',
-          'expose_list' => TRUE,
-          'extra' => array('civicrm_live_options' => 1),
-          'empty_option' => t('None'),
-        );
-      }
+    }
+    if (in_array('CiviMember', $components)) {
+      $fields['membership_membership_type_id'] = array(
+        'name' => t('Membership Type'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'extra' => array('civicrm_live_options' => 1),
+      );
+      $fields['membership_status_id'] = array(
+        'name' => t('Membership Status'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'extra' => array('civicrm_live_options' => 1),
+      );
     }
     if (in_array('CiviContribute', $components)) {
       $fields['contribution_total_amount'] = array(
@@ -892,6 +902,26 @@ function wf_crm_get_fields($var = 'fields') {
         'extra' => array('civicrm_live_options' => 1),
         'empty_option' => t('Offline Payment'),
       );
+    }
+    // Add campaign fields
+    if (in_array('CiviCampaign', $components)) {
+      $fields['activity_survey_id'] = array(
+        'name' => t('Survey/Petition'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'empty_option' => t('None'),
+        'extra' => array('civicrm_live_options' => 1),
+      );
+      $entities_with_campaigns = array_intersect(array('activity', 'membership', 'participant'), array_keys($sets));
+      foreach ($entities_with_campaigns as $ent) {
+        $fields[$ent . '_campaign_id'] = array(
+          'name' => t('Campaign'),
+          'type' => 'select',
+          'expose_list' => TRUE,
+          'extra' => array('civicrm_live_options' => 1),
+          'empty_option' => t('None'),
+        );
+      }
     }
     $tokens = array(
       'display_name' => t('display name'),
@@ -917,26 +947,6 @@ function wf_crm_get_fields($var = 'fields') {
       'email' => t('email'),
     );
 
-    $sets = array(
-      'contact' => array('entity_type' => 'contact', 'label' => t('Contact Fields')),
-      'other' => array('entity_type' => 'contact', 'label' => t('Tags and Groups'), 'max_instances' => 1),
-      'address' => array('entity_type' => 'contact', 'label' => t('Address'), 'max_instances' => 9),
-      'phone' => array('entity_type' => 'contact', 'label' => t('Phone'), 'max_instances' => 9),
-      'email' => array('entity_type' => 'contact', 'label' => t('Email'), 'max_instances' => 9),
-      'website' => array('entity_type' => 'contact', 'label' => t('Website'), 'max_instances' => 9),
-      'activity' => array('entity_type' => 'activity', 'label' => t('Activity')),
-      'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship to Contact')),
-    );
-    if (in_array('CiviCase', $components)) {
-      $sets['case'] = array('entity_type' => 'case', 'label' => t('Case Settings'));
-    }
-    if (in_array('CiviEvent', $components)) {
-      $sets['participant'] = array('entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9);
-    }
-    if (in_array('CiviContribute', $components)) {
-      $sets['contribution'] = array('entity_type' => 'contribution', 'label' => t('Contribution'));
-    }
-
     // Pull custom fields and match to Webform element types
     $custom_types = array(
       'Select' => array('type' => 'select'),
@@ -956,16 +966,9 @@ function wf_crm_get_fields($var = 'fields') {
       'Autocomplete-Select' => array('type' => 'select'),
     );
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
-    $custom_extends = "'contact','individual','organization','household','address','activity','relationship'";
-    if (in_array('CiviEvent', $components, TRUE)) {
-      $custom_extends .= ",'participant'";
-    }
-    if (in_array('CiviCase', $components, TRUE)) {
-      $custom_extends .= ",'case'";
-    }
-    if (in_array('CiviContribute', $components, TRUE)) {
-      $custom_extends .= ",'contribution'";
-    }
+    list($contact_types) = wf_crm_get_contact_types();
+    $custom_extends = $contact_types + $sets;
+    $custom_extends = "'" . implode("','", array_keys($custom_extends)) . "'";
     $sql = "
       SELECT cf.*, cg.title AS custom_group_name, LOWER(cg.extends) AS entity_type, cg.extends_entity_column_id, cg.extends_entity_column_value AS sub_types, cg.is_multiple, cg.max_multiple, cg.id AS custom_group_id
       FROM civicrm_custom_field cf
@@ -981,7 +984,7 @@ function wf_crm_get_fields($var = 'fields') {
         }
         elseif (!isset($sets[$set])) {
           $sets[$set]['label'] = $dao->custom_group_name;
-          if ($dao->entity_type != 'activity' && $dao->entity_type != 'participant' && $dao->entity_type != 'case' && $dao->entity_type != 'contribution') {
+          if (isset($contact_types[$dao->entity_type]) || $dao->entity_type == 'contact') {
             $sets[$set]['entity_type'] = 'contact';
             if ($dao->entity_type != 'contact') {
               $sets[$set]['contact_type'] = $dao->entity_type;

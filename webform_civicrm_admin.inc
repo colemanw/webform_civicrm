@@ -460,8 +460,8 @@ function wf_crm_configure_form($form, &$form_state, $node) {
         '#type' => 'fieldset',
         '#title' => $reg_type == 'all' ? t('Registration') : t('Contact !num', array('!num' => $n)),
       );
-      if (!($num = wf_crm_aval($data, "participant:{$n}:number_of_participant"))
-      || ($n > 1 && $reg_type == 'all')) {
+      $num = wf_crm_aval($data, "participant:{$n}:number_of_participant");
+      if (!$num || ($n > 1 && $reg_type == 'all')) {
         $num = 0;
       }
       $form['event']['participants'][$n]['participant_' . $n . '_number_of_participant'] = array(
@@ -523,6 +523,44 @@ function wf_crm_configure_form($form, &$form_state, $node) {
       }
     }
   }
+  // Membership settings
+  if (in_array('CiviMember', $config->enableComponents, TRUE)) {
+    $form['membership'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Memberships'),
+      '#group' => 'webform_civicrm',
+      '#attributes' => array('class' => array('civi-icon-membership')),
+    );
+    for ($c = 1; $c <= $contacts; ++$c) {
+      $num = wf_crm_aval($data, "membership:{$c}:number_of_membership", 0);
+      $form['membership'][$c]["membership_{$c}_number_of_membership"] = array(
+        '#type' => 'select',
+        '#title' => t('Number of Memberships for Contact !num', array('!num' => $c)),
+        '#default_value' => $num,
+        '#options' => range(0, 9),
+        '#prefix' => '<div class="number-of">',
+        '#suffix' => '</div>',
+      );
+      wf_crm_ajax_item($form, "membership:$c", "membership_{$c}_number_of_membership", "membership");
+      for ($n = 1; $n <= $num; ++$n) {
+        $fs = "membership_{$c}_membership_{$n}_fieldset";
+        $form['membership'][$c]['membership'][$fs] = array(
+          '#type' => 'fieldset',
+          '#title' => t('Membership !mem for Contact !num', array('!mem' => $n, '!num' => $c)),
+          '#attributes' => array('id' => $fs),
+          'js_select' => wf_crm_js_select($fs),
+        );
+        foreach ($sets as $sid => $set) {
+          if ($set['entity_type'] == 'membership') {
+            foreach ($set['fields'] as $fid => $field) {
+              $fid = "civicrm_{$c}_membership_{$n}_$fid";
+              $form['membership'][$c]['membership'][$fs][$fid] = wf_crm_configure_form_item($fid, $field, $settings);
+            }
+          }
+        }
+      }
+    }
+  }
   // Contribution settings
   if (in_array('CiviContribute', $config->enableComponents, TRUE)) {
     $form['contribution'] = array(
@@ -532,10 +570,11 @@ function wf_crm_configure_form($form, &$form_state, $node) {
       '#description' => t('Select a contribution page and its billing fields will be embedded on this form.'),
       '#attributes' => array('class' => array('civi-icon-contribution')),
     );
+    $contribution_pages = wf_civicrm_apivalues('contribution', 'getoptions', array('field' => 'contribution_page_id'));
     $form['contribution']['contribution_page_id'] = array(
       '#type' => 'select',
       '#title' => t('Contribution Page'),
-      '#options' => array(t('- None -')) + wf_crm_get_options('contribution_page'),
+      '#options' => array(t('- None -')) + $contribution_pages,
       '#default_value' => wf_crm_aval($data, 'contribution:contribution_page_id'),
     );
     wf_crm_ajax_item($form, 'contribution', 'contribution_page_id', 'contribution_fields');
@@ -662,7 +701,7 @@ function wf_crm_process_form_settings(&$vals) {
   foreach ($vals as $key => $val) {
     if (strpos($key, '_number_of_') !== FALSE) {
       list($ent, $c, $k) = explode('_', $key, 3);
-      if (isset($data[$ent][$c]) || $ent == 'participant') {
+      if (isset($data[$ent][$c]) || $ent == 'participant' || $ent == 'membership') {
         $data[$ent][$c][$k] = $val;
       }
     }

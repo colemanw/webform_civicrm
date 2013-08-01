@@ -1,7 +1,6 @@
 /**
  * Javascript Module for managing the webform_civicrm admin form.
  */
-
 var wfCiviAdmin = (function ($, D) {
   /**
    * Public methods.
@@ -243,6 +242,18 @@ var wfCiviAdmin = (function ($, D) {
           label = $('select[name="case_type_id"] option:selected', context).text() + ' ' + label;
         }
         return label;
+      });
+      $('fieldset#edit-membership', context).once('wf-civi').drupalSetSummary(function (context) {
+        var memberships = [];
+        $('select[name$=membership_type_id]', context).each(function() {
+          var pieces = $(this).attr('name').split('_')
+          var name = $('#wf-crm-configure-form .vertical-tabs-list li').eq(pieces[1] - 1).find('strong').text();
+          memberships.push(name + ': ' + $(this).find('option:selected').text());
+        });
+        if (memberships.length) {
+          return memberships.join('<br>');
+        }
+        return Drupal.t('- None -');
       });
       $('fieldset#edit-contribution', context).once('wf-civi').drupalSetSummary(function (context) {
         return $('select[name="contribution_page_id"] option:selected', context).text();
