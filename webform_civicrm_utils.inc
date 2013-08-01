@@ -784,7 +784,7 @@ function wf_crm_get_fields($var = 'fields') {
       'empty_option' => t('None'),
       'expose_list' => TRUE,
     );
-    if (in_array('CiviCase', $components)) {
+    if (isset($sets['case'])) {
       $case_info = new CRM_Case_XMLProcessor_Process();
       $fields['case_client_id'] = array(
         'name' => t('Case Client'),
@@ -856,7 +856,7 @@ function wf_crm_get_fields($var = 'fields') {
       'name' => t('Relationship to Contact # Description'),
       'type' => 'textarea',
     );
-    if (in_array('CiviEvent', $components)) {
+    if (isset($sets['participant'])) {
       $fields['participant_event_id'] = array(
         'name' => t('Events'),
         'type' => 'select',
@@ -876,7 +876,7 @@ function wf_crm_get_fields($var = 'fields') {
         'value' => '1',
       );
     }
-    if (in_array('CiviMember', $components)) {
+    if (isset($sets['membership'])) {
       $fields['membership_membership_type_id'] = array(
         'name' => t('Membership Type'),
         'type' => 'select',
@@ -890,7 +890,7 @@ function wf_crm_get_fields($var = 'fields') {
         'extra' => array('civicrm_live_options' => 1),
       );
     }
-    if (in_array('CiviContribute', $components)) {
+    if (isset($sets['contribution'])) {
       $fields['contribution_total_amount'] = array(
         'name' => t('Contribution Amount'),
         'type' => 'textfield',
@@ -967,8 +967,7 @@ function wf_crm_get_fields($var = 'fields') {
     );
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
     list($contact_types) = wf_crm_get_contact_types();
-    $custom_extends = $contact_types + $sets;
-    $custom_extends = "'" . implode("','", array_keys($custom_extends)) . "'";
+    $custom_extends = "'" . implode("','", array_keys($contact_types + $sets)) . "'";
     $sql = "
       SELECT cf.*, cg.title AS custom_group_name, LOWER(cg.extends) AS entity_type, cg.extends_entity_column_id, cg.extends_entity_column_value AS sub_types, cg.is_multiple, cg.max_multiple, cg.id AS custom_group_id
       FROM civicrm_custom_field cf
