@@ -60,6 +60,16 @@ function wf_crm_configure_form($form, &$form_state, $node) {
         'civicrm_1_contact_1_contact_existing' => 'create_civicrm_webform_element',
       );
     }
+    // Warn of incompatible modules
+    $incompatibilities = array(
+      'form_builder_webform' => t('Form builder Webform UI'),
+      'webform_alt_ui' => t('Webform Alternate UI'),
+    );
+    foreach ($incompatibilities as $module => $label) {
+      if (module_exists($module)) {
+        drupal_set_message(t('The module %module is not compatible with Webform CiviCRM Integration. Please disable it before continuing.', array('%module' => $label)), 'error');
+      }
+    }
   }
   // On rebuilding the form
   else {

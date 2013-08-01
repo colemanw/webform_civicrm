@@ -96,7 +96,7 @@ function wf_crm_field_options($field, $context, $data) {
         }
       }
     }
-    // Remove options that were set behind the scenes
+    // Remove options that were set behind the scenes on the admin form
     if ($context != 'config_form' && !empty($field['extra']['multiple']) && !empty($field['expose_list'])) {
       foreach (wf_crm_aval($data, "$ent:$c:$table:$n:$name", array()) as $key => $val) {
         unset($ret[$key]);
