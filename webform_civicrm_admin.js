@@ -325,7 +325,7 @@ var wfCiviAdmin = (function ($, D) {
               if (cl[0] == 'contact') {
                 name = 'name="' + (i + 1) + '_contact_type"'
               }
-              $('#wf-crm-configure-form .vertical-tab-button a').eq(i).prepend('<span class="civi-icon '+cl[2]+'" '+name+'"> </span>');
+              $('#wf-crm-configure-form .vertical-tab-button a').eq(i).prepend('<span class="civi-icon '+cl[2]+'" '+name+'> </span>');
               continue;
             }
           }
