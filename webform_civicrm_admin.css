@@ -109,3 +109,11 @@ form .civi-icon.message {
 form .civi-icon.text {
   background-position:-137px 0;
 }
+
+form .civi-icon.contribution {
+  background-position:-154px 0;
+}
+
+form .civi-icon.membership {
+  background-position:-171px 0;
+}
