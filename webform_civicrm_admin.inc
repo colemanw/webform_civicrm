@@ -679,7 +679,7 @@ function wf_crm_process_form_settings(&$vals) {
         )),
       );
       if ($sub_type = wf_crm_aval($vals, 'civicrm_' . $c . '_contact_1_contact_contact_sub_type')) {
-        $allowed = $sub_types[$vals[$c . '_contact_type']];
+        $allowed = wf_crm_aval($sub_types, $vals[$c . '_contact_type'], array());
         foreach ($sub_type as $sub) {
           if (isset($allowed[$sub])) {
             $data['contact'][$c]['contact'][1]['contact_sub_type'][$sub] = $sub;
@@ -1187,7 +1187,7 @@ function wf_crm_component_insert(&$field, &$enabled, $settings) {
     $field['name'] = str_replace(' #', '', $field['name']);
   }
   if ($name == 'contact_sub_type') {
-    list($contact_types, $sub_types) = wf_crm_get_contact_types();
+    list($contact_types) = wf_crm_get_contact_types();
     $field['name'] .= ' ' . $contact_types[$contact_type];
   }
   // Defaults for existing contact field

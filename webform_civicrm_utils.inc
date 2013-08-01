@@ -26,7 +26,7 @@ function wf_crm_field_options($field, $context, $data) {
     $field += $fields[$table . '_' . $name];
     if ($name === 'contact_sub_type') {
       list($contact_types, $sub_types) = wf_crm_get_contact_types();
-      $ret = $sub_types[$data['contact'][$c]['contact'][1]['contact_type']];
+      $ret = wf_crm_aval($sub_types, $data['contact'][$c]['contact'][1]['contact_type'], array());
     }
     elseif ($name === 'relationship_type_id') {
       $ret = wf_crm_get_contact_relationship_types($data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][$n]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$n]['contact'][1]['contact_sub_type']);
@@ -218,6 +218,7 @@ function wf_crm_get_activity_types($case_type_name = NULL) {
 
 /**
  * Get contact types and sub-types
+ * Unlike pretty much every other option list CiviCRM wants "name" instead of "id"
  *
  * @return array
  */
@@ -225,23 +226,14 @@ function wf_crm_get_contact_types() {
   static $contact_types = array();
   static $sub_types = array();
   if (!$contact_types) {
-    $sql = '
-      SELECT c1.name, c1.label, LOWER(c2.name) AS parent_type
-      FROM civicrm_contact_type c1
-      LEFT JOIN civicrm_contact_type c2 ON c1.parent_id  = c2.id
-      WHERE c1.is_active = 1
-      ORDER BY c1.parent_id ASC';
-    $dao = &CRM_Core_DAO::executeQuery($sql);
-    while ($dao->fetch()) {
-      if ($dao->parent_type) {
-        $sub_types[$dao->parent_type][$dao->name] = $dao->label;
+    $data = wf_civicrm_apivalues('contact_type', 'get');
+    foreach ($data as $type) {
+      if (empty($type['parent_id'])) {
+        $contact_types[strtolower($type['name'])] = $type['label'];
+        continue;
       }
-      else {
-        $contact_types[strtolower($dao->name)] = $dao->label;
-        $sub_types[strtolower($dao->name)] = array();
-      }
+      $sub_types[strtolower($data[$type['parent_id']]['name'])][$type['name']] = $type['label'];
     }
-    $dao->free();
   }
   return array($contact_types, $sub_types);
 }
