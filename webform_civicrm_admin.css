@@ -4,7 +4,7 @@ form .web-civi-checkbox-set {
 }
 
 form .web-civi-checkbox-set .form-item,
-#webform-civicrm-configure-form .contact-type-select {
+#wf-crm-configure-form .contact-type-select {
   float:left;
   width:18em;
   padding-right:1.5em;
@@ -23,9 +23,9 @@ form .hidden,
   display:none;
 }
 
-#webform-civicrm-configure-form .form-type-checkbox label,
-#webform-civicrm-configure-form .number-of .form-item label,
-#webform-civicrm-configure-form .form-item-number-of-contacts label {
+#wf-crm-configure-form .form-type-checkbox label,
+#wf-crm-configure-form .number-of .form-item label,
+#wf-crm-configure-form .form-item-number-of-contacts label {
   display:inline;
 }
 
@@ -55,13 +55,17 @@ th div.form-type-radio {
   cursor:pointer;
 }
 
-#webform-civicrm-configure-form fieldset fieldset{
+#wf-crm-configure-form select {
+  max-width: 100%;
+}
+
+#wf-crm-configure-form fieldset fieldset{
   border: 1px solid #CCCCCC;
   margin: 1em 0;
   padding: 2.5em 0 0;
 }
 
-#webform-civicrm-configure-form fieldset fieldset legend{
+#wf-crm-configure-form fieldset fieldset legend{
   display:block;
 }
 
