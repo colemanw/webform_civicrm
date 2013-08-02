@@ -190,7 +190,6 @@ function wf_crm_configure_form($form, &$form_state, $node) {
         if (!isset($c['number_of_' . $sid])) {
           $c['number_of_' . $sid] = 0;
         }
-        $set['label'] = $sid == 'relationship' ? t('Relationship') : $set['label'];
         $selector = array(
           '#type' => 'select',
           '#default_value' => $c['number_of_' . $sid],
@@ -219,14 +218,14 @@ function wf_crm_configure_form($form, &$form_state, $node) {
           '#attributes' => array('id' => $fsid, 'class' => array('web-civi-checkbox-set')),
           'js_select' => wf_crm_js_select($fsid),
         );
-        if ((isset($set['max_instances']) && $set['max_instances'] > 1)) {
+        if ($sid == 'relationship') {
+          $fieldset['#title'] = t('Relationship to !contact', array('!contact' => wf_crm_contact_label($i, $data, 'wrap')));
+        }
+        elseif ((isset($set['max_instances']) && $set['max_instances'] > 1)) {
           $fieldset['#title'] .= ' ' . $i;
           if (in_array($sid, array('email', 'address', 'phone', 'website')) && $i == 1) {
             $fieldset['#title'] .= ' ' . t('(primary)');
           }
-        }
-        elseif ($sid == 'relationship') {
-          $fieldset['#title'] = t('Relationship to !contact', array('!contact' => wf_crm_contact_label($i, $data, 'wrap')));
         }
         foreach ($set['fields'] as $fid => $field) {
           if ($fid == 'contact_contact_sub_type' ||
@@ -774,7 +773,8 @@ function wf_crm_process_form_settings(&$vals) {
  */
 function wf_crm_configure_form_item($fid, $field, $settings) {
   list( , $c, $ent, $n, $table, $name) = explode('_', $fid, 6);
-  $field['name'] = str_replace('#', $table == 'relationship' ? $n : '', $field['name']);
+  // We don't need numbers on the back-end form since they are already grouped in fieldsets
+  $field['name'] = str_replace('#', '', $field['name']);
 
   // Create dropdown list
   if (!empty($field['expose_list'])) {
@@ -1188,13 +1188,16 @@ function wf_crm_component_insert(&$field, &$enabled, $settings) {
   list(, $c, $ent, $n, $table, $name) = explode('_', $field['form_key'], 6);
   $contact_type = $settings['data']['contact'][$c]['contact'][1]['contact_type'];
   // Replace the # token with set number (or append to the end if no token)
-  if ($n > 1 || $table == 'relationship') {
+  if ($n > 1) {
     if (strpos($field['name'], '#') === FALSE) {
       $field['name'] .= " $n";
     }
     else {
       $field['name'] = str_replace('#', $n, $field['name']);
     }
+  }
+  elseif ($table == 'relationship') {
+    $field['name'] = t('Relationship to !contact', array('!contact' => wf_crm_contact_label($n, $settings['data']))) . ' ' . $field['name'];
   }
   else {
     $field['name'] = str_replace(' #', '', $field['name']);

@@ -507,7 +507,7 @@ function wf_crm_get_fields($var = 'fields') {
       'email' => array('entity_type' => 'contact', 'label' => t('Email'), 'max_instances' => 9),
       'website' => array('entity_type' => 'contact', 'label' => t('Website'), 'max_instances' => 9),
       'activity' => array('entity_type' => 'activity', 'label' => t('Activity')),
-      'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship to Contact')),
+      'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship')),
     );
     if (in_array('CiviCase', $components)) {
       $sets['case'] = array('entity_type' => 'case', 'label' => t('Case Settings'));
@@ -813,26 +813,26 @@ function wf_crm_get_fields($var = 'fields') {
       );
     }
     $fields['relationship_relationship_type_id'] = array(
-      'name' => t('Relationship to Contact #'),
+      'name' => t('Relationship Type'),
       'type' => 'select',
       'expose_list' => TRUE,
       'empty_option' => t('No Relationship'),
       'extra' => array('civicrm_live_options' => 1),
     );
     $fields['relationship_is_active'] = array(
-      'name' => t('Relationship to Contact # Is Active'),
+      'name' => t('Is Active'),
       'type' => 'select',
       'expose_list' => TRUE,
       'value' => '1',
     );
     $fields['relationship_relationship_permission'] = array(
-      'name' => t('Relationship to Contact # Permission'),
+      'name' => t('Permissions'),
       'type' => 'select',
       'expose_list' => TRUE,
       'empty_option' => t('No Permissions'),
     );
     $fields['relationship_start_date'] = array(
-      'name' => t('Relationship to Contact # Start Date'),
+      'name' => t('Start Date'),
       'type' => 'date',
       'extra' => array(
         'start_date' => '-50 years',
@@ -840,7 +840,7 @@ function wf_crm_get_fields($var = 'fields') {
       ),
     );
     $fields['relationship_end_date'] = array(
-      'name' => t('Relationship to Contact # End Date'),
+      'name' => t('End Date'),
       'type' => 'date',
       'extra' => array(
         'start_date' => '-50 years',
@@ -848,7 +848,7 @@ function wf_crm_get_fields($var = 'fields') {
       ),
     );
     $fields['relationship_description'] = array(
-      'name' => t('Relationship to Contact # Description'),
+      'name' => t('Description'),
       'type' => 'textarea',
     );
     if (isset($sets['participant'])) {
@@ -883,6 +883,7 @@ function wf_crm_get_fields($var = 'fields') {
         'type' => 'select',
         'expose_list' => TRUE,
         'extra' => array('civicrm_live_options' => 1),
+        'empty_option' => t('Automatic'),
       );
     }
     if (isset($sets['contribution'])) {
@@ -907,8 +908,7 @@ function wf_crm_get_fields($var = 'fields') {
         'empty_option' => t('None'),
         'extra' => array('civicrm_live_options' => 1),
       );
-      $entities_with_campaigns = array_intersect(array('activity', 'membership', 'participant'), array_keys($sets));
-      foreach ($entities_with_campaigns as $ent) {
+      foreach (array_intersect(array('activity', 'membership', 'participant'), array_keys($sets)) as $ent) {
         $fields[$ent . '_campaign_id'] = array(
           'name' => t('Campaign'),
           'type' => 'select',

@@ -194,9 +194,8 @@ var wfCiviAdmin = (function ($, D) {
   function changeContactLabel() {
     var c = $(this).attr('name').split('_')[0];
     var label = getContactLabel(c);
-    $('.vertical-tabs-list li', '#wf-crm-configure-form').eq(c - 1).find('strong').html(c + ': ' + label);
-    $('.contact-label.number-' + c, '#wf-crm-configure-form').html(label);
-    $('select[data-type=ContactReference] option[value=' + c + ']', '#wf-crm-configure-form').html(label);
+    $('.vertical-tabs-list li', '#wf-crm-configure-form').eq(c - 1).find('strong').html(c + '. ' + label);
+    $('select[data-type=ContactReference] option[value=' + c + '], .contact-label.number-' + c, '#wf-crm-configure-form').html(label);
   }
 
   // Return the label of contact #c
@@ -373,9 +372,9 @@ var wfCiviAdmin = (function ($, D) {
         }
       });
 
-      // Handle contact label changing
+      // Contact label change events
       $('input[name$=_webform_label]', context).keyup(changeContactLabel);
-      $('input[name$=_webform_label]', context).blur(function() {
+      $('input[name$=_webform_label]', context).change(function() {
         // Trim string and replace with default if empty
         var label = $(this).val().replace(/^\s+|\s+$/g,'');
         if (!label.length) {
