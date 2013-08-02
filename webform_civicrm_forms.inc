@@ -322,26 +322,26 @@ function wf_crm_contact_get($node, $enabled, $c, $cids, $exclude = array()) {
   $data = $node->webform_civicrm['data'];
   $contact = $data['contact'][$c];
   $prefix = 'civicrm_' . $c . '_contact_1_';
-  foreach (array('contact', 'address', 'email', 'phone', 'website') as $field) {
-    if ((!empty($contact['number_of_' . $field]) && !in_array($field, $exclude)) || $field == 'contact') {
+  foreach (array('contact', 'address', 'email', 'phone', 'website') as $ent) {
+    if ((!empty($contact['number_of_' . $ent]) && !in_array($ent, $exclude)) || $ent == 'contact') {
       $params = array('contact_id' => $cid);
-      if ($field != 'contact' && $field != 'website') {
+      if ($ent != 'contact' && $ent != 'website') {
         $params['options']['sort'] = 'is_primary DESC';
       }
-      $result = wf_civicrm_api($field, 'get', $params);
+      $result = wf_civicrm_api($ent, 'get', $params);
       if (!empty($result['values'])) {
         $result = array_merge(array(0), array_values($result['values']));
         unset($result[0]);
-        if ($field == 'contact' && isset($enabled[$prefix . 'contact_privacy'])) {
+        if ($ent == 'contact' && isset($enabled[$prefix . 'contact_privacy'])) {
           // Privacy fields
-          foreach (array_keys(wf_crm_field_options($node->webform['components'][$enabled[$prefix . 'contact_privacy']], 'contact_get', $data)) as $key) {
+          foreach (array_keys(wf_crm_get_privacy_options()) as $key) {
             if (!empty($result[1][$key])) {
               $result[1]['privacy'][] = $key;
             }
           }
         }
         // Extra processing for addresses
-        if ($field == 'address') {
+        if ($ent == 'address') {
           foreach ($result as &$address) {
             // Translate to abbr
             if (!empty($address['state_province_id'])) {
@@ -354,7 +354,7 @@ function wf_crm_contact_get($node, $enabled, $c, $cids, $exclude = array()) {
             }
           }
         }
-        $info[$field] = $result;
+        $info[$ent] = $result;
       }
     }
   }
@@ -371,7 +371,7 @@ function wf_crm_contact_get($node, $enabled, $c, $cids, $exclude = array()) {
   if (isset($enabled[$prefix . 'contact_preferred_communication_method']) || isset($enabled[$prefix . 'contact_preferred_language'])) {
     if (!in_array('contact', $exclude)) {
       $result = wf_civicrm_api('contact', 'get', array(
-        'contact_id' => $cid,
+        'id' => $cid,
         'return' => array('preferred_communication_method', 'preferred_language'),
       ));
       $info['contact'][1] += $result['values'][$cid];

@@ -194,9 +194,9 @@ var wfCiviAdmin = (function ($, D) {
   function changeContactLabel() {
     var c = $(this).attr('name').split('_')[0];
     var label = getContactLabel(c);
-    $('.vertical-tabs-list li', '#wf-crm-configure-form').eq(c - 1).find('strong').text(c + ': ' + label);
-    $('.contact-label.number-' + c, '#wf-crm-configure-form').text(label);
-    $('select[data-type=ContactReference] option[value=' + c + ']', '#wf-crm-configure-form').text(label);
+    $('.vertical-tabs-list li', '#wf-crm-configure-form').eq(c - 1).find('strong').html(c + ': ' + label);
+    $('.contact-label.number-' + c, '#wf-crm-configure-form').html(label);
+    $('select[data-type=ContactReference] option[value=' + c + ']', '#wf-crm-configure-form').html(label);
   }
 
   // Return the label of contact #c

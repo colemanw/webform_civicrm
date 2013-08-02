@@ -136,7 +136,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     $form['contact_' . $n][$n . '_webform_label'] = array(
       '#type' => 'textfield',
       '#title' => t('Label'),
-      '#default_value' => wf_crm_contact_label($n, $data),
+      '#default_value' => wf_crm_contact_label($n, $data, 'plain'),
       '#suffix' => '</div>',
     );
     wf_crm_ajax_item($form, 'contact_' . $n, $n . '_contact_type', 'contact_subtype_wrapper');
@@ -226,7 +226,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
           }
         }
         elseif ($sid == 'relationship') {
-          $fieldset['#title'] = t('Relationship to !contact', array('!contact' => wf_crm_contact_label($i, $data, TRUE)));
+          $fieldset['#title'] = t('Relationship to !contact', array('!contact' => wf_crm_contact_label($i, $data, 'wrap')));
         }
         foreach ($set['fields'] as $fid => $field) {
           if ($fid == 'contact_contact_sub_type' ||
@@ -476,7 +476,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     for ($n = 1; $reg_type && (($n <= $contacts && $reg_type != 'all') || $n == 1); ++$n) {
       $form['event']['participants'][$n] = array(
         '#type' => 'fieldset',
-        '#title' => $reg_type == 'all' ? t('Registration') : wf_crm_contact_label($n, $data, TRUE),
+        '#title' => $reg_type == 'all' ? t('Registration') : wf_crm_contact_label($n, $data, 'wrap'),
       );
       $num = wf_crm_aval($data, "participant:{$n}:number_of_participant");
       if (!$num || ($n > 1 && $reg_type == 'all')) {
@@ -484,7 +484,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
       }
       $form['event']['participants'][$n]['participant_' . $n . '_number_of_participant'] = array(
         '#type' => 'select',
-        '#title' => $reg_type == 'all' ? t('Number of Event Sets') : t('Number of Event Sets for !contact', array('!contact' => wf_crm_contact_label($n, $data, TRUE))),
+        '#title' => $reg_type == 'all' ? t('Number of Event Sets') : t('Number of Event Sets for !contact', array('!contact' => wf_crm_contact_label($n, $data, 'wrap'))),
         '#default_value' => $num,
         '#options' => range(0, $sets['participant']['max_instances']),
         '#prefix' => '<div class="number-of">',
@@ -553,7 +553,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
       $num = wf_crm_aval($data, "membership:{$c}:number_of_membership", 0);
       $form['membership'][$c]["membership_{$c}_number_of_membership"] = array(
         '#type' => 'select',
-        '#title' => t('Number of Memberships for !contact', array('!contact' => wf_crm_contact_label($c, $data, TRUE))),
+        '#title' => t('Number of Memberships for !contact', array('!contact' => wf_crm_contact_label($c, $data, 'wrap'))),
         '#default_value' => $num,
         '#options' => range(0, 9),
         '#prefix' => '<div class="number-of">',
@@ -564,7 +564,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
         $fs = "membership_{$c}_membership_{$n}_fieldset";
         $form['membership'][$c]['membership'][$fs] = array(
           '#type' => 'fieldset',
-          '#title' => t('Membership !num for !contact', array('!num' => $n, '!contact' => wf_crm_contact_label($c, $data, TRUE))),
+          '#title' => t('Membership !num for !contact', array('!num' => $n, '!contact' => wf_crm_contact_label($c, $data, 'wrap'))),
           '#attributes' => array('id' => $fs),
           'js_select' => wf_crm_js_select($fs),
         );
@@ -684,7 +684,7 @@ function wf_crm_process_form_settings(&$vals) {
         'contact' => array(1 => array(
           'contact_type' => $vals[$c . '_contact_type'],
           'contact_sub_type' => array(),
-          'webform_label' => check_plain($vals[$c . '_webform_label']),
+          'webform_label' => $vals[$c . '_webform_label'],
         )),
       );
       if ($sub_type = wf_crm_aval($vals, 'civicrm_' . $c . '_contact_1_contact_contact_sub_type')) {
@@ -878,7 +878,7 @@ function wf_crm_configure_form_submit($form, &$form_state) {
       list(, $c, $ent, $n, $table, $name) = explode('_', $key, 6);
       $info = '';
       if ($ent == 'contact' || $ent == 'participant') {
-        $info = '<em>' . wf_crm_contact_label($c, $data);
+        $info = '<em>' . wf_crm_contact_label($c, wf_crm_aval($node, 'webform_civicrm:data'));
       }
       if ($info && isset($sets[$table]['max_instances'])) {
         $info .= ' ' . $sets[$table]['label'] . ' ' . $n;
@@ -1512,13 +1512,16 @@ function wf_crm_process_options_selection($form, &$form_state) {
 /**
  * @param $n int Contact Number
  * @param $data array of form data
- * @param bool $wrap Controls whether the output gets wrapped in a span
+ * @param string $html Should html be escaped and/or wrapped
  * @return string
  */
-function wf_crm_contact_label($n, $data, $wrap = FALSE) {
+function wf_crm_contact_label($n, $data, $html = 'escape') {
   $label = trim(wf_crm_aval($data, "contact:$n:contact:1:webform_label", ''));
+  if ($html != 'plain') {
+    $label = check_plain($label);
+  }
   $label = $label ? $label : t('Contact !num', array('!num' => $n));
-  if ($wrap) {
+  if ($html == 'wrap') {
     $label = '<span class="contact-label number-' . $n . '">' . $label . '</span>';
   }
   return $label;

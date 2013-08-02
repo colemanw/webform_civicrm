@@ -33,8 +33,8 @@ function wf_crm_field_options($field, $context, $data) {
     }
     elseif ($name === 'relationship_permission') {
       $ret = array(
-        1 => t('!a may view and edit !b', array('!a' => wf_crm_contact_label($c, $data), '!b' => wf_crm_contact_label($n, $data))),
-        2 => t('!a may view and edit !b', array('!a' => wf_crm_contact_label($n, $data), '!b' => wf_crm_contact_label($c, $data))),
+        1 => t('!a may view and edit !b', array('!a' => wf_crm_contact_label($c, $data, 'plain'), '!b' => wf_crm_contact_label($n, $data, 'plain'))),
+        2 => t('!a may view and edit !b', array('!a' => wf_crm_contact_label($n, $data, 'plain'), '!b' => wf_crm_contact_label($c, $data, 'plain'))),
         3 => t('Both contacts may view and edit each other'),
       );
     }
@@ -44,21 +44,13 @@ function wf_crm_field_options($field, $context, $data) {
       foreach ($data['contact'] as $num => $contact) {
         if ($num != $c || $name != 'master_id') {
           if ($contact_type == 'contact' || $contact_type == $contact['contact'][1]['contact_type']) {
-            $ret[$num] = wf_crm_contact_label($num, $data);
+            $ret[$num] = wf_crm_contact_label($num, $data, 'plain');
           }
         }
       }
     }
     elseif ($name == 'privacy') {
-      // In reality there is no contact field 'privacy' so this is not a real option list.
-      // These are actually 5 separate contact fields that this module munges into 1 for better usability.
-      $ret = array(
-        'do_not_email' => ts('Do not email'),
-        'do_not_phone' => ts('Do not phone'),
-        'do_not_mail' => ts('Do not mail'),
-        'do_not_sms' => ts('Do not sms'),
-        'do_not_trade' => ts('Do not trade'),
-      );
+      $ret = wf_crm_get_privacy_options();
     }
     elseif ($table === 'other') {
       if ($field['table'] === 'tag') {
@@ -239,7 +231,22 @@ function wf_crm_get_contact_types() {
 }
 
 /**
+ * In reality there is no contact field 'privacy' so this is not a real option list.
+ * These are actually 5 separate contact fields that this module munges into 1 for better usability.
+ */
+function wf_crm_get_privacy_options() {
+  return array(
+    'do_not_email' => ts('Do not email'),
+    'do_not_phone' => ts('Do not phone'),
+    'do_not_mail' => ts('Do not mail'),
+    'do_not_sms' => ts('Do not sms'),
+    'do_not_trade' => ts('Do not trade'),
+  );
+}
+
+/**
  * Get relationship type data
+ * FIXME: Use the api for this
  *
  * @return array
  */
