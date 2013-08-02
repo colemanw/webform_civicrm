@@ -143,8 +143,7 @@ var wfCiviAdmin = (function ($, D) {
     $('div.contact-type-select').each(function(i) {
       var c = i + 1;
       if ($('select', this).val() == 'organization') {
-        var name = $('#edit-contact-'+c+' legend:first').text();
-        options += '<option value="'+c+'">'+name+'</option>';
+        options += '<option value="' + c + '">' + getContactLabel(c) + '</option>';
       }
     });
     $('select[id$=contact-employer-id]').each(function() {
@@ -191,10 +190,23 @@ var wfCiviAdmin = (function ($, D) {
     return str;
   }
 
+  // Handle contact label changing
+  function changeContactLabel() {
+    var c = $(this).attr('name').split('_')[0];
+    var label = getContactLabel(c);
+    $('.vertical-tabs-list li', '#wf-crm-configure-form').eq(c - 1).find('strong').text(c + ': ' + label);
+    $('.contact-label.number-' + c, '#wf-crm-configure-form').text(label);
+    $('select[data-type=ContactReference] option[value=' + c + ']', '#wf-crm-configure-form').text(label);
+  }
+
+  // Return the label of contact #c
+  function getContactLabel(c) {
+    return CheckLength($('input[name=' + c + '_webform_label]', '#wf-crm-configure-form').val());
+  }
+
   /**
    * Add Drupal behaviors.
    */
-
   D.behaviors.webform_civicrmAdmin = {
     attach: function (context) {
 
@@ -246,8 +258,7 @@ var wfCiviAdmin = (function ($, D) {
       $('fieldset#edit-membership', context).once('wf-civi').drupalSetSummary(function (context) {
         var memberships = [];
         $('select[name$=membership_type_id]', context).each(function() {
-          var pieces = $(this).attr('name').split('_')
-          var name = $('#wf-crm-configure-form .vertical-tabs-list li').eq(pieces[1] - 1).find('strong').text();
+          var name = getContactLabel($(this).attr('name').split('_')[1]);
           memberships.push(name + ': ' + $(this).find('option:selected').text());
         });
         if (memberships.length) {
@@ -360,6 +371,19 @@ var wfCiviAdmin = (function ($, D) {
           var label = $(this).find('option[value=' + val + ']').text();
           $('#wf-crm-configure-form input[name=activity_subject]').val(label);
         }
+      });
+
+      // Handle contact label changing
+      $('input[name$=_webform_label]', context).keyup(changeContactLabel);
+      $('input[name$=_webform_label]', context).blur(function() {
+        // Trim string and replace with default if empty
+        var label = $(this).val().replace(/^\s+|\s+$/g,'');
+        if (!label.length) {
+          var c = $(this).attr('name').split('_')[0];
+          label = Drupal.t('Contact !num', {'!num': c});
+        }
+        $(this).val(label);
+        changeContactLabel.call(this);
       });
     }
   };

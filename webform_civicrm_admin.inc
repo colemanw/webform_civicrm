@@ -121,8 +121,8 @@ function wf_crm_configure_form($form, &$form_state, $node) {
   foreach ($data['contact'] as $n => $c) {
     $form['contact_' . $n] = array(
       '#type' => 'fieldset',
-      '#title' => t('Contact !num', array('!num' => $n)),
-      '#description' => $n > 1 ? NULL : t('Primary contact. Usually assumed to be the person filling out the form.') . '<br />' . t('Check the "Existing Contact" box to autofill with the current user (or another contact).'),
+      '#title' => $n . '. ' . wf_crm_contact_label($n, $data),
+      '#description' => $n > 1 ? NULL : t('Primary contact. Usually assumed to be the person filling out the form.') . '<br />' . t('Enable the "Existing Contact" field to autofill with the current user (or another contact).'),
       '#group' => 'webform_civicrm',
       '#attributes' => array('class' => array('contact-icon-' . $c['contact'][1]['contact_type'])),
     );
@@ -132,6 +132,11 @@ function wf_crm_configure_form($form, &$form_state, $node) {
       '#default_value' => $c['contact'][1]['contact_type'],
       '#options' => $contact_types,
       '#prefix' => '<div class="contact-type-select">',
+    );
+    $form['contact_' . $n][$n . '_webform_label'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Label'),
+      '#default_value' => wf_crm_contact_label($n, $data),
       '#suffix' => '</div>',
     );
     wf_crm_ajax_item($form, 'contact_' . $n, $n . '_contact_type', 'contact_subtype_wrapper');
@@ -214,11 +219,14 @@ function wf_crm_configure_form($form, &$form_state, $node) {
           '#attributes' => array('id' => $fsid, 'class' => array('web-civi-checkbox-set')),
           'js_select' => wf_crm_js_select($fsid),
         );
-        if ((isset($set['max_instances']) && $set['max_instances'] > 1) || $sid == 'relationship') {
+        if ((isset($set['max_instances']) && $set['max_instances'] > 1)) {
           $fieldset['#title'] .= ' ' . $i;
           if (in_array($sid, array('email', 'address', 'phone', 'website')) && $i == 1) {
             $fieldset['#title'] .= ' ' . t('(primary)');
           }
+        }
+        elseif ($sid == 'relationship') {
+          $fieldset['#title'] = t('Relationship to !contact', array('!contact' => wf_crm_contact_label($i, $data, TRUE)));
         }
         foreach ($set['fields'] as $fid => $field) {
           if ($fid == 'contact_contact_sub_type' ||
@@ -468,7 +476,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     for ($n = 1; $reg_type && (($n <= $contacts && $reg_type != 'all') || $n == 1); ++$n) {
       $form['event']['participants'][$n] = array(
         '#type' => 'fieldset',
-        '#title' => $reg_type == 'all' ? t('Registration') : t('Contact !num', array('!num' => $n)),
+        '#title' => $reg_type == 'all' ? t('Registration') : wf_crm_contact_label($n, $data, TRUE),
       );
       $num = wf_crm_aval($data, "participant:{$n}:number_of_participant");
       if (!$num || ($n > 1 && $reg_type == 'all')) {
@@ -476,7 +484,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
       }
       $form['event']['participants'][$n]['participant_' . $n . '_number_of_participant'] = array(
         '#type' => 'select',
-        '#title' => $reg_type == 'all' ? t('Number of Event Sets') : t('Number of Event Sets for Contact !num', array('!num' => $n)),
+        '#title' => $reg_type == 'all' ? t('Number of Event Sets') : t('Number of Event Sets for !contact', array('!contact' => wf_crm_contact_label($n, $data, TRUE))),
         '#default_value' => $num,
         '#options' => range(0, $sets['participant']['max_instances']),
         '#prefix' => '<div class="number-of">',
@@ -545,7 +553,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
       $num = wf_crm_aval($data, "membership:{$c}:number_of_membership", 0);
       $form['membership'][$c]["membership_{$c}_number_of_membership"] = array(
         '#type' => 'select',
-        '#title' => t('Number of Memberships for Contact !num', array('!num' => $c)),
+        '#title' => t('Number of Memberships for !contact', array('!contact' => wf_crm_contact_label($c, $data, TRUE))),
         '#default_value' => $num,
         '#options' => range(0, 9),
         '#prefix' => '<div class="number-of">',
@@ -556,7 +564,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
         $fs = "membership_{$c}_membership_{$n}_fieldset";
         $form['membership'][$c]['membership'][$fs] = array(
           '#type' => 'fieldset',
-          '#title' => t('Membership !mem for Contact !num', array('!mem' => $n, '!num' => $c)),
+          '#title' => t('Membership !num for !contact', array('!num' => $n, '!contact' => wf_crm_contact_label($c, $data, TRUE))),
           '#attributes' => array('id' => $fs),
           'js_select' => wf_crm_js_select($fs),
         );
@@ -676,6 +684,7 @@ function wf_crm_process_form_settings(&$vals) {
         'contact' => array(1 => array(
           'contact_type' => $vals[$c . '_contact_type'],
           'contact_sub_type' => array(),
+          'webform_label' => check_plain($vals[$c . '_webform_label']),
         )),
       );
       if ($sub_type = wf_crm_aval($vals, 'civicrm_' . $c . '_contact_1_contact_contact_sub_type')) {
@@ -784,6 +793,9 @@ function wf_crm_configure_form_item($fid, $field, $settings) {
       $item['#empty_option'] = '- ' . $field['empty_option'] . ' -';
       $item['#empty_value'] = 0;
     }
+    if (isset($field['data_type'])) {
+      $item['#attributes']['data-type'] = $field['data_type'];
+    }
     // Four ways to get default value...
     // 1: Based on current form state
     if (isset($settings[$fid])) {
@@ -866,7 +878,7 @@ function wf_crm_configure_form_submit($form, &$form_state) {
       list(, $c, $ent, $n, $table, $name) = explode('_', $key, 6);
       $info = '';
       if ($ent == 'contact' || $ent == 'participant') {
-        $info = '<em>' . t('Contact !num', array('!num' => $c));
+        $info = '<em>' . wf_crm_contact_label($c, $data);
       }
       if ($info && isset($sets[$table]['max_instances'])) {
         $info .= ' ' . $sets[$table]['label'] . ' ' . $n;
@@ -1031,6 +1043,7 @@ function _wf_crm_component_form_alter(&$form, $form_state) {
     }
     list(, $i, $ent, $n, $table, $name) = $pieces;
     $fields = wf_crm_get_fields();
+    $data = $node->webform_civicrm['data'];
     // Is this component a CiviCRM field?
     if (($field = wf_crm_aval($fields, $table . '_' . $name)) || $table == 'fieldset') {
       $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_admin.css';
@@ -1044,13 +1057,13 @@ function _wf_crm_component_form_alter(&$form, $form_state) {
         // Clone an entire contact when cloning their fieldset
         if (!empty($form['clone']['#value'])) {
           $form['actions']['submit']['#value'] = t('Clone Contact');
-          $new = count($node->webform_civicrm['data']['contact']) + 1;
+          $new = count($data['contact']) + 1;
           $form['form_key']['#value'] = implode('_', array('civicrm', $new, $ent, $n, $table, $name));
           $form['name']['#default_value'] = str_replace($i, $new, $form['name']['#default_value']);
           ++$form['position']['weight']['#default_value'];
           array_unshift($form['#submit'], 'wf_crm_contact_clone');
           if (empty($form_state['input'])) {
-            drupal_set_message(t('Press the button below to clone this contact. A new CiviCRM contact will be added to the form with all the settings for contact !num. All fields from within this fieldset will be cloned (be careful, that may include non-contact !num fields).', array('!num' => $i)), 'status', FALSE);
+            drupal_set_message(t('Press the button below to clone this contact. A new CiviCRM contact will be added to the form with all the settings for !contact. All fields from within this fieldset will be cloned (be careful, that may include non-contact fields).', array('!contact' => wf_crm_contact_label($i, $data))), 'status', FALSE);
           }
         }
       }
@@ -1094,7 +1107,7 @@ function _wf_crm_component_form_alter(&$form, $form_state) {
         $form['#validate'][] = 'wf_crm_cs_validate';
         $enabled = wf_crm_enabled_fields($node);
         $form['#prefix'] = '<p>'
-        . t('This field will generate a checksum for contact !num after the form is submitted. You could use its webform token to create a personalized link for anonymous users.', array('!num' => $i))
+        . t('This field will generate a checksum for !contact after the form is submitted. You could use its webform token to create a personalized link for anonymous users.', array('!contact' => wf_crm_contact_label($i, $data)))
         . '</p><p>';
         if ($cid_field = wf_crm_aval($enabled, 'civicrm_' . $i . '_contact_1_contact_contact_id')) {
           $form['#prefix'] .= t('Example: to link users back to this form, place this line in a webform-generated email:')
@@ -1242,7 +1255,7 @@ function wf_crm_component_insert(&$field, &$enabled, $settings) {
         'nid' => $field['nid'],
         'form_key' => $sid,
         'type' => 'fieldset',
-        'name' => t('Contact !num', array('!num' => $c)),
+        'name' => wf_crm_contact_label($c, $settings['data']),
         'weight' => $c,
       );
       $new_set += webform_component_invoke('fieldset', 'defaults');
@@ -1494,6 +1507,21 @@ function wf_crm_process_options_selection($form, &$form_state) {
       $vals['extra']['items'] = wf_crm_array2str($items);
     }
   }
+}
+
+/**
+ * @param $n int Contact Number
+ * @param $data array of form data
+ * @param bool $wrap Controls whether the output gets wrapped in a span
+ * @return string
+ */
+function wf_crm_contact_label($n, $data, $wrap = FALSE) {
+  $label = trim(wf_crm_aval($data, "contact:$n:contact:1:webform_label", ''));
+  $label = $label ? $label : t('Contact !num', array('!num' => $n));
+  if ($wrap) {
+    $label = '<span class="contact-label number-' . $n . '">' . $label . '</span>';
+  }
+  return $label;
 }
 
 /**

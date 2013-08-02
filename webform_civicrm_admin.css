@@ -55,7 +55,8 @@ th div.form-type-radio {
   cursor:pointer;
 }
 
-#wf-crm-configure-form select {
+#wf-crm-configure-form select,
+#wf-crm-configure-form .form-type-textfield input {
   max-width: 100%;
 }
 

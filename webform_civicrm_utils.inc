@@ -33,8 +33,8 @@ function wf_crm_field_options($field, $context, $data) {
     }
     elseif ($name === 'relationship_permission') {
       $ret = array(
-        1 => t('Contact !a may view and edit contact !b', array('!a' => $c, '!b' => $n)),
-        2 => t('Contact !a may view and edit contact !b', array('!a' => $n, '!b' => $c)),
+        1 => t('!a may view and edit !b', array('!a' => wf_crm_contact_label($c, $data), '!b' => wf_crm_contact_label($n, $data))),
+        2 => t('!a may view and edit !b', array('!a' => wf_crm_contact_label($n, $data), '!b' => wf_crm_contact_label($c, $data))),
         3 => t('Both contacts may view and edit each other'),
       );
     }
@@ -44,7 +44,7 @@ function wf_crm_field_options($field, $context, $data) {
       foreach ($data['contact'] as $num => $contact) {
         if ($num != $c || $name != 'master_id') {
           if ($contact_type == 'contact' || $contact_type == $contact['contact'][1]['contact_type']) {
-            $ret[$num] =  t('Contact !num', array('!num' => $num));
+            $ret[$num] = wf_crm_contact_label($num, $data);
           }
         }
       }

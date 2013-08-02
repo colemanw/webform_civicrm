@@ -201,7 +201,7 @@ function _webform_edit_civicrm_contact($component) {
     );
     $rtypes = wf_crm_get_contact_relationship_types($contact_type, $data['contact'][1]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][1]['contact'][1]['contact_sub_type']);
     foreach ($rtypes as $k => $v) {
-      $form['defaults']['default_relationship']['#options'][$k] = $v . ' ' . t('Contact !num', array('!num' => 1));
+      $form['defaults']['default_relationship']['#options'][$k] = $v . ' ' . wf_crm_contact_label(1, $data);
     }
   }
   $form['defaults']['default']['#options']['auto'] = t('Auto - From Filters');

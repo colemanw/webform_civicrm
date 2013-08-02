@@ -394,13 +394,15 @@ function webform_civicrm_preprocess_webform_results_submissions(&$variables){
  * Add CiviCRM info and theming to webform components form.
  */
 function webform_civicrm_preprocess_webform_components_form(&$vars) {
+  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_admin');
   $form = &$vars['form'];
   $node = $form['#node'];
   // Prepare for CiviCRM processing
-  $enabled = array();
+  $enabled = $data = array();
   if (!empty($node->webform_civicrm)) {
     civicrm_initialize();
     $enabled = wf_crm_enabled_fields($node);
+    $data = $node->webform_civicrm['data'];
     $form['components']['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_admin.css';
   }
   foreach ($vars['rows'] as &$row) {
@@ -452,8 +454,8 @@ function webform_civicrm_preprocess_webform_components_form(&$vars) {
           // Don't allow CiviCRM fields to be cloned
           $row['data'][6] = '';
           if ($component['type'] == 'fieldset') {
-            $title = t('Container for Contact !num', array('!num' => $c));
-            $type = t('Contact !num Fieldset', array('!num' => $c));
+            $title = t('Contact !num', array('!num' => $c));
+            $type = t('Fieldset for !contact', array('!contact' => wf_crm_contact_label($c, $data)));
             $row['data'][6] = l(t('Clone Contact'), "node/{$node->nid}/webform/components/$cid/clone", array(
               'attributes' => array('title' => t('Add a new contact to the form with the same fields and settings')
             )));
@@ -461,7 +463,7 @@ function webform_civicrm_preprocess_webform_components_form(&$vars) {
           }
           elseif ($ent == 'contact') {
             $field_type = ($table == 'contact' || $table == 'other') ? $field['name'] : $sets[$table]['label'];
-            $title = t('Contact !num !type Field', array('!num' => $c, '!type' => $field_type));
+            $title = t('!type Field for !contact', array('!contact' => wf_crm_contact_label($c, $data), '!type' => $field_type));
           }
           else {
             $title = t('Field for !type', array('!type' => $sets[$table]['label']));
