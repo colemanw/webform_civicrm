@@ -256,7 +256,7 @@ function _webform_edit_civicrm_contact($component) {
     '#type' => 'select',
     '#multiple' => TRUE,
     '#title' => t('Groups'),
-    '#options' => wf_civicrm_apivalues('group', 'get', array('is_hidden' => 0), 'title'),
+    '#options' => wf_crm_apivalues('group', 'get', array('is_hidden' => 0), 'title'),
     '#default_value' => $component['extra']['filters']['group'],
     '#description' => t('Listed contacts must be members of at least one of the selected groups (leave blank to not filter by group).'),
   );
@@ -573,7 +573,7 @@ function wf_crm_ajax($key, $input = '') {
         'field' => 'county_id',
         'state_province_id' => wf_crm_state_abbr($state, 'id', $country)
       );
-      drupal_json_output(wf_civicrm_apivalues('address', 'getoptions', $params));
+      drupal_json_output(wf_crm_apivalues('address', 'getoptions', $params));
       exit();
     }
   }

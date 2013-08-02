@@ -58,7 +58,7 @@ function wf_crm_field_options($field, $context, $data) {
         $ret = CRM_Core_BAO_Tag::getTags("civicrm_{$ent}", $ret, wf_crm_aval($split, 1), '- ');
       }
       elseif ($field['table'] === 'group') {
-        $ret = wf_civicrm_apivalues('group', 'get', array('is_hidden' => 0), 'title');
+        $ret = wf_crm_apivalues('group', 'get', array('is_hidden' => 0), 'title');
       }
     }
     elseif ($name === 'survey_id') {
@@ -77,7 +77,7 @@ function wf_crm_field_options($field, $context, $data) {
       if ($table == 'case' && $name == 'medium_id') {
         $table = 'activity';
       }
-      $ret = wf_civicrm_apivalues($table, 'getoptions', array('field' => $name));
+      $ret = wf_crm_apivalues($table, 'getoptions', array('field' => $name));
 
       // Hack to format money data correctly
       if (!empty($field['data_type']) && $field['data_type'] === 'Money') {
@@ -171,7 +171,7 @@ function wf_crm_get_surveys($act = array()) {
   if (!empty($act['activity_type_id'])) {
     $params['activity_type_id'] = $act['activity_type_id'];
   }
-  return wf_civicrm_apivalues('survey', 'get', $params, 'title');
+  return wf_crm_apivalues('survey', 'get', $params, 'title');
 }
 
 /**
@@ -199,7 +199,7 @@ function wf_crm_get_activity_types($case_type_name = NULL) {
   $campaign_type = wf_crm_aval($comp, 'CiviCampaign:componentID');
 
   $ret = array();
-  foreach (wf_civicrm_apivalues('option_value', 'get', $params) as $val) {
+  foreach (wf_crm_apivalues('option_value', 'get', $params) as $val) {
     if (empty($val['component_id']) || $val['component_id'] == $campaign_type) {
       $ret[$val['id']] = $val['label'];
     }
@@ -218,7 +218,7 @@ function wf_crm_get_contact_types() {
   static $contact_types = array();
   static $sub_types = array();
   if (!$contact_types) {
-    $data = wf_civicrm_apivalues('contact_type', 'get');
+    $data = wf_crm_apivalues('contact_type', 'get', array('is_active' => 1));
     foreach ($data as $type) {
       if (empty($type['parent_id'])) {
         $contact_types[strtolower($type['name'])] = $type['label'];
@@ -233,6 +233,8 @@ function wf_crm_get_contact_types() {
 /**
  * In reality there is no contact field 'privacy' so this is not a real option list.
  * These are actually 5 separate contact fields that this module munges into 1 for better usability.
+ *
+ * @return array
  */
 function wf_crm_get_privacy_options() {
   return array(
@@ -246,25 +248,19 @@ function wf_crm_get_privacy_options() {
 
 /**
  * Get relationship type data
- * FIXME: Use the api for this
  *
  * @return array
  */
 function wf_crm_get_relationship_types() {
   static $types = array();
   if (!$types) {
-    $f = array('id', 'name_a_b', 'name_b_a', 'label_a_b', 'label_b_a', 'type_a', 'type_b', 'sub_type_a', 'sub_type_b');
-    $sql = '
-      SELECT id, name_a_b, name_b_a, label_a_b, label_b_a, LOWER(contact_type_a) AS type_a, LOWER(contact_type_b) AS type_b, contact_sub_type_a AS sub_type_a, contact_sub_type_b AS sub_type_b
-      FROM civicrm_relationship_type
-      WHERE is_active <> 0';
-    $dao = &CRM_Core_DAO::executeQuery($sql);
-    while ($dao->fetch()) {
-      foreach ($f as $field) {
-        $types[$dao->id][$field] = $dao->{$field};
-      }
+    foreach (wf_crm_apivalues('relationship_type', 'get', array('is_active' => 1)) as $r) {
+      $r['type_a'] = strtolower(wf_crm_aval($r, 'contact_type_a'));
+      $r['type_b'] = strtolower(wf_crm_aval($r, 'contact_type_b'));
+      $r['sub_type_a'] = wf_crm_aval($r, 'contact_sub_type_a');
+      $r['sub_type_b'] = wf_crm_aval($r, 'contact_sub_type_b');
+      $types[$r['id']] = $r;
     }
-    $dao->free();
   }
   return $types;
 }
@@ -1231,14 +1227,15 @@ function wf_civicrm_api($entity, $operation, $params) {
  *   API operation
  * @param array $params
  *   API params
- * @param null $value
+ * @param string $value
  *   Reduce each result to this single value
  *
  * @return array
  *   Values from API call
  */
-function wf_civicrm_apivalues($entity, $operation, $params = array(), $value = NULL) {
+function wf_crm_apivalues($entity, $operation, $params = array(), $value = NULL) {
   $params += array('options' => array());
+  // Work around the api's default limit of 25
   $params['options'] += array('limit' => 9999);
   $ret = wf_crm_aval(wf_civicrm_api($entity, $operation, $params), 'values', array());
   if ($value) {
@@ -1274,9 +1271,7 @@ function wf_crm_name_field_exists($enabled, $c, $contact_type) {
 /**
  * At least one of these fields is required to create a contact
  *
- * @param $contact_type
- *   string: contact type
- *
+ * @param string $contact_type
  * @return array of fields
  */
 function wf_crm_required_contact_fields($contact_type) {

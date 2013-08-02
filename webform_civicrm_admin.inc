@@ -290,7 +290,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
   // Case and activity settings
   $case_types = array();
   if (in_array('CiviCase', $config->enableComponents, TRUE)) {
-    $case_types = wf_civicrm_apivalues('case', 'getoptions', array('field' => 'case_type_id'));
+    $case_types = wf_crm_apivalues('case', 'getoptions', array('field' => 'case_type_id'));
   }
   $form['act'] = array(
     '#type' => 'fieldset',
@@ -320,7 +320,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
       '#type' => 'select',
       '#title' => t('Update Existing Case'),
       '#description' => t('If any of the above options are selected and a %type case with that status already exists for the client, it will be autofilled and updated.', array('%type' => $case_type_name)) . '<br />' . t('Note: a case can also be autofilled by passing "caseid" in the url.'),
-      '#options' => wf_civicrm_apivalues('case', 'getoptions', array('field' => 'status_id')),
+      '#options' => wf_crm_apivalues('case', 'getoptions', array('field' => 'status_id')),
       '#default_value' => wf_crm_aval($data, 'case:1:existing_case_status', array()),
       '#multiple' => TRUE,
     );
@@ -341,7 +341,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
       '#type' => 'select',
       '#title' => t('Update Existing Activity'),
       '#description' => t('If any of the above options are selected and a %type activity with that status already exists for !ent, it will be autofilled and updated.', array('!ent' => $case_type ? t('the case') : t('contact 1'), '%type' => $act_types[$settings['activity_type_id']])) . '<br />' . t('Note: an activity can also be autofilled by passing "aid" in the url.'),
-      '#options' => wf_civicrm_apivalues('activity', 'getoptions', array('field' => 'status_id')),
+      '#options' => wf_crm_apivalues('activity', 'getoptions', array('field' => 'status_id')),
       '#default_value' => wf_crm_aval($data, 'activity:1:existing_activity_status', array()),
       '#multiple' => TRUE,
     );
@@ -421,7 +421,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     $form['event']['event_type'] = array(
       '#type' => 'select',
       '#title' => t('Show Events of Type'),
-      '#options' => array('any' => t('- Any Type -')) + wf_civicrm_apivalues('event', 'getoptions', array('field' => 'event_type_id')),
+      '#options' => array('any' => t('- Any Type -')) + wf_crm_apivalues('event', 'getoptions', array('field' => 'event_type_id')),
       '#default_value' => wf_crm_aval($data, 'reg_options:event_type', 'any'),
       '#prefix' => '<div id="event-reg-options-wrapper"><div class="web-civi-checkbox-set">',
       '#parents' => array('reg_options', 'event_type'),
@@ -588,7 +588,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
       '#description' => t('Select a contribution page and its billing fields will be embedded on this form.'),
       '#attributes' => array('class' => array('civi-icon-contribution')),
     );
-    $contribution_pages = wf_civicrm_apivalues('contribution', 'getoptions', array('field' => 'contribution_page_id'));
+    $contribution_pages = wf_crm_apivalues('contribution', 'getoptions', array('field' => 'contribution_page_id'));
     $form['contribution']['contribution_page_id'] = array(
       '#type' => 'select',
       '#title' => t('Contribution Page'),
@@ -636,7 +636,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     '#default_value' => (bool) $settings['confirm_subscription'],
     '#description' => t('Recommended. Send a confirmation email before adding contacts to publicly subscribable mailing list groups.') . '<br />' . t('Your public mailing lists:') . ' <em>',
   );
-  $ml = wf_civicrm_apivalues('group', 'get', array('is_hidden' => 0, 'visibility' => 'Public Pages', 'group_type' => 2), 'title');
+  $ml = wf_crm_apivalues('group', 'get', array('is_hidden' => 0, 'visibility' => 'Public Pages', 'group_type' => 2), 'title');
   if ($ml) {
     if (count($ml) > 4) {
       $ml = array_slice($ml, 0, 3);

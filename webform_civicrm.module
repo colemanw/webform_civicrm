@@ -566,7 +566,7 @@ function wf_crm_contact_clone_storage($input = NULL) {
 function wf_crm_contact_clone($form, $form_state) {
   module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
   $fid = $form['form_key']['#default_value'];
-  list( , $old, $ent, $n, $table, $key) = wf_crm_explode_key($fid);
+  list(, $old) = wf_crm_explode_key($fid);
   $node = node_load($form['nid']['#value']);
   $settings = $node->webform_civicrm;
   $new = count($settings['data']['contact']) + 1;
@@ -576,7 +576,7 @@ function wf_crm_contact_clone($form, $form_state) {
     'old' => array("civicrm_{$old}_contact_"),
     'new' => array("civicrm_{$new}_contact_"),
   );
-  // Clone particpant if registering separately
+  // Clone participant if registering separately
   if (wf_crm_aval($settings['data'], 'participant_reg_type') == 'separate') {
     $settings['data']['participant'][$new] = $settings['data']['participant'][$old];
     $storage['old'][] = "civicrm_{$old}_participant_";
