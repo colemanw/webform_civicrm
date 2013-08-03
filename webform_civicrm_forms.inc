@@ -802,7 +802,7 @@ function wf_crm_process_submission($node, &$submission, $op) {
               // the contact this address is shared with yet.
               if (!empty($params['master_id'])) {
                 $shared_address[$cid][$i] = array(
-                  'id' => !empty($existing[$i]) ? $existing[$i]['id'] : NULL,
+                  'id' => wf_crm_aval($existing, "$i:id"),
                   'mc' => $params['master_id'],
                   'loc' => $params['location_type_id'],
                 );
@@ -832,7 +832,7 @@ function wf_crm_process_submission($node, &$submission, $op) {
             }
             if ($location != 'website') {
               if (empty($params['location_type_id'])) {
-                $params['location_type_id'] = wf_crm_aval($existing, $i . ':location_type_id', 1);
+                $params['location_type_id'] = wf_crm_aval($existing, "$i:location_type_id", 1);
               }
               $params['is_primary'] = $i == 1 ? 1 : 0;
             }
