@@ -558,12 +558,13 @@ function wf_crm_process_submission($node, &$submission, $op) {
   static $id = array();
   static $update = array();
   $settings = $node->webform_civicrm;
+  $fields = wf_crm_get_fields();
+  $sets = wf_crm_get_fields('sets');
 
   // Presave processing - save contact data
   if ($op == 'presave') {
     $config = CRM_Core_Config::singleton();
     $enabled = wf_crm_enabled_fields($node);
-    $fields = wf_crm_get_fields();
     $data = $settings['data'];
     $shared_address = array();
 
@@ -750,7 +751,7 @@ function wf_crm_process_submission($node, &$submission, $op) {
       }
 
       // Save location data
-      foreach (array('address', 'email', 'phone', 'website') as $location) {
+      foreach (wf_crm_location_fields() as $location) {
         if (!empty($contact[$location])) {
           $existing = array();
           $params = array('contact_id' => $cid);
@@ -795,16 +796,7 @@ function wf_crm_process_submission($node, &$submission, $op) {
                 continue;
               }
             }
-            $empty = FALSE;
             if ($location == 'address') {
-              // Check if nothing was entered for address
-              $empty = (empty($params['street_address'])
-                && empty($params['city'])
-                && empty($params['state_province_id'])
-                && empty($params['country_id'])
-                && empty($params['postal_code'])
-                && empty($params['master_id'])
-              );
               // Store shared addresses for later since we haven't necessarily processed
               // the contact this address is shared with yet.
               if (!empty($params['master_id'])) {
@@ -818,19 +810,11 @@ function wf_crm_process_submission($node, &$submission, $op) {
               // Reset calculated values when updating an address
               $params['master_id'] = $params['geo_code_1'] = $params['geo_code_2'] = 'null';
             }
-            // Check if nothing was entered for website
-            elseif ($location == 'website') {
-              $empty = empty($params['url']);
-            }
-            // Check if nothing was entered for email or phone
-            elseif (empty($params[$location])) {
-              $empty = TRUE;
-            }
             $params['contact_id'] = $cid;
             if (!empty($existing[$i])) {
               $params['id'] = $existing[$i]['id'];
             }
-            if ($empty) {
+            if (wf_crm_location_is_empty($location, $params)) {
               // Delete this location if nothing was entered and this is a known contact
               if (!empty($updating['cid'][$c]) && !empty($params['id'])) {
                 wf_civicrm_api($location, 'delete', $params);
@@ -882,7 +866,7 @@ function wf_crm_process_submission($node, &$submission, $op) {
         }
       }
       // Process event participation
-      if (in_array('CiviEvent', $config->enableComponents, TRUE) && !empty($data['participant_reg_type'])) {
+      if (isset($sets['participant']) && !empty($data['participant_reg_type'])) {
         $n = $data['participant_reg_type'] == 'separate' ? $c : 1;
         if ($p = wf_crm_aval($data, "participant:$n:participant")) {
           // Fetch existing participant records
@@ -903,7 +887,7 @@ function wf_crm_process_submission($node, &$submission, $op) {
             }
             if (!empty($params['event_id'])) {
               $params['contact_id'] = $cid;
-              if (empty($params['campaign_id']) || !in_array('CiviCampaign', $config->enableComponents, TRUE)) {
+              if (empty($params['campaign_id']) || empty($fields['participant_campaign_id'])) {
                 unset($params['campaign_id']);
               }
               // Reformat custom data from nested arrays
@@ -953,7 +937,7 @@ function wf_crm_process_submission($node, &$submission, $op) {
     foreach ($shared_address as $cid => $shared) {
       foreach ($shared as $i => $addr) {
         if (!empty($id['cid'][$addr['mc']])) {
-          $masters = wf_civicrm_api('address', 'get', array('contact_id' => $id['cid'][$addr['mc']], 'options' =>array('sort' => 'is_primary DESC')));
+          $masters = wf_civicrm_api('address', 'get', array('contact_id' => $id['cid'][$addr['mc']], 'options' => array('sort' => 'is_primary DESC')));
           if (!empty($masters['values'])) {
             $masters = array_values($masters['values']);
             // Pick the address with the same location type; default to primary.
@@ -976,7 +960,6 @@ function wf_crm_process_submission($node, &$submission, $op) {
   }
   // Insert/update processing - save case & activity data
   elseif (empty($submission->is_draft)) {
-    $config = CRM_Core_Config::singleton();
 
     // Process case
     if (!empty($data['case'][1]['case'][1]['client_id'])) {
@@ -1064,7 +1047,7 @@ function wf_crm_process_submission($node, &$submission, $op) {
       if (!empty($data['activity'][1]['details']['edit_link'])) {
         $params['details'] .= '<p>' . l(t('Edit Submission'), 'node/' . $node->nid . '/submission/' . $submission->sid . '/edit',  array('absolute' => TRUE, 'alias' => TRUE)) . '</p>';
       }
-      if (empty($params['campaign_id']) || !in_array('CiviCampaign', $config->enableComponents, TRUE)) {
+      if (empty($params['campaign_id']) || empty($fields['activity_campaign_id'])) {
         unset($params['campaign_id']);
       }
       if (!empty($data['activity'][1]['activity'][1]['survey_id'])) {
@@ -1622,6 +1605,28 @@ function _wf_crm_form_data(&$data, $enabled, $submission, $updating, $node) {
         $data[$ent][$c][$table][$n][$name] = $val;
       }
     }
+  }
+}
+
+/**
+ * Test if any relevant location data has been entered
+ * @param string $location
+ * @param array $params
+ * @return bool
+ */
+function wf_crm_location_is_empty($location, $params) {
+  switch ($location) {
+    case 'address':
+      return empty($params['street_address'])
+        && empty($params['city'])
+        && empty($params['state_province_id'])
+        && empty($params['country_id'])
+        && empty($params['postal_code'])
+        && empty($params['master_id']);
+    case 'website':
+      return empty($params['url']);
+    default:
+      return empty($params[$location]);
   }
 }
 

@@ -1411,6 +1411,14 @@ function wf_crm_event_info(&$events) {
 }
 
 /**
+ * These are the contact location fields this module supports
+ * @return array
+ */
+function wf_crm_location_fields() {
+  return array('address', 'email', 'phone', 'website');
+}
+
+/**
  * Fetch the path of a file
  * And format it as a public url that CiviCRM can read
  *

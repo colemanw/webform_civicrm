@@ -223,7 +223,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
         }
         elseif ((isset($set['max_instances']) && $set['max_instances'] > 1)) {
           $fieldset['#title'] .= ' ' . $i;
-          if (in_array($sid, array('email', 'address', 'phone', 'website')) && $i == 1) {
+          if (in_array($sid, wf_crm_location_fields()) && $i == 1) {
             $fieldset['#title'] .= ' ' . t('(primary)');
           }
         }
