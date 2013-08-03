@@ -827,20 +827,7 @@ function wf_crm_process_submission($node, &$submission, $op) {
               }
               $params['is_primary'] = $i == 1 ? 1 : 0;
             }
-            $result = wf_civicrm_api($location, 'create', $params);
-            if ($location == 'address' && empty($result['is_error'])) {
-              // Process custom data for address
-              $custom = array();
-              foreach ($params as $param => $val) {
-                if (strpos($param, 'custom_') !== FALSE) {
-                  $custom[$param] = $val;
-                }
-              }
-              if ($custom) {
-                $custom['entityID'] = $result['id'];
-                CRM_Core_BAO_CustomValueTable::setValues($custom);
-              }
-            }
+            wf_civicrm_api($location, 'create', $params);
           }
         }
       }
