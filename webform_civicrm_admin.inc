@@ -81,7 +81,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
   $existing = array_keys(wf_crm_enabled_fields($node, NULL, TRUE));
   $settings += array_fill_keys($existing, 'create_civicrm_webform_element');
 
-  $tokens = '<strong>' . t('Contact 1 Tokens:') . '</strong> [' . implode('], [', wf_crm_get_fields('tokens')) . '].';
+  $tokens = '<strong>' . t('Tokens for !contact', array('!contact' => wf_crm_contact_label(1, $settings['data'], TRUE))) . ':</strong> [' . implode('], [', wf_crm_get_fields('tokens')) . '].';
   list($contact_types, $sub_types) = wf_crm_get_contact_types();
   $data = $settings['data'];
   $contacts = count($data['contact']);
@@ -620,8 +620,8 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     '#group' => 'webform_civicrm',
     '#attributes' => array('class' => array('civi-icon-prefs')),
     '#description' => '<p>' .
-    t('To have this form auto-filled for anonymous users, enable the contact 1 "existing contact" field and send the following link from CiviMail:') .
-    '<br /><code>' . url('node/' . $node->nid, array('absolute' => TRUE, 'query' => array('cid1' => ''))) . '{contact.contact_id}&amp;{contact.checksum}</code></p>',
+    t('To have this form auto-filled for anonymous users, enable the "Existing Contact" field for !contact and send the following link from CiviMail:', array('!contact' => wf_crm_contact_label(1, $data, TRUE))) .
+    '<br /><code>' . url("node/{$node->nid}", array('absolute' => TRUE, 'query' => array('cid1' => ''))) . '{contact.contact_id}&amp;{contact.checksum}</code></p>',
   );
   $form['options']['create_fieldsets'] = array(
     '#type' => 'checkbox',
@@ -1515,15 +1515,20 @@ function wf_crm_process_options_selection($form, &$form_state) {
 /**
  * @param $n int Contact Number
  * @param $data array of form data
- * @param string $html Should html be escaped and/or wrapped
+ * @param string $html Controls how html should be treated. Options are:
+ *  * 'escape': (default) Escape html characters
+ *  * 'wrap': Escape html characters and wrap in a span
+ *  * 'plain': Do not escape (use when passing into an FAPI options list which does its own escaping)
  * @return string
  */
 function wf_crm_contact_label($n, $data, $html = 'escape') {
   $label = trim(wf_crm_aval($data, "contact:$n:contact:1:webform_label", ''));
+  if (!$label) {
+    $label = t('Contact !num', array('!num' => $n));
+  }
   if ($html != 'plain') {
     $label = check_plain($label);
   }
-  $label = $label ? $label : t('Contact !num', array('!num' => $n));
   if ($html == 'wrap') {
     $label = '<span class="contact-label number-' . $n . '">' . $label . '</span>';
   }

@@ -190,7 +190,7 @@ function _webform_edit_civicrm_contact($component) {
     $form['defaults']['default']['#options']['user'] = t('Current User');
   }
   elseif ($c > 1) {
-    $form['defaults']['default']['#options']['relationship'] = t('Relationship to Contact 1');
+    $form['defaults']['default']['#options']['relationship'] = t('Relationship to !contact', array('!contact' => wf_crm_contact_label(1, $data)));
     $form['defaults']['default_relationship'] = array(
       '#type' => 'select',
       '#multiple' => TRUE,

@@ -195,7 +195,8 @@ var wfCiviAdmin = (function ($, D) {
     var c = $(this).attr('name').split('_')[0];
     var label = getContactLabel(c);
     $('.vertical-tabs-list li', '#wf-crm-configure-form').eq(c - 1).find('strong').html(c + '. ' + label);
-    $('select[data-type=ContactReference] option[value=' + c + '], .contact-label.number-' + c, '#wf-crm-configure-form').html(label);
+    $('select[data-type=ContactReference] option[value=' + c + '], select[name$=address_master_id] option[value=' + c + '], .contact-label.number-' + c, '#wf-crm-configure-form').html(label);
+    $('fieldset#edit-membership').trigger('summaryUpdated');
   }
 
   // Return the label of contact #c
@@ -257,8 +258,8 @@ var wfCiviAdmin = (function ($, D) {
       $('fieldset#edit-membership', context).once('wf-civi').drupalSetSummary(function (context) {
         var memberships = [];
         $('select[name$=membership_type_id]', context).each(function() {
-          var name = getContactLabel($(this).attr('name').split('_')[1]);
-          memberships.push(name + ': ' + $(this).find('option:selected').text());
+          var label = getContactLabel($(this).attr('name').split('_')[1]);
+          memberships.push(label + ': ' + $(this).find('option:selected').text());
         });
         if (memberships.length) {
           return memberships.join('<br>');
