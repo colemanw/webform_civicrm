@@ -1049,7 +1049,7 @@ function wf_crm_process_submission($node, &$submission, $op) {
       // Format details as html
       $params['details'] = nl2br(wf_crm_aval($params, 'details', ''));
       if (empty($params['subject'])) {
-        $params['subject'] = $settings['data']['activity'][1]['activity'][1]['subject'];
+        $params['subject'] = $data['activity'][1]['activity'][1]['subject'];
       }
       if (!empty($data['activity'][1]['details']['entire_result'])) {
         module_load_include('inc', 'webform', 'includes/webform.submissions');
