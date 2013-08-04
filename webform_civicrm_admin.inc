@@ -287,10 +287,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     '#description' => t('Enclose your "not you" link text in curly brackets {like this}.') . '<p>' . $tokens . '</p>',
   );
   // Case and activity settings
-  $case_types = array();
-  if (in_array('CiviCase', $config->enableComponents, TRUE)) {
-    $case_types = wf_crm_apivalues('case', 'getoptions', array('field' => 'case_type_id'));
-  }
+  $case_types = isset($sets['case']) ? wf_crm_apivalues('case', 'getoptions', array('field' => 'case_type_id')) : array();
   $form['act'] = array(
     '#type' => 'fieldset',
     '#title' => $case_types ? t('Activity/Case') : t('Activity'),
@@ -399,7 +396,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     }
   }
   // Event participant settings
-  if (in_array('CiviEvent', $config->enableComponents, TRUE)) {
+  if (isset($sets['participant'])) {
     $form['event'] = array(
       '#type' => 'fieldset',
       '#title' => t('Event Registration'),
@@ -541,7 +538,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     }
   }
   // Membership settings
-  if (in_array('CiviMember', $config->enableComponents, TRUE)) {
+  if (isset($sets['membership'])) {
     $form['membership'] = array(
       '#type' => 'fieldset',
       '#title' => t('Memberships'),
@@ -564,7 +561,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
         $form['membership'][$c]['membership'][$fs] = array(
           '#type' => 'fieldset',
           '#title' => t('Membership !num for !contact', array('!num' => $n, '!contact' => wf_crm_contact_label($c, $data, 'wrap'))),
-          '#attributes' => array('id' => $fs),
+          '#attributes' => array('id' => $fs, 'class' => array('web-civi-checkbox-set')),
           'js_select' => wf_crm_js_select($fs),
         );
         foreach ($sets as $sid => $set) {
@@ -573,13 +570,15 @@ function wf_crm_configure_form($form, &$form_state, $node) {
               $fid = "civicrm_{$c}_membership_{$n}_$fid";
               $form['membership'][$c]['membership'][$fs][$fid] = wf_crm_configure_form_item($fid, $field, $settings);
             }
+            $form['membership'][$c]['membership'][$fs]["civicrm_{$c}_membership_{$n}_membership_num_terms"]['#description'] =
+              t('Dates will be filled automatically by selecting terms. This can be overridden by enabling date fields and entering dates manually.');
           }
         }
       }
     }
   }
   // Contribution settings
-  if (in_array('CiviContribute', $config->enableComponents, TRUE)) {
+  if (isset($sets['contribution'])) {
     $form['contribution'] = array(
       '#type' => 'fieldset',
       '#title' => t('Contribution'),

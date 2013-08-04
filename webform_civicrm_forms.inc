@@ -919,6 +919,10 @@ function wf_crm_process_submission($node, &$submission, $op) {
           }
         }
       }
+      // Process memberships
+      if (isset($sets['membership']) && !empty($data['membership'][$c]['number_of_membership'])) {
+        wf_crm_process_membership($c, $cid, $data, $node);
+      }
     }
     // Process shared addresses. We do this last after all contacts and addresses exist.
     foreach ($shared_address as $cid => $shared) {
@@ -1414,6 +1418,49 @@ function _wf_crm_fill_contact_ref(&$data, $cids, $values = NULL, $depth = 0) {
         }
       }
     }
+  }
+}
+
+/**
+ * Process memberships for a contact
+ * Called during webform submission
+ * @param int $c
+ * @param int $cid
+ * @param array $data
+ */
+function wf_crm_process_membership($c, $cid, $data, $node) {
+  static $types;
+  if (!isset($types)) {
+    $types = wf_crm_apivalues('membership_type', 'get');
+  }
+  $existing = wf_crm_apivalues('membership', 'get', array('contact_id' => $cid, 'filters' => array('is_current' => 1)));
+  foreach (wf_crm_aval($data, "membership:$c:membership", array()) as $params) {
+    if (empty($params['membership_type_id'])) {
+      continue;
+    }
+    // Search for existing membership to renew - must belong to same domain and organization
+    // But not necessarily the same membership type to allow for upsell
+    if (!empty($params['num_terms'])) {
+      $type = $types[$params['membership_type_id']];
+      foreach ($existing as $id => $mem) {
+        $existing_type = $types[$mem['membership_type_id']];
+        if ($type['domain_id'] == $existing_type['domain_id'] && $type['member_of_contact_id'] == $existing_type['member_of_contact_id']) {
+          $params['id'] = $id;
+          break;
+        }
+      }
+    }
+    if (empty($params['id']) && !empty($node->webform_civicrm['new_contact_source'])) {
+      $params['source'] = $node->webform_civicrm['new_contact_source'];
+    }
+    $params['contact_id'] = $cid;
+    if (empty($params['status_id'])) {
+      $params['skipStatusCal'] = 0;
+    }
+    else {
+      $params['is_override'] = 1;
+    }
+    $result = wf_civicrm_api('membership', 'create', $params);
   }
 }
 

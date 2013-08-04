@@ -67,6 +67,10 @@ function wf_crm_field_options($field, $context, $data) {
     elseif ($name == 'event_id') {
       $ret = wf_crm_get_events($data['reg_options'], $context);
     }
+    // Not a real field
+    elseif ($table == 'membership' && $name == 'num_terms') {
+      $ret = drupal_map_assoc(range(1, 9));
+    }
     // Aside from the above special cases, most lists can be fetched from api.getoptions
     else {
       // Custom fields - use main entity
@@ -885,6 +889,25 @@ function wf_crm_get_fields($var = 'fields') {
         'extra' => array('civicrm_live_options' => 1),
         'empty_option' => t('Automatic'),
       );
+      $fields['membership_num_terms'] = array(
+        'name' => t('Number of Terms'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'value' => 1,
+        'empty_option' => t('Enter Dates Manually'),
+      );
+      $fields['membership_join_date'] = array(
+        'name' => t('Member Since'),
+        'type' => 'date',
+      );
+      $fields['membership_start_date'] = array(
+        'name' => t('Start Date'),
+        'type' => 'date',
+      );
+      $fields['membership_end_date'] = array(
+        'name' => t('End Date'),
+        'type' => 'date',
+      );
     }
     if (isset($sets['contribution'])) {
       $fields['contribution_total_amount'] = array(
@@ -973,7 +996,7 @@ function wf_crm_get_fields($var = 'fields') {
     while ($dao->fetch()) {
       if (isset($custom_types[$dao->html_type])) {
         $set = 'cg' . $dao->custom_group_id;
-        if ($dao->entity_type == 'address' || $dao->entity_type == 'relationship') {
+        if ($dao->entity_type == 'address' || $dao->entity_type == 'relationship' || $dao->entity_type == 'membership') {
           $set = $dao->entity_type;
         }
         elseif (!isset($sets[$set])) {
