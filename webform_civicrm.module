@@ -128,6 +128,7 @@ function webform_civicrm_theme() {
   $theme = array(
     'webform_civicrm_options_table' => array(
       'render element' => 'element',
+      'file' => 'includes/wf_crm_admin_form.inc',
     ),
     'display_civicrm_contact' => array(
       'render element' => 'element',
