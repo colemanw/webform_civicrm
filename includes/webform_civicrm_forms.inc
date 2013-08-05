@@ -801,7 +801,7 @@ function wf_crm_process_submission($node, &$submission, $op) {
               // the contact this address is shared with yet.
               if (!empty($params['master_id'])) {
                 $shared_address[$cid][$i] = array(
-                  'id' => !empty($existing[$i]) ? $existing[$i]['id'] : NULL,
+                  'id' => wf_crm_aval($existing, "$i:id"),
                   'mc' => $params['master_id'],
                   'loc' => $params['location_type_id'],
                 );
@@ -823,7 +823,7 @@ function wf_crm_process_submission($node, &$submission, $op) {
             }
             if ($location != 'website') {
               if (empty($params['location_type_id'])) {
-                $params['location_type_id'] = wf_crm_aval($existing, $i . ':location_type_id', 1);
+                $params['location_type_id'] = wf_crm_aval($existing, "$i:location_type_id", 1);
               }
               $params['is_primary'] = $i == 1 ? 1 : 0;
             }
@@ -1026,7 +1026,7 @@ function wf_crm_process_submission($node, &$submission, $op) {
       // Format details as html
       $params['details'] = nl2br(wf_crm_aval($params, 'details', ''));
       if (empty($params['subject'])) {
-        $params['subject'] = $settings['data']['activity'][1]['activity'][1]['subject'];
+        $params['subject'] = $data['activity'][1]['activity'][1]['subject'];
       }
       if (!empty($data['activity'][1]['details']['entire_result'])) {
         module_load_include('inc', 'webform', 'includes/webform.submissions');
