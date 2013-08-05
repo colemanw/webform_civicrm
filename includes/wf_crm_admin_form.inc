@@ -1199,7 +1199,7 @@ class wf_crm_admin_form {
 }
 
 /**
- * Drupal form builder callback
+ * Drupal FAPI form builder callback
  */
 function wf_crm_configure_form($form, &$form_state, $node) {
   $admin_form = new wf_crm_admin_form($form, $form_state, $node);
@@ -1207,7 +1207,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
 }
 
 /**
- * Drupal form submit callback
+ * Drupal FAPI submit callback
  */
 function wf_crm_configure_form_submit($form, &$form_state) {
   $node = node_load($form_state['storage']['nid']);

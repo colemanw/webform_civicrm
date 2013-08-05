@@ -144,7 +144,7 @@ class wf_crm_admin_component {
           '#collapsible' => TRUE,
           '#collapsed' => TRUE,
         );
-        $this->form['widget']['widget'] = array(
+        $this->form['widget']['type'] = array(
           '#type' => 'select',
           '#options' => $widgets,
           '#default_value' => $this->form['type']['#value'],
@@ -155,10 +155,10 @@ class wf_crm_admin_component {
           '#submit' => array('webform_component_edit_form_submit', 'wf_crm_change_widget'),
           '#states' => array(
             'invisible' => array(
-              'select[name="widget[widget]"]' => array('value' => $this->form['type']['#value']),
+              'select[name="widget[type]"]' => array('value' => $this->form['type']['#value']),
             ),
             'disabled' => array(
-              'select[name="widget[widget]"]' => array('value' => $this->form['type']['#value']),
+              'select[name="widget[type]"]' => array('value' => $this->form['type']['#value']),
             ),
           )
         );
@@ -406,13 +406,18 @@ function wf_crm_cs_validate($form, &$form_state) {
 function wf_crm_change_widget($form, &$form_state) {
   // Get rid of default message
   unset($_SESSION['messages']['status']);
-  drupal_set_message(t('Click "Save component" to change this field to %type (or go back to cancel). Test your form to ensure that the new widget works with this CiviCRM field.', array('%type' => $form['widget']['widget']['#options'][$form_state['values']['widget']['widget']])));
+  drupal_set_message(t('Click "Save component" to change this field to %type (or go back to cancel). Test your form to ensure that the new widget works with this CiviCRM field.', array('%type' => $form['widget']['type']['#options'][$form_state['values']['widget']['type']])));
   // Set redirect to current form with 'type' arg to trigger type change
-  $form_state['redirect'] = array($_GET['q'], array('query' => array('type' => $form_state['values']['widget']['widget'])));
+  // @see webform_civicrm_node_load
+  $form_state['redirect'] = array(
+    $_GET['q'],
+    array('query' => array(
+      'type' => $form_state['values']['widget']['type'])
+    )
+  );
   // Prevent 'destination' arg from overriding redirect
   unset($_GET['destination']);
 }
-
 
 /**
  * Drupal FAPI submit callback
