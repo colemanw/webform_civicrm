@@ -71,7 +71,7 @@ th div.form-type-radio {
 }
 
 form .civi-icon {
-  background-image:url('icons.png');
+  background-image:url('../images/icons.png');
   background-repeat:no-repeat;
   display:inline-block;
   width:16px;

@@ -18,13 +18,13 @@ function webform_civicrm_menu() {
     'page arguments' => array('wf_crm_configure_form', 1),
     'access callback' => 'wf_crm_admin_access',
     'access arguments' => array(1),
-    'file' => 'webform_civicrm_admin.inc',
+    'file' => 'includes/webform_civicrm_admin.inc',
     'weight' => 3,
     'type' => MENU_LOCAL_TASK,
   );
   $items['webform-civicrm/js/%'] = array(
     'page callback' => 'wf_crm_ajax',
-    'file' => 'contact_component.inc',
+    'file' => 'includes/contact_component.inc',
     'access callback' => TRUE,
     'page arguments' => array(2),
     'type' => MENU_CALLBACK,
@@ -50,14 +50,14 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
   // Alter back-end webform component edit forms
   if ($form_id == 'webform_component_edit_form'
   && substr($form['form_key']['#default_value'], 0, 7) == 'civicrm') {
-    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_admin');
+    module_load_include('inc', 'webform_civicrm', 'includes/webform_civicrm_admin');
     _wf_crm_component_form_alter($form, $form_state);
   }
 
   // Alter front-end of webforms
   elseif (strpos($form_id, 'webform_client_form_') !== FALSE
   && !empty($form['#node']->webform_civicrm)) {
-    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
+    module_load_include('inc', 'webform_civicrm', 'includes/webform_civicrm_forms');
     _wf_crm_frontend_form_alter($form, $form_state);
   }
 }
@@ -77,7 +77,7 @@ function webform_civicrm_node_load($nodes, $types) {
         $node->webform['components'][arg(4)]['type'] = $_GET['type'];
         webform_component_defaults($node->webform['components'][arg(4)]);
         if ($_GET['type'] == 'select') {
-          module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
+          module_load_include('inc', 'webform_civicrm', 'includes/webform_civicrm_utils');
           civicrm_initialize();
           $node->webform['components'][arg(4)]['extra']['items'] = wf_crm_field_options($node->webform['components'][arg(4)], 'component_insert', $node->webform_civicrm['data']);
         }
@@ -130,11 +130,11 @@ function webform_civicrm_theme() {
     ),
     'display_civicrm_contact' => array(
       'render element' => 'element',
-      'file' => 'contact_component.inc',
+      'file' => 'includes/contact_component.inc',
     ),
     'static_contact_element' => array(
       'render element' => 'element',
-      'file' => 'contact_component.inc',
+      'file' => 'includes/contact_component.inc',
     ),
   );
   return $theme;
@@ -153,7 +153,7 @@ function webform_civicrm_webform_component_info() {
       'features' => array(
         'email_name' => TRUE,
       ),
-      'file' => 'contact_component.inc',
+      'file' => 'includes/contact_component.inc',
     ),
   );
 }
@@ -164,7 +164,7 @@ function webform_civicrm_webform_component_info() {
  */
 function webform_civicrm_webform_submission_presave($node, &$submission) {
   if (!empty($node->webform_civicrm)) {
-    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
+    module_load_include('inc', 'webform_civicrm', 'includes/webform_civicrm_forms');
     wf_crm_process_submission($node, $submission, 'presave');
   }
 }
@@ -394,7 +394,7 @@ function webform_civicrm_preprocess_webform_results_submissions(&$variables){
  * Add CiviCRM info and theming to webform components form.
  */
 function webform_civicrm_preprocess_webform_components_form(&$vars) {
-  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_admin');
+  module_load_include('inc', 'webform_civicrm', 'includes/webform_civicrm_admin');
   $form = &$vars['form'];
   $node = $form['#node'];
   // Prepare for CiviCRM processing
@@ -560,7 +560,7 @@ function wf_crm_contact_clone_storage($input = NULL) {
  * This submit handler is called when cloning a contact's fieldset
  */
 function wf_crm_contact_clone($form, $form_state) {
-  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
+  module_load_include('inc', 'webform_civicrm', 'includes/webform_civicrm_utils');
   $fid = $form['form_key']['#default_value'];
   list(, $old) = wf_crm_explode_key($fid);
   $node = node_load($form['nid']['#value']);
@@ -587,7 +587,7 @@ function wf_crm_contact_clone($form, $form_state) {
  * Validation callback for webform submissions.
  */
 function wf_crm_validate($form, &$form_state) {
-  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
+  module_load_include('inc', 'webform_civicrm', 'includes/webform_civicrm_forms');
   civicrm_initialize();
   $node = $form['#node'];
   $values = _webform_client_form_submit_flatten($node, wf_crm_aval($form_state, 'values:submitted'));

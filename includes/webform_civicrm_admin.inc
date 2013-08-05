@@ -5,7 +5,7 @@
  * Webform CiviCRM module's administrative functions.
  */
 
-module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
+module_load_include('inc', 'webform_civicrm', 'includes/webform_civicrm_utils');
 
 /**
  * Drupal form builder callback
@@ -25,10 +25,9 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     return $form;
   }
 
-  $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/' . 'webform_civicrm_admin.js';
-  $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_admin.css';
+  $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_admin.js';
+  $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_admin.css';
   civicrm_initialize();
-  $config = CRM_Core_Config::singleton();
 
   $fields = wf_crm_get_fields();
   $sets = wf_crm_get_fields('sets');
@@ -893,7 +892,7 @@ function wf_crm_configure_form_submit($form, &$form_state) {
   }
 
   module_load_include('inc', 'webform', 'includes/webform.components');
-  module_load_include('inc', 'webform_civicrm', 'contact_component');
+  module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
   $form_state['redirect'] = 'node/' . $nid . '/webform';
 
   // Delete/disable fields
@@ -1045,7 +1044,7 @@ function _wf_crm_component_form_alter(&$form, $form_state) {
     $data = $node->webform_civicrm['data'];
     // Is this component a CiviCRM field?
     if (($field = wf_crm_aval($fields, $table . '_' . $name)) || $table == 'fieldset') {
-      $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_admin.css';
+      $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_admin.css';
       $element = $node->webform['components'][$form['cid']['#value']];
 
       if (empty($form['clone']['#value']) || $name == 'fieldset') {
@@ -1309,7 +1308,7 @@ function wf_crm_custom_field_default($id) {
 function wf_crm_options_table(&$form, $node, $element, $field) {
   $options = $sort = wf_crm_field_options($element, 'component_edit', $node->webform_civicrm['data']);
   if ($options) {
-    $form['#attached']['js'] = array(drupal_get_path('module', 'webform_civicrm') . '/' . 'webform_civicrm_options.js');
+    $form['#attached']['js'] = array(drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_options.js');
 
     $defaults_selected = array();
     if (!empty($element['value'])) {

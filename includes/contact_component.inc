@@ -5,7 +5,7 @@
  * CiviCRM contact webform component.
  */
 
-module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
+module_load_include('inc', 'webform_civicrm', 'includes/webform_civicrm_utils');
 
 /**
  * Implements _webform_defaults_component().
@@ -88,9 +88,9 @@ function _webform_edit_civicrm_contact($component) {
       $("#default-contact-id").tokenInput(' . $callback_path . ', ' . $settings . ');
     });';
     $form['#attached']['js'][$js] = array('type' => 'inline');
-    $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/token-input.css';
+    $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/token-input.css';
   }
-  $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/contact_component.js';
+  $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/js/contact_component.js';
 
   $form['display']['widget'] = array(
     '#type' => 'select',
@@ -315,7 +315,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
       if ($node && isset($node->webform_civicrm)) {
         $path = libraries_get_path('tokeninput');
         $element['#attached']['js'][] = $path . '/src/jquery.tokeninput.js';
-        $element['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/token-input.css';
+        $element['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/token-input.css';
         $settings = '{
           queryParam: "str",
           hintText: "' . $component['extra']['search_prompt'] . '",
@@ -353,7 +353,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
       }
       if ($node && isset($node->webform_civicrm)) {
         if ($component['extra']['show_hidden_contact']) {
-          $element['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/token-input.css';
+          $element['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/token-input.css';
         }
         if ($component['extra']['hide_fields']) {
           $js = "wfCivi.existingInit(field, $c, {$node->nid}, $callback_path, toHide);";
@@ -616,7 +616,7 @@ function wf_crm_ajax($key, $input = '') {
       // Fetch entire contact to populate form via ajax
       if ($_GET['load'] == 'full') {
         $sp = CRM_Core_DAO::VALUE_SEPARATOR;
-        module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
+        module_load_include('inc', 'webform_civicrm', 'includes/webform_civicrm_forms');
         $enabled = wf_crm_enabled_fields($node);
         list(, $c, ) = explode('_', $component['form_key'], 3);
         $cids = array();

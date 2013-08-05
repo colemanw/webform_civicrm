@@ -5,7 +5,7 @@
  * Webform CiviCRM module's front-end form functions.
  */
 
-module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
+module_load_include('inc', 'webform_civicrm', 'includes/webform_civicrm_utils');
 
 /**
  * Alter front-end of webforms: Called by hook_form_alter() when rendering a civicrm-enabled webform
@@ -21,8 +21,8 @@ module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
  */
 function _wf_crm_frontend_form_alter(&$form, &$form_state) {
   civicrm_initialize();
-  $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_forms.js';
-  $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_forms.css';
+  $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_forms.js';
+  $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_forms.css';
   $form['#validate'][] = 'wf_crm_validate';
   array_unshift($form['#submit'], 'wf_crm_storage');
   $config = CRM_Core_Config::singleton();
@@ -97,7 +97,7 @@ function _wf_crm_frontend_form_alter(&$form, &$form_state) {
     $count = count($data['contact']);
     for ($i = 1; $i <= $count; ++$i) {
       if ($existing_component = wf_crm_aval($enabled, "civicrm_{$i}_contact_1_contact_existing")) {
-        module_load_include('inc', 'webform_civicrm', 'contact_component');
+        module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
         wf_crm_find_contact($node, $node->webform['components'][$existing_component], $id['cid']);
       }
     }
@@ -578,7 +578,7 @@ function wf_crm_process_submission($node, &$submission, $op) {
         $id['cid'][$c] = 0;
         $cid = wf_crm_aval(wf_crm_sub_value($submission, $fid), 0);
         if ($cid && is_numeric($cid)) {
-          module_load_include('inc', 'webform_civicrm', 'contact_component');
+          module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
           $component = $node->webform['components'][$fid];
           $filters = wf_crm_search_filters($node, $component);
           // Verify access to this contact
@@ -1454,12 +1454,6 @@ function wf_crm_process_membership($c, $cid, $data, $node) {
       $params['source'] = $node->webform_civicrm['new_contact_source'];
     }
     $params['contact_id'] = $cid;
-    if (empty($params['status_id'])) {
-      $params['skipStatusCal'] = 0;
-    }
-    else {
-      $params['is_override'] = 1;
-    }
     $result = wf_civicrm_api('membership', 'create', $params);
   }
 }
