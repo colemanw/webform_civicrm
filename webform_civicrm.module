@@ -50,8 +50,9 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
   // Alter back-end webform component edit forms
   if ($form_id == 'webform_component_edit_form'
   && substr($form['form_key']['#default_value'], 0, 7) == 'civicrm') {
-    module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_form');
-    _wf_crm_component_form_alter($form, $form_state);
+    module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_component');
+    $admin_form = new wf_crm_admin_component($form, $form_state);
+    $admin_form->alterForm();
   }
 
   // Alter front-end of webforms

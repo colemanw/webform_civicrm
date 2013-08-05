@@ -466,7 +466,7 @@ function webform_civicrm_update_7300() {
     $field['weight'] = -255;
     $field['extra']['default'] = $form['contact_matching'] ? 'user' : '';
     $field['extra']['hide_fields'] = array();
-    wf_crm_component_insert($field, $enabled, $form);
+    wf_crm_admin_form::insertComponent($field, $enabled, $form);
 
     // Activity target
     if (!empty($data['activity'][1]['activity'])) {
@@ -511,7 +511,7 @@ function webform_civicrm_update_7300() {
                 $field['extra']['default'] = 'relationship';
                 $field['extra']['default_relationship'] = array($e_type . '_' . $a_b);
                 $field['extra']['hide_fields'] = array();
-                wf_crm_component_insert($field, $enabled, $form);
+                wf_crm_admin_form::insertComponent($field, $enabled, $form);
               }
             }
           }
