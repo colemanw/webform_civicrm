@@ -18,7 +18,7 @@ function webform_civicrm_menu() {
     'page arguments' => array('wf_crm_configure_form', 1),
     'access callback' => 'wf_crm_admin_access',
     'access arguments' => array(1),
-    'file' => 'includes/webform_civicrm_admin.inc',
+    'file' => 'includes/wf_crm_admin_form.inc',
     'weight' => 3,
     'type' => MENU_LOCAL_TASK,
   );
@@ -50,7 +50,7 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
   // Alter back-end webform component edit forms
   if ($form_id == 'webform_component_edit_form'
   && substr($form['form_key']['#default_value'], 0, 7) == 'civicrm') {
-    module_load_include('inc', 'webform_civicrm', 'includes/webform_civicrm_admin');
+    module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_form');
     _wf_crm_component_form_alter($form, $form_state);
   }
 
@@ -394,7 +394,7 @@ function webform_civicrm_preprocess_webform_results_submissions(&$variables){
  * Add CiviCRM info and theming to webform components form.
  */
 function webform_civicrm_preprocess_webform_components_form(&$vars) {
-  module_load_include('inc', 'webform_civicrm', 'includes/webform_civicrm_admin');
+  module_load_include('inc', 'webform_civicrm', 'includes/webform_civicrm_utils');
   $form = &$vars['form'];
   $node = $form['#node'];
   // Prepare for CiviCRM processing

@@ -1126,6 +1126,29 @@ function wf_crm_display_name($cid) {
 }
 
 /**
+ * @param integer $n
+ * @param array $data Form data
+ * @param string $html Controls how html should be treated. Options are:
+ *  * 'escape': (default) Escape html characters
+ *  * 'wrap': Escape html characters and wrap in a span
+ *  * 'plain': Do not escape (use when passing into an FAPI options list which does its own escaping)
+ * @return string
+ */
+function wf_crm_contact_label($n, $data, $html = 'escape') {
+  $label = trim(wf_crm_aval($data, "contact:$n:contact:1:webform_label", ''));
+  if (!$label) {
+    $label = t('Contact !num', array('!num' => $n));
+  }
+  if ($html != 'plain') {
+    $label = check_plain($label);
+  }
+  if ($html == 'wrap') {
+    $label = '<span class="contact-label number-' . $n . '">' . $label . '</span>';
+  }
+  return $label;
+}
+
+/**
  * Explodes form key into an array and verifies that it is in the right format
  *
  * @param $key
