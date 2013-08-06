@@ -70,6 +70,10 @@ th div.form-type-radio {
   display:block;
 }
 
+#wf-crm-options-fieldset .tabledrag-changed-warning {
+  display: none !important;
+}
+
 form .civi-icon {
   background-image:url('../images/icons.png');
   background-repeat:no-repeat;

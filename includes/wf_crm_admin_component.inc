@@ -191,6 +191,7 @@ class wf_crm_admin_component {
     $this->form['civicrm_options_fieldset'] = array(
       '#type' => 'fieldset',
       '#title' => t('Options'),
+      '#id' => 'wf-crm-options-fieldset',
       '#theme' => 'webform_civicrm_options_table',
     );
     $option_keys = array();
