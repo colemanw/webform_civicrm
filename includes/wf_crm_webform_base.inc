@@ -1,0 +1,220 @@
+<?php
+
+/**
+ * @file
+ * Webform CiviCRM module's front-end form processor base class.
+ */
+
+module_load_include('inc', 'webform_civicrm', 'includes/utils');
+
+abstract class wf_crm_webform_base {
+  protected $node;
+  protected $settings = array();
+  protected $enabled = array();
+  protected $data = array();
+
+  /**
+   * Fetch all relevant data for a given contact
+   * Used to load contacts for pre-filling a webform, and also to fill in a contact via ajax
+   *
+   * @param int $c
+   *   Contact #
+   * @param array $cids
+   *   All known contact ids for this form
+   * @param array $exclude
+   *   Fields to ignore
+   *
+   * @return array of contact data
+   */
+  protected function loadContact($c, $cids, $exclude = array()) {
+    $info = array();
+    $cid = $cids[$c];
+    $contact = $this->data['contact'][$c];
+    $prefix = 'civicrm_' . $c . '_contact_1_';
+    foreach (array('contact', 'address', 'email', 'phone', 'website') as $ent) {
+      if ((!empty($contact['number_of_' . $ent]) && !in_array($ent, $exclude)) || $ent == 'contact') {
+        $params = array('contact_id' => $cid);
+        if ($ent != 'contact' && $ent != 'website') {
+          $params['options']['sort'] = 'is_primary DESC';
+        }
+        $result = wf_civicrm_api($ent, 'get', $params);
+        if (!empty($result['values'])) {
+          $result = array_merge(array(0), array_values($result['values']));
+          unset($result[0]);
+          if ($ent == 'contact' && isset($this->enabled[$prefix . 'contact_privacy'])) {
+            // Privacy fields
+            foreach (array_keys(wf_crm_get_privacy_options()) as $key) {
+              if (!empty($result[1][$key])) {
+                $result[1]['privacy'][] = $key;
+              }
+            }
+          }
+          // Extra processing for addresses
+          if ($ent == 'address') {
+            foreach ($result as &$address) {
+              // Translate to abbr
+              if (!empty($address['state_province_id'])) {
+                $address['state_province_id'] = wf_crm_state_abbr($address['state_province_id']);
+              }
+              // Load custom data
+              $custom = wf_crm_get_custom($address['id'], 'address');
+              if (!empty($custom['address'])) {
+                $address += $custom['address'][1];
+              }
+            }
+          }
+          $info[$ent] = $result;
+        }
+      }
+    }
+    // Get custom contact data if needed
+    foreach ($contact as $k => $v) {
+      if (substr($k, 0, 12) == 'number_of_cg' && !empty($v)) {
+        if (!in_array(substr($k, 10), $exclude)) {
+          $info += wf_crm_get_custom($cid);
+          break;
+        }
+      }
+    }
+    // Communication prefs are not fetched by default by the api
+    if (isset($this->enabled[$prefix . 'contact_preferred_communication_method']) || isset($this->enabled[$prefix . 'contact_preferred_language'])) {
+      if (!in_array('contact', $exclude)) {
+        $result = wf_civicrm_api('contact', 'get', array(
+          'id' => $cid,
+          'return' => array('preferred_communication_method', 'preferred_language'),
+        ));
+        $info['contact'][1] += $result['values'][$cid];
+      }
+    }
+    // Retrieve group and tag data
+    if (!in_array('other', $exclude)) {
+      $api = array('tag' => 'entity_tag', 'group' => 'group_contact');
+      foreach (array_keys($this->enabled) as $fid) {
+        // This way we support multiple tag fields (for tagsets)
+        if (strpos($fid, $prefix . 'other') !== FALSE) {
+          list(, , , , , $ent) = explode('_', $fid);
+          list(, , , , , $field) = explode('_', $fid, 6);
+          // Cheap way to avoid fetching the same data twice from the api
+          if (!is_array($api[$ent])) {
+            $api[$ent] = wf_civicrm_api($api[$ent], 'get', array('contact_id' => $cid));
+          }
+          foreach (wf_crm_aval($api[$ent], 'values') as $val) {
+            $info['other'][1][$field][] = $val[$ent . '_id'];
+          }
+        }
+      }
+    }
+    // Retrieve relationship data
+    if (!in_array('relationship', $exclude) && !empty($contact['number_of_relationship'])) {
+      $this->enabled = wf_crm_enabled_fields($this->node);
+      for ($r = 1; $r <= $contact['number_of_relationship']; ++$r) {
+        $types = array();
+        $prefix = "civicrm_{$c}_contact_{$r}_relationship_";
+        if (!empty($cids[$r])) {
+          if (!empty($contact['relationship'][$r]['relationship_type_id']) && $contact['relationship'][$r]['relationship_type_id'] != 'create_civicrm_webform_element') {
+            $types = array($contact['relationship'][$r]['relationship_type_id']);
+          }
+          if (!empty($this->enabled[$prefix . 'relationship_type_id'])) {
+            $types = array_keys($this->getExposedOptions($this->enabled[$prefix . 'relationship_type_id']));
+          }
+        }
+        $rel = $this->getRelationship($types, $cid, $cids[$r]);
+        if ($rel) {
+          $info['relationship'][$r] = $rel;
+          // Fetch custom data
+          $len = strlen($prefix . 'custom_');
+          foreach ($this->enabled as $k => $v) {
+            if (substr($k, 0, $len) == $prefix . 'custom_') {
+              $custom = wf_civicrm_api('custom_value', 'get', array('entity_id' => $rel['id'], 'entity_table' => 'Relationship'));
+              foreach ($custom['values'] as $k => $v) {
+                if (isset($v[0])) {
+                  $info['relationship'][$r]["custom_$k"] = $v[0];
+                }
+              }
+              break;
+            }
+          }
+        }
+      }
+    }
+    return $info;
+  }
+
+  /**
+   * Fetch relationship for a pair of contacts
+   *
+   * @param $r_types
+   *   Array of relationship type ids
+   * @param $cid1
+   *   Contact id
+   * @param $cid2
+   *   Contact id
+   * @return array
+   */
+  protected function getRelationship($r_types, $cid1, $cid2) {
+    $found = array();
+    if ($r_types && $cid1 && $cid2) {
+      $types = array();
+      foreach ($r_types as $r_type) {
+        list($type, $side) = explode('_', $r_type);
+        $types[] = $type;
+      }
+      $sql = "SELECT * FROM civicrm_relationship
+      WHERE relationship_type_id IN (" . implode(',', $types) . ")
+      AND ((contact_id_a = $cid1 AND contact_id_b = $cid2) OR (contact_id_a = $cid2 AND contact_id_b = $cid1))
+      ORDER BY is_active DESC, IF(end_date, 1, 0), end_date DESC";
+      $dao = CRM_Core_DAO::executeQuery($sql);
+      while ($dao->fetch()) {
+        $type = $dao->relationship_type_id;
+        $side = $dao->contact_id_a == $cid1 ? 'a' : 'b';
+        // Verify this is the correct orientation for the relationship
+        if (in_array("{$type}_$side", $r_types) || in_array("{$type}_r", $r_types)) {
+          // Discard metadata from the query
+          foreach ((array) $dao as $k => $v) {
+            if ($k[0] != '_' && $k != 'N') {
+              $found[$k] = $v;
+            }
+          }
+          $found['relationship_type_id'] = in_array("{$type}_r", $r_types) ? "{$type}_r" : "{$type}_$side";
+          $found['relationship_permission'] = ($found['is_permission_a_b'] ? 1 : 0) + ($found['is_permission_b_a'] ? 2 : 0);
+          break;
+        }
+      }
+      $dao->free();
+    }
+    return $found;
+  }
+
+  /**
+   * For a given field, find the options that are exposed to the webform.
+   *
+   * @param $fid
+   *   Numeric webform component id
+   * @param array $exclude
+   *   Options to ignore
+   *
+   * @return array
+   */
+  protected function getExposedOptions($fid, $exclude = array()) {
+    if ($fid) {
+      $field = $this->node->webform['components'][$fid];
+      if ($field['type'] == 'select') {
+        // Fetch static options
+        if (empty($field['extra']['civicrm_live_options'])) {
+          $exposed = wf_crm_str2array($this->node->webform['components'][$fid]['extra']['items']);
+        }
+        // Fetch live options
+        else {
+          $exposed = wf_crm_field_options($field, 'live_options', $this->data);
+        }
+        foreach ($exclude as $i) {
+          unset($exposed[$i]);
+        }
+        return $exposed;
+      }
+    }
+    return array();
+  }
+
+
+}

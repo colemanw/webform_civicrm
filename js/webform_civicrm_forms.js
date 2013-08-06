@@ -208,7 +208,7 @@ var wfCivi = (function ($, D) {
       fillOptions(stateSelect, stateProvinceCache[countryId], stateVal);
     }
     else {
-      $.get(D.settings.webform_civicrm.callbackPath+'/state_province/'+countryId, function(data) {
+      $.get(D.settings.webform_civicrm.callbackPath+'/stateProvince/'+countryId, function(data) {
         populateCounty(stateSelect, stateVal);
         fillOptions(stateSelect, data, stateVal, countryId);
         stateProvinceCache[countryId] = data;

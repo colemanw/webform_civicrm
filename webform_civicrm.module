@@ -24,7 +24,6 @@ function webform_civicrm_menu() {
   );
   $items['webform-civicrm/js/%'] = array(
     'page callback' => 'wf_crm_ajax',
-    'file' => 'includes/contact_component.inc',
     'access callback' => TRUE,
     'page arguments' => array(2),
     'type' => MENU_CALLBACK,
@@ -57,8 +56,9 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
   // Alter front-end of webforms
   elseif (strpos($form_id, 'webform_client_form_') !== FALSE
   && !empty($form['#node']->webform_civicrm)) {
-    module_load_include('inc', 'webform_civicrm', 'includes/webform_civicrm_forms');
-    _wf_crm_frontend_form_alter($form, $form_state);
+    module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_preprocess');
+    $processor = new wf_crm_webform_preprocess($form, $form_state);
+    $processor->alterForm();
   }
 }
 
@@ -170,8 +170,9 @@ function webform_civicrm_webform_component_info() {
  */
 function webform_civicrm_webform_submission_presave($node, &$submission) {
   if (!empty($node->webform_civicrm)) {
-    module_load_include('inc', 'webform_civicrm', 'includes/webform_civicrm_forms');
-    wf_crm_process_submission($node, $submission, 'presave');
+    module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_postprocess');
+    $processor = wf_crm_webform_postprocess::singleton($node, $submission);
+    $processor->preSave();
   }
 }
 
@@ -181,7 +182,8 @@ function webform_civicrm_webform_submission_presave($node, &$submission) {
  */
 function webform_civicrm_webform_submission_insert($node, $submission) {
   if (!empty($node->webform_civicrm)) {
-    wf_crm_process_submission($node, $submission, 'insert');
+    $processor = wf_crm_webform_postprocess::singleton($node, $submission);
+    $processor->postSave();
   }
 }
 
@@ -191,7 +193,8 @@ function webform_civicrm_webform_submission_insert($node, $submission) {
  */
 function webform_civicrm_webform_submission_update($node, $submission) {
   if (!empty($node->webform_civicrm)) {
-    wf_crm_process_submission($node, $submission, 'update');
+    $processor = wf_crm_webform_postprocess::singleton($node, $submission);
+    $processor->postSave();
   }
 }
 
@@ -518,6 +521,31 @@ function webform_civicrm_preprocess_webform_components_form(&$vars) {
   }
 }
 
+
+/**
+ * Drupal page callback to serve AJAX requests.
+ *
+ * @param $key
+ *   Type of AJAX request
+ * @param $input
+ *   User input
+ *
+ * Prints json output
+ */
+function wf_crm_ajax($key, $input = '') {
+
+  $processor = new wf_crm_webform_ajax();
+  if ($key == 'stateProvince' || $key == 'county') {
+    $processor->$key($input);
+  }
+  elseif (strpos($key, '-')) {
+    list($nid, $fid) = explode('-', $key, 2);
+    $processor->contactAjax($key);
+  }
+  drupal_access_denied();
+}
+
+
 /**
  * Return a value from nested arrays or objects.
  *
@@ -593,23 +621,9 @@ function wf_crm_contact_clone($form, $form_state) {
  * Validation callback for webform submissions.
  */
 function wf_crm_validate($form, &$form_state) {
-  module_load_include('inc', 'webform_civicrm', 'includes/webform_civicrm_forms');
-  civicrm_initialize();
-  $node = $form['#node'];
-  $values = _webform_client_form_submit_flatten($node, wf_crm_aval($form_state, 'values:submitted'));
-  $submitted = wf_crm_enabled_fields($node, $values);
-  _wf_crm_validate($form['submitted'], $form_state, $submitted);
-  if (!empty($node->webform_civicrm['data']['reg_options']['validate'])
-  && !empty($node->webform_civicrm['data']['participant'])
-  && !empty($node->webform_civicrm['data']['participant_reg_type'])) {
-    // We need data from all pages to validate events
-    if (!empty($form_state['storage']['submitted'])
-    && wf_crm_aval($form_state, 'storage:page_num', 1) > 1) {
-      $values += $form_state['storage']['submitted'];
-      $submitted = wf_crm_enabled_fields($node, $values);
-    }
-    _wf_crm_participant_validate($form, $form_state, $submitted);
-  }
+  module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_validate');
+  $processor = new wf_crm_webform_validate($form, $form_state);
+  $processor->validate();
 }
 
 /**
