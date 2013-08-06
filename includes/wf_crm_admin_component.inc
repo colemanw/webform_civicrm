@@ -11,14 +11,17 @@ class wf_crm_admin_component {
   private $form;
   private $form_state;
   private $node;
-  private $fields;
+  private $data;
+  private $component;
+  private $field;
 
   function __construct(&$form, &$form_state) {
     civicrm_initialize();
     $this->form = &$form;
     $this->form_state = &$form_state;
     $this->node = node_load($form['nid']['#value']);
-    $this->fields = wf_crm_get_fields();
+    $this->data = wf_crm_aval($this->node, 'webform_civicrm:data');
+    $this->component = $this->node->webform['components'][$this->form['cid']['#value']];
   }
 
   /**
@@ -26,143 +29,140 @@ class wf_crm_admin_component {
    * Called by hook_form_alter() whenever editing a webform component.
    */
   public function alterForm() {
-    // Is this a CiviCRM-enabled webform?
-    if (empty($this->node->webform_civicrm)) {
-      return;
-    }
     $fid = $this->form['form_key']['#default_value'];
-    // Is this a civicrm component?
-    if (!($pieces = wf_crm_explode_key($fid))) {
+    $pieces = wf_crm_explode_key($fid);
+    // Is this a crm component of a CiviCRM-enabled webform?
+    if (!$this->data || !$pieces) {
       return;
     }
     list(, $i, $ent, $n, $table, $name) = $pieces;
-    $data = $this->node->webform_civicrm['data'];
-    // Is this component a CiviCRM field?
-    if (($field = wf_crm_aval($this->fields, $table . '_' . $name)) || $table == 'fieldset') {
-      $this->form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_admin.css';
-      $element = $this->node->webform['components'][$this->form['cid']['#value']];
+    $this->field = wf_crm_aval(wf_crm_get_fields(), $table . '_' . $name);
+    // Is this a crm field or fieldset?
+    if (!$this->field && $table != 'fieldset') {
+      return;
+    }
+    $this->form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_admin.css';
 
-      if (empty($this->form['clone']['#value']) || $name == 'fieldset') {
-        // Prevent users from editing the form_key and breaking things
-        $this->form['form_key']['#disabled'] = TRUE;
-        $this->form['form_key']['#value'] = $fid;
-        $this->form['form_key']['#description'] = t('Automatically set for use by CiviCRM processing.');
-        // Clone an entire contact when cloning their fieldset
-        if (!empty($this->form['clone']['#value'])) {
-          $this->form['actions']['submit']['#value'] = t('Clone Contact');
-          $new = count($data['contact']) + 1;
-          $this->form['form_key']['#value'] = implode('_', array('civicrm', $new, $ent, $n, $table, $name));
-          $this->form['name']['#default_value'] = str_replace($i, $new, $this->form['name']['#default_value']);
-          ++$this->form['position']['weight']['#default_value'];
-          array_unshift($this->form['#submit'], 'wf_crm_contact_clone');
-          if (empty($this->form_state['input'])) {
-            drupal_set_message(t('Press the button below to clone this contact. A new CiviCRM contact will be added to the form with all the settings for !contact. All fields from within this fieldset will be cloned (be careful, that may include non-contact fields).', array('!contact' => wf_crm_contact_label($i, $data))), 'status', FALSE);
-          }
+    if (empty($this->form['clone']['#value']) || $name == 'fieldset') {
+      // Prevent users from editing the form_key and breaking things
+      $this->form['form_key']['#disabled'] = TRUE;
+      $this->form['form_key']['#value'] = $fid;
+      $this->form['form_key']['#description'] = t('Automatically set for use by CiviCRM processing.');
+      // Clone an entire contact when cloning their fieldset
+      if (!empty($this->form['clone']['#value'])) {
+        $this->form['actions']['submit']['#value'] = t('Clone Contact');
+        $new = count($this->data['contact']) + 1;
+        $this->form['form_key']['#value'] = implode('_', array('civicrm', $new, $ent, $n, $table, $name));
+        $this->form['name']['#default_value'] = str_replace($i, $new, $this->form['name']['#default_value']);
+        ++$this->form['position']['weight']['#default_value'];
+        array_unshift($this->form['#submit'], 'wf_crm_contact_clone');
+        if (empty($this->form_state['input'])) {
+          drupal_set_message(t('Press the button below to clone this contact. A new CiviCRM contact will be added to the form with all the settings for !contact. All fields from within this fieldset will be cloned (be careful, that may include non-contact fields).', array('!contact' => wf_crm_contact_label($i, $this->data))), 'status', FALSE);
         }
       }
-      elseif (empty($this->form_state['input'])) {
-        // Clone a single CiviCRM field
-        drupal_set_message(t('You are cloning a CiviCRM component. Refer to the Webform CiviCRM instructions for how to set the key if you want the new field to be processed by CiviCRM. You can also clone an entire contact by clicking the clone button by their fieldset.'), 'status', FALSE);
-      }
+    }
+    elseif (empty($this->form_state['input'])) {
+      // Clone a single CiviCRM field
+      drupal_set_message(t('You are cloning a CiviCRM component. Refer to the Webform CiviCRM instructions for how to set the key if you want the new field to be processed by CiviCRM. You can also clone an entire contact by clicking the clone button by their fieldset.'), 'status', FALSE);
+    }
 
-      if ($table === 'address' && $name === 'state_province_id') {
-        $this->form['validation']['maxlength']['#type'] = 'hidden';
-        $this->form['validation']['maxlength']['#value'] = 5;
-        $this->form['value']['#description'] = t('To set a default value, enter the state/province abbreviation.');
-        $this->form['value']['#attributes']['onkeyup'] = 'this.value = this.value.toUpperCase();';
-      }
+    if ($table === 'address' && $name === 'state_province_id') {
+      $this->form['validation']['maxlength']['#type'] = 'hidden';
+      $this->form['validation']['maxlength']['#value'] = 5;
+      $this->form['value']['#description'] = t('To set a default value, enter the state/province abbreviation.');
+      $this->form['value']['#attributes']['onkeyup'] = 'this.value = this.value.toUpperCase();';
+    }
 
-      // Interface for managing options
-      elseif (($element['type'] === 'hidden' || $element['type'] === 'select')) {
-        $this->buildOptionsTable($element, $field);
-      }
+    // Interface for managing options
+    elseif (($this->component['type'] === 'hidden' || $this->component['type'] === 'select')) {
+      $this->buildOptionsTable();
+    }
 
-      // Simplify form for hidden fields
-      elseif (($name === 'contact_id' || $name === 'external_identifier') && $element['type'] === 'hidden') {
-        $this->form['value']['#value'] = '';
-        $this->form['value']['#type'] = 'textfield';
-        $this->form['value']['#disabled'] = TRUE;
-        $this->form['#prefix'] = '<p>'
-          . t('There are no configuration options for this hidden field. You can use it for post processing, for example to include a link to the CiviCRM contact in an email.')
-          . '</p><p>'
-          . t('The webform token for this field is:')
-          . '<br /><strong>' . $this->componentToken($this->form['cid']['#value'])
-          . '</strong><br /><em>'
-          . t('Note: this token will change if you move the field in or out of a fieldset.')
-          . '</em></p>';
+    // Simplify form for hidden fields
+    elseif (($name === 'contact_id' || $name === 'external_identifier') && $this->component['type'] === 'hidden') {
+      $this->form['value']['#value'] = '';
+      $this->form['value']['#type'] = 'textfield';
+      $this->form['value']['#disabled'] = TRUE;
+      $this->form['#prefix'] = '<p>'
+        . t('There are no configuration options for this hidden field. You can use it for post processing, for example to include a link to the CiviCRM contact in an email.')
+        . '</p><p>'
+        . t('The webform token for this field is:')
+        . '<br /><strong>' . $this->componentToken($this->form['cid']['#value'])
+        . '</strong><br /><em>'
+        . t('Note: this token will change if you move the field in or out of a fieldset.')
+        . '</em></p>';
+    }
+    // Customize form for checksum element
+    elseif ($name == 'cs') {
+      $this->form['value']['#title'] = t('Checksum Lifespan');
+      $this->form['value']['#required'] = TRUE;
+      $this->form['value']['#type'] = 'textfield';
+      $this->form['value']['#description'] = t('Enter the number of days for which this checksum will be valid. Enter 0 to never expire.');
+      $this->form['#validate'][] = 'wf_crm_cs_validate';
+      $enabled = wf_crm_enabled_fields($this->node);
+      $this->form['#prefix'] = '<p>'
+        . t('This field will generate a checksum for !contact after the form is submitted. You could use its webform token to create a personalized link for anonymous users.', array('!contact' => wf_crm_contact_label($i, $this->data)))
+        . '</p><p>';
+      if ($cid_field = wf_crm_aval($enabled, 'civicrm_' . $i . '_contact_1_contact_contact_id')) {
+        $this->form['#prefix'] .= t('Example: to link users back to this form, place this line in a webform-generated email:')
+          . '<br /><code>'
+          . url('node/' . $this->node->nid, array('absolute' => TRUE)) . '?cid' . $i . '=';
+        $this->form['#prefix'] .= $this->componentToken($cid_field)
+          . '&amp;cs' . $i . '=' . $this->componentToken($this->form['cid']['#value'])
+          . '</code></p>';
+        $this->form['#prefix'] .= '<p>' . t('Example: to redirect to a contribution page, paste this into the redirect field on the Webform "Form Settings" tab (change id from 1 to the real id of your contribution page):')
+          . '<br /><code>'
+          . 'civicrm/contribute/transact?reset=1&amp;id=1'
+          . '&amp;cid=' . $this->componentToken($cid_field)
+          . '&amp;cs=' . $this->componentToken($this->form['cid']['#value'])
+          . '</code></p>';
       }
-      // Customize form for checksum element
-      elseif ($name == 'cs') {
-        $this->form['value']['#title'] = t('Checksum Lifespan');
-        $this->form['value']['#required'] = TRUE;
-        $this->form['value']['#type'] = 'textfield';
-        $this->form['value']['#description'] = t('Enter the number of days for which this checksum will be valid. Enter 0 to never expire.');
-        $this->form['#validate'][] = 'wf_crm_cs_validate';
-        $enabled = wf_crm_enabled_fields($this->node);
-        $this->form['#prefix'] = '<p>'
-          . t('This field will generate a checksum for !contact after the form is submitted. You could use its webform token to create a personalized link for anonymous users.', array('!contact' => wf_crm_contact_label($i, $data)))
-          . '</p><p>';
-        if ($cid_field = wf_crm_aval($enabled, 'civicrm_' . $i . '_contact_1_contact_contact_id')) {
-          $this->form['#prefix'] .= t('Example: to link users back to this form, place this line in a webform-generated email:')
-            . '<br /><code>'
-            . url('node/' . $this->node->nid, array('absolute' => TRUE)) . '?cid' . $i . '=';
-          $this->form['#prefix'] .= $this->componentToken($cid_field)
-            . '&amp;cs' . $i . '=' . $this->componentToken($this->form['cid']['#value'])
-            . '</code></p>';
-          $this->form['#prefix'] .= '<p>' . t('Example: to redirect to a contribution page, paste this into the redirect field on the Webform "Form Settings" tab (change id from 1 to the real id of your contribution page):')
-            . '<br /><code>'
-            . 'civicrm/contribute/transact?reset=1&amp;id=1'
-            . '&amp;cid=' . $this->componentToken($cid_field)
-            . '&amp;cs=' . $this->componentToken($this->form['cid']['#value'])
-            . '</code></p>';
-        }
-        else {
-          $this->form['#prefix'] .= t('Consider enabling the hidden contact_id field - hashed links usually require this value.') . '</p>';
+      else {
+        $this->form['#prefix'] .= t('Consider enabling the hidden contact_id field - hashed links usually require this value.') . '</p>';
+      }
+    }
+    // Alter weights for contact component
+    if ($this->form['type']['#value'] == 'civicrm_contact') {
+      $this->form['display']['#weight'] = -1;
+    }
+    // Allow widget to be altered
+    elseif ($this->field && $this->field['type'] !== 'civicrm_contact' && empty($_GET['type'])) {
+      $widgets = array();
+      foreach (webform_components() as $k => $v) {
+        if ($k !== 'civicrm_contact' && $k !== 'pagebreak' && $k !== 'markup' && empty($v['features']['group'])) {
+          $widgets[$k] = $v['label'];
         }
       }
-      // Alter weights for contact component
-      if ($this->form['type']['#value'] == 'civicrm_contact') {
-        $this->form['display']['#weight'] = -1;
-      }
-      // Allow widget to be altered
-      elseif ($field && $field['type'] !== 'civicrm_contact' && empty($_GET['type'])) {
-        $widgets = array();
-        foreach (webform_components() as $k => $v) {
-          if ($k !== 'civicrm_contact' && $k !== 'pagebreak' && $k !== 'markup' && empty($v['features']['group'])) {
-            $widgets[$k] = $v['label'];
-          }
+      if ($this->form['type']['#value'] == 'textfield' && $table === 'address') {
+        if ($name === 'state_province_id' || $name === 'county_id') {
+          $widgets['textfield'] = t('Textfield / AJAX Select');
         }
-        if ($this->form['type']['#value'] == 'textfield' && $table === 'address') {
-          if ($name === 'state_province_id' || $name === 'county_id') {
-            $widgets['textfield'] = t('Textfield / AJAX Select');
-          }
-        }
-        $this->form['widget'] = array(
-          '#type' => 'fieldset',
-          '#title' => t('Widget: %type', array('%type' => wf_crm_aval($widgets, $this->form['type']['#value'], t('Unknown')))),
-          '#description' => t('The default widget for this %type field is %widget. You may change it if you wish - for example, a hidden field allows you to set the value without exposing this field to the form.<br />Note: Not all widgets may be compatible with this CiviCRM field - test your form after changing widgets.', array('%type' => str_replace('#', '', $field['name']), '%widget' => wf_crm_aval($widgets, $field['type'], t('Disabled')))),
-          '#collapsible' => TRUE,
-          '#collapsed' => TRUE,
-        );
-        $this->form['widget']['type'] = array(
-          '#type' => 'select',
-          '#options' => $widgets,
-          '#default_value' => $this->form['type']['#value'],
-        );
-        $this->form['widget']['change_widget'] = array(
-          '#type' => 'submit',
-          '#value' => t('Change Widget'),
-          '#submit' => array('webform_component_edit_form_submit', 'wf_crm_change_widget'),
-          '#states' => array(
-            'invisible' => array(
-              'select[name="widget[type]"]' => array('value' => $this->form['type']['#value']),
-            ),
-            'disabled' => array(
-              'select[name="widget[type]"]' => array('value' => $this->form['type']['#value']),
-            ),
-          )
-        );
       }
+      $this->form['widget'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Widget: %type', array('%type' => wf_crm_aval($widgets, $this->form['type']['#value'], t('Unknown')))),
+        '#description' => t('The default widget for this %type field is %widget. You may change it if you wish - for example, a hidden field allows you to set the value without exposing this field to the form.<br />Note: Not all widgets may be compatible with this CiviCRM field - test your form after changing widgets.', array('%type' => str_replace('#', '', $this->field['name']), '%widget' => wf_crm_aval($widgets, $this->field['type'], t('Disabled')))),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+      );
+      $this->form['widget']['type'] = array(
+        '#type' => 'select',
+        '#options' => $widgets,
+        '#default_value' => $this->form['type']['#value'],
+      );
+      $this->form['widget']['change_widget'] = array(
+        '#type' => 'submit',
+        '#value' => t('Change Widget'),
+        '#submit' => array('webform_component_edit_form_submit', 'wf_crm_change_widget'),
+        '#states' => array(
+          'invisible' => array(
+            'select[name="widget[type]"]' => array('value' => $this->form['type']['#value']),
+          ),
+          'disabled' => array(
+            'select[name="widget[type]"]' => array('value' => $this->form['type']['#value']),
+          ),
+        )
+      );
     }
   }
 
@@ -170,120 +170,119 @@ class wf_crm_admin_component {
    * Interface similar to options_element module
    * but with the important difference that options already exist in the civi db
    * so this does not allow create/delete of options
-   * @param array $element
-   * @param array $field
    */
-  private function buildOptionsTable($element, $field) {
-    $options = $sort = wf_crm_field_options($element, 'component_edit', $this->node->webform_civicrm['data']);
-    if ($options) {
-      $this->form['#attached']['js'] = array(drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_options.js');
-
-      $defaults_selected = array();
-      if (!empty($element['value'])) {
-        foreach (explode(',', trim($element['value'])) as $v) {
-          $defaults_selected[] = '_web_civi_option_selected_' . $v;
-        }
-      }
-      // Get rid of stuff related to options_element module
-      unset($this->form['items']);
-
-      $this->form['value']['#type'] = 'hidden';
-      $this->form['civicrm_options_fieldset'] = array(
-        '#type' => 'fieldset',
-        '#title' => t('Options'),
-        '#theme' => 'webform_civicrm_options_table',
-      );
-      $option_keys = array();
-      foreach ($options as $k => $v) {
-        $option_keys['_web_civi_option_selected_' . $k] = '';
-        $this->form['civicrm_options_fieldset']['civicrm_option_name_' . $k] = array(
-          '#markup' => '<span class="civicrm-option-name">' . $v . '</span>',
-        );
-      }
-      if ($element['type'] === 'select') {
-        $this->form['civicrm_options_fieldset']['civicrm_live_options'] = array(
-          '#type' => 'radios',
-          '#options' => array(t('<strong>Static Options</strong> (fully configurable)'), t('<strong>Live Options</strong> (update automatically)')),
-          '#default_value' => (int) !empty($element['extra']['civicrm_live_options']),
-          '#parents' => array('extra', 'civicrm_live_options'),
-        );
-        $this->form['civicrm_options_fieldset']['intro'] = array(
-          '#markup' => '<p><div class="live-options-hide">' .
-          t('Drag the arrows to re-order these options. Click the "enabled" checkbox to show/remove an item from the form. Set the label as you want it to appear on the form.') .
-          '</div><div class="live-options-show">' .
-          t('You cannot control the presentation of live options. They will be loaded from the CiviCRM database every time the form is displayed.') .
-          '</div><div>' .
-          t('Check the "default" box for an option to be selected by default when a user views the form.') .
-          '</div></p>',
-        );
-        // Special instructions for contact reference fields
-        if (wf_crm_aval($field, 'data_type') == 'ContactReference') {
-          $this->form['civicrm_options_fieldset']['intro'] = array(
-            '#markup' => '<p>' . t('This is a contact reference field. It points to another contact on the webform. You can configure how that contact is presented by editing their "Existing Contact" field.') . '</p>' .
-            '<p>' . t("Note: In most cases it is not desireable to have the selection of webform contacts exposed to the end-user so you may wish to set this field's value on the CiviCRM tab instead.") . '</p>',
-          );
-        }
-        $options_selected = wf_crm_str2array($element['extra']['items']);
-        // Sort weights. Unselected options will be at the bottom.
-        $option_keys = $option_selected_keys = array();
-        foreach ($options_selected as $k => $v) {
-          if (isset($options[$k])) {
-            $option_keys['_web_civi_option_selected_' . $k] = '';
-            $option_selected_keys[] = '_web_civi_option_selected_' . $k;
-            unset($sort[$k]);
-          }
-        }
-        foreach ($sort as $k => $v) {
-          $option_keys['_web_civi_option_selected_' . $k] = '';
-        }
-        $this->form['extra']['items']['#type'] = 'hidden';
-        $this->form['extra']['items']['#required'] = FALSE;
-        $this->form['extra']['items']['#value'] = $element['extra']['items'];
-        $this->form['extra']['options_source']['#access'] = FALSE;
-        $this->form['civicrm_options_fieldset']['civicrm_options'] = array(
-          '#type' => 'checkboxes',
-          '#required' => TRUE,
-          '#options' => $option_keys,
-          '#default_value' => $option_selected_keys,
-        );
-        $w = 0;
-        foreach ($option_keys as $k => $v) {
-          $k = str_replace('_web_civi_option_selected_', '', $k);
-          $this->form['civicrm_options_fieldset']['civicrm_option_label_' . $k] = array(
-            '#type' => 'textfield',
-            '#size' => 30,
-            '#default_value' => !empty($options_selected[$k]) ? $options_selected[$k] : $options[$k],
-          );
-          $this->form['civicrm_options_fieldset']['civicrm_option_weight_' . $k] = array(
-            '#type' => 'textfield',
-            '#size' => 3,
-            '#default_value' => ++$w,
-          );
-        }
-      }
-      $this->form['civicrm_options_fieldset']['civicrm_defaults'] = array(
-        '#type' => 'checkboxes',
-        '#options' => array('' => '') + $option_keys,
-        '#default_value' => $defaults_selected,
-      );
-      // Auto set multi-value option for single-valued entities
-      if (empty($field['extra']['multiple']) && $element['type'] === 'select') {
-        $this->form['extra']['multiple']['#type'] = 'hidden';
-        $this->form['extra']['multiple']['#value'] = 0;
-      }
-      // Restore multiple checkbox in case options_element module removed it
-      elseif ($element['type'] === 'select') {
-        $this->form['extra']['multiple']['#type'] = 'checkbox';
-        $this->form['extra']['multiple']['#title'] = t('Multiple');
-        $this->form['extra']['multiple']['#description'] = t('Check this option if the user should be allowed to choose multiple values.');
-        $this->form['extra']['multiple']['#default_value'] = !empty($element['extra']['multiple']);
-      }
-      else {
-        $this->form['extra']['multiple']['#type'] = 'hidden';
-        $this->form['extra']['multiple']['#value'] = (int) !empty($field['extra']['multiple']);
-      }
-      array_unshift($this->form['#submit'], 'wf_crm_process_options_selection');
+  private function buildOptionsTable() {
+    $options = $sort = wf_crm_field_options($this->component, 'component_edit', $this->data);
+    if (!$options) {
+      return;
     }
+    $this->form['#attached']['js'] = array(drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_options.js');
+
+    $defaults_selected = array();
+    if (!empty($this->component['value'])) {
+      foreach (explode(',', trim($this->component['value'])) as $v) {
+        $defaults_selected[] = '_web_civi_option_selected_' . $v;
+      }
+    }
+    // Get rid of stuff related to options_element module
+    unset($this->form['items']);
+
+    $this->form['value']['#type'] = 'hidden';
+    $this->form['civicrm_options_fieldset'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Options'),
+      '#theme' => 'webform_civicrm_options_table',
+    );
+    $option_keys = array();
+    foreach ($options as $k => $v) {
+      $option_keys['_web_civi_option_selected_' . $k] = '';
+      $this->form['civicrm_options_fieldset']['civicrm_option_name_' . $k] = array(
+        '#markup' => '<span class="civicrm-option-name">' . $v . '</span>',
+      );
+    }
+    if ($this->component['type'] === 'select') {
+      $this->form['civicrm_options_fieldset']['civicrm_live_options'] = array(
+        '#type' => 'radios',
+        '#options' => array(t('<strong>Static Options</strong> (fully configurable)'), t('<strong>Live Options</strong> (update automatically)')),
+        '#default_value' => (int) !empty($this->component['extra']['civicrm_live_options']),
+        '#parents' => array('extra', 'civicrm_live_options'),
+      );
+      $this->form['civicrm_options_fieldset']['intro'] = array(
+        '#markup' => '<p><div class="live-options-hide">' .
+        t('Drag the arrows to re-order these options. Click the "enabled" checkbox to show/remove an item from the form. Set the label as you want it to appear on the form.') .
+        '</div><div class="live-options-show">' .
+        t('You cannot control the presentation of live options. They will be loaded from the CiviCRM database every time the form is displayed.') .
+        '</div><div>' .
+        t('Check the "default" box for an option to be selected by default when a user views the form.') .
+        '</div></p>',
+      );
+      // Special instructions for contact reference fields
+      if (wf_crm_aval($this->field, 'data_type') == 'ContactReference') {
+        $this->form['civicrm_options_fieldset']['intro'] = array(
+          '#markup' => '<p>' . t('This is a contact reference field. It points to another contact on the webform. You can configure how that contact is presented by editing their "Existing Contact" field.') . '</p>' .
+          '<p>' . t("Note: In most cases it is not desireable to have the selection of webform contacts exposed to the end-user so you may wish to set this field's value on the CiviCRM tab instead.") . '</p>',
+        );
+      }
+      $options_selected = wf_crm_str2array($this->component['extra']['items']);
+      // Sort weights. Unselected options will be at the bottom.
+      $option_keys = $option_selected_keys = array();
+      foreach ($options_selected as $k => $v) {
+        if (isset($options[$k])) {
+          $option_keys['_web_civi_option_selected_' . $k] = '';
+          $option_selected_keys[] = '_web_civi_option_selected_' . $k;
+          unset($sort[$k]);
+        }
+      }
+      foreach ($sort as $k => $v) {
+        $option_keys['_web_civi_option_selected_' . $k] = '';
+      }
+      $this->form['extra']['items']['#type'] = 'hidden';
+      $this->form['extra']['items']['#required'] = FALSE;
+      $this->form['extra']['items']['#value'] = $this->component['extra']['items'];
+      $this->form['extra']['options_source']['#access'] = FALSE;
+      $this->form['civicrm_options_fieldset']['civicrm_options'] = array(
+        '#type' => 'checkboxes',
+        '#required' => TRUE,
+        '#options' => $option_keys,
+        '#default_value' => $option_selected_keys,
+      );
+      $w = 0;
+      foreach ($option_keys as $k => $v) {
+        $k = str_replace('_web_civi_option_selected_', '', $k);
+        $this->form['civicrm_options_fieldset']['civicrm_option_label_' . $k] = array(
+          '#type' => 'textfield',
+          '#size' => 30,
+          '#default_value' => !empty($options_selected[$k]) ? $options_selected[$k] : $options[$k],
+        );
+        $this->form['civicrm_options_fieldset']['civicrm_option_weight_' . $k] = array(
+          '#type' => 'textfield',
+          '#size' => 3,
+          '#default_value' => ++$w,
+        );
+      }
+    }
+    $this->form['civicrm_options_fieldset']['civicrm_defaults'] = array(
+      '#type' => 'checkboxes',
+      '#options' => array('' => '') + $option_keys,
+      '#default_value' => $defaults_selected,
+    );
+    // Auto set multi-value option for single-valued entities
+    if (empty($this->field['extra']['multiple']) && $this->component['type'] === 'select') {
+      $this->form['extra']['multiple']['#type'] = 'hidden';
+      $this->form['extra']['multiple']['#value'] = 0;
+    }
+    // Restore multiple checkbox in case options_element module removed it
+    elseif ($this->component['type'] === 'select') {
+      $this->form['extra']['multiple']['#type'] = 'checkbox';
+      $this->form['extra']['multiple']['#title'] = t('Multiple');
+      $this->form['extra']['multiple']['#description'] = t('Check this option if the user should be allowed to choose multiple values.');
+      $this->form['extra']['multiple']['#default_value'] = !empty($this->component['extra']['multiple']);
+    }
+    else {
+      $this->form['extra']['multiple']['#type'] = 'hidden';
+      $this->form['extra']['multiple']['#value'] = (int) !empty($this->field['extra']['multiple']);
+    }
+    array_unshift($this->form['#submit'], 'wf_crm_process_options_selection');
   }
 
   /**
@@ -318,7 +317,7 @@ class wf_crm_admin_component {
         }
       }
       else {
-        $items = wf_crm_field_options($vals, 'live_options', $this->node->webform_civicrm['data']);
+        $items = wf_crm_field_options($vals, 'live_options', $this->data);
         $items += wf_crm_str2array($vals['extra']['items']);
         $vals['extra']['items'] = wf_crm_array2str($items);
       }
