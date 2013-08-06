@@ -5,7 +5,7 @@
  * CiviCRM contact webform component.
  */
 
-module_load_include('inc', 'webform_civicrm', 'includes/webform_civicrm_utils');
+module_load_include('inc', 'webform_civicrm', 'includes/utils');
 
 /**
  * Implements _webform_defaults_component().

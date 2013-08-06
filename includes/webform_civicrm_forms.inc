@@ -5,7 +5,7 @@
  * Webform CiviCRM module's front-end form functions.
  */
 
-module_load_include('inc', 'webform_civicrm', 'includes/webform_civicrm_utils');
+module_load_include('inc', 'webform_civicrm', 'includes/utils');
 
 /**
  * Alter front-end of webforms: Called by hook_form_alter() when rendering a civicrm-enabled webform
