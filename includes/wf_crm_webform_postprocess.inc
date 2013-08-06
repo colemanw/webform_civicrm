@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Webform CiviCRM module's front-end form postprocessor.
+ * Front-end form post-processor.
  */
 
 module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_base');
@@ -49,7 +49,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (substr($field_key, -8) == 'existing') {
         list(, $c, ) = explode('_', $field_key, 3);
         $this->id['cid'][$c] = 0;
-        $cid = wf_crm_aval(wf_crm_sub_value($this->submission, $fid), 0);
+        $cid = wf_crm_aval($this->submissionValue($fid), 0);
         if ($cid && is_numeric($cid)) {
           module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
           $component = $this->node->webform['components'][$fid];
@@ -202,25 +202,25 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         ));
       }
       // Save custom data
-      wf_crm_save_custom($contact, $cid, 'Contact', !empty($updating['cid'][$c]));
+      $this->saveCustomData($contact, $cid, 'Contact', !empty($updating['cid'][$c]));
 
       // Fill values for hidden ID & CS fields
       $fid = 'civicrm_' . $c . '_contact_1_contact_';
       if (!empty($this->enabled[$fid . 'contact_id'])) {
-        wf_crm_sub_value($this->submission, $this->enabled[$fid . 'contact_id'], $cid);
+        $this->submissionValue($this->enabled[$fid . 'contact_id'], $cid);
       }
       if (!empty($this->enabled[$fid . 'existing'])) {
-        wf_crm_sub_value($this->submission, $this->enabled[$fid . 'existing'], $cid);
+        $this->submissionValue($this->enabled[$fid . 'existing'], $cid);
       }
       if (!empty($this->enabled[$fid . 'external_identifier']) && !empty($updating['cid'][$c])) {
         $exid = wf_civicrm_api('contact', 'get', array('contact_id' => $cid, 'return.external_identifier' => 1));
-        wf_crm_sub_value($this->submission, $this->enabled[$fid . 'external_identifier'], wf_crm_aval($exid, "values:$cid:external_identifier"));
+        $this->submissionValue($this->enabled[$fid . 'external_identifier'], wf_crm_aval($exid, "values:$cid:external_identifier"));
       }
       if (!empty($this->enabled[$fid . 'cs'])) {
-        $cs = wf_crm_sub_value($this->submission, $this->enabled[$fid . 'cs']);
+        $cs = $this->submissionValue($this->enabled[$fid . 'cs']);
         $life = !empty($cs[0]) ? intval(24 * $cs[0]) : 'inf';
         $cs = CRM_Contact_BAO_Contact_Utils::generateChecksum($cid, NULL, $life);
-        wf_crm_sub_value($this->submission, $this->enabled[$fid . 'cs'], $cs);
+        $this->submissionValue($this->enabled[$fid . 'cs'], $cs);
       }
 
       // Save location data
@@ -380,7 +380,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                     $registered_by_id[$e][$i] = $result['id'];
                   }
                   if ($custom) {
-                    wf_crm_save_custom($custom, $result['id'], 'Participant');
+                    $this->saveCustomData($custom, $result['id'], 'Participant');
                   }
                 }
               }
@@ -433,7 +433,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (!empty($this->data['case'][1]['case'][1]['client_id'])) {
         if (empty($this->id['case'][1])) {
           // Search for case
-          $case = wf_crm_case_find($this->data['case'][1]);
+          $case = $this->findCase();
           if ($case) {
             $this->id['case'][1] = $case['id'];
           }
@@ -449,7 +449,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         // Save case
         $result = wf_civicrm_api('case', 'create', $this->data['case'][1]['case'][1]);
         if (!empty($result['id'])) {
-          wf_crm_save_custom($this->data['case'][1], $result['id'], 'Case');
+          $this->saveCustomData($this->data['case'][1], $result['id'], 'Case');
           $this->id['case'][1] = $result['id'];
         }
       }
@@ -468,7 +468,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             $params['contact_id'] = $this->id['cid'][1];
           }
           if (empty($this->id['act'][1])) {
-            $this->id['act'][1] = wf_crm_activity_find($params);
+            $this->id['act'][1] = $this->findActivity($params);
           }
         }
         // Save activity
@@ -525,7 +525,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
         if (!empty($result['id'])) {
           $this->id['act'][1] = $result['id'];
-          wf_crm_save_custom($this->data['activity'][1], $this->id['act'][1], 'Activity');
+          $this->saveCustomData($this->data['activity'][1], $this->id['act'][1], 'Activity');
         }
         if (!empty($this->id['act'][1]) && !empty($params['assignee_contact_id'])) {
           if (CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'activity_assignee_notification')) {
@@ -783,7 +783,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
     $fields = wf_crm_get_fields();
     foreach ($this->enabled as $field_key => $fid) {
-      $val = wf_crm_sub_value($this->submission, $fid);
+      $val = $this->submissionValue($fid);
       if ($val !== FALSE) {
         list( , $c, $ent, $n, $table, $name) = explode('_', $field_key, 6);
         // Fieldsets and existing contact fields are not CRM data, so ignore
@@ -793,13 +793,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         // Ignore values from fields hidden by existing contact component
         if ($ent == 'contact' && isset($this->enabled["civicrm_{$c}_contact_1_contact_existing"])) {
           $component = $this->node->webform['components'][$this->enabled["civicrm_{$c}_contact_1_contact_existing"]];
-          $existing_contact_val = wf_crm_sub_value($this->submission, $component['cid']);
+          $existing_contact_val = $this->submissionValue($component['cid']);
           // Fields should be hidden if value is empty (no selection) or a numeric contact id
           if (!$existing_contact_val[0] || is_numeric($existing_contact_val[0])) {
             $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
             if (in_array($type, $component['extra']['hide_fields'])) {
               // Remove the value from the webform submission
-              wf_crm_sub_value($this->submission, $fid, array(NULL));
+              $this->submissionValue($fid, array(NULL));
               continue;
             }
           }
@@ -879,6 +879,31 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       default:
         return empty($params[$location]);
     }
+  }
+
+
+  /**
+   * Get or set a value from a webform submission
+   *
+   * @param $fid
+   *   Numeric webform component id
+   * @param $value
+   *   Value to set - leave empty to get a value rather than setting it
+   *
+   * @return array|null field value if found
+   */
+  protected function submissionValue($fid, $value = NULL) {
+    if (!isset($this->submission->data[$fid])) {
+      return NULL;
+    }
+    $field =& $this->submission->data[$fid];
+    if (is_array($value)) {
+      $field = array_values($value);
+    }
+    elseif ($value !== NULL) {
+      $field[0] = $value;
+    }
+    return $field;
   }
 
 }

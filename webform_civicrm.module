@@ -24,6 +24,7 @@ function webform_civicrm_menu() {
   );
   $items['webform-civicrm/js/%'] = array(
     'page callback' => 'wf_crm_ajax',
+    'file' => 'includes/wf_crm_webform_ajax.inc',
     'access callback' => TRUE,
     'page arguments' => array(2),
     'type' => MENU_CALLBACK,
@@ -520,31 +521,6 @@ function webform_civicrm_preprocess_webform_components_form(&$vars) {
     }
   }
 }
-
-
-/**
- * Drupal page callback to serve AJAX requests.
- *
- * @param $key
- *   Type of AJAX request
- * @param $input
- *   User input
- *
- * Prints json output
- */
-function wf_crm_ajax($key, $input = '') {
-
-  $processor = new wf_crm_webform_ajax();
-  if ($key == 'stateProvince' || $key == 'county') {
-    $processor->$key($input);
-  }
-  elseif (strpos($key, '-')) {
-    list($nid, $fid) = explode('-', $key, 2);
-    $processor->contactAjax($key);
-  }
-  drupal_access_denied();
-}
-
 
 /**
  * Return a value from nested arrays or objects.

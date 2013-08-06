@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Webform CiviCRM module's front-end form validation.
+ * Front-end form validation.
  */
 
 module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_base');
@@ -165,7 +165,7 @@ class wf_crm_webform_validate extends wf_crm_webform_base {
       }
       $dao->free();
     }
-    wf_crm_event_info($events);
+    $this->loadEvents($events);
     foreach ($events as $eid => $event) {
       if ($event['ended']) {
         form_set_error($eid, t('Sorry, you can no longer register for %event.', array('%event' => $event['title'])));

@@ -137,6 +137,34 @@ function wf_crm_get_states($param = NULL) {
 }
 
 /**
+ * Match a state/province id to its abbr. and vice-versa
+ *
+ * @param $input
+ *   User input (state province id or abbr)
+ * @param $ret
+ *   String: 'abbreviation' or 'id'
+ * @param $country_id
+ *   Int: (optional) must be supplied if fetching id from abbr
+ *
+ * @return string or integer
+ */
+function wf_crm_state_abbr($input, $ret = 'abbreviation', $country_id = NULL) {
+  $input_type = $ret == 'id' ? 'abbreviation' : 'id';
+  $sql = "SELECT $ret FROM civicrm_state_province WHERE $input_type = %1";
+  $vars = array(1 => array($input, $ret == 'id' ? 'String' : 'Integer'));
+  if ($ret === 'id') {
+    if (!$country_id || $country_id === 'default') {
+      $config = CRM_Core_Config::singleton();
+      $country_id = (int) $config->defaultContactCountry;
+    }
+    $sql .= ' AND country_id = %2';
+    $vars[2] = array($country_id, 'Integer');
+  }
+  $sql .= ' LIMIT 0, 1';
+  return CRM_Core_DAO::singleValueQuery($sql, $vars);
+}
+
+/**
  * Get list of events.
  * FIXME use the api for this.
  *
@@ -306,118 +334,6 @@ function wf_crm_get_contact_relationship_types($type_a, $type_b, $sub_type_a, $s
 }
 
 /**
- * Get custom data for an entity
- *
- * @param $entity_id
- *   Numeric id of entity
- * @param $entity_type
- *   Type of crm entity. 'contact' is assumed
- * @param $normalize
- *   Default true: if true shift all arrays to start at index 1
- *
- * @return array
- */
-function wf_crm_get_custom($entity_id, $entity_type = NULL, $normalize = TRUE) {
-  static $parents = array();
-  if (empty($parents)) {
-    // Create matching table to sort fields by group
-    foreach (wf_crm_get_fields() as $key => $value) {
-      list($group, $field) = explode('_', $key, 2);
-      if (substr($field, 0, 7) == 'custom_') {
-        $parents[$field] = $group;
-      }
-    }
-  }
-  $params = array('entityID' => $entity_id);
-  if ($entity_type) {
-    $params['entityType'] = ucfirst($entity_type);
-  }
-  $result = CRM_Core_BAO_CustomValueTable::getValues($params);
-  if (!empty($result['is_error'])) {
-    return array();
-  }
-  unset($result['is_error'], $result['entityID']);
-  $values = array();
-  // Convert multi-value strings to arrays and sort by group
-  foreach ($result as $key => $value) {
-    $pieces = explode('_', $key);
-    if ($pieces[0] == 'custom') {
-      $name = 'custom_' . $pieces[1];
-      if (empty($pieces[2])) {
-        $pieces[2] = ($normalize ? 1 : 0);
-      }
-      if (isset($parents[$name])) {
-        $values[$parents[$name]][$pieces[2]][$name] = $value;
-      }
-    }
-  }
-  if ($normalize) {
-    // Normalize array keys
-    foreach ($values as &$value) {
-      array_unshift($value, 0);
-      unset($value[0]);
-    }
-  }
-  return $values;
-}
-
-/**
- * Save custom data for an entity
- *
- * @param $entity
- *   Array of values
- * @param $entity_id
- *   Numeric id of entity
- * @param $entity_type
- *   Type of crm entity, e.g. "Contact"
- * @param $known
- *   Is this a known record (as opposed to a contact matched via dedupe rules)? 
- *   We only allow saving blank fields for known contacts.
- */
-function wf_crm_save_custom($entity, $entity_id, $entity_type, $known = TRUE) {
-  $existing = wf_crm_get_custom($entity_id, $entity_type, FALSE);
-  $params = array('entityID' => $entity_id);
-  foreach ($entity as $table => $values) {
-    if (substr($table, 0, 2) == 'cg' && is_array($values)) {
-      if (empty($existing[$table])) {
-        $existing[$table] = array();
-      }
-      $insert = 0;
-      foreach ($values as $custom) {
-        if ($id = each($existing[$table])) {
-          $suf = $id['key'];
-        }
-        else {
-          $suf = --$insert;
-        }
-        foreach ($custom as $k => $v) {
-          // Only save if this is not blank or data already exists and record is known
-          if ($v !== '' || ($suf > 0 && $known)) {
-            $params[$k . '_' . $suf] = $v;
-          }
-        }
-      }
-    }
-  }
-  if (count($params) > 1) {
-    $result = CRM_Core_BAO_CustomValueTable::setValues($params);
-    // Prevent wholesale failure by saving each param individually if there was an error while trying to save them all at once
-    if (!empty($result['is_error'])) {
-      $bt = debug_backtrace();
-      array_shift($params);
-      foreach ($params as $k => $v) {
-        $single_param = array('entityID' => $entity_id, $k => $v);
-        $result = CRM_Core_BAO_CustomValueTable::setValues($single_param);
-        if (!empty($result['is_error'])) {
-          $file = explode('/', $bt[0]['file']);
-          watchdog('webform_civicrm', 'The CiviCRM "CustomValueTable::setValues" function returned the error: "%msg" when called by line !line of !file with the following parameters: "!params"', array('%msg' => $result['error_message'], '!line' => $bt[0]['line'], '!file' => array_pop($file), '!params' => print_r($single_param, TRUE)), WATCHDOG_ERROR);
-        }
-      }
-    }
-  }
-}
-
-/**
  * Get ids or values of enabled CiviCRM fields for a webform.
  *
  * @param $node
@@ -452,35 +368,6 @@ function wf_crm_enabled_fields($node, $submission = NULL, $show_all = FALSE) {
     }
   }
   return $enabled;
-}
-
-
-/**
- * Match a state/province id to its abbr. and vice-versa
- *
- * @param $input
- *   User input (state province id or abbr)
- * @param $ret
- *   String: 'abbreviation' or 'id'
- * @param $country_id
- *   Int: (optional) must be supplied if fetching id from abbr
- *
- * @return string or integer
- */
-function wf_crm_state_abbr($input, $ret = 'abbreviation', $country_id = NULL) {
-  $input_type = $ret == 'id' ? 'abbreviation' : 'id';
-  $sql = "SELECT $ret FROM civicrm_state_province WHERE $input_type = %1";
-  $vars = array(1 => array($input, $ret == 'id' ? 'String' : 'Integer'));
-  if ($ret === 'id') {
-    if (!$country_id || $country_id === 'default') {
-      $config = CRM_Core_Config::singleton();
-      $country_id = (int) $config->defaultContactCountry;
-    }
-    $sql .= ' AND country_id = %2';
-    $vars[2] = array($country_id, 'Integer');
-  }
-  $sql .= ' LIMIT 0, 1';
-  return CRM_Core_DAO::singleValueQuery($sql, $vars);
 }
 
 /**
@@ -1201,33 +1088,6 @@ function wf_crm_array2str($arr) {
 }
 
 /**
- * Token replacement for form messages
- *
- * @param $str
- *   Raw message with tokens
- * @param $contact
- *   CiviCRM contact array
- * @return mixed
- */
-function wf_crm_replace_tokens($str, $contact) {
-  $sp = CRM_Core_DAO::VALUE_SEPARATOR;
-  $tokens = wf_crm_get_fields('tokens');
-  $values = array();
-  foreach ($tokens as $k => &$t) {
-    if (empty($contact[$k])) {
-      $contact[$k] = '';
-    }
-    $value = $contact[$k];
-    if (is_array($value)) {
-      $value = implode(', ', $value);
-    }
-    $values[] = str_replace($sp, ' &amp; ', trim($value, $sp));
-    $t = "[$t]";
-  }
-  return str_ireplace($tokens, $values, $str);
-}
-
-/**
  * Wrapper for all CiviCRM API calls
  * For consistency, future-proofing, and error handling
  *
@@ -1333,130 +1193,6 @@ function wf_crm_required_contact_fields($contact_type) {
 }
 
 /**
- * Fetch an existing activity for a contact based on activity & case criteria
- * Maybe someday this will be possible through the CiviCRM API
- *
- * @param $params
- *   Array of activity & case info
- * @return string
- */
-function wf_crm_activity_find($params) {
-  if (!empty($params['status_id'])) {
-    $cid = wf_crm_aval($params, 'contact_id');
-    unset($params['contact_id']);
-    $sql = 'SELECT civicrm_activity.id FROM civicrm_activity';
-    if (!empty($params['case_id'])) {
-      $sql .= ' INNER JOIN civicrm_case_activity ON civicrm_activity.id = civicrm_case_activity.activity_id';
-    }
-    $sql .= " WHERE is_current_revision = 1 AND is_deleted = 0";
-    if ($cid) {
-      $sql .= " AND (civicrm_activity.id IN (SELECT activity_id FROM civicrm_activity_target WHERE target_contact_id = $cid) OR source_contact_id = $cid)";
-    }
-    foreach ($params as $field => $value) {
-      if ($value && is_array($value)) {
-        $sql .= " AND $field IN (" . implode(',', $value) . ")";
-      }
-      elseif ($value) {
-        $sql .= " AND $field = $value";
-      }
-    }
-    $sql .= ' LIMIT 0, 1';
-    return CRM_Core_DAO::singleValueQuery($sql);
-  }
-}
-
-/**
- * Fetch an existing case for client(s)
- * Based on url param or status_id and case_type_id
- *
- * @param $params
- *   Array of case info in standard webform_civicrm format
- * @param $ids
- *   Passed if client id refers to a contact number and not a contact id
- */
-function wf_crm_case_find($params, $ids = NULL) {
-  // Look for case id passed in url 
-  if (!empty($_GET['caseid']) && is_numeric($_GET['caseid'])) {
-    $result = wf_civicrm_api('case', 'get', array('case_id' => $_GET['caseid']));
-    if (isset($result['values'][$_GET['caseid']])) {
-      $case = $result['values'][$_GET['caseid']];
-      // Verify that case is correct type and user has access to this case 
-      if ($case['case_type_id'] == $params['case'][1]['case_type_id']) {
-        // Respect admin privledges
-        if (user_access('access all cases and activities')) {
-          return $case;
-        }
-        $case_cids = array();
-        foreach ($case['contacts'] as $contact) {
-          $case_cids[] = $contact['contact_id'];
-        }
-        foreach ((array) wf_crm_aval($ids, 'cid', $params['case'][1]['client_id']) as $cid) {
-          if (in_array($cid, $case_cids)) {
-            // User is involved in the case therefore the found case is correct
-            return $case;
-          }
-        }
-      }
-    }
-  }
-  // Match existing case based on client and status
-  if (!empty($params['existing_case_status']) && !empty($params['case'][1]['client_id'])) {
-    foreach ((array) $params['case'][1]['client_id'] as $client_id) {
-      if ($ids !== NULL) {
-        $client_id = wf_crm_aval($ids, "cid:$client_id");
-      }
-      if ($client_id) {
-        $result = wf_civicrm_api('case', 'get', array('client_id' => $client_id));
-        foreach (wf_crm_aval($result, 'values', array()) as $case) {
-          if (empty($case['is_deleted']) && in_array($case['status_id'], $params['existing_case_status'])) {
-            $case_types = $case['case_type_id'];
-            if (is_string($case_types)) {
-              $case_types = explode(',', $case_types);
-            }
-            if (in_array($params['case'][1]['case_type_id'], $case_types)) {
-              return $case;
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-/**
- * Fetch info and remaining spaces for events
- *
- * @param $events
- *   Array of event info to fill (reference)
- */
-function wf_crm_event_info(&$events) {
-  if (!empty($events)) {
-    $now = time();
-    // Fetch event info
-    $dao = &CRM_Core_DAO::executeQuery('SELECT id, title, end_date, max_participants
-      FROM civicrm_event WHERE id IN (' . implode(',', array_keys($events)) . ')');
-    while ($dao->fetch()) {
-      $events[$dao->id]['title'] = $dao->title;
-      $events[$dao->id]['end_date'] = $dao->end_date;
-      $events[$dao->id]['full'] = FALSE;
-      $events[$dao->id]['ended'] = $dao->end_date && strtotime($dao->end_date) < $now;
-      if ($events[$dao->id]['max_participants'] = $dao->max_participants) {
-        $remaining = CRM_Event_BAO_Participant::eventFull($dao->id, TRUE, FALSE);
-        if (is_string($remaining)) {
-          $events[$dao->id]['full'] = TRUE;
-          $events[$dao->id]['remaining'] = 0;
-          $events[$dao->id]['full_message'] = $remaining;
-        }
-        else {
-          $events[$dao->id]['remaining'] = $remaining ? $remaining : $dao->max_participants;
-        }
-      }
-    }
-    $dao->free();
-  }
-}
-
-/**
  * These are the contact location fields this module supports
  * @return array
  */
@@ -1479,32 +1215,6 @@ function wf_crm_filepath($id) {
     // Escape all characters except : and /
     return str_replace('public://', $base_url . '/' . variable_get('file_public_path', conf_path() . '/files') . '/', str_replace(array('%3A', '%2F'), array(':', '/'), rawurlencode($file->uri)));
   }
-}
-
-/**
- * Get or set a value from a webform submission
- *
- * @param $submission
- *   Webform submission object (reference)
- * @param $fid
- *   Numeric webform component id
- * @param $value
- *   Value to set - leave empty to get a value rather than setting it
- *
- * @return array|null field value if found
- */
-function wf_crm_sub_value(&$submission, $fid, $value = NULL) {
-  if (!isset($submission->data[$fid])) {
-    return NULL;
-  }
-  $field =& $submission->data[$fid];
-  if (is_array($value)) {
-    $field = array_values($value);
-  }
-  elseif ($value !== NULL) {
-    $field[0] = $value;
-  }
-  return $field;
 }
 
 /**

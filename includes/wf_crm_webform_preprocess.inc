@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Webform CiviCRM module's front-end form preprocessor.
+ * Front-end form pre-processor.
  */
 
 module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_base');
@@ -117,13 +117,13 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           foreach ($this->id['cid'] as $cid) {
             if ($act['source_contact_id'] == $cid || in_array($cid, $act['target_contact_id']) || in_array($cid, $act['assignee_contact_id'])) {
               $activity = array('activity' => array(1 => $result['values'][$_GET['aid']]));
-              $custom = wf_crm_get_custom($_GET['aid'], 'activity');
+              $custom = $this->getCustomData($_GET['aid'], 'activity');
               $this->info['activity'] = array(1 => ($activity + $custom));
               $this->id['act'][1] = $_GET['aid'];
               if (!empty($this->data['case'][1])) {
                 $result = wf_civicrm_api('case', 'get', array('activity_id' => $this->id['act'][1]));
                 if ($this->id['case'][1] = wf_crm_aval($result, 'id')) {
-                  $custom = wf_crm_get_custom($this->id['case'][1], 'case');
+                  $custom = $this->getCustomData($this->id['case'][1], 'case');
                   $this->info['case'] = array(1 => (array('case' => array(1 => $result['values'][$result['id']])) + $custom));
                 }
               }
@@ -136,10 +136,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     // Search for case & activity
     else {
       if (!empty($this->data['case'][1])) {
-        $case = wf_crm_case_find($this->data['case'][1], $this->id);
+        $case = $this->findCase($this->id);
         if ($case) {
           $this->id['case'][1] = $case['id'];
-          $custom = wf_crm_get_custom($case['id'], 'case');
+          $custom = $this->getCustomData($case['id'], 'case');
           // Add case to $this->info in standard webform_civicrm format
           $this->info['case'] = array(1 => (array('case' => array(1 => $case)) + $custom));
         }
@@ -156,11 +156,11 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           else {
             $params['contact_id'] = $this->id['cid'][1];
           }
-          $this->id['act'][1] = wf_crm_activity_find($params);
+          $this->id['act'][1] = $this->findActivity($params);
           if ($this->id['act'][1]) {
             $result = wf_civicrm_api('activity', 'get', array('activity_id' => $this->id['act'][1]));
             $activity = array('activity' => array(1 => $result['values'][$this->id['act'][1]]));
-            $custom = wf_crm_get_custom($this->id['act'][1], 'activity');
+            $custom = $this->getCustomData($this->id['act'][1], 'activity');
             $this->info['activity'] = array(1 => ($activity + $custom));
           }
         }
@@ -221,7 +221,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         }
       }
       if ($events && (!empty($reg['show_remaining']) || !empty($reg['block_form']))) {
-        wf_crm_event_info($events);
+        $this->loadEvents($events);
         foreach ($events as $eid => $event) {
           if ($event['ended']) {
             if (!empty($reg['show_remaining']) && empty($this->form_state['input']) && empty($this->form_state['storage'])) {
@@ -268,7 +268,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             foreach ($select as $sel) {
               $par['participant'][1][$sel] = $dao->$sel;
             }
-            $par += wf_crm_get_custom($dao->id, 'Participant');
+            $par += $this->getCustomData($dao->id, 'Participant');
             foreach ($events[$dao->event_id]['form'] as $event) {
               if ($event['contact'] == $c) {
                 $n = $event['contact'];
@@ -290,7 +290,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     }
     if (!empty($this->id['cid'][1])) {
       if ($this->settings['prefix_known']) {
-        $this->form['#prefix'] = wf_crm_aval($this->form, '#prefix', '') . '<div class="webform-civicrm-prefix contact-known">' . nl2br(wf_crm_replace_tokens($this->settings['prefix_known'], $this->info['contact'][1]['contact'][1])) . '</div>';
+        $this->form['#prefix'] = wf_crm_aval($this->form, '#prefix', '') . '<div class="webform-civicrm-prefix contact-known">' . nl2br($this->replaceTokens($this->settings['prefix_known'], $this->info['contact'][1]['contact'][1])) . '</div>';
       }
       if ($this->settings['message'] && empty($this->form_state['input']) && empty($this->form_state['storage'])) {
         $this->setMessage($this->settings['message'], $this->info['contact'][1]['contact'][1]);
@@ -491,7 +491,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    *   CiviCRM contact array
    */
   private function setMessage($message, $contact) {
-    $message = wf_crm_replace_tokens($message, $contact);
+    $message = $this->replaceTokens($message, $contact);
     preg_match_all('#\{([^}]+)\}#', $message, $matches);
     if (!empty($matches[0])) {
       $q = $_GET;
@@ -505,6 +505,33 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       }
     }
     drupal_set_message($message);
+  }
+
+  /**
+   * Token replacement for form messages
+   *
+   * @param $str
+   *   Raw message with tokens
+   * @param $contact
+   *   CiviCRM contact array
+   * @return mixed
+   */
+  private function replaceTokens($str, $contact) {
+    $sp = CRM_Core_DAO::VALUE_SEPARATOR;
+    $tokens = wf_crm_get_fields('tokens');
+    $values = array();
+    foreach ($tokens as $k => &$t) {
+      if (empty($contact[$k])) {
+        $contact[$k] = '';
+      }
+      $value = $contact[$k];
+      if (is_array($value)) {
+        $value = implode(', ', $value);
+      }
+      $values[] = str_replace($sp, ' &amp; ', trim($value, $sp));
+      $t = "[$t]";
+    }
+    return str_ireplace($tokens, $values, $str);
   }
 
 }
