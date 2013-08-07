@@ -88,14 +88,13 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
         $sp = CRM_Core_DAO::VALUE_SEPARATOR;
         $this->enabled = wf_crm_enabled_fields($this->node);
         list(, $c, ) = explode('_', $component['form_key'], 3);
-        $cids = array();
         foreach ($_GET as $k => $v) {
           if (substr($k, 0, 3) == 'cid' && $v && is_numeric($v)) {
-            $cids[substr($k, 3)] = (int) $v;
+            $this->id['cid'][substr($k, 3)] = (int) $v;
           }
-          $cids[$c] = (int) $_GET['cid'];
+          $this->id['cid'][$c] = (int) $_GET['cid'];
         }
-        $contact = $this->loadContact($c, $cids, $component['extra']['hide_fields']);
+        $contact = $this->loadContact($c, $component['extra']['hide_fields']);
         // Flatten data into simple form keys & values
         foreach ($this->enabled as $fid => $f) {
           list(, $i, $ent, $n, $table, $field) = explode('_', $fid, 6);

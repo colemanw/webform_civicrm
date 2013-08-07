@@ -11,7 +11,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
   private $form;
   private $form_state;
   private $info = array();
-  private $id = array();
+  private $events = array();
 
   function __construct(&$form, &$form_state) {
     civicrm_initialize();
@@ -107,64 +107,11 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         }
       }
     }
-    // Lookup activity if passed in url
     if (!empty($_GET['aid']) && !empty($this->id['cid']) && is_numeric($_GET['aid'])) {
-      $result = wf_civicrm_api('activity', 'get', array('activity_id' => $_GET['aid'], 'return.target_contact_id' => 1, 'return.assignee_contact_id' => 1));
-      if (isset($result['values'][$_GET['aid']])) {
-        $act = $result['values'][$_GET['aid']];
-        // Verify that this activity is the right type and that our contacts have some involvement in it
-        if ($act['activity_type_id'] == $this->data['activity'][1]['activity'][1]['activity_type_id']) {
-          foreach ($this->id['cid'] as $cid) {
-            if ($act['source_contact_id'] == $cid || in_array($cid, $act['target_contact_id']) || in_array($cid, $act['assignee_contact_id'])) {
-              $activity = array('activity' => array(1 => $result['values'][$_GET['aid']]));
-              $custom = $this->getCustomData($_GET['aid'], 'activity');
-              $this->info['activity'] = array(1 => ($activity + $custom));
-              $this->id['act'][1] = $_GET['aid'];
-              if (!empty($this->data['case'][1])) {
-                $result = wf_civicrm_api('case', 'get', array('activity_id' => $this->id['act'][1]));
-                if ($this->id['case'][1] = wf_crm_aval($result, 'id')) {
-                  $custom = $this->getCustomData($this->id['case'][1], 'case');
-                  $this->info['case'] = array(1 => (array('case' => array(1 => $result['values'][$result['id']])) + $custom));
-                }
-              }
-              break;
-            }
-          }
-        }
-      }
+      $this->populateActivityAndCaseFromUrl($_GET['aid']);
     }
-    // Search for case & activity
     else {
-      if (!empty($this->data['case'][1])) {
-        $case = $this->findCase($this->id);
-        if ($case) {
-          $this->id['case'][1] = $case['id'];
-          $custom = $this->getCustomData($case['id'], 'case');
-          // Add case to $this->info in standard webform_civicrm format
-          $this->info['case'] = array(1 => (array('case' => array(1 => $case)) + $custom));
-        }
-      }
-      if ((!empty($this->id['cid'][1]) && empty($this->data['case'][1])) || (!empty($this->data['case'][1]) && !empty($this->id['case'][1]))) {
-        if (!empty($this->data['activity'][1]['existing_activity_status'])) {
-          $params = array(
-            'activity_type_id' => $this->data['activity'][1]['activity'][1]['activity_type_id'],
-            'status_id' => $this->data['activity'][1]['existing_activity_status'],
-          );
-          if (!empty($this->data['case'][1])) {
-            $params['case_id'] = $this->id['case'][1];
-          }
-          else {
-            $params['contact_id'] = $this->id['cid'][1];
-          }
-          $this->id['act'][1] = $this->findActivity($params);
-          if ($this->id['act'][1]) {
-            $result = wf_civicrm_api('activity', 'get', array('activity_id' => $this->id['act'][1]));
-            $activity = array('activity' => array(1 => $result['values'][$this->id['act'][1]]));
-            $custom = $this->getCustomData($this->id['act'][1], 'activity');
-            $this->info['activity'] = array(1 => ($activity + $custom));
-          }
-        }
-      }
+      $this->populateActivityAndCase();
     }
     // Form alterations for unknown contacts
     if (empty($this->id['cid'][1])) {
@@ -177,114 +124,18 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         return;
       }
     }
-    // Check if events are open to registration and take appropriate action
-    $events = array();
-    $reg = wf_crm_aval($this->data, 'reg_options', array());
     if (!empty($this->data['participant_reg_type'])) {
-      // Fetch events set in back-end
-      $this->data += array('participant' => array());
-      foreach ($this->data['participant'] as $e => $par) {
-        if (!empty($par['participant'])) {
-          foreach ($par['participant'] as $n => $p) {
-            if (!empty($p['event_id'])) {
-              // Handle multi-valued event selection
-              foreach ((array) $p['event_id'] as $eid) {
-                if ($eid = (int) $eid) {
-                  $events[$eid]['ended'] = TRUE;
-                  $events[$eid]['title'] = t('this event');
-                  $events[$eid]['count'] = wf_crm_aval($events, "$eid:count", 0) + 1;
-                  $events[$eid]['form'][] = array(
-                    'contact' => $e,
-                    'num' => $n,
-                    'eid' => NULL
-                  );
-                }
-              }
-            }
-          }
-        }
-      }
-      // Add events exposed to the form
-      foreach ($this->enabled as $field => $fid) {
-        if (strpos($field, 'participant_event_id')) {
-          foreach ($this->getExposedOptions($fid) as $p => $label) {
-            list($eid) = explode('-', $p);
-            $events[$eid]['ended'] = TRUE;
-            $events[$eid]['title'] = $label;
-            list(, $e, , $n) = explode('_', $field);
-            $events[$eid]['form'][] = array(
-              'contact' => $e,
-              'num' => $n,
-              'eid' => $p
-            );
-          }
-        }
-      }
-      if ($events && (!empty($reg['show_remaining']) || !empty($reg['block_form']))) {
-        $this->loadEvents($events);
-        foreach ($events as $eid => $event) {
-          if ($event['ended']) {
-            if (!empty($reg['show_remaining']) && empty($this->form_state['input']) && empty($this->form_state['storage'])) {
-              drupal_set_message(t('Sorry, %event has ended.', array('%event' => $event['title'])), 'warning', FALSE);
-            }
-          }
-          elseif ($event['full']) {
-            if (!empty($reg['show_remaining']) && empty($this->form_state['input']) && empty($this->form_state['storage'])) {
-              drupal_set_message('<em>' . $event['title'] . '</em>: ' . $event['full_message'], 'warning', FALSE);
-            }
-          }
-          else {
-            $reg['block_form'] = FALSE;
-            if ($event['max_participants'] && empty($this->form_state['input']) && empty($this->form_state['storage'])
-            && ($reg['show_remaining'] == 'always' || intval($reg['show_remaining']) >= $event['remaining'])) {
-              drupal_set_message(format_plural($event['remaining'],
-                '%event has 1 remaining space.',
-                '%event has @count remaining spaces.',
-                array('%event' => $event['title'])), 'status', FALSE);
-            }
-          }
-        }
-        if ($reg['block_form']) {
-          $this->form['submitted']['#access'] = $this->form['actions']['#access'] = FALSE;
-          return;
-        }
-      }
+      $this->populateEvents();
     }
     // Form alterations for known contacts
-    foreach ($this->data['contact'] as $c => $contact) {
-      if ($cid = wf_crm_aval($this->id['cid'], $c)) {
+    foreach ($this->id['cid'] as $c => $cid) {
+      if ($cid) {
         // Retrieve contact data
-        $this->info['contact'][$c] = $this->loadContact($c, $this->id['cid']);
+        $this->info['contact'][$c] = $this->loadContact($c);
         $this->info['contact'][$c]['contact'][1]['existing'] = $cid;
         // Retrieve participant data
-        if ($events && ($c == 1 || $this->data['participant_reg_type'] == 'separate')) {
-          $select = array('id', 'event_id', 'role_id', 'status_id');
-          if (in_array('CiviCampaign', $config->enableComponents, TRUE)) {
-            $select[] = 'campaign_id';
-          }
-          $dao = &CRM_Core_DAO::executeQuery('SELECT ' . implode(',', $select) . " FROM civicrm_participant WHERE contact_id = $cid AND event_id IN (" . implode(',', array_keys($events)) . ") AND status_id IN (SELECT id FROM civicrm_participant_status_type WHERE class <> 'Negative')");
-          while ($dao->fetch()) {
-            $par = array();
-            foreach ($select as $sel) {
-              $par['participant'][1][$sel] = $dao->$sel;
-            }
-            $par += $this->getCustomData($dao->id, 'Participant');
-            foreach ($events[$dao->event_id]['form'] as $event) {
-              if ($event['contact'] == $c) {
-                $n = $event['contact'];
-                $i = $event['num'];
-                // Support multi-valued form elements
-                $event_ids = wf_crm_aval($this->info, "participant:$n:participant:$i:event_id", array());
-                if ($event['eid']) {
-                  $event_ids[] = $event['eid'];
-                }
-                foreach ($par as $k => $v) {
-                  $this->info['participant'][$n][$k][$i] = $v[1];
-                }
-                $this->info['participant'][$n]['participant'][$i]['event_id'] = $event_ids;
-              }
-            }
-          }
+        if ($this->events && ($c == 1 || $this->data['participant_reg_type'] == 'separate')) {
+          $this->loadParticipants($c);
         }
       }
     }
@@ -305,13 +156,190 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
   }
 
   /**
+   * Lookup activity if id passed in url
+   * @param $aid
+   */
+  private function populateActivityAndCaseFromUrl($aid) {
+    $result = wf_crm_apivalues('activity', 'get', array(
+      'activity_id' => $aid,
+      'options' => array('return' => array('target_contact_id', 'assignee_contact_id'))
+    ));
+    if (isset($result[$aid])) {
+      $act = $result[$aid];
+      // Verify that this activity is the right type and that our contacts have some involvement in it
+      if ($act['activity_type_id'] == $this->data['activity'][1]['activity'][1]['activity_type_id']) {
+        foreach ($this->id['cid'] as $cid) {
+          if ($act['source_contact_id'] == $cid || in_array($cid, $act['target_contact_id']) || in_array($cid, $act['assignee_contact_id'])) {
+            $activity = array('activity' => array(1 => $result['values'][$aid]));
+            $custom = $this->getCustomData($aid, 'activity');
+            $this->info['activity'] = array(1 => ($activity + $custom));
+            $this->id['act'][1] = $aid;
+            if (!empty($this->data['case'][1])) {
+              $result = wf_civicrm_api('case', 'get', array('activity_id' => $this->id['act'][1]));
+              if ($this->id['case'][1] = wf_crm_aval($result, 'id')) {
+                $custom = $this->getCustomData($this->id['case'][1], 'case');
+                $this->info['case'] = array(1 => (array('case' => array(1 => $result['values'][$result['id']])) + $custom));
+              }
+            }
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Search for case & activity
+   */
+  private function populateActivityAndCase() {
+    if (!empty($this->data['case'][1])) {
+      $case = $this->findCase($this->id);
+      if ($case) {
+        $this->id['case'][1] = $case['id'];
+        $custom = $this->getCustomData($case['id'], 'case');
+        // Add case to $this->info in standard webform_civicrm format
+        $this->info['case'] = array(1 => (array('case' => array(1 => $case)) + $custom));
+      }
+    }
+    if ((!empty($this->id['cid'][1]) && empty($this->data['case'][1])) || (!empty($this->data['case'][1]) && !empty($this->id['case'][1]))) {
+      if (!empty($this->data['activity'][1]['existing_activity_status'])) {
+        $params = array(
+          'activity_type_id' => $this->data['activity'][1]['activity'][1]['activity_type_id'],
+          'status_id' => $this->data['activity'][1]['existing_activity_status'],
+        );
+        if (!empty($this->data['case'][1])) {
+          $params['case_id'] = $this->id['case'][1];
+        }
+        else {
+          $params['contact_id'] = $this->id['cid'][1];
+        }
+        $this->id['act'][1] = $this->findActivity($params);
+        if ($this->id['act'][1]) {
+          $result = wf_civicrm_api('activity', 'get', array('activity_id' => $this->id['act'][1]));
+          $activity = array('activity' => array(1 => $result['values'][$this->id['act'][1]]));
+          $custom = $this->getCustomData($this->id['act'][1], 'activity');
+          $this->info['activity'] = array(1 => ($activity + $custom));
+        }
+      }
+    }
+  }
+
+  /**
+   * Check if events are open to registration and take appropriate action
+   */
+  private function populateEvents() {
+    $reg = wf_crm_aval($this->data, 'reg_options', array());
+    // Fetch events set in back-end
+    $this->data += array('participant' => array());
+    foreach ($this->data['participant'] as $e => $par) {
+      if (!empty($par['participant'])) {
+        foreach ($par['participant'] as $n => $p) {
+          if (!empty($p['event_id'])) {
+            // Handle multi-valued event selection
+            foreach ((array) $p['event_id'] as $eid) {
+              if ($eid = (int) $eid) {
+                $this->events[$eid]['ended'] = TRUE;
+                $this->events[$eid]['title'] = t('this event');
+                $this->events[$eid]['count'] = wf_crm_aval($this->events, "$eid:count", 0) + 1;
+                $this->events[$eid]['form'][] = array(
+                  'contact' => $e,
+                  'num' => $n,
+                  'eid' => NULL
+                );
+              }
+            }
+          }
+        }
+      }
+    }
+    // Add events exposed to the form
+    foreach ($this->enabled as $field => $fid) {
+      if (strpos($field, 'participant_event_id')) {
+        foreach ($this->getExposedOptions($fid) as $p => $label) {
+          list($eid) = explode('-', $p);
+          $this->events[$eid]['ended'] = TRUE;
+          $this->events[$eid]['title'] = $label;
+          list(, $e, , $n) = explode('_', $field);
+          $this->events[$eid]['form'][] = array(
+            'contact' => $e,
+            'num' => $n,
+            'eid' => $p
+          );
+        }
+      }
+    }
+    if ($this->events && (!empty($reg['show_remaining']) || !empty($reg['block_form']))) {
+      $this->loadEvents($this->events);
+      foreach ($this->events as $eid => $event) {
+        if ($event['ended']) {
+          if (!empty($reg['show_remaining']) && empty($this->form_state['input']) && empty($this->form_state['storage'])) {
+            drupal_set_message(t('Sorry, %event has ended.', array('%event' => $event['title'])), 'warning', FALSE);
+          }
+        }
+        elseif ($event['full']) {
+          if (!empty($reg['show_remaining']) && empty($this->form_state['input']) && empty($this->form_state['storage'])) {
+            drupal_set_message('<em>' . $event['title'] . '</em>: ' . $event['full_message'], 'warning', FALSE);
+          }
+        }
+        else {
+          $reg['block_form'] = FALSE;
+          if ($event['max_participants'] && empty($this->form_state['input']) && empty($this->form_state['storage'])
+            && ($reg['show_remaining'] == 'always' || intval($reg['show_remaining']) >= $event['remaining'])) {
+            drupal_set_message(format_plural($event['remaining'],
+              '%event has 1 remaining space.',
+              '%event has @count remaining spaces.',
+              array('%event' => $event['title'])), 'status', FALSE);
+          }
+        }
+      }
+      if ($reg['block_form']) {
+        $this->form['submitted']['#access'] = $this->form['actions']['#access'] = FALSE;
+        return;
+      }
+    }
+  }
+
+  private function loadParticipants($c) {
+    $select = array('id', 'event_id', 'role_id', 'status_id');
+    if (array_key_exists('participant_campaign_id', wf_crm_get_fields())) {
+      $select[] = 'campaign_id';
+    }
+    $dao = CRM_Core_DAO::executeQuery('SELECT ' . implode(',', $select) . '
+      FROM civicrm_participant
+      WHERE contact_id = ' . $this->id['cid'][$c] . ' AND event_id IN (' . implode(',', array_keys($this->events)) . ") AND status_id IN (SELECT id FROM civicrm_participant_status_type WHERE class <> 'Negative')"
+    );
+    while ($dao->fetch()) {
+      $par = array();
+      foreach ($select as $sel) {
+        $par['participant'][1][$sel] = $dao->$sel;
+      }
+      $par += $this->getCustomData($dao->id, 'Participant');
+      foreach ($this->events[$dao->event_id]['form'] as $event) {
+        if ($event['contact'] == $c) {
+          $n = $event['contact'];
+          $i = $event['num'];
+          // Support multi-valued form elements
+          $event_ids = wf_crm_aval($this->info, "participant:$n:participant:$i:event_id", array());
+          if ($event['eid']) {
+            $event_ids[] = $event['eid'];
+          }
+          foreach ($par as $k => $v) {
+            $this->info['participant'][$n][$k][$i] = $v[1];
+          }
+          $this->info['participant'][$n]['participant'][$i]['event_id'] = $event_ids;
+        }
+      }
+    }
+    $dao->free();
+  }
+  /**
    * Find an existing contact based on matching criteria
    * Used to populate a webform existing contact field
    *
    * @param array $component
    *   Webform component of type 'civicrm_contact'
    */
-  function findContact($component) {
+  private function findContact($component) {
     module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
     list(, $c, ) = explode('_', $component['form_key'], 3);
     $filters = wf_crm_search_filters($this->node, $component);

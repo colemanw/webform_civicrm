@@ -12,6 +12,7 @@ abstract class wf_crm_webform_base {
   protected $settings = array();
   protected $enabled = array();
   protected $data = array();
+  protected $id = array();
 
   /**
    * Fetch all relevant data for a given contact
@@ -19,16 +20,14 @@ abstract class wf_crm_webform_base {
    *
    * @param int $c
    *   Contact #
-   * @param array $cids
-   *   All known contact ids for this form
    * @param array $exclude
    *   Fields to ignore
    *
    * @return array of contact data
    */
-  protected function loadContact($c, $cids, $exclude = array()) {
+  protected function loadContact($c, $exclude = array()) {
     $info = array();
-    $cid = $cids[$c];
+    $cid = $this->id['cid'][$c];
     $contact = $this->data['contact'][$c];
     $prefix = 'civicrm_' . $c . '_contact_1_';
     foreach (array('contact', 'address', 'email', 'phone', 'website') as $ent) {
@@ -110,7 +109,7 @@ abstract class wf_crm_webform_base {
       for ($r = 1; $r <= $contact['number_of_relationship']; ++$r) {
         $types = array();
         $prefix = "civicrm_{$c}_contact_{$r}_relationship_";
-        if (!empty($cids[$r])) {
+        if (!empty($this->id['cid'][$r])) {
           if (!empty($contact['relationship'][$r]['relationship_type_id']) && $contact['relationship'][$r]['relationship_type_id'] != 'create_civicrm_webform_element') {
             $types = array($contact['relationship'][$r]['relationship_type_id']);
           }
@@ -118,7 +117,7 @@ abstract class wf_crm_webform_base {
             $types = array_keys($this->getExposedOptions($this->enabled[$prefix . 'relationship_type_id']));
           }
         }
-        $rel = $this->getRelationship($types, $cid, $cids[$r]);
+        $rel = $this->getRelationship($types, $cid, $this->id['cid'][$r]);
         if ($rel) {
           $info['relationship'][$r] = $rel;
           // Fetch custom data
