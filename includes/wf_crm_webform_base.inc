@@ -316,7 +316,7 @@ abstract class wf_crm_webform_base {
     if (!empty($events)) {
       $now = time();
       // Fetch event info
-      $dao = &CRM_Core_DAO::executeQuery('SELECT id, title, end_date, max_participants
+      $dao = CRM_Core_DAO::executeQuery('SELECT id, title, end_date, max_participants
       FROM civicrm_event WHERE id IN (' . implode(',', array_keys($events)) . ')');
       while ($dao->fetch()) {
         $events[$dao->id]['title'] = $dao->title;

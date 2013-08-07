@@ -693,7 +693,7 @@ function wf_crm_find_relations($cid, $types, $current = TRUE) {
         $sql = "SELECT id, employer_id
         FROM civicrm_contact
         WHERE id = $cid OR employer_id = $cid";
-        $dao = &CRM_Core_DAO::executeQuery($sql);
+        $dao = CRM_Core_DAO::executeQuery($sql);
         while ($dao->fetch()) {
           $found[] = $dao->id == $cid ? $dao->employer_id : $dao->id;
         }
@@ -714,7 +714,7 @@ function wf_crm_find_relations($cid, $types, $current = TRUE) {
       if ($current) {
         $sql .= " AND is_active = 1 AND (end_date > CURDATE() OR end_date IS NULL)";
       }
-      $dao = &CRM_Core_DAO::executeQuery($sql);
+      $dao = CRM_Core_DAO::executeQuery($sql);
       while ($dao->fetch()) {
         $a_b = $dao->contact_id_a == $cid ? 'b' : 'a';
         if (in_array($dao->relationship_type_id . '_' . $a_b, $allowed)) {

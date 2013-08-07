@@ -150,7 +150,7 @@ class wf_crm_webform_validate extends wf_crm_webform_base {
     }
     // Subtract events already registered for - this only works with known contacts
     if ($events && $cids) {
-      $dao = &CRM_Core_DAO::executeQuery("SELECT event_id
+      $dao = CRM_Core_DAO::executeQuery("SELECT event_id
       FROM civicrm_participant p, civicrm_participant_status_type s
       WHERE s.id = p.status_id AND s.is_counted = 1
       AND event_id IN (" . implode(',', array_keys($events)) . ")

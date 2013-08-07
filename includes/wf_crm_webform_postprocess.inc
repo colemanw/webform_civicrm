@@ -28,6 +28,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->all_sets = wf_crm_get_fields('sets');
     // Retrieve stored ids
     $this->id = wf_crm_aval(wf_crm_storage($node->nid), 'id');
+    // Check for existing submission
+    $this->setUpdateParam();
   }
 
   static function singleton($node, &$submission) {
@@ -41,17 +43,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * Process webform submission when it is about to be saved
    */
   public function preSave() {
-
+    // Fill $this->id from existing contacts
     $this->getExistingContactIds();
-
-    // If this is an update op, set param for drupal_write_record()
-    if (!empty($this->submission->sid)) {
-      $submitted = array($this->submission->sid => new stdClass());
-      webform_civicrm_webform_submission_load($submitted);
-      if (isset($submitted[$this->submission->sid]->civicrm)) {
-        $this->update = 'sid';
-      }
-    }
 
     // While saving a draft, just skip to the end and write the record
     if (!empty($this->submission->is_draft)) {
@@ -106,14 +99,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       foreach (wf_crm_aval($contact, 'relationship', array()) as $n => $params) {
         $this->processRelationship($params, $cid, $this->id['cid'][$n]);
       }
-
       // Process event participation
       if (isset($this->all_sets['participant']) && !empty($this->data['participant_reg_type'])) {
         $this->processParticipants($c, $cid);
       }
       // Process memberships
       if (isset($this->all_sets['membership']) && !empty($this->data['membership'][$c]['number_of_membership'])) {
-        $this->processMembership($c, $cid);
+        $this->processMemberships($c, $cid);
       }
     }
     // We do this last after all contacts and addresses exist.
@@ -148,6 +140,19 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
+   * If this is an update op, set param for drupal_write_record()
+   */
+  private function setUpdateParam() {
+    if (!empty($this->submission->sid)) {
+      $submitted = array($this->submission->sid => new stdClass());
+      webform_civicrm_webform_submission_load($submitted);
+      if (isset($submitted[$this->submission->sid]->civicrm)) {
+        $this->update = 'sid';
+      }
+    }
+  }
+
+  /**
    * Fetch contact ids from "existing contact" fields
    */
   private function getExistingContactIds() {
@@ -175,7 +180,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @param array $contact
    * @return bool
    */
-  private function isContactEmpty($contact){
+  private function isContactEmpty($contact) {
     $contact_type = $contact['contact'][1]['contact_type'];
     foreach (wf_crm_required_contact_fields($contact_type) as $f) {
       if (!empty($contact[$f['table']][1][$f['name']])) {
@@ -285,7 +290,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
-   * Save current employer
+   * Save current employer for a contact
    * @param array $contact
    * @param int $cid
    */
@@ -324,8 +329,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
-   * Save location data
+   * Save location data for a contact
    * @param array $contact
+   * @param int $cid
    * @param int $c
    */
   private function saveContactLocation($contact, $cid, $c) {
@@ -412,6 +418,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
   }
 
+  /**
+   * Save groups and tags for a contact
+   * @param array $contact
+   * @param int $cid
+   * @param int $c
+   */
   private function saveGroupsAndTags($contact, $cid, $c) {
     // Process groups & tags
     foreach ($this->all_fields as $fid => $field) {
@@ -576,7 +588,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     if ($p = wf_crm_aval($this->data, "participant:$n:participant")) {
       // Fetch existing participant records
       $existing = array();
-      $dao = &CRM_CORE_DAO::executeQuery("SELECT id, event_id FROM civicrm_participant WHERE contact_id = $cid AND is_test = 0");
+      $dao = CRM_Core_DAO::executeQuery("SELECT id, event_id FROM civicrm_participant WHERE contact_id = $cid AND is_test = 0");
       while ($dao->fetch()) {
         $existing[$dao->event_id] = $dao->id;
       }
@@ -644,7 +656,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @param int $c
    * @param int $cid
    */
-  private function processMembership($c, $cid) {
+  private function processMemberships($c, $cid) {
     static $types;
     if (!isset($types)) {
       $types = wf_crm_apivalues('membership_type', 'get');
