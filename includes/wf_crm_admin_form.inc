@@ -642,7 +642,7 @@ class wf_crm_admin_form {
       '#type' => 'select',
       '#title' => t('Contribution Page'),
       '#options' => array(t('- None -')) + $contribution_pages,
-      '#default_value' => wf_crm_aval($this->data, 'contribution:contribution_page_id'),
+      '#default_value' => wf_crm_aval($this->data, 'contribution:1:contribution:1:contribution_page_id'),
     );
     $this->addAjaxItem('contribution', 'contribution_page_id', 'contribution_fields');
     if (!empty($this->data['contribution'][1]['contribution'][1]['contribution_page_id'])) {

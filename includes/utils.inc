@@ -67,7 +67,10 @@ function wf_crm_field_options($field, $context, $data) {
     elseif ($name == 'event_id') {
       $ret = wf_crm_get_events($data['reg_options'], $context);
     }
-    // Not a real field
+    elseif ($name == 'payment_processor') {
+      $ret = wf_crm_get_payment_processors($data['contribution'][1]['contribution'][1]['contribution_page_id']);
+    }
+    // Not a real field so can't call getoptions for this one
     elseif ($table == 'membership' && $name == 'num_terms') {
       $ret = drupal_map_assoc(range(1, 9));
     }
@@ -77,7 +80,7 @@ function wf_crm_field_options($field, $context, $data) {
       if (substr($table, 0, 2) == 'cg') {
         $table = $ent;
       }
-      // This field is technically in the wrong place. Maybe fixme
+      // This field gets shared by both entities
       if ($table == 'case' && $name == 'medium_id') {
         $table = 'activity';
       }
@@ -276,6 +279,18 @@ function wf_crm_get_privacy_options() {
     'do_not_sms' => ts('Do not sms'),
     'do_not_trade' => ts('Do not trade'),
   );
+}
+
+/**
+ * Get payment processors for a contribution page
+ * @param int $page_id
+ * @return array
+ */
+function wf_crm_get_payment_processors($page_id) {
+  $ret = wf_crm_apivalues('contribution_page', 'getoptions', array('field' => 'payment_processor'));
+  $page = wf_crm_apivalues('contribution_page', 'get', array('id' => $page_id));
+  $enabled = wf_crm_explode_multivalue_str($page[$page_id]['payment_processor']);
+  return array_intersect_key($ret, array_flip($enabled));
 }
 
 /**
