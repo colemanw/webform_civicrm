@@ -578,6 +578,8 @@ function wf_crm_contact_clone($form, $form_state) {
   $new = count($settings['data']['contact']) + 1;
   // Clone contact
   $settings['data']['contact'][$new] = $settings['data']['contact'][$old];
+  // Set label
+  $settings['data']['contact'][$new]['contact'][1]['webform_label'] = $form_state['input']['name'];
   $storage = array(
     'old' => array("civicrm_{$old}_contact_"),
     'new' => array("civicrm_{$new}_contact_"),

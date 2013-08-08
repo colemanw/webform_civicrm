@@ -53,7 +53,7 @@ class wf_crm_admin_component {
         $this->form['actions']['submit']['#value'] = t('Clone Contact');
         $new = count($this->data['contact']) + 1;
         $this->form['form_key']['#value'] = implode('_', array('civicrm', $new, $ent, $n, $table, $name));
-        $this->form['name']['#default_value'] = str_replace($i, $new, $this->form['name']['#default_value']);
+        $this->form['name']['#default_value'] = wf_crm_contact_label($new, array(), 'plain');
         ++$this->form['position']['weight']['#default_value'];
         array_unshift($this->form['#submit'], 'wf_crm_contact_clone');
         if (empty($this->form_state['input'])) {

@@ -1040,7 +1040,7 @@ function wf_crm_display_name($cid) {
  *  * 'plain': Do not escape (use when passing into an FAPI options list which does its own escaping)
  * @return string
  */
-function wf_crm_contact_label($n, $data, $html = 'escape') {
+function wf_crm_contact_label($n, $data = array(), $html = 'escape') {
   $label = trim(wf_crm_aval($data, "contact:$n:contact:1:webform_label", ''));
   if (!$label) {
     $label = t('Contact !num', array('!num' => $n));
