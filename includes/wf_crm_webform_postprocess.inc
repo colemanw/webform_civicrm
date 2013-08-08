@@ -14,6 +14,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private $all_sets;
   private $shared_address = array();
   private $existing_contacts = array();
+  private $line_items = array();
 
   static $singleton;
 
@@ -674,7 +675,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $existing_type = $types[$mem['membership_type_id']];
           if ($type['domain_id'] == $existing_type['domain_id'] && $type['member_of_contact_id'] == $existing_type['member_of_contact_id']) {
             $params['id'] = $id;
-            break;
+            // If we have an exact match, look no further
+            if ($mem['membership_type_id'] == $params['membership_type_id']) {
+              break;
+            }
           }
         }
       }
@@ -683,6 +687,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
       $params['contact_id'] = $cid;
       $result = wf_civicrm_api('membership', 'create', $params);
+      if (!empty($result['id']) && !empty($params['num_terms']) && !empty($type['minimum_fee'])) {
+        $this->line_items[] = array(
+          'type' => 'membership',
+          'quantity' => $params['num_terms'],
+          'amount' => $params['num_terms'] * $type['minimum_fee'],
+          'id' => $result['id'],
+          'contact_id' => $cid,
+        );
+      }
     }
   }
 

@@ -65,7 +65,7 @@ class wf_crm_admin_form {
     // On rebuilding the form
     else {
       $this->settings = wf_crm_aval($this->form_state['storage'], 'vals', $this->form_state['values']);
-      $this->buildData();
+      $this->rebuildData();
       unset($this->form_state['storage']['vals']);
     }
     // Merge in existing fields
@@ -637,14 +637,10 @@ class wf_crm_admin_form {
       '#description' => t('Select a contribution page and its billing fields will be embedded on this form.'),
       '#attributes' => array('class' => array('civi-icon-contribution')),
     );
-    $contribution_pages = wf_crm_apivalues('contribution', 'getoptions', array('field' => 'contribution_page_id', 'context' => 'get'));
-    $this->form['contribution']['contribution_page_id'] = array(
-      '#type' => 'select',
-      '#title' => t('Contribution Page'),
-      '#options' => array(t('- None -')) + $contribution_pages,
-      '#default_value' => wf_crm_aval($this->data, 'contribution:1:contribution:1:contribution_page_id'),
-    );
-    $this->addAjaxItem('contribution', 'contribution_page_id', 'contribution_fields');
+    $fid = 'civicrm_1_contribution_1_contribution_contribution_page_id';
+    $this->form['contribution'][$fid] = $this->addItem($fid, $this->fields['contribution_contribution_page_id']);
+    unset($this->sets['contribution']['fields']['contribution_contribution_page_id']);
+    $this->addAjaxItem('contribution', $fid, 'contribution_fields');
     if (!empty($this->data['contribution'][1]['contribution'][1]['contribution_page_id'])) {
       // Set default payment processor
       $default = wf_civicrm_api('payment_processor', 'get', array('is_default' => 1, 'is_test' => 0));
@@ -755,9 +751,12 @@ class wf_crm_admin_form {
 
     // Create dropdown list
     if (!empty($field['expose_list'])) {
-      // Retrieve option list
-      $options = array('create_civicrm_webform_element' => t('- User Select -'));
       $field['form_key'] = $fid;
+      // Retrieve option list
+      $options = array();
+      if ($field['type'] != 'hidden') {
+        $options = array('create_civicrm_webform_element' => t('- User Select -'));
+      }
       $options += wf_crm_field_options($field, 'config_form', $this->data);
       $item = array(
         '#type' => 'select',
@@ -775,7 +774,7 @@ class wf_crm_admin_form {
       }
       // Four ways to get default value...
       // 1: Based on current form state
-      if (isset($this->settings[$fid])) {
+      if (isset($this->settings[$fid]) && ($field['type'] != 'hidden')) {
         $item['#default_value'] = $this->settings[$fid];
       }
       // 2: Based on saved settings
@@ -861,7 +860,7 @@ class wf_crm_admin_form {
   /**
    * Build the $this->data array for webform settings; called while rebuilding or post-processing the admin form.
    */
-  private function buildData() {
+  private function rebuildData() {
     $this->settings['data'] = array('contact' => array());
     $this->data = &$this->settings['data'];
     list($contact_types, $sub_types) = wf_crm_get_contact_types();
@@ -941,8 +940,20 @@ class wf_crm_admin_form {
       $this->data['participant_reg_type'] = $this->settings['participant_reg_type'];
       $this->data['reg_options'] = $this->settings['reg_options'];
     }
-    if (!empty($this->settings['contribution_page_id'])) {
-      $this->data['contribution'][1]['contribution'][1]['contribution_page_id'] = $this->settings['contribution_page_id'];
+    // Add settings exposed to the back-end to data
+    foreach ($this->settings as $key => $val) {
+      if (substr($key, 0, 7) == 'civicrm') {
+        list(, $c, $ent, $n, $table, $name) = explode('_', $key, 6);
+        if (is_array($val)) {
+          unset($val['create_civicrm_webform_element']);
+        }
+        elseif ($val == 'create_civicrm_webform_element') {
+          $val = '';
+        }
+        if (isset($this->fields[$table . '_' . $name]['expose_list']) && !empty($val)) {
+          $this->data[$ent][$c][$table][$n][$name] = $val;
+        }
+      }
     }
   }
 
@@ -961,17 +972,8 @@ class wf_crm_admin_form {
     }
     unset($this->form_state['storage']);
 
-    $delete_me = $enabled = $existing = wf_crm_enabled_fields($this->node, NULL, TRUE);
-    $created = $deleted = 0;
-
-    // Fields to delete
-    foreach ($enabled as $key => $val) {
-      $val = (array) wf_crm_aval($this->settings, $key);
-      if ((in_array('create_civicrm_webform_element', $val, TRUE) && $this->settings['nid'])
-        || strpos($key, 'fieldset') !== FALSE) {
-        unset($delete_me[$key]);
-      }
-    }
+    $enabled = $existing = wf_crm_enabled_fields($this->node, NULL, TRUE);
+    $delete_me = $this->getFieldsToDelete($enabled);
 
     // Display a confirmation before deleting fields
     if ($delete_me && $button == 'edit-submit') {
@@ -1000,6 +1002,7 @@ class wf_crm_admin_form {
     $this->form_state['redirect'] = 'node/' . $nid . '/webform';
 
     // Delete/disable fields
+    $deleted = 0;
     if ($button === 'edit-delete' || ($button === 'edit-disable' && $this->settings['nid'])) {
       foreach ($delete_me as $id) {
         $field = $this->node->webform['components'][$id];
@@ -1048,7 +1051,7 @@ class wf_crm_admin_form {
     // CiviCRM enabled
     else {
       webform_ensure_record($this->node);
-      $this->buildData();
+      $this->rebuildData();
       if (!$this->settings['toggle_message']) {
         $this->settings['message'] = '';
       }
@@ -1062,45 +1065,42 @@ class wf_crm_admin_form {
       }
 
       $i = 0;
+      $created = array();
       foreach ($this->settings as $key => $val) {
         if (substr($key, 0, 7) == 'civicrm') {
           ++$i;
-          list(, $c, $ent, $n, $table, $name) = explode('_', $key, 6);
-          $aval = (array) $val;
-          if (is_array($val)) {
-            unset($val['create_civicrm_webform_element']);
-          }
-          elseif ($val == 'create_civicrm_webform_element') {
-            $val = '';
-          }
-          if (!isset($enabled[$key]) && in_array('create_civicrm_webform_element', $aval, TRUE)) {
-            // Restore disabled component
-            if (isset($disabled[$key])) {
-              webform_component_update($disabled[$key]);
-              $enabled[$key] = $disabled[$key]['cid'];
-              drupal_set_message(t('Re-enabled field: %name', array('%name' => $disabled[$key]['name'])));
-            }
-            // Create new component
-            else {
-              $field = $this->fields[$table . '_' . $name];
-              $field['nid'] = $nid;
-              $field['form_key'] = $key;
-              $field['weight'] = $i;
-              self::insertComponent($field, $enabled, $this->settings);
-              ++$created;
+          $field = wf_crm_get_field($key);
+          if (!isset($enabled[$key])) {
+            $val = (array) $val;
+            if (in_array('create_civicrm_webform_element', $val, TRUE) || (!empty($val[0]) && $field['type'] == 'hidden')) {
+              // Restore disabled component
+              if (isset($disabled[$key])) {
+                webform_component_update($disabled[$key]);
+                $enabled[$key] = $disabled[$key]['cid'];
+                drupal_set_message(t('Re-enabled field: %name', array('%name' => $disabled[$key]['name'])));
+              }
+              // Create new component
+              else {
+                $field['nid'] = $nid;
+                $field['form_key'] = $key;
+                $field['weight'] = $i;
+                self::insertComponent($field, $enabled, $this->settings);
+                $created[] = $field['name'];
+              }
             }
           }
-          // Store exposed contact settings that don't create form elements
-          elseif (isset($this->fields[$table . '_' . $name]['expose_list']) && !empty($val)) {
-            $this->data[$ent][$c][$table][$n][$name] = $val;
+          elseif ($field['type'] == 'hidden' && !empty($field['expose_list'])) {
+            $component = $this->node->webform['components'][$enabled[$key]];
+            $component['value'] = $val;
+            webform_component_update($component);
           }
         }
       }
-      if ($created == 1) {
-        drupal_set_message(t('Created field: %name', array('%name' => $field['name'])));
+      if (count($created) == 1) {
+        drupal_set_message(t('Created field: %name', array('%name' => $created[0])));
       }
       elseif ($created) {
-        drupal_set_message(t('Created !num new fields.', array('!num' => $created)));
+        drupal_set_message(t('Created !num new fields.', array('!num' => count($created))));
       }
 
       // Create record
@@ -1128,7 +1128,30 @@ class wf_crm_admin_form {
       cache_clear_all($nid, 'cache_entity_node');
     }
   }
-  
+
+  /**
+   * Search for fields that should be deleted
+   * @param array $fields
+   * @return array
+   */
+  private function getFieldsToDelete($fields) {
+    // Find fields to delete
+    foreach ($fields as $key => $val) {
+      $val = (array) wf_crm_aval($this->settings, $key);
+      if (((in_array('create_civicrm_webform_element', $val, TRUE)) && $this->settings['nid'])
+        || strpos($key, 'fieldset') !== FALSE) {
+        unset($fields[$key]);
+      }
+      else {
+        $field = wf_crm_get_field($key);
+        if (!empty($val[0]) && $field['type'] == 'hidden') {
+          unset($fields[$key]);
+        }
+      }
+    }
+    return $fields;
+  }
+
   /**
    * Add a CiviCRM field to a webform
    *
@@ -1190,15 +1213,20 @@ class wf_crm_admin_form {
       $field['value']['value'] = '';
     }
     // Retrieve option list
-    if ($options = wf_crm_field_options($field, 'component_insert', $settings['data'])) {
-      $field['extra']['items'] = $options;
-      if (!isset($field['extra']['aslist']) && empty($field['extra']['multiple'])) {
-        $field['extra']['aslist'] = 1;
+    if ($field['type'] == 'select') {
+      if ($options = wf_crm_field_options($field, 'component_insert', $settings['data'])) {
+        $field['extra']['items'] = $options;
+        if (!isset($field['extra']['aslist']) && empty($field['extra']['multiple'])) {
+          $field['extra']['aslist'] = 1;
+        }
+        if (substr($name, 0, 7) == 'custom_' && empty($field['value'])) {
+          // Lookup defaults for custom fields
+          $field['value'] = self::getCustomFieldDefault(substr($name, 7));
+        }
       }
-      if (substr($name, 0, 7) == 'custom_' && empty($field['value'])) {
-        // Lookup defaults for custom fields
-        $field['value'] = self::getCustomFieldDefault(substr($name, 7));
-      }
+    }
+    if ($field['type'] == 'hidden' && !empty($field['expose_list']) && !empty($settings[$field['form_key']])) {
+      $field['value'] = $settings[$field['form_key']];
     }
     if ($table == 'other' || $field['type'] == 'hidden') {
       unset($field['extra']['description']);

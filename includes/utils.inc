@@ -106,9 +106,9 @@ function wf_crm_field_options($field, $context, $data) {
 }
 
 /**
- * Get list of states.
+ * Get list of states, keyed by abbreviation rather than ID.
  * FIXME use the api for this.
- * @param null $param
+ * @param null|int|string $param
  */
 function wf_crm_get_states($param = NULL) {
   if (!$param || $param == 'default') {
@@ -387,7 +387,7 @@ function wf_crm_enabled_fields($node, $submission = NULL, $show_all = FALSE) {
 /**
  * Fetches CiviCRM field data.
  *
- * @param $var
+ * @param string $var
  *   Name of variable to return: fields, tokens, or sets
  *
  * @return array - one of:
@@ -778,7 +778,13 @@ function wf_crm_get_fields($var = 'fields') {
       $fields['participant_fee_amount'] = array(
         'name' => t('Participant Fee'),
         'type' => 'number',
-        'extra' => array('description' => t('Amount charged per-person, per-event.')),
+        'extra' => array(
+          'description' => t('Amount charged per-person, per-event.'),
+          'field_prefix' => wf_crm_aval($config, 'defaultCurrencySymbol', '$'),
+          'separator' => wf_crm_aval($config, 'monetaryDecimalPoint', '.'),
+          'point' => wf_crm_aval($config, 'monetaryThousandSeparator', ','),
+          'decimals' => 2,
+        ),
       );
     }
     if (isset($sets['membership'])) {
@@ -816,9 +822,25 @@ function wf_crm_get_fields($var = 'fields') {
       );
     }
     if (isset($sets['contribution'])) {
+      $fields['contribution_contribution_page_id'] = array(
+        'name' => ts('Contribution Page'),
+        'type' => 'hidden',
+        'expose_list' => TRUE,
+        'empty_option' => t('None'),
+        'extra' => array(
+          'hidden_type' => 'hidden',
+        ),
+      );
       $fields['contribution_total_amount'] = array(
         'name' => t('Contribution Amount'),
-        'type' => 'textfield',
+        'type' => 'number',
+        'extra' => array(
+          'description' => t('Amount will be in addition to any paid events and memberships.'),
+          'field_prefix' => wf_crm_aval($config, 'defaultCurrencySymbol', '$'),
+          'separator' => wf_crm_aval($config, 'monetaryDecimalPoint', '.'),
+          'point' => wf_crm_aval($config, 'monetaryThousandSeparator', ','),
+          'decimals' => 2,
+        ),
       );
       $fields['contribution_payment_processor'] = array(
         'name' => t('Payment Processor'),
@@ -969,6 +991,24 @@ function wf_crm_get_fields($var = 'fields') {
     $dao->free();
   }
   return $$var;
+}
+
+/**
+ * Get a field based on its short or full name
+ * @param string $key
+ * @return array|null
+ */
+function wf_crm_get_field($key) {
+  $fields = wf_crm_get_fields();
+  if (isset($fields[$key])) {
+    return $fields[$key];
+  }
+  if ($pieces = wf_crm_explode_key($key)) {
+    list( , , , , $table, $name) = $pieces;
+    if (isset($fields[$table . '_' . $name])) {
+      return $fields[$table . '_' . $name];
+    }
+  }
 }
 
 /**

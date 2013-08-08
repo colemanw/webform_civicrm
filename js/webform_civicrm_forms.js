@@ -376,7 +376,7 @@ var wfCivi = (function ($, D) {
       });
 
       // Contribution fields
-      $('input[id$=civicrm-1-contribution-1-contribution-total-amount]', context).after('<div class="crm-container" id="webform-civicrm-contribution-snippet"></div>');
+      $('input[name$="civicrm_1_contribution_1_contribution_contribution_page_id]"]', context).after('<div class="crm-container" id="webform-civicrm-contribution-snippet"></div>');
       $('#webform-civicrm-contribution-snippet').load(D.settings.webform_civicrm.contributionCallback);
     }
   };

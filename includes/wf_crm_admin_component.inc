@@ -76,6 +76,11 @@ class wf_crm_admin_component {
       $this->form['value']['#empty_value'] = '';
     }
 
+    elseif ($name == 'contribution_page_id') {
+      $this->form['value']['#access'] = FALSE;
+      $this->form['#prefix'] = '<p>' . t('This is a placeholder for a Contribution Page.') . '</p>';
+    }
+
     // Interface for managing options
     elseif (($this->component['type'] === 'hidden' || $this->component['type'] === 'select')) {
       $this->buildOptionsTable();
@@ -84,8 +89,7 @@ class wf_crm_admin_component {
     // Simplify form for hidden fields
     elseif (($name === 'contact_id' || $name === 'external_identifier') && $this->component['type'] === 'hidden') {
       $this->form['value']['#value'] = '';
-      $this->form['value']['#type'] = 'textfield';
-      $this->form['value']['#disabled'] = TRUE;
+      $this->form['value']['#access'] = FALSE;
       $this->form['#prefix'] = '<p>'
         . t('There are no configuration options for this hidden field. You can use it for post processing, for example to include a link to the CiviCRM contact in an email.')
         . '</p><p>'

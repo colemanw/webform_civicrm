@@ -245,8 +245,8 @@ var wfCiviAdmin = (function ($, D) {
           return Drupal.t('- None -');
         }
       });
-      $('fieldset#edit-event', context).once('wf-civi').drupalSetSummary(function (context) {
-        return $('select[name="participant_reg_type"] option:selected', context).text();
+      $('#edit-event, #edit-contribution', context).once('wf-civi').drupalSetSummary(function (context) {
+        return $('select:first option:selected', context).text();
       });
       $('fieldset#edit-act', context).once('wf-civi').drupalSetSummary(function (context) {
         var label = $('select[name="activity_type_id"] option:selected', context).text();
@@ -265,9 +265,6 @@ var wfCiviAdmin = (function ($, D) {
           return memberships.join('<br>');
         }
         return Drupal.t('- None -');
-      });
-      $('fieldset#edit-contribution', context).once('wf-civi').drupalSetSummary(function (context) {
-        return $('select[name="contribution_page_id"] option:selected', context).text();
       });
       $('fieldset#edit-options', context).once('wf-civi').drupalSetSummary(function (context) {
         var label = '';
