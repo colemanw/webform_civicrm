@@ -66,11 +66,14 @@ class wf_crm_admin_component {
       drupal_set_message(t('You are cloning a CiviCRM component. Refer to the Webform CiviCRM instructions for how to set the key if you want the new field to be processed by CiviCRM. You can also clone an entire contact by clicking the clone button by their fieldset.'), 'status', FALSE);
     }
 
+    // Show dropdown list of states
     if ($table === 'address' && $name === 'state_province_id') {
       $this->form['validation']['maxlength']['#type'] = 'hidden';
       $this->form['validation']['maxlength']['#value'] = 5;
-      $this->form['value']['#description'] = t('To set a default value, enter the state/province abbreviation.');
-      $this->form['value']['#attributes']['onkeyup'] = 'this.value = this.value.toUpperCase();';
+      $this->form['value']['#type'] = 'select';
+      unset($this->form['value']['#size'], $this->form['value']['#maxlength'], $this->form['value']['#description']);
+      $this->form['value']['#options'] = wf_crm_get_states();
+      $this->form['value']['#empty_value'] = '';
     }
 
     // Interface for managing options

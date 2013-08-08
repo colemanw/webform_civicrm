@@ -111,7 +111,6 @@ function wf_crm_field_options($field, $context, $data) {
  * @param null $param
  */
 function wf_crm_get_states($param = NULL) {
-  $value = $param ? 'UPPER(abbreviation)' : 'id';
   if (!$param || $param == 'default') {
     $config = CRM_Core_Config::singleton();
     if (!$param && !empty($config->provinceLimit)) {
@@ -124,7 +123,7 @@ function wf_crm_get_states($param = NULL) {
   else {
     $param = (int) $param;
   }
-  $sql = "SELECT name AS label, $value AS value FROM civicrm_state_province WHERE country_id IN ($param) ORDER BY name";
+  $sql = "SELECT name AS label, UPPER(abbreviation) AS value FROM civicrm_state_province WHERE country_id IN ($param) ORDER BY name";
   $dao = CRM_Core_DAO::executeQuery($sql);
   while ($dao->fetch()) {
     $ret[$dao->value] = $dao->label;
