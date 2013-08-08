@@ -332,6 +332,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     }
     $dao->free();
   }
+
   /**
    * Find an existing contact based on matching criteria
    * Used to populate a webform existing contact field
@@ -415,7 +416,6 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    *   Existing submission (optional)
    */
   private function fillForm(&$elements, $submitted = array()) {
-    $sp = CRM_Core_DAO::VALUE_SEPARATOR;
     $fields = wf_crm_get_fields();
     foreach ($elements as $eid => &$element) {
       if ($eid[0] == '#' || !is_array($element)) {
@@ -469,7 +469,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           && !(isset($component['cid']) && isset($submitted[$component['cid']]))) {
             $val = $this->info[$ent][$c][$table][$n][$name];
             if (($element['#type'] == 'checkboxes' || !empty($element['#multiple'])) && !is_array($val)) {
-              $val = explode($sp, trim($val, $sp));
+              $val = wf_crm_explode_multivalue_str($val);
             }
             if ($element['#type'] != 'checkboxes' && $element['#type'] != 'date'
             && empty($element['#multiple']) && is_array($val)) {
@@ -545,7 +545,6 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    * @return mixed
    */
   private function replaceTokens($str, $contact) {
-    $sp = CRM_Core_DAO::VALUE_SEPARATOR;
     $tokens = wf_crm_get_fields('tokens');
     $values = array();
     foreach ($tokens as $k => &$t) {
@@ -556,7 +555,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       if (is_array($value)) {
         $value = implode(', ', $value);
       }
-      $values[] = str_replace($sp, ' &amp; ', trim($value, $sp));
+      $values[] = implode(' &amp; ', wf_crm_explode_multivalue_str($value));
       $t = "[$t]";
     }
     return str_ireplace($tokens, $values, $str);

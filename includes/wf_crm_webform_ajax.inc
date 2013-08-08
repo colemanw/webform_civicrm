@@ -105,7 +105,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
               $val = $contact[$table][$n][$field];
               // Explode multivalue strings
               if (is_string($val) && strpos($val, $sp) !== FALSE) {
-                $val = explode($sp, trim($val, $sp));
+                $val = wf_crm_explode_multivalue_str($val);
               }
               $data[str_replace('_', '-', $fid)] = $val;
             }

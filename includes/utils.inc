@@ -870,7 +870,6 @@ function wf_crm_get_fields($var = 'fields') {
       'Multi-Select State/Province' => array('type' => 'select', 'extra' => array('multiple' => 1)),
       'Autocomplete-Select' => array('type' => 'select'),
     );
-    $sp = CRM_Core_DAO::VALUE_SEPARATOR;
     list($contact_types) = wf_crm_get_contact_types();
     $custom_extends = "'" . implode("','", array_keys($contact_types + $sets)) . "'";
     $sql = "
@@ -904,7 +903,7 @@ function wf_crm_get_fields($var = 'fields') {
             $sets[$set]['entity_type'] = $dao->entity_type;
           }
           if ($dao->sub_types) {
-            $sets[$set]['sub_types'] = explode($sp, trim($dao->sub_types, $sp));
+            $sets[$set]['sub_types'] = wf_crm_explode_multivalue_str($dao->sub_types);
           }
           if ($dao->extends_entity_column_id) {
             $sets[$set]['extension_of'] = $dao->extends_entity_column_id;
@@ -915,11 +914,11 @@ function wf_crm_get_fields($var = 'fields') {
         $fields[$id]['name'] = $dao->label;
         $fields[$id]['required'] = $dao->is_required;
         $fields[$id]['extra']['description'] = $dao->help_pre;
-        $fields[$id]['value'] = str_replace($sp, ',', trim($dao->default_value, $sp));
+        $fields[$id]['value'] = implode(',', wf_crm_explode_multivalue_str($dao->default_value));
         $fields[$id]['data_type'] = $dao->data_type;
 
         if ($dao->entity_type == 'relationship' && $dao->sub_types) {
-          $fields[$id]['attributes']['data-relationship-type'] = str_replace($sp, ',', trim($dao->sub_types, $sp));
+          $fields[$id]['attributes']['data-relationship-type'] = implode(',', wf_crm_explode_multivalue_str($dao->sub_types));
         }
 
         if ($fields[$id]['type'] == 'date') {
@@ -1106,15 +1105,6 @@ function wf_civicrm_api($entity, $operation, $params) {
     'check_permissions' => FALSE,
     'version' => 3
   );
-  // Workaround the multivalued option issue until it's resolved in core
-  if ($entity == 'contact' && $operation == 'create') {
-    $sp = CRM_Core_DAO::VALUE_SEPARATOR;
-    foreach ($params as &$val) {
-      if (is_array($val)) {
-        $val = $val ? $sp . implode($sp, $val) . $sp : '';
-      }
-    }
-  }
   $result = civicrm_api($entity, $operation, $params);
   if (!empty($result['is_error'])) {
     $bt = debug_backtrace();
@@ -1228,4 +1218,12 @@ function _wf_crm_child_components($nid, $id) {
     ->countQuery()
     ->execute()
     ->fetchField();
+}
+
+function wf_crm_explode_multivalue_str($str) {
+  $sp = CRM_Core_DAO::VALUE_SEPARATOR;
+  if (is_array($str)) {
+    return $str;
+  }
+  return explode($sp, trim((string) $str, $sp));
 }

@@ -637,7 +637,7 @@ class wf_crm_admin_form {
       '#description' => t('Select a contribution page and its billing fields will be embedded on this form.'),
       '#attributes' => array('class' => array('civi-icon-contribution')),
     );
-    $contribution_pages = wf_crm_apivalues('contribution', 'getoptions', array('field' => 'contribution_page_id'));
+    $contribution_pages = wf_crm_apivalues('contribution', 'getoptions', array('field' => 'contribution_page_id', 'context' => 'get'));
     $this->form['contribution']['contribution_page_id'] = array(
       '#type' => 'select',
       '#title' => t('Contribution Page'),
