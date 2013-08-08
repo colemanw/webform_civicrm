@@ -351,11 +351,11 @@ function wf_crm_get_contact_relationship_types($type_a, $type_b, $sub_type_a, $s
 /**
  * Get ids or values of enabled CiviCRM fields for a webform.
  *
- * @param $node
+ * @param stdClass $node
  *   Node object
- * @param $submission
+ * @param array|null $submission
  *   (optional) if supplied, will match field keys with submitted values
- * @param $show_all
+ * @param boolean $show_all
  *   (optional) if true, get every field even if it belongs to a contact that does not exist
  *
  * @return array of enabled fields
@@ -391,7 +391,7 @@ function wf_crm_enabled_fields($node, $submission = NULL, $show_all = FALSE) {
  * @param $var
  *   Name of variable to return: fields, tokens, or sets
  *
- * @return array
+ * @return array - one of:
  *   fields: The CiviCRM contact fields this module supports
  *   tokens: Available tokens keyed to field ids
  *   sets: Info on fieldsets (entities)
@@ -776,6 +776,11 @@ function wf_crm_get_fields($var = 'fields') {
         'expose_list' => TRUE,
         'value' => '1',
       );
+      $fields['participant_fee_amount'] = array(
+        'name' => t('Participant Fee'),
+        'type' => 'number',
+        'extra' => array('description' => t('Amount charged per-person, per-event.')),
+      );
     }
     if (isset($sets['membership'])) {
       $fields['membership_membership_type_id'] = array(
@@ -833,7 +838,7 @@ function wf_crm_get_fields($var = 'fields') {
         'empty_option' => t('None'),
         'extra' => array('civicrm_live_options' => 1),
       );
-      foreach (array_intersect(array('activity', 'membership', 'participant'), array_keys($sets)) as $ent) {
+      foreach (array_intersect(array('activity', 'membership', 'participant', 'contribution'), array_keys($sets)) as $ent) {
         $fields[$ent . '_campaign_id'] = array(
           'name' => t('Campaign'),
           'type' => 'select',

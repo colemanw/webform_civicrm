@@ -492,7 +492,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     if (!empty($add)) {
       // Prepare for sending subscription confirmations
-      if ($data_type == 'group' && !empty($this->node->webform_civicrm['confirm_subscription'])) {
+      if ($data_type == 'group' && !empty($this->settings['confirm_subscription'])) {
         // Retrieve this contact's primary email address and perform error-checking
         $result = wf_civicrm_api('email', 'get', array('contact_id' => $id, 'options' => array('sort' => 'is_primary DESC')));
         if (!empty($result['values'])) {
@@ -626,7 +626,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                 $params['id'] = $existing[$params['event_id']];
               }
               else {
-                $params['source'] = check_plain($this->node->title);
+                $params['source'] = $this->settings['new_contact_source'];
                 if ($c > 1 && !empty($registered_by_id[$e][$i])) {
                   $params['registered_by_id'] = $registered_by_id[$e][$i];
                 }
@@ -678,8 +678,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
         }
       }
-      if (empty($params['id']) && !empty($this->node->webform_civicrm['new_contact_source'])) {
-        $params['source'] = $this->node->webform_civicrm['new_contact_source'];
+      if (empty($params['id'])) {
+        $params['source'] = $this->settings['new_contact_source'];
       }
       $params['contact_id'] = $cid;
       $result = wf_civicrm_api('membership', 'create', $params);

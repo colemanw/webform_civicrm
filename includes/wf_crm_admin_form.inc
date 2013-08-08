@@ -646,6 +646,10 @@ class wf_crm_admin_form {
     );
     $this->addAjaxItem('contribution', 'contribution_page_id', 'contribution_fields');
     if (!empty($this->data['contribution'][1]['contribution'][1]['contribution_page_id'])) {
+      // Set default payment processor
+      $default = wf_civicrm_api('payment_processor', 'get', array('is_default' => 1, 'is_test' => 0));
+      $this->sets['contribution']['fields']['contribution_payment_processor']['value'] = wf_crm_aval($default, 'id');
+      // Add contribution fields
       foreach ($this->sets as $sid => $set) {
         if ($set['entity_type'] == 'contribution') {
           foreach ($set['fields'] as $fid => $field) {
@@ -701,11 +705,11 @@ class wf_crm_admin_form {
     );
     $this->form['options']['new_contact_source'] = array(
       '#type' => 'textfield',
-      '#title' => t('New Contact Source'),
+      '#title' => t('Source Label'),
       '#maxlength' => 255,
       '#size' => 30,
       '#default_value' => $this->settings['new_contact_source'],
-      '#description' => t('Optional "source" label for any new contact created by this webform.'),
+      '#description' => t('Optional "source" label for any new contact/participant/membership created by this webform.'),
     );
   }
 
