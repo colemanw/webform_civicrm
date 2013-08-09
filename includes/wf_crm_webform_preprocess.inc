@@ -35,7 +35,6 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     $this->form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_forms.js';
     $this->form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_forms.css';
     $this->form['#validate'][] = 'wf_crm_validate';
-    array_unshift($this->form['#submit'], 'wf_crm_storage');
     $config = CRM_Core_Config::singleton();
     // Variables to push to the client-side
     $js_vars = array();
@@ -511,6 +510,8 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           }
           if ($name == 'contribution_page_id') {
             $element['#suffix'] = '<div class="crm-container crm-public" id="billing-payment-block"></div>';
+            $element['#value'] = wf_crm_aval($this->data, 'contribution:1:contribution:1:contribution_page_id');
+            unset($element['#default_value']);
           }
         }
       }

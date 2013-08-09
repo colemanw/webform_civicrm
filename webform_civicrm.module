@@ -171,9 +171,8 @@ function webform_civicrm_webform_component_info() {
  */
 function webform_civicrm_webform_submission_presave($node, &$submission) {
   if (!empty($node->webform_civicrm)) {
-    module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_postprocess');
-    $processor = wf_crm_webform_postprocess::singleton($node, $submission);
-    $processor->preSave();
+    $processor = wf_crm_webform_postprocess::singleton($node);
+    $processor->preSave($submission);
   }
 }
 
@@ -183,8 +182,8 @@ function webform_civicrm_webform_submission_presave($node, &$submission) {
  */
 function webform_civicrm_webform_submission_insert($node, $submission) {
   if (!empty($node->webform_civicrm)) {
-    $processor = wf_crm_webform_postprocess::singleton($node, $submission);
-    $processor->postSave();
+    $processor = wf_crm_webform_postprocess::singleton($node);
+    $processor->postSave($submission);
   }
 }
 
@@ -194,8 +193,8 @@ function webform_civicrm_webform_submission_insert($node, $submission) {
  */
 function webform_civicrm_webform_submission_update($node, $submission) {
   if (!empty($node->webform_civicrm)) {
-    $processor = wf_crm_webform_postprocess::singleton($node, $submission);
-    $processor->postSave();
+    $processor = wf_crm_webform_postprocess::singleton($node);
+    $processor->postSave($submission);
   }
 }
 
@@ -604,29 +603,7 @@ function wf_crm_contact_clone($form, $form_state) {
  * Validation callback for webform submissions.
  */
 function wf_crm_validate($form, &$form_state) {
-  module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_validate');
-  $processor = new wf_crm_webform_validate($form, $form_state);
-  $processor->validate();
-}
-
-/**
- * Webform submission hooks don't have access to $form_state
- * So this extra submission handler stores it.
- *
- * @param $form
- *   FAPI form array (to store) or form nid (to retrieve)
- * @param $form_state
- *   FAPI form_state array
- * @return null
- */
-function wf_crm_storage($form, $form_state = NULL) {
-  static $storage = array();
-  // During form submission, store data for later
-  if (is_array($form) && !empty($form['#node']->nid) && !empty($form_state['civicrm'])) {
-    $storage[$form['#node']->nid] = $form_state['civicrm'];
-  }
-  // Retrieve stored data
-  elseif (is_numeric($form)) {
-    return wf_crm_aval($storage, $form, array());
-  }
+  module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_postprocess');
+  $processor = wf_crm_webform_postprocess::singleton($form['#node']);
+  $processor->validate($form, $form_state);
 }

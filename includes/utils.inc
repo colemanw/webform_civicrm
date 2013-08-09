@@ -756,6 +756,36 @@ function wf_crm_get_fields($var = 'fields') {
       'name' => t('Description'),
       'type' => 'textarea',
     );
+    if (isset($sets['contribution'])) {
+      $fields['contribution_contribution_page_id'] = array(
+        'name' => ts('Contribution Page'),
+        'type' => 'hidden',
+        'expose_list' => TRUE,
+        'empty_option' => t('None'),
+        'extra' => array(
+          'hidden_type' => 'hidden',
+        ),
+      );
+      $fields['contribution_total_amount'] = array(
+        'name' => t('Contribution Amount'),
+        'type' => 'number',
+        'extra' => array(
+          'description' => t('Amount will be in addition to any paid events and memberships.'),
+          'field_prefix' => wf_crm_aval($config, 'defaultCurrencySymbol', '$'),
+          'point' => wf_crm_aval($config, 'monetaryDecimalPoint', '.'),
+          'separator' => wf_crm_aval($config, 'monetaryThousandSeparator', ','),
+          'decimals' => 2,
+        ),
+        'data_type' => 'Money',
+      );
+      $fields['contribution_payment_processor'] = array(
+        'name' => t('Payment Processor'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'extra' => array('civicrm_live_options' => 1),
+        'empty_option' => t('Offline Payment'),
+      );
+    }
     if (isset($sets['participant'])) {
       $fields['participant_event_id'] = array(
         'name' => t('Events'),
@@ -775,17 +805,11 @@ function wf_crm_get_fields($var = 'fields') {
         'expose_list' => TRUE,
         'value' => '1',
       );
-      $fields['participant_fee_amount'] = array(
-        'name' => t('Participant Fee'),
-        'type' => 'number',
-        'extra' => array(
-          'description' => t('Amount charged per-person, per-event.'),
-          'field_prefix' => wf_crm_aval($config, 'defaultCurrencySymbol', '$'),
-          'separator' => wf_crm_aval($config, 'monetaryDecimalPoint', '.'),
-          'point' => wf_crm_aval($config, 'monetaryThousandSeparator', ','),
-          'decimals' => 2,
-        ),
-      );
+      if (isset($sets['contribution'])) {
+        $fields['participant_fee_amount'] = $fields['contribution_total_amount'];
+        $fields['participant_fee_amount']['name'] = t('Participant Fee');
+        $fields['participant_fee_amount']['extra']['description'] = t('Amount charged per-person, per-event.');
+      }
     }
     if (isset($sets['membership'])) {
       $fields['membership_membership_type_id'] = array(
@@ -819,35 +843,6 @@ function wf_crm_get_fields($var = 'fields') {
       $fields['membership_end_date'] = array(
         'name' => t('End Date'),
         'type' => 'date',
-      );
-    }
-    if (isset($sets['contribution'])) {
-      $fields['contribution_contribution_page_id'] = array(
-        'name' => ts('Contribution Page'),
-        'type' => 'hidden',
-        'expose_list' => TRUE,
-        'empty_option' => t('None'),
-        'extra' => array(
-          'hidden_type' => 'hidden',
-        ),
-      );
-      $fields['contribution_total_amount'] = array(
-        'name' => t('Contribution Amount'),
-        'type' => 'number',
-        'extra' => array(
-          'description' => t('Amount will be in addition to any paid events and memberships.'),
-          'field_prefix' => wf_crm_aval($config, 'defaultCurrencySymbol', '$'),
-          'separator' => wf_crm_aval($config, 'monetaryDecimalPoint', '.'),
-          'point' => wf_crm_aval($config, 'monetaryThousandSeparator', ','),
-          'decimals' => 2,
-        ),
-      );
-      $fields['contribution_payment_processor'] = array(
-        'name' => t('Payment Processor'),
-        'type' => 'select',
-        'expose_list' => TRUE,
-        'extra' => array('civicrm_live_options' => 1),
-        'empty_option' => t('Offline Payment'),
       );
     }
     // Add campaign fields
