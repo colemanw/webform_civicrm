@@ -24,33 +24,27 @@ class wf_crm_webform_validate extends wf_crm_webform_base {
   public function validate() {
     $values = _webform_client_form_submit_flatten($this->node, wf_crm_aval($this->form_state, 'values:submitted'));
     $this->submitted = wf_crm_enabled_fields($this->node, $values);
-    $this->validateValues($this->form['submitted']);
+    $this->validateThisPage($this->form['submitted']);
+
     if (!empty($this->node->webform_civicrm['data']['reg_options']['validate'])
       && !empty($this->node->webform_civicrm['data']['participant'])
       && !empty($this->node->webform_civicrm['data']['participant_reg_type']))
     {
-      // We need data from all pages to validate events
-      if (!empty($this->form_state['storage']['submitted'])
-        && wf_crm_aval($this->form_state, 'storage:page_num', 1) > 1)
-      {
-        $values += $this->form_state['storage']['submitted'];
-        $this->submitted = wf_crm_enabled_fields($this->node, $values);
-      }
       $this->validateParticipants();
     }
   }
 
   /**
-   * Recursive validation callback for webform submissions.
+   * Recursive validation callback for webform page submission
    *
    * @param array $elements
    *   FAPI form array
    */
-  private function validateValues($elements) {
+  private function validateThisPage($elements) {
     // Recurse through form elements.
     foreach (element_children($elements) as $key) {
       if (is_array($elements[$key]) && ($element = $elements[$key])) {
-        $this->validateValues($elements[$key]);
+        $this->validateThisPage($elements[$key]);
         if (!empty($element['#civicrm_data_type'])
           && substr(wf_crm_aval($element, '#type', ''), 0, 4) === 'text'
           && $element['#value'] !== NULL
@@ -183,5 +177,7 @@ class wf_crm_webform_validate extends wf_crm_webform_base {
       }
     }
   }
+
+  private function getMultiPageData
 
 }

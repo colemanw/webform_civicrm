@@ -53,7 +53,11 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     }
     // Preprocess contribution page
     if (!empty($this->data['contribution'])) {
-      CRM_Core_Resources::singleton()->addCoreResources();
+      $credit_card_types = CRM_Core_Payment_Form::getCreditCardCSSNames();
+      CRM_Core_Resources::singleton()
+        ->addCoreResources()
+        ->addSetting(array('config' => array('creditCardTypes' => $credit_card_types)))
+        ->addScriptFile('civicrm', 'templates/CRM/Core/BillingBlock.js', -10, 'html-header');
       $page_id = $this->data['contribution'][1]['contribution'][1]['contribution_page_id'];
       $key = CRM_Core_Key::get('CRM_Contribute_Controller_Contribution', TRUE);
       $js_vars['contributionCallback'] = url('civicrm/contribute/transact', array('query' => array('reset' => 1, 'id' => $page_id, 'qfKey' => $key, 'snippet' => 4, 'type' => 1), 'alias' => TRUE));
@@ -504,6 +508,9 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           }
           if ($name == 'existing') {
             wf_crm_fill_contact_value($this->node, $component, $element);
+          }
+          if ($name == 'contribution_page_id') {
+            $element['#suffix'] = '<div class="crm-container crm-public" id="billing-payment-block"></div>';
           }
         }
       }
