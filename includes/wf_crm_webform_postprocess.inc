@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Front-end form post-processor.
+ * Front-end form validation and post-processing.
  */
 
 module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_base');
@@ -14,7 +14,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private $crmValues;
   private $rawValues;
   private $multiPageDataLoaded;
-  private $paymentPage;
+  private $isPaymentPage;
+  private $contribution_page;
+  private $billing_params;
 
   // Variables used during submission processing
   private $submission;
@@ -40,7 +42,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
   /**
    * This is first called during form validation. We create an instance of this object and stash it in a static variable.
-   * It is subsequently called from presave and postsave webform hooks and re-uses the existing object.
+   * It is subsequently called from presave and postsave webform hooks and re-uses the same instance.
+   * This allows us to maintain internal state, as some values stored during validation need to be retrieved during post-processing.
    * @param stdClass $node
    * @return wf_crm_webform_postprocess
    */
@@ -61,9 +64,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->form_state = &$form_state;
     $this->rawValues = _webform_client_form_submit_flatten($this->node, wf_crm_aval($this->form_state, 'values:submitted'));
     $this->crmValues = wf_crm_enabled_fields($this->node, $this->rawValues);
-    $this->paymentPage = !empty($this->crmValues['civicrm_1_contribution_1_contribution_contribution_page_id']);
+    $this->isPaymentPage = !empty($this->crmValues['civicrm_1_contribution_1_contribution_contribution_page_id']);
     // Retrieve stored ids
-    $this->id = wf_crm_aval($form_state, 'civicrm:id');
+    $this->id = wf_crm_aval($form_state, 'civicrm:id', array());
 
     $this->validateThisPage($this->form['submitted']);
 
@@ -74,8 +77,16 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $this->validateParticipants();
     }
 
-    if ($this->paymentPage && !form_get_errors()) {
-      $this->submitPayment();
+    if ($this->isPaymentPage && !form_get_errors()) {
+      if ($this->getContributionPage()) {
+        if ($this->tallyLineItems()) {
+          if ($this->validateBillingFields()) {
+            if ($this->createBillingContact()) {
+              $this->submitPayment();
+            }
+          }
+        }
+      }
     }
   }
 
@@ -83,6 +94,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * Process webform submission when it is about to be saved
    */
   public function preSave(&$submission) {
+    $this->data = $this->settings['data'];
     $this->submission = &$submission;
     // Check for existing submission
     $this->setUpdateParam();
@@ -330,8 +342,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
-   * Load entire webform submission for validation
-   * Used when validation for one page needs access to other pages
+   * Load entire webform submission during validation
+   * Used when validation for one page needs access to submitted values from other pages
    */
   private function loadMultiPageData() {
     if (!$this->multiPageDataLoaded) {
@@ -365,20 +377,30 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     foreach ($this->enabled as $field_key => $fid) {
       if (substr($field_key, -8) == 'existing') {
         list(, $c, ) = explode('_', $field_key, 3);
-        $this->id['cid'][$c] = 0;
         $cid = wf_crm_aval($this->submissionValue($fid), 0);
-        if ($cid && is_numeric($cid)) {
-          module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
-          $component = $this->node->webform['components'][$fid];
-          $filters = wf_crm_search_filters($this->node, $component);
-          // Verify access to this contact
-          if (wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
-            $this->id['cid'][$c] = $cid;
-          }
-        }
+        $this->id['cid'][$c] = $this->verifyExistingContact($cid, $fid);
       }
     }
     $this->existing_contacts = $this->id['cid'];
+  }
+
+  /**
+   * Ensure we have a valid contact id in a contact ref field
+   * @param $cid
+   * @param $fid
+   * @return int
+   */
+  private function verifyExistingContact($cid, $fid) {
+    if ($cid && is_numeric($cid)) {
+      module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
+      $component = $this->node->webform['components'][$fid];
+      $filters = wf_crm_search_filters($this->node, $component);
+      // Verify access to this contact
+      if (wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
+        return $cid;
+      }
+    }
+    return 0;
   }
 
   /**
@@ -462,8 +484,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function updateContact($contact, $c) {
     $params = $contact['contact'][1];
-    // CiviCRM API is too picky about this, imho
-    $params['contact_type'] = ucfirst($params['contact_type']);
+    unset($params['contact_type'], $params['contact_id']);
     // Fetch data from existing multivalued fields
     $fetch = $multi = array();
     foreach ($this->all_fields as $fid => $field) {
@@ -491,7 +512,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $params[$name] = array_unique(array_merge($params[$name], $exist));
       }
     }
-    $params['contact_id'] = $this->id['cid'][$c];
+    $params['id'] = $this->id['cid'][$c];
     wf_civicrm_api('contact', 'create', $params);
   }
 
@@ -895,8 +916,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (!empty($result['id']) && !empty($params['num_terms']) && !empty($type['minimum_fee'])) {
         $this->line_items[] = array(
           'type' => 'membership',
-          'quantity' => $params['num_terms'],
-          'amount' => $params['num_terms'] * $type['minimum_fee'],
+          'qty' => $params['num_terms'],
+          'unit_price' => $type['minimum_fee'],
+          'line_total' => $params['num_terms'] * $type['minimum_fee'],
           'id' => $result['id'],
           'contact_id' => $cid,
         );
@@ -1043,12 +1065,157 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $assignee = wf_crm_aval($assignee, 'values:' . $params['assignee_contact_id']);
         if (!empty($assignee['email'])) {
           $mail = array($assignee['email'] => $assignee);
-          // Include attachments while sendig a copy of activity.
+          // Include attachments while sending a copy of activity.
           $attachments = &CRM_Core_BAO_File::getEntityFile('civicrm_activity', $this->id['act'][1]);
           CRM_Case_BAO_Case::sendActivityCopy(NULL, $this->id['act'][1], $mail, $attachments, NULL);
         }
       }
     }
+  }
+
+  /**
+   * Loads the contribution page used for this webform
+   */
+  private function getContributionPage() {
+    $params = array('id' => $this->data['contribution'][1]['contribution'][1]['contribution_page_id']);
+    $result = wf_crm_apivalues('contribution_page', 'get', $params);
+    $this->contribution_page = wf_crm_aval($result, $params['id']);
+    return $this->contribution_page;
+  }
+
+  /**
+   * Figure out line-items for this webform submission
+   */
+  private function tallyLineItems() {
+    $this->loadMultiPageData();
+    // Contribution
+    if (!empty($this->crmValues['civicrm_1_contribution_1_contribution_contribution_total_amount'])) {
+      $this->line_items[] = array(
+        'qty' => 1,
+        'unit_price' => $this->crmValues['civicrm_1_contribution_1_contribution_contribution_total_amount'],
+        'line_total' => $$this->crmValues['civicrm_1_contribution_1_contribution_contribution_total_amount'],
+        'financial_type' => $this->contribution_page['financial_type'],
+      );
+    }
+    return $this->line_items;
+  }
+
+  private function validateBillingFields() {
+    $valid = TRUE;
+    // These are hard-coded in CiviCRM so we may as well hard-code them here
+    // Value = translated label to be shown during validation or FALSE if not required
+    $billing_fields = array(
+      'credit_card_number' => ts('Card Number'),
+      'cvv2' => ts('Security Code'),
+      'credit_card_type' => ts('Card Type'),
+      'billing_first_name' => ts('Billing First Name'),
+      'billing_middle_name' => FALSE,
+      'billing_last_name' => ts('Billing Last Name'),
+      'billing_street_address-5' => ts('Street Address'),
+      'billing_city-5' => ts('City'),
+      'billing_country_id-5' => ts('Country'),
+      'billing_state_province_id-5' => ts('State/Province'),
+      'billing_postal_code-5' => ts('Postal Code'),
+    );
+    $params = array();
+    foreach ($billing_fields as $field => $label) {
+      if (empty($_POST[$field]) && $label !== FALSE) {
+        form_set_error($field, t('!name field is required.', array('!name' => check_plain($label))));
+        $valid = FALSE;
+      }
+      else {
+        $name = str_replace('billing_', '', str_replace('-5', '', $field));
+        $params[$name] = $params[$field] = $_POST[$field];
+      }
+    }
+    // Check expiration date
+    $params['month'] = (int) wf_crm_aval($_POST, 'credit_card_exp_date:M', 0);
+    $params['year'] = wf_crm_aval($_POST, 'credit_card_exp_date:Y', 0);
+    if ($params['year'] < date('Y') || ($params['year'] == date('Y') && $params['month'] < date('n'))) {
+      form_set_error('billing', ts('Credit card expiration date cannot be a past date.'));
+      $valid = FALSE;
+    }
+    // Email
+    for ($i = 1; $i <= $this->data['contact'][1]['number_of_email']; ++$i) {
+      if (!empty($this->crmValues["civicrm_1_contact_{$i}_email_email"])) {
+        $params['email'] = $this->crmValues["civicrm_1_contact_{$i}_email_email"];
+        break;
+      }
+    }
+    if (empty($params['email'])) {
+      form_set_error('billing_email', ts('An email address is required to complete this transaction.'));
+      $valid = FALSE;
+    }
+    if ($valid) {
+      $this->billing_params = $params;
+    }
+    return $valid;
+  }
+
+  private function createBillingContact() {
+    $address = array(
+      'street_address' => $this->billing_params['street_address'],
+      'city' => $this->billing_params['city'],
+      'country_id' => $this->billing_params['country_id'],
+      'state_province_id' => $this->billing_params['state_province_id'],
+      'postal_code' => $this->billing_params['postal_code'],
+      'location_type_id' => 'Billing',
+    );
+    $email = array(
+      'email' => $this->billing_params['email'],
+      'location_type_id' => 'Billing',
+    );
+    $fid = 'civicrm_1_contact_1_contact_existing';
+    if (!empty($this->crmValues[$fid])) {
+      $cid = $this->verifyExistingContact($this->crmValues[$fid], $this->enabled[$fid]);
+    }
+    if (empty($cid)) {
+      $params = array('contact' => array(1 => array(
+        'contact_type' => 'Individual',
+        'first_name' => $this->billing_params['first_name'],
+        'middle_name' => $this->billing_params['middle_name'],
+        'last_name' => $this->billing_params['last_name'],
+      )));
+      $cid = $this->createContact($params);
+      if (!$cid) {
+        return;
+      }
+    }
+    else {
+      foreach (array('address', 'email') as $loc) {
+        $result = wf_civicrm_api($loc, 'get', array(
+          'contact_id' => $cid,
+          'location_type_id' => 'Billing',
+        ));
+        if (!empty($result['values'])) {
+          $ids = array_keys($result['values']);
+          ${$loc}['id'] = $ids[0];
+        }
+      }
+    }
+    $address['contact_id'] = $email['contact_id'] = $this->id['cid'][1] = $cid;
+    wf_civicrm_api('address', 'create', $address);
+    wf_civicrm_api('email', 'create', $email);
+    return $cid;
+  }
+  
+  private function submitPayment() {
+    $params = $this->billing_params;
+    $params += $this->data['contribution'][1]['contribution'];
+    $prefix = 'civicrm_1_contribution_1_contribution';
+    foreach ($this->crmValues as $key => $val) {
+      if (strpos($key, $prefix) === 0) {
+        $params[str_replace($prefix, '', $key)] = $val;
+      }
+    }
+    $params['financial_type'] = $this->contribution_page['financial_type'];
+
+    // Total amount
+    $params['amount'] = 0;
+    foreach ($this->line_items as $item) {
+      $params['amount'] += $item['line_total'];
+    }
+
   }
 
   /**
@@ -1097,7 +1264,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function fillDataFromSubmission() {
     $sp = CRM_Core_DAO::VALUE_SEPARATOR;
-    $fields = wf_crm_get_fields();
     foreach ($this->enabled as $field_key => $fid) {
       $val = $this->submissionValue($fid);
       if ($val !== FALSE) {
@@ -1120,7 +1286,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             }
           }
         }
-        $field = $fields[$table . '_' . $name];
+        $field = $this->all_fields[$table . '_' . $name];
         // Ignore values from hidden fields
         if ($field['type'] == 'hidden') {
           continue;
@@ -1176,7 +1342,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
-   * Test if any relevant location data has been entered
+   * Test if any relevant data has been entered for a location
    * @param string $location
    * @param array $params
    * @return bool
@@ -1185,11 +1351,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     switch ($location) {
       case 'address':
         return empty($params['street_address'])
-        && empty($params['city'])
-        && empty($params['state_province_id'])
-        && empty($params['country_id'])
-        && empty($params['postal_code'])
-        && empty($params['master_id']);
+          && empty($params['city'])
+          && empty($params['state_province_id'])
+          && empty($params['country_id'])
+          && empty($params['postal_code'])
+          && empty($params['master_id']);
       case 'website':
         return empty($params['url']);
       default:

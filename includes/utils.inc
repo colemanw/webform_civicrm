@@ -785,6 +785,10 @@ function wf_crm_get_fields($var = 'fields') {
         'extra' => array('civicrm_live_options' => 1),
         'empty_option' => t('Offline Payment'),
       );
+      $fields['contribution_note'] = array(
+        'name' => t('Contribution Note'),
+        'type' => 'textarea',
+      );
     }
     if (isset($sets['participant'])) {
       $fields['participant_event_id'] = array(
@@ -805,7 +809,7 @@ function wf_crm_get_fields($var = 'fields') {
         'expose_list' => TRUE,
         'value' => '1',
       );
-      if (isset($sets['contribution'])) {
+      if (isset($fields['contribution_total_amount'])) {
         $fields['participant_fee_amount'] = $fields['contribution_total_amount'];
         $fields['participant_fee_amount']['name'] = t('Participant Fee');
         $fields['participant_fee_amount']['extra']['description'] = t('Amount charged per-person, per-event.');

@@ -640,18 +640,29 @@ class wf_crm_admin_form {
     $fid = 'civicrm_1_contribution_1_contribution_contribution_page_id';
     $this->form['contribution'][$fid] = $this->addItem($fid, $this->fields['contribution_contribution_page_id']);
     unset($this->sets['contribution']['fields']['contribution_contribution_page_id']);
-    $this->addAjaxItem('contribution', $fid, 'contribution_fields');
-    if (!empty($this->data['contribution'][1]['contribution'][1]['contribution_page_id'])) {
-      // Set default payment processor
-      $default = wf_civicrm_api('payment_processor', 'get', array('is_default' => 1, 'is_test' => 0));
-      $this->sets['contribution']['fields']['contribution_payment_processor']['value'] = wf_crm_aval($default, 'id');
-      // Add contribution fields
-      foreach ($this->sets as $sid => $set) {
-        if ($set['entity_type'] == 'contribution') {
-          foreach ($set['fields'] as $fid => $field) {
-            $fid = "civicrm_1_contribution_1_$fid";
-            $this->form['contribution']['contribution_fields'][$fid] = $this->addItem($fid, $field);
-          }
+    $this->addAjaxItem('contribution', $fid, 'sets');
+    $page_id = wf_crm_aval($this->data, 'contribution:1:contribution:1:contribution_page_id');
+    if ($page_id) {
+      $page = wf_civicrm_api('contribution_page', 'getsingle', array('id' => $page_id));
+    }
+    if (!$page_id || empty($page['financial_type_id'])) {
+      return;
+    }
+    // Set default payment processor
+    $default = wf_civicrm_api('payment_processor', 'get', array('is_default' => 1, 'is_test' => 0));
+    $this->sets['contribution']['fields']['contribution_payment_processor']['value'] = wf_crm_aval($default, 'id');
+    // Add contribution fields
+    foreach ($this->sets as $sid => $set) {
+      if ($set['entity_type'] == 'contribution' && (empty($set['sub_types']) || $set['sub_types'][0] == $page['financial_type_id'])) {
+        $this->form['contribution']['sets'][$sid] = array(
+          '#type' => 'fieldset',
+          '#title' => $set['label'],
+          '#attributes' => array('id' => $sid, 'class' => array('web-civi-checkbox-set')),
+          'js_select' => $this->addToggle($sid),
+        );
+        foreach ($set['fields'] as $fid => $field) {
+          $fid = "civicrm_1_contribution_1_$fid";
+          $this->form['contribution']['sets'][$sid][$fid] = $this->addItem($fid, $field);
         }
       }
     }
