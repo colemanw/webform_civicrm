@@ -634,7 +634,7 @@ class wf_crm_admin_form {
       '#type' => 'fieldset',
       '#title' => t('Contribution'),
       '#group' => 'webform_civicrm',
-      '#description' => t('Select a contribution page and its billing fields will be embedded on this form.'),
+      '#description' => t('In order to process live transactions for events, memberships, or contributions, select a contribution page and its billing fields will be included on the webform.'),
       '#attributes' => array('class' => array('civi-icon-contribution')),
     );
     $fid = 'civicrm_1_contribution_1_contribution_contribution_page_id';
@@ -650,7 +650,7 @@ class wf_crm_admin_form {
     }
     // Set default payment processor
     $default = wf_civicrm_api('payment_processor', 'get', array('is_default' => 1, 'is_test' => 0));
-    $this->sets['contribution']['fields']['contribution_payment_processor']['value'] = wf_crm_aval($default, 'id');
+    $this->sets['contribution']['fields']['contribution_payment_processor_id']['value'] = wf_crm_aval($default, 'id');
     // Add contribution fields
     foreach ($this->sets as $sid => $set) {
       if ($set['entity_type'] == 'contribution' && (empty($set['sub_types']) || $set['sub_types'][0] == $page['financial_type_id'])) {

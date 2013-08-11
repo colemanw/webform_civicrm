@@ -67,8 +67,8 @@ function wf_crm_field_options($field, $context, $data) {
     elseif ($name == 'event_id') {
       $ret = wf_crm_get_events($data['reg_options'], $context);
     }
-    elseif ($name == 'payment_processor') {
-      $ret = wf_crm_get_payment_processors($data['contribution'][1]['contribution'][1]['contribution_page_id']);
+    elseif ($table == 'contribution' && $name == 'is_test') {
+      $ret = array(0 => t('Live Transactions'), 1 => t('Test Mode'));
     }
     // Not a real field so can't call getoptions for this one
     elseif ($table == 'membership' && $name == 'num_terms') {
@@ -76,15 +76,16 @@ function wf_crm_field_options($field, $context, $data) {
     }
     // Aside from the above special cases, most lists can be fetched from api.getoptions
     else {
+      $params = array('field' => $name, 'context' => 'create');
       // Custom fields - use main entity
       if (substr($table, 0, 2) == 'cg') {
         $table = $ent;
       }
-      // This field gets shared by both entities
-      if ($table == 'case' && $name == 'medium_id') {
-        $table = 'activity';
+      else {
+        // Pass data into api.getoptions for contextual filtering
+        $params += wf_crm_aval($data, "$ent:$c:$table:$n", array());
       }
-      $ret = wf_crm_apivalues($table, 'getoptions', array('field' => $name));
+      $ret = wf_crm_apivalues($table, 'getoptions', $params);
 
       // Hack to format money data correctly
       if (!empty($field['data_type']) && $field['data_type'] === 'Money') {
@@ -278,18 +279,6 @@ function wf_crm_get_privacy_options() {
     'do_not_sms' => ts('Do not sms'),
     'do_not_trade' => ts('Do not trade'),
   );
-}
-
-/**
- * Get payment processors for a contribution page
- * @param int $page_id
- * @return array
- */
-function wf_crm_get_payment_processors($page_id) {
-  $ret = wf_crm_apivalues('contribution_page', 'getoptions', array('field' => 'payment_processor'));
-  $page = wf_crm_apivalues('contribution_page', 'get', array('id' => $page_id));
-  $enabled = wf_crm_explode_multivalue_str($page[$page_id]['payment_processor']);
-  return array_intersect_key($ret, array_flip($enabled));
 }
 
 /**
@@ -778,7 +767,7 @@ function wf_crm_get_fields($var = 'fields') {
         ),
         'data_type' => 'Money',
       );
-      $fields['contribution_payment_processor'] = array(
+      $fields['contribution_payment_processor_id'] = array(
         'name' => t('Payment Processor'),
         'type' => 'select',
         'expose_list' => TRUE,
@@ -788,6 +777,13 @@ function wf_crm_get_fields($var = 'fields') {
       $fields['contribution_note'] = array(
         'name' => t('Contribution Note'),
         'type' => 'textarea',
+      );
+      $fields['contribution_is_test'] = array(
+        'name' => t('Payment Processor Mode'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'extra' => array('civicrm_live_options' => 1),
+        'value' => 0,
       );
     }
     if (isset($sets['participant'])) {

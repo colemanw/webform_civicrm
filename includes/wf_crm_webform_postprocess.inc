@@ -65,7 +65,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->rawValues = _webform_client_form_submit_flatten($this->node, wf_crm_aval($this->form_state, 'values:submitted'));
     $this->crmValues = wf_crm_enabled_fields($this->node, $this->rawValues);
     $this->isPaymentPage = !empty($this->crmValues['civicrm_1_contribution_1_contribution_contribution_page_id']);
-    // Retrieve stored ids
+    // Manage stored ids
     $this->id = wf_crm_aval($form_state, 'civicrm:id', array());
 
     $this->validateThisPage($this->form['submitted']);
@@ -88,6 +88,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
       }
     }
+    $form_state['civicrm']['id'] = $this->id;
   }
 
   /**
@@ -180,6 +181,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // Process activity
       if (!empty($this->data['activity'][1]['activity'])) {
        $this->processActivity();
+      }
+      // Save contribution custom data
+      if (!empty($this->id['contribution']) && count($this->data['contribution'][1]) > 1) {
+        $this->saveCustomData($this->data['contribution'][1], $this->id['contribution'], 'Contribution', FALSE);
       }
     }
     // Write record; we do this when creating, updating, or saving a draft of a webform submission.
@@ -1089,12 +1094,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function tallyLineItems() {
     $this->loadMultiPageData();
     // Contribution
-    if (!empty($this->crmValues['civicrm_1_contribution_1_contribution_contribution_total_amount'])) {
+    if (!empty($this->crmValues['civicrm_1_contribution_1_contribution_total_amount'])) {
       $this->line_items[] = array(
         'qty' => 1,
-        'unit_price' => $this->crmValues['civicrm_1_contribution_1_contribution_contribution_total_amount'],
-        'line_total' => $$this->crmValues['civicrm_1_contribution_1_contribution_contribution_total_amount'],
-        'financial_type' => $this->contribution_page['financial_type'],
+        'unit_price' => $this->crmValues['civicrm_1_contribution_1_contribution_total_amount'],
+        'line_total' => $this->crmValues['civicrm_1_contribution_1_contribution_total_amount'],
+        'financial_type_id' => $this->contribution_page['financial_type_id'],
       );
     }
     return $this->line_items;
@@ -1201,21 +1206,30 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   
   private function submitPayment() {
     $params = $this->billing_params;
-    $params += $this->data['contribution'][1]['contribution'];
+    $params += $this->data['contribution'][1]['contribution'][1];
     $prefix = 'civicrm_1_contribution_1_contribution';
+    // Because we're still in validation context we don't yet have the full submission object.
+    // So we'll just save core contribution fields for now and handle custom data during postprocessing.
     foreach ($this->crmValues as $key => $val) {
       if (strpos($key, $prefix) === 0) {
         $params[str_replace($prefix, '', $key)] = $val;
       }
     }
-    $params['financial_type'] = $this->contribution_page['financial_type'];
+    $params['financial_type_id'] = $this->contribution_page['financial_type_id'];
+    $params['skipRecentView'] = $params['skipLineItem'] = 1;
+    $params['contact_id'] = $this->id['cid'][1];
 
     // Total amount
-    $params['amount'] = 0;
+    $params['total_amount'] = 0;
     foreach ($this->line_items as $item) {
-      $params['amount'] += $item['line_total'];
+      $params['total_amount'] += $item['line_total'];
     }
-
+    $result = wf_civicrm_api('contribution', 'transact', $params);
+    if (empty($result['id'])) {
+      form_set_error('contribution', t('Sorry, processing your credit card failed. Please check all billing fields and ensure they match your card exactly.'));
+      return;
+    }
+    $this->id['contribution'] = $result['id'];
   }
 
   /**
