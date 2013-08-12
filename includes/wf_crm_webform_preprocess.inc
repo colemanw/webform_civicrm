@@ -11,7 +11,6 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
   private $form;
   private $form_state;
   private $info = array();
-  private $events = array();
 
   function __construct(&$form, &$form_state) {
     civicrm_initialize();
@@ -276,7 +275,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       }
     }
     if ($this->events && (!empty($reg['show_remaining']) || !empty($reg['block_form']))) {
-      $this->loadEvents($this->events);
+      $this->loadEvents();
       foreach ($this->events as $eid => $event) {
         if ($event['ended']) {
           if (!empty($reg['show_remaining']) && empty($this->form_state['input']) && empty($this->form_state['storage'])) {

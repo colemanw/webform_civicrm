@@ -13,6 +13,7 @@ abstract class wf_crm_webform_base {
   protected $enabled = array();
   protected $data = array();
   protected $id = array();
+  protected $events = array();
 
   /**
    * Fetch all relevant data for a given contact
@@ -312,26 +313,26 @@ abstract class wf_crm_webform_base {
    * @param $events
    *   Array of event info to fill (reference)
    */
-  protected function loadEvents(&$events) {
-    if (!empty($events)) {
+  protected function loadEvents() {
+    if (!empty($this->events)) {
       $now = time();
       // Fetch event info
       $dao = CRM_Core_DAO::executeQuery('SELECT id, title, end_date, max_participants
-      FROM civicrm_event WHERE id IN (' . implode(',', array_keys($events)) . ')');
+      FROM civicrm_event WHERE id IN (' . implode(',', array_keys($this->events)) . ')');
       while ($dao->fetch()) {
-        $events[$dao->id]['title'] = $dao->title;
-        $events[$dao->id]['end_date'] = $dao->end_date;
-        $events[$dao->id]['full'] = FALSE;
-        $events[$dao->id]['ended'] = $dao->end_date && strtotime($dao->end_date) < $now;
-        if ($events[$dao->id]['max_participants'] = $dao->max_participants) {
+        $this->events[$dao->id]['title'] = $dao->title;
+        $this->events[$dao->id]['end_date'] = $dao->end_date;
+        $this->events[$dao->id]['full'] = FALSE;
+        $this->events[$dao->id]['ended'] = $dao->end_date && strtotime($dao->end_date) < $now;
+        if ($this->events[$dao->id]['max_participants'] = $dao->max_participants) {
           $remaining = CRM_Event_BAO_Participant::eventFull($dao->id, TRUE, FALSE);
           if (is_string($remaining)) {
-            $events[$dao->id]['full'] = TRUE;
-            $events[$dao->id]['remaining'] = 0;
-            $events[$dao->id]['full_message'] = $remaining;
+            $this->events[$dao->id]['full'] = TRUE;
+            $this->events[$dao->id]['remaining'] = 0;
+            $this->events[$dao->id]['full_message'] = $remaining;
           }
           else {
-            $events[$dao->id]['remaining'] = $remaining ? $remaining : $dao->max_participants;
+            $this->events[$dao->id]['remaining'] = $remaining ? $remaining : $dao->max_participants;
           }
         }
       }

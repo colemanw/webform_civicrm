@@ -18,13 +18,16 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private $contribution_page;
   private $billing_params;
 
+  // During validation this contains an array of known contact ids and the placeholder 0 for valid contacts
+  // During postprocessing this contains an array of known contact ids
+  private $existing_contacts = array();
+
   // Variables used during submission processing
   private $submission;
   private $update = array();
   private $all_fields;
   private $all_sets;
   private $shared_address = array();
-  private $existing_contacts = array();
   private $line_items = array();
 
   // Cache an instance of this object
@@ -42,7 +45,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
   /**
    * This is first called during form validation. We create an instance of this object and stash it in a static variable.
-   * It is subsequently called from presave and postsave webform hooks and re-uses the same instance.
+   * It is destroyed and rebuilt between each page submission, but after (successful) validation of the final page,
+   * this cache allows the object instance to persist throughout postprocessing.
    * This allows us to maintain internal state, as some values stored during validation need to be retrieved during post-processing.
    * @param stdClass $node
    * @return wf_crm_webform_postprocess
@@ -65,18 +69,16 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->rawValues = _webform_client_form_submit_flatten($this->node, wf_crm_aval($this->form_state, 'values:submitted'));
     $this->crmValues = wf_crm_enabled_fields($this->node, $this->rawValues);
     $this->isPaymentPage = !empty($this->crmValues['civicrm_1_contribution_1_contribution_contribution_page_id']);
-    // Manage stored ids
+    // Even though this object is destroyed between page submissions, this trick allows us to persist some data - see below
     $this->id = wf_crm_aval($form_state, 'civicrm:id', array());
 
     $this->validateThisPage($this->form['submitted']);
 
-    if (!empty($this->node->webform_civicrm['data']['reg_options']['validate'])
-      && !empty($this->node->webform_civicrm['data']['participant'])
-      && !empty($this->node->webform_civicrm['data']['participant_reg_type']))
-    {
+    if (!empty($this->data['reg_options']['validate']) && !empty($this->data['participant']) && !empty($this->data['participant_reg_type'])) {
       $this->validateParticipants();
     }
 
+    // Process contribution. If the transaction is unsuccessful it will trigger a form validation error.
     if ($this->isPaymentPage && !form_get_errors()) {
       if ($this->getContributionPage()) {
         if ($this->tallyLineItems()) {
@@ -88,6 +90,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
       }
     }
+    // Even though this object is destroyed between page submissions, this trick allows us to persist some data - see above
     $form_state['civicrm']['id'] = $this->id;
   }
 
@@ -95,8 +98,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * Process webform submission when it is about to be saved
    */
   public function preSave(&$submission) {
-    $this->data = $this->settings['data'];
     $this->submission = &$submission;
+    $this->data = $this->settings['data'];
     // Check for existing submission
     $this->setUpdateParam();
     // Fill $this->id from existing contacts
@@ -108,7 +111,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     $this->fillDataFromSubmission();
-
+dsm($this->data);
     // Create/update contacts
     foreach ($this->data['contact'] as $c => $contact) {
       if (empty($this->id['cid'][$c])) {
@@ -263,30 +266,18 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function validateParticipants() {
     $this->loadMultiPageData();
-    $contacts = $cids = array();
-    // Check how many valid contacts we have
-    foreach ($this->data['contact'] as $c => $contact) {
-      // Check if we have a contact_id
-      if (is_numeric(wf_crm_aval($this->crmValues, "civicrm_{$c}_contact_1_contact_existing"))) {
-        $cids[] = $contacts[$c] = $this->crmValues["civicrm_{$c}_contact_1_contact_existing"];
-      }
-      // Or else see if enough info was entered to create a contact
-      elseif (wf_crm_name_field_exists($this->crmValues, $c, $contact['contact'][1]['contact_type'])) {
-        $contacts[$c] = 0;
-      }
-    }
-    $events = array();
-    $add = $this->data['participant_reg_type'] == 'all' ? count($contacts) : 1;
+    $cids = array_filter($this->existing_contacts);
+    $add = $this->data['participant_reg_type'] == 'all' ? count($this->existing_contacts) : 1;
     // Fetch events set in back-end
     foreach ($this->data['participant'] as $c => $par) {
-      if (!empty($par['participant']) && isset($contacts[$c])) {
+      if (!empty($par['participant']) && isset($this->existing_contacts[$c])) {
         foreach ($par['participant'] as $p) {
           if (!empty($p['event_id']) && $p['event_id'] != 'create_civicrm_webform_element') {
             list($eid) = explode('-', $p['event_id']);
             if (is_numeric($eid)) {
-              $events[$eid]['ended'] = TRUE;
-              $events[$eid]['title'] = t('this event');
-              $events[$eid]['count'] = wf_crm_aval($events, "$eid:count", 0) + $add;
+              $this->events[$eid]['ended'] = TRUE;
+              $this->events[$eid]['title'] = t('this event');
+              $this->events[$eid]['count'] = wf_crm_aval($this->events, "$eid:count", 0) + $add;
             }
           }
         }
@@ -296,39 +287,39 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     foreach ($this->crmValues as $field => $value) {
       if (strpos($field, 'participant_event_id')) {
         list(, $c) = wf_crm_explode_key($field);
-        if (isset($contacts[$c]) || ($c == 1 && $this->data['participant_reg_type'] == 'all')) {
+        if (isset($this->existing_contacts[$c]) || ($c == 1 && $this->data['participant_reg_type'] == 'all')) {
           $value = is_array($value) ? $value : array($value);
           foreach ($value as $val) {
             $eid = explode('-', $val);
             if (count($eid) == 2 && is_numeric($eid[0]) && $eid[0]) {
               $eid = $eid[0];
-              $events[$eid]['ended'] = TRUE;
-              $events[$eid]['title'] = t('this event');
-              $events[$eid]['count'] = wf_crm_aval($events, "$eid:count", 0) + $add;
+              $this->events[$eid]['ended'] = TRUE;
+              $this->events[$eid]['title'] = t('this event');
+              $this->events[$eid]['count'] = wf_crm_aval($this->events, "$eid:count", 0) + $add;
             }
           }
         }
       }
     }
     // Subtract events already registered for - this only works with known contacts
-    if ($events && $cids) {
+    if ($this->events && $cids) {
       $dao = CRM_Core_DAO::executeQuery("SELECT event_id
       FROM civicrm_participant p, civicrm_participant_status_type s
       WHERE s.id = p.status_id AND s.is_counted = 1
-      AND event_id IN (" . implode(',', array_keys($events)) . ")
+      AND event_id IN (" . implode(',', array_keys($this->events)) . ")
       AND contact_id IN (" . implode(',', $cids) . ")
       AND is_test = 0");
       while ($dao->fetch()) {
-        if (isset($events[$dao->event_id])) {
-          if ((--$events[$dao->event_id]['count']) === 0) {
-            unset($events[$dao->event_id]);
+        if (isset($this->events[$dao->event_id])) {
+          if ((--$this->events[$dao->event_id]['count']) === 0) {
+            unset($this->events[$dao->event_id]);
           }
         }
       }
       $dao->free();
     }
-    $this->loadEvents($events);
-    foreach ($events as $eid => $event) {
+    $this->loadEvents();
+    foreach ($this->events as $eid => $event) {
       if ($event['ended']) {
         form_set_error($eid, t('Sorry, you can no longer register for %event.', array('%event' => $event['title'])));
       }
@@ -359,6 +350,22 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $this->rawValues += $this->form_state['storage']['submitted'];
         $this->crmValues = wf_crm_enabled_fields($this->node, $this->rawValues);
       }
+
+      // Fill data array with submitted form values
+      $this->fillDataFromSubmission();
+
+      // Check how many valid contacts we have
+      foreach ($this->data['contact'] as $c => $contact) {
+        // Check if we have a contact_id
+        $fid = "civicrm_{$c}_contact_1_contact_existing";
+        if ($this->verifyExistingContact(wf_crm_aval($this->crmValues, $fid), $fid)) {
+          $this->existing_contacts[$c] = $this->crmValues[$fid];
+        }
+        // Or else see if enough info was entered to create a contact - use 0 as a placeholder for unknown cid
+        elseif (wf_crm_name_field_exists($this->crmValues, $c, $contact['contact'][1]['contact_type'])) {
+          $this->existing_contacts[$c] = 0;
+        }
+      }
     }
   }
 
@@ -383,7 +390,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (substr($field_key, -8) == 'existing') {
         list(, $c, ) = explode('_', $field_key, 3);
         $cid = wf_crm_aval($this->submissionValue($fid), 0);
-        $this->id['cid'][$c] = $this->verifyExistingContact($cid, $fid);
+        $this->id['cid'][$c] = $this->verifyExistingContact($cid, $field_key);
       }
     }
     $this->existing_contacts = $this->id['cid'];
@@ -396,9 +403,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @return int
    */
   private function verifyExistingContact($cid, $fid) {
-    if ($cid && is_numeric($cid)) {
+    if ($cid && is_numeric($cid) && !empty($this->enabled[$fid])) {
       module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
-      $component = $this->node->webform['components'][$fid];
+      $component = $this->node->webform['components'][$this->enabled[$fid]];
       $filters = wf_crm_search_filters($this->node, $component);
       // Verify access to this contact
       if (wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
@@ -847,8 +854,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             }
           }
           // Loop through event ids to support multi-valued form elements
-          $events = (array) $params['event_id'];
-          foreach ($events as $i => $eid) {
+          $this->events = (array) $params['event_id'];
+          foreach ($this->events as $i => $eid) {
             if (!empty($eid)) {
               list($eid) = explode('-', $eid);
               $params['event_id'] = $eid;
@@ -1102,6 +1109,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         'financial_type_id' => $this->contribution_page['financial_type_id'],
       );
     }
+    // Membership
+    foreach (wf_crm_aval($this->data, 'membership', array()) as $c => $memberships) {
+      if (isset($this->existing_contacts[$c])) {
+        foreach ($memberships as $n => $membership) {
+
+        }
+      }
+    }
+    
     return $this->line_items;
   }
 
@@ -1155,8 +1171,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $valid = FALSE;
     }
     // Check expiration date
-    $submitted['credit_card_exp_date[M]'] = $params['month'] = (int) wf_crm_aval($_POST, 'credit_card_exp_date:M', 0);
     $submitted['credit_card_exp_date[Y]'] = $params['year'] = wf_crm_aval($_POST, 'credit_card_exp_date:Y', 0);
+    // There seems to be some inconsistency with capitalization here
+    $params['month'] = (int) wf_crm_aval($_POST, 'credit_card_exp_date:M', wf_crm_aval($_POST, 'credit_card_exp_date:m', 0));
+    $submitted['credit_card_exp_date[M]'] = $submitted['credit_card_exp_date[m]'] = $params['month'];
     if ($params['year'] < date('Y') || ($params['year'] == date('Y') && $params['month'] < date('n'))) {
       form_set_error('billing', ts('Credit card expiration date cannot be a past date.'));
       $valid = FALSE;
@@ -1181,10 +1199,19 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
   /**
    * Create contact 1 if not already existing (required by contribution.transact)
-   * Because this method is used during the validation phase, we don't have access to $this->submission so have to improvise a bit
    * @return int
    */
   private function createBillingContact() {
+    $cid = wf_crm_aval($this->existing_contacts, 1);
+    if (!$cid) {
+      $contact = $this->data['contact'][1];
+      $contact['contact'][1] += array(
+        'first_name' => $this->billing_params['first_name'],
+        'middle_name' => $this->billing_params['middle_name'],
+        'last_name' => $this->billing_params['last_name'],
+      );
+      $cid = $this->findDuplicateContact($contact);
+    }
     $address = array(
       'street_address' => $this->billing_params['street_address'],
       'city' => $this->billing_params['city'],
@@ -1197,32 +1224,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       'email' => $this->billing_params['email'],
       'location_type_id' => 'Billing',
     );
-    $fid = 'civicrm_1_contact_1_contact_existing';
-    if (!empty($this->crmValues[$fid])) {
-      $cid = $this->verifyExistingContact($this->crmValues[$fid], $this->enabled[$fid]);
-    }
-    if (empty($cid)) {
-      $contact = array('contact' => array(1 => array(
-        'contact_type' => 'Individual',
-        'first_name' => $this->billing_params['first_name'],
-        'middle_name' => $this->billing_params['middle_name'],
-        'last_name' => $this->billing_params['last_name'],
-      )));
-      $contact['contact'][1] += $this->data['contact'][1]['contact'][1];
-      $contact += $this->data['contact'][1];
-      foreach ($this->crmValues as $key => $val) {
-        if (strpos($key, 'civicrm_1_contact_1') === 0) {
-          list( , , , , $table, $name) = explode('_', $key, 6);
-          $contact[$table][1][$name] = $val;
-        }
-      }
-      $cid = $this->findDuplicateContact($contact);
-    }
-    if (empty($cid)) {
+    if (!$cid) {
       $cid = $this->createContact($contact);
-      if (!$cid) {
-        return 0;
-      }
     }
     else {
       foreach (array('address', 'email') as $loc) {
@@ -1230,32 +1233,26 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           'contact_id' => $cid,
           'location_type_id' => 'Billing',
         ));
+        // Use first id if we have any results
         if (!empty($result['values'])) {
           $ids = array_keys($result['values']);
           ${$loc}['id'] = $ids[0];
         }
       }
     }
-    $address['contact_id'] = $email['contact_id'] = $this->id['cid'][1] = $cid;
-    wf_civicrm_api('address', 'create', $address);
-    wf_civicrm_api('email', 'create', $email);
+    if ($cid) {
+      $address['contact_id'] = $email['contact_id'] = $this->id['cid'][1] = $cid;
+      wf_civicrm_api('address', 'create', $address);
+      wf_civicrm_api('email', 'create', $email);
+    }
     return $cid;
   }
 
   /**
-   * Final preprocessing and execution of payment processor transaction
+   * Final prep and execution of payment processor transaction
    */
   private function submitPayment() {
-    $params = $this->billing_params;
-    $params += $this->data['contribution'][1]['contribution'][1];
-    $prefix = 'civicrm_1_contribution_1_contribution';
-    // Because we're still in validation context we don't yet have the full submission object.
-    // So we'll just save core contribution fields for now and handle custom data during postprocessing.
-    foreach ($this->crmValues as $key => $val) {
-      if (strpos($key, $prefix) === 0) {
-        $params[str_replace($prefix, '', $key)] = $val;
-      }
-    }
+    $params = $this->billing_params + $this->data['contribution'][1]['contribution'][1];
     $params['financial_type_id'] = $this->contribution_page['financial_type_id'];
     $params['skipRecentView'] = $params['skipLineItem'] = 1;
     $params['contact_id'] = $this->id['cid'][1];
@@ -1267,7 +1264,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     $result = wf_civicrm_api('contribution', 'transact', $params);
     if (empty($result['id'])) {
-      form_set_error('contribution', t('Sorry, processing your credit card failed. Please check all billing fields and ensure they match your card exactly.'));
+      form_set_error('contribution', t('Transaction failed. Please verify all billing fields are correct.'));
       return;
     }
     $this->id['contribution'] = $result['id'];
@@ -1323,7 +1320,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $val = $this->submissionValue($fid);
       if ($val !== FALSE) {
         list( , $c, $ent, $n, $table, $name) = explode('_', $field_key, 6);
-        // Fieldsets and existing contact fields are not CRM data, so ignore
+        // Fieldsets and existing contact fields are not strictly CiviCRM fields, so ignore
         if ($name === 'existing' || $name === 'fieldset') {
           continue;
         }
@@ -1346,7 +1343,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         if ($field['type'] == 'hidden') {
           continue;
         }
-        // Translate privacy options into seperate values
+        // Translate privacy options into separate values
         if ($name === 'privacy') {
           foreach (array_keys($this->getExposedOptions($fid)) as $key) {
             $this->data[$ent][$c][$table][$n][$key] = in_array($key, $val);
@@ -1420,6 +1417,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
   /**
    * Get or set a value from a webform submission
+   * During validation phase we use $this->crmValues
+   * During postprocessing we use $this->submission
    *
    * @param $fid
    *   Numeric webform component id
@@ -1429,15 +1428,20 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @return array|null field value if found
    */
   protected function submissionValue($fid, $value = NULL) {
-    if (!isset($this->submission->data[$fid])) {
-      return NULL;
+    if ($this->submission) {
+      if (!isset($this->submission->data[$fid])) {
+        return NULL;
+      }
+      $field =& $this->submission->data[$fid];
     }
-    $field =& $this->submission->data[$fid];
-    if (is_array($value)) {
-      $field = array_values($value);
+    else {
+      if (!isset($this->rawValues[$fid])) {
+        return NULL;
+      }
+      $field = (array) $this->rawValues[$fid];
     }
-    elseif ($value !== NULL) {
-      $field[0] = $value;
+    if ($value !== NULL) {
+      $field = (array) $value;
     }
     return $field;
   }
