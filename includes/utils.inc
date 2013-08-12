@@ -361,7 +361,7 @@ function wf_crm_enabled_fields($node, $submission = NULL, $show_all = FALSE) {
             continue;
           }
           if ($submission) {
-            $enabled[$c['form_key']] = wf_crm_aval($submission, $c['cid'], TRUE);
+            $enabled[$c['form_key']] = wf_crm_aval($submission, $c['cid'], NULL, TRUE);
           }
           else {
             $enabled[$c['form_key']] = $c['cid'];

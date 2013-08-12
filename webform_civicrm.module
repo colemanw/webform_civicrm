@@ -73,7 +73,7 @@ function webform_civicrm_node_load($nodes, $types) {
     $node = &$nodes[$settings->nid];
     $settings->data = unserialize($settings->data);
     $node->webform_civicrm = (array) $settings;
-    // Allow a comopnent widget to be changed
+    // Allow a component widget to be changed
     if (!empty($_GET['type']) && arg(0) == 'node' && arg(1) == $node->nid && arg(3) == 'components') {
       if (!empty($node->webform['components'][arg(4)]) && array_key_exists($_GET['type'], webform_components())) {
         $node->webform['components'][arg(4)]['type'] = $_GET['type'];

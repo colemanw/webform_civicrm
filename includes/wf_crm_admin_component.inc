@@ -228,7 +228,7 @@ class wf_crm_admin_component {
       if (wf_crm_aval($this->field, 'data_type') == 'ContactReference') {
         $this->form['civicrm_options_fieldset']['intro'] = array(
           '#markup' => '<p>' . t('This is a contact reference field. It points to another contact on the webform. You can configure how that contact is presented by editing their "Existing Contact" field.') . '</p>' .
-          '<p>' . t("Note: In most cases it is not desireable to have the selection of webform contacts exposed to the end-user so you may wish to set this field's value on the CiviCRM tab instead.") . '</p>',
+          '<p>' . t("Note: In most cases it is not desirable to have the selection of webform contacts exposed to the end-user so you may wish to set this field's value on the CiviCRM tab instead.") . '</p>',
         );
       }
       $options_selected = wf_crm_str2array($this->component['extra']['items']);
