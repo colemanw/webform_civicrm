@@ -3,6 +3,7 @@
  */
 
 var wfCivi = (function ($, D) {
+  var setting = D.settings.webform_civicrm;
   /**
    * Public methods.
    */
@@ -129,7 +130,7 @@ var wfCivi = (function ($, D) {
           });
           // Trigger chain select when changing country
           if (n[5] === 'country') {
-            $('select.civicrm-processed', ele).val(D.settings.webform_civicrm.defaultCountry).change();
+            $('select.civicrm-processed', ele).val(setting.defaultCountry).change();
           }
         }
         if (op === 'show') {
@@ -208,7 +209,7 @@ var wfCivi = (function ($, D) {
       fillOptions(stateSelect, stateProvinceCache[countryId], stateVal);
     }
     else {
-      $.get(D.settings.webform_civicrm.callbackPath+'/stateProvince/'+countryId, function(data) {
+      $.get(setting.callbackPath+'/stateProvince/'+countryId, function(data) {
         populateCounty(stateSelect, stateVal);
         fillOptions(stateSelect, data, stateVal, countryId);
         stateProvinceCache[countryId] = data;
@@ -224,7 +225,7 @@ var wfCivi = (function ($, D) {
         fillOptions(countySelect, {'': Drupal.t('- First Choose a State -')});
       }
       else {
-        $.get(D.settings.webform_civicrm.callbackPath+'/county/'+stateVal+'-'+countryId, function(data) {
+        $.get(setting.callbackPath+'/county/'+stateVal+'-'+countryId, function(data) {
           fillOptions(countySelect, data);
         }, 'json');
       }
@@ -316,10 +317,10 @@ var wfCivi = (function ($, D) {
 
   D.behaviors.webform_civicrmForm = {
     attach: function (context) {
-      if (!stateProvinceCache['default'] && D.settings.webform_civicrm) {
-        stateProvinceCache['default'] = D.settings.webform_civicrm.defaultStates;
-        stateProvinceCache[D.settings.webform_civicrm.defaultCountry] = D.settings.webform_civicrm.defaultStates;
-        stateProvinceCache[''] = {'': D.settings.webform_civicrm.noCountry};
+      if (!stateProvinceCache['default'] && setting) {
+        stateProvinceCache['default'] = setting.defaultStates;
+        stateProvinceCache[setting.defaultCountry] = setting.defaultStates;
+        stateProvinceCache[''] = {'': setting.noCountry};
       }
 
       // Replace state/prov & county textboxes with dynamic select lists
@@ -374,14 +375,36 @@ var wfCivi = (function ($, D) {
       $('div.civicrm-enabled[id$=contact-1-contact-image-url]:has(.file)', context).each(function() {
         pub.contactImage($(this).attr('id'));
       });
-
-      // Contribution fields
-      $('#billing-payment-block').load(D.settings.webform_civicrm.contributionCallback, function() {
-        cj('#billing-payment-block').trigger('crmFormLoad');
-      });
-
     }
   };
+  // Payment processing using CiviCRM's jQuery
+  cj && cj(function($) {
+    function loadBillingBlock(type) {
+      if (type) {
+        $('#billing-payment-block').load(setting.contributionCallback + '&type=' + type, function() {
+          $('#billing-payment-block').trigger('crmFormLoad');
+          if (setting.billingSubmission) {
+            $.each(setting.billingSubmission, function(key, val) {
+              $('[name="' + key + '"]').val(val);
+            });
+          }
+        });
+      }
+      else {
+        $('#billing-payment-block').html('');
+      }
+    }
+    var $processorSelect = $('select.civicrm-enabled[name$="civicrm_1_contribution_1_contribution_payment_processor_id]"]');
+    $processorSelect.change(function() {
+      setting.billingSubmission || (setting.billingSubmission = {});
+      $('input:visible, select', '#billing-payment-block').each(function() {
+        var name = $(this).attr('name');
+        name && (setting.billingSubmission[name] = $(this).val());
+      });
+      loadBillingBlock($(this).val());
+    });
+    loadBillingBlock($processorSelect.val() || setting.paymentProcessor);
+  });
 
   return pub;
 })(jQuery, Drupal);

@@ -1107,6 +1107,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
   private function validateBillingFields() {
     $valid = TRUE;
+    $params = $card_errors = array();
     // These are hard-coded in CiviCRM so we may as well hard-code them here
     // Value = translated label to be shown during validation or FALSE if not required
     $billing_fields = array(
@@ -1119,23 +1120,43 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       'billing_street_address-5' => ts('Street Address'),
       'billing_city-5' => ts('City'),
       'billing_country_id-5' => ts('Country'),
-      'billing_state_province_id-5' => ts('State/Province'),
+      'billing_state_province_id-5' => FALSE,
       'billing_postal_code-5' => ts('Postal Code'),
     );
-    $params = array();
     foreach ($billing_fields as $field => $label) {
       if (empty($_POST[$field]) && $label !== FALSE) {
         form_set_error($field, t('!name field is required.', array('!name' => check_plain($label))));
         $valid = FALSE;
       }
-      else {
+      if (!empty($_POST[$field])) {
         $name = str_replace('billing_', '', str_replace('-5', '', $field));
-        $params[$name] = $params[$field] = $_POST[$field];
+        $submitted[$name] = $params[$name] = $params[$field] = $_POST[$field];
       }
     }
+    // Validate country
+    if (!empty($params['country_id'])) {
+      if (!array_key_exists($params['country_id'], wf_crm_apivalues('address', 'getoptions', array('field' => 'country_id')))) {
+        form_set_error('billing_country_id-5', t('Illegal value entered for Country'));
+        $valid = $params['country_id'] = FALSE;
+      }
+    }
+    // Validate state/province
+    if (!empty($params['country_id'])) {
+      $states = wf_crm_apivalues('address', 'getoptions', array('field' => 'state_province_id', 'country_id' => $params['country_id']));
+      if ($states && (empty($params['state_province_id']) || !isset($states[$params['state_province_id']]))) {
+        form_set_error('billing_state_province_id-5', t('!name field is required.', array('!name' => check_plain(ts('State/Province')))));
+        $valid = FALSE;
+      }
+    }
+    // Validate credit card number & cvv2
+    CRM_Core_Payment_Form::validateCreditCard($params, $card_errors);
+    foreach ($card_errors as $field => $msg) {
+      form_set_error($field, $msg);
+      $valid = FALSE;
+    }
     // Check expiration date
-    $params['month'] = (int) wf_crm_aval($_POST, 'credit_card_exp_date:M', 0);
-    $params['year'] = wf_crm_aval($_POST, 'credit_card_exp_date:Y', 0);
+    $submitted['credit_card_exp_date[M]'] = $params['month'] = (int) wf_crm_aval($_POST, 'credit_card_exp_date:M', 0);
+    $submitted['credit_card_exp_date[Y]'] = $params['year'] = wf_crm_aval($_POST, 'credit_card_exp_date:Y', 0);
     if ($params['year'] < date('Y') || ($params['year'] == date('Y') && $params['month'] < date('n'))) {
       form_set_error('billing', ts('Credit card expiration date cannot be a past date.'));
       $valid = FALSE;
@@ -1154,9 +1175,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     if ($valid) {
       $this->billing_params = $params;
     }
+    drupal_add_js(array('webform_civicrm' => array('billingSubmission' => $submitted)), 'setting');
     return $valid;
   }
 
+  /**
+   * Create contact 1 if not already existing (required by contribution.transact)
+   * Because this method is used during the validation phase, we don't have access to $this->submission so have to improvise a bit
+   * @return int
+   */
   private function createBillingContact() {
     $address = array(
       'street_address' => $this->billing_params['street_address'],
@@ -1175,15 +1202,26 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $cid = $this->verifyExistingContact($this->crmValues[$fid], $this->enabled[$fid]);
     }
     if (empty($cid)) {
-      $params = array('contact' => array(1 => array(
+      $contact = array('contact' => array(1 => array(
         'contact_type' => 'Individual',
         'first_name' => $this->billing_params['first_name'],
         'middle_name' => $this->billing_params['middle_name'],
         'last_name' => $this->billing_params['last_name'],
       )));
-      $cid = $this->createContact($params);
+      $contact['contact'][1] += $this->data['contact'][1]['contact'][1];
+      $contact += $this->data['contact'][1];
+      foreach ($this->crmValues as $key => $val) {
+        if (strpos($key, 'civicrm_1_contact_1') === 0) {
+          list( , , , , $table, $name) = explode('_', $key, 6);
+          $contact[$table][1][$name] = $val;
+        }
+      }
+      $cid = $this->findDuplicateContact($contact);
+    }
+    if (empty($cid)) {
+      $cid = $this->createContact($contact);
       if (!$cid) {
-        return;
+        return 0;
       }
     }
     else {
@@ -1203,7 +1241,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     wf_civicrm_api('email', 'create', $email);
     return $cid;
   }
-  
+
+  /**
+   * Final preprocessing and execution of payment processor transaction
+   */
   private function submitPayment() {
     $params = $this->billing_params;
     $params += $this->data['contribution'][1]['contribution'][1];

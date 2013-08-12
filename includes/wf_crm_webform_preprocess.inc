@@ -32,7 +32,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    * Set webform default values.
    */
   public function alterForm() {
-    $this->form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_forms.js';
+    $this->form['#attached']['js'][] = array(
+      'data' => drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_forms.js',
+      'scope' => 'footer',
+    );
     $this->form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_forms.css';
     $this->form['#validate'][] = 'wf_crm_validate';
     $config = CRM_Core_Config::singleton();
@@ -59,7 +62,8 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         ->addScriptFile('civicrm', 'templates/CRM/Core/BillingBlock.js', -10, 'html-header');
       $page_id = $this->data['contribution'][1]['contribution'][1]['contribution_page_id'];
       $key = CRM_Core_Key::get('CRM_Contribute_Controller_Contribution', TRUE);
-      $js_vars['contributionCallback'] = url('civicrm/contribute/transact', array('query' => array('reset' => 1, 'id' => $page_id, 'qfKey' => $key, 'snippet' => 4, 'type' => 1), 'alias' => TRUE));
+      $js_vars['contributionCallback'] = url('civicrm/contribute/transact', array('query' => array('reset' => 1, 'id' => $page_id, 'qfKey' => $key, 'snippet' => 4), 'alias' => TRUE));
+      $js_vars['paymentProcessor'] = wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id');
     }
     if ($js_vars) {
       $this->form['#attached']['js'][] = array(
