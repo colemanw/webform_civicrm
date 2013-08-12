@@ -1406,6 +1406,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
           $val .= $time;
         }
+        // The admin can change a number field to use checkbox/radio/select widget and we'll sum the result
+        elseif ($field['type'] === 'number' && count($val) > 1) {
+          $val = array_sum($val);
+        }
         else {
           $val = isset($val[0]) ? $val[0] : '';
         }
@@ -1465,23 +1469,25 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         return NULL;
       }
       $field =& $this->submission->data[$fid];
+      // During submission preprocessing this is used to alter the submission
+      if ($value !== NULL) {
+        $field = (array) $value;
+      }
+      return $field;
     }
-    // In validation context
+    // In validation context - no need to ever change the value so just return it
     else {
       if (!isset($this->rawValues[$fid])) {
         return NULL;
       }
+      // rawValues is slightly different from submission->data in that empty values are present in arrays
       if (is_array($this->rawValues[$fid])) {
-        $field = array_filter($this->rawValues[$fid]);
+        return array_filter($this->rawValues[$fid]);
       }
       else {
-        $field = (array) $this->rawValues[$fid];
+        return (array) $this->rawValues[$fid];
       }
     }
-    if ($value !== NULL) {
-      $field = (array) $value;
-    }
-    return $field;
   }
 
 }
