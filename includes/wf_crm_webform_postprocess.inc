@@ -32,6 +32,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private $line_items = array();
 
   // Cache an instance of this object
+  // @see self::singleton()
   static $singleton;
 
   function __construct($node) {
@@ -60,7 +61,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
-   * Called after each page of a webform is submitted
+   * Called after a webform is submitted
+   * Or, for a multipage form, called after each page
    * @param array $form
    * @param array $form_state (reference)
    */
@@ -263,40 +265,41 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
-   * Validation callback for event registrations.
+   * Validate event participants and add line items
    */
   private function validateParticipants() {
     $this->loadMultiPageData();
     $cids = array_filter($this->existing_contacts);
-    $add = $this->data['participant_reg_type'] == 'all' ? count($this->existing_contacts) : 1;
-    // Fetch events set in back-end
-    foreach ($this->data['participant'] as $c => $par) {
-      if (!empty($par['participant']) && isset($this->existing_contacts[$c])) {
-        foreach ($par['participant'] as $p) {
-          if (!empty($p['event_id']) && $p['event_id'] != 'create_civicrm_webform_element') {
-            list($eid) = explode('-', $p['event_id']);
-            if (is_numeric($eid)) {
-              $this->events[$eid]['ended'] = TRUE;
-              $this->events[$eid]['title'] = t('this event');
-              $this->events[$eid]['count'] = wf_crm_aval($this->events, "$eid:count", 0) + $add;
-            }
-          }
-        }
-      }
+    // If we have no valid contacts on the form, don't bother continuing
+    if (!$cids) {
+      return;
     }
-    // Add events selected by user
-    foreach ($this->crmValues as $field => $value) {
-      if (strpos($field, 'participant_event_id')) {
-        list(, $c) = wf_crm_explode_key($field);
-        if (isset($this->existing_contacts[$c]) || ($c == 1 && $this->data['participant_reg_type'] == 'all')) {
-          $value = is_array($value) ? $value : array($value);
-          foreach ($value as $val) {
-            $eid = explode('-', $val);
-            if (count($eid) == 2 && is_numeric($eid[0]) && $eid[0]) {
-              $eid = $eid[0];
-              $this->events[$eid]['ended'] = TRUE;
-              $this->events[$eid]['title'] = t('this event');
-              $this->events[$eid]['count'] = wf_crm_aval($this->events, "$eid:count", 0) + $add;
+    $count = $this->data['participant_reg_type'] == 'all' ? count($this->existing_contacts) : 1;
+    // Collect selected events
+    foreach ($this->data['participant'] as $c => $par) {
+      if ($this->data['participant_reg_type'] == 'all') {
+        $contacts = $this->existing_contacts;
+      }
+      elseif (isset($this->existing_contacts[$c])) {
+        $contacts = array($this->existing_contacts[$c]);
+      }
+      else {
+        continue;
+      }
+      foreach (wf_crm_aval($par, 'participant', array()) as $p) {
+        foreach (array_filter(wf_crm_aval($p, 'event_id', array())) as $id_and_type) {
+          list($eid) = explode('-', $id_and_type);
+          if (is_numeric($eid)) {
+            $this->events[$eid]['ended'] = TRUE;
+            $this->events[$eid]['title'] = t('this event');
+            $this->events[$eid]['count'] = wf_crm_aval($this->events, "$eid:count", 0) + $count;
+            if (!empty($p['fee_amount'])) {
+              $this->line_items[] = array(
+                'qty' => $count,
+                'event_id' => $eid,
+                'contact_ids' => $contacts,
+                'unit_price' => $p['fee_amount'],
+              );
             }
           }
         }
@@ -304,7 +307,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     // Subtract events already registered for - this only works with known contacts
     if ($this->events && $cids) {
-      $dao = CRM_Core_DAO::executeQuery("SELECT event_id
+      $dao = CRM_Core_DAO::executeQuery("SELECT event_id, contact_id
       FROM civicrm_participant p, civicrm_participant_status_type s
       WHERE s.id = p.status_id AND s.is_counted = 1
       AND event_id IN (" . implode(',', array_keys($this->events)) . ")
@@ -312,8 +315,16 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       AND is_test = 0");
       while ($dao->fetch()) {
         if (isset($this->events[$dao->event_id])) {
-          if ((--$this->events[$dao->event_id]['count']) === 0) {
+          if (!(--$this->events[$dao->event_id]['count'])) {
             unset($this->events[$dao->event_id]);
+          }
+        }
+        foreach ($this->line_items as $k => $item) {
+          if ($dao->event_id == $item['event_id'] && in_array($dao->contact_id, $item['contact_ids'])) {
+            unset($this->line_items[$k]['contact_ids'][array_search($dao->contact_id, $item['contact_ids'])]);
+            if (!(--$item['qty'])) {
+              unset($this->line_items[$k]);
+            }
           }
         }
       }
@@ -1106,7 +1117,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $this->line_items[] = array(
         'qty' => 1,
         'unit_price' => $this->crmValues['civicrm_1_contribution_1_contribution_total_amount'],
-        'line_total' => $this->crmValues['civicrm_1_contribution_1_contribution_total_amount'],
         'financial_type_id' => $this->contribution_page['financial_type_id'],
       );
     }
@@ -1121,7 +1131,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
               $this->line_items[] = array(
                 'qty' => $item['num_terms'],
                 'unit_price' => $price,
-                'line_total' => $price * $item['num_terms'],
                 'financial_type_id' => $this->getMembershipTypeField($type, 'financial_type_id'),
               );
             }
@@ -1129,7 +1138,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
       }
     }
-    
+    // Tally
+    foreach ($this->line_items as &$item) {
+      $item['line_total'] = $item['unit_price'] * $item['qty'];
+    }
     return $this->line_items;
   }
 
