@@ -17,9 +17,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private $isPaymentPage;
   private $contribution_page;
   private $billing_params;
+  private $membership_types = array();
 
   // During validation this contains an array of known contact ids and the placeholder 0 for valid contacts
-  // During postprocessing this contains an array of known contact ids
+  // During submission processing this contains an array of known contact ids
   private $existing_contacts = array();
 
   // Variables used during submission processing
@@ -111,7 +112,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     $this->fillDataFromSubmission();
-dsm($this->data);
+
     // Create/update contacts
     foreach ($this->data['contact'] as $c => $contact) {
       if (empty($this->id['cid'][$c])) {
@@ -338,7 +339,7 @@ dsm($this->data);
   }
 
   /**
-   * Load entire webform submission during validation
+   * Load entire webform submission during validation, including contact ids and $this->data
    * Used when validation for one page needs access to submitted values from other pages
    */
   private function loadMultiPageData() {
@@ -350,9 +351,6 @@ dsm($this->data);
         $this->rawValues += $this->form_state['storage']['submitted'];
         $this->crmValues = wf_crm_enabled_fields($this->node, $this->rawValues);
       }
-
-      // Fill data array with submitted form values
-      $this->fillDataFromSubmission();
 
       // Check how many valid contacts we have
       foreach ($this->data['contact'] as $c => $contact) {
@@ -366,6 +364,9 @@ dsm($this->data);
           $this->existing_contacts[$c] = 0;
         }
       }
+
+      // Fill data array with submitted form values
+      $this->fillDataFromSubmission();
     }
   }
 
@@ -1111,9 +1112,20 @@ dsm($this->data);
     }
     // Membership
     foreach (wf_crm_aval($this->data, 'membership', array()) as $c => $memberships) {
-      if (isset($this->existing_contacts[$c])) {
-        foreach ($memberships as $n => $membership) {
-
+      if (isset($this->existing_contacts[$c]) && !empty($memberships['number_of_membership'])) {
+        foreach ($memberships['membership'] as $n => $item) {
+          if (!empty($item['num_terms']) && !empty($item['membership_type_id'])) {
+            $type = $item['membership_type_id'];
+            $price = $this->getMembershipTypeField($type, 'minimum_fee');
+            if ($price) {
+              $this->line_items[] = array(
+                'qty' => $item['num_terms'],
+                'unit_price' => $price,
+                'line_total' => $price * $item['num_terms'],
+                'financial_type_id' => $this->getMembershipTypeField($type, 'financial_type_id'),
+              );
+            }
+          }
         }
       }
     }
@@ -1270,6 +1282,13 @@ dsm($this->data);
     $this->id['contribution'] = $result['id'];
   }
 
+  private function getMembershipTypeField($type, $field) {
+    if (!$this->membership_types) {
+      $this->membership_types = wf_crm_apivalues('membership_type', 'get');
+    }
+    return wf_crm_aval($this->membership_types, $type . ':' . $field);
+  }
+
   /**
    * Recursive function to fill ContactRef fields with contact IDs
    *
@@ -1418,7 +1437,7 @@ dsm($this->data);
   /**
    * Get or set a value from a webform submission
    * During validation phase we use $this->crmValues
-   * During postprocessing we use $this->submission
+   * During submission processing we use $this->submission
    *
    * @param $fid
    *   Numeric webform component id
@@ -1428,17 +1447,24 @@ dsm($this->data);
    * @return array|null field value if found
    */
   protected function submissionValue($fid, $value = NULL) {
+    // In submission processing context
     if ($this->submission) {
       if (!isset($this->submission->data[$fid])) {
         return NULL;
       }
       $field =& $this->submission->data[$fid];
     }
+    // In validation context
     else {
       if (!isset($this->rawValues[$fid])) {
         return NULL;
       }
-      $field = (array) $this->rawValues[$fid];
+      if (is_array($this->rawValues[$fid])) {
+        $field = array_filter($this->rawValues[$fid]);
+      }
+      else {
+        $field = (array) $this->rawValues[$fid];
+      }
     }
     if ($value !== NULL) {
       $field = (array) $value;
