@@ -1243,22 +1243,14 @@ class wf_crm_admin_form {
       unset($field['extra']['description']);
     }
     // Create fieldsets - for contact and contact-specific event fields only
-    if (!empty($settings['create_fieldsets']) && $ent != 'activity' && $ent != 'case'
+    if ($ent != 'activity' && $ent != 'case' && $ent != 'contribution'
       && ($ent != 'participant' || wf_crm_aval($settings['data'], 'participant_reg_type') == 'separate')) {
-      $sid = 'civicrm_' . $c . '_contact_1_fieldset_fieldset';
-      if (!isset($enabled[$sid])) {
-        // Create webform fieldset for this contact
-        $new_set = array(
-          'nid' => $field['nid'],
-          'form_key' => $sid,
-          'type' => 'fieldset',
-          'name' => wf_crm_contact_label($c, $settings['data']),
-          'weight' => $c,
-        );
-        $new_set += webform_component_invoke('fieldset', 'defaults');
-        $enabled[$sid] = webform_component_insert($new_set);
-      }
-      $field['pid'] = $enabled[$sid];
+      self::addFieldset($c, $field, $enabled, $settings);
+    }
+    // Create page break for contribution page
+    if ($name == 'contribution_page_id') {
+      $field['weight'] = 9999;
+      self::addPageBreak($field);
     }
     // Merge defaults and create webform component
     $field += array('extra' => array());
@@ -1272,6 +1264,52 @@ class wf_crm_admin_form {
     else {
       $enabled[$field['form_key']] = webform_component_insert($field);
     }
+  }
+
+  /**
+   * Create a fieldset around a contact if it doesn't already exist
+   * @param $c
+   * @param $field
+   * @param $enabled
+   * @param $settings
+   */
+  static function addFieldset($c, &$field, &$enabled, $settings) {
+    $sid = 'civicrm_' . $c . '_contact_1_fieldset_fieldset';
+    if (!empty($settings['create_fieldsets']) && !isset($enabled[$sid])) {
+      $new_set = array(
+        'nid' => $field['nid'],
+        'form_key' => $sid,
+        'type' => 'fieldset',
+        'name' => wf_crm_contact_label($c, $settings['data']),
+        'weight' => $c,
+      );
+      $new_set += webform_component_invoke('fieldset', 'defaults');
+      $enabled[$sid] = webform_component_insert($new_set);
+    }
+    $field['pid'] = wf_crm_aval($enabled, $sid, 0);
+  }
+
+  /**
+   * Create a page-break before the contribution-page field
+   * @param $field
+   */
+  static function addPageBreak($field) {
+    $node = node_load($field['nid']);
+    // Check if it already exists
+    foreach (wf_crm_aval($node->webform, 'components', array()) as $component) {
+      if ($component['form_key'] == 'contribution_pagebreak') {
+        return;
+      }
+    }
+    $pagebreak = array(
+      'nid' => $field['nid'],
+      'form_key' => 'contribution_pagebreak',
+      'type' => 'pagebreak',
+      'name' => t('Payment'),
+      'weight' => $field['weight'] - 1,
+    );
+    $pagebreak += webform_component_invoke('pagebreak', 'defaults');
+    webform_component_insert($pagebreak);
   }
 
   /**
