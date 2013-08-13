@@ -189,9 +189,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (!empty($this->data['activity'][1]['activity'])) {
        $this->processActivity();
       }
-      // Save contribution custom data
-      if (!empty($this->id['contribution']) && count($this->data['contribution'][1]) > 1) {
-        $this->saveCustomData($this->data['contribution'][1], $this->id['contribution'], 'Contribution', FALSE);
+      // Save contribution custom data & line-items
+      if (!empty($this->id['contribution'])) {
+        $this->processContribution();
       }
     }
     // Write record; we do this when creating, updating, or saving a draft of a webform submission.
@@ -296,6 +296,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             if (!empty($p['fee_amount'])) {
               $this->line_items[] = array(
                 'qty' => $count,
+                'entity_table' => 'civicrm_participant',
                 'event_id' => $eid,
                 'contact_ids' => $contacts,
                 'unit_price' => $p['fee_amount'],
@@ -335,9 +336,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Set event titles
     foreach ($this->line_items as &$item) {
       $item['label'] = $this->events[$item['event_id']]['title'];
-      if ($item['qty'] > 1) {
-        $item['label'] .= ' (' . $item['qty'] . ')';
-      }
     }
     foreach ($this->events as $eid => $event) {
       if ($event['ended']) {
@@ -533,7 +531,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $existing = wf_civicrm_api('contact', 'get', array('id' => $this->id['cid'][$c]) + $fetch);
       $existing = wf_crm_aval($existing, 'values:' . $this->id['cid'][$c], array());
       foreach ($multi as $name) {
-        $exist = drupal_map_assoc(wf_crm_aval($existing, $name, array()));
+        $exist = drupal_map_assoc((array) wf_crm_aval($existing, $name, array()));
         // Only known contacts are allowed to empty a field
         if (!empty($this->existing_contacts[$c])) {
           $fid = wf_crm_aval($this->enabled, "civicrm_{$c}_contact_1_contact_$name");
@@ -875,9 +873,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
           // Loop through event ids to support multi-valued form elements
           $this->events = (array) $params['event_id'];
-          foreach ($this->events as $i => $eid) {
-            if (!empty($eid)) {
-              list($eid) = explode('-', $eid);
+          foreach ($this->events as $i => $id_and_type) {
+            if (!empty($id_and_type)) {
+              list($eid) = explode('-', $id_and_type);
               $params['event_id'] = $eid;
               unset($remove[$eid], $params['registered_by_id'], $params['id'], $params['source']);
               // Is existing participant?
@@ -891,6 +889,16 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                 }
               }
               $result = wf_civicrm_api('participant', 'create', $params);
+              // Update line-item
+              foreach ($this->line_items as &$item) {
+                if ($item['element'] == "civicrm_{$n}_participant_{$e}_participant_{$id_and_type}") {
+                  if (empty($item['participant_id'])) {
+                    $item['participant_id'] = $item['entity_id'] = $result['id'];
+                  }
+                  $item['participant_count'] = wf_crm_aval($item, 'participant_count', 0) + 1;
+                  break;
+                }
+              }
               // When registering contact 1, store id to apply to other contacts
               if ($c == 1) {
                 $registered_by_id[$e][$i] = $result['id'];
@@ -902,8 +910,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
         }
         foreach ($remove as $eid => $title) {
-          wf_civicrm_api('participant', 'create', array('status_id' => 4, 'id' => $existing[$eid]));
-          drupal_set_message(t('Registration canceled for !event', array('!event' => $title)));
+          wf_civicrm_api('participant', 'create', array('status_id' => "Cancelled", 'id' => $existing[$eid]));
+          drupal_set_message(t('Registration cancelled for !event', array('!event' => $title)));
         }
       }
     }
@@ -921,7 +929,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $types = wf_crm_apivalues('membership_type', 'get');
     }
     $existing = wf_crm_apivalues('membership', 'get', array('contact_id' => $cid, 'filters' => array('is_current' => 1)));
-    foreach (wf_crm_aval($this->data, "membership:$c:membership", array()) as $params) {
+    foreach (wf_crm_aval($this->data, "membership:$c:membership", array()) as $n => $params) {
       if (empty($params['membership_type_id'])) {
         continue;
       }
@@ -945,6 +953,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
       $params['contact_id'] = $cid;
       $result = wf_civicrm_api('membership', 'create', $params);
+      foreach ($this->line_items as &$item) {
+        if ($item['element'] == "civicrm_{$c}_membership_{$n}") {
+          $item['membership_id'] = $result['id'];
+          break;
+        }
+      }
     }
   }
 
@@ -1108,6 +1122,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         'financial_type_id' => $this->contribution_page['financial_type_id'],
         'label' => wf_crm_aval($this->node->webform['components'], $this->enabled[$fid] . ':name', t('Contribution')),
         'element' => 'civicrm_1_contribution_1',
+        'entity_table' => 'civicrm_contribution',
       );
     }
     // Membership
@@ -1122,8 +1137,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                 'qty' => $item['num_terms'],
                 'unit_price' => $price,
                 'financial_type_id' => $this->getMembershipTypeField($type, 'financial_type_id'),
-                'label' => $this->getMembershipTypeField($type, 'name') . ($item['num_terms'] > 1 ? " ({$item['num_terms']})" : ''),
+                'label' => $this->getMembershipTypeField($type, 'name'),
                 'element' => "civicrm_{$c}_membership_{$n}",
+                'entity_table' => 'civicrm_contribution',
               );
             }
           }
@@ -1284,6 +1300,31 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       return;
     }
     $this->id['contribution'] = $result['id'];
+  }
+
+  /**
+   * Post-processing of contribution
+   */
+  private function processContribution() {
+    // Save custom data
+    if (count($this->data['contribution'][1]) > 1) {
+      $this->saveCustomData($this->data['contribution'][1], $this->id['contribution'], 'Contribution', FALSE);
+    }
+    // Save line-items
+    foreach ($this->line_items as &$item) {
+      if (empty($item['entity_id'])) {
+        $item['entity_id'] = $this->id['contribution'];
+      }
+      wf_civicrm_api('line_item', 'create', $item);
+      // Create participant/membership payment records
+      if (isset($item['membership_id']) || isset($item['participant_id'])) {
+        $type = isset($item['participant_id']) ? 'participant' : 'membership';
+        wf_civicrm_api("{$type}_payment", 'create', array(
+          "{$type}_id" => $item["{$type}_id"],
+          'contribution_id' => $this->id['contribution'],
+        ));
+      }
+    }
   }
 
   private function getMembershipTypeField($type, $field) {

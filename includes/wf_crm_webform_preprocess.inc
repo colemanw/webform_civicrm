@@ -533,8 +533,9 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     $total = 0;
     foreach ($this->line_items as $item) {
       $total += $item['line_total'];
+      $label = $item['label'] . ($item['qty'] > 1 ? " ({$item['qty']})" : '');
       $rows[] = array(
-        'data' => array($item['label'], CRM_Utils_Money::format($item['line_total'])),
+        'data' => array($label, CRM_Utils_Money::format($item['line_total'])),
         'class' => array($item['element']),
       );
     }
