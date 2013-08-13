@@ -534,11 +534,12 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     foreach ($this->line_items as $item) {
       $total += $item['line_total'];
       $rows[] = array(
-        'data' => array($item['label'], $item['line_total']),
+        'data' => array($item['label'], CRM_Utils_Money::format($item['line_total'])),
+        'class' => array($item['element']),
       );
     }
     $rows[] = array(
-      'data' => array(t('Total'), $total),
+      'data' => array(t('Total'), CRM_Utils_Money::format($total)),
       'class' => array('wf-crm-billing-total'),
     );
     return theme('table', array(

@@ -286,7 +286,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       else {
         continue;
       }
-      foreach (wf_crm_aval($par, 'participant', array()) as $p) {
+      foreach (wf_crm_aval($par, 'participant', array()) as $n => $p) {
         foreach (array_filter(wf_crm_aval($p, 'event_id', array())) as $id_and_type) {
           list($eid) = explode('-', $id_and_type);
           if (is_numeric($eid)) {
@@ -299,6 +299,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                 'event_id' => $eid,
                 'contact_ids' => $contacts,
                 'unit_price' => $p['fee_amount'],
+                'element' => "civicrm_{$c}_participant_{$n}_participant_{$id_and_type}",
               );
             }
           }
@@ -331,6 +332,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $dao->free();
     }
     $this->loadEvents();
+    // Set event titles
     foreach ($this->line_items as &$item) {
       $item['label'] = $this->events[$item['event_id']]['title'];
       if ($item['qty'] > 1) {
@@ -943,16 +945,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
       $params['contact_id'] = $cid;
       $result = wf_civicrm_api('membership', 'create', $params);
-      if (!empty($result['id']) && !empty($params['num_terms']) && !empty($type['minimum_fee'])) {
-        $this->line_items[] = array(
-          'type' => 'membership',
-          'qty' => $params['num_terms'],
-          'unit_price' => $type['minimum_fee'],
-          'line_total' => $params['num_terms'] * $type['minimum_fee'],
-          'id' => $result['id'],
-          'contact_id' => $cid,
-        );
-      }
     }
   }
 
@@ -1109,10 +1101,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function tallyLineItems() {
     // Contribution
     $fid = 'civicrm_1_contribution_1_contribution_total_amount';
-    if (!empty($this->crmValues[$fid])) {
+    if (!empty($this->data['contribution'][1]['contribution'][1]['total_amount'])) {
       $this->line_items[] = array(
         'qty' => 1,
-        'unit_price' => $this->crmValues[$fid],
+        'unit_price' => $this->data['contribution'][1]['contribution'][1]['total_amount'],
         'financial_type_id' => $this->contribution_page['financial_type_id'],
         'label' => wf_crm_aval($this->node->webform['components'], $this->enabled[$fid] . ':name', t('Contribution')),
         'element' => 'civicrm_1_contribution_1',
@@ -1131,7 +1123,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                 'unit_price' => $price,
                 'financial_type_id' => $this->getMembershipTypeField($type, 'financial_type_id'),
                 'label' => $this->getMembershipTypeField($type, 'name') . ($item['num_terms'] > 1 ? " ({$item['num_terms']})" : ''),
-                'element' => "civicrm_{$n}_membership_{$c}",
+                'element' => "civicrm_{$c}_membership_{$n}",
               );
             }
           }
@@ -1407,7 +1399,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $val .= $time;
         }
         // The admin can change a number field to use checkbox/radio/select widget and we'll sum the result
-        elseif ($field['type'] === 'number' && count($val) > 1) {
+        elseif ($field['type'] === 'number') {
           $val = array_sum($val);
         }
         else {
@@ -1482,7 +1474,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
       // rawValues is slightly different from submission->data in that empty values are present in arrays
       if (is_array($this->rawValues[$fid])) {
-        return array_filter($this->rawValues[$fid]);
+        $val = array_filter($this->rawValues[$fid]);
+        return $val;
       }
       else {
         return (array) $this->rawValues[$fid];
