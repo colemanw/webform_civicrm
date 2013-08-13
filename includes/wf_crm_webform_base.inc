@@ -319,11 +319,12 @@ abstract class wf_crm_webform_base {
     if (!empty($this->events)) {
       $now = time();
       // Fetch event info
-      $dao = CRM_Core_DAO::executeQuery('SELECT id, title, end_date, max_participants
+      $dao = CRM_Core_DAO::executeQuery('SELECT id, title, end_date, max_participants, financial_type_id
       FROM civicrm_event WHERE id IN (' . implode(',', array_keys($this->events)) . ')');
       while ($dao->fetch()) {
         $this->events[$dao->id]['title'] = $dao->title;
         $this->events[$dao->id]['end_date'] = $dao->end_date;
+        $this->events[$dao->id]['financial_type_id'] = $dao->financial_type_id;
         $this->events[$dao->id]['full'] = FALSE;
         $this->events[$dao->id]['ended'] = $dao->end_date && strtotime($dao->end_date) < $now;
         if ($this->events[$dao->id]['max_participants'] = $dao->max_participants) {

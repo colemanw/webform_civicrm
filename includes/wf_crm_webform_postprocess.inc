@@ -269,9 +269,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * Validate event participants and add line items
    */
   private function validateParticipants() {
-    $cids = array_filter($this->existing_contacts);
     // If we have no valid contacts on the form, don't bother continuing
-    if (!$cids) {
+    if (!$this->existing_contacts) {
       return;
     }
     $count = $this->data['participant_reg_type'] == 'all' ? count($this->existing_contacts) : 1;
@@ -308,6 +307,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
     }
     // Subtract events already registered for - this only works with known contacts
+    $cids = array_filter($this->existing_contacts);
     if ($this->events && $cids) {
       $dao = CRM_Core_DAO::executeQuery("SELECT event_id, contact_id
       FROM civicrm_participant p, civicrm_participant_status_type s
@@ -321,7 +321,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             unset($this->events[$dao->event_id]);
           }
         }
-        foreach ($this->line_items as $k => $item) {
+        foreach ($this->line_items as $k => &$item) {
           if ($dao->event_id == $item['event_id'] && in_array($dao->contact_id, $item['contact_ids'])) {
             unset($this->line_items[$k]['contact_ids'][array_search($dao->contact_id, $item['contact_ids'])]);
             if (!(--$item['qty'])) {
@@ -333,9 +333,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $dao->free();
     }
     $this->loadEvents();
-    // Set event titles
+    // Add event info to line items
     foreach ($this->line_items as &$item) {
       $item['label'] = $this->events[$item['event_id']]['title'];
+      $item['financial_type_id'] = wf_crm_aval($this->events[$item['event_id']], 'financial_type_id', 'Event Fee');
     }
     foreach ($this->events as $eid => $event) {
       if ($event['ended']) {
