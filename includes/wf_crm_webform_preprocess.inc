@@ -21,6 +21,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     $this->data = $this->settings['data'];
     $this->id['cid'] = array();
     $this->enabled = wf_crm_enabled_fields($this->node);
+    $this->line_items = wf_crm_aval($form_state, 'civicrm:line_items', array());
   }
 
   /**
@@ -512,6 +513,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             wf_crm_fill_contact_value($this->node, $component, $element);
           }
           if ($name == 'contribution_page_id') {
+            $element['#prefix'] = $this->displayLineItems();
             $element['#suffix'] = '<div class="crm-container crm-public" id="billing-payment-block"></div>';
             $element['#value'] = wf_crm_aval($this->data, 'contribution:1:contribution:1:contribution_page_id');
             unset($element['#default_value']);
@@ -519,6 +521,34 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         }
       }
     }
+  }
+
+  /**
+   * Format line-items to appear on front-end of webform
+   * @return string
+   */
+  private function displayLineItems() {
+    $this->getContributionPage();
+    $rows = array();
+    $total = 0;
+    foreach ($this->line_items as $item) {
+      $total += $item['line_total'];
+      $rows[] = array(
+        'data' => array($item['label'], $item['line_total']),
+      );
+    }
+    $rows[] = array(
+      'data' => array(t('Total'), $total),
+      'class' => array('wf-crm-billing-total'),
+    );
+    return theme('table', array(
+      'sticky' => FALSE,
+      'caption' => $this->contribution_page['title'],
+      'header' => array(),
+      'rows' => $rows,
+      'empty' => t('No Items'),
+      'attributes' => array('id' => "wf-crm-billing-items"),
+    ));
   }
 
   /**

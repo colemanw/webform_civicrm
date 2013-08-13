@@ -15,7 +15,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private $rawValues;
   private $multiPageDataLoaded;
   private $isPaymentPage;
-  private $contribution_page;
   private $billing_params;
   private $membership_types = array();
 
@@ -29,7 +28,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private $all_fields;
   private $all_sets;
   private $shared_address = array();
-  private $line_items = array();
 
   // Cache an instance of this object
   // @see self::singleton()
@@ -78,13 +76,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->validateThisPage($this->form['submitted']);
 
     if (!empty($this->data['reg_options']['validate']) && !empty($this->data['participant']) && !empty($this->data['participant_reg_type'])) {
+      $this->loadMultiPageData();
       $this->validateParticipants();
     }
 
     // Process contribution. If the transaction is unsuccessful it will trigger a form validation error.
-    if ($this->isPaymentPage && !form_get_errors()) {
-      if ($this->getContributionPage()) {
-        if ($this->tallyLineItems()) {
+    if ($this->getContributionPage()) {
+      $this->loadMultiPageData();
+      if ($this->tallyLineItems()) {
+        if ($this->isPaymentPage && !form_get_errors()) {
           if ($this->validateBillingFields()) {
             if ($this->createBillingContact()) {
               $this->submitPayment();
@@ -95,6 +95,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     // Even though this object is destroyed between page submissions, this trick allows us to persist some data - see above
     $form_state['civicrm']['id'] = $this->id;
+    $form_state['civicrm']['line_items'] = $this->line_items;
   }
 
   /**
@@ -268,7 +269,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * Validate event participants and add line items
    */
   private function validateParticipants() {
-    $this->loadMultiPageData();
     $cids = array_filter($this->existing_contacts);
     // If we have no valid contacts on the form, don't bother continuing
     if (!$cids) {
@@ -331,6 +331,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $dao->free();
     }
     $this->loadEvents();
+    foreach ($this->line_items as &$item) {
+      $item['label'] = $this->events[$item['event_id']]['title'];
+      if ($item['qty'] > 1) {
+        $item['label'] .= ' (' . $item['qty'] . ')';
+      }
+    }
     foreach ($this->events as $eid => $event) {
       if ($event['ended']) {
         form_set_error($eid, t('Sorry, you can no longer register for %event.', array('%event' => $event['title'])));
@@ -1098,26 +1104,18 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
-   * Loads the contribution page used for this webform
-   */
-  private function getContributionPage() {
-    $params = array('id' => $this->data['contribution'][1]['contribution'][1]['contribution_page_id']);
-    $result = wf_crm_apivalues('contribution_page', 'get', $params);
-    $this->contribution_page = wf_crm_aval($result, $params['id']);
-    return $this->contribution_page;
-  }
-
-  /**
    * Figure out line-items for this webform submission
    */
   private function tallyLineItems() {
-    $this->loadMultiPageData();
     // Contribution
-    if (!empty($this->crmValues['civicrm_1_contribution_1_contribution_total_amount'])) {
+    $fid = 'civicrm_1_contribution_1_contribution_total_amount';
+    if (!empty($this->crmValues[$fid])) {
       $this->line_items[] = array(
         'qty' => 1,
-        'unit_price' => $this->crmValues['civicrm_1_contribution_1_contribution_total_amount'],
+        'unit_price' => $this->crmValues[$fid],
         'financial_type_id' => $this->contribution_page['financial_type_id'],
+        'label' => wf_crm_aval($this->node->webform['components'], $this->enabled[$fid] . ':name', t('Contribution')),
+        'element' => 'civicrm_1_contribution_1',
       );
     }
     // Membership
@@ -1132,15 +1130,17 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                 'qty' => $item['num_terms'],
                 'unit_price' => $price,
                 'financial_type_id' => $this->getMembershipTypeField($type, 'financial_type_id'),
+                'label' => $this->getMembershipTypeField($type, 'name') . ($item['num_terms'] > 1 ? " ({$item['num_terms']})" : ''),
+                'element' => "civicrm_{$n}_membership_{$c}",
               );
             }
           }
         }
       }
     }
-    // Tally
+    // Calculate totals
     foreach ($this->line_items as &$item) {
-      $item['line_total'] = $item['unit_price'] * $item['qty'];
+      $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
     }
     return $this->line_items;
   }

@@ -14,6 +14,8 @@ abstract class wf_crm_webform_base {
   protected $data = array();
   protected $id = array();
   protected $events = array();
+  protected $contribution_page;
+  protected $line_items = array();
 
   /**
    * Fetch all relevant data for a given contact
@@ -452,6 +454,17 @@ abstract class wf_crm_webform_base {
     }
   }
 
+  /**
+   * Loads the contribution page used for this webform
+   */
+  protected function getContributionPage() {
+    $params = array('id' => wf_crm_aval($this->data, 'contribution:1:contribution:1:contribution_page_id'));
+    if ($params['id']) {
+      $result = wf_crm_apivalues('contribution_page', 'get', $params);
+      $this->contribution_page = wf_crm_aval($result, $params['id']);
+    }
+    return $this->contribution_page;
+  }
 
 }
 
