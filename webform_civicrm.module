@@ -47,11 +47,17 @@ function wf_crm_admin_access($node) {
  */
 function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
   // Alter back-end webform component edit forms
-  if ($form_id == 'webform_component_edit_form'
-  && substr($form['form_key']['#default_value'], 0, 7) == 'civicrm') {
-    module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_component');
-    $admin_form = new wf_crm_admin_component($form, $form_state);
-    $admin_form->alterForm();
+  if ($form_id == 'webform_component_edit_form') {
+    if (substr($form['form_key']['#default_value'], 0, 7) == 'civicrm') {
+      module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_component');
+      $admin_form = new wf_crm_admin_component($form, $form_state);
+      $admin_form->alterForm();
+    }
+    if ($form['type']['#value'] == 'pagebreak') {
+      module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_component');
+      $admin_form = new wf_crm_admin_component($form, $form_state);
+      $admin_form->adjustPageBreak();
+    }
   }
 
   // Alter front-end of webforms
@@ -60,6 +66,11 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
     module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_preprocess');
     $processor = new wf_crm_webform_preprocess($form, $form_state);
     $processor->alterForm();
+  }
+
+  // Validation for webform components tab
+  elseif ($form_id == 'webform_components_form') {
+    $form['#validate'][] = 'wf_crm_components_form_validate';
   }
 }
 
@@ -606,4 +617,29 @@ function wf_crm_validate($form, &$form_state) {
   module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_postprocess');
   $processor = wf_crm_webform_postprocess::singleton($form['#node']);
   $processor->validate($form, $form_state);
+}
+
+/**
+ * Validation callback for webform component form
+ */
+function wf_crm_components_form_validate($form, &$form_state) {
+  $components = wf_crm_aval($form_state, 'values:components', array());
+  foreach ($components as $cid => $component) {
+    $component += $form['#node']->webform['components'][$cid];
+    if ($component['form_key'] == 'civicrm_1_contribution_1_contribution_contribution_page_id') {
+      // Iterate up through parents
+      while ($component['pid']) {
+        $component = $components[$component['pid']];
+      }
+      $weight = $component['weight'];
+    }
+  }
+  if (isset($weight)) {
+    foreach ($components as $cid => $component) {
+      $component += $form['#node']->webform['components'][$cid];
+      if ($component['type'] == 'pagebreak' && $component['weight'] > $weight) {
+        form_error($form['components'], t('CiviCRM Contribution Billing Fields <em>must</em> be on the last page of the form.'));
+      }
+    }
+  }
 }

@@ -21,7 +21,7 @@ class wf_crm_admin_component {
     $this->form_state = &$form_state;
     $this->node = node_load($form['nid']['#value']);
     $this->data = wf_crm_aval($this->node, 'webform_civicrm:data');
-    $this->component = $this->node->webform['components'][$this->form['cid']['#value']];
+    $this->component = wf_crm_aval($this->node, 'webform:components:' . $this->form['cid']['#value']);
   }
 
   /**
@@ -170,6 +170,30 @@ class wf_crm_admin_component {
           ),
         )
       );
+    }
+  }
+
+  /**
+   * Ensure page breaks are not placed after contribution page
+   */
+  public function adjustPageBreak() {
+    $components = $this->node->webform['components'];
+    foreach ($components as $cid => $component) {
+      if ($component['form_key'] == 'civicrm_1_contribution_1_contribution_contribution_page_id') {
+        // Iterate up through parents
+        while ($component['pid']) {
+          $component = $components[$component['pid']];
+        }
+        $min = $component['weight'];
+      }
+    }
+    if (isset($min)) {
+      $weight = $this->form['position']['weight']['#default_value'];
+      $this->form['position']['weight'] = array('#type' => 'value');
+      if ($weight >= $min) {
+        $weight = $min - 1;
+      }
+      $this->form['position']['weight']['#value'] = $weight;
     }
   }
 
