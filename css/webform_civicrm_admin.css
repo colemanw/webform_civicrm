@@ -1,3 +1,7 @@
+form .contact-type-select .form-item {
+  margin-bottom: 0;
+}
+
 form .web-civi-checkbox-set {
   padding-left:0;
   position:relative;

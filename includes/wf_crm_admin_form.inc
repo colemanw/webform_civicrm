@@ -168,6 +168,7 @@ class wf_crm_admin_form {
       '#type' => 'textfield',
       '#title' => t('Label'),
       '#default_value' => wf_crm_contact_label($n, $this->data, 'plain'),
+      '#description' => t('Role of this contact. Not necessarily displayed to the end-user.'),
       '#suffix' => '</div>',
     );
     $this->addAjaxItem('contact_' . $n, $n . '_contact_type', 'contact_subtype_wrapper');
