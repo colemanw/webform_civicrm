@@ -1283,6 +1283,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
   /**
    * Final prep and execution of payment processor transaction
+   * This happens during form validation
    */
   private function submitPayment() {
     $params = $this->billing_params + $this->data['contribution'][1]['contribution'][1];
@@ -1306,6 +1307,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
   /**
    * Post-processing of contribution
+   * This happens during form post-processing
    */
   private function processContribution() {
     // Save custom data
@@ -1326,6 +1328,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           'contribution_id' => $this->id['contribution'],
         ));
       }
+    }
+    // Send receipt
+    if (!empty($this->contribution_page['is_email_receipt'])) {
+      wf_civicrm_api('contribution', 'sendconfirmation', array('id' => $this->id['contribution']) + $this->contribution_page);
     }
   }
 
