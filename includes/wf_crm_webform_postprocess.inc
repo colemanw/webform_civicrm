@@ -1289,6 +1289,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['financial_type_id'] = $this->contribution_page['financial_type_id'];
     $params['skipRecentView'] = $params['skipLineItem'] = 1;
     $params['contact_id'] = $this->id['cid'][1];
+    $params['source'] = $this->settings['new_contact_source'];
 
     // Total amount
     $params['total_amount'] = 0;
