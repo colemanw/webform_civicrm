@@ -17,6 +17,7 @@ class wf_crm_admin_form {
   private $data;
 
   function __construct($form, &$form_state, $node) {
+    module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_help');
     civicrm_initialize();
     $this->form = $form;
     $this->form_state = &$form_state;
@@ -37,12 +38,9 @@ class wf_crm_admin_form {
     if (!empty($this->form_state['storage']['msg'])) {
       return $this->buildConfirmationForm();
     }
-    $this->form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_admin.css';
-    $this->form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_admin.js';
-    $this->form['#attached']['js'][] = array(
-      'data' => array('webform_civicrm' => array('rTypes' => wf_crm_get_relationship_types())),
-      'type' => 'setting',
-    );
+
+    // Add css & js
+    $this->addResources();
 
     // Initialize form on first view
     if (empty($this->form_state['values'])) {
@@ -117,6 +115,21 @@ class wf_crm_admin_form {
   }
 
   /**
+   * Add necessary css & js
+   */
+  private function addResources() {
+    $this->form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_admin.css';
+    $this->form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_admin.js';
+    $this->form['#attached']['js'][] = array(
+      'data' => array('webform_civicrm' => array('rTypes' => wf_crm_get_relationship_types())),
+      'type' => 'setting',
+    );
+    // Add CiviCRM resources to take advantage of popup notifications, etc.
+    CRM_Core_Resources::singleton()->addCoreResources();
+    $this->form['#suffix'] = wf_crm_admin_help::helpTemplate();
+  }
+
+  /**
    * Build fields for form intro
    */
   private function buildFormIntro() {
@@ -168,17 +181,17 @@ class wf_crm_admin_form {
       '#type' => 'textfield',
       '#title' => t('Label'),
       '#default_value' => wf_crm_contact_label($n, $this->data, 'plain'),
-      '#description' => t('Role of this contact. Not necessarily displayed to the end-user.'),
       '#suffix' => '</div>',
     );
+    $this->help($this->form['contact_' . $n][$n . '_webform_label'], 'webform_label');
     $this->addAjaxItem('contact_' . $n, $n . '_contact_type', 'contact_subtype_wrapper');
 
     // Contact sub-type
     $fid = 'civicrm_' . $n . '_contact_1_contact_contact_sub_type';
     if (!empty($sub_types[$c['contact'][1]['contact_type']])) {
-      $field = $this->addItem($fid, $this->fields['contact_contact_sub_type']);
-      $field['#title'] .= ' ' . $contact_types[$c['contact'][1]['contact_type']];
-      $this->form['contact_' . $n]['contact_subtype_wrapper'][$fid] = $field;
+      $field = $this->fields['contact_contact_sub_type'];
+      $field['name'] = t('Type of @contact', array('@contact' => $contact_types[$c['contact'][1]['contact_type']]));
+      $this->form['contact_' . $n]['contact_subtype_wrapper'][$fid] = $this->addItem($fid, $field);
       $this->addAjaxItem('contact_' . $n . ':contact_subtype_wrapper', $fid, 'contact_custom_wrapper');
     }
     // If no sub-types
@@ -619,8 +632,6 @@ class wf_crm_admin_form {
               $fid = "civicrm_{$c}_membership_{$n}_$fid";
               $this->form['membership'][$c]['membership'][$fs][$fid] = $this->addItem($fid, $field);
             }
-            $this->form['membership'][$c]['membership'][$fs]["civicrm_{$c}_membership_{$n}_membership_num_terms"]['#description'] =
-              t('Dates will be filled automatically by selecting terms. This can be overridden by enabling date fields and entering dates manually.');
           }
         }
       }
@@ -803,7 +814,6 @@ class wf_crm_admin_form {
         $item['#default_value'] = $options[1];
       }
       if (!empty($field['extra']['multiple'])) {
-        $item['#description'] = t('You may set options here and/or add this element to the webform ("user select"). If you do both, options set here will not appear on the form.');
         $item['#default_value'] = (array) $item['#default_value'];
         if (isset($this->settings[$fid]) && !is_array($this->settings[$fid])
           && isset($this->data[$ent][$c][$table][$n][$name])) {
@@ -825,6 +835,14 @@ class wf_crm_admin_form {
     }
     if ($a = wf_crm_aval($field, 'attributes')) {
       $item['#attributes'] = $a;
+    }
+    // Add help
+    $topic = $table . '_' . $name;
+    if (method_exists('wf_crm_admin_help', $topic)) {
+      $this->help($item, $topic);
+    }
+    elseif (!empty($field['expose_list']) && !empty($field['extra']['multiple'])) {
+      $this->help($item, 'multiselect_options', t('Multiple Select Options'));
     }
     return $item;
   }
@@ -1141,6 +1159,11 @@ class wf_crm_admin_form {
     }
   }
 
+  private function help(&$field, $topic, $title = NULL) {
+    $title = $title ? $title : $field['#title'];
+    $field['#title'] .= ' &nbsp;<span class="crm-container"><a class="helpicon" href="#' . $topic . '" title="' . $title .'">&nbsp;</a></span>';
+  }
+
   /**
    * Search for fields that should be deleted
    * @param array $fields
@@ -1194,7 +1217,7 @@ class wf_crm_admin_form {
     }
     if ($name == 'contact_sub_type') {
       list($contact_types) = wf_crm_get_contact_types();
-      $field['name'] .= ' ' . $contact_types[$contact_type];
+      $field['name'] = t('Type of @contact', array('@contact' => $contact_types[$contact_type]));
     }
     // Defaults for existing contact field
     if ($name == 'existing') {

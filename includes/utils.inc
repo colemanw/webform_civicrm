@@ -421,7 +421,7 @@ function wf_crm_get_fields($var = 'fields') {
     // Setting 'expose_list' allows the value to be set on the config form
     // Set label for 'empty_option' for exposed lists that do not require input
     $fields['contact_contact_sub_type'] = array(
-      'name' => t('Type of'),
+      'name' => t('Type of @contact'),
       'type' => 'select',
       'extra' => array('multiple' => 1, 'civicrm_live_options' => 1),
       'expose_list' => TRUE,
@@ -488,17 +488,14 @@ function wf_crm_get_fields($var = 'fields') {
     $fields['contact_contact_id'] = array(
       'name' => t('Contact ID'),
       'type' => 'hidden',
-      'extra' => array('description' => t('(hidden field, use for post-processing)')),
     );
     $fields['contact_external_identifier'] = array(
       'name' => t('External ID'),
       'type' => 'hidden',
-      'extra' => array('description' => t('(hidden field, use for post-processing)')),
     );
     $fields['contact_cs'] = array(
       'name' => t('Checksum'),
       'type' => 'hidden',
-      'extra' => array('description' => t('(hidden field, use to create hashed links)')),
     );
     $fields['contact_employer_id'] = array(
       'name' => t('Current Employer'),
@@ -759,7 +756,6 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Contribution Amount'),
         'type' => 'number',
         'extra' => array(
-          'description' => t('Amount will be in addition to any paid events and memberships.'),
           'field_prefix' => wf_crm_aval($config, 'defaultCurrencySymbol', '$'),
           'point' => wf_crm_aval($config, 'monetaryDecimalPoint', '.'),
           'separator' => wf_crm_aval($config, 'monetaryThousandSeparator', ','),
@@ -808,7 +804,6 @@ function wf_crm_get_fields($var = 'fields') {
       if (isset($fields['contribution_total_amount'])) {
         $fields['participant_fee_amount'] = $fields['contribution_total_amount'];
         $fields['participant_fee_amount']['name'] = t('Participant Fee');
-        $fields['participant_fee_amount']['extra']['description'] = t('Amount charged per-person, per-event.');
       }
     }
     if (isset($sets['membership'])) {

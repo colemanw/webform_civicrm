@@ -371,8 +371,8 @@ var wfCiviAdmin = (function ($, D) {
       });
 
       // Contact label change events
-      $('input[name$=_webform_label]', context).keyup(changeContactLabel);
-      $('input[name$=_webform_label]', context).change(function() {
+      $('input[name$=_webform_label]', context).once('wf-keyup').keyup(changeContactLabel);
+      $('input[name$=_webform_label]', context).once('wf-change').change(function() {
         // Trim string and replace with default if empty
         var label = $(this).val().replace(/^\s+|\s+$/g,'');
         if (!label.length) {
@@ -381,6 +381,13 @@ var wfCiviAdmin = (function ($, D) {
         }
         $(this).val(label);
         changeContactLabel.call(this);
+      });
+
+      // Inline help
+      $('a.helpicon').once('wf-help').click(function () {
+        var topic = $(this).attr('href').substr(1);
+        CRM.help($(this).attr('title'), {}, '/webform-civicrm/help/' + topic);
+        return false;
       });
     }
   };

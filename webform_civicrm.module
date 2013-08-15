@@ -29,6 +29,13 @@ function webform_civicrm_menu() {
     'page arguments' => array(2),
     'type' => MENU_CALLBACK,
   );
+  $items['webform-civicrm/help/%'] = array(
+    'page callback' => 'wf_crm_admin_help',
+    'file' => 'includes/wf_crm_admin_help.inc',
+    'access arguments' => array('access CiviCRM'),
+    'page arguments' => array(2),
+    'type' => MENU_CALLBACK,
+  );
   return $items;
 }
 
