@@ -1111,7 +1111,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
-   * Figure out line-items for this webform submission
+   * Calculate line-items for this webform submission
    */
   private function tallyLineItems() {
     // Contribution

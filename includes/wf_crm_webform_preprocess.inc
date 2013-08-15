@@ -32,46 +32,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    * Set webform default values.
    */
   public function alterForm() {
-    $this->form['#attached']['js'][] = array(
-      'data' => drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_forms.js',
-      'scope' => 'footer',
-    );
-    $this->form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_forms.css';
+    // Add css & js
+    $this->addResources();
+    // Add validation handler
     $this->form['#validate'][] = 'wf_crm_validate';
-    $config = CRM_Core_Config::singleton();
-    // Variables to push to the client-side
-    $js_vars = array();
-    // JS Cache eliminates the need for most ajax state/province callbacks
-    foreach ($this->data['contact'] as $c) {
-      if (!empty($c['number_of_address'])) {
-        $js_vars += array(
-          'defaultCountry' => $config->defaultContactCountry,
-          'defaultStates' => wf_crm_get_states($config->defaultContactCountry),
-          'noCountry' => t('- First Choose a Country -'),
-          'callbackPath' => url('webform-civicrm/js', array('alias' => TRUE)),
-        );
-        break;
-      }
-    }
-    // Preprocess contribution page
-    if (!empty($this->data['contribution'])) {
-      $credit_card_types = CRM_Core_Payment_Form::getCreditCardCSSNames();
-      CRM_Core_Resources::singleton()
-        ->addCoreResources()
-        ->addSetting(array('config' => array('creditCardTypes' => $credit_card_types)))
-        ->addScriptFile('civicrm', 'templates/CRM/Core/BillingBlock.js', -10, 'html-header')
-        ->addScriptUrl('/' . drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_payment.js', 10, 'html-header');
-      $page_id = $this->data['contribution'][1]['contribution'][1]['contribution_page_id'];
-      $key = CRM_Core_Key::get('CRM_Contribute_Controller_Contribution', TRUE);
-      $js_vars['contributionCallback'] = url('civicrm/contribute/transact', array('query' => array('reset' => 1, 'id' => $page_id, 'qfKey' => $key, 'snippet' => 4), 'alias' => TRUE));
-      $js_vars['paymentProcessor'] = wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id');
-    }
-    if ($js_vars) {
-      $this->form['#attached']['js'][] = array(
-        'data' => array('webform_civicrm' => $js_vars),
-        'type' => 'setting',
-      );
-    }
     // Keep track of cids across multipage forms
     if (!empty($this->form_state['values']['submitted']) && wf_crm_aval($this->form_state, 'webform:page_count') > 1) {
       foreach ($this->enabled as $k => $v) {
@@ -161,6 +125,54 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     // Passing $submitted helps avoid overwriting values that have been entered on a multi-step form
     $submitted = wf_crm_aval($this->form_state, 'values:submitted', array());
     $this->fillForm($this->form['submitted'], $submitted);
+  }
+
+  /**
+   * Add necessary js & css to the form
+   */
+  private function addResources() {
+    $this->form['#attached']['js'][] = array(
+      'data' => drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_forms.js',
+      'scope' => 'footer',
+    );
+    $this->form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_forms.css';
+    $config = CRM_Core_Config::singleton();
+    // Variables to push to the client-side
+    $js_vars = array();
+    // JS Cache eliminates the need for most ajax state/province callbacks
+    foreach ($this->data['contact'] as $c) {
+      if (!empty($c['number_of_address'])) {
+        $js_vars += array(
+          'defaultCountry' => $config->defaultContactCountry,
+          'defaultStates' => wf_crm_get_states($config->defaultContactCountry),
+          'noCountry' => t('- First Choose a Country -'),
+          'callbackPath' => url('webform-civicrm/js', array('alias' => TRUE)),
+        );
+        break;
+      }
+    }
+    // Preprocess contribution page
+    if (!empty($this->data['contribution'])) {
+      $credit_card_types = CRM_Core_Payment_Form::getCreditCardCSSNames();
+      CRM_Core_Resources::singleton()
+        ->addCoreResources()
+        ->addSetting(array('config' => array('creditCardTypes' => $credit_card_types)))
+        ->addScriptFile('civicrm', 'templates/CRM/Core/BillingBlock.js', -10, 'html-header');
+      $this->form['#attached']['js'][] = array(
+        'data' => drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_payment.js',
+        'scope' => 'footer',
+      );
+      $page_id = $this->data['contribution'][1]['contribution'][1]['contribution_page_id'];
+      $key = CRM_Core_Key::get('CRM_Contribute_Controller_Contribution', TRUE);
+      $js_vars['contributionCallback'] = url('civicrm/contribute/transact', array('query' => array('reset' => 1, 'id' => $page_id, 'qfKey' => $key, 'snippet' => 4), 'alias' => TRUE));
+      $js_vars['paymentProcessor'] = wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id');
+    }
+    if ($js_vars) {
+      $this->form['#attached']['js'][] = array(
+        'data' => array('webform_civicrm' => $js_vars),
+        'type' => 'setting',
+      );
+    }
   }
 
   /**
