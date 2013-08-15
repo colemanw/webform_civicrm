@@ -1116,10 +1116,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function tallyLineItems() {
     // Contribution
     $fid = 'civicrm_1_contribution_1_contribution_total_amount';
-    if (!empty($this->data['contribution'][1]['contribution'][1]['total_amount']) || isset($this->enabled[$fid])) {
+    if (isset($this->enabled[$fid]) || $this->getData($fid) > 0) {
       $this->line_items[] = array(
         'qty' => 1,
-        'unit_price' => $this->data['contribution'][1]['contribution'][1]['total_amount'],
+        'unit_price' => $this->getData($fid),
         'financial_type_id' => $this->contribution_page['financial_type_id'],
         'label' => wf_crm_aval($this->node->webform['components'], $this->enabled[$fid] . ':name', t('Contribution')),
         'element' => 'civicrm_1_contribution_1',
@@ -1140,6 +1140,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                 'financial_type_id' => $this->getMembershipTypeField($type, 'financial_type_id'),
                 'label' => $this->getMembershipTypeField($type, 'name'),
                 'element' => "civicrm_{$c}_membership_{$n}",
+                // Seems strange to not be civicrm_membership, but this is how it's done in core
                 'entity_table' => 'civicrm_contribution',
               );
             }

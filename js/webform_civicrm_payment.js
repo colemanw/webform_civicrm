@@ -64,7 +64,7 @@ cj(function($) {
       .filter('option:selected, [type=hidden], [type=number], [type=text], :checked');
     $fields.each(function() {
       amount = parseFloat($(this).val());
-      total += isNaN(amount) ? 0 : amount;
+      total += (isNaN(amount) || amount < 0) ? 0 : amount;
     });
     return total;
   }
