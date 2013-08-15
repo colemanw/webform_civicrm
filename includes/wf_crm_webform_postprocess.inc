@@ -1116,7 +1116,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function tallyLineItems() {
     // Contribution
     $fid = 'civicrm_1_contribution_1_contribution_total_amount';
-    if (!empty($this->data['contribution'][1]['contribution'][1]['total_amount'])) {
+    if (!empty($this->data['contribution'][1]['contribution'][1]['total_amount']) || isset($this->enabled[$fid])) {
       $this->line_items[] = array(
         'qty' => 1,
         'unit_price' => $this->data['contribution'][1]['contribution'][1]['total_amount'],

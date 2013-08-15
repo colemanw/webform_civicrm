@@ -59,7 +59,8 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       CRM_Core_Resources::singleton()
         ->addCoreResources()
         ->addSetting(array('config' => array('creditCardTypes' => $credit_card_types)))
-        ->addScriptFile('civicrm', 'templates/CRM/Core/BillingBlock.js', -10, 'html-header');
+        ->addScriptFile('civicrm', 'templates/CRM/Core/BillingBlock.js', -10, 'html-header')
+        ->addScriptUrl('/' . drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_payment.js', 10, 'html-header');
       $page_id = $this->data['contribution'][1]['contribution'][1]['contribution_page_id'];
       $key = CRM_Core_Key::get('CRM_Contribute_Controller_Contribution', TRUE);
       $js_vars['contributionCallback'] = url('civicrm/contribute/transact', array('query' => array('reset' => 1, 'id' => $page_id, 'qfKey' => $key, 'snippet' => 4), 'alias' => TRUE));
@@ -531,24 +532,38 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     $this->getContributionPage();
     $rows = array();
     $total = 0;
+    // Support hidden contribution field
+    $fid = 'civicrm_1_contribution_1_contribution_total_amount';
+    if (!$this->line_items && isset($this->enabled[$fid])) {
+      $field = $this->node->webform['components'][$this->enabled[$fid]];
+      if ($field['type'] == 'hidden') {
+        $this->line_items[] = array(
+          'line_total' => $field['value'],
+          'qty' => 1,
+          'element' => 'civicrm_1_contribution_1',
+          'label' => !empty($field['name']) ? $field['name'] : t('Contribution Amount'),
+        );
+      }
+    }
     foreach ($this->line_items as $item) {
       $total += $item['line_total'];
       $label = $item['label'] . ($item['qty'] > 1 ? " ({$item['qty']})" : '');
       $rows[] = array(
         'data' => array($label, CRM_Utils_Money::format($item['line_total'])),
-        'class' => array($item['element']),
+        'class' => array($item['element'], 'line-item'),
+        'data-amount' => $item['line_total'],
       );
     }
     $rows[] = array(
       'data' => array(t('Total'), CRM_Utils_Money::format($total)),
-      'class' => array('wf-crm-billing-total'),
+      'id' => 'wf-crm-billing-total',
+      'data-amount' => $total,
     );
     return theme('table', array(
       'sticky' => FALSE,
       'caption' => $this->contribution_page['title'],
       'header' => array(),
       'rows' => $rows,
-      'empty' => t('No Items'),
       'attributes' => array('id' => "wf-crm-billing-items"),
     ));
   }

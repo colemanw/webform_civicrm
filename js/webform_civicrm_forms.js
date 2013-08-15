@@ -377,34 +377,5 @@ var wfCivi = (function ($, D) {
       });
     }
   };
-  // Payment processing using CiviCRM's jQuery
-  cj && cj(function($) {
-    function loadBillingBlock(type) {
-      if (type) {
-        $('#billing-payment-block').load(setting.contributionCallback + '&type=' + type, function() {
-          $('#billing-payment-block').trigger('crmFormLoad');
-          if (setting.billingSubmission) {
-            $.each(setting.billingSubmission, function(key, val) {
-              $('[name="' + key + '"]').val(val);
-            });
-          }
-        });
-      }
-      else {
-        $('#billing-payment-block').html('');
-      }
-    }
-    var $processorSelect = $('select.civicrm-enabled[name$="civicrm_1_contribution_1_contribution_payment_processor_id]"]');
-    $processorSelect.change(function() {
-      setting.billingSubmission || (setting.billingSubmission = {});
-      $('input:visible, select', '#billing-payment-block').each(function() {
-        var name = $(this).attr('name');
-        name && (setting.billingSubmission[name] = $(this).val());
-      });
-      loadBillingBlock($(this).val());
-    });
-    loadBillingBlock($processorSelect.val() || setting.paymentProcessor);
-  });
-
   return pub;
 })(jQuery, Drupal);

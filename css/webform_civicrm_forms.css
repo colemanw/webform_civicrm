@@ -13,6 +13,10 @@
   padding: 4px 8px;
 }
 
-.wf-crm-billing-total {
+#wf-crm-billing-total {
   font-weight: bold;
+}
+
+#wf-crm-billing-items td + td {
+  text-align: right;
 }
