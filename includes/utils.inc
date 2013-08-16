@@ -662,12 +662,6 @@ function wf_crm_get_fields($var = 'fields') {
         'integer' => 1,
       ),
     );
-    $fields['activity_engagement_level'] = array(
-      'name' => t('Engagement Level'),
-      'type' => 'select',
-      'empty_option' => t('None'),
-      'expose_list' => TRUE,
-    );
     if (isset($sets['case'])) {
       $case_info = new CRM_Case_XMLProcessor_Process();
       $fields['case_client_id'] = array(
@@ -839,6 +833,12 @@ function wf_crm_get_fields($var = 'fields') {
     }
     // Add campaign fields
     if (in_array('CiviCampaign', $components)) {
+      $fields['activity_engagement_level'] = array(
+        'name' => t('Engagement Level'),
+        'type' => 'select',
+        'empty_option' => t('None'),
+        'expose_list' => TRUE,
+      );
       $fields['activity_survey_id'] = array(
         'name' => t('Survey/Petition'),
         'type' => 'select',
