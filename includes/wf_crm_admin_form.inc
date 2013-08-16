@@ -1249,8 +1249,13 @@ class wf_crm_admin_form {
     if ($field['type'] == 'select') {
       if ($options = wf_crm_field_options($field, 'component_insert', $settings['data'])) {
         $field['extra']['items'] = $options;
+        // Default to select widget
         if (!isset($field['extra']['aslist']) && empty($field['extra']['multiple'])) {
           $field['extra']['aslist'] = 1;
+        }
+        // A single static radio should be shown as a checkbox
+        if (count($options) == 1 && empty($field['extra']['aslist']) && empty($field['extra']['civicrm_live_options'])) {
+          $field['extra']['multiple'] = 1;
         }
         if (substr($name, 0, 7) == 'custom_' && empty($field['value'])) {
           // Lookup defaults for custom fields
