@@ -5,6 +5,10 @@
  * Admin form inline-help.
  */
 
+/**
+ * Class wf_crm_admin_help
+ * Adding a static function to this class with the same name as a field will magically add pop-up help for that field to the admin form.
+ */
 class wf_crm_admin_help {
 
   static function contact_existing() {
@@ -60,11 +64,11 @@ class wf_crm_admin_help {
     print '<p>' .
       t("It is recommended to create a new contribution page solely for webform use. When configuring the page, most options will be irrelevant (such as profiles, premiums, widgets, etc.). Only the following need to be configured:") .
       '</p><ul>' .
-      '<li>' . t('Title') . '</li>' .
-      '<li>' . t('Financial Type') . '</li>' .
-      '<li>' . t('Currency') . '</li>' .
-      '<li>' . t('Payment Processor') . '</li>' .
-      '<li>' . t('Email Receipt') . '</li>' .
+      '<li>' . t('Title: Displayed on the webform.') . '</li>' .
+      '<li>' . t('Financial Type: Controls overall contribution type.') . '</li>' .
+      '<li>' . t('Currency: Sets currency for all payment fields on this form.') . '</li>' .
+      '<li>' . t('Payment Processor: Controls list of options here.') . '</li>' .
+      '<li>' . t('Email Receipt: Configure whether to email receipts from this webform.') . '</li>' .
       '</ul>';
   }
 
