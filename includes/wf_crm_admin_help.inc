@@ -99,6 +99,12 @@ class wf_crm_admin_help {
       '</ul>';
   }
 
+  static function membership_membership_type_id() {
+    print '<p>' .
+      t('Fee will be calculated automatically based on selected membership type and number of terms chosen. A contribution page must be enabled to collect fees.') .
+     '</p>';
+  }
+
   static function membership_num_terms() {
     print '<p>' .
       t('Membership dates will be filled automatically by selecting terms. This can be overridden by enabling date fields and entering dates manually.') .
@@ -128,6 +134,30 @@ class wf_crm_admin_help {
   static function activity_duration() {
     print '<p>' .
       t('Total time spent on this activity (in minutes).') .
+      '</p>';
+  }
+
+  static function existing_activity_status() {
+    print '<p>' .
+      t('If any of these options are selected and a matching activity of the chosen type already exists for Contact 1, it will be autofilled and updated.') .
+      '</p><p>' .
+      t('Note: an activity can also be autofilled by passing "aid" in the url.') .
+      '</p>';
+  }
+
+  static function existing_case_activity_status() {
+    print '<p>' .
+      t('If any of these options are selected and a matching activity of the chosen type already exists for this case, it will be autofilled and updated.') .
+      '</p><p>' .
+      t('Note: an activity can also be autofilled by passing "aid" in the url.') .
+      '</p>';
+  }
+
+  static function existing_case_status() {
+    print '<p>' .
+      t('If any of these options are selected and a matching case of the chosen type already exists for the client, it will be autofilled and updated.') .
+      '</p><p>' .
+      t('Note: a case can also be autofilled by passing "caseid" in the url.') .
       '</p>';
   }
 

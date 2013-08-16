@@ -370,11 +370,11 @@ class wf_crm_admin_form {
       $this->form['act']['case']['case_fields']['existing_case_status'] = array(
         '#type' => 'select',
         '#title' => t('Update Existing Case'),
-        '#description' => t('If any of the above options are selected and a %type case with that status already exists for the client, it will be autofilled and updated.', array('%type' => $case_type_name)) . '<br />' . t('Note: a case can also be autofilled by passing "caseid" in the url.'),
         '#options' => wf_crm_apivalues('case', 'getoptions', array('field' => 'status_id')),
         '#default_value' => wf_crm_aval($this->data, 'case:1:existing_case_status', array()),
         '#multiple' => TRUE,
       );
+      $this->help($this->form['act']['case']['case_fields']['existing_case_status'], 'existing_case_status');
     }
     $act_types = wf_crm_get_activity_types($case_type_name);
     $this->form['act']['case']['activity_type_id'] = array(
@@ -391,11 +391,11 @@ class wf_crm_admin_form {
       $this->form['act']['case']['activity_fields']['existing_activity_status'] = array(
         '#type' => 'select',
         '#title' => t('Update Existing Activity'),
-        '#description' => t('If any of the above options are selected and a %type activity with that status already exists for !ent, it will be autofilled and updated.', array('!ent' => $case_type ? t('the case') : t('contact 1'), '%type' => $act_types[$this->settings['activity_type_id']])) . '<br />' . t('Note: an activity can also be autofilled by passing "aid" in the url.'),
         '#options' => wf_crm_apivalues('activity', 'getoptions', array('field' => 'status_id')),
         '#default_value' => wf_crm_aval($this->data, 'activity:1:existing_activity_status', array()),
         '#multiple' => TRUE,
       );
+      $this->help($this->form['act']['case']['activity_fields']['existing_activity_status'], $case_type ? 'existing_case_activity_status' : 'existing_activity_status');
       $this->form['act']['case']['activity_fields']['activity_subject'] = array(
         '#type' => 'textfield',
         '#title' => t('Default Activity Subject'),
