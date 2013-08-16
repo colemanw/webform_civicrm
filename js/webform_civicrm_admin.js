@@ -246,7 +246,7 @@ var wfCiviAdmin = (function ($, D) {
           return Drupal.t('- None -');
         }
       });
-      $('#edit-event, #edit-contribution', context).once('wf-civi').drupalSetSummary(function (context) {
+      $('#edit-participant, #edit-contribution', context).once('wf-civi').drupalSetSummary(function (context) {
         return $('select:first option:selected', context).text();
       });
       $('fieldset#edit-act', context).once('wf-civi').drupalSetSummary(function (context) {
@@ -391,9 +391,9 @@ var wfCiviAdmin = (function ($, D) {
         return false;
       });
 
-      // Warning about contribution page with no email
-      function billingEmailWarning() {
+      function billingMessages() {
         var $pageSelect = $('[name=civicrm_1_contribution_1_contribution_contribution_page_id]');
+        // Warning about contribution page with no email
         if ($pageSelect.val() !== '0' && ($('[name=civicrm_1_contact_1_email_email]:checked').length < 1 || $('[name=contact_1_number_of_email]').val() == '0')) {
           var msg = Drupal.t('You must enable an email field for !contact in order to process transactions.', {'!contact': getContactLabel(1)});
           if (!$('.wf-crm-billing-email-alert').length) {
@@ -407,9 +407,15 @@ var wfCiviAdmin = (function ($, D) {
           $('.wf-crm-billing-email-alert').remove();
           billingEmailMsg && billingEmailMsg.close && billingEmailMsg.close();
         }
+        // Info about paid events/memberships
+        $('.wf-crm-paid-entities-info').remove();
+        if ($pageSelect.val() == '0') {
+          $('#edit-membership').prepend('<div class="wf-crm-paid-entities-info messages warning">' + Drupal.t('Configure the Contribution settings to enable paid memberships.') + '</div>');
+          $('#edit-participant').prepend('<div class="wf-crm-paid-entities-info messages warning">' + Drupal.t('Configure the Contribution settings to enable paid events.') + '</div>');
+        }
       }
-      $('[name=civicrm_1_contribution_1_contribution_contribution_page_id], [name=civicrm_1_contact_1_email_email]', context).once('email-alert').change(billingEmailWarning);
-      billingEmailWarning();
+      $('[name=civicrm_1_contribution_1_contribution_contribution_page_id], [name=civicrm_1_contact_1_email_email]', context).once('email-alert').change(billingMessages);
+      billingMessages();
     }
   };
 

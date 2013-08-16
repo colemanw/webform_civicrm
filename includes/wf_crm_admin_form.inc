@@ -456,14 +456,14 @@ class wf_crm_admin_form {
    * Event participant settings
    */
   private function buildParticipantTab() {
-    $this->form['event'] = array(
+    $this->form['participant'] = array(
       '#type' => 'fieldset',
       '#title' => t('Event Registration'),
       '#group' => 'webform_civicrm',
       '#attributes' => array('class' => array('civi-icon-participant')),
     );
     $reg_type = wf_crm_aval($this->data, 'participant_reg_type');
-    $this->form['event']['participant_reg_type'] = array(
+    $this->form['participant']['participant_reg_type'] = array(
       '#type' => 'select',
       '#title' => t('Registration Method'),
       '#default_value' => $reg_type,
@@ -473,7 +473,7 @@ class wf_crm_admin_form {
         'separate' => t('Register each contact separately'),
       ),
     );
-    $this->form['event']['event_type'] = array(
+    $this->form['participant']['event_type'] = array(
       '#type' => 'select',
       '#title' => t('Show Events of Type'),
       '#options' => array('any' => t('- Any Type -')) + wf_crm_apivalues('event', 'getoptions', array('field' => 'event_type_id')),
@@ -482,7 +482,7 @@ class wf_crm_admin_form {
       '#parents' => array('reg_options', 'event_type'),
       '#tree' => TRUE,
     );
-    $this->form['event']['show_past_events'] = array(
+    $this->form['participant']['show_past_events'] = array(
       '#type' => 'checkbox',
       '#title' => t('Show Past Events'),
       '#default_value' => (bool) wf_crm_aval($this->data, 'reg_options:show_past_events'),
@@ -490,7 +490,7 @@ class wf_crm_admin_form {
       '#parents' => array('reg_options', 'show_past_events'),
       '#tree' => TRUE,
     );
-    $this->form['event']['reg_options'] = array(
+    $this->form['participant']['reg_options'] = array(
       '#prefix' => '<div class="clearfix"> </div>',
       '#suffix' => '</div>',
       '#type' => 'fieldset',
@@ -498,7 +498,7 @@ class wf_crm_admin_form {
       '#collapsible' => TRUE,
       '#tree' => TRUE,
     );
-    $this->form['event']['reg_options']['show_remaining'] = array(
+    $this->form['participant']['reg_options']['show_remaining'] = array(
       '#type' => 'select',
       '#title' => t('Show Remaining Space in Events'),
       '#default_value' => wf_crm_aval($this->data, 'reg_options:show_remaining', 0),
@@ -510,15 +510,15 @@ class wf_crm_admin_form {
       ),
     );
     foreach (array(5, 10, 20, 50, 100, 200, 500, 1000) as $num) {
-      $this->form['event']['reg_options']['show_remaining']['#options'][$num] = t('When under !num spaces left', array('!num' => $num));
+      $this->form['participant']['reg_options']['show_remaining']['#options'][$num] = t('When under !num spaces left', array('!num' => $num));
     }
-    $this->form['event']['reg_options']['validate'] = array(
+    $this->form['participant']['reg_options']['validate'] = array(
       '#type' => 'checkbox',
       '#title' => t('Prevent Registration for Past/Full Events'),
       '#default_value' => (bool) wf_crm_aval($this->data, 'reg_options:validate'),
       '#description' => t('Will not allow the form to be submitted if user registers for an event that is ended or full.'),
     );
-    $this->form['event']['reg_options']['block_form'] = array(
+    $this->form['participant']['reg_options']['block_form'] = array(
       '#type' => 'checkbox',
       '#title' => t('Block Form Access when Event(s) are Full/Ended'),
       '#default_value' => (bool) wf_crm_aval($this->data, 'reg_options:block_form'),
@@ -529,7 +529,7 @@ class wf_crm_admin_form {
     $this->addAjaxItem('event', 'show_past_events', 'participants');
 
     for ($n = 1; $reg_type && (($n <= count($this->data['contact']) && $reg_type != 'all') || $n == 1); ++$n) {
-      $this->form['event']['participants'][$n] = array(
+      $this->form['participant']['participants'][$n] = array(
         '#type' => 'fieldset',
         '#title' => $reg_type == 'all' ? t('Registration') : wf_crm_contact_label($n, $this->data, 'wrap'),
       );
@@ -537,7 +537,7 @@ class wf_crm_admin_form {
       if (!$num || ($n > 1 && $reg_type == 'all')) {
         $num = 0;
       }
-      $this->form['event']['participants'][$n]['participant_' . $n . '_number_of_participant'] = array(
+      $this->form['participant']['participants'][$n]['participant_' . $n . '_number_of_participant'] = array(
         '#type' => 'select',
         '#title' => $reg_type == 'all' ? t('Number of Event Sets') : t('Number of Event Sets for !contact', array('!contact' => wf_crm_contact_label($n, $this->data, 'wrap'))),
         '#default_value' => $num,
@@ -553,7 +553,7 @@ class wf_crm_admin_form {
       );
       for ($e = 1; $e <= $num; ++$e) {
         $fs = "participant_{$n}_event_{$e}_fieldset";
-        $this->form['event']['participants'][$n]['div'][$fs] = array(
+        $this->form['participant']['participants'][$n]['div'][$fs] = array(
           '#type' => 'fieldset',
           '#title' => t('Event !num', array('!num' => $e)),
           '#attributes' => array('id' => $fs),
@@ -575,7 +575,7 @@ class wf_crm_admin_form {
               }
               $class .= ' extends-condition ' . str_replace('_', '', $ext) . '-' . implode('-', $set['sub_types']);
             }
-            $this->form['event']['participants'][$n]['div'][$fs][$sid] = array(
+            $this->form['participant']['participants'][$n]['div'][$fs][$sid] = array(
               '#type' => 'fieldset',
               '#title' => $set['label'],
               '#attributes' => array('id' => $sid, 'class' => array($class)),
@@ -589,7 +589,7 @@ class wf_crm_admin_form {
                 $item['#attributes']['class'] = array($fid);
                 $$fid = wf_crm_aval($item, '#default_value');
               }
-              $this->form['event']['participants'][$n]['div'][$fs][$sid][$id] = $item;
+              $this->form['participant']['participants'][$n]['div'][$fs][$sid][$id] = $item;
             }
           }
         }
