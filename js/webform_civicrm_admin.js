@@ -2,6 +2,7 @@
  * Javascript Module for managing the webform_civicrm admin form.
  */
 var wfCiviAdmin = (function ($, D) {
+  var billingEmailMsg;
   /**
    * Public methods.
    */
@@ -391,19 +392,24 @@ var wfCiviAdmin = (function ($, D) {
       });
 
       // Warning about contribution page with no email
-      var billingEmailMsg;
-      $('[name=civicrm_1_contribution_1_contribution_contribution_page_id], [name=civicrm_1_contact_1_email_email], [name=contact_1_number_of_email]', context).once('email-alert').change(function() {
+      function billingEmailWarning() {
         var $pageSelect = $('[name=civicrm_1_contribution_1_contribution_contribution_page_id]');
-        $('.wf-crm-billing-email-alert').remove();
-        billingEmailMsg && billingEmailMsg.close && billingEmailMsg.close();
         if ($pageSelect.val() !== '0' && ($('[name=civicrm_1_contact_1_email_email]:checked').length < 1 || $('[name=contact_1_number_of_email]').val() == '0')) {
           var msg = Drupal.t('You must enable an email field for !contact in order to process transactions.', {'!contact': getContactLabel(1)});
-          $pageSelect.after('<div class="messages error wf-crm-billing-email-alert">' + msg + '</div>');
-          if ($('.wf-crm-billing-email-alert').is(':hidden')) {
-            billingEmailMsg = CRM.alert(msg, Drupal.t('Email Required'), 'error');
+          if (!$('.wf-crm-billing-email-alert').length) {
+            $pageSelect.after('<div class="messages error wf-crm-billing-email-alert">' + msg + '</div>');
+            if ($('.wf-crm-billing-email-alert').is(':hidden')) {
+              billingEmailMsg = CRM.alert(msg, Drupal.t('Email Required'), 'error');
+            }
           }
         }
-      });
+        else {
+          $('.wf-crm-billing-email-alert').remove();
+          billingEmailMsg && billingEmailMsg.close && billingEmailMsg.close();
+        }
+      }
+      $('[name=civicrm_1_contribution_1_contribution_contribution_page_id], [name=civicrm_1_contact_1_email_email]', context).once('email-alert').change(billingEmailWarning);
+      billingEmailWarning();
     }
   };
 
