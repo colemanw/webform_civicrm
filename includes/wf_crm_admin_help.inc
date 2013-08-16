@@ -198,7 +198,8 @@ class wf_crm_admin_help {
    */
   static function helpTemplate() {
     return '
-      <div id="crm-notification-container" class="crm-container" style="display:none">
+    <div class="crm-container">
+      <div id="crm-notification-container" style="display:none">
         <div id="crm-notification-alert" class="#{type}">
           <div class="icon ui-notify-close" title="' . t('close') . '"> </div>
           <a class="ui-notify-cross ui-notify-close" href="#" title="' . t('close') . '">x</a>
@@ -206,7 +207,7 @@ class wf_crm_admin_help {
           <div class="notify-content">#{text}</div>
         </div>
       </div>
-    ';
+    </div>';
   }
 }
 
