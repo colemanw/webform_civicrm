@@ -830,16 +830,14 @@ class wf_crm_admin_form {
         '#default_value' => !empty($this->settings[$fid]),
       );
     }
-    if ($d = wf_crm_aval($field, 'extra:description')) {
-      $item['#description'] = strlen($d) > 75 ? substr($d, 0, 75) . '...' : $d;
-    }
-    if ($a = wf_crm_aval($field, 'attributes')) {
-      $item['#attributes'] = $a;
-    }
+    $item['#attributes'] = wf_crm_aval($field, 'attributes');
     // Add help
     $topic = $table . '_' . $name;
     if (method_exists('wf_crm_admin_help', $topic)) {
       $this->help($item, $topic);
+    }
+    elseif (!empty($field['has_help'])) {
+      $this->help($item, $name);
     }
     elseif (!empty($field['expose_list']) && !empty($field['extra']['multiple'])) {
       $this->help($item, 'multiselect_options', t('Multiple Select Options'));
@@ -1262,9 +1260,6 @@ class wf_crm_admin_form {
     }
     if ($field['type'] == 'hidden' && !empty($field['expose_list']) && !empty($settings[$field['form_key']])) {
       $field['value'] = $settings[$field['form_key']];
-    }
-    if ($table == 'other' || $field['type'] == 'hidden') {
-      unset($field['extra']['description']);
     }
     // Create fieldsets - for contact and contact-specific event fields only
     if ($ent != 'activity' && $ent != 'case' && $ent != 'contribution'

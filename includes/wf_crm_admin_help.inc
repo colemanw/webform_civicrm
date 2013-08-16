@@ -7,6 +7,16 @@
 
 class wf_crm_admin_help {
 
+  static function contact_existing() {
+    print '<p>' .
+      t('Gives you many options for how a contact can be autofilled or selected. Once added to the form you can configure:') .'</p><ul>' .
+      '<li>' . t('Widget: Determine whether to expose this field to the form as an autocomplete or select element, or hide it and pick the contact automatically.') . '</li>' .
+      '<li>' . t('Default Value: Select a contact based on the current user, relationships, or other options.') . '</li>' .
+      '<li>' . t('Filters: Limit the list of available choices from which this contact may be autofilled or selected.') . '</li>' .
+      '<li>' . t('Show/Hide Fields: Control which other fields the user is allowed to edit and which will be hidden.') . '</li>' .
+      '</ul>';
+  }
+
   static function contact_employer_id() {
     print '<p>' .
       t('Choose a contact of type "Organization" to be the employer for this individual.') .
@@ -37,6 +47,15 @@ class wf_crm_admin_help {
     self::contact_contact_id();
   }
 
+  static function address_master_id() {
+    print '<p>' .
+      t('When selected, will hide other fields for this address and use those of the other contact.') .
+      '</p><p>' .
+      t('Tip: In many use-cases it is desirable to show this field as a single checkbox. You can configure that by editing the field and removing all but one option (the one this contact is allowed to share) and re-labelling it something like "Same as my address".') .
+      '</p>';
+  }
+
+
   static function contribution_contribution_page_id() {
     print '<p>' .
       t("It is recommended to create a new contribution page solely for webform use. When configuring the page, most options will be irrelevant (such as profiles, premiums, widgets, etc.). Only the following need to be configured:") .
@@ -47,6 +66,12 @@ class wf_crm_admin_help {
       '<li>' . t('Payment Processor') . '</li>' .
       '<li>' . t('Email Receipt') . '</li>' .
       '</ul>';
+  }
+
+  static function contribution_payment_processor_id() {
+    print '<p>' .
+      t("All payment processors enabled on the contribution page are available here. Note that only on-site credit card processors are supported on Webforms. Services that redirect to an external website, such as Paypal Standard, are not supported.") .
+      '</p>';
   }
 
   static function contribution_total_amount() {
@@ -79,6 +104,7 @@ class wf_crm_admin_help {
       t('Membership dates will be filled automatically by selecting terms. This can be overridden by enabling date fields and entering dates manually.') .
      '</p>';
   }
+
   static function multiselect_options() {
     print '<p>' .
       t('You may set options here and/or add this element to the webform ("user select"). If you do both, options set here will not appear on the form.') .
@@ -87,10 +113,53 @@ class wf_crm_admin_help {
 
   static function webform_label() {
     print '<p>' .
-      t('Labels help you keep track of the role of each contact on the form. For example, you might label contact 1 "Parent", contact 2 "Spouse" and contact 3 "Child".') .
+      t('Labels help you keep track of the role of each contact on the form. For example, you might label Contact 1 "Parent", Contact 2 "Spouse" and Contact 3 "Child".') .
       '</p><p>' .
       t("Labels do not have to appear on the form. By default they will be the title of each contact's fieldset, but you may rename fieldsets without affecting this label.") .
       '</p>';
+  }
+
+  static function activity_target_contact_id() {
+    print '<p>' .
+      t('Which contacts should be tagged as part of this activity?') .
+      '</p>';
+  }
+
+  static function activity_duration() {
+    print '<p>' .
+      t('Total time spent on this activity (in minutes).') .
+      '</p>';
+  }
+
+  static function case_medium_id() {
+    print '<p>' .
+      t('Medium for activities added to cases from this webform.') .
+      '</p>';
+  }
+
+  static function case_creator_id() {
+    print '<p>' .
+      t('Owner of newly created cases.') .
+      '</p>';
+  }
+
+  /**
+   * Get help for a custom field
+   */
+  static function custom($field) {
+    list( , $id) = explode('_', $field);
+    if (!is_numeric($id)) {
+      return;
+    }
+    civicrm_initialize();
+    module_load_include('inc', 'webform_civicrm', 'includes/utils');
+    $info = wf_civicrm_api('custom_field', 'getsingle', array('id' => $id));
+    if (!empty($info['help_pre'])) {
+      print '<p>' . $info['help_pre'] . '</p>';
+    }
+    if (!empty($info['help_post'])) {
+      print '<p>' . $info['help_post'] . '</p>';
+    }
   }
 
   /**
@@ -114,6 +183,9 @@ class wf_crm_admin_help {
 function wf_crm_admin_help($topic) {
   if (method_exists('wf_crm_admin_help', $topic)) {
     wf_crm_admin_help::$topic();
+  }
+  elseif (strpos($topic, 'custom_') === 0) {
+    wf_crm_admin_help::custom($topic);
   }
   exit();
 }

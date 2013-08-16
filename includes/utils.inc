@@ -553,7 +553,7 @@ function wf_crm_get_fields($var = 'fields') {
       'name' => t('Share address of'),
       'type' => 'select',
       'expose_list' => TRUE,
-      'extra' => array('description' => t('Will overwrite address fields with those of the other contact.')),
+      'extra' => array('aslist' => 0),
       'empty_option' => t('Do Not Share'),
     );
     $fields['phone_phone'] = array(
@@ -614,7 +614,6 @@ function wf_crm_get_fields($var = 'fields') {
       'expose_list' => TRUE,
       'extra' => array(
         'multiple' => 1,
-        'description' => t('Which contacts should be tagged as part of this activity?'),
       ),
       'data_type' => 'ContactReference',
     );
@@ -657,7 +656,6 @@ function wf_crm_get_fields($var = 'fields') {
       'name' => t('Duration'),
       'type' => 'number',
       'extra' => array(
-        'description' => t('Total time spent on this activity (in minutes).'),
         'field_suffix' => t('min.'),
         'min' => 0,
         'step' => 5,
@@ -688,7 +686,6 @@ function wf_crm_get_fields($var = 'fields') {
       $fields['case_medium_id'] = array(
         'name' => t('Medium'),
         'type' => 'select',
-        'extra' => array('description' => t('Medium for activities added to cases from this webform.')),
         'expose_list' => TRUE,
       );
       $fields['case_subject'] = array(
@@ -699,7 +696,6 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Case Manager'),
         'type' => 'select',
         'expose_list' => TRUE,
-        'extra' => array('description' => t('Owner of newly created cases.')),
         'data_type' => 'ContactReference',
       );
     }
@@ -760,6 +756,7 @@ function wf_crm_get_fields($var = 'fields') {
           'point' => wf_crm_aval($config, 'monetaryDecimalPoint', '.'),
           'separator' => wf_crm_aval($config, 'monetaryThousandSeparator', ','),
           'decimals' => 2,
+          'min' => 0,
         ),
         'data_type' => 'Money',
       );
@@ -947,6 +944,10 @@ function wf_crm_get_fields($var = 'fields') {
         $fields[$id]['extra']['description'] = $dao->help_pre;
         $fields[$id]['value'] = implode(',', wf_crm_explode_multivalue_str($dao->default_value));
         $fields[$id]['data_type'] = $dao->data_type;
+        if (!empty($dao->help_pre) || !empty($dao->help_post)) {
+          $fields[$id]['extra']['description'] = $dao->help_pre ? $dao->help_pre : $dao->help_post;
+          $fields[$id]['has_help'] = TRUE;
+        }
 
         if ($dao->entity_type == 'relationship' && $dao->sub_types) {
           $fields[$id]['attributes']['data-relationship-type'] = implode(',', wf_crm_explode_multivalue_str($dao->sub_types));
