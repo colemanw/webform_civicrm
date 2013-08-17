@@ -53,7 +53,7 @@ class wf_crm_admin_help {
 
   static function address_master_id() {
     print '<p>' .
-      t('When selected, will hide other fields for this address and use those of the other contact.') .
+      t('When selected, will hide fields for this address and use those of the other contact.') .
       '</p><p>' .
       t('Tip: In many use-cases it is desirable to show this field as a single checkbox. You can configure that by editing the field and removing all but one option (the one this contact is allowed to share) and re-labelling it something like "Same as my address".') .
       '</p>';
@@ -129,10 +129,31 @@ class wf_crm_admin_help {
       '</p>';
   }
 
+  static function activity_default_subject() {
+    print '<p>' .
+      t('You can override this default by allowing users to enter a subject (enable "Activity Subject" field below)') .
+      '</p>';
+  }
+
+
   static function activity_target_contact_id() {
     print '<p>' .
       t('Which contacts should be tagged as part of this activity?') .
       '</p>';
+    self::contact_reference();
+  }
+
+  static function activity_assignee_contact_id() {
+    civicrm_initialize();
+    print '<p>';
+    if (CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'activity_assignee_notification')) {
+      print t('A copy of this activity will be emailed to the assignee.');
+    }
+    else {
+      print t('Assignee notifications are currently disabled in CiviCRM; no email will be sent to the assignee.');
+    }
+    print '</p>';
+    self::contact_reference();
   }
 
   static function activity_duration() {
@@ -171,10 +192,15 @@ class wf_crm_admin_help {
       '</p>';
   }
 
-  static function case_creator_id() {
+  static function contact_reference() {
     print '<p>' .
-      t('Owner of newly created cases.') .
-      '</p>';
+      t('This is a contact reference field. Webform gives you a great deal of flexibility about how this field is displayed:') .
+      '</p><ul>' .
+      '<li>' . t('First choose a contact on this webform as the target for this field (or add a new contact to the form for that purpose).') . '</li>' .
+      '<li>' . t('To enable a selection of contacts, enable the "Existing Contact" field for that contact.') . '</li>' .
+      '<li>' . t('This allows the contact to be selected on the form via autocomplete or dropdown select, or even hidden and set to always be the same contact.') . '</li>' .
+      '<li>' . t('There are many more possibilities, see "Existing Contact" field help for more information.') . '</li>' .
+      '</ul>';
   }
 
   /**

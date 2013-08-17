@@ -183,7 +183,7 @@ class wf_crm_admin_form {
       '#default_value' => wf_crm_contact_label($n, $this->data, 'plain'),
       '#suffix' => '</div>',
     );
-    $this->help($this->form['contact_' . $n][$n . '_webform_label'], 'webform_label');
+    $this->help($this->form['contact_' . $n][$n . '_webform_label'], 'webform_label', t('Contact Label'));
     $this->addAjaxItem('contact_' . $n, $n . '_contact_type', 'contact_subtype_wrapper');
 
     // Contact sub-type
@@ -353,7 +353,6 @@ class wf_crm_admin_form {
       $this->form['act']['case_type_id'] = array(
         '#type' => 'select',
         '#title' => t('CiviCase Type'),
-        '#description' => t('Is this activity part of a case?'),
         '#options' => array(t('- No Case -')) + $case_types,
       );
       $this->addAjaxItem('act', 'case_type_id', 'case');
@@ -401,9 +400,9 @@ class wf_crm_admin_form {
         '#title' => t('Default Activity Subject'),
         '#maxlength' => 255,
         '#required' => TRUE,
-        '#description' => t('You can override this default by allowing users to enter a subject (enable "Activity Subject" field below)'),
         '#default_value' => wf_crm_aval($this->data, 'activity:1:activity:1:subject', check_plain($this->node->title)),
       );
+      $this->help($this->form['act']['case']['activity_fields']['activity_subject'], 'activity_default_subject');
       $this->form['act']['case']['activity_fields']['activity_details'] = array(
         '#type' => 'checkboxes',
         '#options' => array(
@@ -428,9 +427,6 @@ class wf_crm_admin_form {
           'js_select' => $this->addToggle($sid),
         );
         foreach ($set['fields'] as $fid => $field) {
-          if ($fid == 'activity_assignee_contact_id' && CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'activity_assignee_notification')) {
-            $field['extra']['description'] = t('A copy of this activity will be emailed to the assignee.');
-          }
           if ($fid !== 'activity_survey_id') {
             $complete_fid = "civicrm_1_{$ent}_1_$fid";
             $form_item = $this->addItem($complete_fid, $field);
@@ -838,6 +834,9 @@ class wf_crm_admin_form {
     }
     elseif (!empty($field['has_help'])) {
       $this->help($item, $name);
+    }
+    elseif (wf_crm_aval($field, 'data_type') == 'ContactReference') {
+      $this->help($item, 'contact_reference');
     }
     elseif (!empty($field['expose_list']) && !empty($field['extra']['multiple'])) {
       $this->help($item, 'multiselect_options', t('Multiple Select Options'));

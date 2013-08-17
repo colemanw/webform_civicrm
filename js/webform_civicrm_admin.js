@@ -349,7 +349,6 @@ var wfCiviAdmin = (function ($, D) {
                 name = 'name="' + (i + 1) + '_contact_type"'
               }
               $('#wf-crm-configure-form .vertical-tab-button a').eq(i).prepend('<span class="civi-icon '+cl[2]+'" '+name+'> </span>');
-              continue;
             }
           }
           $(this).addClass('wf-civi-icon-processed');
