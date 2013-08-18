@@ -1005,7 +1005,7 @@ function _wf_crm_component_form_alter(&$form, $form_state) {
         $form['#attached']['js'] = array(drupal_get_path('module', 'webform_civicrm') . '/' . 'webform_civicrm_options.js');
         $options = $sort = wf_crm_field_options($element, 'component_edit', $node->webform_civicrm['data']);
         $defaults_selected = array();
-        if (!empty($element['value'])) {
+        if (isset($element['value']) && strlen($element['value'])) {
           foreach (explode(',', trim($element['value'])) as $v) {
             $defaults_selected[] = '_web_civi_option_selected_' . $v;
           }
@@ -1614,7 +1614,7 @@ function theme_webform_civicrm_components_form($variables) {
             $component['value'] = t('Relationship to Contact 1');
           }
         }
-        elseif ($component['value'] && $field['type'] == 'select') {
+        elseif (isset($component['value']) && strlen($component['value']) && $field['type'] == 'select') {
           if ($component['type'] == 'select') {
             $items = wf_crm_str2array($component['extra']['items']);
           }
