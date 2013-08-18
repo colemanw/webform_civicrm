@@ -4,6 +4,7 @@
  * @file
  * Webform CiviCRM module's alterations to webform component form.
  */
+module_load_include('inc', 'webform_civicrm', 'includes/utils');
 
 class wf_crm_admin_component {
   private $form;
@@ -14,7 +15,6 @@ class wf_crm_admin_component {
   private $field;
 
   function __construct(&$form, &$form_state) {
-    module_load_include('inc', 'webform_civicrm', 'includes/utils');
     civicrm_initialize();
     $this->form = &$form;
     $this->form_state = &$form_state;
@@ -367,6 +367,183 @@ class wf_crm_admin_component {
 
     return '[submission:values:' . implode(':', $parents) . ':nolabel]';
   }
+
+  /**
+   * Add CiviCRM info and theming to webform components form.
+   * @param array $form
+   * @param array $rows
+   * @param stdClass $node
+   */
+  static function preprocessComponentsForm(&$form, &$rows, $node) {
+    // Prepare for CiviCRM processing
+    $enabled = $data = array();
+    if (!empty($node->webform_civicrm)) {
+      civicrm_initialize();
+      $enabled = wf_crm_enabled_fields($node);
+      $data = $node->webform_civicrm['data'];
+      $form['components']['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_admin.css';
+    }
+    foreach ($rows as &$row) {
+      // Empty message when no components have been added
+      if (!empty($row[0]['colspan'])) {
+        if (empty($node->webform['components']) && wf_crm_admin_access($node)) {
+          $row[0]['data'] = t(
+            'Add a webform component below, or click the <a href="!url">CiviCRM tab</a> to add CRM fields.',
+            (array('!url' => url("node/{$node->nid}/civicrm")))
+          );
+        }
+      }
+      // Add-component row - re-render select element without civicrm_contact option
+      elseif (in_array('webform-add-form', $row['class'])) {
+        unset($form['add']['type']['#options']['civicrm_contact']);
+        $form['add']['type']['#printed'] = FALSE;
+        $row['data'][1] = drupal_render($form['add']['type']);
+      }
+      // Component row
+      elseif (!empty($row['data-cid']) && isset($node->webform['components'][$row['data-cid']])) {
+        $cid = $row['data-cid'];
+        $component = $node->webform['components'][$cid];
+        $type = &$row['data'][1];
+        if ($component['type'] == 'civicrm_contact') {
+          $types = array(
+            'autocomplete' => t('Contact - Autocomplete'),
+            'select' => t('Contact - Select List'),
+            'hidden' => $component['extra']['show_hidden_contact'] ? t('Contact - Static') : t('Contact - Hidden'),
+          );
+          $type = $types[$component['extra']['widget']];
+        }
+        elseif ($component['type'] == 'select') {
+          if ($component['extra']['aslist']) {
+            $type = $component['extra']['multiple'] ? t('Multi-select') : t('Select');
+          }
+          else {
+            $type = $component['extra']['multiple'] ? t('Checkboxes') : t('Radio buttons');
+          }
+        }
+        if (in_array($cid, $enabled)) {
+          $fields = wf_crm_get_fields();
+          $sets = wf_crm_get_fields('sets');
+          $class = 'civi-icon';
+          list( , $c, $ent, $n, $table, $name) = explode('_', $component['form_key'], 6);
+          $field = wf_crm_aval($fields, $table . '_' . $name, array('type' => 'fieldset'));
+          // Don't allow CiviCRM fields to be cloned
+          $row['data'][6] = '';
+          if ($component['type'] == 'fieldset') {
+            $title = t('Contact !num', array('!num' => $c));
+            $type = t('Fieldset for !contact', array('!contact' => wf_crm_contact_label($c, $data)));
+            $row['data'][6] = l(t('Clone Contact'), "node/{$node->nid}/webform/components/$cid/clone", array(
+              'attributes' => array('title' => t('Add a new contact to the form with the same fields and settings')
+              )));
+            $class .= ' fieldset';
+          }
+          elseif ($ent == 'contact') {
+            $field_type = ($table == 'contact' || $table == 'other') ? $field['name'] : $sets[$table]['label'];
+            $title = t('!type Field for !contact', array('!contact' => wf_crm_contact_label($c, $data), '!type' => $field_type));
+          }
+          else {
+            $title = t('Field for !type', array('!type' => $sets[$table]['label']));
+          }
+          if ($table === 'address' && $component['type'] === 'textfield') {
+            if ($name === 'state_province_id' || $name === 'county_id') {
+              $type = t('AJAX Select');
+            }
+          }
+          if ($component['type'] == 'civicrm_contact' || $component['type'] == 'fieldset') {
+            $class .= ' ' . $node->webform_civicrm['data']['contact'][$c]['contact'][1]['contact_type'];
+          }
+          if ($component['type'] == 'select') {
+            $type .= ' (' . (empty($component['extra']['civicrm_live_options']) ? t('static') : t('live')) . ')';
+          }
+          // Show defaults with labels instead of keys
+          if ($component['type'] == 'civicrm_contact') {
+            if ($component['extra']['default'] == 'contact_id') {
+              $row['data'][2] = check_plain(wf_crm_display_name($component['extra']['default_contact_id']));
+            }
+            elseif ($component['extra']['default'] == 'user') {
+              $row['data'][2] = t('Current User');
+            }
+            elseif ($component['extra']['default'] == 'auto') {
+              $row['data'][2] = t('Auto - From Filters');
+            }
+            elseif ($component['extra']['default'] == 'relationship' && $component['extra']['default_relationship']) {
+              $row['data'][2] = t('Relationship to !contact', array('!contact' => wf_crm_contact_label(1, $data)));
+            }
+          }
+          elseif (isset($component['value']) && strlen($component['value']) && ($field['type'] == 'select' || !empty($field['expose_list']))) {
+            if ($component['type'] == 'select') {
+              $items = wf_crm_str2array($component['extra']['items']);
+            }
+            else {
+              $items = wf_crm_field_options($component, 'components_form', $node->webform_civicrm['data']);
+            }
+            $val = '';
+            foreach (explode(',', $component['value']) as $v) {
+              if (isset($items[trim($v)])) {
+                $val .= ($val ? ', ' : '') . $items[trim($v)];
+              }
+            }
+            $row['data'][2] = $val;
+          }
+          // Contribution page - link to civicrm config form instead of component edit form
+          if ($name == 'contribution_page_id') {
+            $type = t('CiviCRM Billing Fields');
+            $class .= ' contribution';
+            $row['data'][5] = l(t('Configure'), 'civicrm/admin/contribute/settings', array(
+              'query' => array(
+                'reset' => 1,
+                'action' => 'update',
+                'id' => $component['value'],
+              ),
+              'attributes' => array(
+                'title' => t('Edit Contribution Page in CiviCRM'),
+              )
+            ));
+          }
+          $type = array('data' => '<span class="' . $class . '"> </span>' . $type, 'title' => $title);
+        }
+      }
+    }
+  }
+
+  /**
+   * Ensure billing fields are not on same page as event/member amounts
+   * @param stdClass $node
+   */
+  static function checkBillingPagination($node) {
+    civicrm_initialize();
+    $enabled = wf_crm_enabled_fields($node);
+    $field_ids = array(
+      'membership_membership_type_id',
+      'membership_num_terms',
+      'participant_fee_amount',
+      'participant_event_id',
+    );
+    foreach ($node->webform['components'] as $cid => $component) {
+      if (in_array($cid, $enabled)) {
+        list( , , , , $key) = explode('_', $component['form_key'], 5);
+        if (in_array($key, $field_ids)) {
+          $payment_fields[$cid] = $component;
+        }
+        elseif ($key == 'contribution_contribution_page_id') {
+          $contribution_page_page = $component['page_num'];
+        }
+      }
+    }
+    // Warning if payment fields are on same page as billing fields
+    $message = '';
+    if (isset($contribution_page_page) && !empty($payment_fields)) {
+      foreach ($payment_fields as $component) {
+        if ($component['page_num'] >= $contribution_page_page) {
+          $message .= '<li>' . $component['name'] . '</li>';
+        }
+      }
+    }
+    if ($message) {
+      $message = t('In order for line-items to be displayed correctly to the user, it is recommended to add a page break in-between Contribution Billing Fields and the following:') .
+        '<ul>' . $message . '</ul>';
+      drupal_set_message($message, 'warning', FALSE);
+    }
+  }
 }
 
 /**
@@ -450,9 +627,34 @@ function wf_crm_change_widget($form, &$form_state) {
 }
 
 /**
- * Drupal FAPI submit callback
+ * Drupal FAPI submit callback for single-component form
  */
 function wf_crm_process_options_selection($form, &$form_state) {
   $admin_form = new wf_crm_admin_component($form, $form_state);
   $admin_form->postProcess();
+}
+
+/**
+ * Drupal FAPI validation callback for all-components form
+ */
+function wf_crm_components_form_validate($form, &$form_state) {
+  $components = wf_crm_aval($form_state, 'values:components', array());
+  foreach ($components as $cid => $component) {
+    $component += $form['#node']->webform['components'][$cid];
+    if ($component['form_key'] == 'civicrm_1_contribution_1_contribution_contribution_page_id') {
+      // Iterate up through parents
+      while ($component['pid']) {
+        $component = $components[$component['pid']];
+      }
+      $weight = $component['weight'];
+    }
+  }
+  if (isset($weight)) {
+    foreach ($components as $cid => $component) {
+      $component += $form['#node']->webform['components'][$cid];
+      if ($component['type'] == 'pagebreak' && $component['weight'] > $weight) {
+        form_error($form['components'], t('CiviCRM Contribution Billing Fields <em>must</em> be on the last page of the form.'));
+      }
+    }
+  }
 }
