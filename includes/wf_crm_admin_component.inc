@@ -209,7 +209,7 @@ class wf_crm_admin_component {
     $this->form['#attached']['js'] = array(drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_options.js');
 
     $defaults_selected = array();
-    if (!empty($this->component['value'])) {
+    if (isset($this->component['value']) && strlen($this->component['value'])) {
       foreach (explode(',', trim($this->component['value'])) as $v) {
         $defaults_selected[] = '_web_civi_option_selected_' . $v;
       }
