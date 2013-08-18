@@ -21,7 +21,7 @@ class wf_crm_admin_form {
     civicrm_initialize();
     $this->form = $form;
     $this->form_state = &$form_state;
-    $this->node = $node;
+    $this->node = &$node;
     $this->fields = wf_crm_get_fields();
     $this->sets = wf_crm_get_fields('sets');
     $this->settings = isset($node->webform_civicrm) ? $node->webform_civicrm : array();
@@ -656,6 +656,8 @@ class wf_crm_admin_form {
     if (!$page_id || empty($page['financial_type_id'])) {
       return;
     }
+    // Make sure webform is set-up to prevent credit card abuse.
+    $this->checkSubmissionLimit();
     // Set default payment processor
     $default = wf_civicrm_api('payment_processor', 'get', array('is_default' => 1, 'is_test' => 0));
     $this->sets['contribution']['fields']['contribution_payment_processor_id']['value'] = wf_crm_aval($default, 'id');
@@ -726,6 +728,48 @@ class wf_crm_admin_form {
       '#default_value' => $this->settings['new_contact_source'],
       '#description' => t('Optional "source" label for any new contact/participant/membership created by this webform.'),
     );
+  }
+
+  private function checkSubmissionLimit() {
+    $webform = &$this->node->webform;
+    // If anonymous users don't have access to the form, no need for a warning.
+    if (!in_array('1', $webform['roles'])) {
+      return;
+    }
+    // Sneaky little ajax mini-form: allow user to easily change webform submit limit
+    if (!empty($_POST['submit_limit']) && !empty($_POST['submit_interval'])) {
+      $submit_limit = (int) $_POST['submit_limit'];
+      $submit_interval = (int) $_POST['submit_interval'];
+      if ($submit_limit > 0 && $submit_interval > 0) {
+        $webform['submit_limit'] = $submit_limit;
+        $webform['submit_interval'] = $submit_interval;
+        db_update('webform')
+          ->condition('nid', $this->node->nid)
+          ->fields(array('submit_limit' => $submit_limit, 'submit_interval' => $submit_interval))
+          ->execute();
+      }
+      drupal_set_message('Per-user submission limit has been updated. You may revisit these options any time on the Webform: Form Settings tab.');
+    }
+    if ($webform['submit_limit'] == -1) {
+      $this->form['contribution']['sets']['submit_limit'] = array(
+        '#markup' => '<div class="messages warning">' .
+          t('To prevent Credit Card abuse, it is recommended to set the per-user submission limit for this form.') .
+          ' <button id="configure-submit-limit" type="button">' . t('Configure') . '</button>' .
+          '<div id="submit-limit-wrapper" style="display:none">' .
+            t('Limit each user to') .
+            ' <input class="form-text" type="number" maxlength="2" size="2" name="submit_limit"> ' .
+            t('submission(s)') . ' <select class="form-select" name="submit_interval">' .
+              '<option value="-1">' .t('ever') . '</option>' .
+              '<option value="3600" selected="selected">' .t('every hour') . '</option>' .
+              '<option value="86400">' .t('every day') . '</option>' .
+              '<option value="604800">' .t('every week') . '</option>'.
+            '</select>' .
+            ' <button id="configure-submit-limit-save" type="button">' . t('Save') . '</button>' .
+            ' <button id="configure-submit-limit-cancel" type="button">' . t('Cancel') . '</button>' .
+          '</div>' .
+        '</div>',
+      );
+    }
   }
 
   /**

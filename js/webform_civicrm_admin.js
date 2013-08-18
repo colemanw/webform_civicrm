@@ -409,12 +409,26 @@ var wfCiviAdmin = (function ($, D) {
         // Info about paid events/memberships
         $('.wf-crm-paid-entities-info').remove();
         if ($pageSelect.val() == '0') {
-          $('#edit-membership').prepend('<div class="wf-crm-paid-entities-info messages warning">' + Drupal.t('Configure the Contribution settings to enable paid memberships.') + '</div>');
-          $('#edit-participant').prepend('<div class="wf-crm-paid-entities-info messages warning">' + Drupal.t('Configure the Contribution settings to enable paid events.') + '</div>');
+          $('#edit-membership').prepend('<div class="wf-crm-paid-entities-info messages status">' + Drupal.t('Configure the Contribution settings to enable paid memberships.') + '</div>');
+          $('#edit-participant').prepend('<div class="wf-crm-paid-entities-info messages status">' + Drupal.t('Configure the Contribution settings to enable paid events.') + '</div>');
         }
       }
       $('[name=civicrm_1_contribution_1_contribution_contribution_page_id], [name=civicrm_1_contact_1_email_email]', context).once('email-alert').change(billingMessages);
       billingMessages();
+
+      $('#configure-submit-limit', context).once('wf-civi').click(function() {
+        $(this).hide();
+        $('#submit-limit-wrapper').show();
+      });
+
+      $('#configure-submit-limit-cancel', context).once('wf-civi').click(function() {
+        $('#submit-limit-wrapper').hide();
+        $('#configure-submit-limit').show();
+      });
+
+      $('#configure-submit-limit-save', context).once('wf-civi').click(function() {
+        $('[name=civicrm_1_contribution_1_contribution_contribution_page_id]').change();
+      });
     }
   };
 
