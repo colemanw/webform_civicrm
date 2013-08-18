@@ -5,8 +5,6 @@
  * Webform CiviCRM module's admin form.
  */
 
-module_load_include('inc', 'webform_civicrm', 'includes/utils');
-
 class wf_crm_admin_form {
   private $form;
   private $form_state;
@@ -17,6 +15,7 @@ class wf_crm_admin_form {
   private $data;
 
   function __construct($form, &$form_state, $node) {
+    module_load_include('inc', 'webform_civicrm', 'includes/utils');
     module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_help');
     civicrm_initialize();
     $this->form = $form;
@@ -736,11 +735,11 @@ class wf_crm_admin_form {
     if (!in_array('1', $webform['roles'])) {
       return;
     }
-    // Handle ajax submission from "submit_limit" form below
+    // Handle ajax submission from "submit_limit" mini-form below
     if (!empty($_POST['submit_limit']) && !empty($_POST['submit_interval'])) {
       $submit_limit = (int) $_POST['submit_limit'];
       $submit_interval = (int) $_POST['submit_interval'];
-      if ($submit_limit > 0 && $submit_interval > 0) {
+      if ($submit_limit > 0 && $submit_interval != 0) {
         $webform['submit_limit'] = $submit_limit;
         $webform['submit_interval'] = $submit_interval;
         db_update('webform')
@@ -748,13 +747,16 @@ class wf_crm_admin_form {
           ->fields(array('submit_limit' => $submit_limit, 'submit_interval' => $submit_interval))
           ->execute();
       }
-      drupal_set_message('Per-user submission limit has been updated. You may revisit these options any time on the Webform: Form Settings tab.');
+      drupal_set_message(t('Per-user submission limit has been updated. You may revisit these options any time on the <em>Form Settings</em> tab of this webform.'));
     }
-    // Handle ajax submission from "webform_tracking_mode" form below
+    // Handle ajax submission from "webform_tracking_mode" mini-form below
     if (!empty($_POST['webform_tracking_mode']) && $_POST['webform_tracking_mode'] == 'strict') {
       variable_set('webform_tracking_mode', 'strict');
-      drupal_set_message('Webform anonymous user tracking has been updated to use the strict method. You may revisit this option any time on the global Webform Advanced Settings.');
+      drupal_set_message(t('Webform anonymous user tracking has been updated to use the strict method. You may revisit this option any time on the global <a !link>Webform Settings</a> page.',
+        array('!link' => 'href="/admin/config/content/webform" target="_blank"')
+      ));
     }
+    // Mini-form to configure submit limit without leaving the page
     if ($webform['submit_limit'] == -1) {
       $this->form['contribution']['sets']['submit_limit'] = array(
         '#markup' => '<div class="messages warning">' .
@@ -775,7 +777,7 @@ class wf_crm_admin_form {
         '</div>',
       );
     }
-    // Check for global cookie setting
+    // Mini-form to conveniently update global cookie setting
     elseif (variable_get('webform_tracking_mode', 'cookie') == 'cookie') {
       $this->form['contribution']['sets']['webform_tracking_mode'] = array(
         '#markup' => '<div class="messages warning">' .

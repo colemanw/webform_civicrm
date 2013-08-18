@@ -5,8 +5,6 @@
  * Webform CiviCRM module's alterations to webform component form.
  */
 
-module_load_include('inc', 'webform_civicrm', 'includes/utils');
-
 class wf_crm_admin_component {
   private $form;
   private $form_state;
@@ -16,6 +14,7 @@ class wf_crm_admin_component {
   private $field;
 
   function __construct(&$form, &$form_state) {
+    module_load_include('inc', 'webform_civicrm', 'includes/utils');
     civicrm_initialize();
     $this->form = &$form;
     $this->form_state = &$form_state;

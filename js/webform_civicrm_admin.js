@@ -383,6 +383,17 @@ var wfCiviAdmin = (function ($, D) {
         changeContactLabel.call(this);
       });
 
+      // Membership constraints
+      $('select[name$=_membership_num_terms]', context).once('crm-mem-date').change(function() {
+        var $dateWrappers = $(this).parent().siblings('[class$="-date"]');
+        if ($(this).val() == '0') {
+          $dateWrappers.show().find('input').attr('checked', 'checked');
+        }
+        else {
+          $dateWrappers.hide().find('input').removeAttr('checked');
+        }
+      }).change();
+
       // Inline help
       $('a.helpicon', context).once('wf-help').click(function () {
         var topic = $(this).attr('href').substr(1);
@@ -416,20 +427,18 @@ var wfCiviAdmin = (function ($, D) {
       $('[name=civicrm_1_contribution_1_contribution_contribution_page_id], [name=civicrm_1_contact_1_email_email]', context).once('email-alert').change(billingMessages);
       billingMessages();
 
+      // Handlers for submit-limit & tracking-mode mini-forms
       $('#configure-submit-limit', context).once('wf-civi').click(function() {
         $(this).hide();
         $('#submit-limit-wrapper').show();
       });
-
       $('#configure-submit-limit-cancel', context).once('wf-civi').click(function() {
         $('#submit-limit-wrapper').hide();
         $('#configure-submit-limit').show();
       });
-
       $('#configure-submit-limit-save', context).once('wf-civi').click(function() {
         $('[name=civicrm_1_contribution_1_contribution_contribution_page_id]').change();
       });
-
       $('#webform-tracking-mode', context).once('wf-civi').click(function() {
         $('[name=webform_tracking_mode]').val('strict');
         $('[name=civicrm_1_contribution_1_contribution_contribution_page_id]').change();

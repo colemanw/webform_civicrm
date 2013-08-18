@@ -13,7 +13,7 @@ class wf_crm_admin_help {
 
   static function contact_existing() {
     print '<p>' .
-      t('Gives you many options for how a contact can be autofilled or selected. Once added to the form you can configure:') .'</p><ul>' .
+      t('Gives you many options for how a contact can be autofilled or selected. Once added to the form you can edit the field to configure:') .'</p><ul>' .
       '<li>' . t('Widget: Determine whether to expose this field to the form as an autocomplete or select element, or hide it and pick the contact automatically.') . '</li>' .
       '<li>' . t('Default Value: Select a contact based on the current user, relationships, or other options.') . '</li>' .
       '<li>' . t('Filters: Limit the list of available choices from which this contact may be autofilled or selected.') . '</li>' .
@@ -23,11 +23,11 @@ class wf_crm_admin_help {
 
   static function contact_employer_id() {
     print '<p>' .
-      t('Choose a contact of type "Organization" to be the employer for this individual.') .
+      t('Choose a webform contact of type "Organization" to be the employer for this individual.') .
       '</p><p>' .
       t('Use the "Existing Contact" field for that organization to enable autocomplete or select of employers.') .
       '</p><p>' .
-      t('Set the default value to be "Employer" relationship to this individual.') .
+      t('Configure the "Existing Contact" default value to be "Employer" relationship to this individual.') .
       '</p>';
   }
 
@@ -109,15 +109,23 @@ class wf_crm_admin_help {
      '</p>';
   }
 
+  static function membership_status_id() {
+    print '<p>' .
+      t('If number of terms is enabled, status can be calculated automatically based on new/renewal status and payment.') .
+     '</p>';
+  }
+
   static function membership_num_terms() {
     print '<p>' .
-      t('Membership dates will be filled automatically by selecting terms. This can be overridden by enabling date fields and entering dates manually.') .
+      t('Membership dates will be filled automatically by selecting terms. This can be overridden by entering dates manually.') .
+     '</p><p>' .
+      t('Note: Number of terms is required to calculate membership fees for paid memberships. Fees will not be charged when dates are entered manually') .
      '</p>';
   }
 
   static function multiselect_options() {
     print '<p>' .
-      t('You may set options here and/or add this element to the webform ("user select"). If you do both, options set here will not appear on the form.') .
+      t('You may set options here and/or add this element to the webform ("User Select"). If you do both, options set here will be applied automatically and will not appear on the form.') .
       '</p>';
   }
 
@@ -125,7 +133,7 @@ class wf_crm_admin_help {
     print '<p>' .
       t('Labels help you keep track of the role of each contact on the form. For example, you might label Contact 1 "Parent", Contact 2 "Spouse" and Contact 3 "Child".') .
       '</p><p>' .
-      t("Labels do not have to appear on the form. By default they will be the title of each contact's fieldset, but you may rename fieldsets without affecting this label.") .
+      t("Labels do not have to be shown to the end-user. By default they will be the title of each contact's fieldset, but you may rename (or remove) fieldsets without affecting this label.") .
       '</p>';
   }
 
