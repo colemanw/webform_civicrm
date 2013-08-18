@@ -429,6 +429,11 @@ var wfCiviAdmin = (function ($, D) {
       $('#configure-submit-limit-save', context).once('wf-civi').click(function() {
         $('[name=civicrm_1_contribution_1_contribution_contribution_page_id]').change();
       });
+
+      $('#webform-tracking-mode', context).once('wf-civi').click(function() {
+        $('[name=webform_tracking_mode]').val('strict');
+        $('[name=civicrm_1_contribution_1_contribution_contribution_page_id]').change();
+      });
     }
   };
 

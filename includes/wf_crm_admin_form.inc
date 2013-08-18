@@ -736,7 +736,7 @@ class wf_crm_admin_form {
     if (!in_array('1', $webform['roles'])) {
       return;
     }
-    // Sneaky little ajax mini-form: allow user to easily change webform submit limit
+    // Handle ajax submission from "submit_limit" form below
     if (!empty($_POST['submit_limit']) && !empty($_POST['submit_interval'])) {
       $submit_limit = (int) $_POST['submit_limit'];
       $submit_interval = (int) $_POST['submit_interval'];
@@ -749,6 +749,11 @@ class wf_crm_admin_form {
           ->execute();
       }
       drupal_set_message('Per-user submission limit has been updated. You may revisit these options any time on the Webform: Form Settings tab.');
+    }
+    // Handle ajax submission from "webform_tracking_mode" form below
+    if (!empty($_POST['webform_tracking_mode']) && $_POST['webform_tracking_mode'] == 'strict') {
+      variable_set('webform_tracking_mode', 'strict');
+      drupal_set_message('Webform anonymous user tracking has been updated to use the strict method. You may revisit this option any time on the global Webform Advanced Settings.');
     }
     if ($webform['submit_limit'] == -1) {
       $this->form['contribution']['sets']['submit_limit'] = array(
@@ -768,6 +773,16 @@ class wf_crm_admin_form {
             ' <button id="configure-submit-limit-cancel" type="button">' . t('Cancel') . '</button>' .
           '</div>' .
         '</div>',
+      );
+    }
+    // Check for global cookie setting
+    elseif (variable_get('webform_tracking_mode', 'cookie') == 'cookie') {
+      $this->form['contribution']['sets']['webform_tracking_mode'] = array(
+        '#markup' => '<div class="messages warning">' .
+          t('Per-user submission limit is enabled for this form, however the webform anonymous user tracking method is configured to use cookies only, which is not secure enough to prevent Credit Card abuse.') .
+          ' <button id="webform-tracking-mode" type="button">' . t('Change Now') . '</button>' .
+          ' <input type="hidden" value="" name="webform_tracking_mode"> ' .
+        '</div>'
       );
     }
   }
