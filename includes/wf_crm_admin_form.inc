@@ -1169,9 +1169,11 @@ class wf_crm_admin_form {
               }
               // Create new component
               else {
-                $field['nid'] = $nid;
-                $field['form_key'] = $key;
-                $field['weight'] = $i;
+                $field += array(
+                  'nid' => $nid,
+                  'form_key' => $key,
+                  'weight' => $i,
+                );
                 self::insertComponent($field, $enabled, $this->settings);
                 $created[] = $field['name'];
               }
@@ -1333,7 +1335,6 @@ class wf_crm_admin_form {
     }
     // Create page break for contribution page
     if ($name == 'contribution_page_id') {
-      $field['weight'] = 9999;
       self::addPageBreak($field);
     }
     // Merge defaults and create webform component
@@ -1390,7 +1391,7 @@ class wf_crm_admin_form {
       'form_key' => 'contribution_pagebreak',
       'type' => 'pagebreak',
       'name' => t('Payment'),
-      'weight' => $field['weight'] - 1,
+      'weight' => $field['weight'] - 9,
     );
     $pagebreak += webform_component_invoke('pagebreak', 'defaults');
     webform_component_insert($pagebreak);

@@ -1450,7 +1450,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
         // The admin can change a number field to use checkbox/radio/select widget and we'll sum the result
         elseif ($field['type'] === 'number') {
-          $val = array_sum($val);
+          $val = is_array($val) ? array_sum($val) : $val;
         }
         else {
           $val = isset($val[0]) ? $val[0] : '';

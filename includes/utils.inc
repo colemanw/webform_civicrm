@@ -741,6 +741,7 @@ function wf_crm_get_fields($var = 'fields') {
         'extra' => array(
           'hidden_type' => 'hidden',
         ),
+        'weight' => 9999,
       );
       $fields['contribution_total_amount'] = array(
         'name' => t('Contribution Amount'),
@@ -753,6 +754,7 @@ function wf_crm_get_fields($var = 'fields') {
           'min' => 0,
         ),
         'data_type' => 'Money',
+        'weight' => 9991,
       );
       $fields['contribution_payment_processor_id'] = array(
         'name' => t('Payment Processor'),
@@ -760,10 +762,12 @@ function wf_crm_get_fields($var = 'fields') {
         'expose_list' => TRUE,
         'extra' => array('civicrm_live_options' => 1),
         'empty_option' => t('Offline Payment'),
+        'weight' => 9995,
       );
       $fields['contribution_note'] = array(
         'name' => t('Contribution Note'),
         'type' => 'textarea',
+        'weight' => 9993,
       );
       $fields['contribution_is_test'] = array(
         'name' => t('Payment Processor Mode'),
@@ -771,6 +775,7 @@ function wf_crm_get_fields($var = 'fields') {
         'expose_list' => TRUE,
         'extra' => array('civicrm_live_options' => 1),
         'value' => 0,
+        'weight' => 9997,
       );
     }
     if (isset($sets['participant'])) {

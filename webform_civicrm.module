@@ -442,7 +442,7 @@ function webform_civicrm_preprocess_webform_components_form(&$vars) {
         );
       }
     }
-    // Add-component row - re-render select element
+    // Add-component row - re-render select element without civicrm_contact option
     elseif (in_array('webform-add-form', $row['class'])) {
       unset($form['add']['type']['#options']['civicrm_contact']);
       $form['add']['type']['#printed'] = FALSE;
@@ -533,10 +533,20 @@ function webform_civicrm_preprocess_webform_components_form(&$vars) {
           }
           $row['data'][2] = $val;
         }
+        // Contribution page - link to civicrm config form instead of component edit form
         if ($name == 'contribution_page_id') {
           $type = t('CiviCRM Billing Fields');
           $class .= ' contribution';
-          $row['data'][5] = '';
+          $row['data'][5] = l(t('Configure'), 'civicrm/admin/contribute/settings', array(
+            'query' => array(
+              'reset' => 1,
+              'action' => 'update',
+              'id' => $component['value'],
+            ),
+            'attributes' => array(
+              'title' => t('Edit Contribution Page in CiviCRM'),
+            )
+          ));
         }
         $type = array('data' => '<span class="' . $class . '"> </span>' . $type, 'title' => $title);
       }
