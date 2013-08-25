@@ -1238,9 +1238,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $cid = wf_crm_aval($this->existing_contacts, 1);
     if (!$cid) {
       $contact = $this->data['contact'][1];
+      // Only use middle name from billing if we are using the rest of the billing name as well
+      if (empty($contact['contact'][1]['first_name']) && !empty($this->billing_params['middle_name'])) {
+        $contact['contact'][1]['middle_name'] = $this->billing_params['middle_name'];
+      }
       $contact['contact'][1] += array(
         'first_name' => $this->billing_params['first_name'],
-        'middle_name' => $this->billing_params['middle_name'],
         'last_name' => $this->billing_params['last_name'],
       );
       $cid = $this->findDuplicateContact($contact);
@@ -1249,7 +1252,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       'street_address' => $this->billing_params['street_address'],
       'city' => $this->billing_params['city'],
       'country_id' => $this->billing_params['country_id'],
-      'state_province_id' => $this->billing_params['state_province_id'],
+      'state_province_id' => wf_crm_aval($this->billing_params, 'state_province_id'),
       'postal_code' => $this->billing_params['postal_code'],
       'location_type_id' => 'Billing',
     );
