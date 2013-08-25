@@ -1147,10 +1147,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
     }
     // Calculate totals
+    $grand_total = 0;
     foreach ($this->line_items as &$item) {
-      $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
+      $grand_total += $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
     }
-    return $this->line_items;
+    return $grand_total;
   }
 
   private function validateBillingFields() {
