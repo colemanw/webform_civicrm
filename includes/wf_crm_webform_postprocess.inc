@@ -139,6 +139,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $this->updateContact($contact, $c);
       }
     }
+    // $this->id['cid'] will now contain all contact ids in order, with 0 as a placeholder for any contact not saved
+    ksort($this->id['cid']);
 
     // Once all contacts are saved we can fill contact ref fields
     $this->fillContactRefs();
@@ -195,13 +197,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
     }
     // Write record; we do this when creating, updating, or saving a draft of a webform submission.
-    $cid = '-';
-    foreach (array_keys($this->data['contact']) as $c) {
-      $cid .= (empty($this->id['cid'][$c]) ? 0 : $this->id['cid'][$c]) . '-';
-    }
     $record = array(
       'sid' => $this->submission->sid,
-      'contact_id' => $cid,
+      'contact_id' => '-' . implode('-', $this->id['cid']) . '-',
       'activity_id' => empty($this->id['act'][1]) ? 0 : $this->id['act'][1],
     );
     drupal_write_record('webform_civicrm_submissions', $record, $this->update);
