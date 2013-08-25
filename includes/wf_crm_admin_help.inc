@@ -88,6 +88,8 @@ class wf_crm_admin_help {
   static function participant_fee_amount() {
     print '<p>' .
       t('Price for this event. If multiple events or participants are registered with this field, the amount will be charged per-person, per-event.') .
+      '</p><p>' .
+      t('Note that any event prices you have configured in CiviCRM are not imported into the Webform - you will need to reconfigure them here.') .
      '</p>';
     self::fee();
   }
