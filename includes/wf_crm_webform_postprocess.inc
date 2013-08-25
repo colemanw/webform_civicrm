@@ -14,7 +14,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private $crmValues;
   private $rawValues;
   private $multiPageDataLoaded;
-  private $isPaymentPage;
   private $billing_params;
   private $membership_types = array();
 
@@ -46,8 +45,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   /**
    * This is first called during form validation. We create an instance of this object and stash it in a static variable.
    * It is destroyed and rebuilt between each page submission, but after (successful) validation of the final page,
-   * this cache allows the object instance to persist throughout postprocessing.
-   * This allows us to maintain internal state, as some values stored during validation need to be retrieved during post-processing.
+   * this cache allows the object instance to persist throughout (final) validate, preSave and postSave operations.
    * @param stdClass $node
    * @return wf_crm_webform_postprocess
    */
@@ -69,7 +67,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->form_state = &$form_state;
     $this->rawValues = _webform_client_form_submit_flatten($this->node, wf_crm_aval($this->form_state, 'values:submitted'));
     $this->crmValues = wf_crm_enabled_fields($this->node, $this->rawValues);
-    $this->isPaymentPage = !empty($this->crmValues['civicrm_1_contribution_1_contribution_contribution_page_id']);
     // Even though this object is destroyed between page submissions, this trick allows us to persist some data - see below
     $this->id = wf_crm_aval($form_state, 'civicrm:id', array());
 
@@ -84,7 +81,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     if ($this->getContributionPage()) {
       $this->loadMultiPageData();
       if ($this->tallyLineItems()) {
-        if ($this->isPaymentPage && !form_get_errors()) {
+        if ($this->isPaymentPage() && !form_get_errors()) {
           if ($this->validateBillingFields()) {
             if ($this->createBillingContact()) {
               $this->submitPayment();
@@ -99,7 +96,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
-   * Process webform submission when it is about to be saved
+   * Process webform submission when it is about to be saved. Called by the following hook:
+   * @see webform_civicrm_webform_submission_presave
    */
   public function preSave(&$submission) {
     $this->submission = &$submission;
@@ -178,7 +176,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
-   * Process webform submission when it is has been saved
+   * Process webform submission when it is has been saved. Called by the following hooks:
+   * @see webform_civicrm_webform_submission_insert
+   * @see webform_civicrm_webform_submission_update
    */
   public function postSave($submission) {
     $this->submission = $submission;
@@ -204,7 +204,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     );
     drupal_write_record('webform_civicrm_submissions', $record, $this->update);
   }
-
 
   /**
    * Recursive validation callback for webform page submission
@@ -1154,6 +1153,19 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     return $grand_total;
   }
 
+  /**
+   * Are billing fields exposed to this webform page?
+   * @return bool
+   */
+  private function isPaymentPage() {
+    return !empty($this->crmValues['civicrm_1_contribution_1_contribution_contribution_page_id']) &&
+      !empty($this->data['contribution'][1]['contribution'][1]['payment_processor_id']);
+  }
+
+  /**
+   * Normalize and validate billing input
+   * @return bool
+   */
   private function validateBillingFields() {
     $valid = TRUE;
     $params = $card_errors = array();
@@ -1226,6 +1238,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     if ($valid) {
       $this->billing_params = $params;
     }
+    // Since billing fields are not "real" form fields they get cleared if the page reloads.
+    // We add a bit of js to fix this annoyance.
     drupal_add_js(array('webform_civicrm' => array('billingSubmission' => $submitted)), 'setting');
     return $valid;
   }
