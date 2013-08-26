@@ -703,6 +703,9 @@ function wf_crm_process_submission($node, &$submission, $op) {
         wf_civicrm_api('contact', 'create', $params);
       }
     }
+    // $id['cid'] will now contain all contact ids in order, with 0 as a placeholder for any contact not saved
+    ksort($id['cid']);
+
     // Fill ContactRef fields with contact IDs
     _wf_crm_fill_contact_ref($data, $id['cid']);
 
