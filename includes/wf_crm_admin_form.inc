@@ -826,8 +826,11 @@ class wf_crm_admin_form {
    */
   private function addItem($fid, $field) {
     list(, $c, $ent, $n, $table, $name) = explode('_', $fid, 6);
-    // We don't need numbers on the admin form since they are already grouped in fieldsets
-    $field['name'] = str_replace('#', '', $field['name']);
+    $item = array(
+      // We don't need numbers on the admin form since they are already grouped in fieldsets
+      '#title' => str_replace('#', '', $field['name']),
+      '#attributes' => wf_crm_aval($field, 'attributes'),
+    );
 
     // Create dropdown list
     if (!empty($field['expose_list'])) {
@@ -838,9 +841,8 @@ class wf_crm_admin_form {
         $options = array('create_civicrm_webform_element' => t('- User Select -'));
       }
       $options += wf_crm_field_options($field, 'config_form', $this->data);
-      $item = array(
+      $item += array(
         '#type' => 'select',
-        '#title' => $field['name'],
         '#options' => $options,
         '#multiple' => !empty($field['extra']['multiple']),
         '#default_value' => !empty($field['empty_option']) ? 0 : NULL,
@@ -880,14 +882,12 @@ class wf_crm_admin_form {
     }
     // Create checkbox
     else {
-      $item = array(
+      $item += array(
         '#type' => 'checkbox',
-        '#title' => $field['name'],
         '#return_value' => 'create_civicrm_webform_element',
         '#default_value' => !empty($this->settings[$fid]),
       );
     }
-    $item['#attributes'] = wf_crm_aval($field, 'attributes');
     // Add help
     $topic = $table . '_' . $name;
     if (method_exists('wf_crm_admin_help', $topic)) {

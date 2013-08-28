@@ -390,10 +390,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           $msg .= t('Expires today.');
         }
         elseif ($end > $now) {
-          $msg .= t('Expires in !time.', array('!time' => format_interval($end - time())));
+          $msg .= t('Expires in !interval.', array('!interval' => format_interval($end - time())));
         }
         elseif ($end < $now) {
-          $msg .= t('Expired !time ago.', array('!time' => format_interval(time() - $end)));
+          $msg .= t('Expired !interval ago.', array('!interval' => format_interval(time() - $end)));
         }
       }
       drupal_set_message($msg);
