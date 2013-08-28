@@ -519,9 +519,9 @@ class wf_crm_admin_form {
       '#default_value' => (bool) wf_crm_aval($this->data, 'reg_options:block_form'),
       '#description' => t('Hide webform if all the events for the form are full or ended.'),
     );
-    $this->addAjaxItem('event', 'participant_reg_type', 'participants');
-    $this->addAjaxItem('event', 'event_type', 'participants');
-    $this->addAjaxItem('event', 'show_past_events', 'participants');
+    $this->addAjaxItem('participant', 'participant_reg_type', 'participants');
+    $this->addAjaxItem('participant', 'event_type', 'participants');
+    $this->addAjaxItem('participant', 'show_past_events', 'participants');
 
     for ($n = 1; $reg_type && (($n <= count($this->data['contact']) && $reg_type != 'all') || $n == 1); ++$n) {
       $this->form['participant']['participants'][$n] = array(
@@ -540,7 +540,7 @@ class wf_crm_admin_form {
         '#prefix' => '<div class="number-of">',
         '#suffix' => '</div>',
       );
-      $this->addAjaxItem("event:participants:{$n}", 'participant_' . $n . '_number_of_participant', 'div');
+      $this->addAjaxItem("participant:participants:{$n}", 'participant_' . $n . '_number_of_participant', 'div');
       $particpant_extensions = array(
         1 => 'role_id',
         2 => 'event_id',
