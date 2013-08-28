@@ -15,7 +15,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private $rawValues;
   private $multiPageDataLoaded;
   private $billing_params;
-  private $membership_types = array();
 
   // During validation this contains an array of known contact ids and the placeholder 0 for valid contacts
   // During submission processing this contains an array of known contact ids
@@ -532,8 +531,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $exist = drupal_map_assoc((array) wf_crm_aval($existing, $name, array()));
         // Only known contacts are allowed to empty a field
         if (!empty($this->existing_contacts[$c])) {
-          $fid = wf_crm_aval($this->enabled, "civicrm_{$c}_contact_1_contact_$name");
-          foreach ($this->getExposedOptions($fid) as $k => $v) {
+          foreach ($this->getExposedOptions("civicrm_{$c}_contact_1_contact_$name") as $k => $v) {
             unset($exist[$k]);
           }
         }
@@ -686,9 +684,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if ($set == 'other') {
         $field_name = 'civicrm_' . $c . '_contact_1_' . $fid;
         if (!empty($contact['other'][1][$type]) || isset($this->enabled[$field_name])) {
-          $fid = wf_crm_aval($this->enabled, $field_name, 0);
           $add = wf_crm_aval($contact, "other:1:$type", array());
-          $remove = empty($this->existing_contacts[$c]) ? array() : $this->getExposedOptions($fid, $add);
+          $remove = empty($this->existing_contacts[$c]) ? array() : $this->getExposedOptions($field_name, $add);
           $this->addOrRemoveMultivaluedData($field['table'], 'contact', $cid, $add, $remove);
         }
       }
@@ -849,12 +846,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
       foreach ($p as $e => $params) {
         $remove = array();
-        if ($fid = wf_crm_aval($this->enabled, 'civicrm_' . $c . '_participant_' . $e . '_participant_event_id')) {
-          foreach ($this->getExposedOptions($fid) as $eid => $title) {
-            list($eid) = explode('-', $eid);
-            if (isset($existing[$eid])) {
-              $remove[$eid] = $title;
-            }
+        $fid = "civicrm_{$c}_participant_{$e}_participant_event_id";
+        foreach ($this->getExposedOptions($fid) as $eid => $title) {
+          list($eid) = explode('-', $eid);
+          if (isset($existing[$eid])) {
+            $remove[$eid] = $title;
           }
         }
         if (!empty($params['event_id'])) {
@@ -1352,13 +1348,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
   }
 
-  private function getMembershipTypeField($type, $field) {
-    if (!$this->membership_types) {
-      $this->membership_types = wf_crm_apivalues('membership_type', 'get');
-    }
-    return wf_crm_aval($this->membership_types, $type . ':' . $field);
-  }
-
   /**
    * Recursive function to fill ContactRef fields with contact IDs
    *
@@ -1434,7 +1423,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
         // Translate privacy options into separate values
         if ($name === 'privacy') {
-          foreach (array_keys($this->getExposedOptions($fid)) as $key) {
+          foreach (array_keys($this->getExposedOptions($field_key)) as $key) {
             $this->data[$ent][$c][$table][$n][$key] = in_array($key, $val);
           }
           continue;

@@ -16,6 +16,7 @@ abstract class wf_crm_webform_base {
   protected $events = array();
   protected $contribution_page;
   protected $line_items = array();
+  protected $membership_types = array();
 
   /**
    * Fetch all relevant data for a given contact
@@ -117,7 +118,7 @@ abstract class wf_crm_webform_base {
             $types = array($contact['relationship'][$r]['relationship_type_id']);
           }
           if (!empty($this->enabled[$prefix . 'relationship_type_id'])) {
-            $types = array_keys($this->getExposedOptions($this->enabled[$prefix . 'relationship_type_id']));
+            $types = array_keys($this->getExposedOptions($prefix . 'relationship_type_id'));
           }
         }
         $rel = $this->getRelationship($types, $cid, $this->id['cid'][$r]);
@@ -190,20 +191,20 @@ abstract class wf_crm_webform_base {
   /**
    * For a given field, find the options that are exposed to the webform.
    *
-   * @param $fid
-   *   Numeric webform component id
+   * @param $field_key
+   *   Field key
    * @param array $exclude
    *   Options to ignore
    *
    * @return array
    */
-  protected function getExposedOptions($fid, $exclude = array()) {
-    if ($fid) {
-      $field = $this->node->webform['components'][$fid];
+  protected function getExposedOptions($field_key, $exclude = array()) {
+    if ($field_key && isset($this->enabled[$field_key])) {
+      $field = $this->node->webform['components'][$this->enabled[$field_key]];
       if ($field['type'] == 'select') {
         // Fetch static options
         if (empty($field['extra']['civicrm_live_options'])) {
-          $exposed = wf_crm_str2array($this->node->webform['components'][$fid]['extra']['items']);
+          $exposed = wf_crm_str2array($field['extra']['items']);
         }
         // Fetch live options
         else {
@@ -476,6 +477,14 @@ abstract class wf_crm_webform_base {
       $this->contribution_page = wf_crm_aval($result, $params['id']);
     }
     return $this->contribution_page;
+  }
+
+
+  protected function getMembershipTypeField($type, $field) {
+    if (!$this->membership_types) {
+      $this->membership_types = wf_crm_apivalues('membership_type', 'get');
+    }
+    return wf_crm_aval($this->membership_types, $type . ':' . $field);
   }
 
 }

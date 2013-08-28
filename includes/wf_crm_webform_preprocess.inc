@@ -109,6 +109,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         if ($this->events && ($c == 1 || $this->data['participant_reg_type'] == 'separate')) {
           $this->loadParticipants($c);
         }
+        // Membership
+        if (!empty($this->data['membership'][$c]['number_of_membership'])) {
+          $this->loadMemberships($c, $cid);
+        }
       }
     }
     if (!empty($this->id['cid'][1])) {
@@ -275,7 +279,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     // Add events exposed to the form
     foreach ($this->enabled as $field => $fid) {
       if (strpos($field, 'participant_event_id')) {
-        foreach ($this->getExposedOptions($fid) as $p => $label) {
+        foreach ($this->getExposedOptions($field) as $p => $label) {
           list($eid) = explode('-', $p);
           $this->events[$eid]['ended'] = TRUE;
           $this->events[$eid]['title'] = $label;
@@ -319,6 +323,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     }
   }
 
+  /**
+   * Load participant data for a contact
+   * @param int $c
+   */
   private function loadParticipants($c) {
     $select = array('id', 'event_id', 'role_id', 'status_id');
     if (array_key_exists('participant_campaign_id', wf_crm_get_fields())) {
@@ -351,6 +359,54 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       }
     }
     $dao->free();
+  }
+
+  /**
+   * Load existing membership information and display a message to members.
+   * @param int $c
+   * @param int $cid
+   */
+  private function loadMemberships($c, $cid) {
+    static $status_types;
+    $existing = wf_crm_apivalues('membership', 'get', array('contact_id' => $cid, 'filters' => array('is_current' => 1)));
+    if (!$existing) {
+      return;
+    }
+    if (!$status_types) {
+      $status_types = wf_crm_apivalues('membership', 'getoptions', array('field' => 'status_id', 'context' => 'get'));
+    }
+    foreach ($existing as $membership) {
+      $type = $membership['membership_type_id'];
+      $msg = t('@type membership for @contact is currently @status.', array(
+        '@type' => $this->getMembershipTypeField($type, 'name'),
+        '@contact' => $this->info['contact'][$c]['contact'][1]['display_name'],
+        '@status' => strtolower($status_types[$membership['status_id']]),
+      ));
+      if (!empty($membership['end_date'])) {
+        $msg .= ' ';
+        $end = strtotime($membership['end_date']);
+        $now = strtotime('today');
+        if ($end == $now) {
+          $msg .= t('Expires today.');
+        }
+        elseif ($end > $now) {
+          $msg .= t('Expires in !time.', array('!time' => format_interval($end - time())));
+        }
+        elseif ($end < $now) {
+          $msg .= t('Expired !time ago.', array('!time' => format_interval(time() - $end)));
+        }
+      }
+      drupal_set_message($msg);
+      for ($n = 1; $n <= $this->data['membership'][$c]['number_of_membership']; ++$n) {
+        $fid = "civicrm_{$c}_membership_{$n}_membership_membership_type_id";
+        if (empty($info['membership'][$c]['membership'][$n]) && ($this->getData($fid) == $type ||
+          array_key_exists($type, $this->getExposedOptions($fid)))
+        ) {
+          $this->info['membership'][$c]['membership'][$n] = $membership;
+          break;
+        }
+      }
+    }
   }
 
   /**
