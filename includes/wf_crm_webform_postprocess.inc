@@ -528,7 +528,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $existing = wf_civicrm_api('contact', 'get', array('id' => $this->id['cid'][$c]) + $fetch);
       $existing = wf_crm_aval($existing, 'values:' . $this->id['cid'][$c], array());
       foreach ($multi as $name) {
-        $exist = drupal_map_assoc((array) wf_crm_aval($existing, $name, array()));
+        $exist = array_filter(drupal_map_assoc((array) wf_crm_aval($existing, $name, array())));
         // Only known contacts are allowed to empty a field
         if (!empty($this->existing_contacts[$c])) {
           foreach ($this->getExposedOptions("civicrm_{$c}_contact_1_contact_$name") as $k => $v) {
