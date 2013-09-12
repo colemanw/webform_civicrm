@@ -79,16 +79,6 @@ abstract class wf_crm_webform_base {
         }
       }
     }
-    // Communication prefs are not fetched by default by the api
-    if (isset($this->enabled[$prefix . 'contact_preferred_communication_method']) || isset($this->enabled[$prefix . 'contact_preferred_language'])) {
-      if (!in_array('contact', $exclude)) {
-        $result = wf_civicrm_api('contact', 'get', array(
-          'id' => $cid,
-          'return' => array('preferred_communication_method', 'preferred_language'),
-        ));
-        $info['contact'][1] += $result['values'][$cid];
-      }
-    }
     // Retrieve group and tag data
     if (!in_array('other', $exclude)) {
       $api = array('tag' => 'entity_tag', 'group' => 'group_contact');
