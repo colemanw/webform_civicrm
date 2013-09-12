@@ -383,6 +383,25 @@ var wfCiviAdmin = (function ($, D) {
         changeContactLabel.call(this);
       });
 
+      // Contribution constraints
+      $('select[name$=contribution_honor_contact_id]', context).once('crm-contrib').change(function() {
+        if ($(this).val() == '0') {
+          $('.form-item-civicrm-1-contribution-1-contribution-honor-type-id').hide();
+        }
+        else {
+          $('.form-item-civicrm-1-contribution-1-contribution-honor-type-id').show();
+        }
+      }).change();
+      $('select[name$=contribution_honor_type_id]', context).once('crm-contrib').change(function() {
+        var $label = $('label[for=edit-civicrm-1-contribution-1-contribution-honor-contact-id]');
+        if ($(this).val() == 'create_civicrm_webform_element') {
+          $label.html(Drupal.t('In Honor/Memory of'));
+        }
+        else {
+          $label.html($('option:selected', this).html());
+        }
+      }).change();
+
       // Membership constraints
       $('select[name$=_membership_num_terms]', context).once('crm-mem-date').change(function() {
         var $dateWrappers = $(this).parent().siblings('[class$="-date"]');

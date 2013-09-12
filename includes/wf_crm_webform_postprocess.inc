@@ -1301,6 +1301,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function submitPayment() {
     $params = $this->billing_params + $this->data['contribution'][1]['contribution'][1];
     $params['financial_type_id'] = $this->contribution_page['financial_type_id'];
+    $params['currency'] = $this->contribution_page['currency'];
     $params['skipRecentView'] = $params['skipLineItem'] = 1;
     $params['contact_id'] = $this->id['cid'][1];
     $params['source'] = $this->settings['new_contact_source'];
@@ -1310,6 +1311,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     foreach ($this->line_items as $item) {
       $params['total_amount'] += $item['line_total'];
     }
+    // Save this stuff for later
+    unset($params['soft'], $params['honor_contact_id'], $params['honor_type_id']);
+
     $result = wf_civicrm_api('contribution', 'transact', $params);
     if (empty($result['id'])) {
       form_set_error('contribution', t('Transaction failed. Please verify all billing fields are correct.'));
@@ -1323,14 +1327,35 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * This happens during form post-processing
    */
   private function processContribution() {
+    $contribution = $this->data['contribution'][1]['contribution'][1];
+    $id = $this->id['contribution'];
     // Save custom data
     if (count($this->data['contribution'][1]) > 1) {
-      $this->saveCustomData($this->data['contribution'][1], $this->id['contribution'], 'Contribution', FALSE);
+      $this->saveCustomData($this->data['contribution'][1], $id, 'Contribution', FALSE);
+    }
+    // Save soft credits
+    if (!empty($contribution['soft'])) {
+      foreach (array_filter($contribution['soft']) as $cid) {
+        wf_civicrm_api('contribution_soft', 'create', array(
+          'contact_id' => $cid,
+          'contribution_id' => $id,
+          'amount' => $contribution['total_amount'],
+          'currency' => $this->contribution_page['currency'],
+        ));
+      }
+    }
+    // Save honoree
+    if (!empty($contribution['honor_contact_id']) && !empty($contribution['honor_type_id'])) {
+      wf_civicrm_api('contribution', 'create', array(
+        'id' => $id,
+        'honor_contact_id' => $contribution['honor_contact_id'],
+        'honor_type_id' => $contribution['honor_type_id'],
+      ));
     }
     // Save line-items
     foreach ($this->line_items as &$item) {
       if (empty($item['entity_id'])) {
-        $item['entity_id'] = $this->id['contribution'];
+        $item['entity_id'] = $id;
       }
       wf_civicrm_api('line_item', 'create', $item);
       // Create participant/membership payment records
@@ -1338,13 +1363,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $type = isset($item['participant_id']) ? 'participant' : 'membership';
         wf_civicrm_api("{$type}_payment", 'create', array(
           "{$type}_id" => $item["{$type}_id"],
-          'contribution_id' => $this->id['contribution'],
+          'contribution_id' => $id,
         ));
       }
     }
     // Send receipt
     if (!empty($this->contribution_page['is_email_receipt'])) {
-      wf_civicrm_api('contribution', 'sendconfirmation', array('id' => $this->id['contribution']) + $this->contribution_page);
+      wf_civicrm_api('contribution', 'sendconfirmation', array('id' => $id) + $this->contribution_page);
     }
   }
 

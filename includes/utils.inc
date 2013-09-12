@@ -769,6 +769,25 @@ function wf_crm_get_fields($var = 'fields') {
         'type' => 'textarea',
         'weight' => 9993,
       );
+      $fields['contribution_soft'] = array(
+        'name' => t('Soft Credit To'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'extra' => array('multiple' => TRUE),
+        'data_type' => 'ContactReference',
+      );
+      $fields['contribution_honor_contact_id'] = array(
+        'name' => t('In Honor/Memory of'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'empty_option' => t('No One'),
+        'data_type' => 'ContactReference',
+      );
+      $fields['contribution_honor_type_id'] = array(
+        'name' => t('Honoree Type'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+      );
       $fields['contribution_is_test'] = array(
         'name' => t('Payment Processor Mode'),
         'type' => 'select',
