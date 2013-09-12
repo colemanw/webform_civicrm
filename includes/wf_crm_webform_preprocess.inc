@@ -377,24 +377,13 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     }
     foreach ($existing as $membership) {
       $type = $membership['membership_type_id'];
-      $msg = t('@type membership for @contact is currently @status.', array(
+      $msg = t('@type membership for @contact has a status of "@status".', array(
         '@type' => $this->getMembershipTypeField($type, 'name'),
         '@contact' => $this->info['contact'][$c]['contact'][1]['display_name'],
-        '@status' => strtolower($status_types[$membership['status_id']]),
+        '@status' => $status_types[$membership['status_id']]
       ));
       if (!empty($membership['end_date'])) {
-        $msg .= ' ';
-        $end = strtotime($membership['end_date']);
-        $now = strtotime('today');
-        if ($end == $now) {
-          $msg .= t('Expires today.');
-        }
-        elseif ($end > $now) {
-          $msg .= t('Expires in !interval.', array('!interval' => format_interval($end - time())));
-        }
-        elseif ($end < $now) {
-          $msg .= t('Expired !interval ago.', array('!interval' => format_interval(time() - $end)));
-        }
+        $msg .= ' ' . t('Expires @date.', array('@date' => CRM_Utils_Date::customFormat($membership['end_date'])));
       }
       drupal_set_message($msg);
       for ($n = 1; $n <= $this->data['membership'][$c]['number_of_membership']; ++$n) {

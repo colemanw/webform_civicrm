@@ -383,7 +383,7 @@ var wfCiviAdmin = (function ($, D) {
         changeContactLabel.call(this);
       });
 
-      // Contribution constraints
+      // Contribution honoree fields
       $('select[name$=contribution_honor_contact_id]', context).once('crm-contrib').change(function() {
         if ($(this).val() == '0') {
           $('.form-item-civicrm-1-contribution-1-contribution-honor-type-id').hide();
