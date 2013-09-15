@@ -683,10 +683,12 @@ function wf_crm_get_fields($var = 'fields') {
     $fields['activity_activity_date_time'] = array(
       'name' => t('Activity Date'),
       'type' => 'date',
+      'value' => 'now',
     );
     $fields['activity_activity_date_time_timepart'] = array(
       'name' => t('Activity Time'),
       'type' => 'time',
+      'value' => 'now',
     );
     $fields['activity_duration'] = array(
       'name' => t('Duration'),
