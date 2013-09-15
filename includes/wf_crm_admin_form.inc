@@ -478,13 +478,46 @@ class wf_crm_admin_form {
       '#tree' => TRUE,
     );
     $this->form['participant']['show_past_events'] = array(
-      '#type' => 'checkbox',
+      '#type' => 'select',
       '#title' => t('Show Past Events'),
-      '#default_value' => (bool) wf_crm_aval($this->data, 'reg_options:show_past_events'),
-      '#suffix' => '</div>',
+      '#default_value' => wf_crm_aval($this->data, 'reg_options:show_past_events', 0),
       '#parents' => array('reg_options', 'show_past_events'),
       '#tree' => TRUE,
+      '#options' => array(
+        0 => t('- None -'),
+        1 => t('All'),
+        '-1 day' => t('Past Day'),
+        '-1 week' => t('Past Week'),
+        '-1 month' => t('Past Month'),
+        '-2 month' => t('Past 2 Months'),
+        '-3 month' => t('Past 3 Months'),
+        '-6 month' => t('Past 6 Months'),
+        '-1 year' => t('Past Year'),
+        '-2 year' => t('Past 2 Years'),
+      ),
     );
+    $this->help($this->form['participant']['show_past_events'], 'reg_options_show_past_events');
+    $this->form['participant']['title_display'] = array(
+      '#type' => 'select',
+      '#title' => t('Title Display'),
+      '#default_value' => wf_crm_aval($this->data, 'reg_options:title_display', 'title'),
+      '#suffix' => '</div>',
+      '#parents' => array('reg_options', 'title_display'),
+      '#tree' => TRUE,
+      '#options' => array(
+        'title' => t('Title Only'),
+        'title type' => t('Title + Event Type'),
+        'title start dateformatYear' => t('Title + Year'),
+        'title start dateformatPartial' => t('Title + Month + Year'),
+        'title start dateformatFull' => t('Title + Start-Date'),
+        'title start dateformatTime' => t('Title + Start-Time'),
+        'title start dateformatDatetime' => t('Title + Start-Date-Time'),
+        'title start end dateformatFull' => t('Title + Start-Date + End'),
+        'title start end dateformatTime' => t('Title + Start-Time + End'),
+        'title start end dateformatDatetime' => t('Title + Start-Date-Time + End'),
+      ),
+    );
+    $this->help($this->form['participant']['title_display'], 'reg_options_title_display');
     $this->form['participant']['reg_options'] = array(
       '#prefix' => '<div class="clearfix"> </div>',
       '#suffix' => '</div>',
@@ -524,6 +557,7 @@ class wf_crm_admin_form {
     $this->addAjaxItem('participant', 'participant_reg_type', 'participants');
     $this->addAjaxItem('participant', 'event_type', 'participants');
     $this->addAjaxItem('participant', 'show_past_events', 'participants');
+    $this->addAjaxItem('participant', 'title_display', 'participants');
 
     for ($n = 1; $reg_type && (($n <= count($this->data['contact']) && $reg_type != 'all') || $n == 1); ++$n) {
       $this->form['participant']['participants'][$n] = array(
@@ -581,6 +615,10 @@ class wf_crm_admin_form {
             foreach ($set['fields'] as $fid => $field) {
               $id = 'civicrm_' . $n . '_participant_' . $e . '_' . $fid;
               $item = $this->addItem($id, $field);
+              if ($fid == 'participant_event_id') {
+                $item['#prefix'] = '<div class="auto-width">';
+                $item['#suffix'] = '</div>';
+              }
               if ($fid == 'participant_event_id' || $fid == 'participant_role_id') {
                 $item['#attributes']['onchange'] = "wfCiviAdmin.participantConditional('#$fs');";
                 $item['#attributes']['class'] = array($fid);

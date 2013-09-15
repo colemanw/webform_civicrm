@@ -128,6 +128,20 @@ class wf_crm_admin_help {
       '</p>';
   }
 
+  static function reg_options_show_past_events() {
+    print '<p>' .
+      t('Upcoming events will always be shown. To also display events that have ended, choose an option for how far in the past to search.') .
+      '</p>';
+  }
+
+  static function reg_options_title_display() {
+    print '<p>' .
+      t('Controls how events are displayed. Date formats can be further configured in <a !link>CiviCRM Date Settings</a>',
+        array('!link' => 'target="_blank" href="' . url('civicrm/admin/setting/date', array('query' => array('reset' => 1))) . '"')
+      ) .
+      '</p>';
+  }
+
   static function membership_membership_type_id() {
     print '<p>' .
       t('Fee will be calculated automatically based on selected membership type and number of terms chosen. A contribution page must be enabled to collect fees.') .

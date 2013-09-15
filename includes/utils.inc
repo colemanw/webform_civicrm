@@ -180,9 +180,23 @@ function wf_crm_state_abbr($input, $ret = 'abbreviation', $country_id = NULL) {
  */
 function wf_crm_get_events($param, $context) {
   $ret = array();
-  $sql = "SELECT title AS label, CONCAT(id, '-', event_type_id) AS value FROM civicrm_event WHERE is_template = 0";
-  if (empty($param['show_past_events'])) {
-    $sql .= ' AND (end_date >= NOW() OR end_date IS NULL) AND is_active = 1';
+  $format = explode(' ', wf_crm_aval($param, 'title_display', 'title'));
+  if (in_array('type', $format)) {
+    $types = wf_crm_apivalues('event', 'getoptions', array('field' => 'event_type_id', 'context' => 'get'));
+  }
+  // Date format
+  foreach ($format as $value) {
+    if (strpos($value, 'dateformat') === 0) {
+      $config = CRM_Core_Config::singleton();
+      $date_format = $config->$value;
+    }
+  }
+  $sql = "SELECT id, title, start_date, end_date, event_type_id FROM civicrm_event WHERE is_template = 0 AND is_active = 1";
+  // 0 means only current events, 1 means show all past events, other values are relative date strings
+  $date = wf_crm_aval($param, 'show_past_events', 'now');
+  if ($date != '1') {
+    $date = date('Y-m-d H:i:s', strtotime($date));
+    $sql .= " AND (end_date >= '$date' OR end_date IS NULL)";
   }
   if (is_numeric($param['event_type'])) {
     $sql .= ' AND event_type_id = ' . $param['event_type'];
@@ -190,7 +204,25 @@ function wf_crm_get_events($param, $context) {
   $sql .= ' ORDER BY start_date ' . ($context == 'config_form' ? 'DESC' : '');
   $dao = CRM_Core_DAO::executeQuery($sql);
   while ($dao->fetch()) {
-    $ret[$dao->value] = $dao->label;
+    $title = array();
+    if (in_array('title', $format)) {
+      $title[] = $dao->title;
+    }
+    if (in_array('type', $format)) {
+      $title[] = $types[$dao->event_type_id];
+    }
+    if (in_array('start', $format) && $dao->start_date) {
+      $title[] = CRM_Utils_Date::customFormat($dao->start_date, $date_format);
+    }
+    if (in_array('end', $format) && $dao->end_date) {
+      // Avoid showing redundant end-date if it is the same as the start date
+      $same_day = substr($dao->start_date, 0, 10) == substr($dao->end_date, 0, 10);
+      if (!$same_day || in_array('dateformatDatetime', $format) || in_array('dateformatTime', $format)) {
+        $end_format = (in_array('dateformatDatetime', $format) && $same_day) ? $config->dateformatTime : $date_format;
+        $title[] = CRM_Utils_Date::customFormat($dao->end_date, $end_format);
+      }
+    }
+    $ret[$dao->id . '-' . $dao->event_type_id] = implode(' - ', $title);
   }
   return $ret;
 }
@@ -804,7 +836,7 @@ function wf_crm_get_fields($var = 'fields') {
     }
     if (isset($sets['participant'])) {
       $fields['participant_event_id'] = array(
-        'name' => t('Events'),
+        'name' => t('Event(s)'),
         'type' => 'select',
         'extra' => array('multiple' => 1, 'civicrm_live_options' => 1),
         'expose_list' => TRUE,
@@ -826,6 +858,7 @@ function wf_crm_get_fields($var = 'fields') {
       if (isset($fields['contribution_total_amount'])) {
         $fields['participant_fee_amount'] = $fields['contribution_total_amount'];
         $fields['participant_fee_amount']['name'] = t('Participant Fee');
+        unset($fields['participant_fee_amount']['weight']);
       }
     }
     if (isset($sets['membership'])) {

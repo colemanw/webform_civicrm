@@ -14,6 +14,10 @@ form .web-civi-checkbox-set .form-item,
   padding-right:1.5em;
 }
 
+form .web-civi-checkbox-set .auto-width .form-item {
+  width:auto;
+}
+
 form #web-civi-help {
   float:right;
 }
