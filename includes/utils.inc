@@ -103,6 +103,9 @@ function wf_crm_field_options($field, $context, $data) {
       }
     }
   }
+  if (!empty($field['exposed_empty_option'])) {
+    $ret = array(0 => $field['exposed_empty_option']) + $ret;
+  }
   return $context == 'component_insert' ? wf_crm_array2str($ret) : $ret;
 }
 
@@ -496,6 +499,7 @@ function wf_crm_get_fields($var = 'fields') {
     $fields['contact_cs'] = array(
       'name' => t('Checksum'),
       'type' => 'hidden',
+      'value_callback' => TRUE,
     );
     $fields['contact_employer_id'] = array(
       'name' => t('Current Employer'),
@@ -760,8 +764,9 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Payment Processor'),
         'type' => 'select',
         'expose_list' => TRUE,
-        'extra' => array('civicrm_live_options' => 1),
-        'empty_option' => t('Offline Payment'),
+        'extra' => array('aslist' => 0),
+        'exposed_empty_option' => t('Pay Later'),
+        'value_callback' => TRUE,
         'weight' => 9995,
       );
       $fields['contribution_note'] = array(
@@ -814,7 +819,9 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Registration Status'),
         'type' => 'select',
         'expose_list' => TRUE,
-        'value' => '1',
+        'extra' => array('civicrm_live_options' => 1),
+        'value' => 0,
+        'exposed_empty_option' => '- ' . t('Automatic') . ' -',
       );
       if (isset($fields['contribution_total_amount'])) {
         $fields['participant_fee_amount'] = $fields['contribution_total_amount'];
@@ -833,7 +840,8 @@ function wf_crm_get_fields($var = 'fields') {
         'type' => 'select',
         'expose_list' => TRUE,
         'extra' => array('civicrm_live_options' => 1),
-        'empty_option' => t('Automatic'),
+        'value' => 0,
+        'exposed_empty_option' => '- ' . t('Automatic') . ' -',
       );
       $fields['membership_num_terms'] = array(
         'name' => t('Number of Terms'),
@@ -1000,6 +1008,9 @@ function wf_crm_get_fields($var = 'fields') {
         elseif ($fields[$id]['type'] == 'textarea') {
           $fields[$id]['extra']['cols'] = $dao->note_columns;
           $fields[$id]['extra']['rows'] = $dao->note_rows;
+        }
+        if (!empty($dao->option_group_id) && empty($fields[$id]['value'])) {
+          $fields[$id]['value_callback'] = 'getCustomFieldDefault';
         }
       }
     }

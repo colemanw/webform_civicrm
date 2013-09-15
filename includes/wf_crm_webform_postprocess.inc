@@ -14,7 +14,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private $crmValues;
   private $rawValues;
   private $multiPageDataLoaded;
-  private $billing_params;
+  private $billing_params = array();
+  private $totalContribution = 0;
+  private $contributionIsPayLater = FALSE;
 
   // During validation this contains an array of known contact ids and the placeholder 0 for valid contacts
   // During submission processing this contains an array of known contact ids
@@ -71,12 +73,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     $this->validateThisPage($this->form['submitted']);
 
-    if (!empty($this->data['reg_options']['validate']) && !empty($this->data['participant']) && !empty($this->data['participant_reg_type'])) {
+    if (!empty($this->data['participant']) && !empty($this->data['participant_reg_type'])) {
       $this->loadMultiPageData();
       $this->validateParticipants();
     }
 
-    // Process contribution. If the transaction is unsuccessful it will trigger a form validation error.
+    // Process live contribution. If the transaction is unsuccessful it will trigger a form validation error.
     if ($this->getContributionPage()) {
       $this->loadMultiPageData();
       if ($this->tallyLineItems()) {
@@ -141,6 +143,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     // Once all contacts are saved we can fill contact ref fields
     $this->fillContactRefs();
+
+    // Save a non-live transaction
+    if (empty($this->id['contribution']) && $this->totalContribution) {
+      $this->payLaterContribution();
+    }
 
     // Create/update other data associated with contacts
     foreach ($this->data['contact'] as $c => $contact) {
@@ -334,19 +341,22 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $item['label'] = $this->events[$item['event_id']]['title'];
       $item['financial_type_id'] = wf_crm_aval($this->events[$item['event_id']], 'financial_type_id', 'Event Fee');
     }
-    foreach ($this->events as $eid => $event) {
-      if ($event['ended']) {
-        form_set_error($eid, t('Sorry, you can no longer register for %event.', array('%event' => $event['title'])));
-      }
-      elseif ($event['max_participants'] && $event['count'] > $event['remaining']) {
-        if (!empty($event['full'])) {
-          form_set_error($eid, '<em>' . $event['title'] . '</em>: ' . $event['full_message']);
+    // Form Validation
+    if (!empty($this->data['reg_options']['validate'])) {
+      foreach ($this->events as $eid => $event) {
+        if ($event['ended']) {
+          form_set_error($eid, t('Sorry, you can no longer register for %event.', array('%event' => $event['title'])));
         }
-        else {
-          form_set_error($eid, format_plural($event['remaining'],
-            'Sorry, you tried to register !count people for %event but there is only 1 space remaining.',
-            'Sorry, you tried to register !count people for %event but there are only @count spaces remaining.',
-            array('%event' => $event['title'], '!count' => $event['count'])));
+        elseif ($event['max_participants'] && $event['count'] > $event['remaining']) {
+          if (!empty($event['full'])) {
+            form_set_error($eid, '<em>' . $event['title'] . '</em>: ' . $event['full_message']);
+          }
+          else {
+            form_set_error($eid, format_plural($event['remaining'],
+              'Sorry, you tried to register !count people for %event but there is only 1 space remaining.',
+              'Sorry, you tried to register !count people for %event but there are only @count spaces remaining.',
+              array('%event' => $event['title'], '!count' => $event['count'])));
+          }
         }
       }
     }
@@ -836,6 +846,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @param int $cid
    */
   private function processParticipants($c, $cid) {
+    static $registered_by_id = array();
     $n = $this->data['participant_reg_type'] == 'separate' ? $c : 1;
     if ($p = wf_crm_aval($this->data, "participant:$n:participant")) {
       // Fetch existing participant records
@@ -881,6 +892,17 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                 if ($c > 1 && !empty($registered_by_id[$e][$i])) {
                   $params['registered_by_id'] = $registered_by_id[$e][$i];
                 }
+              }
+              // Automatic status
+              if (empty($params['status_id']) && empty($params['id'])) {
+                $params['status_id'] = 'Registered';
+                // Pay later status
+                if ($this->contributionIsPayLater && !empty($params['fee_amount'])) {
+                  $params['status_id'] = 'Pending from pay later';
+                }
+              }
+              if (empty($params['status_id'])) {
+                unset($params['status_id']);
               }
               $result = wf_civicrm_api('participant', 'create', $params);
               // Update line-item
@@ -945,7 +967,18 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (empty($params['id'])) {
         $params['source'] = $this->settings['new_contact_source'];
       }
+      // Automatic status
+      if (empty($params['status_id'])) {
+        unset($params['status_id']);
+        // Pay later status
+        if ($this->contributionIsPayLater && $this->getMembershipTypeField($params['membership_type_id'], 'minimum_fee')) {
+          $params['status_id'] = 'Pending';
+        }
+      }
       $params['contact_id'] = $cid;
+      // The api won't let us manually set status without this weird param
+      $params['skipStatusCal'] = !empty($params['status_id']);
+
       $result = wf_civicrm_api('membership', 'create', $params);
       foreach ($this->line_items as &$item) {
         if ($item['element'] == "civicrm_{$c}_membership_{$n}") {
@@ -1142,11 +1175,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
     }
     // Calculate totals
-    $grand_total = 0;
+    $this->totalContribution = 0;
     foreach ($this->line_items as &$item) {
-      $grand_total += $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
+      $this->totalContribution += $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
     }
-    return $grand_total;
+    return $this->totalContribution;
   }
 
   /**
@@ -1295,31 +1328,46 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
-   * Final prep and execution of payment processor transaction
+   * Execute payment processor transaction
    * This happens during form validation
    */
   private function submitPayment() {
+    $result = wf_civicrm_api('contribution', 'transact', $this->contributionParams());
+    if (empty($result['id'])) {
+      form_set_error('contribution', t('Transaction failed. Please verify all billing fields are correct.'));
+      return;
+    }
+    $this->id['contribution'] = $result['id'];
+  }
+
+  /**
+   * Create Pay-Later Contribution
+   */
+  private function payLaterContribution() {
+    $params = $this->contributionParams();
+    $params['receive_date'] = 'now';
+    $params['contribution_status_id'] = 'Pending';
+    $result = wf_civicrm_api('contribution', 'create', $params);
+    $this->id['contribution'] = $result['id'];
+    $this->contributionIsPayLater = TRUE;
+  }
+
+  /**
+   * Format contribution params for transact/pay-later
+   * @return array
+   */
+  private function contributionParams() {
     $params = $this->billing_params + $this->data['contribution'][1]['contribution'][1];
     $params['financial_type_id'] = $this->contribution_page['financial_type_id'];
     $params['currency'] = $this->contribution_page['currency'];
     $params['skipRecentView'] = $params['skipLineItem'] = 1;
     $params['contact_id'] = $this->id['cid'][1];
     $params['source'] = $this->settings['new_contact_source'];
+    $params['total_amount'] = $this->totalContribution;
 
-    // Total amount
-    $params['total_amount'] = 0;
-    foreach ($this->line_items as $item) {
-      $params['total_amount'] += $item['line_total'];
-    }
     // Save this stuff for later
     unset($params['soft'], $params['honor_contact_id'], $params['honor_type_id']);
-
-    $result = wf_civicrm_api('contribution', 'transact', $params);
-    if (empty($result['id'])) {
-      form_set_error('contribution', t('Transaction failed. Please verify all billing fields are correct.'));
-      return;
-    }
-    $this->id['contribution'] = $result['id'];
+    return $params;
   }
 
   /**
@@ -1354,6 +1402,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     // Save line-items
     foreach ($this->line_items as &$item) {
+      if (empty($item['line_total'])) {
+        continue;
+      }
       if (empty($item['entity_id'])) {
         $item['entity_id'] = $id;
       }

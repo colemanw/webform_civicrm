@@ -3,8 +3,18 @@ cj(function($) {
   'use strict';
   var setting = Drupal.settings.webform_civicrm;
   var $contributionAmount = $('.civicrm-enabled[name*="[civicrm_1_contribution_1_contribution_total_amount]"]');
-  function loadBillingBlock(type) {
-    if (type) {
+  var $processorFields = $('.civicrm-enabled[name$="civicrm_1_contribution_1_contribution_payment_processor_id]"]');
+
+  function getPaymentProcessor() {
+    if (!$processorFields.length) {
+      return setting.paymentProcessor;
+    }
+    return $processorFields.filter('select, :checked').val();
+  }
+
+  function loadBillingBlock() {
+    var type = getPaymentProcessor();
+    if (type && type != '0') {
       $('#billing-payment-block').load(setting.contributionCallback + '&type=' + type, function() {
         $('#billing-payment-block').trigger('crmFormLoad');
         if (setting.billingSubmission) {
@@ -18,16 +28,15 @@ cj(function($) {
       $('#billing-payment-block').html('');
     }
   }
-  var $processorSelect = $('select.civicrm-enabled[name$="civicrm_1_contribution_1_contribution_payment_processor_id]"]');
-  $processorSelect.on('change', function() {
+  $processorFields.on('change', function() {
     setting.billingSubmission || (setting.billingSubmission = {});
     $('input:visible, select', '#billing-payment-block').each(function() {
       var name = $(this).attr('name');
       name && (setting.billingSubmission[name] = $(this).val());
     });
-    loadBillingBlock($(this).val());
+    loadBillingBlock();
   });
-  loadBillingBlock($processorSelect.val() || setting.paymentProcessor);
+  loadBillingBlock();
 
   function tally() {
     var total = 0;

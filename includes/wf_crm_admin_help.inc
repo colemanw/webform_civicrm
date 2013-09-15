@@ -13,7 +13,7 @@ class wf_crm_admin_help {
 
   static function contact_existing() {
     print '<p>' .
-      t('Gives you many options for how a contact can be autofilled or selected. Once added to the form you can edit the field to configure:') .'</p><ul>' .
+      t('Gives many options for how this contact can be autofilled or selected. From the Webform tab you can edit this field to configure:') .'</p><ul>' .
       '<li>' . t('Widget: Determine whether to expose this field to the form as an autocomplete or select element, or hide it and pick the contact automatically.') . '</li>' .
       '<li>' . t('Default Value: Select a contact based on the current user, relationships, or other options.') . '</li>' .
       '<li>' . t('Filters: Limit the list of available choices from which this contact may be autofilled or selected.') . '</li>' .
@@ -62,19 +62,22 @@ class wf_crm_admin_help {
 
   static function contribution_contribution_page_id() {
     print '<p>' .
-      t("It is recommended to create a new contribution page solely for webform use. When configuring the page, most options will be irrelevant (such as profiles, premiums, widgets, etc.). Only the following need to be configured:") .
+      t("It is recommended to <a !link>create a new contribution page</a> solely for webform use. When configuring the page, most options will be irrelevant (such as profiles, premiums, widgets, etc.). Only the following need to be configured:",
+      array('!link' => 'target="_blank" href="' . url('civicrm/admin/contribute/add', array('query' => array('reset' => 1, 'action' => 'add'))) . '"')) .
       '</p><ul>' .
       '<li>' . t('Title: Displayed on the webform.') . '</li>' .
       '<li>' . t('Financial Type: Controls overall contribution type.') . '</li>' .
       '<li>' . t('Currency: Sets currency for all payment fields on this form.') . '</li>' .
-      '<li>' . t('Payment Processor: Controls list of options here.') . '</li>' .
-      '<li>' . t('Email Receipt: Configure whether to email receipts from this webform.') . '</li>' .
+      '<li>' . t('Payment Processors: Controls list of options here.') . '</li>' .
+      '<li>' . t('Email Receipt: Configure email receipts from this webform.') . '</li>' .
       '</ul>';
   }
 
   static function contribution_payment_processor_id() {
     print '<p>' .
-      t("All payment processors enabled on the contribution page are available here. Note that only on-site credit card processors are supported on Webforms. Services that redirect to an external website, such as Paypal Standard, are not supported.") .
+      t('All payment processors enabled on the contribution page are available here. "Pay Later" option allows the user to purchase events/memberships without entering a credit card.') .
+      '</p><p>' .
+      t("Note that only on-site credit card processors will work on Webforms. Services that redirect to an external website, such as Paypal Standard, are not supported.") .
       '</p>';
   }
 
@@ -87,7 +90,7 @@ class wf_crm_admin_help {
 
   static function participant_fee_amount() {
     print '<p>' .
-      t('Price for this event. If multiple events or participants are registered with this field, the amount will be charged per-person, per-event.') .
+      t('Price for this event. If multiple events or participants are registered with this field, the amount will be multiplied per-person, per-event.') .
       '</p><p>' .
       t('Note that any event prices you have configured in CiviCRM are not imported into the Webform - you will need to reconfigure them here.') .
      '</p>';
@@ -96,13 +99,33 @@ class wf_crm_admin_help {
 
   static function fee() {
     print '<p>' .
-      t('Once added to the webform, this field can be configured in a number of ways by changing its widget and settings:') .
-     '</p><ul>' .
+      t('Once added to the webform, this field can be configured in a number of ways by changing its settings.') .
+     '</p><strong>' .
+     t('Possible Widgets:') .
+     '</strong><ul>' .
       '<li>' . t('Number (default): Allow the user to enter an amount, optionally constrained by min, max, and increments.') . '</li>' .
       '<li>' . t('Hidden: Set the amount without giving the user a choice.') . '</li>' .
       '<li>' . t('Select/Radios: Allow the user to choose from one of several options.') . '</li>' .
       '<li>' . t('MultiSelect/Checkboxes: Each choice the user selects will be added together.') . '</li>' .
       '</ul>';
+  }
+
+  static function reg_options_show_remaining() {
+    print '<p>' .
+      t('Display a message at the top of the form for each event with a registration limit or past end date.') .
+      '</p>';
+  }
+
+  static function reg_options_validate() {
+    print '<p>' .
+      t('Will not allow the form to be submitted if user registers for an event that is ended or full.') .
+      '</p>';
+  }
+
+  static function reg_options_block_form() {
+    print '<p>' .
+      t('Hide webform if all the events for the form are full or ended.') .
+      '</p>';
   }
 
   static function membership_membership_type_id() {
@@ -207,8 +230,9 @@ class wf_crm_admin_help {
       t('This is a contact reference field. Webform gives you a great deal of flexibility about how this field is displayed:') .
       '</p><ul>' .
       '<li>' . t('First choose a contact on this webform as the target for this field (or add a new contact to the form for that purpose).') . '</li>' .
-      '<li>' . t('To enable a selection of contacts, enable the "Existing Contact" field for that contact.') . '</li>' .
-      '<li>' . t('This allows the contact to be selected on the form via autocomplete or dropdown select, or even hidden and set to always be the same contact.') . '</li>' .
+      '<li>' . t('In rare cases you might want to expose the list of webform contacts ("User Select").') . '</li>' .
+      '<li>' . t('To enable a selection of contacts, enable the "Existing Contact" field for the selected contact.') . '</li>' .
+      '<li>' . t('This allows the contact to be selected on the form via autocomplete or dropdown select, or hidden and set to always be the same contact.') . '</li>' .
       '<li>' . t('There are many more possibilities, see "Existing Contact" field help for more information.') . '</li>' .
       '</ul>';
   }
@@ -251,6 +275,10 @@ class wf_crm_admin_help {
   }
 }
 
+/**
+ * Ajax page callback
+ * @param string $topic
+ */
 function wf_crm_admin_help($topic) {
   if (method_exists('wf_crm_admin_help', $topic)) {
     wf_crm_admin_help::$topic();

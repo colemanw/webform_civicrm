@@ -491,34 +491,36 @@ class wf_crm_admin_form {
       '#type' => 'fieldset',
       '#title' => t('Registration Options'),
       '#collapsible' => TRUE,
+      '#collapsed' => isset($this->data['participant']),
       '#tree' => TRUE,
     );
-    $this->form['participant']['reg_options']['show_remaining'] = array(
+    $field = array(
       '#type' => 'select',
       '#title' => t('Show Remaining Space in Events'),
       '#default_value' => wf_crm_aval($this->data, 'reg_options:show_remaining', 0),
-      '#description' => t('Display a message at the top of the form for each event with a registration limit or past end date.'),
       '#options' => array(
         t('Never'),
         'always' => t('Always'),
         '0_full' => t('When full - 0 spaces left'),
       ),
     );
+    $this->help($field, 'reg_options_show_remaining');
     foreach (array(5, 10, 20, 50, 100, 200, 500, 1000) as $num) {
-      $this->form['participant']['reg_options']['show_remaining']['#options'][$num] = t('When under !num spaces left', array('!num' => $num));
+      $field['#options'][$num] = t('When under !num spaces left', array('!num' => $num));
     }
+    $this->form['participant']['reg_options']['show_remaining'] = $field;
     $this->form['participant']['reg_options']['validate'] = array(
       '#type' => 'checkbox',
       '#title' => t('Prevent Registration for Past/Full Events'),
       '#default_value' => (bool) wf_crm_aval($this->data, 'reg_options:validate'),
-      '#description' => t('Will not allow the form to be submitted if user registers for an event that is ended or full.'),
     );
+    $this->help($this->form['participant']['reg_options']['validate'], 'reg_options_validate');
     $this->form['participant']['reg_options']['block_form'] = array(
       '#type' => 'checkbox',
       '#title' => t('Block Form Access when Event(s) are Full/Ended'),
       '#default_value' => (bool) wf_crm_aval($this->data, 'reg_options:block_form'),
-      '#description' => t('Hide webform if all the events for the form are full or ended.'),
     );
+    $this->help($this->form['participant']['reg_options']['block_form'], 'reg_options_block_form');
     $this->addAjaxItem('participant', 'participant_reg_type', 'participants');
     $this->addAjaxItem('participant', 'event_type', 'participants');
     $this->addAjaxItem('participant', 'show_past_events', 'participants');
@@ -657,9 +659,6 @@ class wf_crm_admin_form {
     }
     // Make sure webform is set-up to prevent credit card abuse.
     $this->checkSubmissionLimit();
-    // Set default payment processor
-    $default = wf_civicrm_api('payment_processor', 'get', array('is_default' => 1, 'is_test' => 0));
-    $this->sets['contribution']['fields']['contribution_payment_processor_id']['value'] = wf_crm_aval($default, 'id');
     // Add contribution fields
     foreach ($this->sets as $sid => $set) {
       if ($set['entity_type'] == 'contribution' && (empty($set['sub_types']) || $set['sub_types'][0] == $page['financial_type_id'])) {
@@ -761,7 +760,7 @@ class wf_crm_admin_form {
       $this->form['contribution']['sets']['submit_limit'] = array(
         '#markup' => '<div class="messages warning">' .
           t('To prevent Credit Card abuse, it is recommended to set the per-user submission limit for this form.') .
-          ' <button id="configure-submit-limit" type="button">' . t('Configure') . '</button>' .
+          ' &nbsp; <button id="configure-submit-limit" type="button">' . t('Configure') . '</button>' .
           '<div id="submit-limit-wrapper" style="display:none">' .
             t('Limit each user to') .
             ' <input class="form-text" type="number" maxlength="2" size="2" name="submit_limit"> ' .
@@ -770,7 +769,7 @@ class wf_crm_admin_form {
               '<option value="3600" selected="selected">' .t('every hour') . '</option>' .
               '<option value="86400">' .t('every day') . '</option>' .
               '<option value="604800">' .t('every week') . '</option>'.
-            '</select>' .
+            '</select> &nbsp; ' .
             ' <button id="configure-submit-limit-save" type="button">' . t('Save') . '</button>' .
             ' <button id="configure-submit-limit-cancel" type="button">' . t('Cancel') . '</button>' .
           '</div>' .
@@ -797,11 +796,16 @@ class wf_crm_admin_form {
       'data' => array(
         'contact' => array(
           1 => array(
-            'contact' => array(1 => array(
-              'contact_type' => 'individual',
-              'contact_sub_type' => array(),
-            )),
+            'contact' => array(
+              1 => array(
+                'contact_type' => 'individual',
+                'contact_sub_type' => array(),
+              ),
+            ),
           ),
+        ),
+        'reg_options' => array(
+          'validate' => 1,
         ),
       ),
       'confirm_subscription' => 1,
@@ -854,20 +858,25 @@ class wf_crm_admin_form {
       if (isset($field['data_type'])) {
         $item['#attributes']['data-type'] = $field['data_type'];
       }
-      // Four ways to get default value...
-      // 1: Based on current form state
+      // Five ways to get default value...
+      // 1: From current form state
       if (isset($this->settings[$fid]) && ($field['type'] != 'hidden')) {
         $item['#default_value'] = $this->settings[$fid];
       }
-      // 2: Based on saved settings
+      // 2: From saved settings
       elseif (isset($this->data[$ent][$c][$table][$n][$name])) {
         $item['#default_value'] = $this->data[$ent][$c][$table][$n][$name];
       }
-      // 3: Based on field default
+      // 3: From callback function
+      elseif (isset($field['value_callback'])) {
+        $method = 'get_default_' . $table . '_' . $name;
+        $item['#default_value'] = self::$method($fid, $options);
+      }
+      // 4: From field default
       elseif (isset($field['value'])) {
         $item['#default_value'] = $field['value'];
       }
-      // 4: For required fields like phone type, default to the first option
+      // 5: For required fields like phone type, default to the first option
       elseif (empty($field['extra']['multiple']) && !isset($field['empty_option'])) {
         $options = array_keys($options);
         $item['#default_value'] = $options[1];
@@ -1258,6 +1267,7 @@ class wf_crm_admin_form {
    *   webform_civicrm configuration for this form
    */
   static function insertComponent(&$field, &$enabled, $settings) {
+    $options = NULL;
     list(, $c, $ent, $n, $table, $name) = explode('_', $field['form_key'], 6);
     $contact_type = $settings['data']['contact'][$c]['contact'][1]['contact_type'];
     // Replace the # token with set number (or append to the end if no token)
@@ -1297,11 +1307,6 @@ class wf_crm_admin_form {
     if (($field['type'] == 'textfield' || $field['type'] == 'email') && empty($field['extra']['width'])) {
       $field['extra']['width'] = 20;
     }
-    // Default checksum lifespan
-    if ($name == 'cs') {
-      $field['value'] = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME,
-        'checksum_timeout', NULL, 7);
-    }
     // Support html_textarea module
     if ($field['type'] == 'html_textarea') {
       $field['value']['format'] = filter_default_format();
@@ -1319,12 +1324,13 @@ class wf_crm_admin_form {
         if (count($options) == 1 && empty($field['extra']['aslist']) && empty($field['extra']['civicrm_live_options'])) {
           $field['extra']['multiple'] = 1;
         }
-        if (substr($name, 0, 7) == 'custom_' && empty($field['value'])) {
-          // Lookup defaults for custom fields
-          $field['value'] = self::getCustomFieldDefault(substr($name, 7));
-        }
       }
     }
+    if (isset($field['value_callback'])) {
+      $method = 'get_default_' . $table . '_' . $name;
+      $field['value'] = self::$method($field['form_key'], $options);
+    }
+    // For hidden+select fields such as contribution_page
     if ($field['type'] == 'hidden' && !empty($field['expose_list']) && !empty($settings[$field['form_key']])) {
       $field['value'] = $settings[$field['form_key']];
     }
@@ -1398,21 +1404,22 @@ class wf_crm_admin_form {
   }
 
   /**
-   * Retrieve defaults for a custom field
-   * @param int $id
-   * @return string
+   * Default value callback
    */
-  static function getCustomFieldDefault($id) {
-    $val = '';
-    if ($id && is_numeric($id)) {
-      $dao = CRM_Core_DAO::executeQuery("SELECT value FROM civicrm_option_value
-    WHERE is_default AND is_active AND option_group_id = (SELECT option_group_id FROM civicrm_custom_field WHERE id = $id)");
-      while ($dao->fetch()) {
-        $val .= ($val ? ',' : '') . $dao->value;
-      }
-      $dao->free();
+  static function get_default_contact_cs($fid, $options) {
+    return CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'checksum_timeout', NULL, 7);
+  }
+
+  /**
+   * Default value callback
+   */
+  static function get_default_contribution_payment_processor_id($fid, $options) {
+    $default = wf_civicrm_api('payment_processor', 'get', array('is_default' => 1, 'is_test' => 0));
+    if (!empty($default['id']) && isset($options[$default['id']])) {
+      return $default['id'];
     }
-    return $val;
+    unset($options[0]);
+    return $options ? key($options) : 0;
   }
 
   /**

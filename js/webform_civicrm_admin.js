@@ -205,6 +205,15 @@ var wfCiviAdmin = (function ($, D) {
     return CheckLength($('input[name=' + c + '_webform_label]', '#wf-crm-configure-form').val());
   }
 
+  function showHideParticipantOptions(speed) {
+    if ($('select[name=participant_reg_type]').val() == '0') {
+      $('#event-reg-options-wrapper').hide(speed);
+    }
+    else {
+      $('#event-reg-options-wrapper').show(speed);
+    }
+  }
+
   /**
    * Add Drupal behaviors.
    */
@@ -212,6 +221,7 @@ var wfCiviAdmin = (function ($, D) {
     attach: function (context) {
 
       employerOptions();
+      showHideParticipantOptions();
 
       // Summaries for vertical tabs
       $('fieldset[id^="edit-contact-"]', context).once('wf-civi').drupalSetSummary(function (context) {
@@ -273,6 +283,10 @@ var wfCiviAdmin = (function ($, D) {
           label = (label ? label + ', ' : '') + $.trim($(this).siblings('label').text());
         });
         return label;
+      });
+
+      $('select[name=participant_reg_type]', context).once('wf-civi').change(function() {
+        showHideParticipantOptions('fast');
       });
 
       $('#edit-nid', context).once('wf-civi').change(function() {
@@ -393,7 +407,7 @@ var wfCiviAdmin = (function ($, D) {
         }
       }).change();
       $('select[name$=contribution_honor_type_id]', context).once('crm-contrib').change(function() {
-        var $label = $('label[for=edit-civicrm-1-contribution-1-contribution-honor-contact-id]');
+        var $label = $('.form-item-civicrm-1-contribution-1-contribution-honor-contact-id label');
         if ($(this).val() == 'create_civicrm_webform_element') {
           $label.html(Drupal.t('In Honor/Memory of'));
         }
