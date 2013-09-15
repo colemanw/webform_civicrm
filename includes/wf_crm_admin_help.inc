@@ -110,6 +110,16 @@ class wf_crm_admin_help {
       '</ul>';
   }
 
+  static function participant_status_id() {
+    print '<ul><li>' .
+      t('In "Automatic" mode, status will be set to "Registered" (or "Pending" if the user chooses to "Pay Later" for events with a fee). The user will be able to cancel registration by re-visiting the form and de-selecting any events they are registered for.') .
+      '</li><li>' .
+      t('If a status is selected here, events will be autofilled only if the participant has that status.') .
+      '</li><li>' .
+      t('If this field is exposed to the webform ("User Select"), events will be autofilled only if the particiant status among the enabled options.') .
+      '</li></ul>';
+  }
+
   static function reg_options_show_remaining() {
     print '<p>' .
       t('Display a message at the top of the form for each event with a registration limit or past end date.') .

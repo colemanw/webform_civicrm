@@ -858,10 +858,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       foreach ($p as $e => $params) {
         $remove = array();
         $fid = "civicrm_{$c}_participant_{$e}_participant_event_id";
-        foreach ($this->getExposedOptions($fid) as $eid => $title) {
-          list($eid) = explode('-', $eid);
-          if (isset($existing[$eid])) {
-            $remove[$eid] = $title;
+        // Automatic status - de-selected events will be cancelled
+        if (empty($params['status_id'])) {
+          foreach ($this->getExposedOptions($fid) as $eid => $title) {
+            list($eid) = explode('-', $eid);
+            if (isset($existing[$eid])) {
+              $remove[$eid] = $title;
+            }
           }
         }
         if (!empty($params['event_id'])) {
@@ -901,6 +904,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                   $params['status_id'] = 'Pending from pay later';
                 }
               }
+              // Do not update status of existing participant in "Automatic" mode
               if (empty($params['status_id'])) {
                 unset($params['status_id']);
               }

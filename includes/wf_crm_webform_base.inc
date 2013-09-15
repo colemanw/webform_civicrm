@@ -447,13 +447,15 @@ abstract class wf_crm_webform_base {
   }
 
   /**
-   * @param $fid
+   * @param string $fid
+   * @param mixed $default
+   * @param bool $strict
    * @return mixed
    */
-  protected function getData($fid) {
+  protected function getData($fid, $default = NULL, $strict = FALSE) {
     if ($pieces = wf_crm_explode_key($fid)) {
       list( , $c, $ent, $n, $table, $name) = $pieces;
-      return wf_crm_aval($this->data, "{$ent}:{$c}:{$table}:{$n}:{$name}");
+      return wf_crm_aval($this->data, "{$ent}:{$c}:{$table}:{$n}:{$name}", $default, $strict);
     }
   }
 

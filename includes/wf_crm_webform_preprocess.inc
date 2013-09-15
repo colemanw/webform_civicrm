@@ -265,10 +265,12 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
                 $this->events[$eid]['ended'] = TRUE;
                 $this->events[$eid]['title'] = t('this event');
                 $this->events[$eid]['count'] = wf_crm_aval($this->events, "$eid:count", 0) + 1;
+                $status_fid = "civicrm_{$e}_participant_{$n}_participant_status_id";
                 $this->events[$eid]['form'][] = array(
                   'contact' => $e,
                   'num' => $n,
-                  'eid' => NULL
+                  'eid' => NULL,
+                  'status_id' => (array) $this->getData($status_fid, $this->getExposedOptions($status_fid)),
                 );
               }
             }
@@ -284,10 +286,12 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           $this->events[$eid]['ended'] = TRUE;
           $this->events[$eid]['title'] = $label;
           list(, $e, , $n) = explode('_', $field);
+          $status_fid = "civicrm_{$e}_participant_{$n}_participant_status_id";
           $this->events[$eid]['form'][] = array(
             'contact' => $e,
             'num' => $n,
-            'eid' => $p
+            'eid' => $p,
+            'status_id' => (array) $this->getData($status_fid, $this->getExposedOptions($status_fid)),
           );
         }
       }
@@ -332,9 +336,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     if (array_key_exists('participant_campaign_id', wf_crm_get_fields())) {
       $select[] = 'campaign_id';
     }
+    $status_types = wf_crm_apivalues('participant_status_type', 'get');
     $dao = CRM_Core_DAO::executeQuery('SELECT ' . implode(',', $select) . '
       FROM civicrm_participant
-      WHERE contact_id = ' . $this->id['cid'][$c] . ' AND event_id IN (' . implode(',', array_keys($this->events)) . ") AND status_id IN (SELECT id FROM civicrm_participant_status_type WHERE class <> 'Negative')"
+      WHERE contact_id = ' . $this->id['cid'][$c] . ' AND event_id IN (' . implode(',', array_keys($this->events)) . ")"
     );
     while ($dao->fetch()) {
       $par = array();
@@ -342,19 +347,26 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         $par['participant'][1][$sel] = $dao->$sel;
       }
       $par += $this->getCustomData($dao->id, 'Participant');
+      $status = $status_types[$dao->status_id];
       foreach ($this->events[$dao->event_id]['form'] as $event) {
         if ($event['contact'] == $c) {
-          $n = $event['contact'];
-          $i = $event['num'];
-          // Support multi-valued form elements
-          $event_ids = wf_crm_aval($this->info, "participant:$n:participant:$i:event_id", array());
-          if ($event['eid']) {
-            $event_ids[] = $event['eid'];
+          // If status has been set by admin or exposed to the form, use it as a filter
+          if (in_array($status['id'], $event['status_id']) ||
+            // If status is "Automatic" (empty) then make sure the participant is registered
+            (empty($event['status_id']) && $status['class'] != 'Negative')
+          ) {
+            $n = $event['contact'];
+            $i = $event['num'];
+            // Support multi-valued form elements as best we can
+            $event_ids = wf_crm_aval($this->info, "participant:$n:participant:$i:event_id", array());
+            if ($event['eid']) {
+              $event_ids[] = $event['eid'];
+            }
+            foreach ($par as $k => $v) {
+              $this->info['participant'][$n][$k][$i] = $v[1];
+            }
+            $this->info['participant'][$n]['participant'][$i]['event_id'] = $event_ids;
           }
-          foreach ($par as $k => $v) {
-            $this->info['participant'][$n][$k][$i] = $v[1];
-          }
-          $this->info['participant'][$n]['participant'][$i]['event_id'] = $event_ids;
         }
       }
     }
