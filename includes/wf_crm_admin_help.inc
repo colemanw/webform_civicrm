@@ -110,6 +110,12 @@ class wf_crm_admin_help {
       '</ul>';
   }
 
+  static function participant_reg_type() {
+    print '<p>' .
+      t('If there are multiple contacts on this webform, should they be registered for event(s) as a group, or each have their own separate registration options? The latter is a good choice if you want to register some contacts on the form but not others. Note that this option is irrelevant if there is only one contact on this webform.') .
+      '</p>';
+  }
+
   static function participant_status_id() {
     print '<ul><li>' .
       t('In "Automatic" mode, status will be set to "Registered" (or "Pending" if the user chooses to "Pay Later" for events with a fee). The user will be able to cancel registration by re-visiting the form and de-selecting any events they are registered for.') .
@@ -149,6 +155,8 @@ class wf_crm_admin_help {
       t('Controls how events are displayed. Date formats can be further configured in <a !link>CiviCRM Date Settings</a>',
         array('!link' => 'target="_blank" href="' . url('civicrm/admin/setting/date', array('query' => array('reset' => 1))) . '"')
       ) .
+      '</p><p>' .
+      t('Note: End-date will automatically be omitted if it is the same as the start-date.') .
       '</p>';
   }
 

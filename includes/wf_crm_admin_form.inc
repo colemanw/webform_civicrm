@@ -468,6 +468,7 @@ class wf_crm_admin_form {
         'separate' => t('Register each contact separately'),
       ),
     );
+    $this->help($this->form['participant']['participant_reg_type'], 'participant_reg_type');
     $this->form['participant']['event_type'] = array(
       '#type' => 'select',
       '#title' => t('Show Events of Type'),
