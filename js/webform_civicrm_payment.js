@@ -88,4 +88,7 @@ cj(function($) {
     calculateContributionAmount();
     $contributionAmount.on('change keyup', calculateContributionAmount);
   }
+  else {
+    tally();
+  }
 });
