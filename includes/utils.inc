@@ -853,7 +853,6 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Registration Status'),
         'type' => 'select',
         'expose_list' => TRUE,
-        'extra' => array('civicrm_live_options' => 1),
         'value' => 0,
         'exposed_empty_option' => '- ' . t('Automatic') . ' -',
       );
@@ -874,7 +873,6 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Membership Status'),
         'type' => 'select',
         'expose_list' => TRUE,
-        'extra' => array('civicrm_live_options' => 1),
         'value' => 0,
         'exposed_empty_option' => '- ' . t('Automatic') . ' -',
       );

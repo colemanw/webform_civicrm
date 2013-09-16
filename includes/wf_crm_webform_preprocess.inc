@@ -270,7 +270,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
                   'contact' => $e,
                   'num' => $n,
                   'eid' => NULL,
-                  'status_id' => (array) $this->getData($status_fid, $this->getExposedOptions($status_fid)),
+                  'status_id' => (array) $this->getData($status_fid, array_keys($this->getExposedOptions($status_fid))),
                 );
               }
             }
@@ -291,7 +291,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             'contact' => $e,
             'num' => $n,
             'eid' => $p,
-            'status_id' => (array) $this->getData($status_fid, $this->getExposedOptions($status_fid)),
+            'status_id' => (array) $this->getData($status_fid, array_keys($this->getExposedOptions($status_fid))),
           );
         }
       }
