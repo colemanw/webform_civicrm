@@ -1353,7 +1353,7 @@ class wf_crm_admin_form {
     // Retrieve option list
     if ($field['type'] == 'select') {
       if ($options = wf_crm_field_options($field, 'component_insert', $settings['data'])) {
-        $field['extra']['items'] = $options;
+        $field['extra']['items'] = wf_crm_array2str($options);
         // Default to select widget
         if (!isset($field['extra']['aslist']) && empty($field['extra']['multiple'])) {
           $field['extra']['aslist'] = 1;

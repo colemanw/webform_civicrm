@@ -103,7 +103,7 @@ function webform_civicrm_node_load($nodes, $types) {
         if ($_GET['type'] == 'select') {
           module_load_include('inc', 'webform_civicrm', 'includes/utils');
           civicrm_initialize();
-          $node->webform['components'][arg(4)]['extra']['items'] = wf_crm_field_options($node->webform['components'][arg(4)], 'component_insert', $node->webform_civicrm['data']);
+          $node->webform['components'][arg(4)]['extra']['items'] = wf_crm_array2str(wf_crm_field_options($node->webform['components'][arg(4)], 'component_insert', $node->webform_civicrm['data']));
         }
       }
     }

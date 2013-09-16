@@ -106,7 +106,7 @@ function wf_crm_field_options($field, $context, $data) {
   if (!empty($field['exposed_empty_option'])) {
     $ret = array(0 => $field['exposed_empty_option']) + $ret;
   }
-  return $context == 'component_insert' ? wf_crm_array2str($ret) : $ret;
+  return $ret;
 }
 
 /**
