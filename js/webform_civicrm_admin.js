@@ -245,16 +245,8 @@ var wfCiviAdmin = (function ($, D) {
         }
       });
       $('fieldset#edit-prefix', context).once('wf-civi').drupalSetSummary(function (context) {
-        var label = $('[name="prefix_known"]', context).val();
-        if (!(label.length > 0)) {
-          label = $('[name="prefix_unknown"]', context).val();
-        }
-        if (label.length > 0) {
-          return CheckLength(label);
-        }
-        else {
-          return Drupal.t('- None -');
-        }
+        var label = $('[name="prefix_known"]', context).val() || $('[name="prefix_unknown"]', context).val();
+        return CheckLength(label) || Drupal.t('- None -');
       });
       $('#edit-participant, #edit-contribution', context).once('wf-civi').drupalSetSummary(function (context) {
         return $('select:first option:selected', context).text();
@@ -272,17 +264,14 @@ var wfCiviAdmin = (function ($, D) {
           var label = getContactLabel($(this).attr('name').split('_')[1]);
           memberships.push(label + ': ' + $(this).find('option:selected').text());
         });
-        if (memberships.length) {
-          return memberships.join('<br>');
-        }
-        return Drupal.t('- None -');
+        return memberships.join('<br>') || Drupal.t('- None -');
       });
       $('fieldset#edit-options', context).once('wf-civi').drupalSetSummary(function (context) {
         var label = '';
         $(':checked', context).each(function() {
           label = (label ? label + ', ' : '') + $.trim($(this).siblings('label').text());
         });
-        return label;
+        return label || Drupal.t('- None -');
       });
 
       $('select[name=participant_reg_type]', context).once('wf-civi').change(function() {
