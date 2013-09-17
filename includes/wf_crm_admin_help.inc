@@ -11,6 +11,19 @@
  */
 class wf_crm_admin_help {
 
+  static function intro() {
+    print '<p>' .
+      t('Create anything from a simple newsletter signup, to a complex multi-step registration system.') .
+      '</p><strong>' .
+      t('Getting Started:') .
+      '</strong><ul>' .
+      '<li>' . t('Enable fields for one or more contacts.') . '</li>' .
+      '<li>' . t('Arrange and configure those fields on the "Webform" tab.') . '</li>' .
+      '<li>' . t('Click the blue help icons to learn more.') . '</li>' .
+      '<li><a href="http://drupal.org/node/1615380" target="_blank">' . t('Read the instructions.') . '</a></li>' .
+      '</ul>';
+  }
+
   static function contact_existing() {
     print '<p>' .
       t('Gives many options for how this contact can be autofilled or selected. From the Webform tab you can edit this field to configure:') .'</p><ul>' .
@@ -110,9 +123,13 @@ class wf_crm_admin_help {
       '</ul>';
   }
 
-  static function participant_reg_type() {
+  static function participant_event_id() {
     print '<p>' .
-      t('If there are multiple contacts on this webform, should they be registered for event(s) as a group, or each have their own separate registration options? The latter is a good choice if you want to register some contacts on the form but not others. Note that this option is irrelevant if there is only one contact on this webform.') .
+      t('Events can be selected here without giving the user a choice, or this field can be added to the form ("User Select").') .
+      '</p><p>' .
+      t('On the form, this field could be represented as either single or multiselect (checkboxes or radios). Note: enabling this field as a multiselect (checkboxes) should only be done if all selectable events will have the same price, role, custom data, etc.') .
+      '</p><p>' .
+      t('"Live Options" can be enabled to keep the field up-to-date with all your organization\'s events, or you can hand-pick the events you wish to show.') .
       '</p>';
   }
 

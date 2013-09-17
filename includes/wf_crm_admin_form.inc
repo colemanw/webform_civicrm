@@ -137,9 +137,8 @@ class wf_crm_admin_form {
       '#title' => t('Enable CiviCRM Processing'),
       '#default_value' => !empty($this->settings['nid']),
       '#return_value' => $this->node->nid,
-      '#description' => t('Contacts will be created or updated when users submit this webform.'),
-      '#prefix' => '<a id="web-civi-help" class="module-link module-link-help" href="http://drupal.org/node/1615380" target="_blank">' . t('Webform CiviCRM Help') . '</a>',
     );
+    $this->help($this->form['nid'], 'intro', t('Webform-CiviCRM Integration'));
     $this->form['number_of_contacts'] = array(
       '#type' => 'select',
       '#title' => t('Number of Contacts'),
@@ -153,6 +152,11 @@ class wf_crm_admin_form {
       '#suffix' => '<div>' . t('You have Javascript disabled. You will need to click this button after changing any option to see the result.') . '</div></div>',
     );
     $this->form['webform_civicrm'] = array('#type' => 'vertical_tabs');
+    // Display intro help to virgins
+    if (!variable_get('webform_civicrm_help_seen')) {
+      variable_set('webform_civicrm_help_seen', TRUE);
+      drupal_add_js('cj(function() {CRM.help("' . t('Welcome to Webform-CiviCRM') . '", {}, "' . url('webform-civicrm/help/intro') . '");});', array('type' => 'inline', 'scope' => 'footer'));
+    }
   }
 
   /**

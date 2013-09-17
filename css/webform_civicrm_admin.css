@@ -18,10 +18,6 @@ form .web-civi-checkbox-set .auto-width .form-item {
   width:auto;
 }
 
-form #web-civi-help {
-  float:right;
-}
-
 .web-civi-checkbox-set + div {
   clear:both;
 }

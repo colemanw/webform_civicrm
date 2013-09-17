@@ -419,7 +419,7 @@ var wfCiviAdmin = (function ($, D) {
       // Inline help
       $('a.helpicon', context).once('wf-help').click(function () {
         var topic = $(this).attr('href').substr(1);
-        CRM.help($(this).attr('title'), {}, '/webform-civicrm/help/' + topic);
+        CRM.help($(this).attr('title'), {q: 'webform-civicrm/help/' + topic}, D.settings.basePath);
         return false;
       });
 
