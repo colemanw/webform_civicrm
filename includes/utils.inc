@@ -174,13 +174,13 @@ function wf_crm_state_abbr($input, $ret = 'abbreviation', $country_id = NULL) {
  * Get list of events.
  * FIXME use the api for this.
  *
- * @param $param
- * @param $context
+ * @param array $reg_options
+ * @param string $context
  * @return array
  */
-function wf_crm_get_events($param, $context) {
+function wf_crm_get_events($reg_options, $context) {
   $ret = array();
-  $format = explode(' ', wf_crm_aval($param, 'title_display', 'title'));
+  $format = explode(' ', wf_crm_aval($reg_options, 'title_display', 'title'));
   if (in_array('type', $format)) {
     $types = wf_crm_apivalues('event', 'getoptions', array('field' => 'event_type_id', 'context' => 'get'));
   }
@@ -193,13 +193,13 @@ function wf_crm_get_events($param, $context) {
   }
   $sql = "SELECT id, title, start_date, end_date, event_type_id FROM civicrm_event WHERE is_template = 0 AND is_active = 1";
   // 0 means only current events, 1 means show all past events, other values are relative date strings
-  $date = wf_crm_aval($param, 'show_past_events', 'now');
+  $date = wf_crm_aval($reg_options, 'show_past_events', 'now');
   if ($date != '1') {
     $date = date('Y-m-d H:i:s', strtotime($date));
     $sql .= " AND (end_date >= '$date' OR end_date IS NULL)";
   }
-  if (is_numeric($param['event_type'])) {
-    $sql .= ' AND event_type_id = ' . $param['event_type'];
+  if (is_numeric($reg_options['event_type'])) {
+    $sql .= ' AND event_type_id = ' . $reg_options['event_type'];
   }
   $sql .= ' ORDER BY start_date ' . ($context == 'config_form' ? 'DESC' : '');
   $dao = CRM_Core_DAO::executeQuery($sql);
