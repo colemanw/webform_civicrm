@@ -416,13 +416,6 @@ var wfCiviAdmin = (function ($, D) {
         }
       }).change();
 
-      // Inline help
-      $('a.helpicon', context).once('wf-help').click(function () {
-        var topic = $(this).attr('href').substr(1);
-        CRM.help($(this).attr('title'), {q: 'webform-civicrm/help/' + topic}, D.settings.basePath);
-        return false;
-      });
-
       function billingMessages() {
         var $pageSelect = $('[name=civicrm_1_contribution_1_contribution_contribution_page_id]');
         // Warning about contribution page with no email
@@ -467,6 +460,19 @@ var wfCiviAdmin = (function ($, D) {
       });
     }
   };
+
+  /**
+   * This block uses CiviCRM's jQuery not Drupal's version
+   * Todo: Move more code here! Drupal's version of jQuery is ancient.
+   */
+  cj(function($) {
+    // Inline help
+    $('#wf-crm-configure-form').on('click', 'a.helpicon', function () {
+      var topic = $(this).attr('href').substr(1);
+      CRM.help($(this).attr('title'), {q: 'webform-civicrm/help/' + topic}, D.settings.basePath);
+      return false;
+    });
+  });
 
   return pub;
 })(jQuery, Drupal);
