@@ -12,14 +12,14 @@ var wfCiviAdmin = (function ($, D) {
     var context = $(id);
     switch (op) {
       case 'all':
-        $('input:checkbox', context).attr('checked', 'checked');
-        $('select[multiple] option, option[value="create_civicrm_webform_element"]', context).each(function() {
+        $('input:enabled:checkbox', context).attr('checked', 'checked');
+        $('select:enabled[multiple] option, select:enabled option[value="create_civicrm_webform_element"]', context).each(function() {
           $(this).attr('selected', 'selected');
         });
         break;
       case 'none':
-        $('input:checkbox', context).attr('checked', '');
-        $('select:not([multiple])', context).each(function() {
+        $('input:enabled:checkbox', context).attr('checked', '');
+        $('select:enabled:not([multiple])', context).each(function() {
           if ($(this).val() === 'create_civicrm_webform_element') {
             $('option', this).each(function() {
               $(this).attr('selected', $(this).attr('defaultSelected'));
@@ -29,15 +29,15 @@ var wfCiviAdmin = (function ($, D) {
             $('option:first-child+option', this).attr('selected', 'selected');
           }
         });
-        $('select[multiple] option', context).each(function() {
+        $('select:enabled[multiple] option', context).each(function() {
           $(this).attr('selected', '');
         });
         break;
       case 'reset':
-        $('input:checkbox', context).each(function() {
+        $('input:enabled:checkbox', context).each(function() {
           $(this).attr('checked', $(this).attr('defaultChecked'));
         });
-        $('select option', context).each(function() {
+        $('select:enabled option', context).each(function() {
           $(this).attr('selected', $(this).attr('defaultSelected'));
         });
         break;
