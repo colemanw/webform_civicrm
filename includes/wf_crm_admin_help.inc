@@ -119,7 +119,7 @@ class wf_crm_admin_help {
       '<li>' . t('Number (default): Allow the user to enter an amount, optionally constrained by min, max, and increments.') . '</li>' .
       '<li>' . t('Hidden: Set the amount without giving the user a choice.') . '</li>' .
       '<li>' . t('Select/Radios: Allow the user to choose from one of several options.') . '</li>' .
-      '<li>' . t('MultiSelect/Checkboxes: Each choice the user selects will be added together.') . '</li>' .
+      '<li>' . t('MultiSelect/Checkboxes/Grid: Each choice the user selects will be added together.') . '</li>' .
       '</ul>';
   }
 

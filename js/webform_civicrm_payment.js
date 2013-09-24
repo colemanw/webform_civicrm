@@ -2,7 +2,7 @@
 cj(function($) {
   'use strict';
   var setting = Drupal.settings.webform_civicrm;
-  var $contributionAmount = $('.civicrm-enabled[name*="[civicrm_1_contribution_1_contribution_total_amount]"]');
+  var $contributionAmount = $('[name*="[civicrm_1_contribution_1_contribution_total_amount]"]');
   var $processorFields = $('.civicrm-enabled[name$="civicrm_1_contribution_1_contribution_payment_processor_id]"]');
 
   function getPaymentProcessor() {
@@ -69,13 +69,13 @@ cj(function($) {
 
   function getFieldAmount(fid) {
     var amount, total = 0;
-    var $fields = $('input.civicrm-enabled[name*="' + fid +'"], select.civicrm-enabled[name*="' + fid +'"] option')
-      .filter('option:selected, [type=hidden], [type=number], [type=text], :checked');
-    $fields.each(function() {
-      amount = parseFloat($(this).val());
-      total += (isNaN(amount) || amount < 0) ? 0 : amount;
-    });
-    return total;
+    $('input[name*="' + fid + '"], select.civicrm-enabled[name*="' + fid +'"] option')
+      .filter('option:selected, [type=hidden], [type=number], [type=text], :checked')
+      .each(function() {
+        amount = parseFloat($(this).val());
+        total += isNaN(amount) ? 0 : amount;
+      });
+    return total < 0 ? 0 : total;
   }
 
   function calculateContributionAmount() {
