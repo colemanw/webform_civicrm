@@ -1497,6 +1497,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
         }
         $field = $this->all_fields[$table . '_' . $name];
+        $component = $this->node->webform['components'][$this->enabled[$field_key]];
         // Ignore values from hidden fields
         if ($field['type'] == 'hidden') {
           continue;
@@ -1533,9 +1534,20 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
           $val .= $time;
         }
-        // The admin can change a number field to use checkbox/radio/select widget and we'll sum the result
+        // The admin can change a number field to use checkbox/radio/select/grid widget and we'll sum the result
         elseif ($field['type'] === 'number') {
-          $val = is_array($val) ? array_sum($val) : $val;
+          $sum = 0;
+          foreach ((array) $val as $k => $v) {
+            // Perform multiplication across grid elements
+            if ($component['type'] == 'grid' && is_numeric($k)) {
+              $v = $v * $k;
+            }
+            if (is_numeric($v)) {
+              $sum += $v;
+            }
+          }
+          // We don't allow negative payments
+          $val = $sum < 0 ? 0 : $sum;
         }
         else {
           $val = isset($val[0]) ? $val[0] : '';

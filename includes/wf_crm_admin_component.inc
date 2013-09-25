@@ -13,6 +13,7 @@ class wf_crm_admin_component {
   private $data;
   private $component;
   private $field;
+  private $hasOptionsTable;
 
   function __construct(&$form, &$form_state) {
     civicrm_initialize();
@@ -82,12 +83,17 @@ class wf_crm_admin_component {
 
     // Interface for managing options
     elseif (($this->component['type'] === 'hidden' || $this->component['type'] === 'select')) {
-      $this->buildOptionsTable();
+      $this->hasOptionsTable = $this->buildOptionsTable();
     }
 
-    // Validation for money fields
-    if (wf_crm_aval($this->field, 'data_type') == 'Money') {
-      $this->form['#validate'][] = 'wf_crm_money_validate';
+    // Customize options_element a bit
+    if (!$this->hasOptionsTable && $this->component['type'] === 'select') {
+      $this->alterOptionsElement();
+    }
+
+    // Money fields
+    if (!$this->hasOptionsTable && wf_crm_aval($this->field, 'data_type') == 'Money') {
+      $this->moneyOptions();
     }
 
     // Simplify form for hidden fields
@@ -205,11 +211,13 @@ class wf_crm_admin_component {
    * Interface similar to options_element module
    * but with the important difference that options already exist in the civi db
    * so this does not allow create/delete of options
+   *
+   * @return bool
    */
   private function buildOptionsTable() {
     $options = $sort = wf_crm_field_options($this->component, 'component_edit', $this->data);
     if (!$options) {
-      return;
+      return FALSE;
     }
     $this->form['#attached']['js'] = array(drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_options.js');
 
@@ -319,6 +327,33 @@ class wf_crm_admin_component {
       $this->form['extra']['multiple']['#value'] = (int) !empty($this->field['extra']['multiple']);
     }
     array_unshift($this->form['#submit'], 'wf_crm_process_options_selection');
+    return TRUE;
+  }
+
+  /**
+   * When a CiviCRM field has no options but is rendered as a select
+   * Customize the options_element form
+   */
+  private function alterOptionsElement() {
+    $this->form['items']['options']['#key_type_toggle'] = t('Show CiviCRM values (keys)');
+    $this->form['items']['options']['#key_type_toggled'] = TRUE;
+  }
+
+  private function moneyOptions() {
+    $this->form['#validate'][] = 'wf_crm_money_validate';
+    if ($this->component['type'] === 'grid') {
+      $this->form['options']['#title'] = t('Amounts');
+      $this->form['options']['#description'] = t('Options to select across the top. Usually these are quantities.');
+      $this->form['questions']['#title'] = t('Items');
+      $this->form['questions']['#description'] = t('Items down the side of the grid. Usually the keys represent item price.');
+      foreach (array('options', 'questions') as $field) {
+        $this->form[$field]['options']['#key_type_toggle'] = t('Show Prices');
+        $this->form[$field]['options']['#key_type_toggled'] = TRUE;
+      }
+    }
+    else {
+      $this->form['items']['options']['option_settings']['options_source']['#access'] = FALSE;
+    }
   }
 
   /**

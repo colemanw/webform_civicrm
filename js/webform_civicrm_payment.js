@@ -73,6 +73,10 @@ cj(function($) {
       .filter('option:selected, [type=hidden], [type=number], [type=text], :checked')
       .each(function() {
         amount = parseFloat($(this).val());
+        if ($(this).is('.webform-grid-option input')) {
+          var mult = parseFloat(this.name.substring(this.name.lastIndexOf('[')+1, this.name.lastIndexOf(']')));
+          !isNaN(mult) && (amount = amount * mult);
+        }
         total += isNaN(amount) ? 0 : amount;
       });
     return total < 0 ? 0 : total;
