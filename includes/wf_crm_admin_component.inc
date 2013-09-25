@@ -85,6 +85,11 @@ class wf_crm_admin_component {
       $this->buildOptionsTable();
     }
 
+    // Validation for money fields
+    if (wf_crm_aval($this->field, 'data_type') == 'Money') {
+      $this->form['#validate'][] = 'wf_crm_money_validate';
+    }
+
     // Simplify form for hidden fields
     elseif (($name === 'contact_id' || $name === 'external_identifier') && $this->component['type'] === 'hidden') {
       $this->form['value']['#value'] = '';
@@ -603,6 +608,27 @@ function theme_webform_civicrm_options_table($variables) {
 function wf_crm_cs_validate($form, &$form_state) {
   if (!is_numeric($form_state['values']['value']) || $form_state['values']['value'] < 0) {
     form_error($form['value'], t('Please enter a valid number of days.'));
+  }
+}
+
+/**
+ * Drupal FAPI validate callback
+ * Validate money options & default value
+ */
+function wf_crm_money_validate($form, &$form_state) {
+  $vals = $form_state['values'];
+  if (!empty($vals['value']) && !is_numeric($vals['value'])) {
+    form_error($form['value'], t('This is a CiviCRM currency field. @field must be a number.', array('@field' => $form['value']['#title'])));
+  }
+  foreach (array('items', 'options') as $field) {
+    if (!empty($vals['extra'][$field])) {
+      foreach (wf_crm_str2array($vals['extra'][$field]) as $key => $val) {
+        if (!is_numeric($key)) {
+          form_error($form[$field], t('This is a CiviCRM currency field. @field keys must be numeric.', array('@field' => $form[$field]['#title'])));
+          break;
+        }
+      }
+    }
   }
 }
 
