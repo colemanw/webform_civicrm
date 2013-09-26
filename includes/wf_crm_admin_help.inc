@@ -96,7 +96,7 @@ class wf_crm_admin_help {
 
   static function contribution_total_amount() {
     print '<p>' .
-      t('If selected, this amount will be in addition to any paid events and memberships.') .
+      t('This amount will be in addition to any paid events and memberships.') .
      '</p>';
     self::fee();
   }
@@ -122,6 +122,14 @@ class wf_crm_admin_help {
       '<li>' . t('MultiSelect/Checkboxes: Each choice the user selects will be added together.') . '</li>' .
       '<li>' . t('Grid: Configure multiple items and quantities.') . '</li>' .
       '</ul>';
+  }
+
+  static function participant_reg_type() {
+    print '<p>' .
+      t('Registering participants separately gives finer control over which contacts register for what events, and allows you to exclude certain contacts on the form from being registered for events.') .
+      '</p><p>' .
+      t('With only one contact on the form, there is no difference between these options.') .
+      '</p>';
   }
 
   static function participant_event_id() {
