@@ -342,18 +342,31 @@ class wf_crm_admin_component {
   private function moneyOptions() {
     $this->form['#validate'][] = 'wf_crm_money_validate';
     if ($this->component['type'] === 'grid') {
-      $this->form['options']['#title'] = t('Amounts');
-      $this->form['options']['#description'] = t('Options to select across the top. Usually these are quantities.');
-      $this->form['questions']['#title'] = t('Items');
-      $this->form['questions']['#description'] = t('Items down the side of the grid. Usually the keys represent item price.');
-      foreach (array('options', 'questions') as $field) {
-        $this->form[$field]['options']['#key_type_toggle'] = t('Show Prices');
-        $this->form[$field]['options']['#key_type_toggled'] = TRUE;
-      }
+      $this->form['options']['#title'] = t('Amounts (columns)');
+      $this->form['options']['#description'] = t('Options to select across the top. Usually these are quantities. Keys must be numeric');
+      $this->form['questions']['#title'] = t('Items (rows)');
+      $this->form['questions']['#description'] = t('Items down the side of the grid. Usually the keys represent item price, which will be multiplied with the amount column.') .
+        '<br />' . t('Use non-numeric keys to use the price from the amount column as-is with no multiplication.');
     }
     else {
       $this->form['items']['options']['option_settings']['options_source']['#access'] = FALSE;
+      $this->form['items']['#description'] = t('Enter item labels and prices. If you allow the user to select multiple items their amounts will be added together.');
     }
+    foreach (array('items', 'options', 'questions') as $field) {
+      $this->form[$field]['options']['#key_type_toggle'] = t('Show Prices');
+      $this->form[$field]['options']['#key_type_toggled'] = TRUE;
+    }
+    // CSS trick to add currency symbol to options element keys
+    $symbol = wf_crm_aval(CRM_Core_Config::singleton(), 'defaultCurrencySymbol', '$');
+    drupal_add_css('
+      .option-key-cell:before {
+        content:"' . $symbol . '";
+      }
+      .options-widget .form-text.option-key {
+        width: 50%;
+        margin-left: .3em;
+      }',
+      'inline');
   }
 
   /**
@@ -659,7 +672,7 @@ function wf_crm_money_validate($form, &$form_state) {
     if (!empty($vals['extra'][$field])) {
       foreach (wf_crm_str2array($vals['extra'][$field]) as $key => $val) {
         if (!is_numeric($key)) {
-          form_error($form[$field], t('This is a CiviCRM currency field. @field keys must be numeric.', array('@field' => $form[$field]['#title'])));
+          form_error($form, t('This is a CiviCRM currency field. @field keys must be numeric.', array('@field' => $form[$field]['#title'])));
           break;
         }
       }

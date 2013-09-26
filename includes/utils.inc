@@ -1180,8 +1180,10 @@ function wf_crm_str2array($str) {
   $ret = array();
   if ($str) {
     foreach (explode("\n", trim($str)) as $row) {
-      list($k, $v) = explode('|', $row);
-      $ret[trim($k)] = trim($v);
+      if ($row && $row[0] !== '<' && strpos($row, '|')) {
+        list($k, $v) = explode('|', $row);
+        $ret[trim($k)] = trim($v);
+      }
     }
   }
   return $ret;
