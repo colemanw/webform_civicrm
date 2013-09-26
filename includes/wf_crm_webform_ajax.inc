@@ -95,7 +95,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
           $this->id['cid'][$c] = (int) $_GET['cid'];
         }
         $contact = $this->loadContact($c, $component['extra']['hide_fields']);
-        // Flatten data into simple form keys & values
+        // Flatten data into simple keys & values
         foreach ($this->enabled as $fid => $f) {
           list(, $i, $ent, $n, $table, $field) = explode('_', $fid, 6);
           if ($i == $c && $ent == 'contact' && isset($contact[$table][$n][$field])) {
@@ -107,7 +107,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
               if (is_string($val) && strpos($val, $sp) !== FALSE) {
                 $val = wf_crm_explode_multivalue_str($val);
               }
-              $data[str_replace('_', '-', $fid)] = $val;
+              $data[$fid] = $val;
             }
           }
         }

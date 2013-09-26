@@ -368,7 +368,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
         D.behaviors.webform_civicrm_' . $node->nid . '_' . $component['cid'] . ' = {
           attach: function (context) {
             var toHide = ' . json_encode(array_values($component['extra']['hide_fields'])) . ';
-            var field = $(\'#webform-client-form-' . $component['nid'] . ' :input.civicrm-enabled[name*="' . $component['form_key'] . '"]\', context);
+            var field = $(\'.webform-client-form-' . $component['nid'] . ' :input.civicrm-enabled[name$="' . $component['form_key'] . ']"]\', context);
             ' . $js .'
           }
         };
@@ -774,13 +774,14 @@ function theme_static_contact_element($vars) {
    'webform-component',
    'webform-component-' . $type,
    'static',
+   'webform-component--' . $parents,
   );
 
   if ($component['extra']['title_display'] === 'inline') {
     $wrapper_classes[] = 'webform-container-inline';
   }
 
-  $output = '<div class="' . implode(' ', $wrapper_classes) . '" id="webform-component-' . $parents . '">' . "\n";
+  $output = '<div class="' . implode(' ', $wrapper_classes) . '">' . "\n";
 
   // Display static value in addition to hidden field
   if ($type == 'civicrm_contact' && !empty($element['#attributes']['data-civicrm-name'])) {
