@@ -1091,7 +1091,10 @@ class wf_crm_admin_form {
           $val = '';
         }
         if (isset($this->fields[$table . '_' . $name]['expose_list']) && !empty($val)) {
-          $this->data[$ent][$c][$table][$n][$name] = $val;
+          // Don't add data for non-existent contacts
+          if (!in_array($ent, array('contact', 'participant', 'membership')) || isset($this->data['contact'][$c])) {
+            $this->data[$ent][$c][$table][$n][$name] = $val;
+          }
         }
       }
     }
