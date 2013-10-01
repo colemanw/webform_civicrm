@@ -3,6 +3,7 @@
  */
 
 var wfCivi = (function ($, D) {
+  'use strict';
   var setting = D.settings.webform_civicrm;
   /**
    * Public methods.
@@ -46,13 +47,13 @@ var wfCivi = (function ($, D) {
   };
 
   pub.existingInit = function (field, num, nid, path, toHide) {
-    var ret = null;
+    var cid, ret = null;
     if (field.length) {
       if (field.is('select')) {
-        var cid = $('option:selected', field).val();
+        cid = $('option:selected', field).val();
       }
       else {
-        var cid = field.attr('defaultValue');
+        cid = field.attr('defaultValue');
       }
       if (!cid || cid.charAt(0) !== '-') {
         resetFields(num, nid, false, 'hide', toHide);
@@ -254,10 +255,10 @@ var wfCivi = (function ($, D) {
     if (!dataEmpty) {
       if (!noCountry) {
         if ($(element).hasClass('required')) {
-          var text = D.t('- Select -');
+          var text = Drupal.t('- Select -');
         }
         else {
-          var text = D.t('- None -');
+          var text = Drupal.t('- None -');
         }
         if ($(element).hasClass('has-default')) {
           $(element).removeClass('has-default');
@@ -273,7 +274,7 @@ var wfCivi = (function ($, D) {
     }
     else {
       $(element).removeClass('has-default');
-      $(element).append('<option value="-">'+D.t('- N/A -')+'</option>');
+      $(element).append('<option value="-">'+Drupal.t('- N/A -')+'</option>');
     }
     $(element).removeAttr('disabled');
   }
@@ -338,9 +339,8 @@ var wfCivi = (function ($, D) {
         var countrySelect = ele.parents('form').find('.civicrm-enabled[name*="['+(key.replace('state_province', 'country'))+']"]');
         var county = ele.parents('form').find('.civicrm-enabled[name*="['+(key.replace('state_province', 'county'))+']"]');
         makeSelect(ele);
-        if (county.length) {
-          makeSelect(county);
-        }
+        county.length && makeSelect(county);
+
         var countryVal = 'default';
         if (countrySelect.length === 1) {
           countryVal = $(countrySelect).val();
@@ -348,9 +348,8 @@ var wfCivi = (function ($, D) {
         else if (countrySelect.length > 1) {
           countryVal = $(countrySelect).filter(':checked').val();
         }
-        if (!countryVal) {
-          countryVal = '';
-        }
+        countryVal || (countryVal = '');
+
         populateStates($('#'+id), countryVal);
         $('#'+id).change(function() {
           populateCounty($(this), $(this).val(), countryVal);
@@ -364,13 +363,10 @@ var wfCivi = (function ($, D) {
 
       // Show/hide address fields when sharing an address
       $('form.webform-client-form .civicrm-enabled[name*="_address_master_id"]').once('civicrm').change(function(){
-        if ($(this).val() === '' || ($(this).is('input:checkbox:not(:checked)'))) {
-          sharedAddress(this, 'show', 500);
-        }
-        else {
-          sharedAddress(this, 'hide', 500);
-        }
+        var action = ($(this).val() === '' || ($(this).is('input:checkbox:not(:checked)'))) ? 'show' : 'hide';
+        sharedAddress(this, action, 500);
       });
+
       // Hide shared address fields on form load
       $('form.webform-client-form select.civicrm-enabled[name*="_address_master_id"], form.webform-client-form .civicrm-enabled[name*="_address_master_id"]:checked').each(function() {
         if ($(this).val() !== '') {
