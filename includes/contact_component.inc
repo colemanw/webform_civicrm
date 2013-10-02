@@ -292,10 +292,10 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
   );
   if ($component['extra']['widget'] != 'hidden') {
     $element += array(
-      '#title' => $filter ? _webform_filter_xss($component['name']) : $component['name'],
+      '#title' => $filter ? webform_filter_xss($component['name']) : $component['name'],
       '#title_display' => $component['extra']['title_display'] ? $component['extra']['title_display'] : 'before',
       '#required' => $component['required'],
-      '#description' => $filter ? _webform_filter_descriptions($component['extra']['description'], $node) : $component['extra']['description'],
+      '#description' => $filter ? webform_filter_descriptions($component['extra']['description'], $node) : $component['extra']['description'],
       '#translatable' => array('title', 'description'),
       '#theme_wrappers' => array('webform_element'),
     );
