@@ -71,6 +71,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Even though this object is destroyed between page submissions, this trick allows us to persist some data - see below
     $this->id = wf_crm_aval($form_state, 'civicrm:id', array());
 
+    $this->hiddenFieldValidation();
     $this->validateThisPage($this->form['submitted']);
 
     if (!empty($this->data['participant']) && !empty($this->data['participant_reg_type'])) {
@@ -209,6 +210,29 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       'activity_id' => empty($this->id['act'][1]) ? 0 : $this->id['act'][1],
     );
     drupal_write_record('webform_civicrm_submissions', $record, $this->update);
+  }
+
+  /**
+   * Force Drupal to ignore errors for fields hidden by this module
+   */
+  private function hiddenFieldValidation() {
+    $errors = form_get_errors();
+    foreach ((array) $errors as $key => $error) {
+      $pieces = wf_crm_explode_key(substr($key, strrpos($key, '][') + 2));
+      if($pieces) {
+        list( , $c, $ent, $n, $table, $name) = $pieces;
+        if ($this->isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name)) {
+          $this->unsetError($key);
+        }
+        elseif ($table == 'address' && !empty($this->crmValues["civicrm_{$c}_contact_{$n}_address_master_id"])) {
+          $master_id = $this->crmValues["civicrm_{$c}_contact_{$n}_address_master_id"];
+          // If widget is checkboxes, need to filter the array
+          if (!is_array($master_id) || array_filter($master_id)) {
+            $this->unsetError($key);
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -1483,18 +1507,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           continue;
         }
         // Ignore values from fields hidden by existing contact component
-        if ($ent == 'contact' && isset($this->enabled["civicrm_{$c}_contact_1_contact_existing"])) {
-          $component = $this->node->webform['components'][$this->enabled["civicrm_{$c}_contact_1_contact_existing"]];
-          $existing_contact_val = $this->submissionValue($component['cid']);
-          // Fields should be hidden if value is empty (no selection) or a numeric contact id
-          if (!$existing_contact_val[0] || is_numeric($existing_contact_val[0])) {
-            $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
-            if (in_array($type, $component['extra']['hide_fields'])) {
-              // Remove the value from the webform submission
-              $this->submissionValue($fid, array(NULL));
-              continue;
-            }
-          }
+        if ($this->isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name)) {
+          // Also remove the value from the webform submission
+          $this->submissionValue($fid, array(NULL));
+          continue;
         }
         $field = $this->all_fields[$table . '_' . $name];
         $component = $this->node->webform['components'][$this->enabled[$field_key]];
@@ -1568,6 +1584,30 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
+   * Test whether a field has been hidden due to existing contact settings
+   * @param $ent
+   * @param $c
+   * @param $table
+   * @param $n
+   * @param $name
+   * @return bool
+   */
+  private function isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name) {
+    if ($ent == 'contact' && isset($this->enabled["civicrm_{$c}_contact_1_contact_existing"])) {
+      $component = $this->node->webform['components'][$this->enabled["civicrm_{$c}_contact_1_contact_existing"]];
+      $existing_contact_val = $this->submissionValue($component['cid']);
+      // Fields are hidden if value is empty (no selection) or a numeric contact id
+      if (!$existing_contact_val[0] || is_numeric($existing_contact_val[0])) {
+        $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
+        if (in_array($type, $component['extra']['hide_fields'])) {
+          return TRUE;
+        }
+      }
+    }
+    return FALSE;
+  }
+
+  /**
    * Test if any relevant data has been entered for a location
    * @param string $location
    * @param array $params
@@ -1586,6 +1626,26 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         return empty($params['url']);
       default:
         return empty($params[$location]);
+    }
+  }
+
+  /**
+   * Clears an error against a form element.
+   * Used to disable validation when this module hides a field
+   * @see https://api.drupal.org/comment/49163#comment-49163
+   *
+   * @param $name string
+   */
+  private function unsetError($name) {
+    $errors = &drupal_static('form_set_error', array());
+    $removed_messages = array();
+    if (isset($errors[$name])) {
+      $removed_messages[] = $errors[$name];
+      unset($errors[$name]);
+    }
+    $_SESSION['messages']['error'] = array_diff($_SESSION['messages']['error'], $removed_messages);
+    if (empty($_SESSION['messages']['error'])) {
+      unset ($_SESSION['messages']['error']);
     }
   }
 
