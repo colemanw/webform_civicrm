@@ -227,7 +227,8 @@ abstract class wf_crm_webform_base {
       }
       $sql .= " WHERE is_current_revision = 1 AND is_deleted = 0";
       if ($cid) {
-        $sql .= " AND (civicrm_activity.id IN (SELECT activity_id FROM civicrm_activity_target WHERE target_contact_id = $cid) OR source_contact_id = $cid)";
+        $targetTypes = '2, 3';
+        $sql .= " AND (civicrm_activity.id IN (SELECT activity_id FROM civicrm_activity_contact activity_contact WHERE activity_contact.contact_id = $cid AND activity_contact.record_type_id IN ( $targetTypes ) ))";
       }
       foreach ($params as $field => $value) {
         if ($value && is_array($value)) {
