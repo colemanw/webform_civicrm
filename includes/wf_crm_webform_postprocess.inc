@@ -1095,6 +1095,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     // Save activity
     $params = $this->data['activity'][1]['activity'][1];
+    if (is_array($params['status_id'])) {
+      $params['status_id'] = reset($params['status_id']);
+    }
     // Existing activity - set id
     if (!empty($this->id['act'][1])) {
       $params['id'] = $this->id['act'][1];

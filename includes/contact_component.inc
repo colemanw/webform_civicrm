@@ -65,31 +65,25 @@ function _webform_edit_civicrm_contact($component) {
   wf_crm_update_existing_component($component, $enabled, $data);
   $allow_create = $component['extra']['allow_create'];
 
-  // Check for required library
-  $path = libraries_get_path('tokeninput');
-  if (!is_file(DRUPAL_ROOT . '/' . $path . '/src/jquery.tokeninput.js')) {
-    drupal_set_message(t('Could not find the jQuery TokenInput library. Please <a href="http://loopj.com/jquery-tokeninput">download it</a> and extract as the folder "sites/all/libraries/tokeninput". This is required for the autocomplete to function.'), 'warning');
-  }
   // Load scripts & css
-  else {
-    $form['#attached']['js'][] = $path . '/src/jquery.tokeninput.js';
-    $callback_path = '"' . url('webform-civicrm/js/' . $node->nid . '-' . $component['cid'], array('alias' => TRUE, 'query' => array('admin' => 1))) . '"';
-    $settings = '{
-      queryParam: "str",
-      hintText: "' . t('Choose @type', array('@type' => $contact_types[$contact_type])) . '",
-      noResultsText: "' . t('Not found') . '",
-      searchingText: "' . t('Searching...') . '",
-      tokenLimit: 1,
-      prePopulate: prep
-    }';
-    $js = '
-    jQuery(function($) {
-      var prep = wfCiviContact.init(' . $callback_path . ');
-      $("#default-contact-id").tokenInput(' . $callback_path . ', ' . $settings . ');
-    });';
-    $form['#attached']['js'][$js] = array('type' => 'inline');
-    $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/token-input.css';
-  }
+  $form['#attached']['js'][] = wf_crm_tokeninput_path();
+  $form['#attached']['js'][] = $path . '/src/jquery.tokeninput.js';
+  $callback_path = '"' . url('webform-civicrm/js/' . $node->nid . '-' . $component['cid'], array('alias' => TRUE, 'query' => array('admin' => 1))) . '"';
+  $settings = '{
+    queryParam: "str",
+    hintText: "' . t('Choose @type', array('@type' => $contact_types[$contact_type])) . '",
+    noResultsText: "' . t('Not found') . '",
+    searchingText: "' . t('Searching...') . '",
+    tokenLimit: 1,
+    prePopulate: prep
+  }';
+  $js = '
+  jQuery(function($) {
+    var prep = wfCiviContact.init(' . $callback_path . ');
+    $("#default-contact-id").tokenInput(' . $callback_path . ', ' . $settings . ');
+  });';
+  $form['#attached']['js'][$js] = array('type' => 'inline');
+  $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/token-input.css';
   $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/js/contact_component.js';
 
   $form['display']['widget'] = array(
@@ -313,8 +307,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
 
     case 'autocomplete':
       if ($node && isset($node->webform_civicrm)) {
-        $path = libraries_get_path('tokeninput');
-        $element['#attached']['js'][] = $path . '/src/jquery.tokeninput.js';
+        $element['#attached']['js'][] = wf_crm_tokeninput_path();
         $element['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/token-input.css';
         $settings = '{
           queryParam: "str",
@@ -823,4 +816,24 @@ function wf_crm_results_display_options() {
     'phone' => t("Phone"),
   );
   return $options;
+}
+
+/**
+ * Get the path to the jquery.tokeninput plugin
+ * @return string
+ */
+function wf_crm_tokeninput_path() {
+  static $ret;
+  if (!$ret) {
+    // First see if the library is installed in Drupal
+    $path = libraries_get_path('tokeninput');
+    if ($path && is_file(DRUPAL_ROOT . '/' . $path . '/src/jquery.tokeninput.js')) {
+      $ret = $path . '/src/jquery.tokeninput.js';
+    }
+    // If not, fall back on using the copy shipped with CiviCRM
+    else {
+      $ret = drupal_get_path('module', 'civicrm') . '/../packages/jquery/plugins/jquery.tokeninput.js';
+    }
+  }
+  return $ret;
 }
