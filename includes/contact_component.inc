@@ -67,7 +67,6 @@ function _webform_edit_civicrm_contact($component) {
 
   // Load scripts & css
   $form['#attached']['js'][] = wf_crm_tokeninput_path();
-  $form['#attached']['js'][] = $path . '/src/jquery.tokeninput.js';
   $callback_path = '"' . url('webform-civicrm/js/' . $node->nid . '-' . $component['cid'], array('alias' => TRUE, 'query' => array('admin' => 1))) . '"';
   $settings = '{
     queryParam: "str",
