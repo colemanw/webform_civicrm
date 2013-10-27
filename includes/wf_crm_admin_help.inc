@@ -75,7 +75,7 @@ class wf_crm_admin_help {
 
   static function contribution_contribution_page_id() {
     print '<p>' .
-      t("It is recommended to <a !link>create a new contribution page</a> solely for webform use. When configuring the page, most options will be irrelevant (such as profiles, premiums, widgets, etc.). Only the following need to be configured:",
+      t("It is recommended to <a !link>create a new contribution page</a> solely for webform use. When configuring the page, most options will be irrelevant (such as profiles, premiums, widgets, recurring, etc.). Only the following need to be configured:",
       array('!link' => 'target="_blank" href="' . url('civicrm/admin/contribute/add', array('query' => array('reset' => 1, 'action' => 'add'))) . '"')) .
       '</p><ul>' .
       '<li>' . t('Title: Displayed on the webform.') . '</li>' .
@@ -90,7 +90,7 @@ class wf_crm_admin_help {
     print '<p>' .
       t('All payment processors enabled on the contribution page are available here. "Pay Later" option allows the user to purchase events/memberships without entering a credit card.') .
       '</p><p>' .
-      t("Note that only on-site credit card processors will work on Webforms. Services that redirect to an external website, such as Paypal Standard, are not supported.") .
+      t("Note that only on-site credit card processors will work on Webforms. Services that redirect to an external website, such as Paypal Standard, are not supported. Recurring payments are not supported.") .
       '</p>';
   }
 
@@ -126,9 +126,9 @@ class wf_crm_admin_help {
 
   static function participant_reg_type() {
     print '<p>' .
-      t('Registering participants separately gives finer control over which contacts register for what events, and allows you to exclude certain contacts on the form from being registered for events.') .
+      t('Registering as a group will set Contact 1 as the primary registrant. Registering participants separately gives finer control over which contacts register for what events.') .
       '</p><p>' .
-      t('With only one contact on the form, there is no difference between these options.') .
+      t('With only one contact on the form, there is no difference between these two options.') .
       '</p>';
   }
 
