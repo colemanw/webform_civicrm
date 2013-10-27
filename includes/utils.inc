@@ -1340,6 +1340,10 @@ function _wf_crm_child_components($nid, $id) {
     ->fetchField();
 }
 
+/**
+ * @param string
+ * @return array
+ */
 function wf_crm_explode_multivalue_str($str) {
   $sp = CRM_Core_DAO::VALUE_SEPARATOR;
   if (is_array($str)) {
