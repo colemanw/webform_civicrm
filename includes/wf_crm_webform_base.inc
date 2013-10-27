@@ -225,10 +225,14 @@ abstract class wf_crm_webform_base {
       if (!empty($params['case_id'])) {
         $sql .= ' INNER JOIN civicrm_case_activity ON civicrm_activity.id = civicrm_case_activity.activity_id';
       }
+      if ($cid) {
+        $sql .= ' INNER JOIN civicrm_activity_contact ON civicrm_activity.id = civicrm_activity_contact.activity_id';
+      }
       $sql .= " WHERE is_current_revision = 1 AND is_deleted = 0";
       if ($cid) {
+        // Find activity target & assignee
         $targetTypes = '2, 3';
-        $sql .= " AND (civicrm_activity.id IN (SELECT activity_id FROM civicrm_activity_contact activity_contact WHERE activity_contact.contact_id = $cid AND activity_contact.record_type_id IN ( $targetTypes ) ))";
+        $sql .= " AND civicrm_activity_contact.contact_id = $cid AND civicrm_activity_contact.record_type_id IN ($targetTypes)";
       }
       foreach ($params as $field => $value) {
         if ($value && is_array($value)) {
