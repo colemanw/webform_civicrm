@@ -1022,6 +1022,10 @@ function wf_crm_process_submission($node, &$submission, $op) {
       }
       // Save activity
       $params = $data['activity'][1]['activity'][1];
+      if (is_array($params['status_id'])) {
+        $params['status_id'] = reset($params['status_id']);
+      }
+
       // Existing activity - set id
       if (!empty($id['act'][1])) {
         $params['id'] = $id['act'][1];
