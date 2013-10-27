@@ -271,7 +271,7 @@ function wf_crm_get_activity_types($case_type_name = NULL) {
   $ret = array();
   foreach (wf_crm_apivalues('option_value', 'get', $params) as $val) {
     if (empty($val['component_id']) || $val['component_id'] == $campaign_type) {
-      $ret[$val['id']] = $val['label'];
+      $ret[$val['value']] = $val['label'];
     }
   }
 
