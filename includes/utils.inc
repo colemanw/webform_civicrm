@@ -1042,9 +1042,6 @@ function wf_crm_get_fields($var = 'fields') {
           $fields[$id]['extra']['cols'] = $dao->note_columns;
           $fields[$id]['extra']['rows'] = $dao->note_rows;
         }
-        if (!empty($dao->option_group_id) && empty($fields[$id]['value'])) {
-          $fields[$id]['value_callback'] = 'getCustomFieldDefault';
-        }
       }
     }
     $dao->free();
