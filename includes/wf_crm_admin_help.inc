@@ -88,9 +88,9 @@ class wf_crm_admin_help {
 
   static function contribution_payment_processor_id() {
     print '<p>' .
-      t('All payment processors enabled on the contribution page are available here. "Pay Later" option allows the user to purchase events/memberships without entering a credit card.') .
+      t('Supported payment processors enabled on the contribution page are available here. "Pay Later" option allows the user to purchase events/memberships without entering a credit card.') .
       '</p><p>' .
-      t("Note that only on-site credit card processors will work on Webforms. Services that redirect to an external website, such as Paypal Standard, are not supported. Recurring payments are not supported.") .
+      t("Note that only on-site credit card processors are currently supported on Webforms. Services that redirect to an external website, such as Paypal Standard, are not supported. Recurring payments are not supported.") .
       '</p>';
   }
 
