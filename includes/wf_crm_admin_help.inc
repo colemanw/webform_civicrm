@@ -136,6 +136,8 @@ class wf_crm_admin_help {
     print '<p>' .
       t('Events can be selected here without giving the user a choice, or this field can be added to the form ("User Select").') .
       '</p><p>' .
+      t('Click the + button to choose multiple events.') .
+      '</p><p>' .
       t('On the form, this field could be represented as either single or multiselect (checkboxes or radios). Note: enabling this field as a multiselect (checkboxes) should only be done if all selectable events will have the same price, role, custom data, etc.') .
       '</p><p>' .
       t('"Live Options" can be enabled to keep the field up-to-date with all your organization\'s events, or you can hand-pick the events you wish to show.') .
@@ -208,6 +210,8 @@ class wf_crm_admin_help {
 
   static function multiselect_options() {
     print '<p>' .
+      t('Click the + button to select more than one option.') .
+      '</p><p>' .
       t('You may set options here and/or add this element to the webform ("User Select"). If you do both, options set here will be applied automatically and will not appear on the form.') .
       '</p>';
   }

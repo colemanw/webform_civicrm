@@ -642,13 +642,13 @@ function wf_crm_get_fields($var = 'fields') {
       'expose_list' => TRUE,
     );
     $fields['other_group'] = array(
-      'name' => t('Groups'),
+      'name' => t('Group(s)'),
       'type' => 'select',
       'extra' => array('multiple' => 1, 'civicrm_live_options' => 1),
       'table' => 'group',
       'expose_list' => TRUE,
     );
-    $tagsets = array('' => t('Tags')) + CRM_Core_BAO_Tag::getTagSet('civicrm_contact');
+    $tagsets = array('' => t('Tag(s)')) + CRM_Core_BAO_Tag::getTagSet('civicrm_contact');
     foreach ($tagsets as $pid => $name) {
       $fields['other_tag' . ($pid ? "_$pid" : '')] = array(
         'name' => $name,
@@ -659,7 +659,7 @@ function wf_crm_get_fields($var = 'fields') {
       );
     }
     $fields['activity_target_contact_id'] = array(
-      'name' => t('Activity Participants'),
+      'name' => t('Activity Participant(s)'),
       'type' => 'select',
       'expose_list' => TRUE,
       'extra' => array(
@@ -746,11 +746,13 @@ function wf_crm_get_fields($var = 'fields') {
       );
     }
     $fields['relationship_relationship_type_id'] = array(
-      'name' => t('Relationship Type'),
+      'name' => t('Relationship Type(s)'),
       'type' => 'select',
       'expose_list' => TRUE,
-      'empty_option' => t('No Relationship'),
-      'extra' => array('civicrm_live_options' => 1),
+      'extra' => array(
+        'civicrm_live_options' => 1,
+        'multiple' => 1,
+      ),
     );
     $fields['relationship_is_active'] = array(
       'name' => t('Is Active'),
