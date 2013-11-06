@@ -209,10 +209,15 @@ var wfCiviAdmin = (function ($, D) {
     }
   }
 
+  // Toggle the "multiple" attribute of a select
   function changeSelect() {
     var $el = $(this).siblings('select');
+    var triggerChange;
     $(this).toggleClass('select-multiple');
     if ($el.is('[multiple]')) {
+      if ($el.val() && $el.val().length > 1) {
+        triggerChange = true;
+      }
       if ($('option[value=""]', $el).length < 1) {
         $el.prepend('<option value="">'+ Drupal.t('- None -') +'</option>');
       }
@@ -222,9 +227,16 @@ var wfCiviAdmin = (function ($, D) {
       $el.attr('multiple', 'multiple');
       $('option[value=""]', $el).remove();
     }
+    // For the sake of Drupal.setSummary
+    $el.click();
+    // For ajax fields
+    if (triggerChange) {
+      $el.change();
+    }
     return false;
   }
 
+  // HTML multiselect elements are awful. This is a simple/lightweight way to make them better.
   function initMultiSelect() {
     $(this).after('<a href="#" class="wf-crm-change-select civi-icon" title="'+ Drupal.t('Toggle Multiple Options') +'"></a>');
     $(this).siblings('.wf-crm-change-select').click(changeSelect);
@@ -232,7 +244,7 @@ var wfCiviAdmin = (function ($, D) {
       $(this).siblings('.wf-crm-change-select').click();
     }
     else {
-      $('option[value=0]', this).remove();
+      $('option[value=""]', this).remove();
     }
   }
 
