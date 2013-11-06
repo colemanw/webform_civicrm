@@ -275,6 +275,9 @@ class wf_crm_admin_form {
             $fieldset['#title'] .= ' ' . t('(primary)');
           }
         }
+        if (!empty($set['help_text'])) {
+          $this->help($fieldset, "fieldset_$sid", $set['label']);
+        }
         foreach ($set['fields'] as $fid => $field) {
           if ($fid == 'contact_contact_sub_type' ||
             ($fid == 'address_master_id' && count($this->data['contact']) == 1) ||

@@ -302,8 +302,8 @@ class wf_crm_admin_help {
   /**
    * Get help for a custom field
    */
-  static function custom($field) {
-    list( , $id) = explode('_', $field);
+  static function custom($param) {
+    list( , $id) = explode('_', $param);
     if (!is_numeric($id)) {
       return;
     }
@@ -315,6 +315,19 @@ class wf_crm_admin_help {
     }
     if (!empty($info['help_post'])) {
       print '<p>' . $info['help_post'] . '</p>';
+    }
+  }
+
+  /**
+   * Get help for a fieldset
+   */
+  static function fieldset($param) {
+    list( , $set) = explode('_', $param);
+    civicrm_initialize();
+    module_load_include('inc', 'webform_civicrm', 'includes/utils');
+    $sets = wf_crm_get_fields('sets');
+    if (!empty($sets[$set]['help_text'])) {
+      print '<p>' . $sets[$set]['help_text'] . '</p>';
     }
   }
 
@@ -347,6 +360,9 @@ function wf_crm_admin_help($topic) {
   }
   elseif (strpos($topic, 'custom_') === 0) {
     wf_crm_admin_help::custom($topic);
+  }
+  elseif (strpos($topic, 'fieldset_') === 0) {
+    wf_crm_admin_help::fieldset($topic);
   }
   exit();
 }

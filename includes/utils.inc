@@ -982,7 +982,7 @@ function wf_crm_get_fields($var = 'fields') {
     list($contact_types) = wf_crm_get_contact_types();
     $custom_extends = "'" . implode("','", array_keys($contact_types + $sets)) . "'";
     $sql = "
-      SELECT cf.*, cg.title AS custom_group_name, LOWER(cg.extends) AS entity_type, cg.extends_entity_column_id, cg.extends_entity_column_value AS sub_types, cg.is_multiple, cg.max_multiple, cg.id AS custom_group_id
+      SELECT cf.*, cg.title AS custom_group_name, LOWER(cg.extends) AS entity_type, cg.extends_entity_column_id, cg.extends_entity_column_value AS sub_types, cg.is_multiple, cg.max_multiple, cg.id AS custom_group_id, cg.help_pre as cg_help
       FROM civicrm_custom_field cf
       INNER JOIN civicrm_custom_group cg ON cg.id = cf.custom_group_id
       WHERE cf.is_active <> 0 AND cg.extends IN ($custom_extends) AND cg.is_active <> 0
@@ -1017,6 +1017,7 @@ function wf_crm_get_fields($var = 'fields') {
           if ($dao->extends_entity_column_id) {
             $sets[$set]['extension_of'] = $dao->extends_entity_column_id;
           }
+          $sets[$set]['help_text'] = $dao->cg_help;
         }
         $id = $set . '_custom_' . $dao->id;
         $fields[$id] = $custom_types[$dao->html_type];
