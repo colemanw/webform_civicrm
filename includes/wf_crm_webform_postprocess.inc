@@ -1657,7 +1657,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     $_SESSION['messages']['error'] = array_diff($_SESSION['messages']['error'], $removed_messages);
     if (empty($_SESSION['messages']['error'])) {
-      unset ($_SESSION['messages']['error']);
+      unset($_SESSION['messages']['error']);
     }
   }
 
