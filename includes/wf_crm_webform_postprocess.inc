@@ -1399,7 +1399,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function contributionParams() {
     $params = $this->billing_params + $this->data['contribution'][1]['contribution'][1];
     $params['financial_type_id'] = $this->contribution_page['financial_type_id'];
-    $params['currency'] = $this->contribution_page['currency'];
+    $params['currency'] = $params['currencyID'] = $this->contribution_page['currency'];
     $params['skipRecentView'] = $params['skipLineItem'] = 1;
     $params['contact_id'] = $this->id['cid'][1];
     $params['source'] = $this->settings['new_contact_source'];
