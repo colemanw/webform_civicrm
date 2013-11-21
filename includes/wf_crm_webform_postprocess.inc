@@ -178,13 +178,16 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (isset($this->all_sets['participant']) && !empty($this->data['participant_reg_type'])) {
         $this->processParticipants($c, $cid);
       }
-      // Process memberships
-      if (isset($this->all_sets['membership']) && !empty($this->data['membership'][$c]['number_of_membership'])) {
+    }
+    // We do this after all contacts and addresses exist
+    $this->processSharedAddresses();
+
+    // Process memberships after relationships have been created
+    foreach ($this->id['cid'] as $c => $cid) {
+      if ($cid && isset($this->all_sets['membership']) && !empty($this->data['membership'][$c]['number_of_membership'])) {
         $this->processMemberships($c, $cid);
       }
     }
-    // We do this last after all contacts and addresses exist.
-    $this->processSharedAddresses();
   }
 
   /**
