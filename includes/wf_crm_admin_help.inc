@@ -82,6 +82,7 @@ class wf_crm_admin_help {
       '<li>' . t('Financial Type: Controls overall contribution type.') . '</li>' .
       '<li>' . t('Currency: Sets currency for all payment fields on this form.') . '</li>' .
       '<li>' . t('Payment Processors: Controls list of options here.') . '</li>' .
+      '<li>' . t('Contribution Amounts: Must be enabled with a label and Allow Other Amounts checked.') . '</li>' .
       '<li>' . t('Email Receipt: Configure email receipts from this webform.') . '</li>' .
       '</ul>';
   }
