@@ -810,7 +810,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       foreach ($add as $a) {
         $params[$data_type . '_id'] = $mailer_params['group_id'] = $a;
         if ($data_type == 'group' && isset($mailing_lists[$a]) && !empty($email)) {
-          $result = wf_civicrm_api('mailing_group', 'event_subscribe', $mailer_params);
+          $result = wf_civicrm_api('mailing_event_subscribe', 'create', $mailer_params);
           if (empty($result['is_error'])) {
             $confirmations_sent[] = check_plain($mailing_lists[$a]);
           }
