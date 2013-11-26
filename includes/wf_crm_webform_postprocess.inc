@@ -81,6 +81,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     // Process live contribution. If the transaction is unsuccessful it will trigger a form validation error.
     if ($this->getContributionPage()) {
+      // Ensure contribution js is still loaded if the form has to refresh
+      $this->addPaymentJs();
       $this->loadMultiPageData();
       if ($this->tallyLineItems()) {
         if ($this->isPaymentPage() && !form_get_errors()) {

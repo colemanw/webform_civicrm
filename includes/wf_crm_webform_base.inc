@@ -476,12 +476,22 @@ abstract class wf_crm_webform_base {
     return $this->contribution_page;
   }
 
-
   protected function getMembershipTypeField($type, $field) {
     if (!$this->membership_types) {
       $this->membership_types = wf_crm_apivalues('membership_type', 'get');
     }
     return wf_crm_aval($this->membership_types, $type . ':' . $field);
+  }
+
+  /**
+   * CiviCRM JS can't be attached to a drupal form so have to manually re-add this during validation
+   */
+  function addPaymentJs() {
+    $credit_card_types = CRM_Core_Payment_Form::getCreditCardCSSNames();
+    CRM_Core_Resources::singleton()
+      ->addCoreResources()
+      ->addSetting(array('config' => array('creditCardTypes' => $credit_card_types)))
+      ->addScriptFile('civicrm', 'templates/CRM/Core/BillingBlock.js', -10, 'html-header');
   }
 
 }
