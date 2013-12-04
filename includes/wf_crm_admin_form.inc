@@ -914,8 +914,11 @@ class wf_crm_admin_form {
         $item['#default_value'] = $this->settings[$fid];
       }
       // 2: From saved settings
-      elseif (isset($this->data[$ent][$c][$table][$n][$name])) {
-        $item['#default_value'] = $this->data[$ent][$c][$table][$n][$name];
+      elseif (isset($this->data[$ent][$c][$table][$n])) {
+        // Respect blank settings
+        if (isset($this->data[$ent][$c][$table][$n][$name])) {
+          $item['#default_value'] = $this->data[$ent][$c][$table][$n][$name];
+        }
       }
       // 3: From callback function
       elseif (isset($field['value_callback'])) {
