@@ -660,7 +660,7 @@ function wf_crm_update_existing_component(&$component, $enabled, $data) {
     $contact_type = $data['contact'][$c]['contact'][1]['contact_type'];
     $allow_create = wf_crm_name_field_exists($enabled, $c, $contact_type);
     if ($allow_create != $component['extra']['allow_create']) {
-      $component['extra']['none_prompt'] = $allow_create ? t('+ Create new contact +') : t('- None Found -');
+      $component['extra']['none_prompt'] = $allow_create ? t('+ Create new +') : t('- None Found -');
       $component['extra']['allow_create'] = $allow_create;
       webform_component_update($component);
     }

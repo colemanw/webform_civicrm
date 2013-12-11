@@ -320,7 +320,7 @@ class wf_crm_admin_help {
     print '<ul>
       <li>' . t('Autocomplete will suggest names of contacts as the user types. Good for large numbers of contacts.') . '</li>
       <li>' . t('A select list will show all possible contacts in a dropdown menu. Good for small lists - use filters.') . '</li>
-      <li>' . t('A static element will not allow the user to make a choice. Use in conjunction with a default value setting or a cid passed in the url.') . '</li>
+      <li>' . t('A static element will select a contact automatically without giving the user a choice. Use in conjunction with a default value setting or a cid passed in the url.') . '</li>
       </ul>';
   }
 
@@ -383,7 +383,7 @@ class wf_crm_admin_help {
   }
 
   /**
-   * Add help icon to a FAPI field
+   * Add Civi help icon to a FAPI field
    * @param array $field
    * @param string $topic
    * @param string|null $title

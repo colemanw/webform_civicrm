@@ -1350,7 +1350,7 @@ class wf_crm_admin_form {
       $vals = $enabled + $settings;
       // Set the allow_create flag based on presence of name or email fields
       $field['extra']['allow_create'] = $a = wf_crm_name_field_exists($vals, $c, $contact_type);
-      $field['extra']['none_prompt'] = $a ? t('+ Create new contact +') : t('- None Found -');
+      $field['extra']['none_prompt'] = $a ? t('+ Create new +') : t('- None Found -');
       if ($c == 1 && $contact_type == 'individual') {
         // Default to hidden field for 1st contact
         $field['extra'] += array(

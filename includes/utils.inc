@@ -479,7 +479,7 @@ function wf_crm_get_fields($var = 'fields') {
       'name' => t('Existing Contact'),
       'type' => 'civicrm_contact',
       'extra' => array(
-        'search_prompt' => t('- Choose existing contact -'),
+        'search_prompt' => t('- Choose existing -'),
       ),
     );
     foreach (array('organization' => t('Organization Name'), 'legal' => t('Legal Name'), 'household' => t('Household Name')) as $key => $label) {
