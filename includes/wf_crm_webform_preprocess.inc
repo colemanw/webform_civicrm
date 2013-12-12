@@ -182,7 +182,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
   private function populateActivityAndCaseFromUrl($aid) {
     $result = wf_crm_apivalues('activity', 'get', array(
       'activity_id' => $aid,
-      'options' => array('return' => array('target_contact_id', 'assignee_contact_id'))
+      'return' => array('target_contact_id', 'assignee_contact_id', 'source_contact_id', 'activity_type_id'),
     ));
     if (isset($result[$aid])) {
       $act = $result[$aid];
