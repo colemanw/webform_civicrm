@@ -250,11 +250,12 @@ function _webform_edit_civicrm_contact($component) {
     '#default_value' => $component['extra']['filters']['group'],
     '#description' => t('Listed contacts must be members of at least one of the selected groups (leave blank to not filter by group).'),
   );
+  $tags = array();
   $form['filters']['tag'] = array(
     '#type' => 'select',
     '#multiple' => TRUE,
     '#title' => t('Tags'),
-    '#options' => array('' => '- ' . t('None') . ' -') + CRM_Core_BAO_Tag::getTags("civicrm_contact", $ret, NULL, '- '),
+    '#options' => array('' => '- ' . t('None') . ' -') + CRM_Core_BAO_Tag::getTags("civicrm_contact", $tags, NULL, '- '),
     '#default_value' => $component['extra']['filters']['tag'],
     '#description' => t('Listed contacts must be have at least one of the selected tags (leave blank to not filter by tag).'),
   );
