@@ -111,7 +111,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Fill $this->id from existing contacts
     $this->getExistingContactIds();
 
-    // While saving a draft, just skip to the end and write the record
+    // While saving a draft, just skip to postSave and write the record
     if (!empty($this->submission->is_draft)) {
       return;
     }
@@ -139,6 +139,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // Update existing contact
       else {
         $this->updateContact($contact, $c);
+      }
+      // Identify contact 1 as acting user if not logged in
+      if ($c == 1 && $this->id['cid'][$c] && user_is_anonymous()) {
+        CRM_Core_DAO::executeQuery('SET @civicrm_user_id = %1', array(1 => array($this->id['cid'][1], 'Integer')));
       }
     }
     // $this->id['cid'] will now contain all contact ids in order, with 0 as a placeholder for any contact not saved
@@ -193,7 +197,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
-   * Process webform submission when it is has been saved. Called by the following hooks:
+   * Process webform submission after it is has been saved. Called by the following hooks:
    * @see webform_civicrm_webform_submission_insert
    * @see webform_civicrm_webform_submission_update
    */

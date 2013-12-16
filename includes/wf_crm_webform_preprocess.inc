@@ -474,10 +474,6 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         }
       }
     }
-    // Identify contact 1 as acting user if not already logged in
-    if (!empty($this->id['cid'][1]) && $c == 1 && user_is_anonymous()) {
-      CRM_Core_DAO::executeQuery('SET @civicrm_user_id = %1', array(1 => array($this->id['cid'][1], 'Integer')));
-    }
   }
   
   /**
