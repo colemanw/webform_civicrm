@@ -378,8 +378,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     $this->loadEvents();
     // Add event info to line items
+    $format = wf_crm_aval($this->data['reg_options'], 'title_display', 'title');
     foreach ($this->line_items as &$item) {
-      $item['label'] = $this->events[$item['event_id']]['title'];
+      $item['label'] = wf_crm_format_event($this->events[$item['event_id']], $format);
       $item['financial_type_id'] = wf_crm_aval($this->events[$item['event_id']], 'financial_type_id', 'Event Fee');
     }
     // Form Validation
