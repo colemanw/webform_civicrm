@@ -822,9 +822,9 @@ function wf_crm_results_display_options() {
     'external_identifier' => t("External ID"),
     'email' => t("Email"),
     'city' => t("City"),
-    'county' => t("County"),
+    'county' => t("District/County"),
     'state_province' => t("State/Province"),
-    'Country' => t("Country"),
+    'country' => t("Country"),
     'postal_code' => t("Postal Code"),
     'phone' => t("Phone"),
   );
