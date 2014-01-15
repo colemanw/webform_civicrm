@@ -511,7 +511,7 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
   if (empty($node->webform_civicrm)) {
     return array();
   }
-  $limit = $str ? 12 : 200;
+  $limit = $str ? 12 : 500;
   $ret = array();
   $display = $component['extra']['results_display'];
   $params += array(
@@ -542,6 +542,24 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
     foreach (wf_crm_aval($result, 'values', array()) as $contact) {
       if ($name = wf_crm_format_contact($contact, $display)) {
         $ret[$contact['id']] = $name;
+      }
+    }
+    // If we get exactly $limit results, there are probably more - warn that the list is truncated
+    if (wf_crm_aval($result, 'count') >= $limit) {
+      watchdog(
+        'webform_civicrm',
+        'Maximum contacts exceeded, list truncated on the webform "@title". The webform_civicrm "@field" field cannot display more than !limit contacts because it is a select list. Recommend switching to autocomplete widget in component settings.',
+        array('!limit' => $limit, '@field' => $component['name'], '@title' => $node->title),
+        WATCHDOG_WARNING,
+        l(t('Edit component'), "node/{$node->nid}/webform/components/{$component['cid']}")
+      );
+      if (wf_crm_admin_access($node)) {
+        drupal_set_message(
+          '<strong>' . t('Maximum contacts exceeded, list truncated.') .'</strong><br>' .
+          t('The field "@field" cannot show more than !limit contacts because it is a select list. Recommend switching to autocomplete widget in <a !link>component settings</a>.',
+            array('!limit' => $limit, '@field' => $component['name'], '!link' => 'href="' . url("node/{$node->nid}/webform/components/{$component['cid']}") . '"')),
+          'warning'
+        );
       }
     }
   }
