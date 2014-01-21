@@ -513,7 +513,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             }
           }
           // Provide live options from the Civi DB
-          elseif (!empty($component['extra']['civicrm_live_options']) && isset($element['#options'])) {
+          if (!empty($component['extra']['civicrm_live_options']) && isset($element['#options'])) {
             $params = array('extra' => wf_crm_aval($field, 'extra', array())) + $component;
             $new = wf_crm_field_options($params, 'live_options', $this->data);
             $old = $element['#options'];

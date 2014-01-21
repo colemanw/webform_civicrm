@@ -87,7 +87,7 @@ function wf_crm_field_options($field, $context, $data) {
         $params += wf_crm_aval($data, "$ent:$c:$table:$n", array());
       }
       $ret = wf_crm_apivalues($table, 'getoptions', $params);
-
+dsm($ret);
       // Hack to format money data correctly
       if (!empty($field['data_type']) && $field['data_type'] === 'Money') {
         $old = $ret;
