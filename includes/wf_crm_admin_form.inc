@@ -23,7 +23,6 @@ class wf_crm_admin_form {
     $this->node = &$node;
     $this->fields = wf_crm_get_fields();
     $this->sets = wf_crm_get_fields('sets');
-    $this->settings = isset($node->webform_civicrm) ? $node->webform_civicrm : array();
   }
 
   /**
@@ -41,29 +40,11 @@ class wf_crm_admin_form {
     // Add css & js
     $this->addResources();
 
-    // Initialize form on first view
     if (empty($this->form_state['values'])) {
-      // For a new civi-webform, set up some defaults
-      if (!$this->settings) {
-        $this->setDefaultSettings();
-      }
-      $this->data = &$this->settings['data'];
-      // Warn of incompatible modules
-      $incompatibilities = array(
-        'form_builder_webform' => t('Form builder Webform UI'),
-        'webform_alt_ui' => t('Webform Alternate UI'),
-      );
-      foreach ($incompatibilities as $module => $label) {
-        if (module_exists($module)) {
-          drupal_set_message(t('The module %module is not compatible with Webform CiviCRM Integration. Please disable it before continuing.', array('%module' => $label)), 'error');
-        }
-      }
+      $this->initializeForm();
     }
-    // On rebuilding the form
     else {
-      $this->settings = wf_crm_aval($this->form_state['storage'], 'vals', $this->form_state['values']);
-      $this->rebuildData();
-      unset($this->form_state['storage']['vals']);
+      $this->rebuildForm();
     }
     // Merge in existing fields
     $existing = array_keys(wf_crm_enabled_fields($this->node, NULL, TRUE));
@@ -98,6 +79,33 @@ class wf_crm_admin_form {
       '#value' => t('Save Settings'),
     );
     return $this->form;
+  }
+
+  /**
+   * Initialize form on first view
+   */
+  private function initializeForm() {
+    $this->settings = isset($this->node->webform_civicrm) ? $this->node->webform_civicrm : $this->defaultSettings();
+    $this->data = &$this->settings['data'];
+    // Warn of incompatible modules
+    $incompatibilities = array(
+      'form_builder_webform' => t('Form builder Webform UI'),
+      'webform_alt_ui' => t('Webform Alternate UI'),
+    );
+    foreach ($incompatibilities as $module => $label) {
+      if (module_exists($module)) {
+        drupal_set_message(t('The module %module is not compatible with Webform CiviCRM Integration. Please disable it before continuing.', array('%module' => $label)), 'error');
+      }
+    }
+  }
+
+  /**
+   * On rebuilding the form
+   */
+  private function rebuildForm() {
+    $this->settings = wf_crm_aval($this->form_state['storage'], 'vals', $this->form_state['values']);
+    $this->rebuildData();
+    unset($this->form_state['storage']['vals']);
   }
 
   /**
@@ -837,8 +845,8 @@ class wf_crm_admin_form {
   /**
    * Set defaults when visiting the civicrm tab for the first time
    */
-  private function setDefaultSettings() {
-    $this->settings = array(
+  private function defaultSettings() {
+    return array(
       'data' => array(
         'contact' => array(
           1 => array(
