@@ -914,11 +914,8 @@ class wf_crm_admin_form {
         $item['#default_value'] = $this->settings[$fid];
       }
       // 2: From saved settings
-      elseif (isset($this->data[$ent][$c][$table][$n])) {
-        // Respect blank settings
-        if (isset($this->data[$ent][$c][$table][$n][$name])) {
-          $item['#default_value'] = $this->data[$ent][$c][$table][$n][$name];
-        }
+      elseif (isset($this->data[$ent][$c][$table][$n][$name])) {
+        $item['#default_value'] = $this->data[$ent][$c][$table][$n][$name];
       }
       // 3: From callback function
       elseif (isset($field['value_callback'])) {
@@ -1098,10 +1095,10 @@ class wf_crm_admin_form {
           // Git rid of the "User Select" and "None" options
           unset($val['create_civicrm_webform_element'], $val['']);
         }
-        elseif ($val == 'create_civicrm_webform_element') {
+        elseif ($val === 'create_civicrm_webform_element') {
           $val = '';
         }
-        if (isset($this->fields[$table . '_' . $name]['expose_list']) && !empty($val)) {
+        if (isset($this->fields[$table . '_' . $name]['expose_list']) && (!empty($val) || $val === 0)) {
           // Don't add data for non-existent contacts
           if (!in_array($ent, array('contact', 'participant', 'membership')) || isset($this->data['contact'][$c])) {
             $this->data[$ent][$c][$table][$n][$name] = $val;
