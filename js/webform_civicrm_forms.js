@@ -126,7 +126,7 @@ var wfCivi = (function ($, D) {
           $(':input', this).not(':radio, :checkbox, :button, :submit').val('');
           $('.civicrm-remove-image', this).click();
           $('input:checkbox, input:radio', this).each(function() {
-            $(this).attr('checked', '');
+            $(this).removeAttr('checked');
           });
           // Trigger chain select when changing country
           if (n[5] === 'country') {
