@@ -376,22 +376,36 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    */
   private function loadMemberships($c, $cid) {
     static $status_types;
-    $existing = wf_crm_apivalues('membership', 'get', array('contact_id' => $cid, 'filters' => array('is_current' => 1)));
+    $today = date('Y-m-d');
+    $existing = wf_crm_apivalues('membership', 'get', array('contact_id' => $cid));
     if (!$existing) {
       return;
     }
     if (!$status_types) {
-      $status_types = wf_crm_apivalues('membership', 'getoptions', array('field' => 'status_id', 'context' => 'get'));
+      $status_types = wf_crm_apivalues('membership_status', 'get');
     }
+    // Attempt to order memberships by most recent and active
+    $active = $expired = array();
     foreach ($existing as $membership) {
+      $membership['is_active'] = $status_types[$membership['status_id']]['is_current_member'];
+      $list = $membership['is_active'] ? 'active' : 'expired';
+      array_unshift($$list, $membership);
+    }
+    $memberships = array_merge($active, $expired);
+    foreach ($memberships as $num => $membership) {
+      // Only show 1 expired membership, and only if there are no active ones
+      if (!$membership['is_active'] && $num) {
+        break;
+      }
       $type = $membership['membership_type_id'];
       $msg = t('@type membership for @contact has a status of "@status".', array(
         '@type' => $this->getMembershipTypeField($type, 'name'),
         '@contact' => $this->info['contact'][$c]['contact'][1]['display_name'],
-        '@status' => $status_types[$membership['status_id']]
+        '@status' => $status_types[$membership['status_id']]['label']
       ));
       if (!empty($membership['end_date'])) {
-        $msg .= ' ' . t('Expires @date.', array('@date' => CRM_Utils_Date::customFormat($membership['end_date'])));
+        $end = array('@date' => CRM_Utils_Date::customFormat($membership['end_date']));
+        $msg .= ' ' . ($membership['end_date'] > $today ? t('Expires @date.', $end) : t('Expired @date.', $end));
       }
       drupal_set_message($msg);
       for ($n = 1; $n <= $this->data['membership'][$c]['number_of_membership']; ++$n) {
