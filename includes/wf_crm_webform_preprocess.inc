@@ -375,24 +375,8 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    * @param int $cid
    */
   private function loadMemberships($c, $cid) {
-    static $status_types;
     $today = date('Y-m-d');
-    $existing = wf_crm_apivalues('membership', 'get', array('contact_id' => $cid));
-    if (!$existing) {
-      return;
-    }
-    if (!$status_types) {
-      $status_types = wf_crm_apivalues('membership_status', 'get');
-    }
-    // Attempt to order memberships by most recent and active
-    $active = $expired = array();
-    foreach ($existing as $membership) {
-      $membership['is_active'] = $status_types[$membership['status_id']]['is_current_member'];
-      $list = $membership['is_active'] ? 'active' : 'expired';
-      array_unshift($$list, $membership);
-    }
-    $memberships = array_merge($active, $expired);
-    foreach ($memberships as $num => $membership) {
+    foreach ($this->findMemberships($cid) as $num => $membership) {
       // Only show 1 expired membership, and only if there are no active ones
       if (!$membership['is_active'] && $num) {
         break;
@@ -401,7 +385,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       $msg = t('@type membership for @contact has a status of "@status".', array(
         '@type' => $this->getMembershipTypeField($type, 'name'),
         '@contact' => $this->info['contact'][$c]['contact'][1]['display_name'],
-        '@status' => $status_types[$membership['status_id']]['label']
+        '@status' => $membership['status'],
       ));
       if (!empty($membership['end_date'])) {
         $end = array('@date' => CRM_Utils_Date::customFormat($membership['end_date']));

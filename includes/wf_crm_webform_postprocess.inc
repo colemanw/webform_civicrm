@@ -990,7 +990,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     if (!isset($types)) {
       $types = wf_crm_apivalues('membership_type', 'get');
     }
-    $existing = wf_crm_apivalues('membership', 'get', array('contact_id' => $cid, 'filters' => array('is_current' => 1)));
+    $existing = $this->findMemberships($cid);
     foreach (wf_crm_aval($this->data, "membership:$c:membership", array()) as $n => $params) {
       if (empty($params['membership_type_id'])) {
         continue;
@@ -999,10 +999,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // But not necessarily the same membership type to allow for upsell
       if (!empty($params['num_terms'])) {
         $type = $types[$params['membership_type_id']];
-        foreach ($existing as $id => $mem) {
+        foreach ($existing as $mem) {
           $existing_type = $types[$mem['membership_type_id']];
           if ($type['domain_id'] == $existing_type['domain_id'] && $type['member_of_contact_id'] == $existing_type['member_of_contact_id']) {
-            $params['id'] = $id;
+            $params['id'] = $mem['id'];
             // If we have an exact match, look no further
             if ($mem['membership_type_id'] == $params['membership_type_id']) {
               break;
