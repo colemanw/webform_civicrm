@@ -54,7 +54,7 @@ function _webform_edit_civicrm_contact($component) {
   civicrm_initialize();
   $form = array();
   $node = node_load($component['nid']);
-  if (empty($node->webform_civicrm)) {
+  if (empty($node->webform_civicrm) && node_is_page($node)) {
     drupal_set_message(t('CiviCRM processing is not enabled for this webform.'), 'error');
     return $form;
   }
@@ -553,7 +553,7 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
         WATCHDOG_WARNING,
         l(t('Edit component'), "node/{$node->nid}/webform/components/{$component['cid']}")
       );
-      if (wf_crm_admin_access($node)) {
+      if (wf_crm_admin_access($node) && node_is_page($node)) {
         drupal_set_message(
           '<strong>' . t('Maximum contacts exceeded, list truncated.') .'</strong><br>' .
           t('The field "@field" cannot show more than !limit contacts because it is a select list. Recommend switching to autocomplete widget in <a !link>component settings</a>.',
