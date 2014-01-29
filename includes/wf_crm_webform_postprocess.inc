@@ -142,6 +142,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
       // Identify contact 1 as acting user if not logged in
       if ($c == 1 && $this->id['cid'][$c] && user_is_anonymous()) {
+        // For the sake of simple logging
+        CRM_Core_Session::singleton()->set('userID', (int) $this->id['cid'][1]);
+        // For the sake of advanced logging
         CRM_Core_DAO::executeQuery('SET @civicrm_user_id = %1', array(1 => array($this->id['cid'][1], 'Integer')));
       }
     }
