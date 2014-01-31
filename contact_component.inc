@@ -129,7 +129,7 @@ function _webform_edit_civicrm_contact($component) {
       '#title' => t("Field(s) to display the contact"),
       '#required' => TRUE,
       '#default_value' => $component['extra']['results_display'],
-      '#options' => wf_crm_results_display_options(),
+      '#options' => wf_crm_results_display_options($contact_type),
       '#parents' => array('extra', 'results_display'),
     ),
   );
@@ -1012,12 +1012,25 @@ function theme_static_contact_element($vars) {
  *
  * @return array
  */
-function wf_crm_results_display_options() {
+function wf_crm_results_display_options($contact_type) {
   $options = array(
     'display_name' => t("Display Name"),
     'sort_name' => t("Sort Name"),
-    'organization_name' => t("Organization Name"),
-    'job_title' => t("Job Title"),
+  );
+  if ($contact_type == 'individual') {
+    $options += array(
+      'first_name' => t("First Name"),
+      'middle_name' => t("Middle Name"),
+      'last_name' => t("Last Name"),
+      'current_employer' => t("Current Employer"),
+      'job_title' => t("Job Title"),
+    );
+  }
+  else {
+    $options[$contact_type . '_name'] = $contact_type == 'organization' ? t("Organization Name") : t("Household Name");
+  }
+  $options += array(
+    'nick_name' => t("Nick Name"),
     'id' => t("Contact ID"),
     'external_identifier' => t("External ID"),
     'email' => t("Email"),
