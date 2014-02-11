@@ -1106,8 +1106,10 @@ class wf_crm_admin_form {
         elseif ($val === 'create_civicrm_webform_element') {
           $val = '';
         }
-        // Saves all non-empty values with a hack for membership_num_terms which needs to be saved even when 0
-        if (isset($this->fields[$table . '_' . $name]['expose_list']) && (!empty($val) || $name === 'num_terms')) {
+        // Saves all non-empty values with a hack for fields which needs to be saved even when 0
+        // FIXME: Really ought to change the select placeholder value to be '' instead of 0
+        if (isset($this->fields[$table . '_' . $name]['expose_list']) &&
+          (!empty($val) || (in_array($name, array('num_terms', 'is_active', 'is_test'))))) {
           // Don't add data for non-existent contacts
           if (!in_array($ent, array('contact', 'participant', 'membership')) || isset($this->data['contact'][$c])) {
             $this->data[$ent][$c][$table][$n][$name] = $val;
