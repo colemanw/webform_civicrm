@@ -268,7 +268,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $this->validateThisPage($elements[$key]);
         if (!empty($element['#civicrm_data_type'])
           && substr(wf_crm_aval($element, '#type', ''), 0, 4) === 'text'
-          && $element['#value'] !== NULL
+          && isset($element['#value'])
           && $element['#value'] !== '') {
           $dt = $element['#civicrm_data_type'];
           // Validate state/prov abbreviation
