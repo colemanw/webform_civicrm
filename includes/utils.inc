@@ -565,6 +565,21 @@ function wf_crm_get_fields($var = 'fields') {
       'contact_type' => 'individual',
       'reference_contact_type' => 'organization'
     );
+    $fields['contact_is_deceased'] = array(
+      'name' => t('Is Deceased'),
+      'type' => 'select',
+      'extra' => array('aslist' => 0),
+      'contact_type' => 'individual',
+    );
+    $fields['contact_deceased_date'] = array(
+      'name' => t('Deceased Date'),
+      'type' => 'date',
+      'extra' => array(
+        'start_date' => '-100 years',
+        'end_date' => 'now',
+      ),
+      'contact_type' => 'individual',
+    );
     $fields['email_email'] = array(
       'name' => t('Email'),
       'type' => 'email',
