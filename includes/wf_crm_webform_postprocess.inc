@@ -1021,6 +1021,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         unset($params['status_id']);
         // Pay later status
         if ($this->contributionIsPayLater && $this->getMembershipTypeField($params['membership_type_id'], 'minimum_fee')) {
+          $params['is_pay_later'] = TRUE;
           $params['status_id'] = 'Pending';
         }
       }
