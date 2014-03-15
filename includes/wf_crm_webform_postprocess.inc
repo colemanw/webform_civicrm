@@ -1399,7 +1399,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function payLaterContribution() {
     $params = $this->contributionParams();
-    $params['receive_date'] = 'now';
     $params['contribution_status_id'] = 'Pending';
     $result = wf_civicrm_api('contribution', 'create', $params);
     $this->id['contribution'] = $result['id'];
