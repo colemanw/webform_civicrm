@@ -180,17 +180,23 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    * @param $aid
    */
   private function populateActivityAndCaseFromUrl($aid) {
+    $return = array('target_contact_id', 'assignee_contact_id', 'source_contact_id', 'activity_type_id');
+    foreach ($this->enabled as $field => $id) {
+      if (strpos($field, 'civicrm_1_activity_1_activity_') === 0) {
+        $return[] = substr($field, 30);
+      }
+    };
     $result = wf_crm_apivalues('activity', 'get', array(
-      'activity_id' => $aid,
-      'return' => array('target_contact_id', 'assignee_contact_id', 'source_contact_id', 'activity_type_id'),
+      'id' => $aid,
+      'return' => $return,
     ));
     if (isset($result[$aid])) {
-      $act = $result[$aid];
+      $act = $result[$aid];dsm($act);
       // Verify that this activity is the right type and that our contacts have some involvement in it
       if ($act['activity_type_id'] == $this->data['activity'][1]['activity'][1]['activity_type_id']) {
         foreach ($this->id['cid'] as $cid) {
           if ($act['source_contact_id'] == $cid || in_array($cid, $act['target_contact_id']) || in_array($cid, $act['assignee_contact_id'])) {
-            $activity = array('activity' => array(1 => $result['values'][$aid]));
+            $activity = array('activity' => array(1 => $act));
             $custom = $this->getCustomData($aid, 'activity');
             $this->info['activity'] = array(1 => ($activity + $custom));
             $this->id['act'][1] = $aid;
