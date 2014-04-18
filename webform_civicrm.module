@@ -102,32 +102,14 @@ function webform_civicrm_node_load($nodes, $types) {
 
 /**
  * Implements hook_node_insert().
+ * Preserve webform_civicrm data when cloning or importing a node
+ *
+ * @param object $node
  */
 function webform_civicrm_node_insert($node) {
-  // For compatibility with node_clone module
-  if (arg(2) == 'clone') {
-    $db = db_query('SELECT * FROM {webform_civicrm_forms} WHERE nid = :nid', array(':nid' => arg(1)));
-    foreach ($db as $settings) {
-      $settings->nid = $node->nid;
-      $settings->data = unserialize($settings->data);
-      drupal_write_record('webform_civicrm_forms', $settings);
-      return;
-    }
-  }
-}
-
-/**
- * Implements hook_node_export_after_import_alter().
- * For compatibility with node_export module
- *
- * @param array $nodes
- */
-function webform_civicrm_node_export_after_import_alter(&$nodes) {
-  foreach ($nodes as $nid => $node) {
-    if (isset($node->webform_civicrm) && $node->webform_civicrm['nid'] != $nid) {
-      $node->webform_civicrm['nid'] = $nid;
-      drupal_write_record('webform_civicrm_forms', $node->webform_civicrm);
-    }
+  if (isset($node->webform_civicrm)) {
+    $node->webform_civicrm['nid'] = $node->nid;
+    drupal_write_record('webform_civicrm_forms', $node->webform_civicrm);
   }
 }
 
