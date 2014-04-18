@@ -117,6 +117,21 @@ function webform_civicrm_node_insert($node) {
 }
 
 /**
+ * Implements hook_node_export_after_import_alter().
+ * For compatibility with node_export module
+ *
+ * @param array $nodes
+ */
+function webform_civicrm_node_export_after_import_alter(&$nodes) {
+  foreach ($nodes as $nid => $node) {
+    if (isset($node->webform_civicrm) && $node->webform_civicrm['nid'] != $nid) {
+      $node->webform_civicrm['nid'] = $nid;
+      drupal_write_record('webform_civicrm_forms', $node->webform_civicrm);
+    }
+  }
+}
+
+/**
  * Implements hook_node_delete().
  */
 function webform_civicrm_node_delete($node) {
