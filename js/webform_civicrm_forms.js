@@ -317,12 +317,13 @@ var wfCivi = (function ($, D) {
   }
 
   function makeSelect(ele) {
-    var value = ele.val();
-    var classes = ele.attr('class').replace('text', 'select');
+    var value = ele.val(),
+      classes = ele.attr('class').replace('text', 'select'),
+      disabled = ele.is(':disabled') ? ' disabled="disabled"' : '';
     if (value !== '') {
       classes = classes + ' has-default';
     }
-    ele.replaceWith('<select id="'+ele.attr('id')+'" name="'+ele.attr('name')+'" class="'+classes+' civicrm-processed"><option selected="selected" value="'+value+'"> </option></select>');
+    ele.replaceWith('<select id="'+ele.attr('id')+'" name="'+ele.attr('name')+'"' + disabled + ' class="' + classes + ' civicrm-processed"><option selected="selected" value="'+value+'"> </option></select>');
   }
 
   D.behaviors.webform_civicrmForm = {
