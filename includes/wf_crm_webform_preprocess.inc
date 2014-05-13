@@ -191,7 +191,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       'return' => $return,
     ));
     if (isset($result[$aid])) {
-      $act = $result[$aid];dsm($act);
+      $act = $result[$aid];
       // Verify that this activity is the right type and that our contacts have some involvement in it
       if ($act['activity_type_id'] == $this->data['activity'][1]['activity'][1]['activity_type_id']) {
         foreach ($this->id['cid'] as $cid) {
