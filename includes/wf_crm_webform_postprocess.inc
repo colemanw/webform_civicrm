@@ -1646,7 +1646,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           && empty($params['state_province_id'])
           && empty($params['country_id'])
           && empty($params['postal_code'])
-          && empty($params['master_id']);
+          && (empty($params['master_id']) || $params['master_id'] == 'null');
       case 'website':
         return empty($params['url']);
       default:
