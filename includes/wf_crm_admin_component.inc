@@ -456,7 +456,7 @@ class wf_crm_admin_component {
       elseif (!empty($row['data-cid']) && isset($node->webform['components'][$row['data-cid']])) {
         $cid = $row['data-cid'];
         $component = $node->webform['components'][$cid];
-        $type = &$row['data'][1];
+        $type = &$row['data'][1]['data'];
         if ($component['type'] == 'civicrm_contact') {
           $types = array(
             'autocomplete' => t('Contact - Autocomplete'),
@@ -480,11 +480,11 @@ class wf_crm_admin_component {
           list( , $c, $ent, $n, $table, $name) = explode('_', $component['form_key'], 6);
           $field = wf_crm_aval($fields, $table . '_' . $name, array('type' => 'fieldset'));
           // Don't allow CiviCRM fields to be cloned
-          $row['data'][6] = '';
+          $row['data'][6]['data'] = '';
           if ($component['type'] == 'fieldset') {
             $title = t('Contact !num', array('!num' => $c));
             $type = t('Fieldset for !contact', array('!contact' => wf_crm_contact_label($c, $data)));
-            $row['data'][6] = l(t('Clone Contact'), "node/{$node->nid}/webform/components/$cid/clone", array(
+            $row['data'][6]['data'] = l(t('Clone Contact'), "node/{$node->nid}/webform/components/$cid/clone", array(
               'attributes' => array('title' => t('Add a new contact to the form with the same fields and settings')
               )));
             $class .= ' fieldset';
@@ -510,16 +510,16 @@ class wf_crm_admin_component {
           // Show defaults with labels instead of keys
           if ($component['type'] == 'civicrm_contact') {
             if ($component['extra']['default'] == 'contact_id') {
-              $row['data'][2] = check_plain(wf_crm_display_name($component['extra']['default_contact_id']));
+              $row['data'][2]['data'] = check_plain(wf_crm_display_name($component['extra']['default_contact_id']));
             }
             elseif ($component['extra']['default'] == 'user') {
-              $row['data'][2] = t('Current User');
+              $row['data'][2]['data'] = t('Current User');
             }
             elseif ($component['extra']['default'] == 'auto') {
-              $row['data'][2] = t('Auto - From Filters');
+              $row['data'][2]['data'] = t('Auto - From Filters');
             }
             elseif ($component['extra']['default'] == 'relationship' && $component['extra']['default_relationship']) {
-              $row['data'][2] = t('Relationship to !contact', array('!contact' => wf_crm_contact_label(1, $data)));
+              $row['data'][2]['data'] = t('Relationship to !contact', array('!contact' => wf_crm_contact_label(1, $data)));
             }
           }
           elseif (isset($component['value']) && strlen($component['value']) && ($field['type'] == 'select' || !empty($field['expose_list']))) {
@@ -535,13 +535,13 @@ class wf_crm_admin_component {
                 $val .= ($val ? ', ' : '') . $items[trim($v)];
               }
             }
-            $row['data'][2] = $val;
+            $row['data'][2]['data'] = $val;
           }
           // Contribution page - link to civicrm config form instead of component edit form
           if ($name == 'contribution_page_id') {
             $type = t('CiviCRM Billing Fields');
             $class .= ' contribution';
-            $row['data'][5] = l(t('Configure'), 'civicrm/admin/contribute/settings', array(
+            $row['data'][5]['data'] = l(t('Configure'), 'civicrm/admin/contribute/settings', array(
               'query' => array(
                 'reset' => 1,
                 'action' => 'update',
@@ -552,7 +552,8 @@ class wf_crm_admin_component {
               )
             ));
           }
-          $type = array('data' => '<span class="' . $class . '"> </span>' . $type, 'title' => $title);
+          $type = '<span class="' . $class . '"> </span>' . $type;
+          $row['data'][1]['title'] = $title;
         }
       }
     }
