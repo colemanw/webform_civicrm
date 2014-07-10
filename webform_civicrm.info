@@ -1,5 +1,5 @@
 name = Webform CiviCRM Integration
-description = Links Webform submissions with your CiviCRM database.
+description = A powerful, flexible, easy-to-use form builder for CiviCRM.
 core = 7.x
 package = CiviCRM
 dependencies[] = civicrm (>=4.4)
