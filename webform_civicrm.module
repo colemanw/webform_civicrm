@@ -267,7 +267,7 @@ function webform_civicrm_webform_submission_load(&$submissions) {
       $contacts[$dao->id] = $dao->display_name;
     }
     foreach ($submissions as &$s) {
-      if (isset($s->civicrm['contact_id'])) {
+      if (isset($s->civicrm['contact_id']) && !empty($s->civicrm['contact_id'][1])) {
         $s->civicrm['display_name'] = $contacts[$s->civicrm['contact_id'][1]];
       }
     }
@@ -396,12 +396,12 @@ function webform_civicrm_webform_component_presave(&$component) {
  * Implements hook_preprocess_HOOK().
  * Add CiviCRM names to webform submission results table.
  */
-function webform_civicrm_preprocess_webform_results_submissions(&$vars){
+function webform_civicrm_preprocess_webform_results_submissions(&$vars) {
   if (count($vars['table']['#rows']) && !empty($vars['node']->webform_civicrm)) {
     $access = user_access('access CiviCRM');
     $temp = $vars['table']['#header'];
     $vars['table']['#header'] = array();
-    // Move name to position 2
+    // Move contact col to position 2
     foreach ($temp as $k => $v) {
       $vars['table']['#header'][] = $v;
       if ($k == 1) {
@@ -413,10 +413,13 @@ function webform_civicrm_preprocess_webform_results_submissions(&$vars){
       $sid = $row[0];
       if (!empty($vars['submissions'][$sid]->civicrm['contact_id'][1])) {
         $data = $vars['submissions'][$sid]->civicrm;
-        if (($name = $data['display_name']) !== '') {
-          if ($access) {
-            $name = l($name, 'civicrm/contact/view', array('query' => array('reset' => 1, 'cid' => $data['contact_id'][1]), 'alias' => TRUE));
-          }
+        $name = $data['display_name'];
+        if ($name !== '' && $access) {
+          $name = l($name, 'civicrm/contact/view', array(
+            'query' => array('reset' => 1, 'cid' => $data['contact_id'][1]),
+            'attributes' => array('title' => t('View CiviCRM contact')),
+            'alias' => TRUE,
+          ));
         }
       }
       $temp = $row;
