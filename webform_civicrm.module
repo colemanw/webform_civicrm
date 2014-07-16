@@ -410,7 +410,9 @@ function webform_civicrm_preprocess_webform_results_submissions(&$vars) {
     }
     foreach ($vars['table']['#rows'] as &$row) {
       $name = '';
-      $sid = $row[0];
+      // Get submission id from url
+      preg_match('#/submission/(\d+)#', $row[4], $preg);
+      $sid = $preg[1];
       if (!empty($vars['submissions'][$sid]->civicrm['contact_id'][1])) {
         $data = $vars['submissions'][$sid]->civicrm;
         $name = $data['display_name'];
