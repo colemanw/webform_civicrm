@@ -397,7 +397,7 @@ function webform_civicrm_webform_component_presave(&$component) {
  * Add CiviCRM names to webform submission results table.
  */
 function webform_civicrm_preprocess_webform_results_submissions(&$vars) {
-  if (count($vars['table']['#rows']) && !empty($vars['node']->webform_civicrm)) {
+  if (count($vars['table']['#rows']) && !empty($vars['node']->webform_civicrm) && webform_results_access($vars['node'])) {
     $access = user_access('access CiviCRM');
     $temp = $vars['table']['#header'];
     $vars['table']['#header'] = array();
