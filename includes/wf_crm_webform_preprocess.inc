@@ -74,8 +74,9 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     else {
       $count = count($this->data['contact']);
       for ($i = 1; $i <= $count; ++$i) {
-        if ($existing_component = wf_crm_aval($this->enabled, "civicrm_{$i}_contact_1_contact_existing")) {
-          $this->findContact($this->node->webform['components'][$existing_component]);
+        $existing_component = $this->getComponent("civicrm_{$i}_contact_1_contact_existing");
+        if ($existing_component) {
+          $this->findContact($existing_component);
         }
       }
     }

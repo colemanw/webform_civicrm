@@ -189,24 +189,34 @@ abstract class wf_crm_webform_base {
    * @return array
    */
   protected function getExposedOptions($field_key, $exclude = array()) {
-    if ($field_key && isset($this->enabled[$field_key])) {
-      $field = $this->node->webform['components'][$this->enabled[$field_key]];
-      if ($field['type'] == 'select') {
-        // Fetch static options
-        if (empty($field['extra']['civicrm_live_options'])) {
-          $exposed = wf_crm_str2array($field['extra']['items']);
-        }
-        // Fetch live options
-        else {
-          $exposed = wf_crm_field_options($field, 'live_options', $this->data);
-        }
-        foreach ($exclude as $i) {
-          unset($exposed[$i]);
-        }
-        return $exposed;
+    $field = $this->getComponent($field_key);
+    if ($field && $field['type'] == 'select') {
+      // Fetch static options
+      if (empty($field['extra']['civicrm_live_options'])) {
+        $exposed = wf_crm_str2array($field['extra']['items']);
       }
+      // Fetch live options
+      else {
+        $exposed = wf_crm_field_options($field, 'live_options', $this->data);
+      }
+      foreach ($exclude as $i) {
+        unset($exposed[$i]);
+      }
+      return $exposed;
     }
     return array();
+  }
+
+  /**
+   * Fetch a webform component given its civicrm field key
+   * @param $field_key
+   * @return array|null
+   */
+  protected function getComponent($field_key) {
+    if ($field_key && isset($this->enabled[$field_key])) {
+      return wf_crm_aval($this->node->webform, 'components:' . $this->enabled[$field_key]);
+    }
+    return NULL;
   }
 
   /**

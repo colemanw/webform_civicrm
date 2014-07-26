@@ -475,7 +475,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function verifyExistingContact($cid, $fid) {
     if ($cid && is_numeric($cid) && !empty($this->enabled[$fid])) {
       module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
-      $component = $this->node->webform['components'][$this->enabled[$fid]];
+      $component = $this->getComponent($fid);
       $filters = wf_crm_search_filters($this->node, $component);
       // Verify access to this contact
       if (wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
@@ -1242,8 +1242,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function isPaymentPage() {
     $page = wf_crm_aval($this->form_state, 'storage:page_num', 1);
-    $fid = 'civicrm_1_contribution_1_contribution_contribution_page_id';
-    return $page == $this->node->webform['components'][$this->enabled[$fid]]['page_num'] &&
+    $field = $this->getComponent('civicrm_1_contribution_1_contribution_contribution_page_id');
+    return $page == $field['page_num'] &&
       !empty($this->data['contribution'][1]['contribution'][1]['payment_processor_id']);
   }
 
@@ -1622,7 +1622,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name) {
     if ($ent == 'contact' && isset($this->enabled["civicrm_{$c}_contact_1_contact_existing"])) {
-      $component = $this->node->webform['components'][$this->enabled["civicrm_{$c}_contact_1_contact_existing"]];
+      $component = $this->getComponent("civicrm_{$c}_contact_1_contact_existing");
       $existing_contact_val = $this->submissionValue($component['cid']);
       // Fields are hidden if value is empty (no selection) or a numeric contact id
       if (!$existing_contact_val[0] || is_numeric($existing_contact_val[0])) {
