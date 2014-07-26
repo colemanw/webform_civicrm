@@ -1241,7 +1241,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @return bool
    */
   private function isPaymentPage() {
-    return !empty($this->crmValues['civicrm_1_contribution_1_contribution_contribution_page_id']) &&
+    $page = wf_crm_aval($this->form_state, 'storage:page_num', 1);
+    $fid = 'civicrm_1_contribution_1_contribution_contribution_page_id';
+    return $page == $this->node->webform['components'][$this->enabled[$fid]]['page_num'] &&
       !empty($this->data['contribution'][1]['contribution'][1]['payment_processor_id']);
   }
 
