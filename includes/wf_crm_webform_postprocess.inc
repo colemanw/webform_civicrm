@@ -1652,6 +1652,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           && (empty($params['master_id']) || $params['master_id'] == 'null');
       case 'website':
         return empty($params['url']);
+      case 'im':
+        return empty($params['name']);
       default:
         return empty($params[$location]);
     }

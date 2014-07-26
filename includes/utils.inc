@@ -458,6 +458,7 @@ function wf_crm_get_fields($var = 'fields') {
       'phone' => array('entity_type' => 'contact', 'label' => t('Phone'), 'max_instances' => 9),
       'email' => array('entity_type' => 'contact', 'label' => t('Email'), 'max_instances' => 9),
       'website' => array('entity_type' => 'contact', 'label' => t('Website'), 'max_instances' => 9),
+      'im' => array('entity_type' => 'contact', 'label' => t('Instant Message'), 'max_instances' => 9),
       'activity' => array('entity_type' => 'activity', 'label' => t('Activity')),
       'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship'), 'help_text' => TRUE),
     );
@@ -647,7 +648,16 @@ function wf_crm_get_fields($var = 'fields') {
       'table' => 'phone',
       'expose_list' => TRUE,
     );
-    foreach (array('address' => t('Address # Location'), 'phone' => t('Phone # Location'), 'email' => t('Email # Location')) as $key => $label) {
+    $fields['im_name'] = array(
+      'name' => t('Screen Name'),
+      'type' => 'textfield',
+    );
+    $fields['im_provider_id'] = array(
+      'name' => t('IM Provider'),
+      'type' => 'select',
+      'expose_list' => TRUE,
+    );
+    foreach (array('address' => t('Address # Location'), 'phone' => t('Phone # Location'), 'email' => t('Email # Location'), 'im' => t('IM # Location')) as $key => $label) {
       $fields[$key . '_location_type_id'] = array(
         'name' => $label,
         'type' => 'select',
@@ -1345,7 +1355,7 @@ function wf_crm_required_contact_fields($contact_type) {
  * @return array
  */
 function wf_crm_location_fields() {
-  return array('address', 'email', 'phone', 'website');
+  return array('address', 'email', 'phone', 'website', 'im');
 }
 
 /**

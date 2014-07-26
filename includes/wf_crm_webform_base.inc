@@ -34,7 +34,7 @@ abstract class wf_crm_webform_base {
     $cid = $this->id['cid'][$c];
     $contact = $this->data['contact'][$c];
     $prefix = 'civicrm_' . $c . '_contact_1_';
-    foreach (array('contact', 'address', 'email', 'phone', 'website') as $ent) {
+    foreach (array_merge(array('contact'), wf_crm_location_fields()) as $ent) {
       if ((!empty($contact['number_of_' . $ent]) && !in_array($ent, $exclude)) || $ent == 'contact') {
         $params = array('contact_id' => $cid);
         if ($ent != 'contact' && $ent != 'website') {
