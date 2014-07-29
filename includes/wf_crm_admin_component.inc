@@ -49,7 +49,7 @@ class wf_crm_admin_component {
       $this->form['form_key']['#value'] = $fid;
       $this->form['form_key']['#description'] = NULL;
       $this->form['form_key']['#attributes']['title'] = t('Automatically set for use by CiviCRM processing.');
-      
+
       // Clone an entire contact when cloning their fieldset
       if (!empty($this->form['clone']['#value'])) {
         $this->form['actions']['submit']['#value'] = t('Clone Contact');
@@ -341,6 +341,9 @@ class wf_crm_admin_component {
     $this->form['items']['options']['#key_type_toggled'] = TRUE;
   }
 
+  /**
+   * options_element alterations for when a currency field (e.g. contribution amount, event fee) is rendered as a select
+   */
   private function moneyOptions() {
     $this->form['#validate'][] = 'wf_crm_money_validate';
     if ($this->component['type'] === 'grid') {
