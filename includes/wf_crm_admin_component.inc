@@ -47,7 +47,9 @@ class wf_crm_admin_component {
       // Prevent users from editing the form_key and breaking things
       $this->form['form_key']['#disabled'] = TRUE;
       $this->form['form_key']['#value'] = $fid;
-      $this->form['form_key']['#description'] = t('Automatically set for use by CiviCRM processing.');
+      $this->form['form_key']['#description'] = NULL;
+      $this->form['form_key']['#attributes']['title'] = t('Automatically set for use by CiviCRM processing.');
+      
       // Clone an entire contact when cloning their fieldset
       if (!empty($this->form['clone']['#value'])) {
         $this->form['actions']['submit']['#value'] = t('Clone Contact');
