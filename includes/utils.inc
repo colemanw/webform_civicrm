@@ -1365,14 +1365,11 @@ function wf_crm_location_fields() {
  * @param $id
  *   Drupal file id
  *
- * @return string|void: url of file if found
+ * @return string|bool: url of file if found
  */
 function wf_crm_filepath($id) {
-  if ($file = file_load($id)) {
-    global $base_url;
-    // Escape all characters except : and /
-    return str_replace('public://', $base_url . '/' . variable_get('file_public_path', conf_path() . '/files') . '/', str_replace(array('%3A', '%2F'), array(':', '/'), rawurlencode($file->uri)));
-  }
+  $file = file_load($id);
+  return $file ? file_create_url($file->uri) : FALSE;
 }
 
 /**
