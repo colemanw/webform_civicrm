@@ -515,6 +515,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         if ($field = wf_crm_aval($fields, $table . '_' . $name)) {
           $component = $element['#webform_component'];
           $element['#attributes']['class'][] = 'civicrm-enabled';
+          $dt = NULL;
           if (!empty($field['data_type'])) {
             $dt = $element['#civicrm_data_type'] = $field['data_type'];
             // Add CiviCRM JS to link fields
@@ -566,16 +567,14 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
                 $val = array_pop($val);
               }
             }
-            // Set data for contact image
-            if ($name == 'image_URL') {
-              if ($val && in_array($element['#type'], array('file', 'managed_file'))) {
-                $js = "jQuery(function() {wfCivi.contactImage('$eid', '$val')});";
+            // Contact image & custom file fields
+            if ($dt == 'File') {
+              $fileInfo = $this->getFileInfo($name, $val);
+              if ($fileInfo && in_array($element['#type'], array('file', 'managed_file'))) {
+                $fileInfo = json_encode($fileInfo);
+                $js = "jQuery(function() {wfCivi.initFileField('$eid', $fileInfo)});";
                 $element['#attached']['js'][$js] = array('type' => 'inline');
               }
-            }
-            // Custom file fields
-            elseif ($dt = 'File') {
-              continue;
             }
             // Set value for "secure value" elements
             elseif ($element['#type'] == 'value') {

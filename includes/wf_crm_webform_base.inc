@@ -533,6 +533,12 @@ abstract class wf_crm_webform_base {
       ->addScriptFile('civicrm', 'templates/CRM/Core/BillingBlock.js', -10, 'html-header');
   }
 
+  /**
+   * Copies a drupal file into the Civi file system
+   *
+   * @param int $id: drupal file id
+   * @return int|null Civi file id
+   */
   static function saveDrupalFileToCivi($id) {
     $file = file_load($id);
     if ($file) {
@@ -545,6 +551,32 @@ abstract class wf_crm_webform_base {
         ));
         return wf_crm_aval($result, 'id');
       }
+    }
+    return NULL;
+  }
+
+  /**
+   * @param $val
+   * @return array|null
+   */
+  function getFileInfo($fieldName, $val) {
+    if (!$val) {
+      return NULL;
+    }
+    if ($fieldName === 'image_URL') {
+      return array(
+        'data_type' => 'File',
+        'name' => NULL,
+        'icon' => $val,
+      );
+    }
+    $file = wf_crm_apivalues('file', 'get', $val);
+    if (!empty($file[$val])) {
+      return array(
+        'data_type' => 'File',
+        'name' => CRM_Utils_File::cleanFileName($file[$val]['uri']),
+        'icon' => file_icon_url((object) array('filemime' => $file[$val]['mime_type'])),
+      );
     }
     return NULL;
   }

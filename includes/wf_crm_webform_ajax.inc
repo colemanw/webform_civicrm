@@ -102,9 +102,14 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
             $type = ($table == 'contact' && strpos($field, 'name')) ? 'name' : $table;
             // Exclude blank and hidden fields to save bandwidth
             if ($contact[$table][$n][$field] !== '' && $contact[$table][$n][$field] !== array() && !in_array($type, $component['extra']['hide_fields'])) {
+              $dataType = wf_crm_aval(wf_crm_get_field("{$table}_$field"), 'data_type');
               $val = $contact[$table][$n][$field];
+              // Retrieve file info
+              if ($dataType === 'File') {
+                $val = $this->getFileInfo($field, $val);
+              }
               // Explode multivalue strings
-              if (is_string($val) && strpos($val, $sp) !== FALSE) {
+              elseif (is_string($val) && strpos($val, $sp) !== FALSE) {
                 $val = wf_crm_explode_multivalue_str($val);
               }
               $data[$fid] = $val;

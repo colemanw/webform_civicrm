@@ -542,6 +542,7 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Upload Image'),
         'type' => 'file',
         'extra' => array('width' => 40),
+        'data_type' => 'File',
       );
     }
     $fields['contact_contact_id'] = array(
@@ -1299,6 +1300,9 @@ function wf_civicrm_api($entity, $operation, $params) {
  *   Values from API call
  */
 function wf_crm_apivalues($entity, $operation, $params = array(), $value = NULL) {
+  if (is_numeric($params)) {
+    $params = array('id' => $params);
+  }
   $params += array('options' => array());
   // Work around the api's default limit of 25
   $params['options'] += array('limit' => 9999);

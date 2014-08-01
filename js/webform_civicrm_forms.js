@@ -81,13 +81,14 @@ var wfCivi = (function ($, D) {
     return ret;
   };
 
-  pub.contactImage = function(field, url) {
+  pub.initFileField = function(field, info) {
+    info = info || {};
     var container = $('div.webform-component.[class$="--' + field.replace(/_/g, '-') + '"] div.civicrm-enabled');
     if (container.length > 0) {
       if ($('.file', container).length > 0) {
         if ($('.file', container).is(':visible')) {
           $('.file', container).hide();
-          url = $('.file a', container).attr('href');
+          info.icon = $('.file a', container).attr('href');
         }
         else {
           return;
@@ -95,15 +96,15 @@ var wfCivi = (function ($, D) {
       }
       else {
         $(':visible', container).hide();
-        container.append('<input type="submit" class="form-submit ajax-processed civicrm-remove-image" value="' + Drupal.t('Change Image') + '" onclick="wfCivi.clearImage(\'' + field + '\'); return false;">');
+        container.append('<input type="submit" class="form-submit ajax-processed civicrm-remove-file" value="' + Drupal.t('Change') + '" onclick="wfCivi.clearFileField(\'' + field + '\'); return false;">');
       }
-      container.prepend('<img class="civicrm-contact-image" alt="' + Drupal.t('Contact Image') + '" src="' + url + '" />');
+      container.prepend('<span class="civicrm-file-icon"><img alt="' + Drupal.t('File') + '" src="' + info.icon + '" /> ' + (info.name || '') + '</span>');
     }
   };
 
-  pub.clearImage = function(field) {
+  pub.clearFileField = function(field) {
     var container = $('div.webform-component.[class$="--' + field.replace(/_/g, '-') + '"] div.civicrm-enabled');
-    $('.civicrm-remove-image, .civicrm-contact-image', container).remove();
+    $('.civicrm-remove-file, .civicrm-file-icon', container).remove();
     $('input[type=file], input[type=submit]', container).show();
   };
 
@@ -124,7 +125,7 @@ var wfCivi = (function ($, D) {
       if (n[0] === 'civicrm' && n[1] == num && n[2] === 'contact' && n[5] !== 'existing') {
         if (clear) {
           $(':input', this).not(':radio, :checkbox, :button, :submit').val('');
-          $('.civicrm-remove-image', this).click();
+          $('.civicrm-remove-file', this).click();
           $('input:checkbox, input:radio', this).each(function() {
             $(this).removeAttr('checked');
           });
@@ -156,11 +157,9 @@ var wfCivi = (function ($, D) {
 
   function fillValues(data, nid) {
     for (var fid in data) {
-      // Handle contact image
-      if (fid.slice(-9) == 'image_URL') {
-        if (data[fid].length > 0) {
-          pub.contactImage(fid, data[fid]);
-        }
+      // Handle file fields
+      if ($.isPlainObject(data[fid]) && data[fid].data_type === 'File') {
+        pub.initFileField(fid, data[fid]);
         continue;
       }
       // First try to find a single element - works for textfields and selects
@@ -377,7 +376,7 @@ var wfCivi = (function ($, D) {
 
       // Handle image file ajax refresh
       $('div.civicrm-enabled[id*=contact-1-contact-image-url]:has(.file)', context).each(function() {
-        pub.contactImage(getFieldNameFromClass($(this).parent()));
+        pub.initFileField(getFieldNameFromClass($(this).parent()));
       });
     }
   };
