@@ -144,8 +144,8 @@ class wf_crm_admin_component {
     if ($this->form['type']['#value'] == 'civicrm_contact') {
       $this->form['display']['#weight'] = -1;
     }
-    // Allow widget to be altered
-    elseif ($this->field && $this->field['type'] !== 'civicrm_contact' && empty($_GET['type'])) {
+    // Allow widget to be altered, unless it's a contact or file
+    elseif ($this->field && !in_array($this->field['type'], array('civicrm_contact', 'file')) && empty($_GET['type'])) {
       $widgets = array();
       foreach (webform_components() as $k => $v) {
         if ($k !== 'civicrm_contact' && $k !== 'pagebreak' && $k !== 'markup' && empty($v['features']['group'])) {

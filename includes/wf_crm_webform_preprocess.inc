@@ -573,6 +573,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
                 $element['#attached']['js'][$js] = array('type' => 'inline');
               }
             }
+            // Custom file fields
+            elseif ($dt = 'File') {
+              continue;
+            }
             // Set value for "secure value" elements
             elseif ($element['#type'] == 'value') {
               $element['#value'] = $val;

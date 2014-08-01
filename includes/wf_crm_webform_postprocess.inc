@@ -1553,18 +1553,26 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
           continue;
         }
+        $dataType = wf_crm_aval($field, 'data_type');
         if (!empty($field['extra']['multiple'])) {
           // Merge with existing data
           if (!empty($this->data[$ent][$c][$table][$n][$name]) && is_array($this->data[$ent][$c][$table][$n][$name])) {
             $val = array_unique(array_merge($val, $this->data[$ent][$c][$table][$n][$name]));
           }
           // Implode data that will be stored as a string
-          if ($table !== 'other' && $name !== 'event_id' && $name !== 'relationship_type_id' && $table !== 'contact' && wf_crm_aval($field, 'data_type') != 'ContactReference') {
+          if ($table !== 'other' && $name !== 'event_id' && $name !== 'relationship_type_id' && $table !== 'contact' && $dataType != 'ContactReference') {
             $val = $sp . implode($sp, $val) . $sp;
           }
         }
         elseif ($name === 'image_URL') {
           if (empty($val[0]) || !($val = wf_crm_filepath($val[0]))) {
+            // This field can't be emptied due to the nature of file uploads
+            continue;
+          }
+        }
+        elseif ($dataType == 'File') {
+          if (empty($val[0]) || !($val = $this->saveDrupalFileToCivi($val[0]))) {
+            // This field can't be emptied due to the nature of file uploads
             continue;
           }
         }

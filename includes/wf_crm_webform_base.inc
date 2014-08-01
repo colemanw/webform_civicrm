@@ -522,6 +522,8 @@ abstract class wf_crm_webform_base {
 
   /**
    * CiviCRM JS can't be attached to a drupal form so have to manually re-add this during validation
+   *
+   * @return int|null
    */
   function addPaymentJs() {
     $credit_card_types = CRM_Core_Payment_Form::getCreditCardCSSNames();
@@ -529,6 +531,22 @@ abstract class wf_crm_webform_base {
       ->addCoreResources()
       ->addSetting(array('config' => array('creditCardTypes' => $credit_card_types)))
       ->addScriptFile('civicrm', 'templates/CRM/Core/BillingBlock.js', -10, 'html-header');
+  }
+
+  static function saveDrupalFileToCivi($id) {
+    $file = file_load($id);
+    if ($file) {
+      $config = CRM_Core_Config::singleton();
+      $path = file_unmanaged_copy($file->uri, $config->customFileUploadDir);
+      if ($path) {
+        $result = wf_civicrm_api('file', 'create', array(
+          'uri' => str_replace($config->customFileUploadDir, '', $path),
+          'mime_type' => $file->filemime,
+        ));
+        return wf_crm_aval($result, 'id');
+      }
+    }
+    return NULL;
   }
 
 }

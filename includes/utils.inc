@@ -1012,6 +1012,7 @@ function wf_crm_get_fields($var = 'fields') {
       'Select State/Province' => array('type' => 'select'),
       'Multi-Select State/Province' => array('type' => 'select', 'extra' => array('multiple' => 1)),
       'Autocomplete-Select' => array('type' => 'select'),
+      'File' => array('type' => 'file'),
     );
     list($contact_types) = wf_crm_get_contact_types();
     $custom_extends = "'" . implode("','", array_keys($contact_types + $sets)) . "'";
