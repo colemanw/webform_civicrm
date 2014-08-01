@@ -1565,7 +1565,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
         }
         elseif ($name === 'image_URL') {
-          if (empty($val[0]) || !($val = wf_crm_filepath($val[0]))) {
+          if (empty($val[0]) || !($val = $this->getDrupalFileUrl($val[0]))) {
             // This field can't be emptied due to the nature of file uploads
             continue;
           }

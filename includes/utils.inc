@@ -1364,20 +1364,6 @@ function wf_crm_location_fields() {
 }
 
 /**
- * Fetch the path of a file
- * And format it as a public url that CiviCRM can read
- *
- * @param $id
- *   Drupal file id
- *
- * @return string|bool: url of file if found
- */
-function wf_crm_filepath($id) {
-  $file = file_load($id);
-  return $file ? file_create_url($file->uri) : FALSE;
-}
-
-/**
  * Returns the children of a webform component
  */
 function _wf_crm_child_components($nid, $id) {

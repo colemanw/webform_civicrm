@@ -556,7 +556,9 @@ abstract class wf_crm_webform_base {
   }
 
   /**
-   * @param $val
+   * Retrieve info needed for pre-filling a webform file field
+   * @param string $fieldName
+   * @param string|int $val: url or civi file id
    * @return array|null
    */
   function getFileInfo($fieldName, $val) {
@@ -579,6 +581,18 @@ abstract class wf_crm_webform_base {
       );
     }
     return NULL;
+  }
+
+  /**
+   * Fetch the public url of a file in the Drupal file system
+   *
+   * @param $id Drupal file id
+   *
+   * @return string|bool: url of file if found
+   */
+  function getDrupalFileUrl($id) {
+    $file = file_load($id);
+    return $file ? file_create_url($file->uri) : FALSE;
   }
 
 }
