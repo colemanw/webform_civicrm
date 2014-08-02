@@ -105,6 +105,17 @@ class wf_crm_admin_form {
   private function rebuildForm() {
     $this->settings = wf_crm_aval($this->form_state['storage'], 'vals', $this->form_state['values']);
     $this->rebuildData();
+    // Hack for nicer UX: pre-check phone, email, etc when user increments them
+    if (!empty($_POST['_triggering_element_name'])) {
+      foreach (array('phone' => 'phone', 'email' => 'email', 'website' => 'url', 'im' => 'name') as $ent => $field) {
+        if (strpos($_POST['_triggering_element_name'], "_number_of_$ent")) {
+          list(, $c) = explode('_', $_POST['_triggering_element_name']);
+          for ($n = 1; $n <= $this->data['contact'][$c]["number_of_$ent"]; ++$n) {
+            $this->settings["civicrm_{$c}_contact_{$n}_{$ent}_{$field}"] = 1;
+          }
+        }
+      }
+    }
     unset($this->form_state['storage']['vals']);
   }
 
