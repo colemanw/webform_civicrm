@@ -386,10 +386,11 @@ class wf_crm_admin_form {
     $campaign_act_types = array();
     if ($case_types && !empty($this->data['case'][1]['case'][1]['case_type_id'])) {
       $case_type = $this->form['act']['case_type_id']['#default_value'] = $this->data['case'][1]['case'][1]['case_type_id'];
-      $case_type_name = $case_types[$case_type];
+      $case_type_names = wf_crm_apivalues('case', 'getoptions', array('field' => 'case_type_id', 'context' => 'validate'));
+      $case_type_name = $case_type_names[$case_type];
       $this->form['act']['case']['case_fields'] = array(
         '#type' => 'fieldset',
-        '#title' => $case_type_name . ' ' . t('Case'),
+        '#title' => $case_types[$case_type] . ' ' . t('Case'),
       );
       $this->form['act']['case']['case_fields']['existing_case_status'] = array(
         '#type' => 'select',
