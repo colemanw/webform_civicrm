@@ -212,11 +212,11 @@ var wfCivi = (function ($, D) {
   function populateStates(stateSelect, countryId, stateVal) {
     $(stateSelect).attr('disabled', 'disabled');
     if (stateProvinceCache[countryId]) {
-      fillOptions(stateSelect, stateProvinceCache[countryId], stateVal);
+      fillOptions(stateSelect, stateProvinceCache[countryId], stateVal, '-');
     }
     else {
       $.get(setting.callbackPath+'/stateProvince/'+countryId, function(data) {
-        fillOptions(stateSelect, data, stateVal, countryId);
+        fillOptions(stateSelect, data, stateVal, '-');
         stateProvinceCache[countryId] = data;
       }, 'json');
     }
@@ -231,30 +231,23 @@ var wfCivi = (function ($, D) {
       stateVal = stateSelect.val();
     if (countySelect.length) {
       if (!stateVal) {
-        fillOptions(countySelect, {'': Drupal.t('- First Choose a State -')});
+        fillOptions(countySelect, {'': Drupal.t('- First Choose a State -')}, countySelect.val(), '');
+      }
+      else if (stateVal === '-') {
+        fillOptions(countySelect, null, countySelect.val(), '');
       }
       else {
         $.get(setting.callbackPath+'/county/'+stateVal+'-'+countryId, function(data) {
-          fillOptions(countySelect, data);
+          fillOptions(countySelect, data, countySelect.val(), '');
         }, 'json');
       }
     }
   }
 
-  function fillOptions(element, data, value) {
-    value = value || $(element).val();
+  function fillOptions(element, data, value, na) {
     $(element).find('option').remove();
-    var dataEmpty = true;
-    var noCountry = false;
-    for (var key in data) {
-      if (key === '') {
-        noCountry = true;
-      }
-      dataEmpty = false;
-      break;
-    }
-    if (!dataEmpty) {
-      if (!noCountry) {
+    if (!$.isEmptyObject(data || {})) {
+      if (!data['']) {
         if ($(element).hasClass('required')) {
           var text = Drupal.t('- Select -');
         }
@@ -268,14 +261,14 @@ var wfCivi = (function ($, D) {
           $(element).append('<option value="">'+text+'</option>');
         }
       }
-      for (key in data) {
-        $(element).append('<option value="'+key+'">'+data[key]+'</option>');
-      }
+      $.each(data, function(key, val) {
+        $(element).append('<option value="'+key+'">'+val+'</option>');
+      });
       $(element).val(value);
     }
     else {
       $(element).removeClass('has-default');
-      $(element).append('<option value="-">'+Drupal.t('- N/A -')+'</option>');
+      $(element).append('<option value="'+ na +'">'+Drupal.t('- N/A -')+'</option>');
     }
     $(element).removeAttr('disabled').change();
   }
