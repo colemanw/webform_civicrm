@@ -1561,7 +1561,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
           // Implode data that will be stored as a string
           if ($table !== 'other' && $name !== 'event_id' && $name !== 'relationship_type_id' && $table !== 'contact' && $dataType != 'ContactReference') {
-            $val = $sp . implode($sp, $val) . $sp;
+            $val = CRM_Utils_Array::implodePadded($val);
           }
         }
         elseif ($name === 'image_URL') {
