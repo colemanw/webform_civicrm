@@ -121,6 +121,7 @@ function wf_crm_field_options($field, $context, $data) {
  * @param null|int|string $param
  */
 function wf_crm_get_states($param = NULL) {
+  $ret = array();
   if (!$param || $param == 'default') {
     $config = CRM_Core_Config::singleton();
     if (!$param && !empty($config->provinceLimit)) {
