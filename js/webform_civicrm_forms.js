@@ -212,11 +212,11 @@ var wfCivi = (function ($, D) {
   function populateStates(stateSelect, countryId, stateVal) {
     $(stateSelect).attr('disabled', 'disabled');
     if (stateProvinceCache[countryId]) {
-      fillOptions(stateSelect, stateProvinceCache[countryId], stateVal, '-');
+      fillOptions(stateSelect, stateProvinceCache[countryId], stateVal);
     }
     else {
       $.get(setting.callbackPath+'/stateProvince/'+countryId, function(data) {
-        fillOptions(stateSelect, data, stateVal, '-');
+        fillOptions(stateSelect, data, stateVal);
         stateProvinceCache[countryId] = data;
       }, 'json');
     }
@@ -231,20 +231,20 @@ var wfCivi = (function ($, D) {
       stateVal = stateSelect.val();
     if (countySelect.length) {
       if (!stateVal) {
-        fillOptions(countySelect, {'': Drupal.t('- First Choose a State -')}, countySelect.val(), '');
+        fillOptions(countySelect, {'': Drupal.t('- First Choose a State -')}, countySelect.val());
       }
       else if (stateVal === '-') {
-        fillOptions(countySelect, null, countySelect.val(), '');
+        fillOptions(countySelect, null, countySelect.val());
       }
       else {
         $.get(setting.callbackPath+'/county/'+stateVal+'-'+countryId, function(data) {
-          fillOptions(countySelect, data, countySelect.val(), '');
+          fillOptions(countySelect, data, countySelect.val());
         }, 'json');
       }
     }
   }
 
-  function fillOptions(element, data, value, na) {
+  function fillOptions(element, data, value) {
     $(element).find('option').remove();
     if (!$.isEmptyObject(data || {})) {
       if (!data['']) {
@@ -268,7 +268,7 @@ var wfCivi = (function ($, D) {
     }
     else {
       $(element).removeClass('has-default');
-      $(element).append('<option value="'+ na +'">'+Drupal.t('- N/A -')+'</option>');
+      $(element).append('<option value="-">'+Drupal.t('- N/A -')+'</option>');
     }
     $(element).removeAttr('disabled').change();
   }
