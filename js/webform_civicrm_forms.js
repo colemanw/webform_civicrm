@@ -163,16 +163,16 @@ var wfCivi = (function ($, D) {
         continue;
       }
       // First try to find a single element - works for textfields and selects
-      var ele = $('.webform-client-form-'+nid+' :input.civicrm-enabled[name$="'+fid+']"]').not(':checkbox, :radio');
-      if (ele.length > 0) {
+      var $el = $('.webform-client-form-'+nid+' :input.civicrm-enabled[name$="'+fid+']"]').not(':checkbox, :radio');
+      if ($el.length > 0) {
         // Trigger chain select when changing country
         if (fid.substr(fid.length - 10) === 'country_id') {
-          if (ele.val() != data[fid]) {
-            ele.val(data[fid]);
-            countrySelect('#'+ele.attr('id'), data[fid.replace('country', 'state_province')]);
+          if ($el.val() != data[fid]) {
+            $el.val(data[fid]);
+            countrySelect('#'+$el.attr('id'), data[fid.replace('country', 'state_province')]);
           }
         }
-        ele.val(data[fid]);
+        $el.val(data[fid]);
       }
       // Next go after the wrapper - for radios, dates & checkboxes
       else {
@@ -308,14 +308,17 @@ var wfCivi = (function ($, D) {
     return cids;
   }
 
-  function makeSelect(ele) {
-    var value = ele.val(),
-      classes = ele.attr('class').replace('text', 'select'),
-      disabled = ele.is(':disabled') ? ' disabled="disabled"' : '';
+  function makeSelect($el) {
+    var value = $el.val(),
+      classes = $el.attr('class').replace('text', 'select'),
+      id = $el.attr('id'),
+      $form = $el.closest('form'),
+      disabled = $el.is(':disabled') ? ' disabled="disabled"' : '';
     if (value !== '') {
       classes = classes + ' has-default';
     }
-    ele.replaceWith('<select id="'+ele.attr('id')+'" name="'+ele.attr('name')+'"' + disabled + ' class="' + classes + ' civicrm-processed"><option selected="selected" value="'+value+'"> </option></select>');
+    $el.replaceWith('<select id="'+$el.attr('id')+'" name="'+$el.attr('name')+'"' + disabled + ' class="' + classes + ' civicrm-processed"><option selected="selected" value="'+value+'"> </option></select>');
+    return $('#' + id, $form);
   }
 
   D.behaviors.webform_civicrmForm = {
@@ -327,14 +330,13 @@ var wfCivi = (function ($, D) {
       }
 
       // Replace state/prov & county textboxes with dynamic select lists
-      $('input:text.civicrm-enabled[name*="_address_state_province_id"]', context).each(function(){
-        var ele = $(this);
-        var id = ele.attr('id');
-        var key = parseName(ele.attr('name'));
-        var countrySelect = ele.parents('form').find('.civicrm-enabled[name*="['+(key.replace('state_province', 'country'))+']"]');
-        var county = ele.parents('form').find('.civicrm-enabled[name*="['+(key.replace('state_province', 'county'))+']"]');
-        makeSelect(ele);
-        county.length && makeSelect(county);
+      $('input:text.civicrm-enabled[name*="_address_state_province_id"]', context).each(function() {
+        var $el = $(this);
+        var key = parseName($el.attr('name'));
+        var countrySelect = $el.parents('form').find('.civicrm-enabled[name*="['+(key.replace('state_province', 'country'))+']"]');
+        var $county = $el.parents('form').find('.civicrm-enabled[name*="['+(key.replace('state_province', 'county'))+']"]');
+        $el = makeSelect($el);
+        $county.length && ($county = makeSelect($county));
 
         var countryVal = 'default';
         if (countrySelect.length === 1) {
@@ -345,8 +347,8 @@ var wfCivi = (function ($, D) {
         }
         countryVal || (countryVal = '');
 
-        $('#'+id).change(populateCounty);
-        populateStates($('#'+id), countryVal);
+        $county.length && $el.change(populateCounty);
+        populateStates($el, countryVal, $el.val());
       });
 
       // Add handler to country field to trigger ajax refresh of corresponding state/prov

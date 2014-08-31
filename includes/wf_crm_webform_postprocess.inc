@@ -664,7 +664,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             }
           }
           // Substitute county stub ('-' is a hack to get around required field when there are no available counties)
-          if (isset($params['county_id']) && $params['county_id'] == '-') {
+          if (isset($params['county_id']) && $params['county_id'] === '-') {
             $params['county_id'] = '';
           }
           // Update drupal email address
