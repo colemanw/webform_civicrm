@@ -398,6 +398,7 @@ function webform_civicrm_webform_component_presave(&$component) {
  */
 function webform_civicrm_preprocess_webform_results_submissions(&$vars) {
   if (count($vars['table']['#rows']) && !empty($vars['node']->webform_civicrm) && webform_results_access($vars['node'])) {
+    module_load_include('inc', 'webform_civicrm', 'includes/utils');
     $access = user_access('access CiviCRM');
     $temp = $vars['table']['#header'];
     $vars['table']['#header'] = array();
