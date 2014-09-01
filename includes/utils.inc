@@ -479,6 +479,21 @@ function wf_crm_get_fields($var = 'fields') {
     if (in_array('CiviMember', $components)) {
       $sets['membership'] = array('entity_type' => 'membership', 'label' => t('Membership'));
     }
+    if (in_array('CiviGrant', $components)) {
+      $sets['grant'] = array('entity_type' => 'grant', 'label' => t('Grant'), 'max_instances' => 50);
+    }
+
+    $moneyDefaults = array(
+      'type' => 'number',
+      'data_type' => 'Money',
+      'extra' => array(
+        'field_prefix' => wf_crm_aval($config, 'defaultCurrencySymbol', '$'),
+        'point' => wf_crm_aval($config, 'monetaryDecimalPoint', '.'),
+        'separator' => wf_crm_aval($config, 'monetaryThousandSeparator', ','),
+        'decimals' => 2,
+        'min' => 0,
+      ),
+    );
 
     // Field keys are in the format table_column
     // Use a # sign as a placeholder for field number in the title (or by default it will be appended to the end)
@@ -855,17 +870,8 @@ function wf_crm_get_fields($var = 'fields') {
       );
       $fields['contribution_total_amount'] = array(
         'name' => t('Contribution Amount'),
-        'type' => 'number',
-        'extra' => array(
-          'field_prefix' => wf_crm_aval($config, 'defaultCurrencySymbol', '$'),
-          'point' => wf_crm_aval($config, 'monetaryDecimalPoint', '.'),
-          'separator' => wf_crm_aval($config, 'monetaryThousandSeparator', ','),
-          'decimals' => 2,
-          'min' => 0,
-        ),
-        'data_type' => 'Money',
         'weight' => 9991,
-      );
+      ) + $moneyDefaults;
       $fields['contribution_payment_processor_id'] = array(
         'name' => t('Payment Processor'),
         'type' => 'select',
@@ -928,10 +934,10 @@ function wf_crm_get_fields($var = 'fields') {
         'value' => 0,
         'exposed_empty_option' => '- ' . t('Automatic') . ' -',
       );
-      if (isset($fields['contribution_total_amount'])) {
-        $fields['participant_fee_amount'] = $fields['contribution_total_amount'];
-        $fields['participant_fee_amount']['name'] = t('Participant Fee');
-        unset($fields['participant_fee_amount']['weight']);
+      if (isset($sets['contribution'])) {
+        $fields['participant_fee_amount'] = array(
+          'name' => t('Participant Fee'),
+        ) + $moneyDefaults;
       }
     }
     if (isset($sets['membership'])) {
@@ -992,6 +998,63 @@ function wf_crm_get_fields($var = 'fields') {
           'empty_option' => t('None'),
         );
       }
+    }
+    // Add grant fields
+    if (isset($sets['grant'])) {
+      $fields['grant_contact_id'] = array(
+        'name' => t('Grant Applicant'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'data_type' => 'ContactReference',
+      );
+      $fields['grant_grant_type_id'] = array(
+        'name' => t('Grant Type'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'extra' => array('civicrm_live_options' => 1),
+      );
+      $fields['grant_status_id'] = array(
+        'name' => t('Grant Status'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'value' => 0,
+        'exposed_empty_option' => '- ' . t('Automatic') . ' -',
+      );
+      $fields['grant_application_received_date'] = array(
+        'name' => t('Application Received Date'),
+        'type' => 'date',
+      );
+      $fields['grant_decision_date'] = array(
+        'name' => t('Decision Date'),
+        'type' => 'date',
+      );
+      $fields['grant_money_transfer_date'] = array(
+        'name' => t('Money Transfer Date'),
+        'type' => 'date',
+      );
+      $fields['grant_grant_due_date'] = array(
+        'name' => t('Grant Report Due'),
+        'type' => 'date',
+      );
+      $fields['grant_grant_report_received'] = array(
+        'name' => t('Grant Report Received?'),
+        'type' => 'select',
+        'extra' => array('aslist' => 0),
+      );
+      $fields['grant_rationale'] = array(
+        'name' => t('Grant Rationale'),
+        'type' => 'textarea',
+      );
+      $fields['grant_note'] = array(
+        'name' => t('Grant Notes'),
+        'type' => 'textarea',
+      );
+      $fields['grant_amount_total'] = array(
+        'name' => t('Amount Requested'),
+      ) + $moneyDefaults;
+      $fields['grant_amount_granted'] = array(
+        'name' => t('Amount Granted'),
+      ) + $moneyDefaults;
     }
     $tokens = array(
       'display_name' => t('display name'),

@@ -227,6 +227,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $this->processContribution();
         $record['contribution_id'] = $this->id['contribution'];
       }
+      if (isset($this->all_sets['grant'])) {
+        $this->processGrants();
+      }
     }
     // Write record; we do this when creating, updating, or saving a draft of a webform submission.
     drupal_write_record('webform_civicrm_submissions', $record, $this->update);
@@ -1485,6 +1488,39 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Send receipt
     if (!empty($this->contribution_page['is_email_receipt'])) {
       wf_civicrm_api('contribution', 'sendconfirmation', array('id' => $id) + $this->contribution_page);
+    }
+  }
+
+  /**
+   * Save grants
+   */
+  private function processGrants() {
+    foreach (wf_crm_aval($this->data, 'grant', array()) as $n => $data) {
+      if (is_array($data) && !empty($data['grant'][1]['contact_id'])) {
+        $grant = $data['grant'][1];
+        // Set some defaults
+        if (empty($grant['id'])) {
+          // Automatic status... for lack of anything fancier just pick the first option ("Submitted" on a standard install)
+          if (empty($grant['status_id'])) {
+            $options = wf_crm_apivalues('grant', 'getoptions', array('field' => 'status_id'));
+            $grant['status_id'] = current(array_keys($options));
+          }
+          if (empty($grant['application_received_date'])) {
+            $grant['application_received_date'] = 'now';
+          }
+          if (empty($grant['grant_report_received'])) {
+            $grant['grant_report_received'] = '0';
+          }
+        }
+        if (empty($grant['status_id'])) {
+          unset($grant['status_id']);
+        }
+        $result = wf_civicrm_api('grant', 'create', $grant);
+        // Save custom data
+        if (count($data) > 1 && !empty($result['id'])) {
+          $this->saveCustomData($data, $result['id'], 'Grant', FALSE);
+        }
+      }
     }
   }
 
