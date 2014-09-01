@@ -401,7 +401,7 @@ class wf_crm_admin_form {
       );
       $this->help($this->form['act']['case']['case_fields']['existing_case_status'], 'existing_case_status');
     }
-    $act_types = wf_crm_get_activity_types($case_type_name);
+    $act_types = wf_crm_get_activity_types($case_type_name, $campaign_act_types);
     $this->form['act']['case']['activity_type_id'] = array(
       '#type' => 'select',
       '#title' => t('Activity Type'),

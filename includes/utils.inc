@@ -263,10 +263,11 @@ function wf_crm_get_surveys($act = array()) {
 /**
  * Get list of activity types
  * @param string $case_type_name
+ * @param array $campaign_act_types
  *
  * @return array
  */
-function wf_crm_get_activity_types($case_type_name = NULL) {
+function wf_crm_get_activity_types($case_type_name, &$campaign_act_types) {
   // Return activities only appropriate to this case
   if ($case_type_name) {
     $case_info = new CRM_Case_XMLProcessor_Process();
@@ -286,8 +287,11 @@ function wf_crm_get_activity_types($case_type_name = NULL) {
 
   $ret = array();
   foreach (wf_crm_apivalues('option_value', 'get', $params) as $val) {
-    if (empty($val['component_id']) || $val['component_id'] == $campaign_type) {
+    if (empty($val['component_id'])) {
       $ret[$val['value']] = $val['label'];
+    }
+    elseif ($val['component_id'] == $campaign_type) {
+      $campaign_act_types[$val['value']] = $ret[$val['value']] = $val['label'];
     }
   }
 
