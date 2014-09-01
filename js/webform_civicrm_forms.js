@@ -39,10 +39,10 @@ var wfCivi = (function ($, D) {
       var params = getCids(nid);
       params.load = 'full';
       params.cid = cid;
-      $.get(path, params, function(data) {
+      $.getJSON(path, params, function(data) {
         fillValues(data, nid);
         $('.webform-client-form-'+nid).removeClass('contact-loading');
-      }, 'json');
+      });
     }
   };
 
@@ -124,14 +124,15 @@ var wfCivi = (function ($, D) {
       var n = name.split('-');
       if (n[0] === 'civicrm' && n[1] == num && n[2] === 'contact' && n[5] !== 'existing') {
         if (clear) {
-          $(':input', this).not(':radio, :checkbox, :button, :submit').val('');
-          $('.civicrm-remove-file', this).click();
-          $('input:checkbox, input:radio', this).each(function() {
-            $(this).removeAttr('checked');
-          });
-          // Trigger chain select when changing country
+          // Reset country to default
           if (n[5] === 'country') {
-            $('select.civicrm-processed', this).val(setting.defaultCountry).change();
+            $('select.civicrm-processed', this).val(setting.defaultCountry).trigger('change', 'webform_civicrm:reset');
+          } else {
+            $(':input', this).not(':radio, :checkbox, :button, :submit').val('').trigger('change', 'webform_civicrm:reset');
+            $('.civicrm-remove-file', this).click();
+            $('input:checkbox, input:radio', this).each(function() {
+              $(this).removeAttr('checked').trigger('change', 'webform_civicrm:reset');
+            });
           }
         }
         var type = (n[6] === 'name') ? 'name' : n[4];
@@ -156,47 +157,48 @@ var wfCivi = (function ($, D) {
   }
 
   function fillValues(data, nid) {
-    for (var fid in data) {
+    $.each(data, function() {
+      var fid = this.fid,
+        val = this.val;
       // Handle file fields
-      if ($.isPlainObject(data[fid]) && data[fid].data_type === 'File') {
-        pub.initFileField(fid, data[fid]);
-        continue;
+      if (this.data_type === 'File') {
+        pub.initFileField(fid, val);
+        return;
       }
       // First try to find a single element - works for textfields and selects
       var $el = $('.webform-client-form-'+nid+' :input.civicrm-enabled[name$="'+fid+']"]').not(':checkbox, :radio');
-      if ($el.length > 0) {
-        // Trigger chain select when changing country
-        if (fid.substr(fid.length - 10) === 'country_id') {
-          if ($el.val() != data[fid]) {
-            $el.val(data[fid]);
-            countrySelect('#'+$el.attr('id'), data[fid.replace('country', 'state_province')]);
-          }
+      if ($el.length) {
+        // For chain-select fields, store value for later if it's not available
+        if ((fid.substr(fid.length - 9) === 'county_id' || fid.substr(fid.length - 11) === 'province_id') && !$('option[value='+val+']', $el).length) {
+          console.log($el);
+          $el.attr('data-val', val);
         }
-        $el.val(data[fid]);
+        else if ($el.val() !== val) {
+          $el.val(val).trigger('change', 'webform_civicrm:autofill');
+        }
       }
       // Next go after the wrapper - for radios, dates & checkboxes
       else {
-        var wrapper = $('.webform-client-form-'+nid+' div.form-item.webform-component[class*="--'+(fid.replace(/_/g, '-'))+'"]');
-        if (wrapper.length > 0) {
+        var $wrapper = $('.webform-client-form-'+nid+' div.form-item.webform-component[class*="--'+(fid.replace(/_/g, '-'))+'"]');
+        if ($wrapper.length) {
           // Date fields
-          if (wrapper.hasClass('webform-component-date')) {
-            var val = data[fid].split('-');
-            if (val.length === 3) {
-              $(':input[id$="year"]', wrapper).val(val[0]);
-              $(':input[id$="month"]', wrapper).val(parseInt(val[1], 10));
-              $(':input[id$="day"]', wrapper).val(parseInt(val[2], 10));
+          if ($wrapper.hasClass('webform-component-date')) {
+            var vals = val.split('-');
+            if (vals.length === 3) {
+              $(':input[id$="year"]', $wrapper).val(vals[0]).trigger('change', 'webform_civicrm:autofill');
+              $(':input[id$="month"]', $wrapper).val(parseInt(vals[1], 10)).trigger('change', 'webform_civicrm:autofill');
+              $(':input[id$="day"]', $wrapper).val(parseInt(vals[2], 10)).trigger('change', 'webform_civicrm:autofill');
             }
           }
           // Checkboxes & radios
           else {
-            var val = $.makeArray(data[fid]);
-            for (var i in val) {
-              $(':input[value="'+val[i]+'"]', wrapper).attr('checked', 'checked');
-            }
+            $.each($.makeArray(val), function(k, v) {
+              $(':input[value="'+v+'"]', $wrapper).attr('checked', 'checked').trigger('change', 'webform_civicrm:autofill');
+            });
           }
         }
       }
-    }
+    });
   }
 
   function parseName(name) {
@@ -209,16 +211,16 @@ var wfCivi = (function ($, D) {
     return name;
   }
 
-  function populateStates(stateSelect, countryId, stateVal) {
+  function populateStates(stateSelect, countryId) {
     $(stateSelect).attr('disabled', 'disabled');
     if (stateProvinceCache[countryId]) {
-      fillOptions(stateSelect, stateProvinceCache[countryId], stateVal);
+      fillOptions(stateSelect, stateProvinceCache[countryId]);
     }
     else {
-      $.get(setting.callbackPath+'/stateProvince/'+countryId, function(data) {
-        fillOptions(stateSelect, data, stateVal);
+      $.getJSON(setting.callbackPath+'/stateProvince/'+countryId, function(data) {
+        fillOptions(stateSelect, data);
         stateProvinceCache[countryId] = data;
-      }, 'json');
+      });
     }
   }
 
@@ -231,46 +233,43 @@ var wfCivi = (function ($, D) {
       stateVal = stateSelect.val();
     if (countySelect.length) {
       if (!stateVal) {
-        fillOptions(countySelect, {'': Drupal.t('- First Choose a State -')}, countySelect.val());
+        fillOptions(countySelect, {'': Drupal.t('- First Choose a State -')});
       }
       else if (stateVal === '-') {
-        fillOptions(countySelect, null, countySelect.val());
+        fillOptions(countySelect, null);
       }
       else {
-        $.get(setting.callbackPath+'/county/'+stateVal+'-'+countryId, function(data) {
-          fillOptions(countySelect, data, countySelect.val());
-        }, 'json');
+        $.getJSON(setting.callbackPath+'/county/'+stateVal+'-'+countryId, function(data) {
+          fillOptions(countySelect, data);
+        });
       }
     }
   }
 
-  function fillOptions(element, data, value) {
-    $(element).find('option').remove();
-    if (!$.isEmptyObject(data || {})) {
+  function fillOptions(element, data) {
+    var $el = $(element),
+      value = $el.attr('data-val') ? $el.attr('data-val') : $el.val();
+    $el.find('option').remove();
+    if (!$.isEmptyObject(data || [])) {
       if (!data['']) {
-        if ($(element).hasClass('required')) {
-          var text = Drupal.t('- Select -');
+        var text = $el.hasClass('required') ? Drupal.t('- Select -') : Drupal.t('- None -');
+        if ($el.hasClass('has-default')) {
+          $el.removeClass('has-default');
         }
         else {
-          var text = Drupal.t('- None -');
-        }
-        if ($(element).hasClass('has-default')) {
-          $(element).removeClass('has-default');
-        }
-        else {
-          $(element).append('<option value="">'+text+'</option>');
+          $el.append('<option value="">'+text+'</option>');
         }
       }
       $.each(data, function(key, val) {
-        $(element).append('<option value="'+key+'">'+val+'</option>');
+        $el.append('<option value="'+key+'">'+val+'</option>');
       });
-      $(element).val(value);
+      $el.val(value);
     }
     else {
-      $(element).removeClass('has-default');
-      $(element).append('<option value="-">'+Drupal.t('- N/A -')+'</option>');
+      $el.removeClass('has-default');
+      $el.append('<option value="-">'+Drupal.t('- N/A -')+'</option>');
     }
-    $(element).removeAttr('disabled').change();
+    $el.removeAttr('disabled').trigger('change', 'webform_civicrm:chainselect');
   }
 
   function sharedAddress(item, action, speed) {
@@ -286,13 +285,12 @@ var wfCivi = (function ($, D) {
     }
   }
 
-  function countrySelect(ele, stateVal) {
-    var name = parseName($(ele).attr('name'));
-    var countryId = $(ele).val();
-    var stateSelect = $(ele).parents('form.webform-client-form').find('select.civicrm-enabled[name*="['+(name.replace('country', 'state_province'))+']"]');
+  function countrySelect() {
+    var name = parseName($(this).attr('name'));
+    var countryId = $(this).val();
+    var stateSelect = $(this).parents('form.webform-client-form').find('select.civicrm-enabled[name*="['+(name.replace('country', 'state_province'))+']"]');
     if (stateSelect.length) {
-      $(stateSelect).val('');
-      populateStates(stateSelect, countryId, stateVal);
+      populateStates(stateSelect, countryId);
     }
   }
 
@@ -317,8 +315,10 @@ var wfCivi = (function ($, D) {
     if (value !== '') {
       classes = classes + ' has-default';
     }
-    $el.replaceWith('<select id="'+$el.attr('id')+'" name="'+$el.attr('name')+'"' + disabled + ' class="' + classes + ' civicrm-processed"><option selected="selected" value="'+value+'"> </option></select>');
-    return $('#' + id, $form);
+    $el.replaceWith('<select id="'+$el.attr('id')+'" name="'+$el.attr('name')+'"' + disabled + ' class="' + classes + ' civicrm-processed" data-val="' + value + '"></select>');
+    return $('#' + id, $form).change(function() {
+      $(this).attr('data-val', '');
+    });
   }
 
   D.behaviors.webform_civicrmForm = {
@@ -348,13 +348,11 @@ var wfCivi = (function ($, D) {
         countryVal || (countryVal = '');
 
         $county.length && $el.change(populateCounty);
-        populateStates($el, countryVal, $el.val());
+        populateStates($el, countryVal);
       });
 
       // Add handler to country field to trigger ajax refresh of corresponding state/prov
-      $('form.webform-client-form .civicrm-enabled[name*="_address_country_id]"]').once('civicrm').change(function(){
-        countrySelect(this);
-      });
+      $('form.webform-client-form .civicrm-enabled[name*="_address_country_id]"]').once('civicrm').change(countrySelect);
 
       // Show/hide address fields when sharing an address
       $('form.webform-client-form .civicrm-enabled[name*="_address_master_id"]').once('civicrm').change(function(){

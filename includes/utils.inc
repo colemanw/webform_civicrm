@@ -607,10 +607,6 @@ function wf_crm_get_fields($var = 'fields') {
         'description' => t('+4 digits of Zip Code'),
       ),
     );
-    $fields['address_county_id'] = array(
-      'name' => t('District/County'),
-      'type' => 'textfield',
-    );
     $fields['address_country_id'] = array(
       'name' => t('Country'),
       'type' => 'select',
@@ -625,6 +621,10 @@ function wf_crm_get_fields($var = 'fields') {
         'width' => 4,
       ),
       'data_type' => 'state_province_abbr',
+    );
+    $fields['address_county_id'] = array(
+      'name' => t('District/County'),
+      'type' => 'textfield',
     );
     $fields['address_master_id'] = array(
       'name' => t('Share address of'),
