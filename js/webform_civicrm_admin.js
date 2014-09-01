@@ -305,7 +305,14 @@ var wfCiviAdmin = (function ($, D) {
           var label = getContactLabel($(this).attr('name').split('_')[1]);
           memberships.push(label + ': ' + $(this).find('option:selected').text());
         });
-        return memberships.join('<br>') || Drupal.t('- None -');
+        return memberships.join('<br />') || Drupal.t('- None -');
+      });
+      $('#edit-grant', context).once('wf-civi').drupalSetSummary(function (context) {
+        var label = [];
+        $('select[name$=grant_type_id]', context).each(function() {
+          label.push($(this).find('option:selected').text());
+        });
+        return label.join('<br />') || Drupal.t('- None -');
       });
       $('fieldset#edit-options', context).once('wf-civi').drupalSetSummary(function (context) {
         var label = '';
