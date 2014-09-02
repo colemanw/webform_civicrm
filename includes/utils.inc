@@ -1138,6 +1138,9 @@ function wf_crm_get_fields($var = 'fields') {
         }
         $id = $set . '_custom_' . $dao->id;
         $fields[$id] = $custom_types[$dao->html_type];
+        if ($dao->html_type == 'Text' && $dao->data_type == 'Money') {
+          $fields[$id] = $moneyDefaults;
+        }
         $fields[$id]['name'] = $dao->label;
         $fields[$id]['required'] = $dao->is_required;
         $fields[$id]['extra']['description'] = $dao->help_pre;
