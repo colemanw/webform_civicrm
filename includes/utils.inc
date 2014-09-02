@@ -467,20 +467,17 @@ function wf_crm_get_fields($var = 'fields') {
       'activity' => array('entity_type' => 'activity', 'label' => t('Activity')),
       'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship'), 'help_text' => TRUE),
     );
-    if (in_array('CiviCase', $components)) {
-      $sets['case'] = array('entity_type' => 'case', 'label' => t('Case Settings'));
-    }
-    if (in_array('CiviEvent', $components)) {
-      $sets['participant'] = array('entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9);
-    }
-    if (in_array('CiviContribute', $components)) {
-      $sets['contribution'] = array('entity_type' => 'contribution', 'label' => t('Contribution'));
-    }
-    if (in_array('CiviMember', $components)) {
-      $sets['membership'] = array('entity_type' => 'membership', 'label' => t('Membership'));
-    }
-    if (in_array('CiviGrant', $components)) {
-      $sets['grant'] = array('entity_type' => 'grant', 'label' => t('Grant'), 'max_instances' => 50);
+    $conditional_sets = array(
+      'CiviCase' => array('entity_type' => 'case', 'label' => t('Case Settings')),
+      'CiviEvent' => array('entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9),
+      'CiviContribute' => array('entity_type' => 'contribution', 'label' => t('Contribution')),
+      'CiviMember' => array('entity_type' => 'membership', 'label' => t('Membership')),
+      'CiviGrant' => array('entity_type' => 'grant', 'label' => t('Grant'), 'max_instances' => 50),
+    );
+    foreach ($conditional_sets as $component => $set) {
+      if (in_array($component, $components)) {
+        $sets[$set['entity_type']] = $set;
+      }
     }
 
     $moneyDefaults = array(
