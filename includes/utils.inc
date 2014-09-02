@@ -1053,6 +1053,25 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Amount Granted'),
       ) + $moneyDefaults;
     }
+
+    // File attachment fields
+    $numAttachments = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'max_attachments');
+    foreach (array('grant') as $ent) {
+      if (isset($sets[$ent]) && $numAttachments) {
+        $sets["{$ent}upload"] = array(
+          'label' => t('File Attachments'),
+          'entity_type' => $ent,
+        );
+        for ($i = 1; $i <= $numAttachments; $i++) {
+          $fields["{$ent}upload_file_$i"] = array(
+            'name' => t('Attachment !num', array('!num' => $i)),
+            'type' => 'file',
+            'data_type' => 'File',
+          );
+        }
+      }
+    }
+
     $tokens = array(
       'display_name' => t('display name'),
       'first_name' => t('first name'),

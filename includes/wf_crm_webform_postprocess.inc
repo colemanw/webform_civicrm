@@ -1516,10 +1516,38 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           unset($grant['status_id']);
         }
         $result = wf_civicrm_api('grant', 'create', $grant);
+        $sets = 1;
+        if (isset($data['grantupload'])) {
+          $sets = 2;
+          $this->processAttachments('grant', $n, $result['id'], empty($grant['id']));
+        }
         // Save custom data
-        if (count($data) > 1 && !empty($result['id'])) {
+        if (count($data) > $sets && !empty($result['id'])) {
           $this->saveCustomData($data, $result['id'], 'Grant', FALSE);
         }
+      }
+    }
+  }
+
+  /**
+   * @param string $ent - entity type
+   * @param int $n - entity number
+   * @param int $id - entity id
+   * @param bool $new - is this a new object? (should we bother checking for existing data)
+   */
+  private function processAttachments($ent, $n, $id, $new = FALSE) {
+    $attachments = $new ? array() : $this->getAttachments($ent, $id);
+    foreach ((array) wf_crm_aval($this->data[$ent], "$n:{$ent}upload:1") as $num => $file_id) {
+      if ($file_id) {
+        list(, $i) = explode('_', $num);
+        $dao = new CRM_Core_DAO_EntityFile();
+        if (!empty($attachments[$i])) {
+          $dao->id = $attachments[$i]['id'];
+        }
+        $dao->file_id = $file_id;
+        $dao->entity_id = $id;
+        $dao->entity_table = "civicrm_$ent";
+        $dao->save();
       }
     }
   }
