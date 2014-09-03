@@ -1029,6 +1029,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $params['status_id'] = 'Pending';
         }
       }
+      // Override status
+      else {
+        $params['is_override'] = 1;
+      }
       $params['contact_id'] = $cid;
       // The api won't let us manually set status without this weird param
       $params['skipStatusCal'] = !empty($params['status_id']);
