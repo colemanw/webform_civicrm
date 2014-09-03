@@ -111,7 +111,7 @@ abstract class wf_crm_webform_base {
             $types += array_keys($this->getExposedOptions($prefix . 'relationship_type_id'));
           }
         }
-        $rel = $this->getRelationship($types, $cid, $this->id['cid'][$r]);
+        $rel = $this->getRelationship($types, $cid, wf_crm_aval($this->id['cid'], $r));
         if ($rel) {
           $info['relationship'][$r] = $rel;
           // Fetch custom data
