@@ -509,7 +509,6 @@ function wf_crm_get_fields($var = 'fields') {
     $enabled_names = wf_crm_explode_multivalue_str(CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'contact_edit_options'));
     $name_options = CRM_Core_OptionGroup::values('contact_edit_options', FALSE, FALSE, FALSE, NULL, 'name');
     $enabled_names = array_intersect_key($name_options, array_flip($enabled_names));
-    dsm($enabled_names);
     foreach (array('prefix' => t('Name Prefix'), 'formal_title' => t('Formal Title'), 'first_name' => t('First Name'), 'middle_name' => t('Middle Name'), 'last_name' => t('Last Name'), 'suffix' => t('Name Suffix')) as $key => $label) {
       if (in_array(ucwords(str_replace(array('_id', '_'), array('', ' '), $key)), $enabled_names)) {
         $fields['contact_' . $key] = array(
