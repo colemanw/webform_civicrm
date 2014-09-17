@@ -506,14 +506,20 @@ function wf_crm_get_fields($var = 'fields') {
       );
     }
     // Individual names
-    $enabled_names = wf_crm_explode_multivalue_str(CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'contact_edit_options'));
-    $name_options = CRM_Core_OptionGroup::values('contact_edit_options', FALSE, FALSE, FALSE, NULL, 'name');
-    $enabled_names = array_intersect_key($name_options, array_flip($enabled_names));
-    foreach (array('prefix' => t('Name Prefix'), 'formal_title' => t('Formal Title'), 'first_name' => t('First Name'), 'middle_name' => t('Middle Name'), 'last_name' => t('Last Name'), 'suffix' => t('Name Suffix')) as $key => $label) {
+    if (substr($config->civiVersion, 0, 3) == '4.4') {
+      // This setting doesn't exist prior to 4.5 so hard-code it.
+      $enabled_names = array('Prefix', 'Suffix', 'First Name', 'Middle Name', 'Last Name');
+    }
+    else {
+      $enabled_names = wf_crm_explode_multivalue_str(CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'contact_edit_options'));
+      $name_options = CRM_Core_OptionGroup::values('contact_edit_options', FALSE, FALSE, FALSE, NULL, 'name');
+      $enabled_names = array_intersect_key($name_options, array_flip($enabled_names));
+    }
+    foreach (array('prefix_id' => t('Name Prefix'), 'formal_title' => t('Formal Title'), 'first_name' => t('First Name'), 'middle_name' => t('Middle Name'), 'last_name' => t('Last Name'), 'suffix_id' => t('Name Suffix')) as $key => $label) {
       if (in_array(ucwords(str_replace(array('_id', '_'), array('', ' '), $key)), $enabled_names)) {
         $fields['contact_' . $key] = array(
           'name' => $label,
-          'type' => strpos($key, 'fix') ? 'select' : 'textfield',
+          'type' => strpos($key, '_id') ? 'select' : 'textfield',
           'contact_type' => 'individual',
         );
       }
