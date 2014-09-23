@@ -506,7 +506,7 @@ function wf_crm_get_fields($var = 'fields') {
       );
     }
     // Individual names
-    if (substr($config->civiVersion, 0, 3) == '4.4') {
+    if (empty($config->civiVersion) || substr($config->civiVersion, 0, 3) == '4.4') {
       // This setting doesn't exist prior to 4.5 so hard-code it.
       $enabled_names = array('Prefix', 'Suffix', 'First Name', 'Middle Name', 'Last Name');
     }
