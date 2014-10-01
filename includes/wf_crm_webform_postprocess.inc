@@ -1434,6 +1434,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['source'] = $this->settings['new_contact_source'];
     $params['total_amount'] = $this->totalContribution;
 
+    // pass all submitted values to payment processor
+    foreach ($_POST as $key => $value) {
+      if (empty($params[$key])) {
+        $params[$key] = $value;
+      }
+    }
+
     // Save this stuff for later
     unset($params['soft'], $params['honor_contact_id'], $params['honor_type_id']);
     return $params;
