@@ -1398,7 +1398,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function submitPayment() {
     $result = wf_civicrm_api('contribution', 'transact', $this->contributionParams());
     if (empty($result['id'])) {
-      form_set_error('contribution', t('Transaction failed. Please verify all billing fields are correct.'));
+      if (!empty($result['error_message'])) {
+        form_set_error('contribution', $result['error_message']);
+      }
+      else {
+        form_set_error('contribution', t('Transaction failed. Please verify all billing fields are correct.'));
+      }
       return;
     }
     $this->id['contribution'] = $result['id'];
