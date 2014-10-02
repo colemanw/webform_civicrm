@@ -92,11 +92,11 @@ form .civi-icon {
 form .wf-crm-change-select {
   margin: 3px 0 0 6px;
   vertical-align: top;
-  background-position: -188px -0px;
+  background-position: -204px -0px;
 }
 
 form .wf-crm-change-select.select-multiple {
-  background-position: -203px -0px;
+  background-position: -219px -0px;
 }
 
 form .civi-icon.individual {
@@ -137,4 +137,7 @@ form .civi-icon.contribution {
 
 form .civi-icon.membership {
   background-position:-171px 0;
+}
+form .civi-icon.grant {
+  background-position:-187px 0;
 }

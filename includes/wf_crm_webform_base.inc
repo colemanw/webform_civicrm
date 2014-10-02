@@ -595,5 +595,20 @@ abstract class wf_crm_webform_base {
     return $file ? file_create_url($file->uri) : FALSE;
   }
 
+  /**
+   * @param string $ent - entity type
+   * @param int $id - entity id
+   * @return array starting at index 1
+   */
+  public function getAttachments($ent, $id) {
+    $n = 1;
+    $attachments = array();
+    $dao = CRM_Core_DAO::executeQuery("SELECT * FROM civicrm_entity_file WHERE entity_table = 'civicrm_$ent' AND entity_id = $id");
+    while ($dao->fetch()) {
+      $attachments[$n++] = (array) $dao;
+    }
+    return $attachments;
+  }
+
 }
 
