@@ -245,17 +245,17 @@ function webform_civicrm_webform_submission_load(&$submissions) {
   $db = db_query('SELECT * FROM {webform_civicrm_submissions} WHERE sid IN (' . implode(',', array_keys($submissions)) . ')');
   $contacts = array();
   foreach ($db as $row) {
-    $sid = $row->sid;
-    unset($row->sid);
+    $data = $row->civicrm_data + array('contact' => array());
     if ($row->contact_id) {
-      $cid = explode('-', rtrim($row->contact_id, '-'));
-      unset($cid[0]);
-      $row->contact_id = $cid;
-      if (!empty($cid[1])) {
-        $contacts[$cid[1]] = '';
+      foreach (explode('-', trim($row->contact_id, '-')) as $c => $cid) {
+        $data['contact'][$c + 1]['id'] = $cid;
+        $data['contact'][$c + 1]['display_name'] = '';
+        if ($c == 0 && $cid) {
+          $contacts[$cid] = '';
+        }
       }
     }
-    $submissions[$sid]->civicrm = (array) $row;
+    $submissions[$row->sid]->civicrm = $data;
   }
   if ($contacts) {
     // Retrieve contact names and add to submission objects
@@ -267,8 +267,8 @@ function webform_civicrm_webform_submission_load(&$submissions) {
       $contacts[$dao->id] = $dao->display_name;
     }
     foreach ($submissions as &$s) {
-      if (isset($s->civicrm['contact_id']) && !empty($s->civicrm['contact_id'][1])) {
-        $s->civicrm['display_name'] = $contacts[$s->civicrm['contact_id'][1]];
+      if (!empty($s->civicrm['contact'][1]['id'])) {
+        $s->civicrm['contact'][1]['display_name'] = $contacts[$s->civicrm['contact'][1]['id']];
       }
     }
   }
@@ -279,8 +279,8 @@ function webform_civicrm_webform_submission_load(&$submissions) {
  * Add display name to title while viewing a submission.
  */
 function webform_civicrm_webform_submission_render_alter(&$sub) {
-  if (!empty($sub['#submission']->civicrm['display_name']) && empty($sub['#email']) && $sub['#format'] == 'html') {
-    drupal_set_title(t('Submission #!num by @name', array('!num' => $sub['#submission']->sid, '@name' => $sub['#submission']->civicrm['display_name'])));
+  if (!empty($sub['#submission']->civicrm['contact'][1]['display_name']) && empty($sub['#email']) && $sub['#format'] == 'html') {
+    drupal_set_title(t('Submission #!num by @name', array('!num' => $sub['#submission']->sid, '@name' => $sub['#submission']->civicrm['contact'][1]['display_name'])));
   }
 }
 
@@ -291,30 +291,30 @@ function webform_civicrm_webform_submission_render_alter(&$sub) {
 function webform_civicrm_webform_submission_actions($node, $submission) {
   $actions = array();
   if (!empty($node->webform_civicrm)
-  && !empty($submission->civicrm)
-  && webform_results_access($node)
-  && user_access('access CiviCRM')) {
+    && !empty($submission->civicrm)
+    && webform_results_access($node)
+    && user_access('access CiviCRM')) {
     $data = $submission->civicrm;
-    if (!empty($data['display_name'])) {
+    if (!empty($data['contact'][1]['display_name'])) {
       $actions['civicrm_action contact_view'] = array(
-        'title' => t('View @name', array('@name' => $data['display_name'])),
+        'title' => t('View @name', array('@name' => $data['contact'][1]['display_name'])),
         'href' => 'civicrm/contact/view',
-        'query' => array('reset' => 1, 'cid' => $data['contact_id'][1]),
+        'query' => array('reset' => 1, 'cid' => $data['contact'][1]['id']),
       );
-    }
-    if (!empty($data['activity_id'])) {
-      $actions['civicrm_action activity_view'] = array(
-        'title' => t('View Activity'),
-        'href' => 'civicrm/activity',
-        'query' => array('action' => 'view', 'reset' => 1, 'cid' => $data['contact_id'][1], 'id' => $data['activity_id']),
-      );
-    }
-    if (!empty($data['contribution_id'])) {
-      $actions['civicrm_action contribution_view'] = array(
-        'title' => t('View Contribution'),
-        'href' => 'civicrm/contact/view/contribution',
-        'query' => array('action' => 'view', 'reset' => 1, 'cid' => $data['contact_id'][1], 'id' => $data['contribution_id']),
-      );
+      if (!empty($data['activity'][1]['id'])) {
+        $actions['civicrm_action activity_view'] = array(
+          'title' => t('View Activity'),
+          'href' => 'civicrm/activity',
+          'query' => array('action' => 'view', 'reset' => 1, 'cid' => $data['contact'][1]['id'], 'id' => $data['activity'][1]['id']),
+        );
+      }
+      if (!empty($data['contribution'][1]['id'])) {
+        $actions['civicrm_action contribution_view'] = array(
+          'title' => t('View Contribution'),
+          'href' => 'civicrm/contact/view/contribution',
+          'query' => array('action' => 'view', 'reset' => 1, 'cid' => $data['contact'][1]['id'], 'id' => $data['contribution'][1]['id']),
+        );
+      }
     }
   }
   return $actions;
@@ -336,19 +336,6 @@ function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = N
       WHERE d.data = :old AND d.cid = c.cid AND d.nid = c.nid AND c.type = 'civicrm_contact'",
       array(':new' => $new_id, ':old' => $old_id)
     );
-  }
-}
-
-/**
- * Implements hook_civicrm_post().
- * Update submission data when civicrm data is deleted.
- */
-function webform_civicrm_civicrm_post($op, $type, $id, $obj) {
-  if ($type === 'Activity' && $op === 'delete') {
-    db_update('webform_civicrm_submissions')
-    ->fields(array('activity_id' => 0))
-    ->condition('activity_id', $id)
-    ->execute();
   }
 }
 
@@ -416,10 +403,10 @@ function webform_civicrm_preprocess_webform_results_submissions(&$vars) {
       $sid = $preg[1];
       if (!empty($vars['submissions'][$sid]->civicrm['contact_id'][1])) {
         $data = $vars['submissions'][$sid]->civicrm;
-        $name = $data['display_name'];
+        $name = $data['contact'][1]['display_name'];
         if ($name !== '' && $access) {
           $name = l($name, 'civicrm/contact/view', array(
-            'query' => array('reset' => 1, 'cid' => $data['contact_id'][1]),
+            'query' => array('reset' => 1, 'cid' => $data['contact'][1]['id']),
             'attributes' => array('title' => t('View CiviCRM contact')),
             'alias' => TRUE,
           ));
