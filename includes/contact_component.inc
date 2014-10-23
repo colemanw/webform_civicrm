@@ -688,14 +688,14 @@ function wf_crm_update_existing_component(&$component, $enabled, $data) {
 
 /**
  * Get a contact's relations of certain types
- * 
+ *
  * @param cid
  *   Contact id
  * @param types
  *   Array of relationship_type_ids
  * @param $current
  *   Limit to current & enabled relations?
- * 
+ *
  * @return array
  */
 function wf_crm_find_relations($cid, $types, $current = TRUE) {
@@ -751,12 +751,12 @@ function wf_crm_find_relations($cid, $types, $current = TRUE) {
 
 /**
  * Format filters for the contact get api
- * 
+ *
  * @param $node
  *   Webform node object
  * @param $component
  *   Webform component of type 'civicrm_contact'
- * 
+ *
  * @return array
  *   Api params
  */
@@ -851,6 +851,7 @@ function wf_crm_results_display_options($contact_type) {
     'nick_name' => t("Nick Name"),
     'id' => t("Contact ID"),
     'external_identifier' => t("External ID"),
+    'source' => t("Source"),
     'email' => t("Email"),
     'city' => t("City"),
     'county' => t("District/County"),

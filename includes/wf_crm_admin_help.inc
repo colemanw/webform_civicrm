@@ -60,6 +60,12 @@ class wf_crm_admin_help {
     self::contact_contact_id();
   }
 
+  static function contact_source() {
+     print '<p>' .
+      t('This field will override the "Source Label" in "Additional Options".') .
+      '</p>';
+  }
+
   static function contact_cs() {
     self::contact_contact_id();
   }

@@ -552,7 +552,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // CiviCRM API is too picky about this, imho
     $params['contact_type'] = ucfirst($params['contact_type']);
     unset($params['contact_id'], $params['id']);
-    $params['source'] = $this->settings['new_contact_source'];
+    if(!isset($params['source'])){
+      $params['source'] = $this->settings['new_contact_source'];
+    }
     // If creating individual with no first/last name,
     // set display name and sort_name
     if ($params['contact_type'] == 'Individual' && empty($params['first_name']) && empty($params['last_name'])) {
@@ -943,7 +945,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                 $params['id'] = $existing[$params['event_id']];
               }
               else {
-                $params['source'] = $this->settings['new_contact_source'];
+                if(isset($this->data['contact'][$c]['contact'][1]['source'])){
+                  $params['source'] = $this->data['contact'][$c]['contact'][1]['source'];
+                }else{
+                  $params['source'] = $this->settings['new_contact_source'];
+                }
                 if ($c > 1 && !empty($registered_by_id[$e][$i])) {
                   $params['registered_by_id'] = $registered_by_id[$e][$i];
                 }
@@ -1021,7 +1027,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
       }
       if (empty($params['id'])) {
-        $params['source'] = $this->settings['new_contact_source'];
+        if(isset($this->data['contact'][$c]['contact'][1]['source'])){
+          $params['source'] = $this->data['contact'][$c]['contact'][1]['source'];
+        }else{
+          $params['source'] = $this->settings['new_contact_source'];
+        }
       }
       // Automatic status
       if (empty($params['status_id'])) {
@@ -1434,8 +1444,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['currency'] = $params['currencyID'] = $this->contribution_page['currency'];
     $params['skipRecentView'] = $params['skipLineItem'] = 1;
     $params['contact_id'] = $this->id['cid'][1];
-    $params['source'] = $this->settings['new_contact_source'];
     $params['total_amount'] = $this->totalContribution;
+    if(isset($this->data['contact'][1]['contact'][1]['source'])){
+      $params['source'] = $this->data['contact'][1]['contact'][1]['source'];
+    }else{
+      $params['source'] = $this->settings['new_contact_source'];
+    }
 
     // pass all submitted values to payment processor
     foreach ($_POST as $key => $value) {
