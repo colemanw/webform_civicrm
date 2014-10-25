@@ -1170,9 +1170,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     // Format details as html
     $params['details'] = nl2br(wf_crm_aval($params, 'details', ''));
-    if (empty($params['subject'])) {
-      $params['subject'] = $this->data['activity'][1]['activity'][1]['subject'];
-    }
     if (!empty($this->data['activity'][1]['details']['entire_result'])) {
       module_load_include('inc', 'webform', 'includes/webform.submissions');
       $renderable = webform_submission_render($this->node, $this->submission, NULL, 'html');

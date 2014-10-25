@@ -764,3 +764,27 @@ function webform_civicrm_update_7401(&$batch) {
     db_drop_field('webform_civicrm_submissions', 'contribution_id');
   }
 }
+
+/**
+ * Create hidden field for activity subject to replace the removed "default subject" setting
+ */
+function webform_civicrm_update_7402() {
+  civicrm_initialize();
+  module_load_include('inc', 'webform', 'includes/webform.components');
+  module_load_include('inc', 'webform_civicrm', 'includes/utils');
+  // Exclude forms that already have an activity_subject field
+  $forms = db_query("SELECT * FROM {webform_civicrm_forms} WHERE data LIKE '%%\"subject\"%%' AND nid NOT IN (SELECT nid FROM {webform_component} WHERE form_key = 'civicrm_1_activity_1_activity_subject')");
+  foreach ($forms as $form) {
+    $data = unserialize($form->data);
+    if (!empty($data['activity'][1]['activity'][1]['subject'])) {
+      $component = array(
+        'form_key' => 'civicrm_1_activity_1_activity_subject',
+        'nid' => $form->nid,
+        'value' => $data['activity'][1]['activity'][1]['subject'],
+        'type' => 'hidden',
+      ) + wf_crm_get_field('activity_subject');
+      webform_component_defaults($component);
+      webform_component_insert($component);
+    }
+  }
+}

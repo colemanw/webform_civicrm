@@ -231,13 +231,6 @@ class wf_crm_admin_help {
       '</p>';
   }
 
-  static function activity_default_subject() {
-    print '<p>' .
-      t('You can override this default by allowing users to enter a subject (enable "Activity Subject" field below)') .
-      '</p>';
-  }
-
-
   static function activity_target_contact_id() {
     print '<p>' .
       t('Which contacts should be tagged as part of this activity?') .
@@ -266,7 +259,7 @@ class wf_crm_admin_help {
 
   static function existing_activity_status() {
     print '<p>' .
-      t('If any of these options are selected and a matching activity of the chosen type already exists for Contact 1, it will be autofilled and updated.') .
+      t('If a matching activity of the chosen type already exists for Contact 1, it will be autofilled and updated.') .
       '</p><p>' .
       t('Note: an activity can also be autofilled by passing "aid" in the url.') .
       '</p>';
@@ -274,7 +267,7 @@ class wf_crm_admin_help {
 
   static function existing_case_activity_status() {
     print '<p>' .
-      t('If any of these options are selected and a matching activity of the chosen type already exists for this case, it will be autofilled and updated.') .
+      t('If a matching activity of the chosen type already exists for this case, it will be autofilled and updated.') .
       '</p><p>' .
       t('Note: an activity can also be autofilled by passing "aid" in the url.') .
       '</p>';
@@ -282,7 +275,7 @@ class wf_crm_admin_help {
 
   static function existing_case_status() {
     print '<p>' .
-      t('If any of these options are selected and a matching case of the chosen type already exists for the client, it will be autofilled and updated.') .
+      t('If a matching case of the chosen type already exists for the client, it will be autofilled and updated.') .
       '</p><p>' .
       t('Note: a case can also be autofilled by passing "caseid" in the url.') .
       '</p>';

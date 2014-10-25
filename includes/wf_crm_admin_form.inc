@@ -424,14 +424,6 @@ class wf_crm_admin_form {
         '#multiple' => TRUE,
       );
       $this->help($this->form['act']['case']['activity_fields']['existing_activity_status'], $case_type ? 'existing_case_activity_status' : 'existing_activity_status');
-      $this->form['act']['case']['activity_fields']['activity_subject'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Default Activity Subject'),
-        '#maxlength' => 255,
-        '#required' => TRUE,
-        '#default_value' => wf_crm_aval($this->data, 'activity:1:activity:1:subject', check_plain($this->node->title)),
-      );
-      $this->help($this->form['act']['case']['activity_fields']['activity_subject'], 'activity_default_subject');
       $this->form['act']['case']['activity_fields']['activity_details'] = array(
         '#type' => 'checkboxes',
         '#options' => array(
@@ -1142,7 +1134,6 @@ class wf_crm_admin_form {
     if (!empty($this->settings['activity_type_id'])) {
       $this->data['activity'][1]['activity'][1]['activity_type_id'] = $this->settings['activity_type_id'];
       if (isset($this->settings['activity_subject'])) {
-        $this->data['activity'][1]['activity'][1]['subject'] = $this->settings['activity_subject'];
         $this->data['activity'][1]['details'] = $this->settings['activity_details'];
         $this->data['activity'][1]['existing_activity_status'] = array_filter($this->settings['existing_activity_status']);
       }
