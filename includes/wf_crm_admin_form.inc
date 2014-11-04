@@ -63,6 +63,9 @@ class wf_crm_admin_form {
     }
     $this->buildMessageTabs();
     $this->buildActivityTab();
+    if (isset($this->sets['case'])) {
+      $this->buildCaseTab();
+    }
     if (isset($this->sets['participant'])) {
       $this->buildParticipantTab();
     }
@@ -367,105 +370,192 @@ class wf_crm_admin_form {
   }
 
   /**
-   * Case and activity settings
+   * Activity settings
    */
   private function buildActivityTab() {
-    $case_types = isset($this->sets['case']) ? wf_crm_apivalues('case', 'getoptions', array('field' => 'case_type_id')) : array();
-    $this->form['act'] = array(
+    $this->form['activityTab'] = array(
       '#type' => 'fieldset',
-      '#title' => $case_types ? t('Activity/Case') : t('Activity'),
+      '#title' => t('Activities'),
       '#group' => 'webform_civicrm',
       '#attributes' => array('class' => array('civi-icon-activity')),
     );
-    if ($case_types) {
-      $this->form['act']['case_type_id'] = array(
-        '#type' => 'select',
-        '#title' => t('CiviCase Type'),
-        '#options' => array(t('- No Case -')) + $case_types,
-      );
-      $this->addAjaxItem('act', 'case_type_id', 'case');
-    }
-    $case_type = $activity_type = $case_type_name = NULL;
-    $campaign_act_types = array();
-    if ($case_types && !empty($this->data['case'][1]['case'][1]['case_type_id'])) {
-      $case_type = $this->form['act']['case_type_id']['#default_value'] = $this->data['case'][1]['case'][1]['case_type_id'];
-      $case_type_names = wf_crm_apivalues('case', 'getoptions', array('field' => 'case_type_id', 'context' => 'validate'));
-      $case_type_name = $case_type_names[$case_type];
-      $this->form['act']['case']['case_fields'] = array(
-        '#type' => 'fieldset',
-        '#title' => $case_types[$case_type] . ' ' . t('Case'),
-      );
-      $this->form['act']['case']['case_fields']['existing_case_status'] = array(
-        '#type' => 'select',
-        '#title' => t('Update Existing Case'),
-        '#options' => array('' => '- ' . t('None') . ' -') + wf_crm_apivalues('case', 'getoptions', array('field' => 'status_id')),
-        '#default_value' => wf_crm_aval($this->data, 'case:1:existing_case_status', array()),
-        '#multiple' => TRUE,
-      );
-      $this->help($this->form['act']['case']['case_fields']['existing_case_status'], 'existing_case_status');
-    }
-    $act_types = wf_crm_get_activity_types($case_type_name, $campaign_act_types);
-    $this->form['act']['case']['activity_type_id'] = array(
+    $num_acts = wf_crm_aval($this->data, "activity:number_of_activity", 0);
+    $this->form['activityTab']["activity_number_of_activity"] = array(
       '#type' => 'select',
-      '#title' => t('Activity Type'),
-      '#options' => array(t('- No Activity -')) + $act_types,
+      '#title' => t('Number of Activities'),
+      '#default_value' => $num_acts,
+      '#options' => range(0, $this->sets['activity']['max_instances']),
+      '#prefix' => '<div class="number-of">',
+      '#suffix' => '</div>',
     );
-    $this->addAjaxItem('act:case', 'activity_type_id', 'activity_fields');
-    if (!empty($this->data['activity'][1]['activity'][1]['activity_type_id']) && isset($act_types[$this->data['activity'][1]['activity'][1]['activity_type_id']])) {
-      $this->form['act']['case']['activity_fields']['#type'] = 'fieldset';
-      $activity_type = $this->form['act']['case']['activity_type_id']['#default_value'] = $this->settings['activity_type_id'] = $this->data['activity'][1]['activity'][1]['activity_type_id'];
-      $this->form['act']['case']['activity_fields']['#title'] = $act_types[$activity_type] . ' ' . t('Activity');
-
-      $this->form['act']['case']['activity_fields']['existing_activity_status'] = array(
+    $this->addAjaxItem("activityTab", "activity_number_of_activity", "activity");
+    for ($n = 1; $n <= $num_acts; ++$n) {
+      $num = "activity_activity_{$n}_fieldset";
+      $this->form['activityTab']['activity'][$num] = array(
+        '#type' => 'fieldset',
+        '#attributes' => array('class' => array('activity-wrapper')),
+        '#title' => t('Activity !num', array('!num' => $n)),
+      );
+      $this->form['activityTab']['activity'][$num]["activity_{$n}_settings_existing_activity_status"] = array(
         '#type' => 'select',
         '#title' => t('Update Existing Activity'),
         '#options' => array('' => '- ' . t('None') . ' -') + wf_crm_apivalues('activity', 'getoptions', array('field' => 'status_id')),
-        '#default_value' => wf_crm_aval($this->data, 'activity:1:existing_activity_status', array()),
+        '#default_value' => wf_crm_aval($this->data, "activity:$n:existing_activity_status", array()),
         '#multiple' => TRUE,
       );
-      $this->help($this->form['act']['case']['activity_fields']['existing_activity_status'], $case_type ? 'existing_case_activity_status' : 'existing_activity_status');
-      $this->form['act']['case']['activity_fields']['activity_details'] = array(
+      $this->help($this->form['activityTab']['activity'][$num]["activity_{$n}_settings_existing_activity_status"], 'existing_activity_status');
+      $this->form['activityTab']['activity'][$num]["activity_{$n}_settings_details"] = array(
         '#type' => 'checkboxes',
         '#options' => array(
           'entire_result' => t('Include <em>entire</em> webform submission in activity details'),
           'view_link' => t('Include link to <em>view</em> webform submission in activity details'),
           'edit_link' => t('Include link to <em>edit</em> webform submission in activity details'),
         ),
-        '#default_value' => wf_crm_aval($this->data, 'activity:1:details', array('view_link'), TRUE),
+        '#default_value' => wf_crm_aval($this->data, "activity:$n:details", array('view_link'), TRUE),
       );
-    }
-    foreach ($this->sets as $sid => $set) {
-      $sid .= '_fieldset';
-      $ent = $set['entity_type'];
-      if (($ent == 'activity' && $type = $activity_type) || ($ent == 'case' && $type = $case_type)) {
-        if ((!empty($set['sub_types']) && !in_array($type, $set['sub_types'])) || empty($set['fields'])) {
-          continue;
-        }
-        $this->form['act']['case'][$ent . '_fields'][$sid] = array(
-          '#type' => 'fieldset',
-          '#title' => $set['label'],
-          '#attributes' => array('id' => $sid, 'class' => array('web-civi-checkbox-set')),
-          'js_select' => $this->addToggle($sid),
-        );
-        foreach ($set['fields'] as $fid => $field) {
-          if ($fid !== 'activity_survey_id') {
-            $complete_fid = "civicrm_1_{$ent}_1_$fid";
-            $form_item = $this->addItem($complete_fid, $field);
-            $this->form['act']['case'][$ent . '_fields'][$sid][$complete_fid] = $form_item;
-
-            // If the activity type is part of CiviCampaign
-            // then attach an AJAX select box for the survey/petition ID
-            if (isset($campaign_act_types[$activity_type]) && $fid === 'activity_campaign_id') {
-              $pathstr = 'act:case:activity_fields:' . $sid;
-              $this->addAjaxItem($pathstr, $complete_fid, 'campaign_fields');
-              $survey_fid = 'activity_survey_id';
-              $complete_survey_fid = "civicrm_1_{$ent}_1_{$survey_fid}";
-              $survey_form_item = $this->addItem($complete_survey_fid, $this->sets['activity']['fields']['activity_survey_id']);
-              $this->form['act']['case']['activity_fields'][$sid]['campaign_fields'][$complete_survey_fid] = $survey_form_item;
-            }
+      $this->form['activityTab']['activity'][$num]['wrap'] = array();
+      $wrap = &$this->form['activityTab']['activity'][$num]['wrap'];
+      if (isset($this->sets['case'])) {
+        $case_types = wf_crm_apivalues('case', 'getoptions', array('field' => 'case_type_id'));
+        if ($case_types) {
+          $wrap['case']["activity_{$n}_settings_case_type_id"] = array(
+            '#type' => 'select',
+            '#title' => t('File On Case'),
+            '#options' => array(t('- None -')) + $case_types,
+            '#default_value' => $case_type = wf_crm_aval($this->data, "activity:$n:case_type_id"),
+          );
+          $this->addAjaxItem("activityTab:activity:$num:wrap:case", "activity_{$n}_settings_case_type_id", '..:..:wrap');
+          if ($case_type) {
+            $wrap['case']['#type'] = 'fieldset';
+            $wrap['case']['#attributes'] = array('class' => array('web-civi-checkbox-set'));
+            $wrap['case']['#title'] = t('File On Case');
+            $wrap['case']['#description'] = t('File on existing case matching the following criteria:');
+            $wrap['case']["activity_{$n}_settings_case_type_id"]['#title'] = t('Case Type');
+            $status_options = wf_crm_apivalues('case', 'getoptions', array('field' => 'status_id'));
+            $wrap['case']["activity_{$n}_settings_case_status_id"] = array(
+              '#type' => 'select',
+              '#title' => t('Case Status'),
+              '#options' => $status_options,
+              '#multiple' => TRUE,
+              '#attributes' => array('class' => array('required')),
+              '#default_value' => wf_crm_aval($this->data, "activity:$n:case_status_id", array_keys($status_options)),
+            );
+            $wrap['case']["activity_{$n}_settings_case_contact_id"] = array(
+              '#type' => 'select',
+              '#title' => t('Case Client'),
+              '#attributes' => array('data-type' => 'ContactReference'),
+              '#options' => $this->contactRefOptions(),
+              '#default_value' => wf_crm_aval($this->data, "activity:$n:case_contact_id"),
+            );
           }
         }
       }
+      $wrap[$num . '_fields'] = array(
+        '#type' => 'fieldset',
+        '#title' => ts('Activity'),
+        '#attributes' => array('id' => $num . '_fields', 'class' => array('web-civi-checkbox-set')),
+        'js_select' => $this->addToggle($num . '_fields'),
+      );
+      foreach ($this->sets['activity']['fields'] as $fid => $field) {
+        if ($fid != 'activity_survey_id') {
+          $fid = "civicrm_{$n}_activity_1_$fid";
+          $wrap[$num . '_fields'][$fid] = $this->addItem($fid, $field);
+        }
+      }
+      $type = $wrap[$num . '_fields']["civicrm_{$n}_activity_1_activity_activity_type_id"]['#default_value'];
+      $type = $type == 'create_civicrm_webform_element' ? 0 : $type;
+      $this->addAjaxItem("activityTab:activity:$num:wrap:{$num}_fields", "civicrm_{$n}_activity_1_activity_activity_type_id", "..:custom");
+      // Add ajax survey type field
+      if (isset($this->fields['activity_survey_id'])) {
+        $this->addAjaxItem("activityTab:activity:$num:wrap:{$num}_fields", "civicrm_{$n}_activity_1_activity_campaign_id", "..:custom");
+        if ($type && array_key_exists($type, wf_crm_get_campaign_activity_types())) {
+          $this->sets['activity_survey'] = array(
+            'entity_type' => 'activity',
+            'label' => $wrap[$num . '_fields']["civicrm_{$n}_activity_1_activity_activity_type_id"]['#options'][$type],
+            'fields' => array(
+              'activity_survey_id' => $this->fields['activity_survey_id'],
+            )
+          );
+        }
+      }
+      // Add custom field sets appropriate to this activity type
+      foreach ($this->sets as $sid => $set) {
+        if ($set['entity_type'] == 'activity' && $sid != 'activity'
+          && (!$type || empty($set['sub_types']) || in_array($type, $set['sub_types']))
+        ) {
+          $fs1 = "activity_activity_{$n}_fieldset_$sid";
+          $wrap['custom'][$fs1] = array(
+            '#type' => 'fieldset',
+            '#title' => $set['label'],
+            '#attributes' => array('id' => $fs1, 'class' => array('web-civi-checkbox-set')),
+            'js_select' => $this->addToggle($fs1),
+          );
+          foreach ($set['fields'] as $fid => $field) {
+            $fid = "civicrm_{$n}_activity_1_$fid";
+            $wrap['custom'][$fs1][$fid] = $this->addItem($fid, $field);
+          }
+        }
+      }
+    }
+  }
+  
+  /**
+   * Case settings
+   */
+  private function buildCaseTab() {
+    $this->form['caseTab'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Cases'),
+      '#group' => 'webform_civicrm',
+      '#attributes' => array('class' => array('civi-icon-case')),
+    );
+    $this->form['caseTab']["case_number_of_case"] = array(
+      '#type' => 'select',
+      '#title' => t('Number of Cases'),
+      '#default_value' => $num = wf_crm_aval($this->data, "case:number_of_case", 0),
+      '#options' => range(0, $this->sets['case']['max_instances']),
+      '#prefix' => '<div class="number-of">',
+      '#suffix' => '</div>',
+    );
+    $this->addAjaxItem("caseTab", "case_number_of_case", "case");
+    for ($n = 1; $n <= $num; ++$n) {
+      $fs = "case_case_{$n}_fieldset";
+      $this->form['caseTab']['case'][$fs] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Case !num', array('!num' => $n)),
+        'wrap' => array('#weight' => 9),
+      );
+      $this->form['caseTab']['case'][$fs]["case_{$n}_settings_existing_case_status"] = array(
+        '#type' => 'select',
+        '#title' => t('Update Existing Case'),
+        '#options' => array('' => '- ' . t('None') . ' -') + wf_crm_apivalues('case', 'getoptions', array('field' => 'status_id')),
+        '#default_value' => wf_crm_aval($this->data, "case:{$n}:existing_case_status", array()),
+        '#multiple' => TRUE,
+      );
+      $this->help($this->form['caseTab']['case'][$fs]["case_{$n}_settings_existing_case_status"], 'existing_case_status');
+      $case_type = wf_crm_aval($this->data, "case:{$n}:case:1:case_type_id");
+      foreach ($this->sets as $sid => $set) {
+        if ($set['entity_type'] == 'case' && (!$case_type || empty($set['sub_types']) || in_array($case_type, $set['sub_types']))) {
+          $fs1 = "case_case_{$n}_fieldset_$sid";
+          if ($sid == 'case') {
+            $pos = &$this->form['caseTab']['case'][$fs];
+          }
+          else {
+            $pos = &$this->form['caseTab']['case'][$fs]['wrap'];
+          }
+          $pos[$fs1] = array(
+            '#type' => 'fieldset',
+            '#title' => $set['label'],
+            '#attributes' => array('id' => $fs1, 'class' => array('web-civi-checkbox-set')),
+            'js_select' => $this->addToggle($fs1),
+          );
+          foreach ($set['fields'] as $fid => $field) {
+            $fid = "civicrm_{$n}_case_1_$fid";
+            $pos[$fs1][$fid] = $this->addItem($fid, $field);
+          }
+        }
+      }
+      $this->addAjaxItem("caseTab:case:$fs:case_case_{$n}_fieldset_case", "civicrm_{$n}_case_1_case_case_type_id", "..:wrap");
     }
   }
 
@@ -562,7 +652,7 @@ class wf_crm_admin_form {
     );
     $this->help($field, 'reg_options_show_remaining');
     foreach (array(5, 10, 20, 50, 100, 200, 500, 1000) as $num) {
-      $field['#options'][$num] = t('When under !num spaces left', array('!num' => $num));
+      $field['#options'][$num]['wrap'] = t('When under !num spaces left', array('!num' => $num));
     }
     $this->form['participant']['reg_options']['show_remaining'] = $field;
     $this->form['participant']['reg_options']['validate'] = array(
@@ -957,8 +1047,12 @@ class wf_crm_admin_form {
       // Retrieve option list
       $options = array();
       // Placeholder empty option - used by javascript when displaying multiselect as single
-      if (!empty($field['extra']['multiple'])) {
+      if (!empty($field['extra']['multiple']) && empty($field['extra']['required'])) {
         $options += array('' => '- ' . t('None') . ' -');
+      }
+      // This prevents the multi-select js from adding an illegal empty option
+      if (!empty($field['extra']['required'])) {
+        $item['#attributes']['class'][] = 'required';
       }
       if ($field['type'] != 'hidden') {
         $options += array('create_civicrm_webform_element' => t('- User Select -'));
@@ -1037,27 +1131,37 @@ class wf_crm_admin_form {
    * Add an ajax container to the form, and set an existing form element to control it
    *
    * @param string $path
-   *   A : separated string of nested array keys leading to the relevant form snippet
+   *   A : separated string of nested array keys leading to the control element's parent
    * @param string $control_element
    *   Array key of the existing element to add ajax behavior to
    * @param string $container
-   *   Array key of the container to be created
+   *   Path to the key of the container to be created (relative to $path) use '..' to go up a level
+   * @param string $class
+   *   Css class to add to target container
    */
   private function addAjaxItem($path, $control_element, $container, $class='civicrm-ajax-wrapper') {
-    eval('$snippet = &$this->form[\'' . str_replace(':', "']['", $path) . "'];");
-    $path .= ':' . $container;
+    eval('$control_container = &$this->form[\'' . str_replace(':', "']['", $path) . "'];");
+    foreach (explode(':', $container) as $level) {
+      if ($level == '..') {
+        $path = substr($path, 0, strrpos($path, ':'));
+      }
+      else {
+        $path .= ':' . $level;
+      }
+    }
+    eval('$target_container = &$this->form[\'' . str_replace(':', "']['", substr($path, 0, strrpos($path, ':'))) . "'];");
     $id = 'civicrm-ajax-' . str_replace(array(':', '_'), '-', $path);
-    $snippet[$control_element]['#ajax'] = array(
+    $control_container[$control_element]['#ajax'] = array(
       'callback' => 'wf_crm_configure_form_ajax',
       'pathstr' => $path,
       'wrapper' => $id,
       'effect' => 'fade',
     );
-    $snippet[$container] = array(
-      '#prefix' => '<div class="' . $class . '" id="' . $id . '">',
-      '#type' => 'markup',
-      '#suffix' => '</div>',
-    );
+    if (!isset($target_container[$level])) {
+      $target_container[$level] = array();
+    }
+    $target_container[$level]['#prefix'] = '<div class="' . $class . '" id="' . $id . '">';
+    $target_container[$level]['#suffix'] = '</div>';
   }
 
   /**
@@ -1122,30 +1226,26 @@ class wf_crm_admin_form {
     // Store "number of foo for bar" fields, i.e. number of email for contact 1
     foreach ($this->settings as $key => $val) {
       if (strpos($key, '_number_of_') !== FALSE) {
-        list($ent, $c, $k) = explode('_', $key, 3);
+        list($ent, $c, $key) = explode('_', $key, 3);
         if (isset($this->data[$ent][$c]) || $ent == 'participant' || $ent == 'membership') {
-          $this->data[$ent][$c][$k] = $val;
+          $this->data[$ent][$c][$key] = $val;
         }
-        elseif ($ent == 'grant') {
-          $this->data[$ent]["number_$k"] = $val;
+        // Standalone entities keep their own count independent of contacts
+        elseif ($ent == 'grant' || $ent == 'activity' || $ent == 'case') {
+          $this->data[$ent]["number_$key"] = $val;
         }
       }
     }
-    if (!empty($this->settings['activity_type_id'])) {
-      $this->data['activity'][1]['activity'][1]['activity_type_id'] = $this->settings['activity_type_id'];
-      if (isset($this->settings['activity_subject'])) {
-        $this->data['activity'][1]['details'] = $this->settings['activity_details'];
-        $this->data['activity'][1]['existing_activity_status'] = array_filter($this->settings['existing_activity_status']);
+    for ($i=1; $i <= $this->settings['activity_number_of_activity']; ++$i) {
+      if (!isset($this->settings["activity_{$i}_existing_activity_status"])) {
+        $this->data['activity'][$i]['activity'][1]['target_contact_id'] = range(1, $this->settings['number_of_contacts']);
       }
-      else {
-        $this->data['activity'][1]['activity'][1]['target_contact_id'] = range(1, $this->settings['number_of_contacts']);
+      foreach ($this->settings as $key => $val) {
+        if (strpos($key, "activity_{$i}_settings") === 0) {
+          $val = is_array($val) ? array_filter($val) : $val;
+          $this->data['activity'][$i][str_replace("activity_{$i}_settings_", '', $key)] = $val;
+        }
       }
-    }
-    if (!empty($this->settings['civicrm_1_activity_1_activity_campaign_id'])) {
-      $this->data['activity'][1]['activity'][1]['activity_campaign_id'] = $this->settings['civicrm_1_activity_1_activity_campaign_id'];
-    }
-    if (!empty($this->settings['civicrm_1_activity_1_activity_survey_id'])) {
-      $this->data['activity'][1]['activity'][1]['activity_survey_id'] = $this->settings['civicrm_1_activity_1_activity_survey_id'];
     }
     if (!empty($this->settings['case_type_id'])) {
       if (empty($this->data['case'][1])) {
@@ -1556,6 +1656,16 @@ class wf_crm_admin_form {
     db_delete('webform_civicrm_forms')
       ->condition('nid', $this->node->nid)
       ->execute();
+  }
+  
+  private function contactRefOptions($exclude = NULL) {
+    $ret = array();
+    foreach ($this->data['contact'] as $num => $contact) {
+      if ($num != $exclude) {
+        $ret[$num] = wf_crm_contact_label($num, $this->data, 'plain');
+      }
+    }
+    return $ret;
   }
 }
 

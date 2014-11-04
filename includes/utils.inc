@@ -62,7 +62,7 @@ function wf_crm_field_options($field, $context, $data) {
       }
     }
     elseif ($name === 'survey_id') {
-      $ret = wf_crm_get_surveys(wf_crm_aval($data, 'activity:1:activity:1', array()));
+      $ret = wf_crm_get_surveys(wf_crm_aval($data, "activity:$c:activity:1", array()));
     }
     elseif ($name == 'event_id') {
       $ret = wf_crm_get_events($data['reg_options'], $context);
@@ -250,14 +250,7 @@ function wf_crm_format_event($event, $format) {
  * @return array
  */
 function wf_crm_get_surveys($act = array()) {
-  $params = array();
-  if (!empty($act['activity_campaign_id'])) {
-    $params['campaign_id'] = $act['activity_campaign_id'];
-  }
-  if (!empty($act['activity_type_id'])) {
-    $params['activity_type_id'] = $act['activity_type_id'];
-  }
-  return wf_crm_apivalues('survey', 'get', $params, 'title');
+  return wf_crm_apivalues('survey', 'get', array_filter($act), 'title');
 }
 
 /**
@@ -295,6 +288,25 @@ function wf_crm_get_activity_types($case_type_name, &$campaign_act_types) {
     }
   }
 
+  return $ret;
+}
+
+/**
+ * Get activity types related to CiviCampaign
+ * @return array
+ */
+function wf_crm_get_campaign_activity_types() {
+  $ret = array();
+  if (array_key_exists('activity_survey_id', wf_crm_get_fields())) {
+    $vals = wf_crm_apivalues('option_value', 'get', array(
+      'option_group_id' => 'activity_type',
+      'is_active' => 1,
+      'component_id' => 'CiviCampaign',
+    ));
+    foreach ($vals as $val) {
+      $ret[$val['value']] = $val['label'];
+    }
+  }
   return $ret;
 }
 
@@ -465,15 +477,15 @@ function wf_crm_get_fields($var = 'fields') {
       'email' => array('entity_type' => 'contact', 'label' => t('Email'), 'max_instances' => 9),
       'website' => array('entity_type' => 'contact', 'label' => t('Website'), 'max_instances' => 9),
       'im' => array('entity_type' => 'contact', 'label' => t('Instant Message'), 'max_instances' => 9),
-      'activity' => array('entity_type' => 'activity', 'label' => t('Activity')),
+      'activity' => array('entity_type' => 'activity', 'label' => t('Activity'), 'max_instances' => 30),
       'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship'), 'help_text' => TRUE),
     );
     $conditional_sets = array(
-      'CiviCase' => array('entity_type' => 'case', 'label' => t('Case Settings')),
+      'CiviCase' => array('entity_type' => 'case', 'label' => t('Case Settings'), 'max_instances' => 30),
       'CiviEvent' => array('entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9),
       'CiviContribute' => array('entity_type' => 'contribution', 'label' => t('Contribution')),
       'CiviMember' => array('entity_type' => 'membership', 'label' => t('Membership')),
-      'CiviGrant' => array('entity_type' => 'grant', 'label' => t('Grant'), 'max_instances' => 50),
+      'CiviGrant' => array('entity_type' => 'grant', 'label' => t('Grant'), 'max_instances' => 30),
     );
     foreach ($conditional_sets as $component => $set) {
       if (in_array($component, $components)) {
@@ -737,54 +749,64 @@ function wf_crm_get_fields($var = 'fields') {
         'expose_list' => TRUE,
       );
     }
+    $fields['activity_activity_type_id'] = array(
+      'name' => t('Activity # Type'),
+      'type' => 'select',
+      'expose_list' => TRUE,
+    );
     $fields['activity_target_contact_id'] = array(
-      'name' => t('Activity Participant(s)'),
+      'name' => t('Activity # Participant(s)'),
       'type' => 'select',
       'expose_list' => TRUE,
       'extra' => array(
         'multiple' => 1,
+        'required' => 1,
       ),
       'data_type' => 'ContactReference',
     );
     $fields['activity_subject'] = array(
-      'name' => t('Activity Subject'),
+      'name' => t('Activity # Subject'),
       'type' => 'textfield',
     );
     $fields['activity_details'] = array(
-      'name' => t('Activity Details'),
+      'name' => t('Activity # Details'),
       'type' => module_exists('webform_html_textarea') ? 'html_textarea' : 'textarea',
     );
-    foreach (array('status' => t('Activity Status'), 'priority' => t('Activity Priority')) as $key => $label) {
-      $fields['activity_' . $key . '_id'] = array(
-        'name' => $label,
-        'type' => 'select',
-        'value' => '2',
-        'expose_list' => TRUE,
-      );
-    }
+    $fields['activity_status_id'] = array(
+      'name' => t('Activity # Status'),
+      'type' => 'select',
+      'expose_list' => TRUE,
+      'exposed_empty_option' => '- ' . t('Automatic') . ' -',
+    );
+    $fields['activity_priority_id'] = array(
+      'name' => t('Activity # Priority'),
+      'type' => 'select',
+      'value' => '2',
+      'expose_list' => TRUE,
+    );
     $fields['activity_assignee_contact_id'] = array(
-      'name' => t('Assign Activity to'),
+      'name' => t('Assign Activity # to'),
       'type' => 'select',
       'expose_list' => TRUE,
       'empty_option' => t('No One'),
       'data_type' => 'ContactReference',
     );
     $fields['activity_location'] = array(
-      'name' => t('Activity Location'),
+      'name' => t('Activity # Location'),
       'type' => 'textfield',
     );
     $fields['activity_activity_date_time'] = array(
-      'name' => t('Activity Date'),
+      'name' => t('Activity # Date'),
       'type' => 'date',
       'value' => 'now',
     );
     $fields['activity_activity_date_time_timepart'] = array(
-      'name' => t('Activity Time'),
+      'name' => t('Activity # Time'),
       'type' => 'time',
       'value' => 'now',
     );
     $fields['activity_duration'] = array(
-      'name' => t('Duration'),
+      'name' => t('Activity # Duration'),
       'type' => 'number',
       'extra' => array(
         'field_suffix' => t('min.'),
@@ -795,8 +817,13 @@ function wf_crm_get_fields($var = 'fields') {
     );
     if (isset($sets['case'])) {
       $case_info = new CRM_Case_XMLProcessor_Process();
+      $fields['case_case_type_id'] = array(
+        'name' => t('Case # Type'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+      );
       $fields['case_client_id'] = array(
-        'name' => t('Case Client'),
+        'name' => t('Case # Client'),
         'type' => 'select',
         'expose_list' => TRUE,
         'extra' => array('required' => 1, 'multiple' => $case_info->getAllowMultipleCaseClients()),
@@ -804,9 +831,10 @@ function wf_crm_get_fields($var = 'fields') {
         'value' => 1,
       );
       $fields['case_status_id'] = array(
-        'name' => t('Case Status'),
+        'name' => t('Case # Status'),
         'type' => 'select',
         'expose_list' => TRUE,
+        'exposed_empty_option' => '- ' . t('Automatic') . ' -',
       );
       $fields['case_medium_id'] = array(
         'name' => t('Medium'),
@@ -814,11 +842,11 @@ function wf_crm_get_fields($var = 'fields') {
         'expose_list' => TRUE,
       );
       $fields['case_subject'] = array(
-        'name' => t('Case Subject'),
+        'name' => t('Case # Subject'),
         'type' => 'textfield',
       );
       $fields['case_creator_id'] = array(
-        'name' => t('Case Manager'),
+        'name' => t('Case # Manager'),
         'type' => 'select',
         'expose_list' => TRUE,
         'data_type' => 'ContactReference',
@@ -1007,7 +1035,7 @@ function wf_crm_get_fields($var = 'fields') {
         );
       }
     }
-    // Add grant fields
+    // CiviGrant fields
     if (isset($sets['grant'])) {
       $fields['grant_contact_id'] = array(
         'name' => t('Grant Applicant'),
@@ -1067,7 +1095,7 @@ function wf_crm_get_fields($var = 'fields') {
 
     // File attachment fields
     $numAttachments = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'max_attachments');
-    foreach (array('grant') as $ent) {
+    foreach (array('activity', 'grant') as $ent) {
       if (isset($sets[$ent]) && $numAttachments) {
         $sets["{$ent}upload"] = array(
           'label' => t('File Attachments'),

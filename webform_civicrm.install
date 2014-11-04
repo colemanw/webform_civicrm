@@ -766,25 +766,35 @@ function webform_civicrm_update_7401(&$batch) {
 }
 
 /**
- * Create hidden field for activity subject to replace the removed "default subject" setting
+ * Upgrade schema to handle multiple activities
  */
 function webform_civicrm_update_7402() {
   civicrm_initialize();
   module_load_include('inc', 'webform', 'includes/webform.components');
   module_load_include('inc', 'webform_civicrm', 'includes/utils');
-  // Exclude forms that already have an activity_subject field
-  $forms = db_query("SELECT * FROM {webform_civicrm_forms} WHERE data LIKE '%%\"subject\"%%' AND nid NOT IN (SELECT nid FROM {webform_component} WHERE form_key = 'civicrm_1_activity_1_activity_subject')");
+  $forms = db_query("SELECT * FROM {webform_civicrm_forms} WHERE data LIKE '%%\"activity\"%%'");
   foreach ($forms as $form) {
     $data = unserialize($form->data);
-    if (!empty($data['activity'][1]['activity'][1]['subject'])) {
-      $component = array(
-        'form_key' => 'civicrm_1_activity_1_activity_subject',
-        'nid' => $form->nid,
-        'value' => $data['activity'][1]['activity'][1]['subject'],
-        'type' => 'hidden',
-      ) + wf_crm_get_field('activity_subject');
-      webform_component_defaults($component);
-      webform_component_insert($component);
+    if (isset($data['activity'][1]['activity'][1]['subject'])) {
+      $data['activity']['number_of_activity'] = 1;
+      // Fix mis-named fields
+      foreach (array('campaign_id', 'survey_id') as $field) {
+        if (!empty($data['activity'][1]['activity'][1]['activity_' . $field])) {
+          $data['activity'][1]['activity'][1][$field] = $data['activity'][1]['activity'][1]['activity_' . $field];
+          unset($data['activity'][1]['activity'][1]['activity_' . $field]);
+        }
+      }
+      // Create hidden field for activity subject to replace the removed "default subject" setting
+      if (!(db_query("SELECT nid FROM {webform_component} WHERE form_key = 'civicrm_1_activity_1_activity_subject' AND nid = {$form->nid}"))) {
+        $component = array(
+          'form_key' => 'civicrm_1_activity_1_activity_subject',
+          'nid' => $form->nid,
+          'value' => $data['activity'][1]['activity'][1]['subject'],
+          'type' => 'hidden',
+        ) + wf_crm_get_field('activity_subject');
+        webform_component_defaults($component);
+        webform_component_insert($component);
+      }
     }
   }
 }
