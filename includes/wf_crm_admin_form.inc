@@ -62,6 +62,8 @@ class wf_crm_admin_form {
       $this->buildContactTab($n, $c);
     }
     $this->buildMessageTabs();
+
+    // Component tabs
     $this->buildActivityTab();
     if (isset($this->sets['case'])) {
       $this->buildCaseTab();
@@ -148,8 +150,9 @@ class wf_crm_admin_form {
       'data' => array('webform_civicrm' => array('rTypes' => wf_crm_get_relationship_types())),
       'type' => 'setting',
     );
-    // Add CiviCRM resources to take advantage of popup notifications, etc.
+    // Add CiviCRM core css & js, which includes jQuery, jQuery UI + other plugins
     CRM_Core_Resources::singleton()->addCoreResources();
+    // Markup needed by CRM popup notifications
     $this->form['#suffix'] = wf_crm_admin_help::helpTemplate();
   }
 
