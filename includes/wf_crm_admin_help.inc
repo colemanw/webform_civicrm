@@ -238,6 +238,13 @@ class wf_crm_admin_help {
     self::contact_reference();
   }
 
+  static function activity_source_contact_id() {
+    print '<p>' .
+      t('Choose "automatic" to have this activity attributed to the current user (or contact 1 if the user is anonymous).') .
+      '</p>';
+    self::contact_reference();
+  }
+
   static function activity_assignee_contact_id() {
     civicrm_initialize();
     print '<p>';
@@ -261,15 +268,7 @@ class wf_crm_admin_help {
     print '<p>' .
       t('If a matching activity of the chosen type already exists for Contact 1, it will be autofilled and updated.') .
       '</p><p>' .
-      t('Note: an activity can also be autofilled by passing "aid" in the url.') .
-      '</p>';
-  }
-
-  static function existing_case_activity_status() {
-    print '<p>' .
-      t('If a matching activity of the chosen type already exists for this case, it will be autofilled and updated.') .
-      '</p><p>' .
-      t('Note: an activity can also be autofilled by passing "aid" in the url.') .
+      t('Note: an activity can also be autofilled by passing "activity1", etc. in the url.') .
       '</p>';
   }
 
@@ -277,7 +276,23 @@ class wf_crm_admin_help {
     print '<p>' .
       t('If a matching case of the chosen type already exists for the client, it will be autofilled and updated.') .
       '</p><p>' .
-      t('Note: a case can also be autofilled by passing "caseid" in the url.') .
+      t('Note: a case can also be autofilled by passing "case1", etc. in the url.') .
+      '</p>';
+  }
+
+  static function existing_grant_status() {
+    print '<p>' .
+      t('If a matching grant of the chosen type already exists for the applicant, it will be autofilled and updated.') .
+      '</p><p>' .
+      t('Note: a grant can also be autofilled by passing "grant1", etc. in the url.') .
+      '</p>';
+  }
+
+  static function file_on_case() {
+    print '<p>' .
+      t('Activity will be added to an existing case matching the following criteria.') .
+      '</p><p>' .
+      t('This will not open a new case; use the "Cases" tab to do so. Match these settings to those on the "Cases" tab if you wish this activity to be filed on a newly-created case.') .
       '</p>';
   }
 
@@ -292,9 +307,9 @@ class wf_crm_admin_help {
       t('This is a contact reference field. Webform gives you a great deal of flexibility about how this field is displayed:') .
       '</p><ul>' .
       '<li>' . t('First choose a contact on this webform as the target for this field (or add a new contact to the form for that purpose).') . '</li>' .
-      '<li>' . t('In rare cases you might want to expose the list of webform contacts ("User Select").') . '</li>' .
       '<li>' . t('To enable a selection of contacts, enable the "Existing Contact" field for the selected contact.') . '</li>' .
       '<li>' . t('This allows the contact to be selected on the form via autocomplete or dropdown select, or hidden and set to always be the same contact.') . '</li>' .
+      '<li>' . t('In rare cases you might want to expose the list of webform contacts ("User Select").') . '</li>' .
       '<li>' . t('There are many more possibilities, see "Existing Contact" field help for more information.') . '</li>' .
       '</ul>';
   }

@@ -477,7 +477,7 @@ function wf_crm_get_fields($var = 'fields') {
       'email' => array('entity_type' => 'contact', 'label' => t('Email'), 'max_instances' => 9),
       'website' => array('entity_type' => 'contact', 'label' => t('Website'), 'max_instances' => 9),
       'im' => array('entity_type' => 'contact', 'label' => t('Instant Message'), 'max_instances' => 9),
-      'activity' => array('entity_type' => 'activity', 'label' => t('Activity'), 'max_instances' => 30),
+      'activity' => array('entity_type' => 'activity', 'label' => t('Activity'), 'max_instances' => 30,  'attachments' => TRUE),
       'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship'), 'help_text' => TRUE),
     );
     $conditional_sets = array(
@@ -485,7 +485,7 @@ function wf_crm_get_fields($var = 'fields') {
       'CiviEvent' => array('entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9),
       'CiviContribute' => array('entity_type' => 'contribution', 'label' => t('Contribution')),
       'CiviMember' => array('entity_type' => 'membership', 'label' => t('Membership')),
-      'CiviGrant' => array('entity_type' => 'grant', 'label' => t('Grant'), 'max_instances' => 30),
+      'CiviGrant' => array('entity_type' => 'grant', 'label' => t('Grant'), 'max_instances' => 30, 'attachments' => TRUE),
     );
     foreach ($conditional_sets as $component => $set) {
       if (in_array($component, $components)) {
@@ -764,6 +764,13 @@ function wf_crm_get_fields($var = 'fields') {
       ),
       'data_type' => 'ContactReference',
     );
+    $fields['activity_source_contact_id'] = array(
+      'name' => t('Activity # Creator'),
+      'type' => 'select',
+      'expose_list' => TRUE,
+      'data_type' => 'ContactReference',
+      'exposed_empty_option' => '- ' . t('Automatic') . ' -',
+    );
     $fields['activity_subject'] = array(
       'name' => t('Activity # Subject'),
       'type' => 'textfield',
@@ -781,8 +788,8 @@ function wf_crm_get_fields($var = 'fields') {
     $fields['activity_priority_id'] = array(
       'name' => t('Activity # Priority'),
       'type' => 'select',
-      'value' => '2',
       'expose_list' => TRUE,
+      'exposed_empty_option' => '- ' . t('Automatic') . ' -',
     );
     $fields['activity_assignee_contact_id'] = array(
       'name' => t('Assign Activity # to'),
@@ -850,6 +857,7 @@ function wf_crm_get_fields($var = 'fields') {
         'type' => 'select',
         'expose_list' => TRUE,
         'data_type' => 'ContactReference',
+        'exposed_empty_option' => '- ' . t('Automatic') . ' -',
       );
     }
     $fields['relationship_relationship_type_id'] = array(
@@ -1095,8 +1103,8 @@ function wf_crm_get_fields($var = 'fields') {
 
     // File attachment fields
     $numAttachments = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'max_attachments');
-    foreach (array('activity', 'grant') as $ent) {
-      if (isset($sets[$ent]) && $numAttachments) {
+    foreach ($sets as $ent => $set) {
+      if (!empty($set['attachments']) && $numAttachments) {
         $sets["{$ent}upload"] = array(
           'label' => t('File Attachments'),
           'entity_type' => $ent,
@@ -1528,4 +1536,13 @@ function wf_crm_explode_multivalue_str($str) {
     return $str;
   }
   return explode($sp, trim((string) $str, $sp));
+}
+
+/**
+ * Check if value is a positive integer
+ * @param mixed $val
+ * @return bool
+ */
+function wf_crm_is_positive($val) {
+  return is_numeric($val) && $val > 0 && round($val) == $val;
 }

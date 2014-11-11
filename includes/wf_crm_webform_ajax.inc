@@ -91,9 +91,9 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
         // Populate other contact ids for related data
         foreach ($_GET as $k => $v) {
           if (substr($k, 0, 3) == 'cid' && $v && is_numeric($v)) {
-            $this->id['cid'][substr($k, 3)] = (int) $v;
+            $this->ent['contact'][substr($k, 3)]['id'] = (int) $v;
           }
-          $this->id['cid'][$c] = (int) $_GET['cid'];
+          $this->ent['contact'][$c]['id'] = (int) $_GET['cid'];
         }
         $contact = $this->loadContact($c, $component['extra']['hide_fields']);
         $states = $countries = array();

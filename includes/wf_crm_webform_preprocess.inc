@@ -11,6 +11,8 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
   private $form;
   private $form_state;
   private $info = array();
+  private $all_fields;
+  private $all_sets;
 
   function __construct(&$form, &$form_state) {
     civicrm_initialize();
@@ -19,7 +21,9 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     $this->node = $form['#node'];
     $this->settings = $this->node->webform_civicrm;
     $this->data = $this->settings['data'];
-    $this->id['cid'] = array();
+    $this->ent['contact'] = array();
+    $this->all_fields = wf_crm_get_fields();
+    $this->all_sets = wf_crm_get_fields('sets');
     $this->enabled = wf_crm_enabled_fields($this->node);
     $this->line_items = wf_crm_aval($form_state, 'civicrm:line_items', array());
   }
@@ -57,10 +61,9 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     // If this is an edit op, use the original IDs and return
     if (isset($this->form['#submission']->sid)) {
       if (isset($this->form['#submission']->civicrm)) {
-        $this->form_state['civicrm']['id']['cid'] = $this->form['#submission']->civicrm['contact_id'];
-        $this->form_state['civicrm']['id']['act'][1] = $this->form['#submission']->civicrm['activity_id'];
-        foreach ($this->form_state['civicrm']['id']['cid'] as $c => $cid) {
-          $this->info['contact'][$c]['contact'][1]['existing'] = $cid;
+        $this->form_state['civicrm']['ent'] = $this->form['#submission']->civicrm;
+        foreach ($this->form_state['civicrm']['ent']['contact'] as $c => $contact) {
+          $this->info['contact'][$c]['contact'][1]['existing'] = wf_crm_aval($contact, 'id', 0);
         }
       }
       $this->fillForm($this->form['submitted']);
@@ -68,26 +71,32 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     }
     // If this form is already in-process, IDs will be stored
     if (!empty($this->form_state['civicrm'])) {
-      $this->id = $this->form_state['civicrm']['id'];
+      $this->ent = $this->form_state['civicrm']['ent'];
     }
-    // Search for existing contacts
     else {
-      $count = count($this->data['contact']);
-      for ($i = 1; $i <= $count; ++$i) {
+      // Search for existing contacts
+      for ($i = 1; $i <= count($this->data['contact']); ++$i) {
+        $this->ent['contact'][$i] = array();
         $existing_component = $this->getComponent("civicrm_{$i}_contact_1_contact_existing");
         if ($existing_component) {
           $this->findContact($existing_component);
         }
+        // Fill cid with '0' if unknown
+        $this->ent['contact'][$i] += array('id' => 0);
+      }
+      // Search for other existing entities
+      if (!empty($this->data['case']['number_of_case'])) {
+        $this->findExistingCases();
+      }
+      if (!empty($this->data['activity']['number_of_activity'])) {
+        $this->findExistingActivities();
+      }
+      if (isset($this->data['grant']['number_of_grant'])) {
+        $this->findExistingGrants();
       }
     }
-    if (!empty($_GET['aid']) && !empty($this->id['cid']) && is_numeric($_GET['aid'])) {
-      $this->populateActivityAndCaseFromUrl($_GET['aid']);
-    }
-    else {
-      $this->populateActivityAndCase();
-    }
     // Form alterations for unknown contacts
-    if (empty($this->id['cid'][1])) {
+    if (empty($this->ent['contact'][1]['id'])) {
       if ($this->settings['prefix_unknown']) {
         $this->form['#prefix'] = wf_crm_aval($this->form, '#prefix', '') . '<div class="webform-civicrm-prefix contact-unknown">' . nl2br($this->settings['prefix_unknown']) . '</div>';
       }
@@ -101,22 +110,28 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       $this->populateEvents();
     }
     // Form alterations for known contacts
-    foreach ($this->id['cid'] as $c => $cid) {
-      if ($cid) {
+    foreach ($this->ent['contact'] as $c => $contact) {
+      if (!empty($contact['id'])) {
         // Retrieve contact data
         $this->info['contact'][$c] = $this->loadContact($c);
-        $this->info['contact'][$c]['contact'][1]['existing'] = $cid;
+        $this->info['contact'][$c]['contact'][1]['existing'] = $contact['id'];
         // Retrieve participant data
         if ($this->events && ($c == 1 || $this->data['participant_reg_type'] == 'separate')) {
           $this->loadParticipants($c);
         }
         // Membership
         if (!empty($this->data['membership'][$c]['number_of_membership'])) {
-          $this->loadMemberships($c, $cid);
+          $this->loadMemberships($c, $contact['id']);
         }
       }
     }
-    if (!empty($this->id['cid'][1])) {
+    // Prefill other existing entities
+    foreach (array('case', 'activity', 'grant') as $entity) {
+      if (!empty($this->ent[$entity])) {
+        $this->populateExistingEntity($entity);
+      }
+    }
+    if (!empty($this->ent['contact'][1]['id'])) {
       if ($this->settings['prefix_known']) {
         $this->form['#prefix'] = wf_crm_aval($this->form, '#prefix', '') . '<div class="webform-civicrm-prefix contact-known">' . nl2br($this->replaceTokens($this->settings['prefix_known'], $this->info['contact'][1]['contact'][1])) . '</div>';
       }
@@ -125,7 +140,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       }
     }
     // Store ids
-    $this->form_state['civicrm']['id'] = $this->id;
+    $this->form_state['civicrm']['ent'] = $this->ent;
     // Set default values and other attributes for CiviCRM form elements
     // Passing $submitted helps avoid overwriting values that have been entered on a multi-step form
     $submitted = wf_crm_aval($this->form_state, 'values:submitted', array());
@@ -180,81 +195,6 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         'data' => array('webform_civicrm' => $js_vars),
         'type' => 'setting',
       );
-    }
-  }
-
-  /**
-   * Lookup activity if id passed in url
-   * @param $aid
-   */
-  private function populateActivityAndCaseFromUrl($aid) {
-    $return = array('target_contact_id', 'assignee_contact_id', 'source_contact_id', 'activity_type_id');
-    foreach ($this->enabled as $field => $id) {
-      if (strpos($field, 'civicrm_1_activity_1_activity_') === 0) {
-        $return[] = substr($field, 30);
-      }
-    };
-    $result = wf_crm_apivalues('activity', 'get', array(
-      'id' => $aid,
-      'return' => $return,
-    ));
-    if (isset($result[$aid])) {
-      $act = $result[$aid];
-      // Verify that this activity is the right type and that our contacts have some involvement in it
-      if ($act['activity_type_id'] == $this->data['activity'][1]['activity'][1]['activity_type_id']) {
-        foreach ($this->id['cid'] as $cid) {
-          if ($act['source_contact_id'] == $cid || in_array($cid, $act['target_contact_id']) || in_array($cid, $act['assignee_contact_id'])) {
-            $activity = array('activity' => array(1 => $act));
-            $custom = $this->getCustomData($aid, 'activity');
-            $this->info['activity'] = array(1 => ($activity + $custom));
-            $this->id['act'][1] = $aid;
-            if (!empty($this->data['case'][1])) {
-              $result = wf_civicrm_api('case', 'get', array('activity_id' => $this->id['act'][1]));
-              if ($this->id['case'][1] = wf_crm_aval($result, 'id')) {
-                $custom = $this->getCustomData($this->id['case'][1], 'case');
-                $this->info['case'] = array(1 => (array('case' => array(1 => $result['values'][$result['id']])) + $custom));
-              }
-            }
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  /**
-   * Search for case & activity
-   */
-  private function populateActivityAndCase() {
-    if (!empty($this->data['case'][1])) {
-      $case = $this->findCase($this->id);
-      if ($case) {
-        $this->id['case'][1] = $case['id'];
-        $custom = $this->getCustomData($case['id'], 'case');
-        // Add case to $this->info in standard webform_civicrm format
-        $this->info['case'] = array(1 => (array('case' => array(1 => $case)) + $custom));
-      }
-    }
-    if ((!empty($this->id['cid'][1]) && empty($this->data['case'][1])) || (!empty($this->data['case'][1]) && !empty($this->id['case'][1]))) {
-      if (!empty($this->data['activity'][1]['existing_activity_status'])) {
-        $params = array(
-          'activity_type_id' => $this->data['activity'][1]['activity'][1]['activity_type_id'],
-          'status_id' => $this->data['activity'][1]['existing_activity_status'],
-        );
-        if (!empty($this->data['case'][1])) {
-          $params['case_id'] = $this->id['case'][1];
-        }
-        else {
-          $params['contact_id'] = $this->id['cid'][1];
-        }
-        $this->id['act'][1] = $this->findActivity($params);
-        if ($this->id['act'][1]) {
-          $result = wf_civicrm_api('activity', 'get', array('activity_id' => $this->id['act'][1]));
-          $activity = array('activity' => array(1 => $result['values'][$this->id['act'][1]]));
-          $custom = $this->getCustomData($this->id['act'][1], 'activity');
-          $this->info['activity'] = array(1 => ($activity + $custom));
-        }
-      }
     }
   }
 
@@ -342,13 +282,13 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    */
   private function loadParticipants($c) {
     $select = array('id', 'event_id', 'role_id', 'status_id');
-    if (array_key_exists('participant_campaign_id', wf_crm_get_fields())) {
+    if (array_key_exists('participant_campaign_id', $this->all_fields)) {
       $select[] = 'campaign_id';
     }
     $status_types = wf_crm_apivalues('participant_status_type', 'get');
     $dao = CRM_Core_DAO::executeQuery('SELECT ' . implode(',', $select) . '
       FROM civicrm_participant
-      WHERE contact_id = ' . $this->id['cid'][$c] . ' AND event_id IN (' . implode(',', array_keys($this->events)) . ")"
+      WHERE contact_id = ' . $this->ent['contact'][$c]['id'] . ' AND event_id IN (' . implode(',', array_keys($this->events)) . ")"
     );
     while ($dao->fetch()) {
       $par = array();
@@ -431,19 +371,19 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     // Start with the url - that trumps everything.
     if (isset($_GET["cid$c"]) || ($c == 1 && isset($_GET['cid']))) {
       $cid = isset($_GET["cid$c"]) ? $_GET["cid$c"] : $_GET['cid'];
-      if (is_numeric($cid)) {
+      if (wf_crm_is_positive($cid) || $cid == '0') {
         $cid = (int) $cid;
         if ($cid === 0) {
-          $this->id['cid'][$c] = $cid;
+          $this->ent['contact'][$c]['id'] = $cid;
         }
         else {
           if (wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
-            $this->id['cid'][$c] = $cid;
+            $this->ent['contact'][$c]['id'] = $cid;
           }
         }
       }
     }
-    if (!isset($this->id['cid'][$c])) {
+    if (!isset($this->ent['contact'][$c]['id'])) {
       $found = array();
       switch ($component['extra']['default']) {
         case 'user':
@@ -456,8 +396,8 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           }
           break;
         case 'relationship':
-          if (!empty($this->id['cid'][1])) {
-            $found = wf_crm_find_relations($this->id['cid'][1], $component['extra']['default_relationship']);
+          if (!empty($this->ent['contact'][1]['id'])) {
+            $found = wf_crm_find_relations($this->ent['contact'][1]['id'], $component['extra']['default_relationship']);
           }
           break;
         case 'auto':
@@ -476,12 +416,17 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       }
       foreach ($found as $cid) {
         // Don't pick the same contact twice unless explicitly told to do so
-        if (!in_array($cid, $this->id['cid']) || $dupes_allowed) {
-          // Check filters except for 'auto' which already applied them
-          if ($component['extra']['default'] == 'auto' || wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
-            $this->id['cid'][$c] = $cid;
-            break;
+        if (!$dupes_allowed) {
+          foreach($this->ent['contact'] as $contact) {
+            if ($cid == $contact['id']) {
+              continue;
+            }
           }
+        }
+        // Check filters except for 'auto' which already applied them
+        if ($component['extra']['default'] == 'auto' || wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
+          $this->ent['contact'][$c]['id'] = $cid;
+          break;
         }
       }
     }
@@ -496,7 +441,6 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    *   Existing submission (optional)
    */
   private function fillForm(&$elements, $submitted = array()) {
-    $fields = wf_crm_get_fields();
     foreach ($elements as $eid => &$element) {
       if ($eid[0] == '#' || !is_array($element)) {
         continue;
@@ -512,7 +456,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         if (substr($name, -8) === 'timepart') {
           $name = str_replace('_timepart', '', $name);
         }
-        if ($field = wf_crm_aval($fields, $table . '_' . $name)) {
+        if ($field = wf_crm_aval($this->all_fields, $table . '_' . $name)) {
           $component = $element['#webform_component'];
           $element['#attributes']['class'][] = 'civicrm-enabled';
           $dt = NULL;
@@ -641,6 +585,159 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       'rows' => $rows,
       'attributes' => array('id' => "wf-crm-billing-items"),
     ));
+  }
+
+  /**
+   * Find case ids based on url input or "existing case" settings
+   */
+  private function findExistingCases() {
+    // Support legacy url param
+    if (empty($_GET["case1"]) && !empty($_GET["caseid"])) {
+      $_GET["case1"] = $_GET["caseid"];
+    }
+    for ($n = 1; $n <= $this->data['case']['number_of_case']; ++$n) {
+      if (!empty($this->data['case'][$n]['case'][1]['client_id'])) {
+        $clients = array();
+        foreach ((array)$this->data['case'][$n]['case'][1]['client_id'] as $c) {
+          if (!empty($this->ent['contact'][$c]['id'])) {
+            $clients[] = $this->ent['contact'][$c]['id'];
+          }
+        }
+        if ($clients) {
+          // Populate via url argument
+          if (isset($_GET["case$n"]) && wf_crm_is_positive($_GET["case$n"])) {
+            $id = $_GET["case$n"];
+            $item = wf_civicrm_api('case', 'getsingle', array('id' => $id));
+            if (array_intersect((array)wf_crm_aval($item, 'client_id'), $clients)) {
+              $this->ent['case'][$n] = array('id' => $id);
+            }
+          }
+          // Populate via search
+          elseif (!empty($this->data['case'][$n]['existing_case_status'])) {
+            $item = $this->findCaseForContact($clients, array(
+              'case_type_id' => wf_crm_aval($this->data['case'][$n], 'case:1:case_type_id'),
+              'status_id' => $this->data['case'][$n]['existing_case_status']
+            ));
+            if ($item) {
+              $this->ent['case'][$n] = array('id' => $item['id']);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Find activity ids based on url input or "existing activity" settings
+   */
+  private function findExistingActivities() {
+    // Support legacy url param
+    if (empty($_GET["activity1"]) && !empty($_GET["aid"])) {
+      $_GET["activity1"] = $_GET["aid"];
+    }
+    for ($n = 1; $n <= $this->data['activity']['number_of_activity']; ++$n) {
+      if (!empty($this->data['activity'][$n]['activity'][1]['target_contact_id'])) {
+        $targets = array();
+        foreach ($this->data['activity'][$n]['activity'][1]['target_contact_id'] as $c) {
+          if (!empty($this->ent['contact'][$c]['id'])) {
+            $targets[] = $this->ent['contact'][$c]['id'];
+          }
+        }
+        if ($targets) {
+          if (isset($_GET["activity$n"]) && wf_crm_is_positive($_GET["activity$n"])) {
+            $id = $_GET["activity$n"];
+            $item = wf_civicrm_api('activity', 'getsingle', array('id' => $id, 'return' => array('target_contact_id')));
+            if (array_intersect($targets, $item['target_contact_id'])) {
+              $this->ent['activity'][$n] = array('id' => $id);
+            }
+          }
+          elseif (!empty($this->data['activity'][$n]['existing_activity_status'])) {
+            // The api doesn't accept an array of target contacts so we'll do it as a loop
+            foreach ($targets as $cid) {
+              $params = array(
+                'sequential' => 1,
+                'target_contact_id' => $cid,
+                'status_id' => array('IN' => (array)$this->data['activity'][$n]['existing_activity_status']),
+                'is_deleted' => '0',
+                'is_current_revision' => '1',
+                'options' => array('limit' => 1),
+              );
+              if (!empty($this->data['activity'][$n]['activity'][1]['activity_type_id'])) {
+                $params['activity_type_id'] = $this->data['activity'][$n]['activity'][1]['activity_type_id'];
+              }
+              $items = wf_crm_apivalues('activity', 'get', $params);
+              if (isset($items[0]['id'])) {
+                $this->ent['activity'][$n] = array('id' => $items[0]['id']);
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  /**
+   * Find grant ids based on url input or "existing grant" settings
+   */
+  private function findExistingGrants() {
+    for ($n = 1; $n <= $this->data['grant']['number_of_grant']; ++$n) {
+      if (!empty($this->data['grant'][$n]['grant'][1]['contact_id'])) {
+        $cid = $this->ent['contact'][$this->data['grant'][$n]['grant'][1]['contact_id']]['id'];
+        if ($cid) {
+          if (isset($_GET["grant$n"]) && wf_crm_is_positive($_GET["grant$n"])) {
+            $id = $_GET["grant$n"];
+            $item = wf_civicrm_api('grant', 'getsingle', array('id' => $id));
+            if ($cid == $item['contact_id']) {
+              $this->ent['grant'][$n] = array('id' => $id);
+            }
+          }
+          elseif (!empty($this->data['grant'][$n]['existing_grant_status'])) {
+            $params = array(
+              'sequential' => 1,
+              'contact_id' => $cid,
+              'status_id' => array('IN' => (array)$this->data['grant'][$n]['existing_grant_status']),
+              'options' => array('limit' => 1),
+            );
+            if (!empty($this->data['grant'][$n]['grant'][1]['grant_type_id'])) {
+              $params['grant_type_id'] = $this->data['grant'][$n]['grant'][1]['grant_type_id'];
+            }
+            $items = wf_crm_apivalues('grant', 'get', $params);
+            if (isset($items[0]['id'])) {
+              $this->ent['grant'][$n] = array('id' => $items[0]['id']);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Populate existing entity data
+   * @param string $type entity type (activity, case, grant)
+   */
+  private function populateExistingEntity($type) {
+    $items = array();
+    foreach ($this->ent[$type] as $key => $item) {
+      if (!empty($item['id'])) {
+        $items[$key] = $item['id'];
+      }
+    }
+    if ($items) {
+      $values = wf_crm_apivalues($type, 'get', array('id' => array('IN' => array_values($items))));
+      foreach ($items as $n => $id) {
+        if (isset($values[$id])) {
+          // Load core + custom data
+          $this->info[$type][$n] = array($type => array(1 => $values[$id])) + $this->getCustomData($id, $type);
+          // Load file attachments
+          if (!empty($this->all_sets["{$type}upload"])) {
+            foreach ($this->getAttachments($type, $id) as $f => $file) {
+              $this->info[$type][$n]["{$type}upload"][1]["file_$f"] = $file['file_id'];
+            }
+          }
+        }
+      }
+    }
   }
 
   /**

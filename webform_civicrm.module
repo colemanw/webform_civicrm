@@ -245,7 +245,7 @@ function webform_civicrm_webform_submission_load(&$submissions) {
   $db = db_query('SELECT * FROM {webform_civicrm_submissions} WHERE sid IN (' . implode(',', array_keys($submissions)) . ')');
   $contacts = array();
   foreach ($db as $row) {
-    $data = $row->civicrm_data + array('contact' => array());
+    $data = unserialize($row->civicrm_data) + array('contact' => array());
     if ($row->contact_id) {
       foreach (explode('-', trim($row->contact_id, '-')) as $c => $cid) {
         $data['contact'][$c + 1]['id'] = $cid;
@@ -401,7 +401,7 @@ function webform_civicrm_preprocess_webform_results_submissions(&$vars) {
       // Get submission id from url
       preg_match('#/submission/(\d+)#', $row[4], $preg);
       $sid = $preg[1];
-      if (!empty($vars['submissions'][$sid]->civicrm['contact_id'][1])) {
+      if (!empty($vars['submissions'][$sid]->civicrm['contact'][1])) {
         $data = $vars['submissions'][$sid]->civicrm;
         $name = $data['contact'][1]['display_name'];
         if ($name !== '' && $access) {

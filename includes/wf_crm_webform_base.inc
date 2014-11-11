@@ -12,7 +12,7 @@ abstract class wf_crm_webform_base {
   protected $settings = array();
   protected $enabled = array();
   protected $data = array();
-  protected $id = array();
+  protected $ent = array();
   protected $events = array();
   protected $contribution_page;
   protected $line_items = array();
@@ -31,7 +31,7 @@ abstract class wf_crm_webform_base {
    */
   protected function loadContact($c, $exclude = array()) {
     $info = array();
-    $cid = $this->id['cid'][$c];
+    $cid = $this->ent['contact'][$c]['id'];
     $contact = $this->data['contact'][$c];
     $prefix = 'civicrm_' . $c . '_contact_1_';
     foreach (array_merge(array('contact'), wf_crm_location_fields()) as $ent) {
@@ -103,7 +103,7 @@ abstract class wf_crm_webform_base {
       for ($r = 1; $r <= $contact['number_of_relationship']; ++$r) {
         $types = array();
         $prefix = "civicrm_{$c}_contact_{$r}_relationship_";
-        if (!empty($this->id['cid'][$r])) {
+        if (!empty($this->ent['contact'][$r]['id'])) {
           if (!empty($contact['relationship'][$r]['relationship_type_id']) && $contact['relationship'][$r]['relationship_type_id'] != 'create_civicrm_webform_element') {
             $types = (array) $contact['relationship'][$r]['relationship_type_id'];
           }
@@ -111,7 +111,7 @@ abstract class wf_crm_webform_base {
             $types += array_keys($this->getExposedOptions($prefix . 'relationship_type_id'));
           }
         }
-        $rel = $this->getRelationship($types, $cid, wf_crm_aval($this->id['cid'], $r));
+        $rel = $this->getRelationship($types, $cid, wf_crm_aval($this->ent['contact'], "$r:id"));
         if ($rel) {
           $info['relationship'][$r] = $rel;
           // Fetch custom data
@@ -217,102 +217,6 @@ abstract class wf_crm_webform_base {
       return wf_crm_aval($this->node->webform, 'components:' . $this->enabled[$field_key]);
     }
     return NULL;
-  }
-
-  /**
-   * Fetch an existing activity for a contact based on activity & case criteria
-   * Maybe someday this will be possible through the CiviCRM API
-   *
-   * @param $params
-   *   Array of activity & case info
-   * @return string
-   */
-  protected function findActivity($params) {
-    if (!empty($params['status_id'])) {
-      $cid = wf_crm_aval($params, 'contact_id');
-      unset($params['contact_id']);
-      $sql = 'SELECT civicrm_activity.id FROM civicrm_activity';
-      if (!empty($params['case_id'])) {
-        $sql .= ' INNER JOIN civicrm_case_activity ON civicrm_activity.id = civicrm_case_activity.activity_id';
-      }
-      if ($cid) {
-        $sql .= ' INNER JOIN civicrm_activity_contact ON civicrm_activity.id = civicrm_activity_contact.activity_id';
-      }
-      $sql .= " WHERE is_current_revision = 1 AND is_deleted = 0";
-      if ($cid) {
-        // Find activity target & assignee
-        $targetTypes = '2, 3';
-        $sql .= " AND civicrm_activity_contact.contact_id = $cid AND civicrm_activity_contact.record_type_id IN ($targetTypes)";
-      }
-      foreach ($params as $field => $value) {
-        if ($value && is_array($value)) {
-          $sql .= " AND $field IN (" . implode(',', $value) . ")";
-        }
-        elseif ($value) {
-          $sql .= " AND $field = $value";
-        }
-      }
-      $sql .= ' LIMIT 0, 1';
-      return CRM_Core_DAO::singleValueQuery($sql);
-    }
-  }
-
-  /**
-   * Fetch an existing case for client(s)
-   * Based on url param or status_id and case_type_id
-   *
-   * @param $ids
-   *   Passed if client id refers to a contact number and not a contact id
-   * @return mixed
-   */
-  protected function findCase($ids = NULL) {
-    $params = $this->data['case'][1];
-    // Look for case id passed in url
-    if (!empty($_GET['caseid']) && is_numeric($_GET['caseid'])) {
-      $result = wf_civicrm_api('case', 'get', array('case_id' => $_GET['caseid']));
-      if (isset($result['values'][$_GET['caseid']])) {
-        $case = $result['values'][$_GET['caseid']];
-        // Verify that case is correct type and user has access to this case
-        if ($case['case_type_id'] == $params['case'][1]['case_type_id']) {
-          // Respect admin privledges
-          if (user_access('access all cases and activities')) {
-            return $case;
-          }
-          $case_cids = array();
-          foreach ($case['contacts'] as $contact) {
-            $case_cids[] = $contact['contact_id'];
-          }
-          foreach ((array) wf_crm_aval($ids, 'cid', $params['case'][1]['client_id']) as $cid) {
-            if (in_array($cid, $case_cids)) {
-              // User is involved in the case therefore the found case is correct
-              return $case;
-            }
-          }
-        }
-      }
-    }
-    // Match existing case based on client and status
-    if (!empty($params['existing_case_status']) && !empty($params['case'][1]['client_id'])) {
-      foreach ((array) $params['case'][1]['client_id'] as $client_id) {
-        if ($ids !== NULL) {
-          $client_id = wf_crm_aval($ids, "cid:$client_id");
-        }
-        if ($client_id) {
-          $result = wf_civicrm_api('case', 'get', array('client_id' => $client_id));
-          foreach (wf_crm_aval($result, 'values', array()) as $case) {
-            if (empty($case['is_deleted']) && in_array($case['status_id'], $params['existing_case_status'])) {
-              $case_types = $case['case_type_id'];
-              if (is_string($case_types)) {
-                $case_types = explode(',', $case_types);
-              }
-              if (in_array($params['case'][1]['case_type_id'], $case_types)) {
-                return $case;
-              }
-            }
-          }
-        }
-      }
-    }
   }
 
   /**
@@ -446,13 +350,14 @@ abstract class wf_crm_webform_base {
    *   We only allow saving blank fields for known contacts.
    */
   protected function saveCustomData($entity, $entity_id, $entity_type, $known = TRUE) {
-    $existing = $this->getCustomData($entity_id, $entity_type, FALSE);
+    $existing = FALSE;
     $params = array('entityID' => $entity_id);
     foreach ($entity as $table => $values) {
       if (substr($table, 0, 2) == 'cg' && is_array($values)) {
-        if (empty($existing[$table])) {
-          $existing[$table] = array();
+        if ($existing === FALSE) {
+          $existing = $this->getCustomData($entity_id, $entity_type, FALSE);
         }
+        $existing += array($table => array());
         $insert = 0;
         foreach ($values as $custom) {
           if ($id = each($existing[$table])) {
@@ -499,6 +404,28 @@ abstract class wf_crm_webform_base {
       list( , $c, $ent, $n, $table, $name) = $pieces;
       return wf_crm_aval($this->data, "{$ent}:{$c}:{$table}:{$n}:{$name}", $default, $strict);
     }
+  }
+
+  /**
+   * Normally we could do this by passing filters into the api, but legacy case api doesn't support them
+   * So instead we fetch every case for the contact and loop through them
+   * @param array|int $cid
+   * @param array $filters
+   * @return null|array
+   */
+  function findCaseForContact($cid, $filters) {
+    $case = NULL;
+    foreach (wf_crm_apivalues('case', 'get', array('client_id' => $cid)) as $item) {
+      if (empty($item['is_deleted'])) {
+        foreach (array_filter($filters) as $filter => $value) {
+          if (array_intersect((array)$item[$filter], (array)$value)) {
+            // Note: this loop has no break on purpose - this way we find the most recent case instead of stopping at the first
+            $case = $item;
+          }
+        }
+      }
+    }
+    return $case;
   }
 
   /**
@@ -586,7 +513,7 @@ abstract class wf_crm_webform_base {
   /**
    * Fetch the public url of a file in the Drupal file system
    *
-   * @param $id Drupal file id
+   * @param int $id Drupal file id
    *
    * @return string|bool: url of file if found
    */
@@ -596,6 +523,7 @@ abstract class wf_crm_webform_base {
   }
 
   /**
+   * FIXME: Use the api for this
    * @param string $ent - entity type
    * @param int $id - entity id
    * @return array starting at index 1
@@ -605,7 +533,7 @@ abstract class wf_crm_webform_base {
     $attachments = array();
     $dao = CRM_Core_DAO::executeQuery("SELECT * FROM civicrm_entity_file WHERE entity_table = 'civicrm_$ent' AND entity_id = $id");
     while ($dao->fetch()) {
-      $attachments[$n++] = (array) $dao;
+      $attachments[$n++] = array('id' => $dao->id, 'file_id' => $dao->file_id);
     }
     return $attachments;
   }

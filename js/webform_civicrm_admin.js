@@ -314,7 +314,7 @@ var wfCiviAdmin = (function ($, D) {
         });
         return memberships.join('<br />') || Drupal.t('- None -');
       });
-      $('#edit-grant', context).once('wf-civi').drupalSetSummary(function (context) {
+      $('#edit-granttab', context).once('wf-civi').drupalSetSummary(function (context) {
         var label = [];
         $('select[name$=grant_type_id]', context).each(function() {
           label.push($(this).find('option:selected').text());

@@ -766,28 +766,36 @@ function webform_civicrm_update_7401(&$batch) {
 }
 
 /**
- * Upgrade schema to handle multiple activities
+ * Upgrade schema to handle multiple activities and cases
  */
 function webform_civicrm_update_7402() {
   civicrm_initialize();
   module_load_include('inc', 'webform', 'includes/webform.components');
   module_load_include('inc', 'webform_civicrm', 'includes/utils');
-  $forms = db_query("SELECT * FROM {webform_civicrm_forms} WHERE data LIKE '%%\"activity\"%%'");
+  $forms = db_query("SELECT * FROM {webform_civicrm_forms}");
   foreach ($forms as $form) {
-    $data = unserialize($form->data);
-    if (isset($data['activity'][1]['activity'][1]['subject'])) {
+    $data = $orig = unserialize($form->data);
+    if (isset($data['activity'][1]['activity'][1])) {
       $data['activity']['number_of_activity'] = 1;
-      // Fix mis-named fields
+      // Fix misnamed fields
       foreach (array('campaign_id', 'survey_id') as $field) {
         if (!empty($data['activity'][1]['activity'][1]['activity_' . $field])) {
           $data['activity'][1]['activity'][1][$field] = $data['activity'][1]['activity'][1]['activity_' . $field];
           unset($data['activity'][1]['activity'][1]['activity_' . $field]);
         }
       }
+      // Set "file on case" settings if activity and case are both set
+      // Previous behavior was to always file on case
+      if (!empty($data['case'][1]['case'][1]['case_type_id'])) {
+        $data['activity'][1]['case_type_id'] = $data['case'][1]['case'][1]['case_type_id'];
+        $data['activity'][1]['case_status_id'] = (array) wf_crm_aval($data['case'][1]['case'][1], 'status_id');
+        $data['activity'][1]['case_contact_id'] = wf_crm_aval($data['case'][1]['case'][1], 'client_id', 1);
+      }
       // Create hidden field for activity subject to replace the removed "default subject" setting
-      if (!(db_query("SELECT nid FROM {webform_component} WHERE form_key = 'civicrm_1_activity_1_activity_subject' AND nid = {$form->nid}"))) {
+      $fid = 'civicrm_1_activity_1_activity_subject';
+      if (!(db_query("SELECT nid FROM {webform_component} WHERE form_key = '$fid' AND nid = {$form->nid}")->fetchField())) {
         $component = array(
-          'form_key' => 'civicrm_1_activity_1_activity_subject',
+          'form_key' => $fid,
           'nid' => $form->nid,
           'value' => $data['activity'][1]['activity'][1]['subject'],
           'type' => 'hidden',
@@ -795,6 +803,15 @@ function webform_civicrm_update_7402() {
         webform_component_defaults($component);
         webform_component_insert($component);
       }
+    }
+    if (isset($data['case'][1]['case'][1])) {
+      $data['case']['number_of_case'] = 1;
+    }
+    if ($data !== $orig) {
+      db_update('webform_civicrm_forms')
+        ->fields(array('data' => serialize($data)))
+        ->condition('nid', $form->nid)
+        ->execute();
     }
   }
 }

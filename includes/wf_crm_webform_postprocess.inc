@@ -69,7 +69,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->rawValues = _webform_client_form_submit_flatten($this->node, wf_crm_aval($this->form_state, 'values:submitted'));
     $this->crmValues = wf_crm_enabled_fields($this->node, $this->rawValues);
     // Even though this object is destroyed between page submissions, this trick allows us to persist some data - see below
-    $this->id = wf_crm_aval($form_state, 'civicrm:id', array());
+    $this->ent = wf_crm_aval($form_state, 'civicrm:ent', array());
 
     $this->hiddenFieldValidation();
     $this->validateThisPage($this->form['submitted']);
@@ -95,13 +95,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
     }
     // Even though this object is destroyed between page submissions, this trick allows us to persist some data - see above
-    $form_state['civicrm']['id'] = $this->id;
+    $form_state['civicrm']['ent'] = $this->ent;
     $form_state['civicrm']['line_items'] = $this->line_items;
   }
 
   /**
    * Process webform submission when it is about to be saved. Called by the following hook:
    * @see webform_civicrm_webform_submission_presave
+   * @param stdClass $submission
    */
   public function preSave(&$submission) {
     $this->submission = &$submission;
@@ -120,48 +121,49 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     // Create/update contacts
     foreach ($this->data['contact'] as $c => $contact) {
-      if (empty($this->id['cid'][$c])) {
+      if (empty($this->ent['contact'][$c]['id'])) {
         // Don't create contact if we don't have a name or email
         if ($this->isContactEmpty($contact)) {
-          $this->id['cid'][$c] = 0;
+          $this->ent['contact'][$c]['id'] = 0;
           continue;
         }
-        $this->id['cid'][$c] = $this->findDuplicateContact($contact);
+        $this->ent['contact'][$c]['id'] = $this->findDuplicateContact($contact);
       }
 
       // Current employer must wait for ContactRef ids to be filled
       unset($contact['contact'][1]['employer_id']);
 
       // Create new contact
-      if (empty($this->id['cid'][$c])) {
-        $this->id['cid'][$c] = $this->createContact($contact);
+      if (empty($this->ent['contact'][$c]['id'])) {
+        $this->ent['contact'][$c]['id'] = $this->createContact($contact);
       }
       // Update existing contact
       else {
         $this->updateContact($contact, $c);
       }
       // Identify contact 1 as acting user if not logged in
-      if ($c == 1 && $this->id['cid'][$c] && user_is_anonymous()) {
+      if ($c == 1 && $this->ent['contact'][$c]['id'] && user_is_anonymous()) {
         // For the sake of simple logging
-        CRM_Core_Session::singleton()->set('userID', (int) $this->id['cid'][1]);
+        CRM_Core_Session::singleton()->set('userID', (int) $this->ent['contact'][1]['id']);
         // For the sake of advanced logging
-        CRM_Core_DAO::executeQuery('SET @civicrm_user_id = %1', array(1 => array($this->id['cid'][1], 'Integer')));
+        CRM_Core_DAO::executeQuery('SET @civicrm_user_id = %1', array(1 => array($this->ent['contact'][1]['id'], 'Integer')));
       }
     }
-    // $this->id['cid'] will now contain all contact ids in order, with 0 as a placeholder for any contact not saved
-    ksort($this->id['cid']);
+    // $this->ent['contact'] will now contain all contacts in order, with 0 as a placeholder id for any contact not saved
+    ksort($this->ent['contact']);
 
     // Once all contacts are saved we can fill contact ref fields
     $this->fillContactRefs();
 
     // Save a non-live transaction
-    if (empty($this->id['contribution']) && $this->totalContribution) {
+    if (empty($this->ent['contribution'][1]['id']) && $this->totalContribution) {
       $this->payLaterContribution();
     }
 
     // Create/update other data associated with contacts
     foreach ($this->data['contact'] as $c => $contact) {
-      if (!($cid = $this->id['cid'][$c])) {
+      $cid = $this->ent['contact'][$c]['id'];
+      if (!$cid) {
         continue;
       }
       $this->saveCurrentEmployer($contact, $cid);
@@ -179,7 +181,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $relationship_type_id = wf_crm_aval($params, 'relationship_type_id');
         if ($relationship_type_id) {
           foreach ((array) $relationship_type_id as $params['relationship_type_id']) {
-            $this->processRelationship($params, $cid, $this->id['cid'][$n]);
+            $this->processRelationship($params, $cid, $this->ent['contact'][$n]['id']);
           }
         }
       }
@@ -192,9 +194,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->processSharedAddresses();
 
     // Process memberships after relationships have been created
-    foreach ($this->id['cid'] as $c => $cid) {
-      if ($cid && isset($this->all_sets['membership']) && !empty($this->data['membership'][$c]['number_of_membership'])) {
-        $this->processMemberships($c, $cid);
+    foreach ($this->ent['contact'] as $c => $contact) {
+      if ($contact['id'] && isset($this->all_sets['membership']) && !empty($this->data['membership'][$c]['number_of_membership'])) {
+        $this->processMemberships($c, $contact['id']);
       }
     }
   }
@@ -203,36 +205,48 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * Process webform submission after it is has been saved. Called by the following hooks:
    * @see webform_civicrm_webform_submission_insert
    * @see webform_civicrm_webform_submission_update
+   * @param stdClass $submission
    */
   public function postSave($submission) {
     $this->submission = $submission;
-    $record = array(
-      'sid' => $this->submission->sid,
-      'contact_id' => '-' . implode('-', $this->id['cid']) . '-',
-    );
     if (empty($this->submission->is_draft)) {
-      // Process case
-      if (!empty($this->data['case'][1]['case'][1]['client_id'])) {
-        $this->processCase();
+      // Save cases
+      if (!empty($this->data['case']['number_of_case'])) {
+        $this->processCases();
       }
-      // Process activity
-      if (!empty($this->data['activity'][1]['activity'])) {
-       $this->processActivity();
-        if (!empty($this->id['act'][1])) {
-          $record['activity_id'] = $this->id['act'][1];
-        }
+      // Save activities
+      if (!empty($this->data['activity']['number_of_activity'])) {
+       $this->processActivities();
+      }
+      // Save grants
+      if (isset($this->data['grant']['number_of_grant'])) {
+        $this->processGrants();
       }
       // Save contribution custom data & line-items
-      if (!empty($this->id['contribution'])) {
+      if (!empty($this->ent['contribution'][1]['id'])) {
         $this->processContribution();
-        $record['contribution_id'] = $this->id['contribution'];
-      }
-      if (isset($this->all_sets['grant'])) {
-        $this->processGrants();
       }
     }
     // Write record; we do this when creating, updating, or saving a draft of a webform submission.
+    $record = $this->formatSubmission();
     drupal_write_record('webform_civicrm_submissions', $record, $this->update);
+  }
+
+  /**
+   * Formats submission data as expected by the schema
+   */
+  private function formatSubmission() {
+    $data = $this->ent;
+    unset($data['contact']);
+    $record = array(
+      'sid' => $this->submission->sid,
+      'contact_id' => '-',
+      'civicrm_data' => $data,
+    );
+    foreach ($this->ent['contact'] as $contact) {
+      $record['contact_id'] .= $contact['id'] . '-';
+    }
+    return $record;
   }
 
   /**
@@ -463,10 +477,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (substr($field_key, -8) == 'existing') {
         list(, $c, ) = explode('_', $field_key, 3);
         $cid = wf_crm_aval($this->submissionValue($fid), 0);
-        $this->id['cid'][$c] = $this->verifyExistingContact($cid, $field_key);
+        $this->ent['contact'][$c]['id'] = $this->verifyExistingContact($cid, $field_key);
       }
     }
-    $this->existing_contacts = $this->id['cid'];
+    $this->existing_contacts = $this->ent['contact'];
   }
 
   /**
@@ -525,7 +539,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           // Else look up the master contact's address
           elseif (!empty($this->existing_contacts[$m])) {
             $masters = wf_civicrm_api('address', 'get',
-              array('contact_id' => $this->id['cid'][$m], 'sort' => 'is_primary DESC'));
+              array('contact_id' => $this->ent['contact'][$m]['id'], 'sort' => 'is_primary DESC'));
             if (!empty($masters['values'])) {
               $params['civicrm_address'] = array_shift($masters['values']);
             }
@@ -585,8 +599,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     // Merge data from existing multivalued fields
     if ($multi) {
-      $existing = wf_civicrm_api('contact', 'get', array('id' => $this->id['cid'][$c]) + $fetch);
-      $existing = wf_crm_aval($existing, 'values:' . $this->id['cid'][$c], array());
+      $existing = wf_civicrm_api('contact', 'get', array('id' => $this->ent['contact'][$c]['id']) + $fetch);
+      $existing = wf_crm_aval($existing, 'values:' . $this->ent['contact'][$c]['id'], array());
       foreach ($multi as $name) {
         $exist = array_filter(drupal_map_assoc((array) wf_crm_aval($existing, $name, array())));
         // Only known contacts are allowed to empty a field
@@ -598,7 +612,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $params[$name] = array_unique(array_merge($params[$name], $exist));
       }
     }
-    $params['id'] = $this->id['cid'][$c];
+    $params['id'] = $this->ent['contact'][$c]['id'];
     wf_civicrm_api('contact', 'create', $params);
   }
 
@@ -1066,8 +1080,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function processSharedAddresses() {
     foreach ($this->shared_address as $cid => $shared) {
       foreach ($shared as $i => $addr) {
-        if (!empty($this->id['cid'][$addr['mc']])) {
-          $masters = wf_civicrm_api('address', 'get', array('contact_id' => $this->id['cid'][$addr['mc']], 'options' => array('sort' => 'is_primary DESC')));
+        if (!empty($this->ent['contact'][$addr['mc']]['id'])) {
+          $masters = wf_civicrm_api('address', 'get', array('contact_id' => $this->ent['contact'][$addr['mc']]['id'], 'options' => array('sort' => 'is_primary DESC')));
           if (!empty($masters['values'])) {
             $masters = array_values($masters['values']);
             // Pick the address with the same location type; default to primary.
@@ -1092,117 +1106,194 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   /**
    * Save case data
    */
-  private function processCase() {
-    if (empty($this->id['case'][1])) {
-      // Search for case
-      $case = $this->findCase();
-      if ($case) {
-        $this->id['case'][1] = $case['id'];
+  private function processCases() {
+    foreach (wf_crm_aval($this->data, 'case', array()) as $n => $data) {
+      if (is_array($data) && !empty($data['case'][1]['client_id'])) {
+        $params = $data['case'][1];
+        // Set some defaults in create mode
+        if (empty($this->ent['case'][$n]['id'])) {
+          // Automatic status... for lack of anything fancier just pick the first option ("Ongoing" on a standard install)
+          if (empty($params['status_id'])) {
+            $options = wf_crm_apivalues('case', 'getoptions', array('field' => 'status_id'));
+            $params['status_id'] = current(array_keys($options));
+          }
+          if (empty($params['subject'])) {
+            $params['subject'] = check_plain($this->node->title);
+          }
+          // Automatic creator_id - default to current user or contact 1
+          if (empty($data['case'][1]['creator_id'])) {
+            if (user_is_logged_in()) {
+              $params['creator_id'] = 'user_contact_id';
+            }
+            elseif (!empty($this->ent['contact'][1]['id'])) {
+              $params['creator_id'] = $this->ent['contact'][1]['id'];
+            }
+            else {
+              // Abort if no creator available
+              continue;
+            }
+          }
+        }
+        // Update mode
+        else {
+          $params['id'] = $this->ent['case'][$n]['id'];
+          // These params aren't allowed in update mode
+          unset($params['creator_id'], $params['case_type_id']);
+        }
+        // Allow "automatic" status to pass-thru
+        if (empty($params['status_id'])) {
+          unset($params['status_id']);
+        }
+        $result = wf_civicrm_api('case', 'create', $params);
+        // Final processing if save was successful
+        if (!empty($result['id'])) {
+          // Store id
+          $this->ent['case'][$n]['id'] = $result['id'];
+          // Save custom field data
+          $this->saveCustomData($data, $result['id'], 'Case', FALSE);
+        }
       }
-    }
-    // Default subject
-    if (empty($this->id['case'][1]) && empty($this->data['case'][1]['case'][1]['subject'])) {
-      $this->data['case'][1]['case'][1]['subject'] = check_plain($this->node->title);
-    }
-    if (!empty($this->id['case'][1])) {
-      $this->data['case'][1]['case'][1]['id'] = $this->id['case'][1];
-      unset($this->data['case'][1]['case'][1]['creator_id'], $this->data['case'][1]['case'][1]['case_type_id']);
-    }
-    // Save case
-    $result = wf_civicrm_api('case', 'create', $this->data['case'][1]['case'][1]);
-    if (!empty($result['id'])) {
-      $this->saveCustomData($this->data['case'][1], $result['id'], 'Case');
-      $this->id['case'][1] = $result['id'];
     }
   }
 
   /**
    * Save activity data
    */
-  private function processActivity() {
-    // Search for activity
-    if ((!empty($this->id['cid'][1]) && empty($this->data['case'][1])) || (!empty($this->data['case'][1]) && !empty($this->id['case'][1]))) {
-      $params = array(
-        'activity_type_id' => $this->data['activity'][1]['activity'][1]['activity_type_id'],
-        'status_id' => $this->data['activity'][1]['existing_activity_status'],
-      );
-      if (!empty($this->data['case'][1])) {
-        $params['case_id'] = $this->id['case'][1];
-      }
-      else {
-        $params['contact_id'] = $this->id['cid'][1];
-      }
-      if (empty($this->id['act'][1])) {
-        $this->id['act'][1] = $this->findActivity($params);
-      }
-    }
-    // Save activity
-    $params = $this->data['activity'][1]['activity'][1];
-    if (is_array($params['status_id'])) {
-      $params['status_id'] = reset($params['status_id']);
-    }
-    // Existing activity - set id
-    if (!empty($this->id['act'][1])) {
-      $params['id'] = $this->id['act'][1];
-    }
-    // New activity - set case id and source_contact
-    else {
-      if (!empty($this->id['case'][1])) {
-        $params['case_id'] = $this->id['case'][1];
-        $params['medium_id'] = $this->data['case'][1]['case'][1]['medium_id'];
-      }
-      $cid = wf_crm_user_cid();
-      if ($cid) {
-        $params['source_contact_id'] = $cid;
-      }
-      else {
-        foreach ($this->id['cid'] as $cid) {
-          if ($cid) {
-            $params['source_contact_id'] = $cid;
-            break;
+  private function processActivities() {
+    foreach (wf_crm_aval($this->data, 'activity', array()) as $n => $data) {
+      if (is_array($data) && !empty($data['activity'][1]['target_contact_id'])) {
+        $params = $data['activity'][1];
+        // Create mode
+        if (empty($this->ent['activity'][$n]['id'])) {
+          // Automatic status based on whether activity_date_time is in the future
+          if (empty($params['status_id'])) {
+            $params['status_id'] = strtotime(wf_crm_aval($params, 'activity_date_time', 'now')) > time() ? 'Scheduled' : 'Completed';
+          }
+          // Automatic source_contact_id - default to current user or contact 1
+          if (empty($data['activity'][1]['source_contact_id'])) {
+            if (user_is_logged_in()) {
+              $params['source_contact_id'] = 'user_contact_id';
+            }
+            elseif (!empty($this->ent['contact'][1]['id'])) {
+              $params['source_contact_id'] = $this->ent['contact'][1]['id'];
+            }
+          }
+          // Format details as html
+          $params['details'] = nl2br(wf_crm_aval($params, 'details', ''));
+          // Add webform results to details
+          if (!empty($this->data['activity'][$n]['details']['entire_result'])) {
+            module_load_include('inc', 'webform', 'includes/webform.submissions');
+            $submission = webform_submission_render($this->node, $this->submission, NULL, 'html');
+            $params['details'] .= drupal_render($submission);
+          }
+          if (!empty($this->data['activity'][$n]['details']['view_link'])) {
+            $params['details'] .= '<p>' . l(t('View Webform Submission'), "node/{$this->node->nid}/submission/{$this->submission->sid}", array('absolute' => TRUE, 'alias' => TRUE)) . '</p>';
+          }
+          if (!empty($this->data['activity'][$n]['details']['edit_link'])) {
+            $params['details'] .= '<p>' . l(t('Edit Submission'), "node/{$this->node->nid}/submission/{$this->submission->sid}/edit", array('absolute' => TRUE, 'alias' => TRUE)) . '</p>';
+          }
+        }
+        // Update mode
+        else {
+          $params['id'] = $this->ent['activity'][$n]['id'];
+        }
+        // Allow "automatic" values to pass-thru if empty
+        foreach ($params as $field => $value) {
+          if ((isset($this->all_fields["activity_$field"]['empty_option']) || isset($this->all_fields["activity_$field"]['exposed_empty_option'])) && !$value) {
+            unset($params[$field]);
+          }
+        }
+        // Handle survey data
+        if (!empty($this->data['activity'][$n]['activity'][1]['survey_id'])) {
+          $params['source_record_id'] = $this->data['activity'][$n]['activity'][1]['survey_id'];
+          // Set default subject
+          if (empty($params['id']) && empty($params['subject'])) {
+            $survey = wf_civicrm_api('survey', 'getsingle', array('id' => $this->data['activity'][$n]['activity'][1]['survey_id'], 'return' => 'title'));
+            $params['subject'] = wf_crm_aval($survey, 'title', '');
+          }
+        }
+        // File on case
+        if (!empty($this->data['activity'][$n]['case_type_id'])) {
+          $case_contact = $this->ent['contact'][$this->data['activity'][$n]['case_contact_id']]['id'];
+          if ($case_contact) {
+            // Proceed only if this activity is not already filed on a case
+            if (empty($params['id']) || !wf_crm_apivalues('case', 'get', array('activity_id' => $params['id']))) {
+              $case = $this->findCaseForContact($case_contact, array(
+                'status_id' => $this->data['activity'][$n]['case_status_id'],
+                'case_type_id' => $this->data['activity'][$n]['case_type_id'],
+              ));
+              if ($case) {
+                $params['case_id'] = $case['id'];
+              }
+            }
+          }
+        }
+        $result = wf_civicrm_api('activity', 'create', $params);
+        // Final processing if save was successful
+        if (!empty($result['id'])) {
+          // Store id
+          $this->ent['activity'][$n]['id'] = $result['id'];
+          // Save custom data & attachments
+          $this->saveCustomData($data, $result['id'], 'Activity', FALSE);
+          if (isset($data['activityupload'])) {
+            $this->processAttachments('activity', $n, $result['id'], empty($params['id']));
+          }
+          if (!empty($params['assignee_contact_id'])) {
+            if (CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'activity_assignee_notification')) {
+              // Send email to assignees. TODO: Move to CiviCRM API?
+              $assignee = wf_civicrm_api('contact', 'getsingle', array('id' => $params['assignee_contact_id']));
+              if (!empty($assignee['email'])) {
+                $mail = array($assignee['email'] => $assignee);
+                // Include attachments while sending a copy of activity.
+                $attachments = CRM_Core_BAO_File::getEntityFile('civicrm_activity', $this->ent['act'][1]);
+                CRM_Case_BAO_Case::sendActivityCopy(NULL, $this->ent['act'][1], $mail, $attachments, NULL);
+              }
+            }
           }
         }
       }
     }
-    // Can't pass an empty contact id to the api
-    if (empty($params['assignee_contact_id'])) {
-      unset($params['assignee_contact_id']);
-    }
-    // Format details as html
-    $params['details'] = nl2br(wf_crm_aval($params, 'details', ''));
-    if (!empty($this->data['activity'][1]['details']['entire_result'])) {
-      module_load_include('inc', 'webform', 'includes/webform.submissions');
-      $renderable = webform_submission_render($this->node, $this->submission, NULL, 'html');
-      $params['details'] .= drupal_render($renderable);
-    }
-    if (!empty($this->data['activity'][1]['details']['view_link'])) {
-      $params['details'] .= '<p>' . l(t('View Webform Submission'), 'node/' . $this->node->nid . '/submission/' . $this->submission->sid, array('absolute' => TRUE, 'alias' => TRUE)) . '</p>';
-    }
-    if (!empty($this->data['activity'][1]['details']['edit_link'])) {
-      $params['details'] .= '<p>' . l(t('Edit Submission'), 'node/' . $this->node->nid . '/submission/' . $this->submission->sid . '/edit',  array('absolute' => TRUE, 'alias' => TRUE)) . '</p>';
-    }
-    if (empty($params['campaign_id']) || empty($this->all_fields['activity_campaign_id'])) {
-      unset($params['campaign_id']);
-    }
-    if (!empty($this->data['activity'][1]['activity'][1]['survey_id'])) {
-      $params['source_record_id'] = $this->data['activity'][1]['activity'][1]['survey_id'];
-    }
-    $result = wf_civicrm_api('activity', 'create', $params);
+  }
 
-    if (!empty($result['id'])) {
-      $this->id['act'][1] = $result['id'];
-      $this->saveCustomData($this->data['activity'][1], $this->id['act'][1], 'Activity');
-    }
-    if (!empty($this->id['act'][1]) && !empty($params['assignee_contact_id'])) {
-      if (CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'activity_assignee_notification')) {
-        // Send email to assignees. TODO: Move to CiviCRM API?
-        $assignee = wf_civicrm_api('contact', 'get', array('id' => $params['assignee_contact_id']));
-        $assignee = wf_crm_aval($assignee, 'values:' . $params['assignee_contact_id']);
-        if (!empty($assignee['email'])) {
-          $mail = array($assignee['email'] => $assignee);
-          // Include attachments while sending a copy of activity.
-          $attachments = &CRM_Core_BAO_File::getEntityFile('civicrm_activity', $this->id['act'][1]);
-          CRM_Case_BAO_Case::sendActivityCopy(NULL, $this->id['act'][1], $mail, $attachments, NULL);
+  /**
+   * Save grants
+   */
+  private function processGrants() {
+    foreach (wf_crm_aval($this->data, 'grant', array()) as $n => $data) {
+      if (is_array($data) && !empty($data['grant'][1]['contact_id'])) {
+        $params = $data['grant'][1];
+        // Set some defaults in create mode
+        if (empty($this->ent['grant'][$n]['id'])) {
+          // Automatic status... for lack of anything fancier just pick the first option ("Submitted" on a standard install)
+          if (empty($params['status_id'])) {
+            $options = wf_crm_apivalues('grant', 'getoptions', array('field' => 'status_id'));
+            $params['status_id'] = current(array_keys($options));
+          }
+          if (empty($params['application_received_date'])) {
+            $params['application_received_date'] = 'now';
+          }
+          if (empty($params['grant_report_received'])) {
+            $params['grant_report_received'] = '0';
+          }
+        }
+        // Update mode
+        else {
+          $params['id'] = $this->ent['grant'][$n]['id'];
+        }
+        // Allow "automatic" status to pass-thru
+        if (empty($params['status_id'])) {
+          unset($params['status_id']);
+        }
+        $result = wf_civicrm_api('grant', 'create', $params);
+        // Final processing if save was successful
+        if (!empty($result['id'])) {
+          // Store id
+          $this->ent['grant'][$n]['id'] = $result['id'];
+          // Save custom data & attachments
+          $this->saveCustomData($data, $result['id'], 'Grant', FALSE);
+          if (isset($data['grantupload'])) {
+            $this->processAttachments('grant', $n, $result['id'], empty($params['id']));
+          }
         }
       }
     }
@@ -1394,7 +1485,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
     }
     if ($cid) {
-      $address['contact_id'] = $email['contact_id'] = $this->id['cid'][1] = $cid;
+      $address['contact_id'] = $email['contact_id'] = $this->ent['contact'][1]['id'] = $cid;
       wf_civicrm_api('address', 'create', $address);
       wf_civicrm_api('email', 'create', $email);
     }
@@ -1416,7 +1507,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
       return;
     }
-    $this->id['contribution'] = $result['id'];
+    $this->ent['contribution'][1]['id'] = $result['id'];
   }
 
   /**
@@ -1427,7 +1518,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['contribution_status_id'] = 'Pending';
     $params['is_pay_later'] = 1;
     $result = wf_civicrm_api('contribution', 'create', $params);
-    $this->id['contribution'] = $result['id'];
+    $this->ent['contribution'][1]['id'] = $result['id'];
     $this->contributionIsPayLater = TRUE;
   }
 
@@ -1440,7 +1531,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['financial_type_id'] = $this->contribution_page['financial_type_id'];
     $params['currency'] = $params['currencyID'] = $this->contribution_page['currency'];
     $params['skipRecentView'] = $params['skipLineItem'] = 1;
-    $params['contact_id'] = $this->id['cid'][1];
+    $params['contact_id'] = $this->ent['contact'][1]['id'];
     $params['total_amount'] = $this->totalContribution;
     if(isset($this->data['contact'][1]['contact'][1]['source'])){
       $params['source'] = $this->data['contact'][1]['contact'][1]['source'];
@@ -1466,11 +1557,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function processContribution() {
     $contribution = $this->data['contribution'][1]['contribution'][1];
-    $id = $this->id['contribution'];
+    $id = $this->ent['contribution'][1]['id'];
     // Save custom data
-    if (count($this->data['contribution'][1]) > 1) {
-      $this->saveCustomData($this->data['contribution'][1], $id, 'Contribution', FALSE);
-    }
+    $this->saveCustomData($this->data['contribution'][1], $id, 'Contribution', FALSE);
     // Save soft credits
     if (!empty($contribution['soft'])) {
       foreach (array_filter($contribution['soft']) as $cid) {
@@ -1511,44 +1600,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Send receipt
     if (!empty($this->contribution_page['is_email_receipt'])) {
       wf_civicrm_api('contribution', 'sendconfirmation', array('id' => $id) + $this->contribution_page);
-    }
-  }
-
-  /**
-   * Save grants
-   */
-  private function processGrants() {
-    foreach (wf_crm_aval($this->data, 'grant', array()) as $n => $data) {
-      if (is_array($data) && !empty($data['grant'][1]['contact_id'])) {
-        $grant = $data['grant'][1];
-        // Set some defaults
-        if (empty($grant['id'])) {
-          // Automatic status... for lack of anything fancier just pick the first option ("Submitted" on a standard install)
-          if (empty($grant['status_id'])) {
-            $options = wf_crm_apivalues('grant', 'getoptions', array('field' => 'status_id'));
-            $grant['status_id'] = current(array_keys($options));
-          }
-          if (empty($grant['application_received_date'])) {
-            $grant['application_received_date'] = 'now';
-          }
-          if (empty($grant['grant_report_received'])) {
-            $grant['grant_report_received'] = '0';
-          }
-        }
-        if (empty($grant['status_id'])) {
-          unset($grant['status_id']);
-        }
-        $result = wf_civicrm_api('grant', 'create', $grant);
-        $sets = 1;
-        if (isset($data['grantupload'])) {
-          $sets = 2;
-          $this->processAttachments('grant', $n, $result['id'], empty($grant['id']));
-        }
-        // Save custom data
-        if (count($data) > $sets && !empty($result['id'])) {
-          $this->saveCustomData($data, $result['id'], 'Grant', FALSE);
-        }
-      }
     }
   }
 
@@ -1601,15 +1652,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         if (is_array($val)) {
           $this->data[$ent][$c][$table][$n][$name] = array();
           foreach ($val as $v) {
-            if (is_numeric($v) && !empty($this->id['cid'][$v])) {
-              $this->data[$ent][$c][$table][$n][$name][] = $this->id['cid'][$v];
+            if (is_numeric($v) && !empty($this->ent['contact'][$v]['id'])) {
+              $this->data[$ent][$c][$table][$n][$name][] = $this->ent['contact'][$v]['id'];
             }
           }
         }
         else {
           unset($this->data[$ent][$c][$table][$n][$name]);
-          if (!empty($this->id['cid'][$val])) {
-            $this->data[$ent][$c][$table][$n][$name] = $this->id['cid'][$val];
+          if (!empty($this->ent['contact'][$val]['id'])) {
+            $this->data[$ent][$c][$table][$n][$name] = $this->ent['contact'][$val]['id'];
           }
         }
       }
