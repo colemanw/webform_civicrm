@@ -345,6 +345,7 @@ class wf_crm_admin_component {
    * options_element alterations for when a currency field (e.g. contribution amount, event fee) is rendered as a select
    */
   private function moneyOptions() {
+    form_load_include($this->form_state, 'inc', 'webform_civicrm', 'includes/wf_crm_admin_component');
     $this->form['#validate'][] = 'wf_crm_money_validate';
     if ($this->component['type'] === 'grid') {
       $this->form['options']['#title'] = t('Amounts (columns)');
