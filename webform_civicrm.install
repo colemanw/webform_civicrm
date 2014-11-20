@@ -737,7 +737,7 @@ function webform_civicrm_update_7401(&$batch) {
   }
 
   // Process the next group of submissions.
-  $result = db_query("SELECT * FROM {webform_civicrm_submissions} WHERE sid > {$batch['current_sid']} ORDER BY sid LIMIT 50");
+  $result = db_query("SELECT * FROM {webform_civicrm_submissions} WHERE sid > {$batch['current_sid']} ORDER BY sid LIMIT 500");
   foreach ($result as $row) {
     $data = array();
     if ($row->activity_id) {
