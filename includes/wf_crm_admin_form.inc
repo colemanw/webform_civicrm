@@ -368,6 +368,7 @@ class wf_crm_admin_form {
       '#default_value' => wf_crm_aval($this->settings, 'message', t("You are viewing this form as [display name]. Please {click here if that's not you}.")),
       '#size' => 100,
       '#maxlength' => 255,
+      '#attributes' => array('style' => 'max-width: 100%;'),
       '#description' => t('Enclose your "not you" link text in curly brackets {like this}.') . '<p>' . $tokens . '</p>',
     );
   }
