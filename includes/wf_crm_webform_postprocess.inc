@@ -1569,9 +1569,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
     }
     // Save honoree
+    // FIXME: these api params were deprecated in 4.5, should be switched to use soft-credits when we drop support for 4.4
     if (!empty($contribution['honor_contact_id']) && !empty($contribution['honor_type_id'])) {
       wf_civicrm_api('contribution', 'create', array(
         'id' => $id,
+        'total_amount' => $contribution['total_amount'],
         'honor_contact_id' => $contribution['honor_contact_id'],
         'honor_type_id' => $contribution['honor_type_id'],
       ));
