@@ -538,5 +538,13 @@ abstract class wf_crm_webform_base {
     return $attachments;
   }
 
+  /**
+   * Generate the quickform key needed to access a contribution form
+   * @return string
+   */
+  public function getQfKey() {
+    return CRM_Core_Key::get('CRM_Contribute_Controller_Contribution', TRUE);
+  }
+
 }
 

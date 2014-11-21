@@ -16,6 +16,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private $multiPageDataLoaded;
   private $billing_params = array();
   private $totalContribution = 0;
+  private $contributionIsIncomplete = FALSE;
   private $contributionIsPayLater = FALSE;
 
   // During validation this contains an array of known contact ids and the placeholder 0 for valid contacts
@@ -85,10 +86,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $this->addPaymentJs();
       $this->loadMultiPageData();
       if ($this->tallyLineItems()) {
-        if ($this->isPaymentPage() && !form_get_errors()) {
+        if ($this->isLivePaymentProcessor() && $this->isPaymentPage() && !form_get_errors()) {
           if ($this->validateBillingFields()) {
             if ($this->createBillingContact()) {
-              $this->submitPayment();
+              $this->submitLivePayment();
             }
           }
         }
@@ -157,7 +158,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     // Save a non-live transaction
     if (empty($this->ent['contribution'][1]['id']) && $this->totalContribution) {
-      $this->payLaterContribution();
+      $this->createDeferredPayment();
     }
 
     // Create/update other data associated with contacts
@@ -230,6 +231,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Write record; we do this when creating, updating, or saving a draft of a webform submission.
     $record = $this->formatSubmission();
     drupal_write_record('webform_civicrm_submissions', $record, $this->update);
+
+    // Calling an IPN payment processor will result in a redirect so this happens after everything else
+    if (empty($this->submission->is_draft) && !empty($this->ent['contribution'][1]['id']) && $this->contributionIsIncomplete && !$this->contributionIsPayLater) {
+      $this->submitIPNPayment();
+    }
   }
 
   /**
@@ -971,9 +977,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
               // Automatic status
               if (empty($params['status_id']) && empty($params['id'])) {
                 $params['status_id'] = 'Registered';
-                // Pay later status
-                if ($this->contributionIsPayLater && !empty($params['fee_amount'])) {
-                  $params['status_id'] = 'Pending from pay later';
+                // Pending payment status
+                if ($this->contributionIsIncomplete && !empty($params['fee_amount'])) {
+                  $params['status_id'] = $this->contributionIsPayLater ? 'Pending from pay later' : 'Pending from incomplete transaction';
                 }
               }
               // Do not update status of existing participant in "Automatic" mode
@@ -1050,9 +1056,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // Automatic status
       if (empty($params['status_id'])) {
         unset($params['status_id']);
-        // Pay later status
-        if ($this->contributionIsPayLater && $this->getMembershipTypeField($params['membership_type_id'], 'minimum_fee')) {
-          $params['is_pay_later'] = TRUE;
+        // Pending payment status
+        if ($this->contributionIsIncomplete && $this->getMembershipTypeField($params['membership_type_id'], 'minimum_fee')) {
+          $params['is_pay_later'] = $this->contributionIsPayLater;
           $params['status_id'] = 'Pending';
         }
       }
@@ -1352,8 +1358,19 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function isPaymentPage() {
     $page = wf_crm_aval($this->form_state, 'storage:page_num', 1);
     $field = $this->getComponent('civicrm_1_contribution_1_contribution_contribution_page_id');
-    return $page == $field['page_num'] &&
-      !empty($this->data['contribution'][1]['contribution'][1]['payment_processor_id']);
+    return $page == $field['page_num'];
+  }
+
+  /**
+   * @return bool
+   */
+  private function isLivePaymentProcessor() {
+    $payment_processor_id = wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id');
+    if ($payment_processor_id) {
+      $processor = wf_civicrm_api('payment_processor', 'getsingle', array('id' => $payment_processor_id));
+      return $processor['billing_mode'] == 1;
+    }
+    return FALSE;
   }
 
   /**
@@ -1494,9 +1511,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
   /**
    * Execute payment processor transaction
-   * This happens during form validation
+   * This happens during form validation and sets a form error if unsuccessful
    */
-  private function submitPayment() {
+  private function submitLivePayment() {
     $result = wf_civicrm_api('contribution', 'transact', $this->contributionParams());
     if (empty($result['id'])) {
       if (!empty($result['error_message'])) {
@@ -1511,15 +1528,35 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
-   * Create Pay-Later Contribution
+   * Create Incomplete (Pay-Later or IPN) Contribution
    */
-  private function payLaterContribution() {
+  private function createDeferredPayment() {
+    $this->contributionIsIncomplete = TRUE;
+    $this->contributionIsPayLater = empty($this->data['contribution'][1]['contribution'][1]['payment_processor_id']);
     $params = $this->contributionParams();
     $params['contribution_status_id'] = 'Pending';
-    $params['is_pay_later'] = 1;
+    $params['is_pay_later'] = $this->contributionIsPayLater;
     $result = wf_civicrm_api('contribution', 'create', $params);
     $this->ent['contribution'][1]['id'] = $result['id'];
-    $this->contributionIsPayLater = TRUE;
+  }
+
+  /**
+   * Call IPN payment processor to redirect to payment site
+   */
+  private function submitIPNPayment() {
+    $params = $this->data['contribution'][1]['contribution'][1];
+    $processor_type = wf_civicrm_api('payment_processor', 'getsingle', array('id' => $params['payment_processor_id']));
+    $mode = empty($params['is_test']) ? 'live' : 'test';
+    $paymentProcessor = CRM_Core_Payment::singleton($mode, $processor_type);
+    // Add contact details to params (most processors want a first_name and last_name)
+    $contact = wf_civicrm_api('contact', 'getsingle', array('id' => $this->ent['contact'][1]['id']));
+    $params += $contact;
+    $params['contributionID'] = $params['id'] = $this->ent['contribution'][1]['id'];
+    // Generate a fake qfKey in case payment processor redirects to contribution thank-you page
+    $params['qfKey'] = $this->getQfKey();
+    // Some processors want this one way, some want it the other
+    $params['amount'] = $params['total_amount'];
+    $paymentProcessor->doTransferCheckout($params, 'contribute');
   }
 
   /**
