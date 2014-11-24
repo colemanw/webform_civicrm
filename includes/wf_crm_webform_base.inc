@@ -14,9 +14,41 @@ abstract class wf_crm_webform_base {
   protected $data = array();
   protected $ent = array();
   protected $events = array();
-  protected $contribution_page;
   protected $line_items = array();
   protected $membership_types = array();
+
+
+  // No direct access - storage for variables fetched via __get
+  private $_payment_processor;
+  private $_contribution_page;
+
+
+  /**
+   * Magic method to retrieve otherwise inaccessible properties
+   * @param $name
+   * @throws Exception
+   * @return mixed
+   */
+  function __get($name) {
+    switch ($name) {
+      case 'payment_processor':
+        $payment_processor_id = wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id');
+        if ($payment_processor_id && !$this->_payment_processor) {
+          $this->_payment_processor = wf_civicrm_api('payment_processor', 'getsingle', array('id' => $payment_processor_id));
+        }
+        return $this->_payment_processor;
+      
+      case 'contribution_page':
+        $contribution_page_id = wf_crm_aval($this->data, 'contribution:1:contribution:1:contribution_page_id');
+        if ($contribution_page_id && !$this->_contribution_page) {
+          $this->_contribution_page = wf_civicrm_api('contribution_page', 'getsingle', array('id' => $contribution_page_id));
+        }
+        return $this->_contribution_page;
+      
+      default:
+        throw new Exception('Unknown property');
+    }
+  }
 
   /**
    * Fetch all relevant data for a given contact
@@ -429,17 +461,10 @@ abstract class wf_crm_webform_base {
   }
 
   /**
-   * Loads the contribution page used for this webform
+   * @param $type
+   * @param $field
+   * @return array|null
    */
-  protected function getContributionPage() {
-    $params = array('id' => wf_crm_aval($this->data, 'contribution:1:contribution:1:contribution_page_id'));
-    if ($params['id']) {
-      $result = wf_crm_apivalues('contribution_page', 'get', $params);
-      $this->contribution_page = wf_crm_aval($result, $params['id']);
-    }
-    return $this->contribution_page;
-  }
-
   protected function getMembershipTypeField($type, $field) {
     if (!$this->membership_types) {
       $this->membership_types = wf_crm_apivalues('membership_type', 'get');

@@ -34,6 +34,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   // @see self::singleton()
   static $singleton;
 
+  const
+    BILLING_MODE_LIVE = 1,
+    BILLING_MODE_MIXED = 3;
+
   function __construct($node) {
     civicrm_initialize();
     $this->node = $node;
@@ -81,7 +85,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     // Process live contribution. If the transaction is unsuccessful it will trigger a form validation error.
-    if ($this->getContributionPage()) {
+    if ($this->contribution_page) {
       // Ensure contribution js is still loaded if the form has to refresh
       $this->addPaymentJs();
       $this->loadMultiPageData();
@@ -1365,10 +1369,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @return bool
    */
   private function isLivePaymentProcessor() {
-    $payment_processor_id = wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id');
-    if ($payment_processor_id) {
-      $processor = wf_civicrm_api('payment_processor', 'getsingle', array('id' => $payment_processor_id));
-      return $processor['billing_mode'] == 1;
+    if ($this->payment_processor) {
+      if ($this->payment_processor['billing_mode'] == self::BILLING_MODE_LIVE) {
+        return TRUE;
+      }
+      // In mixed mode (where there is e.g. a PayPal button + credit card fields) the cc field will contain a placeholder if the button was clicked
+      if ($this->payment_processor['billing_mode'] == self::BILLING_MODE_MIXED && wf_crm_aval($_POST, 'credit_card_number') != 'express') {
+        return TRUE;
+      }
     }
     return FALSE;
   }

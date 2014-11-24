@@ -547,7 +547,6 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    * @return string
    */
   private function displayLineItems() {
-    $this->getContributionPage();
     $rows = array();
     $total = 0;
     // Support hidden contribution field
