@@ -340,13 +340,6 @@ function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = N
 }
 
 /**
- * FAPI AJAX callback for the configure form.
- */
-function wf_crm_configure_form_ajax($form, $form_state) {
-  return wf_crm_aval($form, $form_state['triggering_element']['#ajax']['pathstr']);
-}
-
-/**
  * Implements hook_admin_paths().
  */
 function webform_civicrm_admin_paths() {
