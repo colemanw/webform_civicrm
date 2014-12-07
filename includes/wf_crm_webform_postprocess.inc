@@ -478,9 +478,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         list(, $c, ) = explode('_', $field_key, 3);
         $cid = wf_crm_aval($this->submissionValue($fid), 0);
         $this->ent['contact'][$c]['id'] = $this->verifyExistingContact($cid, $field_key);
+        if ($this->ent['contact'][$c]['id']) {
+          $this->existing_contacts[$c] = $cid;
+        }
       }
     }
-    $this->existing_contacts = $this->ent['contact'];
   }
 
   /**
