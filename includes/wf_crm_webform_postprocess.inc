@@ -1672,10 +1672,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * Fill data array with submitted form values
    */
   private function fillDataFromSubmission() {
-    $sp = CRM_Core_DAO::VALUE_SEPARATOR;
     foreach ($this->enabled as $field_key => $fid) {
       $val = $this->submissionValue($fid);
-      if ($val !== FALSE) {
+      // If value is null then it was hidden by a webform conditional rule - skip it
+      if ($val !== NULL && $val !== array(NULL)) {
         list( , $c, $ent, $n, $table, $name) = explode('_', $field_key, 6);
         // Fieldsets and existing contact fields are not strictly CiviCRM fields, so ignore
         if ($name === 'existing' || $name === 'fieldset') {
