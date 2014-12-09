@@ -360,15 +360,17 @@ abstract class wf_crm_webform_base {
         $existing += array($table => array());
         $insert = 0;
         foreach ($values as $custom) {
+          // Match to id of existing record (id will be 0 for non-multi-value custom sets, which is fine)
           if ($id = each($existing[$table])) {
             $suf = $id['key'];
           }
+          // Create new record(s) using negative numbers
           else {
             $suf = --$insert;
           }
           foreach ($custom as $k => $v) {
             // Only save if this is not blank or data already exists and record is known
-            if ($v !== '' || ($suf > 0 && $known)) {
+            if ($v !== '' || ($suf >= 0 && $known)) {
               $params[$k . '_' . $suf] = $v;
             }
           }
