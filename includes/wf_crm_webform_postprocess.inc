@@ -1333,7 +1333,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         foreach ($memberships['membership'] as $n => $item) {
           if (!empty($item['num_terms']) && !empty($item['membership_type_id'])) {
             $type = $item['membership_type_id'];
-            $price = $this->getMembershipTypeField($type, 'minimum_fee');
+            if(!empty($item['fee_amount'])){
+              $price = $item['fee_amount'];
+            }else{
+              $price = $this->getMembershipTypeField($type, 'minimum_fee');
+            }
             if ($price) {
               $this->line_items[] = array(
                 'qty' => $item['num_terms'],

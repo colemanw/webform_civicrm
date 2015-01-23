@@ -992,6 +992,11 @@ function wf_crm_get_fields($var = 'fields') {
         'value' => 1,
         'empty_option' => t('Enter Dates Manually'),
       );
+      if (isset($sets['contribution'])) {
+        $fields['membership_fee_amount'] = array(
+          'name' => t('Membership Fee'),
+        ) + $moneyDefaults;
+      }
       $fields['membership_join_date'] = array(
         'name' => t('Member Since'),
         'type' => 'date',

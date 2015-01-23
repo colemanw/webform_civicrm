@@ -215,6 +215,15 @@ class wf_crm_admin_help {
      '</p>';
   }
 
+  static function membership_fee_amount() {
+    print '<p>' .
+      t('Price for this membership per term.') .
+      '</p><p>' .
+      t('Note that if this field is enabled, the default minimum membership fee from CiviCRM membership type settings will not be loaded.') .
+     '</p>';
+    self::fee();
+  }
+
   static function multiselect_options() {
     print '<p>' .
       t('Click the + button to select more than one option.') .
