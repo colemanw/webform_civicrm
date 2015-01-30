@@ -1380,6 +1380,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       'billing_state_province_id-5' => FALSE,
       'billing_postal_code-5' => ts('Postal Code'),
     );
+    if (!empty($_POST['stripe_token'])) {
+      // Using Stripe payment processor - cc fields not posted
+      $billing_fields['credit_card_number'] = FALSE;
+      $billing_fields['cvv2'] = FALSE;
+    }
     foreach ($billing_fields as $field => $label) {
       if (empty($_POST[$field]) && $label !== FALSE) {
         form_set_error($field, t('!name field is required.', array('!name' => check_plain($label))));
