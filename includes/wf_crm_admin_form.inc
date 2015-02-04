@@ -1144,7 +1144,9 @@ class wf_crm_admin_form {
   }
 
   /**
-   * Add an ajax container to the form, and set an existing form element to control it
+   * Boilerplate-reducing helper function for FAPI ajax.
+   * Set an existing form element to control an ajax container.
+   * The container will be created if it doesn't already exist.
    *
    * @param string $path
    *   A : separated string of nested array keys leading to the control element's parent
@@ -1156,7 +1158,10 @@ class wf_crm_admin_form {
    *   Css class to add to target container
    */
   private function addAjaxItem($path, $control_element, $container, $class='civicrm-ajax-wrapper') {
+    // Get a reference to the control container
+    // For anyone who wants to call this evil - I challenge you to find a better way to accomplish this
     eval('$control_container = &$this->form[\'' . str_replace(':', "']['", $path) . "'];");
+    // Now find the container element (may be outside the $path if .. is used)
     foreach (explode(':', $container) as $level) {
       if ($level == '..') {
         $path = substr($path, 0, strrpos($path, ':'));
@@ -1691,3 +1696,9 @@ function wf_crm_configure_form_submit($form, &$form_state) {
   $admin_form->postProcess();
 }
 
+/**
+ * FAPI AJAX callback
+ */
+function wf_crm_configure_form_ajax($form, $form_state) {
+  return wf_crm_aval($form, $form_state['triggering_element']['#ajax']['pathstr']);
+}

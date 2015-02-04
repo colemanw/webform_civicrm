@@ -96,11 +96,6 @@ function wf_crm_field_options($field, $context, $data) {
           $ret[number_format(str_replace(',', '', $key), 2, '.', '')] = $val;
         }
       }
-
-      // Hack to remove payment processors we don't support
-      if ($name == 'payment_processor_id') {
-        wf_crm_supported_payment_processors($ret);
-      }
     }
     // Remove options that were set behind the scenes on the admin form
     if ($context != 'config_form' && !empty($field['extra']['multiple']) && !empty($field['expose_list'])) {
@@ -347,14 +342,6 @@ function wf_crm_get_privacy_options() {
     'do_not_trade' => ts('Do not trade'),
     'is_opt_out' => ts('NO BULK EMAILS (User Opt Out)'),
   );
-}
-
-function wf_crm_supported_payment_processors(&$ret) {
-  foreach(wf_crm_apivalues('payment_processor', 'get', array('is_test' => 0)) as $processor) {
-    if (!in_array($processor['billing_mode'], array(1, 3))) {
-      unset($ret[$processor['id']]);
-    }
-  }
 }
 
 /**

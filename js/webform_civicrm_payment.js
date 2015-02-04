@@ -1,9 +1,10 @@
 // Webform payment processing using CiviCRM's jQuery
 cj(function($) {
   'use strict';
-  var setting = Drupal.settings.webform_civicrm;
-  var $contributionAmount = $('[name*="[civicrm_1_contribution_1_contribution_total_amount]"]');
-  var $processorFields = $('.civicrm-enabled[name$="civicrm_1_contribution_1_contribution_payment_processor_id]"]');
+  var
+    setting = Drupal.settings.webform_civicrm,
+    $contributionAmount = $('[name*="[civicrm_1_contribution_1_contribution_total_amount]"]'),
+    $processorFields = $('.civicrm-enabled[name$="civicrm_1_contribution_1_contribution_payment_processor_id]"]');
 
   function getPaymentProcessor() {
     if (!$processorFields.length) {
@@ -21,6 +22,15 @@ cj(function($) {
           $.each(setting.billingSubmission, function(key, val) {
             $('[name="' + key + '"]').val(val);
           });
+        }
+        // When an express payment button is clicked, skip the billing fields and submit the form with a placeholder
+        var $expressButton = $('input[name$=_upload_express]', '#billing-payment-block');
+        if ($expressButton.length) {
+          $expressButton.removeClass('crm-form-submit').click(function(e) {
+            e.preventDefault();
+            $('input[name=credit_card_number]', '#billing-payment-block').val('express');
+            $(this).closest('form').find('input.webform-submit.button-primary').click();
+          })
         }
       });
     }
