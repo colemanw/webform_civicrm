@@ -219,10 +219,12 @@ class wf_crm_admin_form {
 
     // Contact sub-type
     $fid = 'civicrm_' . $n . '_contact_1_contact_contact_sub_type';
+    $subTypeIsUserSelect = FALSE;
     if (!empty($sub_types[$c['contact'][1]['contact_type']])) {
       $field = $this->fields['contact_contact_sub_type'];
       $field['name'] = t('Type of @contact', array('@contact' => $contact_types[$c['contact'][1]['contact_type']]));
-      $this->form['contact_' . $n]['contact_subtype_wrapper'][$fid] = $this->addItem($fid, $field);
+      $this->form['contact_' . $n]['contact_subtype_wrapper'][$fid] = $subTypeField = $this->addItem($fid, $field);
+      $subTypeIsUserSelect = in_array('create_civicrm_webform_element', $subTypeField['#default_value']);
       $this->addAjaxItem('contact_' . $n . ':contact_subtype_wrapper', $fid, 'contact_custom_wrapper');
     }
     // If no sub-types
@@ -248,7 +250,7 @@ class wf_crm_admin_form {
         continue;
       }
       if (!empty($set['sub_types'])) {
-        if (!array_intersect($c['contact'][1]['contact_sub_type'], $set['sub_types'])) {
+        if (!$subTypeIsUserSelect && !array_intersect($c['contact'][1]['contact_sub_type'], $set['sub_types'])) {
           continue;
         }
         $pos = &$this->form['contact_' . $n]['contact_subtype_wrapper']['contact_custom_wrapper'];
