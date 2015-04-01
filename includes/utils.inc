@@ -1203,6 +1203,16 @@ function wf_crm_get_fields($var = 'fields') {
           $fields[$id]['extra']['description'] = $dao->help_pre ? $dao->help_pre : $dao->help_post;
           $fields[$id]['has_help'] = TRUE;
         }
+        // Conditional rule - todo: support additional entities
+        if ($sets[$set]['entity_type'] == 'contact' && !empty($sets[$set]['sub_types'])) {
+          $fields[$id]['civicrm_condition'] = array(
+            'andor' => 'or',
+            'action' => 'show',
+            'rules' => array(
+              'contact_contact_sub_type' => $sets[$set]['sub_types'],
+            ),
+          );
+        }
 
         if ($dao->entity_type == 'relationship' && $dao->sub_types) {
           $fields[$id]['attributes']['data-relationship-type'] = implode(',', wf_crm_explode_multivalue_str($dao->sub_types));

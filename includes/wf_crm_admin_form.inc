@@ -1425,6 +1425,9 @@ class wf_crm_admin_form {
                 );
                 self::insertComponent($field, $enabled, $this->settings);
                 $created[] = $field['name'];
+                if (isset($field['civicrm_condition'])) {
+                  $this->addConditionalRule($field, $enabled);
+                }
               }
             }
           }
@@ -1465,6 +1468,49 @@ class wf_crm_admin_form {
     // Clear the entity cache.
     if (module_exists('entitycache')) {
       cache_clear_all($nid, 'cache_entity_node');
+    }
+  }
+
+  /**
+   * Create a conditional rule if the source and target fields both exist.
+   * TODO: This is fairly minimal. It doesn't check if the rule already exists,
+   * and doesn't work if both fields haven't been created yet.
+   * 
+   * @param array $field
+   * @param array $enabled
+   */
+  private function addConditionalRule($field, $enabled) {
+
+    list(, $c, $ent, $n, $table, $name) = explode('_', $field['form_key'], 6);
+    $rgid = $weight = -1;
+    foreach ($this->node->webform['conditionals'] as $rgid => $existing) {
+      $weight = $existing['weight'];
+    }
+    $rgid++;
+    $rule_group = $field['civicrm_condition'] + array(
+      'nid' => $this->node->nid,
+      'rgid' => $rgid,
+      'weight' => $weight,
+      'target' => $enabled[$field['form_key']],
+      'target_type' => 'component',
+    );
+    $rule_group['rules'] = array();
+    foreach ($field['civicrm_condition']['rules'] as $source => $conditions) {
+      $source_id = wf_crm_aval($enabled, "civicrm_{$c}_{$ent}_{$n}_{$source}");
+      if ($source_id) {
+        foreach ($conditions as $condition) {
+          $rule_group['rules'][] = array(
+            'source_type' => 'component',
+            'source' => $source_id,
+            'operator' => 'equal',
+            'value' => $condition,
+          );
+        }
+      }
+    }
+    if ($rule_group['rules']) {
+      module_load_include('inc', 'webform', 'includes/webform.conditionals');
+      webform_conditional_insert($rule_group);
     }
   }
 
