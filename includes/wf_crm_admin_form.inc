@@ -1480,7 +1480,6 @@ class wf_crm_admin_form {
    * @param array $enabled
    */
   private function addConditionalRule($field, $enabled) {
-
     list(, $c, $ent, $n, $table, $name) = explode('_', $field['form_key'], 6);
     $rgid = $weight = -1;
     foreach ($this->node->webform['conditionals'] as $rgid => $existing) {
@@ -1496,15 +1495,19 @@ class wf_crm_admin_form {
     );
     $rule_group['rules'] = array();
     foreach ($field['civicrm_condition']['rules'] as $source => $conditions) {
-      $source_id = wf_crm_aval($enabled, "civicrm_{$c}_{$ent}_{$n}_{$source}");
+      $source_key = "civicrm_{$c}_{$ent}_{$n}_{$source}";
+      $source_id = wf_crm_aval($enabled, $source_key);
       if ($source_id) {
+        $options = wf_crm_field_options(array('form_key' => $source_key), '', $this->settings['data']);
         foreach ($conditions as $condition) {
-          $rule_group['rules'][] = array(
-            'source_type' => 'component',
-            'source' => $source_id,
-            'operator' => 'equal',
-            'value' => $condition,
-          );
+          if (isset($options[$condition])) {
+            $rule_group['rules'][] = array(
+              'source_type' => 'component',
+              'source' => $source_id,
+              'operator' => 'equal',
+              'value' => $condition,
+            );
+          }
         }
       }
     }
