@@ -1475,7 +1475,7 @@ class wf_crm_admin_form {
    * Create a conditional rule if the source and target fields both exist.
    * TODO: This is fairly minimal. It doesn't check if the rule already exists,
    * and doesn't work if both fields haven't been created yet.
-   * 
+   *
    * @param array $field
    * @param array $enabled
    */
@@ -1509,6 +1509,7 @@ class wf_crm_admin_form {
       }
     }
     if ($rule_group['rules']) {
+      $this->node->webform['conditionals'][] = $rule_group;
       module_load_include('inc', 'webform', 'includes/webform.conditionals');
       webform_conditional_insert($rule_group);
     }
