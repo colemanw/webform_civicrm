@@ -1295,17 +1295,12 @@ function wf_crm_user_cid($id = NULL, $type = 'uf') {
     $domain = wf_civicrm_api('domain', 'get', array('current_domain' => 1, 'return.id' => 1));
     $domain = wf_crm_aval($domain, 'id', 1);
   }
-  $result = wf_civicrm_api('uf_match', 'get', array($type . '_id' => $id));
-  if (!empty($result['values'])) {
-    foreach ($result['values'] as $val) {
-      if ($val['domain_id'] == $domain) {
-        break;
-      }
-    }
+  $result = wf_civicrm_api('uf_match', 'getsingle', array($type . '_id' => $id, 'domain_id' => $domain));
+  if (empty($result['is_error'])) {
     if (!empty($user_lookup)) {
-      $current_user = $val['contact_id'];
+      $current_user = $result['contact_id'];
     }
-    return $type == 'uf' ? $val['contact_id'] : $val['uf_id'];
+    return $type == 'uf' ? $result['contact_id'] : $result['uf_id'];
   }
 }
 
