@@ -1336,7 +1336,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             $price = $this->getMembershipTypeField($type, 'minimum_fee');
 
             //if number of terms is set, regard membership fee field as price per term
-            //if choose to set dates manually while membership fee field is enabled, take the membership fee as total cost of this membership
+            //if you choose to set dates manually while membership fee field is enabled, take the membership fee as total cost of this membership
             if(isset($item['fee_amount'])){
               $price = $item['fee_amount'];
               if(empty($item['num_terms'])){

@@ -213,7 +213,7 @@ class wf_crm_admin_help {
      '</p><p>' .
       t('Note: Number of terms is required to calculate membership fees for paid memberships.') .
      '</p><p>'.
-      t('If choose to enter dates manually, enabling membership fee field will provide the price. Otherwise the membership will be free') .
+      t('If you choose to enter dates manually, enabling membership fee field will provide the price. Otherwise the membership will be free') .
      '</p>';
   }
 
