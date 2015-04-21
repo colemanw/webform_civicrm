@@ -1331,9 +1331,19 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     foreach (wf_crm_aval($this->data, 'membership', array()) as $c => $memberships) {
       if (isset($this->existing_contacts[$c]) && !empty($memberships['number_of_membership'])) {
         foreach ($memberships['membership'] as $n => $item) {
-          if (!empty($item['num_terms']) && !empty($item['membership_type_id'])) {
+          if (!empty($item['membership_type_id'])) {
             $type = $item['membership_type_id'];
             $price = $this->getMembershipTypeField($type, 'minimum_fee');
+
+            //if number of terms is set, regard membership fee field as price per term
+            //if you choose to set dates manually while membership fee field is enabled, take the membership fee as total cost of this membership
+            if(isset($item['fee_amount'])){
+              $price = $item['fee_amount'];
+              if(empty($item['num_terms'])){
+                $item['num_terms'] = 1;
+              }
+            }
+
             if ($price) {
               $this->line_items[] = array(
                 'qty' => $item['num_terms'],

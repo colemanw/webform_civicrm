@@ -211,8 +211,19 @@ class wf_crm_admin_help {
     print '<p>' .
       t('Membership dates will be filled automatically by selecting terms. This can be overridden by entering dates manually.') .
      '</p><p>' .
-      t('Note: Number of terms is required to calculate membership fees for paid memberships. Fees will not be charged when dates are entered manually') .
+      t('Note: Number of terms is required to calculate membership fees for paid memberships.') .
+     '</p><p>'.
+      t('If you choose to enter dates manually, enabling membership fee field will provide the price. Otherwise the membership will be free') .
      '</p>';
+  }
+
+  static function membership_fee_amount() {
+    print '<p>' .
+      t('Price for this membership per term. If this field is enabled, the default minimum membership fee from CiviCRM membership type settings will not be loaded.') .
+      '</p><p>' .
+      t('Note that if this field is enabled, the default minimum membership fee from CiviCRM membership type settings will not be loaded.') .
+     '</p>';
+    self::fee();
   }
 
   static function multiselect_options() {

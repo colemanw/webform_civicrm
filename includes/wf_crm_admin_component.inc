@@ -578,6 +578,7 @@ class wf_crm_admin_component {
     $field_ids = array(
       'membership_membership_type_id',
       'membership_num_terms',
+      'membership_fee_amount',
       'participant_fee_amount',
       'participant_event_id',
     );
