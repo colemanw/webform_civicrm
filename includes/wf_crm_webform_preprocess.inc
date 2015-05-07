@@ -650,7 +650,13 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             }
           }
           elseif (!empty($this->data['activity'][$n]['existing_activity_status'])) {
+            // If the activity type hasn't been set, bail.
+            if (empty($this->data['activity'][$n]['activity'][1]['activity_type_id'])) {
+              watchdog('webform_civicrm', "Activity type to update hasn't been set, so won't try to update activity. location = %1, webform activity number : %2", array('%1' => request_uri(), '%2' => $n), WATCHDOG_ERROR);
+              continue;
+            }
             // The api doesn't accept an array of target contacts so we'll do it as a loop
+            // If targets has more than one entry, the below could result in the wrong activity getting updated.
             foreach ($targets as $cid) {
               $params = array(
                 'sequential' => 1,
@@ -660,9 +666,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
                 'is_current_revision' => '1',
                 'options' => array('limit' => 1),
               );
-              if (!empty($this->data['activity'][$n]['activity'][1]['activity_type_id'])) {
-                $params['activity_type_id'] = $this->data['activity'][$n]['activity'][1]['activity_type_id'];
-              }
+              $params['activity_type_id'] = $this->data['activity'][$n]['activity'][1]['activity_type_id'];
               $items = wf_crm_apivalues('activity', 'get', $params);
               if (isset($items[0]['id'])) {
                 $this->ent['activity'][$n] = array('id' => $items[0]['id']);
