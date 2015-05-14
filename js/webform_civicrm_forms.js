@@ -128,7 +128,12 @@ var wfCivi = (function ($, D) {
           if (n[5] === 'country') {
             $('select.civicrm-processed', this).val(setting.defaultCountry).trigger('change', 'webform_civicrm:reset');
           } else {
-            $(':input', this).not(':radio, :checkbox, :button, :submit').val('').trigger('change', 'webform_civicrm:reset');
+            $(':input', this).not(':radio, :checkbox, :button, :submit, :file, .form-file').each(function() {
+              if (this.id && $(this).val() != '') {
+                $(this).val('');
+                $(this).trigger('change', 'webform_civicrm:reset');
+              }
+            });
             $('.civicrm-remove-file', this).click();
             $('input:checkbox, input:radio', this).each(function() {
               $(this).removeAttr('checked').trigger('change', 'webform_civicrm:reset');
