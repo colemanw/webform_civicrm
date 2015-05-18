@@ -686,8 +686,11 @@ class wf_crm_admin_form {
       '#type' => 'checkbox',
       '#title' => t('Allow events to be autoloaded from URL'),
       '#default_value' => (bool) wf_crm_aval($this->data, 'reg_options:allow_url_load'),
-      '#description' => t('Example: send the following link from CiviMail:') .
-      '<br /><code>' . url("node/{$this->node->nid}", array('absolute' => TRUE, 'query' => array('eid1' => ''))) . '{event1.event_id},{event2.event_id}</code></p>',
+      '#description' => t('Example for "Register all":') .
+      '<br /><code>' . url("node/{$this->node->nid}", array('absolute' => TRUE, 'query' => array('eid1' => ''))) . '{event1.event_id},{event2.event_id}</code></p>'.
+      t('Example for "Register separately":') .
+      '<br /><code>' . url("node/{$this->node->nid}", array('absolute' => TRUE, 'query' => array('c1eid1' => ''))) . 
+      '{event1.event_id},{event2.event_id}&amp;c2eid1={event3.event_id}</code></p>',
     );
     $this->help($this->form['participant']['reg_options']['block_form'], 'reg_options_block_form');
     $this->help($this->form['participant']['reg_options']['disable_unregister'], 'reg_options_disable_unregister');

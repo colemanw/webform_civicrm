@@ -124,6 +124,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           $this->loadMemberships($c, $contact['id']);
         }
       }
+      // Load events from url if enabled, this will override loadParticipants
+      if (!empty($this->data['reg_options']['allow_url_load'])) {
+        $this->loadURLEvents($c);
+      }
     }
     // Prefill other existing entities
     foreach (array('case', 'activity', 'grant') as $entity) {
@@ -319,6 +323,38 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       }
     }
     $dao->free();
+  }
+
+  /**
+   * Load event data for the url
+   * @param int $c
+   */
+  private function loadURLEvents($c) {
+    $n = $this->data['participant_reg_type'] == 'separate' ? $c : 1;
+    if ($p = wf_crm_aval($this->data, "participant:$n:participant")) {
+      foreach ($p as $e => $value) {
+        $event_ids = array();
+        // Get the available event list from the component
+        $fid = "civicrm_{$c}_participant_{$e}_participant_event_id";
+        $eids = array();
+        foreach ($this->getExposedOptions($fid) as $eid => $title) {
+          $id = explode('-', $eid);
+          $eids[$id[0]] = $eid;
+        }
+        if ($this->data['participant_reg_type'] == 'all') {
+          $urlParam = "eid$e";
+        }
+        else {
+          $urlParam = "c$c"."eid$e";
+        }
+        foreach (explode(',', wf_crm_aval($_GET, $urlParam)) as $key => $value) {
+          if (isset($eids[$value])){
+            $event_ids[] = $eids[$value];
+          }
+        }
+        $this->info['participant'][$c]['participant'][$e]['event_id'] = $event_ids;
+      }
+    }
   }
 
   /**
