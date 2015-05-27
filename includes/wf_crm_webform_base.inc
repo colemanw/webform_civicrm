@@ -513,9 +513,10 @@ abstract class wf_crm_webform_base {
    * Retrieve info needed for pre-filling a webform file field
    * @param string $fieldName
    * @param string|int $val: url or civi file id
+   * @param string|null $entity: entity name
    * @return array|null
    */
-  function getFileInfo($fieldName, $val) {
+  function getFileInfo($fieldName, $val, $entity = null) {
     if (!$val) {
       return NULL;
     }
@@ -527,10 +528,22 @@ abstract class wf_crm_webform_base {
       );
     }
     $file = wf_crm_apivalues('file', 'get', $val);
+    $entity_id = '';
+    if ($entity && strpos($fieldName, 'custom_') === 0 ) {
+      switch ( $entity ) {
+      case 'contact':
+        $entity_id = $_GET['cid1'];
+        break;
+      case 'activity':
+        $entity_id = $_GET['activity1'];
+        break;
+      }
+    }
     if (!empty($file[$val])) {
       return array(
         'data_type' => 'File',
         'name' => CRM_Utils_File::cleanFileName($file[$val]['uri']),
+        'file_url'=> CRM_Utils_System::url('civicrm/file', "reset=1&id={$val}&eid={$entity_id}", true, true),
         'icon' => file_icon_url((object) array('filemime' => $file[$val]['mime_type'])),
       );
     }
