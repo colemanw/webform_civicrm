@@ -343,10 +343,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           $eids[$id[0]] = $eid;
         }
         if ($this->data['participant_reg_type'] == 'all') {
-          $urlParam = "eid$e";
+          $urlParam = "event$e";
         }
         else {
-          $urlParam = "c$c"."eid$e";
+          $urlParam = "c$c"."event$e";
         }
         foreach (explode(',', wf_crm_aval($_GET, $urlParam)) as $key => $value) {
           if (isset($eids[$value])){
