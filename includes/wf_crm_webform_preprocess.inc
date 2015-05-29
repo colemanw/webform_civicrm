@@ -331,7 +331,8 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    */
   private function loadURLEvents($c) {
     $n = $this->data['participant_reg_type'] == 'separate' ? $c : 1;
-    if ($p = wf_crm_aval($this->data, "participant:$n:participant")) {
+    $p = wf_crm_aval($this->data, "participant:$n:participant");
+    if ($p) {
       foreach ($p as $e => $value) {
         $event_ids = array();
         // Get the available event list from the component
