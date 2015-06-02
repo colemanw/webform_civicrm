@@ -1184,7 +1184,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function processActivities() {
     foreach (wf_crm_aval($this->data, 'activity', array()) as $n => $data) {
-      if (is_array($data) && !empty($data['activity'][1]['target_contact_id'])) {
+      if (is_array($data)) {
         $params = $data['activity'][1];
         // Create mode
         if (empty($this->ent['activity'][$n]['id'])) {

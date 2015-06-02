@@ -1269,7 +1269,7 @@ class wf_crm_admin_form {
       }
     }
     for ($i=1; $i <= $this->settings['activity_number_of_activity']; ++$i) {
-      if (!isset($this->settings["activity_{$i}_existing_activity_status"])) {
+      if (!isset($this->settings["activity_{$i}_settings_existing_activity_status"])) {
         $this->data['activity'][$i]['activity'][1]['target_contact_id'] = range(1, $this->settings['number_of_contacts']);
       }
     }

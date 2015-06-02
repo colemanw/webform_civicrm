@@ -745,9 +745,9 @@ function wf_crm_get_fields($var = 'fields') {
       'name' => t('Activity # Participant(s)'),
       'type' => 'select',
       'expose_list' => TRUE,
+      'empty_option' => t('None'),
       'extra' => array(
         'multiple' => 1,
-        'required' => 1,
       ),
       'data_type' => 'ContactReference',
     );
