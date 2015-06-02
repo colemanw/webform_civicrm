@@ -52,8 +52,13 @@ class wf_crm_admin_form {
 
     // Sort fields by set
     foreach ($this->fields as $fid => $field) {
-      list($group) = explode('_', $fid, 2);
-      $this->sets[$group]['fields'][$fid] = $field;
+      if (isset($field['set'])) {
+        $set = $field['set'];
+      }
+      else {
+        list($set) = explode('_', $fid, 2);
+      }
+      $this->sets[$set]['fields'][$fid] = $field;
     }
 
     // Build form fields
@@ -562,7 +567,9 @@ class wf_crm_admin_form {
           );
           foreach ($set['fields'] as $fid => $field) {
             $fid = "civicrm_{$n}_case_1_$fid";
-            $pos[$fs1][$fid] = $this->addItem($fid, $field);
+            if (!$case_type || empty($field['case_types']) || in_array($case_type, $field['case_types'])) {
+              $pos[$fs1][$fid] = $this->addItem($fid, $field);
+            }
           }
         }
       }

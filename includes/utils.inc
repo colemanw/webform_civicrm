@@ -352,7 +352,7 @@ function wf_crm_get_privacy_options() {
 function wf_crm_get_relationship_types() {
   static $types = array();
   if (!$types) {
-    foreach (wf_crm_apivalues('relationship_type', 'get', array('is_active' => 1)) as $r) {
+    foreach (wf_crm_apivalues('relationship_type', 'get', array('is_active' => 1, array('options' => array('limit' => 0)))) as $r) {
       $r['type_a'] = strtolower(wf_crm_aval($r, 'contact_type_a'));
       $r['type_b'] = strtolower(wf_crm_aval($r, 'contact_type_b'));
       $r['sub_type_a'] = wf_crm_aval($r, 'contact_sub_type_a');
@@ -822,6 +822,7 @@ function wf_crm_get_fields($var = 'fields') {
         'expose_list' => TRUE,
         'extra' => array('required' => 1, 'multiple' => $case_info->getAllowMultipleCaseClients()),
         'data_type' => 'ContactReference',
+        'set' => 'caseRoles',
         'value' => 1,
       );
       $fields['case_status_id'] = array(
@@ -844,8 +845,34 @@ function wf_crm_get_fields($var = 'fields') {
         'type' => 'select',
         'expose_list' => TRUE,
         'data_type' => 'ContactReference',
+        'set' => 'caseRoles',
         'exposed_empty_option' => '- ' . t('Automatic') . ' -',
       );
+      // Fetch case roles
+      $sets['caseRoles'] = array('entity_type' => 'case', 'label' => t('Case Roles'));
+      $case_types = wf_crm_apivalues('case_type', 'get', array('options' => array('limit' => 0)));
+      foreach($case_types as $case_type) {
+        foreach ($case_type['definition']['caseRoles'] as $role) {
+          if (empty($role['manager'])) {
+            foreach (wf_crm_get_relationship_types() as $rel_type) {
+              if ($rel_type['name_b_a'] == $role['name']) {
+                if (!isset($fields['case_role_' . $rel_type['id']])) {
+                  $fields['case_role_' . $rel_type['id']] = array(
+                    'name' => $rel_type['label_b_a'],
+                    'type' => 'select',
+                    'expose_list' => TRUE,
+                    'data_type' => 'ContactReference',
+                    'set' => 'caseRoles',
+                    'empty_option' => t('None'),
+                  );
+                }
+                $fields['case_role_' . $rel_type['id']]['case_types'][] = $case_type['id'];
+                break;
+              }
+            }
+          }
+        }
+      }
     }
     $fields['relationship_relationship_type_id'] = array(
       'name' => t('Relationship Type(s)'),
