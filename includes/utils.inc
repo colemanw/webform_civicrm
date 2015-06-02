@@ -352,7 +352,7 @@ function wf_crm_get_privacy_options() {
 function wf_crm_get_relationship_types() {
   static $types = array();
   if (!$types) {
-    foreach (wf_crm_apivalues('relationship_type', 'get', array('is_active' => 1, array('options' => array('limit' => 0)))) as $r) {
+    foreach (wf_crm_apivalues('relationship_type', 'get', array('is_active' => 1)) as $r) {
       $r['type_a'] = strtolower(wf_crm_aval($r, 'contact_type_a'));
       $r['type_b'] = strtolower(wf_crm_aval($r, 'contact_type_b'));
       $r['sub_type_a'] = wf_crm_aval($r, 'contact_sub_type_a');
@@ -850,7 +850,9 @@ function wf_crm_get_fields($var = 'fields') {
       );
       // Fetch case roles
       $sets['caseRoles'] = array('entity_type' => 'case', 'label' => t('Case Roles'));
-      $case_types = wf_crm_apivalues('case_type', 'get', array('options' => array('limit' => 0)));
+      // Use the vanilla civicrm_api for this because it will throw an error in CiviCRM 4.4 (api doesn't exist)
+      $case_types = civicrm_api('case_type', 'get', array('version' => 3, 'options' => array('limit' => 0)));
+      $case_types = wf_crm_aval($case_types, 'values', array());
       foreach($case_types as $case_type) {
         foreach ($case_type['definition']['caseRoles'] as $role) {
           if (empty($role['manager'])) {
