@@ -301,9 +301,9 @@ class wf_crm_admin_help {
 
   static function file_on_case() {
     print '<p>' .
-      t('Activity will be added to an existing case matching the following criteria.') .
+      t('Add this activity to either a specific case from this webform, or an already existing case based on matching criteria.') .
       '</p><p>' .
-      t('This will not open a new case; use the "Cases" tab to do so. Match these settings to those on the "Cases" tab if you wish this activity to be filed on a newly-created case.') .
+      t('These options will not open a new case; configure the "Cases" section to do so.') .
       '</p>';
   }
 

@@ -437,9 +437,22 @@ class wf_crm_admin_form {
             '#options' => array(t('- None -')) + $case_types,
             '#default_value' => $case_type = wf_crm_aval($this->data, "activity:$n:case_type_id"),
           );
+          // Allow selection of webform cases
+          $num_case = wf_crm_aval($this->data, "case:number_of_case", 0);
+          if ($num_case) {
+            $webform_cases = array();
+            for ($i=1; $i<=$num_case; ++$i) {
+              $webform_cases["#$i"] = t('Case !num', array('!num' => $i));
+            }
+            $wrap['case']["activity_{$n}_settings_case_type_id"]['#options'] = array(
+              t('- None -'),
+              t('This Webform') => $webform_cases,
+              t('Find by Case Type') => $case_types,
+            );
+          }
           $this->help($wrap['case']["activity_{$n}_settings_case_type_id"], 'file_on_case');
           $this->addAjaxItem("activityTab:activity:$num:wrap:case", "activity_{$n}_settings_case_type_id", '..:..:wrap');
-          if ($case_type) {
+          if ($case_type && $case_type[0] !== '#') {
             $wrap['case']['#type'] = 'fieldset';
             $wrap['case']['#attributes'] = array('class' => array('web-civi-checkbox-set'));
             $wrap['case']['#title'] = t('File On Case');

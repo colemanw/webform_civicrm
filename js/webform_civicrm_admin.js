@@ -333,6 +333,13 @@ var wfCiviAdmin = (function ($, D) {
         showHideParticipantOptions('fast');
       });
 
+      // Update activity block when changing # of cases to refresh the "file on case" selector
+      if ($(context).is('#civicrm-ajax-caseTab-case')) {
+        if ($('select[name=activity_number_of_activity]').val() !== '0') {
+          $('select[name=activity_number_of_activity]').change();
+        }
+      };
+
       $('#edit-nid', context).once('wf-civi').change(function() {
         if ($(this).is(':checked')) {
           $('#wf-crm-configure-form .vertical-tabs, .form-item-number-of-contacts').removeAttr('style');

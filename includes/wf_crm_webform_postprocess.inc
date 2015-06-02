@@ -1237,16 +1237,26 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
         // File on case
         if (!empty($this->data['activity'][$n]['case_type_id'])) {
-          $case_contact = $this->ent['contact'][$this->data['activity'][$n]['case_contact_id']]['id'];
-          if ($case_contact) {
-            // Proceed only if this activity is not already filed on a case
-            if (empty($params['id']) || !wf_crm_apivalues('case', 'get', array('activity_id' => $params['id']))) {
-              $case = $this->findCaseForContact($case_contact, array(
-                'status_id' => $this->data['activity'][$n]['case_status_id'],
-                'case_type_id' => $this->data['activity'][$n]['case_type_id'],
-              ));
-              if ($case) {
-                $params['case_id'] = $case['id'];
+          // Webform case
+          if ($this->data['activity'][$n]['case_type_id'][0] === '#') {
+            $case_num = substr($this->data['activity'][$n]['case_type_id'], 1);
+            if (!empty($this->ent['case'][$case_num]['id'])) {
+              $params['case_id'] = $this->ent['case'][$case_num]['id'];
+            }
+          }
+          // Search for case by criteria
+          else {
+            $case_contact = $this->ent['contact'][$this->data['activity'][$n]['case_contact_id']]['id'];
+            if ($case_contact) {
+              // Proceed only if this activity is not already filed on a case
+              if (empty($params['id']) || !wf_crm_apivalues('case', 'get', array('activity_id' => $params['id']))) {
+                $case = $this->findCaseForContact($case_contact, array(
+                  'status_id' => $this->data['activity'][$n]['case_status_id'],
+                  'case_type_id' => $this->data['activity'][$n]['case_type_id'],
+                ));
+                if ($case) {
+                  $params['case_id'] = $case['id'];
+                }
               }
             }
           }
