@@ -517,6 +517,11 @@ function wf_crm_get_fields($var = 'fields') {
         'contact_type' => $key == 'household' ? 'household' : 'organization',
       );
     }
+    $fields['contact_sic_code'] = array(
+      'name' => t('SIC Code'),
+      'type' => 'textfield',
+      'contact_type' => 'organization',
+    );
     // Individual names
     if (empty($config->civiVersion) || substr($config->civiVersion, 0, 3) == '4.4') {
       // This setting doesn't exist prior to 4.5 so hard-code it.
