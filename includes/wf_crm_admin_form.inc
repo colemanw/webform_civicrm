@@ -329,6 +329,27 @@ class wf_crm_admin_form {
           $pos[$n . $sid . $i . '_fieldset'] = $fieldset;
         }
       }
+      if ($sid == 'contact') {
+        // Matching rule
+        $rule_field = $this->form['contact_' . $n]['contact_subtype_wrapper']["contact_{$n}_settings_matching_rule"] = array(
+          '#type' => 'select',
+          '#options' => array(
+              0 =>t('- None -'),
+              'Unsupervised' => t('Default Unsupervised'),
+              'Supervised' => t('Default Supervised'),
+            ) + wf_crm_get_matching_rules($c['contact'][1]['contact_type']),
+          '#title' => t('Matching Rule'),
+          '#prefix' => '<div class="number-of">',
+          '#suffix' => '</div>',
+          '#default_value' => wf_crm_aval($this->data['contact'][$n], 'matching_rule', 'Unsupervised', TRUE),
+        );
+        $rule_field =& $this->form['contact_' . $n]['contact_subtype_wrapper']["contact_{$n}_settings_matching_rule"];
+        // Reset to default if selected rule doesn't exist or isn't valid for this contact type
+        if (!array_key_exists($rule_field['#default_value'], $rule_field['#options'])) {
+          $rule_field['#default_value'] = $this->form_state['input']["contact_{$n}_settings_matching_rule"] = 'Unsupervised';
+        }
+        $this->help($rule_field, 'matching_rule');
+      }
     }
   }
 
@@ -1253,6 +1274,7 @@ class wf_crm_admin_form {
             'contact_type' => 'individual',
             'contact_sub_type' => array(),
           )),
+          'matching_rule' => 'Unsupervised',
         );
         // Set defaults for new contact
         $this->settings += array(
@@ -1278,7 +1300,10 @@ class wf_crm_admin_form {
       elseif (strpos($key, '_settings_') !== FALSE) {
         list($ent, $c, , $key) = explode('_', $key, 4);
         $val = is_array($val) ? array_filter($val) : $val;
-        $this->data[$ent][$c][$key] = $val;
+        // Don't store settings for nonexistant contacts. Todo: check other entities
+        if (isset($this->data[$ent][$c]) || $ent !== 'contact') {
+          $this->data[$ent][$c][$key] = $val;
+        }
       }
     }
     for ($i=1; $i <= $this->settings['activity_number_of_activity']; ++$i) {

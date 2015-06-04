@@ -70,6 +70,12 @@ class wf_crm_admin_help {
     self::contact_contact_id();
   }
 
+  static function matching_rule() {
+    print '<p>' .
+      t('This determines how an <em>unknown</em> contact will be handled when the webform is submitted.') .
+      '</p>';
+  }
+
   static function address_master_id() {
     print '<p>' .
       t('When selected, will hide fields for this address and use those of the other contact.') .

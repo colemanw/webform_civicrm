@@ -399,6 +399,19 @@ function wf_crm_get_contact_relationship_types($type_a, $type_b, $sub_type_a, $s
   return $ret;
 }
 
+function wf_crm_get_matching_rules($contact_type) {
+  static $rules;
+  $contact_type = ucfirst($contact_type);
+  if (!$rules) {
+    $rules = array('Individual', 'Organization', 'Household');
+    $dao = CRM_Core_DAO::executeQuery('SELECT * FROM civicrm_dedupe_rule_group');
+    while ($dao->fetch()) {
+      $rules[$dao->contact_type][$dao->id] = $dao->title;
+    }
+  }
+  return $rules[$contact_type];
+}
+
 /**
  * Get ids or values of enabled CiviCRM fields for a webform.
  *
