@@ -266,7 +266,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $errors = form_get_errors();
     foreach ((array) $errors as $key => $error) {
       $pieces = wf_crm_explode_key(substr($key, strrpos($key, '][') + 2));
-      if($pieces) {
+      if ($pieces) {
         list( , $c, $ent, $n, $table, $name) = $pieces;
         if ($this->isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name)) {
           $this->unsetError($key);
@@ -599,7 +599,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // CiviCRM API is too picky about this, imho
     $params['contact_type'] = ucfirst($params['contact_type']);
     unset($params['contact_id'], $params['id']);
-    if(!isset($params['source'])){
+    if (!isset($params['source'])) {
       $params['source'] = $this->settings['new_contact_source'];
     }
     // If creating individual with no first/last name,
@@ -994,9 +994,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                 $params['id'] = $existing[$params['event_id']];
               }
               else {
-                if(isset($this->data['contact'][$c]['contact'][1]['source'])){
+                if (isset($this->data['contact'][$c]['contact'][1]['source'])) {
                   $params['source'] = $this->data['contact'][$c]['contact'][1]['source'];
-                }else{
+                }
+                else {
                   $params['source'] = $this->settings['new_contact_source'];
                 }
                 if ($c > 1 && !empty($registered_by_id[$e][$i])) {
@@ -1076,9 +1077,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
       }
       if (empty($params['id'])) {
-        if(isset($this->data['contact'][$c]['contact'][1]['source'])){
+        if (isset($this->data['contact'][$c]['contact'][1]['source'])) {
           $params['source'] = $this->data['contact'][$c]['contact'][1]['source'];
-        }else{
+        }
+        else {
           $params['source'] = $this->settings['new_contact_source'];
         }
       }
@@ -1381,9 +1383,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
             //if number of terms is set, regard membership fee field as price per term
             //if you choose to set dates manually while membership fee field is enabled, take the membership fee as total cost of this membership
-            if(isset($item['fee_amount'])){
+            if (isset($item['fee_amount'])) {
               $price = $item['fee_amount'];
-              if(empty($item['num_terms'])){
+              if (empty($item['num_terms'])) {
                 $item['num_terms'] = 1;
               }
             }
