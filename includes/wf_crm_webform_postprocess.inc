@@ -959,12 +959,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       foreach ($p as $e => $params) {
         $remove = array();
         $fid = "civicrm_{$c}_participant_{$e}_participant_event_id";
-        // Automatic status - de-selected events will be cancelled
-        if (empty($params['status_id'])) {
-          foreach ($this->getExposedOptions($fid) as $eid => $title) {
-            list($eid) = explode('-', $eid);
-            if (isset($existing[$eid])) {
-              $remove[$eid] = $title;
+        // Automatic status - de-selected events will be cancelled if 'disable_unregister' is not selected
+        if (empty($this->data['reg_options']['disable_unregister'])) {
+          if (empty($params['status_id'])) {
+            foreach ($this->getExposedOptions($fid) as $eid => $title) {
+              list($eid) = explode('-', $eid);
+              if (isset($existing[$eid])) {
+                $remove[$eid] = $title;
+              }
             }
           }
         }

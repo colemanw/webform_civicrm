@@ -185,6 +185,22 @@ class wf_crm_admin_help {
       '</p>';
   }
 
+  static function reg_options_disable_unregister() {
+    print '<p>' .
+      t('If this is selected, on "User Select mode", participants will not be unregistered from unchecked events.') .
+      '</p>';
+  }
+
+  static function reg_options_allow_url_load() {
+    print '<p>' .
+      t('Allow events in "User Select" mode to be auto-filled from URL.') .
+      '</p>'.'<br /><p>'.t('Example for "Register all":') .
+      '<br /><code>' . url("node", array('absolute' => TRUE)) . '/{node.nid}?event1={event1.event_id},{event2.event_id}</code></p><br />'.
+      t('Example for "Register separately":') .
+      '<br /><code>' . url("node", array('absolute' => TRUE)) . 
+      '/{node.nid}?c1event1={event1.event_id},{event2.event_id}&amp;c2event1={event3.event_id}</code></p>';
+  }
+
   static function reg_options_show_past_events() {
     print '<p>' .
       t('Upcoming events will always be shown. To also display events that have ended, choose an option for how far in the past to search.') .
