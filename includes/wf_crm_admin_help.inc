@@ -73,6 +73,12 @@ class wf_crm_admin_help {
   static function matching_rule() {
     print '<p>' .
       t('This determines how an <em>unknown</em> contact will be handled when the webform is submitted.') .
+      '</p><ul>' .
+      '<li>' . t('Select the "Default Unsupervised" rule for the same duplicate matching used by CiviCRM event registration &amp contribution forms.') . '</li>' .
+      '<li>' . t('Select a specific rule to customize how matching is performed.') . '</li>' .
+      '<li>' . t('Or select "- None -" to always create a new contact.') . '</li>' .
+      '</ul><p>' .
+      t('Note: Matching rules are only used if the contact is not already selected via "Existing Contact" field.') .
       '</p>';
   }
 
