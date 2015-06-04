@@ -188,7 +188,11 @@ class wf_crm_admin_help {
   static function reg_options_allow_url_load() {
     print '<p>' .
       t('Allow events in "User Select" mode to be auto-filled from URL.') .
-      '</p>';
+      '</p>'.'<br /><p>'.t('Example for "Register all":') .
+      '<br /><code>' . url("node", array('absolute' => TRUE)) . '/{node.nid}?event1={event1.event_id},{event2.event_id}</code></p><br />'.
+      t('Example for "Register separately":') .
+      '<br /><code>' . url("node", array('absolute' => TRUE)) . 
+      '/{node.nid}?c1event1={event1.event_id},{event2.event_id}&amp;c2event1={event3.event_id}</code></p>';
   }
 
   static function reg_options_show_past_events() {
