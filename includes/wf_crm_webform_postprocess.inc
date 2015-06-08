@@ -1304,7 +1304,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                 $mail = array($assignee['email'] => $assignee);
                 // Include attachments while sending a copy of activity.
                 $attachments = CRM_Core_BAO_File::getEntityFile('civicrm_activity', $this->ent['act'][1]);
-                CRM_Case_BAO_Case::sendActivityCopy(NULL, $this->ent['act'][1], $mail, $attachments, NULL);
+                CRM_Case_BAO_Case::sendActivityCopy(NULL, $result['id'], $mail, $attachments, NULL);
               }
             }
           }
