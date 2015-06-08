@@ -29,7 +29,6 @@ function webform_civicrm_configure_form_builder($form, &$form_state, $node) {
   webform_civicrm_add_js('webform_civicrm_admin.js');
   drupal_add_css(drupal_get_path('module', 'webform_civicrm') . '/webform_civicrm_admin.css');
   civicrm_initialize();
-  require_once 'CRM/Core/BAO/Setting.php';
   $config = CRM_Core_Config::singleton();
 
   $fields = webform_civicrm_get_fields();
@@ -898,7 +897,6 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
           }
 
           if ($name == 'cs') {
-            require_once 'CRM/Core/BAO/Setting.php';
             $field['value'] = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME,
               'checksum_timeout', NULL, 7);
           }
@@ -911,7 +909,7 @@ function webform_civicrm_configure_form_submit($form, &$form_state) {
             }
             if (is_numeric($lists[$name])) {
               // Lookup defaults for custom fields
-              $dao = &CRM_Core_DAO::executeQuery('SELECT value FROM civicrm_option_value
+              $dao = CRM_Core_DAO::executeQuery('SELECT value FROM civicrm_option_value
                 WHERE is_default AND is_active AND option_group_id = ' . $lists[$name]);
               $field['value'] = '';
               while ($dao->fetch()) {

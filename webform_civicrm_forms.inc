@@ -76,7 +76,6 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
     for ($i = 1; $i <= $count; ++$i) {
       if (isset($args['cid' . $i]) && is_numeric($args['cid' . $i])) {
         $cid = (int) $args['cid' . $i];
-        require_once 'CRM/Contact/BAO/Contact/Permission.php';
         if ($cid === 0 ||
         CRM_Contact_BAO_Contact_Permission::validateChecksumContact($cid, CRM_Core_DAO::$_nullObject, FALSE)) {
           $id['cid'][$i] = $cid;
@@ -284,6 +283,11 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
                 $result[1]['privacy'][] = $key;
               }
             }
+            // Use gender label if textfield
+            $gender_field = webform_civicrm_aval($enabled, "civicrm_{$c}_contact_1_contact_gender_id");
+            if ($gender_field && $node->webform['components'][$gender_field]['type'] == 'textfield') {
+              $result[1]['gender_id'] = webform_civicrm_aval($result[1], 'gender');
+            }
           }
           // Extra processing for addresses
           if ($field == 'address') {
@@ -338,7 +342,7 @@ function _webform_civicrm_webform_frontend_form_alter(&$form, &$form_state) {
       if (in_array('CiviCampaign', $config->enableComponents, TRUE)) {
         $select[] = 'campaign_id';
       }
-      $dao = &CRM_Core_DAO::executeQuery('SELECT ' . implode(',', $select) . " FROM civicrm_participant WHERE contact_id = $cid AND event_id IN (" . implode(',', array_keys($events)) . ") AND status_id IN (SELECT id FROM civicrm_participant_status_type WHERE class <> 'Negative')");
+      $dao = CRM_Core_DAO::executeQuery('SELECT ' . implode(',', $select) . " FROM civicrm_participant WHERE contact_id = $cid AND event_id IN (" . implode(',', array_keys($events)) . ") AND status_id IN (SELECT id FROM civicrm_participant_status_type WHERE class <> 'Negative')");
       while ($dao->fetch()) {
         $par = array();
         foreach ($select as $sel) {
@@ -457,13 +461,11 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
   static $id = array();
   static $update = array();
   $settings = $node->webform_civicrm;
-  require_once 'CRM/Core/BAO/Setting.php';
 
   // Presave processing - save contact data
   if ($op == 'presave') {
     civicrm_initialize();
     $config = CRM_Core_Config::singleton();
-    require_once 'CRM/Core/BAO/CustomValueTable.php';
     $enabled = webform_civicrm_enabled_fields($node);
     $fields = webform_civicrm_get_fields();
     $data = $settings['data'];
@@ -548,7 +550,6 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
           continue;
         }
         // Search for an existing contact using default strict rule
-        require_once 'CRM/Dedupe/Finder.php';
         $params = array('check_permission' => FALSE);
         foreach ($contact as $table => $field) {
           if (is_array($field) && !empty($field[1])) {
@@ -633,7 +634,6 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         else {
           $life = intval(24 * $params['cs']);
         }
-        require_once 'CRM/Contact/BAO/Contact/Utils.php';
         $cs = CRM_Contact_BAO_Contact_Utils::generateChecksum($cid, NULL, $life);
         $submission->data[$enabled[$fid . 'cs']]['value'] = array($cs);
       }
@@ -782,7 +782,7 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         if ($p = webform_civicrm_aval($data, "participant:$n:participant")) {
           // Fetch existing participant records
           $existing = array();
-          $dao = &CRM_CORE_DAO::executeQuery("SELECT id, event_id FROM civicrm_participant WHERE contact_id = $cid AND is_test = 0");
+          $dao = CRM_Core_DAO::executeQuery("SELECT id, event_id FROM civicrm_participant WHERE contact_id = $cid AND is_test = 0");
           while ($dao->fetch()) {
             $existing[$dao->event_id] = $dao->id;
           }
@@ -950,10 +950,8 @@ function webform_civicrm_process_submission($node, &$submission, $op) {
         if (!empty($assignee['email'])) {
           $mail = array($assignee['email'] => $assignee);
           //include attachments while sendig a copy of activity.
-          require_once 'CRM/Core/BAO/File.php';
           $attachments = &CRM_Core_BAO_File::getEntityFile('civicrm_activity', $id['act'][1]);
-          require_once 'CRM/Case/BAO/Case.php';
-          $result = CRM_Case_BAO_Case::sendActivityCopy(NULL, $id['act'][1], $mail, $attachments, NULL);
+          CRM_Case_BAO_Case::sendActivityCopy(NULL, $id['act'][1], $mail, $attachments, NULL);
         }
       }
     }
@@ -1190,7 +1188,7 @@ function _webform_civicrm_participant_validate($form, &$form_state, $submitted) 
   }
   // Subtract events already registered for - this only works with known contacts
   if ($events && $cids) {
-    $dao = &CRM_Core_DAO::executeQuery("SELECT event_id
+    $dao = CRM_Core_DAO::executeQuery("SELECT event_id
       FROM civicrm_participant p, civicrm_participant_status_type s
       WHERE s.id = p.status_id AND s.is_counted = 1
       AND event_id IN (" . implode(',', array_keys($events)) . ")

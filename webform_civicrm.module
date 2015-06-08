@@ -192,7 +192,7 @@ function webform_civicrm_webform_submission_load(&$submissions) {
     civicrm_initialize();
     $sql = 'SELECT id, display_name FROM civicrm_contact WHERE id IN (' . implode(',', array_keys($contacts)) . ')';
 
-    $dao = &CRM_Core_DAO::executeQuery($sql);
+    $dao = CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {
       $contacts[$dao->id] = $dao->display_name;
     }
@@ -363,7 +363,6 @@ function webform_civicrm_contact_clone($form, $form_state) {
 function webform_civicrm_form_validate($form, &$form_state) {
   module_load_include('inc', 'webform_civicrm', 'webform_civicrm_forms');
   civicrm_initialize();
-  require_once 'CRM/Utils/Type.php';
   $node = $form['#node'];
   $values = _webform_client_form_submit_flatten($node, webform_civicrm_aval($form_state, 'values:submitted'));
   $submitted = webform_civicrm_enabled_fields($node, $values);

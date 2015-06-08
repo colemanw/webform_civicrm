@@ -8,7 +8,7 @@
  */
 
 // Load drupal-version-specific helper functions
-module_load_include('inc', 'webform_civicrm', 'webform_civicrm_d' . substr(VERSION, 0, 1) . '_functions');
+module_load_include('inc', 'webform_civicrm', 'webform_civicrm_d6_functions');
 
 /**
  * Get option values from various civicrm tables
@@ -58,7 +58,6 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
       $sql = "SELECT name AS label, $value AS value FROM civicrm_state_province WHERE country_id IN ($param) ORDER BY name";
     }
     elseif ($option_group == 'tag') {
-      require_once 'CRM/Core/BAO/Tag.php';
       // $param is entity type i.e. contact
       return CRM_Core_BAO_Tag::getTags("civicrm_$param", $ret, NULL, '- ');
     } 
@@ -69,8 +68,15 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
       }
     }
     elseif ($option_group == 'languages') {
-      require_once 'CRM/Core/PseudoConstant.php';
-      return CRM_Core_PseudoConstant::languages();
+      // For older versions of CiviCRM
+      if (method_exists('CRM_Core_PseudoConstant', 'languages')) {
+        return CRM_Core_PseudoConstant::languages();
+      }
+      // For 4.4+
+      else {
+        $result = webform_civicrm_api('contact', 'getoptions', array('field' => 'preferred_language'));
+        return $result['values'];
+      }
     } 
     elseif ($option_group == 'location_type') {
       $sql = 'SELECT display_name AS label, id AS value FROM civicrm_location_type WHERE is_active = 1 ORDER BY is_default DESC';
@@ -115,7 +121,7 @@ function webform_civicrm_get_options($option_group, $param = NULL) {
         $sql .= ' ORDER BY weight, label';
       }
     }
-    $dao = &CRM_Core_DAO::executeQuery($sql, $vars);
+    $dao = CRM_Core_DAO::executeQuery($sql, $vars);
     while ($dao->fetch()) {
       $ret[$dao->value] = $dao->label;
     }
@@ -167,7 +173,6 @@ function webform_civicrm_field_options($field, $context, $data) {
       $ret = webform_civicrm_get_options('tag', $ent);
     }
     elseif ($name === 'status_id' && $table === 'participant') {
-      require_once 'CRM/Event/PseudoConstant.php';
       $ret = CRM_Event_PseudoConstant::participantStatus(NULL, NULL, 'label');
     }
     elseif (isset($lists[$name])) {
@@ -226,7 +231,7 @@ function webform_civicrm_get_contact_types() {
       LEFT JOIN civicrm_contact_type c2 ON c1.parent_id  = c2.id
       WHERE c1.is_active = 1
       ORDER BY c1.parent_id ASC';
-    $dao = &CRM_Core_DAO::executeQuery($sql);
+    $dao = CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {
       if ($dao->parent_type) {
         $sub_types[$dao->parent_type][$dao->name] = $dao->label;
@@ -252,7 +257,7 @@ function webform_civicrm_get_relationship_types() {
       SELECT id, name_a_b, name_b_a, label_a_b, label_b_a, LOWER(contact_type_a) AS type_a, LOWER(contact_type_b) AS type_b, contact_sub_type_a AS sub_type_a, contact_sub_type_b AS sub_type_b
       FROM civicrm_relationship_type
       WHERE is_active <> 0';
-    $dao = &CRM_Core_DAO::executeQuery($sql);
+    $dao = CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {
       foreach ($f as $field) {
         $types[$dao->id][$field] = $dao->{$field};
@@ -301,7 +306,6 @@ function webform_civicrm_get_contact_relationship_types($type_a, $type_b, $sub_t
 function webform_civicrm_get_custom($entity_id, $entity_type = NULL, $normalize = TRUE) {
   static $parents = array();
   if (empty($parents)) {
-    require_once 'CRM/Core/BAO/CustomValueTable.php';
     // Create matching table to sort fields by group
     foreach (webform_civicrm_get_fields() as $key => $value) {
       list($group, $field) = explode('_', $key, 2);
@@ -802,7 +806,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       INNER JOIN civicrm_custom_group cg ON cg.id = cf.custom_group_id
       WHERE cf.is_active <> 0 AND cg.extends IN ($custom_extends) AND cg.is_active <> 0
       ORDER BY cf.custom_group_id, cf.weight";
-    $dao = &CRM_Core_DAO::executeQuery($sql);
+    $dao = CRM_Core_DAO::executeQuery($sql);
     while ($dao->fetch()) {
       if (isset($custom_types[$dao->html_type])) {
         if ($dao->entity_type == 'address') {
@@ -1031,10 +1035,9 @@ function webform_civicrm_activity_find($params) {
  */
 function webform_civicrm_event_info(&$events) {
   if (!empty($events)) {
-    require_once 'CRM/Event/BAO/Participant.php';
     $now = time();
     // Fetch event info
-    $dao = &CRM_Core_DAO::executeQuery('SELECT id, title, end_date, max_participants
+    $dao = CRM_Core_DAO::executeQuery('SELECT id, title, end_date, max_participants
       FROM civicrm_event WHERE id IN (' . implode(',', array_keys($events)) . ')');
     while ($dao->fetch()) {
       $events[$dao->id]['title'] = $dao->title;
@@ -1074,5 +1077,5 @@ function webform_civicrm_js_options($key, $str='') {
   if (substr($key, 0, 12) == 'civicrm_ahah' && user_access('access CiviCRM')) {
     webform_civicrm_ahah_callback($key);
   }
-  return drupal_not_found();
+  drupal_not_found();
 }
