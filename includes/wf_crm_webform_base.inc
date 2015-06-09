@@ -77,12 +77,19 @@ abstract class wf_crm_webform_base {
           // Index array from 1 instead of 0
           $result = array_merge(array(0), array_values($result['values']));
           unset($result[0]);
-          if ($ent == 'contact' && isset($this->enabled[$prefix . 'contact_privacy'])) {
+          if ($ent == 'contact') {
             // Privacy fields
-            foreach (array_keys(wf_crm_get_privacy_options()) as $key) {
-              if (!empty($result[1][$key])) {
-                $result[1]['privacy'][] = $key;
+            if (isset($this->enabled[$prefix . 'contact_privacy'])) {
+              foreach (array_keys(wf_crm_get_privacy_options()) as $key) {
+                if (!empty($result[1][$key])) {
+                  $result[1]['privacy'][] = $key;
+                }
               }
+            }
+            // Hack for gender as textfield. More general solution needed for all pseudoconsant fields
+            $gender_field = $this->getComponent("civicrm_{$c}_contact_1_contact_gender_id");
+            if ($gender_field && $gender_field['type'] == 'textfield') {
+              $result[1]['gender_id'] = wf_crm_aval($result[1], 'gender');
             }
           }
           // Extra processing for addresses
