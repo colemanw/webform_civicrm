@@ -74,6 +74,7 @@ abstract class wf_crm_webform_base {
         }
         $result = wf_civicrm_api($ent, 'get', $params);
         if (!empty($result['values'])) {
+          // Index array from 1 instead of 0
           $result = array_merge(array(0), array_values($result['values']));
           unset($result[0]);
           if ($ent == 'contact' && isset($this->enabled[$prefix . 'contact_privacy'])) {

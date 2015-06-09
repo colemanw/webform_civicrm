@@ -503,11 +503,6 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           $dt = NULL;
           if (!empty($field['data_type'])) {
             $dt = $element['#civicrm_data_type'] = $field['data_type'];
-            // Add CiviCRM JS to link fields
-            if ($dt == 'Link' && substr($element['#type'], 0, 4) == 'text') {
-              $element['#attributes']['onblur'] = "if (this.value == 'http://') {this.value = '';}";
-              $element['#attributes']['onfocus'] = "if (this.value == '') {this.value = 'http://';}";
-            }
           }
           // Provide live options from the Civi DB
           if (!empty($component['extra']['civicrm_live_options']) && isset($element['#options'])) {
