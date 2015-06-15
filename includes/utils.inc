@@ -859,7 +859,7 @@ function wf_crm_get_fields($var = 'fields') {
         'type' => 'textfield',
       );
       $fields['case_creator_id'] = array(
-        'name' => t('Case # Manager'),
+        'name' => t('Case # Creator'),
         'type' => 'select',
         'expose_list' => TRUE,
         'data_type' => 'ContactReference',
@@ -870,25 +870,22 @@ function wf_crm_get_fields($var = 'fields') {
       $sets['caseRoles'] = array('entity_type' => 'case', 'label' => t('Case Roles'));
       // Use the vanilla civicrm_api for this because it will throw an error in CiviCRM 4.4 (api doesn't exist)
       $case_types = civicrm_api('case_type', 'get', array('version' => 3, 'options' => array('limit' => 0)));
-      $case_types = wf_crm_aval($case_types, 'values', array());
-      foreach($case_types as $case_type) {
+      foreach (wf_crm_aval($case_types, 'values', array()) as $case_type) {
         foreach ($case_type['definition']['caseRoles'] as $role) {
-          if (empty($role['manager'])) {
-            foreach (wf_crm_get_relationship_types() as $rel_type) {
-              if ($rel_type['name_b_a'] == $role['name']) {
-                if (!isset($fields['case_role_' . $rel_type['id']])) {
-                  $fields['case_role_' . $rel_type['id']] = array(
-                    'name' => $rel_type['label_b_a'],
-                    'type' => 'select',
-                    'expose_list' => TRUE,
-                    'data_type' => 'ContactReference',
-                    'set' => 'caseRoles',
-                    'empty_option' => t('None'),
-                  );
-                }
-                $fields['case_role_' . $rel_type['id']]['case_types'][] = $case_type['id'];
-                break;
+          foreach (wf_crm_get_relationship_types() as $rel_type) {
+            if ($rel_type['name_b_a'] == $role['name']) {
+              if (!isset($fields['case_role_' . $rel_type['id']])) {
+                $fields['case_role_' . $rel_type['id']] = array(
+                  'name' => $rel_type['label_b_a'],
+                  'type' => 'select',
+                  'expose_list' => TRUE,
+                  'data_type' => 'ContactReference',
+                  'set' => 'caseRoles',
+                  'empty_option' => t('None'),
+                );
               }
+              $fields['case_role_' . $rel_type['id']]['case_types'][] = $case_type['id'];
+              break;
             }
           }
         }

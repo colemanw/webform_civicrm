@@ -584,31 +584,75 @@ class wf_crm_admin_form {
       );
       $this->help($this->form['caseTab']['case'][$fs]["case_{$n}_settings_existing_case_status"], 'existing_case_status');
       $case_type = wf_crm_aval($this->data, "case:{$n}:case:1:case_type_id");
-      foreach ($this->sets as $sid => $set) {
-        if ($set['entity_type'] == 'case' && (!$case_type || empty($set['sub_types']) || in_array($case_type, $set['sub_types']))) {
-          $fs1 = "case_case_{$n}_fieldset_$sid";
-          if ($sid == 'case') {
-            $pos = &$this->form['caseTab']['case'][$fs];
-          }
-          else {
-            $pos = &$this->form['caseTab']['case'][$fs]['wrap'];
-          }
-          $pos[$fs1] = array(
-            '#type' => 'fieldset',
-            '#title' => $set['label'],
-            '#attributes' => array('id' => $fs1, 'class' => array('web-civi-checkbox-set')),
-            'js_select' => $this->addToggle($fs1),
-          );
-          foreach ($set['fields'] as $fid => $field) {
-            $fid = "civicrm_{$n}_case_1_$fid";
-            if (!$case_type || empty($field['case_types']) || in_array($case_type, $field['case_types'])) {
-              $pos[$fs1][$fid] = $this->addItem($fid, $field);
-            }
+      foreach ($this->getCaseSets($case_type) as $sid => $set) {
+        $fs1 = "case_case_{$n}_fieldset_$sid";
+        if ($sid == 'case') {
+          $pos = &$this->form['caseTab']['case'][$fs];
+        }
+        else {
+          $pos = &$this->form['caseTab']['case'][$fs]['wrap'];
+        }
+        $pos[$fs1] = array(
+          '#type' => 'fieldset',
+          '#title' => $set['label'],
+          '#attributes' => array('id' => $fs1, 'class' => array('web-civi-checkbox-set')),
+          'js_select' => $this->addToggle($fs1),
+        );
+        foreach ($set['fields'] as $fid => $field) {
+          $fid = "civicrm_{$n}_case_1_$fid";
+          if (!$case_type || empty($field['case_types']) || in_array($case_type, $field['case_types'])) {
+            $pos[$fs1][$fid] = $this->addItem($fid, $field);
           }
         }
       }
       $this->addAjaxItem("caseTab:case:$fs:case_case_{$n}_fieldset_case", "civicrm_{$n}_case_1_case_case_type_id", "..:wrap");
     }
+  }
+
+  /**
+   * Adjust case role fields to match creator/manager settings for a given case type
+   *
+   * @param int|null $case_type
+   * @return array
+   */
+  private function getCaseSets($case_type) {
+    $case_sets = array();
+    foreach ($this->sets as $sid => $set) {
+      if ($set['entity_type'] == 'case' && (!$case_type || empty($set['sub_types']) || in_array($case_type, $set['sub_types']))) {
+        if ($sid == 'caseRoles') {
+          // Lookup case-role names
+          $creator = $manager = NULL;
+          // Use the vanilla civicrm_api for this because it will throw an error in CiviCRM 4.4 (api doesn't exist)
+          $case_types = civicrm_api('case_type', 'get', array('version' => 3, 'id' => $case_type, 'options' => array('limit' => 0)));
+          foreach (wf_crm_aval($case_types, 'values', array()) as $type) {
+            foreach ($type['definition']['caseRoles'] as $role) {
+              if (!empty($role['creator'])) {
+                $creator = ($creator == $role['name'] || $creator === NULL) ? $role['name'] : FALSE;
+              }
+              if (!empty($role['manager'])) {
+                $manager = ($manager == $role['name'] || $manager === NULL) ? $role['name'] : FALSE;
+              }
+            }
+          }
+          if ($creator) {
+            $rel_type = wf_civicrm_api('relationshipType', 'getsingle', array('name_b_a' => $creator));
+            $label = $creator == $manager ? ts('Case # Creator/Manager') : ts('Case # Creator');
+            $set['fields']['case_creator_id']['name'] = $rel_type['label_b_a'] . ' (' . $label . ')';
+          }
+          if ($manager) {
+            if ($creator == $manager) {
+              unset($set['fields']['case_role_' . $rel_type['id']]);
+            }
+            else {
+              $rel_type = wf_civicrm_api('relationshipType', 'getsingle', array('name_b_a' => $manager));
+              $set['fields']['case_role_' . $rel_type['id']]['name'] .= ' (' . ts('Case # Manager') . ')';
+            }
+          }
+        }
+        $case_sets[$sid] = $set;
+      }
+    }
+    return $case_sets;
   }
 
   /**
@@ -893,7 +937,7 @@ class wf_crm_admin_form {
 
   /**
    * Grant settings
-   * FIXME: This is exactly the same code as buildCaseTab. More utilities and less boilerplate needed.
+   * FIXME: This is nearly the same code as buildCaseTab. More utilities and less boilerplate needed.
    */
   private function buildGrantTab() {
     $this->form['grantTab'] = array(
@@ -1318,11 +1362,20 @@ class wf_crm_admin_form {
         }
       }
     }
+    // Defaults when adding an activity
     for ($i=1; $i <= $this->settings['activity_number_of_activity']; ++$i) {
       if (!isset($this->settings["activity_{$i}_settings_existing_activity_status"])) {
         $this->data['activity'][$i]['activity'][1]['target_contact_id'] = range(1, $this->settings['number_of_contacts']);
       }
     }
+    // Defaults when adding a case
+    for ($i=1; $i <= wf_crm_aval($this->settings, 'case_number_of_case'); ++$i) {
+      if (!isset($this->settings["civicrm_{$i}_case_1_case_case_type_id"])) {
+        $case_types = array_keys(wf_crm_apivalues('Case', 'getoptions', array('field' => 'case_type_id')));
+        $this->data['case'][$i]['case'][1]['case_type_id'] = $case_types[0];
+      }
+    }
+    // Store event settings
     if (isset($this->settings['participant_reg_type'])) {
       $this->data['participant_reg_type'] = $this->settings['participant_reg_type'];
       $this->data['reg_options'] = $this->settings['reg_options'];
