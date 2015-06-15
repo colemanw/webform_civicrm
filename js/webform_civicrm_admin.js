@@ -294,7 +294,7 @@ var wfCiviAdmin = (function ($, D) {
         var label = [];
         $('fieldset.activity-wrapper', context).each(function() {
           var caseType = $('select[name$=case_type_id]', this).val();
-          var prefix = caseType != '0' ? $('select[name$=case_type_id] option:selected', this).text() + ': ' : '';
+          var prefix = caseType && caseType != '0' ? $('select[name$=case_type_id] option:selected', this).text() + ': ' : '';
           label.push(prefix + $('select[name$=activity_type_id] option:selected', this).text());
         });
         return label.join('<br />') || Drupal.t('- None -');
