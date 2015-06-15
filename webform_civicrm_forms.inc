@@ -420,7 +420,7 @@ function webform_civicrm_fill_values(&$elements, $data, $fields, $submitted) {
         && !(isset($element['#webform_component']['cid'])
              && isset($submitted[$element['#webform_component']['cid']]))) {
           $val = $data[$ent][$c][$table][$n][$name];
-          if ($element['#type'] == 'date') {
+          if ($element['#type'] == 'date' && $val) {
             $date = strtotime($val);
             $val = array(
               'year' => (int) date('Y', $date),
