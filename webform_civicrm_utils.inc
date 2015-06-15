@@ -464,6 +464,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'extra' => array('multiple' => 1),
       'expose_list' => TRUE,
     );
+    // Organization / household names
     foreach (array('organization' => t('Organization Name'), 'legal' => t('Legal Name'), 'household' => t('Household Name')) as $key => $label) {
       $fields['contact_' . $key . '_name'] = array(
         'name' => $label,
@@ -471,20 +472,41 @@ function webform_civicrm_get_fields($var = 'fields') {
         'contact_type' => $key == 'household' ? 'household' : 'organization',
       );
     }
-    foreach (array('first_name' => t('First Name'), 'nick_name' => t('Nickname'), 'middle_name' => t('Middle Name'), 'last_name' => t('Last Name'), 'job_title' => t('Job Title')) as $key => $label) {
-      $fields['contact_' . $key] = array(
-        'name' => $label,
-        'type' => 'textfield',
-        'contact_type' => $key == 'nick_name' ? NULL : 'individual',
-      );
+    $fields['contact_sic_code'] = array(
+      'name' => t('SIC Code'),
+      'type' => 'textfield',
+      'contact_type' => 'organization',
+    );
+    // Individual names
+    if (empty($config->civiVersion) || substr($config->civiVersion, 0, 3) < '4.5') {
+      // This setting doesn't exist prior to 4.5 so hard-code it.
+      $enabled_names = array('Prefix', 'Suffix', 'First Name', 'Middle Name', 'Last Name');
     }
-    foreach (array('prefix' => t('Name Prefix'), 'suffix' => t('Name Suffix'), 'gender' => t('Gender')) as $key => $label) {
-      $fields['contact_' . $key . '_id'] = array(
-        'name' => $label,
-        'type' => 'select',
-        'contact_type' => 'individual',
-      );
+    else {
+      $enabled_names = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'contact_edit_options');
+      $enabled_names = explode(CRM_Core_DAO::VALUE_SEPARATOR, trim($enabled_names, CRM_Core_DAO::VALUE_SEPARATOR));
+      $name_options = CRM_Core_OptionGroup::values('contact_edit_options', FALSE, FALSE, FALSE, NULL, 'name');
+      $enabled_names = array_intersect_key($name_options, array_flip($enabled_names));
     }
+    foreach (array('prefix_id' => t('Name Prefix'), 'formal_title' => t('Formal Title'), 'first_name' => t('First Name'), 'middle_name' => t('Middle Name'), 'last_name' => t('Last Name'), 'suffix_id' => t('Name Suffix')) as $key => $label) {
+      if (in_array(ucwords(str_replace(array('_id', '_'), array('', ' '), $key)), $enabled_names)) {
+        $fields['contact_' . $key] = array(
+          'name' => $label,
+          'type' => strpos($key, '_id') ? 'select' : 'textfield',
+          'contact_type' => 'individual',
+        );
+      }
+    }
+    $fields['contact_nick_name'] = array(
+      'name' => t('Nickname'),
+      'type' => 'textfield',
+    );
+    $fields['contact_gender_id'] = array(
+      'name' => t('Gender'),
+      // Gender should be textfield if using https://civicrm.org/extensions/gender-self-identify
+      'type' => function_exists('genderselfidentify_civicrm_apiWrappers') ? 'textfield' : 'select',
+      'contact_type' => 'individual',
+    );
     $fields['contact_birth_date'] = array(
       'name' => t('Birth Date'),
       'type' => 'date',
@@ -492,6 +514,11 @@ function webform_civicrm_get_fields($var = 'fields') {
         'start_date' => '-100 years',
         'end_date' => 'now',
       ),
+      'contact_type' => 'individual',
+    );
+    $fields['contact_job_title'] = array(
+      'name' => t('Job Title'),
+      'type' => 'textfield',
       'contact_type' => 'individual',
     );
     $fields['contact_preferred_communication_method'] = array(
@@ -530,6 +557,21 @@ function webform_civicrm_get_fields($var = 'fields') {
       'name' => t('Generate Checksum'),
       'type' => 'hidden',
       'extra' => array('description' => t('(hidden field, use to create hashed links)')),
+    );
+    $fields['contact_is_deceased'] = array(
+      'name' => t('Is Deceased'),
+      'type' => 'select',
+      'extra' => array('aslist' => 0),
+      'contact_type' => 'individual',
+    );
+    $fields['contact_deceased_date'] = array(
+      'name' => t('Deceased Date'),
+      'type' => 'date',
+      'extra' => array(
+        'start_date' => '-100 years',
+        'end_date' => 'now',
+      ),
+      'contact_type' => 'individual',
     );
     $fields['email_email'] = array(
       'name' => t('Email'),
@@ -749,6 +791,7 @@ function webform_civicrm_get_fields($var = 'fields') {
       'master_id' => 'master_id',
       'relationship_type_id' => 'relationship_type_id',
       'is_active' => 'yes_no',
+      'is_deceased' => 'yes_no',
       'relationship_permission' => 'relationship_permission',
       'contact_sub_type' => 'contact_sub_type',
       'group' => 'group',
