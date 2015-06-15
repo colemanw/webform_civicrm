@@ -560,7 +560,8 @@ function wf_crm_get_fields($var = 'fields') {
     );
     $fields['contact_gender_id'] = array(
       'name' => t('Gender'),
-      'type' => 'select',
+      // Gender should be textfield if using https://civicrm.org/extensions/gender-self-identify
+      'type' => function_exists('genderselfidentify_civicrm_apiWrappers') ? 'textfield' : 'select',
       'contact_type' => 'individual',
     );
     $fields['contact_job_title'] = array(
