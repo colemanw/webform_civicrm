@@ -584,7 +584,7 @@ class wf_crm_admin_form {
       );
       $this->help($this->form['caseTab']['case'][$fs]["case_{$n}_settings_existing_case_status"], 'existing_case_status');
       $case_type = wf_crm_aval($this->data, "case:{$n}:case:1:case_type_id");
-      foreach ($this->getCaseSets($case_type) as $sid => $set) {
+      foreach ($this->filterCaseSets($case_type) as $sid => $set) {
         $fs1 = "case_case_{$n}_fieldset_$sid";
         if ($sid == 'case') {
           $pos = &$this->form['caseTab']['case'][$fs];
@@ -615,7 +615,7 @@ class wf_crm_admin_form {
    * @param int|null $case_type
    * @return array
    */
-  private function getCaseSets($case_type) {
+  private function filterCaseSets($case_type) {
     $case_sets = array();
     foreach ($this->sets as $sid => $set) {
       if ($set['entity_type'] == 'case' && (!$case_type || empty($set['sub_types']) || in_array($case_type, $set['sub_types']))) {
@@ -638,15 +638,11 @@ class wf_crm_admin_form {
             $rel_type = wf_civicrm_api('relationshipType', 'getsingle', array('name_b_a' => $creator));
             $label = $creator == $manager ? ts('Case # Creator/Manager') : ts('Case # Creator');
             $set['fields']['case_creator_id']['name'] = $rel_type['label_b_a'] . ' (' . $label . ')';
+            unset($set['fields']['case_role_' . $rel_type['id']]);
           }
-          if ($manager) {
-            if ($creator == $manager) {
-              unset($set['fields']['case_role_' . $rel_type['id']]);
-            }
-            else {
-              $rel_type = wf_civicrm_api('relationshipType', 'getsingle', array('name_b_a' => $manager));
-              $set['fields']['case_role_' . $rel_type['id']]['name'] .= ' (' . ts('Case # Manager') . ')';
-            }
+          if ($manager && $manager != $creator) {
+            $rel_type = wf_civicrm_api('relationshipType', 'getsingle', array('name_b_a' => $manager));
+            $set['fields']['case_role_' . $rel_type['id']]['name'] .= ' (' . ts('Case # Manager') . ')';
           }
         }
         $case_sets[$sid] = $set;
