@@ -553,6 +553,10 @@ class wf_crm_admin_form {
    * FIXME: This is exactly the same code as buildGrantTab. More utilities and less boilerplate needed.
    */
   private function buildCaseTab() {
+    $types = wf_crm_apivalues('case', 'getoptions', array('field' => 'case_type_id'));
+    if (!$types) {
+      return;
+    }
     $this->form['caseTab'] = array(
       '#type' => 'fieldset',
       '#title' => t('Cases'),
@@ -936,6 +940,10 @@ class wf_crm_admin_form {
    * FIXME: This is nearly the same code as buildCaseTab. More utilities and less boilerplate needed.
    */
   private function buildGrantTab() {
+    $types = wf_crm_apivalues('grant', 'getoptions', array('field' => 'grant_type_id'));
+    if (!$types) {
+      return;
+    }
     $this->form['grantTab'] = array(
       '#type' => 'fieldset',
       '#title' => t('Grants'),
