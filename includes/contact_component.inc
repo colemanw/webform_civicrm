@@ -294,7 +294,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
     '#weight' => $component['weight'],
     '#attributes' => $component['extra']['attributes'],
   );
-  if ($component['extra']['widget'] != 'hidden') {
+  if ($component['extra']['widget'] != 'hidden' || $component['extra']['show_hidden_contact']) {
     $element += array(
       '#title' => $filter ? webform_filter_xss($component['name']) : $component['name'],
       '#title_display' => $component['extra']['title_display'] ? $component['extra']['title_display'] : 'before',
@@ -811,13 +811,13 @@ function theme_static_contact_element($vars) {
   if ($type == 'civicrm_contact' && !empty($element['#attributes']['data-civicrm-name'])) {
 
     if ($component['extra']['title_display'] != 'none') {
-      $output .= ' <label for="' . $element['#id'] . '">' . check_plain($component['name']) . "</label>\n";
+      $output .= ' <label for="' . $element['#id'] . '">' . check_plain($element['#title']) . "</label>\n";
     }
 
     $output .= '<ul class="token-input-list"><li class="token-input-token"><p>' . $element['#attributes']['data-civicrm-name'] . "</p></li></ul>\n";
 
     if (!empty($component['extra']['description'])) {
-      $output .= ' <div class="description">' . filter_xss($component['extra']['description']) . "</div>\n";
+      $output .= ' <div class="description">' . filter_xss($element['#description']) . "</div>\n";
     }
   }
 
