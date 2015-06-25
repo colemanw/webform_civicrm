@@ -1701,7 +1701,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     // tax integration
-    $contributionResult = CRM_Contribute_BAO_Contribution::getValues(array('id' => $id), CRM_Core_DAO::$_nullArray, CRM_Core_DAO::$_nullArray);
+    if(!is_null($this->tax_rate)){
+      $contributionResult = CRM_Contribute_BAO_Contribution::getValues(array('id' => $id), CRM_Core_DAO::$_nullArray, CRM_Core_DAO::$_nullArray);
+    }
 
     // Save line-items
     foreach ($this->line_items as &$item) {
