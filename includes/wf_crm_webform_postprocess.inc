@@ -1149,6 +1149,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $params = $data['case'][1];
         // Set some defaults in create mode
         if (empty($this->ent['case'][$n]['id'])) {
+          if (empty($params['case_type_id'])) {
+            // Abort if no case type.
+            continue;
+          }
           // Automatic status... for lack of anything fancier just pick the first option ("Ongoing" on a standard install)
           if (empty($params['status_id'])) {
             $options = wf_crm_apivalues('case', 'getoptions', array('field' => 'status_id'));
