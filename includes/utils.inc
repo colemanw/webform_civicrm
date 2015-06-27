@@ -1469,8 +1469,18 @@ function wf_civicrm_api($entity, $operation, $params) {
   $result = civicrm_api($entity, $operation, $params);
   if (!empty($result['is_error'])) {
     $bt = debug_backtrace();
-    $file = explode('/', $bt[0]['file']);
-    watchdog('webform_civicrm', 'The CiviCRM "%function" API function returned the error: "%msg" when called by line !line of !file with the following parameters: "!params"', array('%function' => $entity . ' ' . $operation, '%msg' => $result['error_message'], '!line' => $bt[0]['line'], '!file' => array_pop($file), '!params' => print_r($params, TRUE)), WATCHDOG_ERROR);
+    $n = $bt[0]['function'] == 'wf_civicrm_api' ? 1 : 0;
+    $file = explode('/', $bt[$n]['file']);
+    watchdog('webform_civicrm', 'The CiviCRM "%function" API returned the error: "%msg" when called by function "!fn" on line !line of !file with parameters: "!params"',
+      array(
+        '%function' => $entity . ' ' . $operation,
+        '%msg' => $result['error_message'],
+        '!fn' => $bt[$n+1]['function'],
+        '!line' => $bt[$n]['line'],
+        '!file' => array_pop($file),
+        '!params' => print_r($params, TRUE),
+      ),
+      WATCHDOG_ERROR);
   }
   return $result;
 }
