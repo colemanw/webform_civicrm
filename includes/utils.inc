@@ -1467,7 +1467,8 @@ function wf_civicrm_api($entity, $operation, $params) {
     'version' => 3
   );
   $result = civicrm_api($entity, $operation, $params);
-  if (!empty($result['is_error'])) {
+  // I guess we want silent errors for getoptions b/c we check it for failure separately
+  if (!empty($result['is_error']) && $operation != 'getoptions') {
     $bt = debug_backtrace();
     $n = $bt[0]['function'] == 'wf_civicrm_api' ? 1 : 0;
     $file = explode('/', $bt[$n]['file']);

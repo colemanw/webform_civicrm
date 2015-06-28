@@ -357,13 +357,15 @@ class wf_crm_admin_component {
       $this->form['questions']['#description'] = t('Items down the side of the grid. Usually the keys represent item price, which will be multiplied with the amount column.') .
         '<br />' . t('Use non-numeric keys to use the price from the amount column as-is with no multiplication.');
     }
-    else {
+    elseif ($this->component['type'] === 'select') {
       $this->form['items']['options']['option_settings']['options_source']['#access'] = FALSE;
       $this->form['items']['#description'] = t('Enter item labels and prices. If you allow the user to select multiple items their amounts will be added together.');
     }
     foreach (array('items', 'options', 'questions') as $field) {
-      $this->form[$field]['options']['#key_type_toggle'] = t('Show Prices');
-      $this->form[$field]['options']['#key_type_toggled'] = TRUE;
+      if (!empty($this->form[$field]['options']['#key_type_toggle'])) {
+        $this->form[$field]['options']['#key_type_toggle'] = t('Show Prices');
+        $this->form[$field]['options']['#key_type_toggled'] = TRUE;
+      }
     }
     // CSS trick to add currency symbol to options element keys
     $symbol = wf_crm_aval(CRM_Core_Config::singleton(), 'defaultCurrencySymbol', '$');
