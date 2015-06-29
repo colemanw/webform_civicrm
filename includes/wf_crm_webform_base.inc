@@ -30,10 +30,6 @@ abstract class wf_crm_webform_base {
    * @return mixed
    */
   function __get($name) {
-    $contribution_page_id = wf_crm_aval($this->data, 'contribution:1:contribution:1:contribution_page_id');
-    if ($contribution_page_id && !$this->_contribution_page) {
-      $this->_contribution_page = wf_civicrm_api('contribution_page', 'getsingle', array('id' => $contribution_page_id));
-    }
     switch ($name) {
       case 'payment_processor':
         $payment_processor_id = wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id');
@@ -43,13 +39,17 @@ abstract class wf_crm_webform_base {
         return $this->_payment_processor;
       
       case 'contribution_page':
+        $contribution_page_id = wf_crm_aval($this->data, 'contribution:1:contribution:1:contribution_page_id');
+        if ($contribution_page_id && !$this->_contribution_page) {
+          $this->_contribution_page = wf_civicrm_api('contribution_page', 'getsingle', array('id' => $contribution_page_id));
+        }
         return $this->_contribution_page;
         
       case 'tax_rate':
         $taxSettings = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::CONTRIBUTE_PREFERENCES_NAME, 'contribution_invoice_settings');
         if(isset($taxSettings['invoicing'])){
           if($taxSettings['invoicing']){
-            if ($this->_contribution_page) {
+            if ($this->contribution_page) {
               // tax integration
               $taxRates = CRM_Core_PseudoConstant::getTaxRates();
               $this->_tax_rate = $taxRates[$this->_contribution_page['financial_type_id']];

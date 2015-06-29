@@ -1413,7 +1413,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
         $item['tax_amount'] = ($this->tax_rate / 100) * $item['line_total'];
         $this->totalContribution += (1 + $this->tax_rate / 100) * $item['unit_price'] * (int) $item['qty'];
-      }else{
+      }
+      else {
         $this->totalContribution += $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
       }
     }
