@@ -1627,6 +1627,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params = $this->contributionParams();
     $params['contribution_status_id'] = 'Pending';
     $params['is_pay_later'] = $this->contributionIsPayLater;
+    // IPN processors use this for matching and updating the contribution status
+    if (!$this->contributionIsPayLater) {
+      $params['invoice_id'] = $this->data['contribution'][1]['contribution'][1]['invoiceID'] = md5(uniqid(rand(), TRUE));
+    }
     $result = wf_civicrm_api('contribution', 'create', $params);
     $this->ent['contribution'][1]['id'] = $result['id'];
   }
@@ -1647,7 +1651,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['qfKey'] = $this->getQfKey();
 
     $params['contactID'] = $params['contact_id'];
-    $params['invoiceID'] = md5(uniqid(rand(), TRUE));
     $params['currency'] = $params['currencyID'] = $this->contribution_page['currency'];
     $params['total_amount'] = $this->totalContribution;
     // Some processors want this one way, some want it the other
