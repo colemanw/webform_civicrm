@@ -451,8 +451,9 @@ class wf_crm_admin_component {
       // Empty message when no components have been added
       if (!empty($row[0]['colspan'])) {
         if (empty($node->webform['components']) && wf_crm_admin_access($node)) {
+          $form['components']['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/js/webform_tab.js';
           $row[0]['data'] = t(
-            'Add a webform component below, or click the <a href="!url">CiviCRM tab</a> to add CRM fields.',
+            'Add a webform component below, or click the <a class="webform-civicrm-tab-link" href="!url">CiviCRM tab</a> to add CRM fields.',
             (array('!url' => url("node/{$node->nid}/civicrm")))
           );
         }
