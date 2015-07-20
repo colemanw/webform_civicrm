@@ -1553,10 +1553,10 @@ class wf_crm_admin_form {
         }
       }
       if (count($created) == 1) {
-        drupal_set_message(t('Created field: %name', array('%name' => $created[0])));
+        drupal_set_message(t('Added field: %name', array('%name' => $created[0])));
       }
       elseif ($created) {
-        drupal_set_message(t('Created !num new fields.', array('!num' => count($created))));
+        drupal_set_message(t('Added !num fields to the form.', array('!num' => count($created))));
       }
 
       // Create record
