@@ -258,7 +258,7 @@ class wf_crm_admin_help {
     print '<p>' .
       t('Click the + button to select more than one option.') .
       '</p><p>' .
-      t('You may set options here and/or add this element to the webform ("User Select"). If you do both, options set here will be applied automatically and will not appear on the form.') .
+      t('You may set options here and/or add this element to the webform ("User Select"). Options chosen here will be applied automatically and will not appear on the form.') .
       '</p>';
   }
 
