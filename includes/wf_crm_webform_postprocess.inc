@@ -1645,8 +1645,19 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['contributionID'] = $params['id'] = $this->ent['contribution'][1]['id'];
     // Generate a fake qfKey in case payment processor redirects to contribution thank-you page
     $params['qfKey'] = $this->getQfKey();
+
+    $params['contactID'] = $params['contact_id'];
+    $params['invoiceID'] = md5(uniqid(rand(), TRUE));
+    $params['currency'] = $params['currencyID'] = $this->contribution_page['currency'];
+    $params['total_amount'] = $this->totalContribution;
     // Some processors want this one way, some want it the other
     $params['amount'] = $params['total_amount'];
+
+    $params['financial_type_id'] = $this->contribution_page['financial_type_id'];
+
+    $params['source'] = $this->settings['new_contact_source'];
+    $params['item_name'] = t('Webform Payment: @title', array('@title' => $this->node->title));
+
     $paymentProcessor->doTransferCheckout($params, 'contribute');
   }
 
