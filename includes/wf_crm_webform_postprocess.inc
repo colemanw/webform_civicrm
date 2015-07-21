@@ -1661,7 +1661,33 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['source'] = $this->settings['new_contact_source'];
     $params['item_name'] = t('Webform Payment: @title', array('@title' => $this->node->title));
 
+    // TODO: Someday payment processors will accept params like these.
+    // For now, we fake it with these placeholders and a hook to cajole the processor to respect them
+    // @see webform_civicrm_civicrm_alterPaymentProcessorParams
+    $params['webform_redirect_cancel'] = $this->getIpnRedirectUrl('cancel');
+    $params['webform_redirect_success'] = $this->getIpnRedirectUrl('success');
+
     $paymentProcessor->doTransferCheckout($params, 'contribute');
+  }
+
+  /**
+   * @param $type
+   * @return string
+   */
+  public function getIpnRedirectUrl($type) {
+    $url = trim($this->node->webform['redirect_url']);
+    if ($url == '<none>' || $type == 'cancel') {
+      $url = url('node/' . $this->node->nid, array('absolute' => TRUE));
+    }
+    elseif ($url == '<confirmation>') {
+      $url = url("node/{$this->node->nid}/done", array('query' => array('sid' => $this->submission->sid), 'absolute' => TRUE));
+    }
+    else {
+      $parsed = webform_replace_url_tokens($url, $this->node, $this->submission);
+      $parsed[1]['absolute'] = TRUE;
+      $url = url($parsed[0], $parsed[1]);
+    }
+    return $url;
   }
 
   /**
