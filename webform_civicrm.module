@@ -18,6 +18,8 @@ define('WEBFROM_CIVICRM_WEBFORM_VERSION', '4');
 
 /**
  * Implements hook_menu().
+ *
+ * @return array
  */
 function webform_civicrm_menu() {
   $items = array();
@@ -96,6 +98,7 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
 
 /**
  * Implements hook_node_load().
+ * 
  * @param array $nodes
  */
 function webform_civicrm_node_load($nodes, $types) {
@@ -447,16 +450,17 @@ function webform_civicrm_civicrm_alterPaymentProcessorParams($paymentObj, $rawPa
 /**
  * Return a value from nested arrays or objects.
  *
- * @param $haystack
+ * @param array|object $haystack
  *   The array to search
- * @param $keys
+ * @param string $keys
  *   Pass a single key, or multiple keys separated by : to get a nested value
- * @param $default
+ * @param mixed $default
  *   Value to return if given array key does not exist
- * @param $strict
+ * @param bool $strict
  *   Should we use empty or isset to determine if array key exists?
  *
- * @return: found value or default
+ * @return mixed
+ *   found value or default
  */
 function wf_crm_aval($haystack, $keys, $default = NULL, $strict = FALSE) {
   foreach (explode(':', $keys) as $key) {
@@ -475,9 +479,9 @@ function wf_crm_aval($haystack, $keys, $default = NULL, $strict = FALSE) {
 /**
  * Store info while a clone operation is running.
  *
- * @param $input
+ * @param array $input
  *   Data to store
- * @return null
+ * @return array
  */
 function wf_crm_contact_clone_storage($input = NULL) {
   static $storage = NULL;
@@ -529,10 +533,10 @@ function wf_crm_validate($form, &$form_state) {
 /**
  * Checks dependencies.
  *
- * @return bool
+ * @return array
  *   Array with TRUE/FALSE for each dependency.
  *
- * @see webform_civicrm_requirements() in .install
+ * @see webform_civicrm_requirements
  */
 function _webform_civicrm_status() {
   $status = array();
