@@ -1102,26 +1102,27 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $params['skipStatusCal'] = !empty($params['status_id']);
 
       $result = wf_civicrm_api('membership', 'create', $params);
-      
-      //Issue #2516924 If existing membership create renewal activity
-      foreach ($result['values'] as $memId => $membership) {
-        if ($params['membership_type_id'] == $memId) {
+
+      if (!empty($result['id'])) {
+        // Issue #2516924 If existing membership create renewal activity
+        if (!empty($params['id'])) {
+          $membership = $result['values'][$result['id']];
           $actParams = array(
-            'source_record_id' => $memId,
+            'source_record_id' => $result['id'],
             'activity_type_id' => 'Membership Renewal',
             'target_id' => $cid,
           );
           $memType = wf_civicrm_api('MembershipType', 'getsingle', array('id' => $membership['membership_type_id']));
           $memStatus = wf_civicrm_api('MembershipStatus', 'getsingle', array('id' => $membership['status_id']));
-          $actParams['subject'] = "{$memType['name']} - Status: {$memStatus['label']} ";
-          $activity = wf_civicrm_api('Activity', 'create', $actParams);
+          $actParams['subject'] = ts("%1 - Status: %2", array(1 => $memType['name'], 2 => $memStatus['label']));
+          wf_civicrm_api('Activity', 'create', $actParams);
         }
-      }
-      
-      foreach ($this->line_items as &$item) {
-        if ($item['element'] == "civicrm_{$c}_membership_{$n}") {
-          $item['membership_id'] = $result['id'];
-          break;
+
+        foreach ($this->line_items as &$item) {
+          if ($item['element'] == "civicrm_{$c}_membership_{$n}") {
+            $item['membership_id'] = $result['id'];
+            break;
+          }
         }
       }
     }
