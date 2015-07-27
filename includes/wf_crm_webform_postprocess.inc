@@ -1702,8 +1702,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['skipRecentView'] = $params['skipLineItem'] = 1;
     $params['contact_id'] = $this->ent['contact'][1]['id'];
     $params['total_amount'] = $this->totalContribution;
-    $params['source'] = $this->settings['new_contact_source'];
     $params['description'] = t('Webform Payment') . ': ' . check_plain($this->node->title);
+    if (!isset($params['source'])) {
+      $params['source'] = $this->settings['new_contact_source'];
+    }
 
     // pass all submitted values to payment processor
     foreach ($_POST as $key => $value) {

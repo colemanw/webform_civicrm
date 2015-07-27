@@ -988,6 +988,10 @@ function wf_crm_get_fields($var = 'fields') {
         'value' => 0,
         'weight' => 9997,
       );
+      $fields['contribution_source'] = array(
+        'name' => t('Contribution Source'),
+        'type' => 'textfield',
+      );
     }
     if (isset($sets['participant'])) {
       $fields['participant_event_id'] = array(
