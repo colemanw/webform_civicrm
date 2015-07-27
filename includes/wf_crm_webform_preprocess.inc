@@ -616,8 +616,9 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         $label = $item['label'] . ($item['qty'] > 1 ? " ({$item['qty']})" : '');
         $rows[] = array(
           'data' => array($label, CRM_Utils_Money::format($item['line_total'] * (($this->tax_rate / 100) + 1))),
-          'class' => array($item['element'], 'line-item vat-'.(int)$this->tax_rate),
+          'class' => array($item['element'], 'line-item'),
           'data-amount' => $item['line_total'] * (($this->tax_rate / 100) + 1),
+          'data-tax' => (int)$this->tax_rate,
         );
       }else{
         $total += $item['line_total'];
