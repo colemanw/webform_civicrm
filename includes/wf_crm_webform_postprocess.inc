@@ -1702,7 +1702,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     // tax integration
-    if(!is_null($this->tax_rate)){
+    if (!is_null($this->tax_rate)) {
       $contributionResult = CRM_Contribute_BAO_Contribution::getValues(array('id' => $id), CRM_Core_DAO::$_nullArray, CRM_Core_DAO::$_nullArray);
     }
 
@@ -1721,7 +1721,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $line_result = wf_civicrm_api('line_item', 'create', $item);
       $item['id'] = $line_result['id'];
   
-      if(!is_null($this->tax_rate)){
+      if (!is_null($this->tax_rate)) {
         $lineItemRecord = json_decode(json_encode($item), FALSE);
         // Add financial_item and entity_financial_trxn
         $result = CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult);
@@ -1739,7 +1739,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Send receipt
     if (!empty($this->contribution_page['is_email_receipt'])) {
       // tax integration
-      if(!is_null($this->tax_rate)){
+      if (!is_null($this->tax_rate)) {
         $template = CRM_Core_Smarty::singleton();
         $template->assign('dataArray', array( "{$this->tax_rate}" => $this->tax_rate/100 ));
       }

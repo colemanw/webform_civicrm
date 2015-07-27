@@ -358,7 +358,7 @@ var wfCiviAdmin = (function ($, D) {
         $('#edit-st-message .form-item-message').hide();
       };
       $('#edit-toggle-message', context).once('wf-civi').change(function() {
-        if($(this).is(':checked')) {
+        if ($(this).is(':checked')) {
           $('#edit-message').removeAttr('disabled');
           $('#edit-st-message .form-item-message').show('fast');
         }

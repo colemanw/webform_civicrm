@@ -47,15 +47,13 @@ abstract class wf_crm_webform_base {
         
       case 'tax_rate':
         $taxSettings = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::CONTRIBUTE_PREFERENCES_NAME, 'contribution_invoice_settings');
-        if (isset($taxSettings['invoicing'])) {
-          if ($taxSettings['invoicing']) {
+        if (is_array($taxSettings) && !empty($taxSettings['invoicing'])) {
             if ($this->contribution_page) {
               // tax integration
               $taxRates = CRM_Core_PseudoConstant::getTaxRates();
               $this->_tax_rate = $taxRates[$this->_contribution_page['financial_type_id']];
             }
             return $this->_tax_rate;
-          }
         }
         return;
       
