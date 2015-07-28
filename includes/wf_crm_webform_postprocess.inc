@@ -1429,7 +1429,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Calculate totals
     $this->totalContribution = 0;
     foreach ($this->line_items as &$item) {
-      $this->totalContribution += $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
+      // tax integration
+      if (!is_null($this->tax_rate)) {
+        $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
+        $item['tax_amount'] = ($this->tax_rate / 100) * $item['line_total'];
+        $this->totalContribution += (1 + $this->tax_rate / 100) * $item['unit_price'] * (int) $item['qty'];
+      }
+      else {
+        $this->totalContribution += $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
+      }
     }
     return $this->totalContribution;
   }
@@ -1702,7 +1710,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['skipRecentView'] = $params['skipLineItem'] = 1;
     $params['contact_id'] = $this->ent['contact'][1]['id'];
     $params['total_amount'] = $this->totalContribution;
-    $params['description'] = t('Webform Payment') . ': ' . check_plain($this->node->title);
+
+    // tax integration
+    // TODO: needs review if this is changed in 4.6
+    if (!is_null($this->tax_rate)) {
+      $params['non_deductible_amount']  = $this->totalContribution;
+      $params['tax_amount'] = ($params['total_amount'] / ($this->tax_rate + 100)) * $this->tax_rate;
+    }
+    $params['description'] = t('Webform Payment: @title', array('@title' => $this->node->title));
     if (!isset($params['source'])) {
       $params['source'] = $this->settings['new_contact_source'];
     }
@@ -1749,6 +1764,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         'honor_type_id' => $contribution['honor_type_id'],
       ));
     }
+
+    // tax integration
+    if (!is_null($this->tax_rate)) {
+      $contributionResult = CRM_Contribute_BAO_Contribution::getValues(array('id' => $id), CRM_Core_DAO::$_nullArray, CRM_Core_DAO::$_nullArray);
+    }
+
     // Save line-items
     foreach ($this->line_items as &$item) {
       if (empty($item['line_total'])) {
@@ -1757,7 +1778,19 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (empty($item['entity_id'])) {
         $item['entity_id'] = $id;
       }
-      wf_civicrm_api('line_item', 'create', $item);
+      // tax integration
+      if (empty($item['contribution_id'])) {
+        $item['contribution_id'] = $id;
+      }
+      $line_result = wf_civicrm_api('line_item', 'create', $item);
+      $item['id'] = $line_result['id'];
+  
+      if (!is_null($this->tax_rate)) {
+        $lineItemRecord = json_decode(json_encode($item), FALSE);
+        // Add financial_item and entity_financial_trxn
+        $result = CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult);
+        $result = CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult, TRUE);
+      }
       // Create participant/membership payment records
       if (isset($item['membership_id']) || isset($item['participant_id'])) {
         $type = isset($item['participant_id']) ? 'participant' : 'membership';
@@ -1769,6 +1802,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     // Send receipt
     if (!empty($this->contribution_page['is_email_receipt'])) {
+      // tax integration
+      if (!is_null($this->tax_rate)) {
+        $template = CRM_Core_Smarty::singleton();
+        $template->assign('dataArray', array( "{$this->tax_rate}" => $this->tax_rate/100 ));
+      }
       wf_civicrm_api('contribution', 'sendconfirmation', array('id' => $id) + $this->contribution_page);
     }
   }

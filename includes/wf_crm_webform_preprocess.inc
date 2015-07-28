@@ -601,12 +601,35 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     }
     foreach ($this->line_items as $item) {
       $total += $item['line_total'];
-      $label = $item['label'] . ($item['qty'] > 1 ? " ({$item['qty']})" : '');
-      $rows[] = array(
-        'data' => array($label, CRM_Utils_Money::format($item['line_total'])),
-        'class' => array($item['element'], 'line-item'),
-        'data-amount' => $item['line_total'],
-      );
+      // tax integration
+      if (!is_null($this->tax_rate)) {
+        // Change the line item label to display the tax rate it contains
+        $taxSettings = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::CONTRIBUTE_PREFERENCES_NAME, 'contribution_invoice_settings');
+        
+        if ($taxSettings['tax_display_settings'] != 'Do_not_show') {
+          $item['label'] .= ' (including '.(int)$this->tax_rate.'% '.$taxSettings['tax_term'].')';
+        }
+      
+        // Add calculation for financial type that contains tax
+        $item['tax_amount'] = ($this->tax_rate / 100) * $item['line_total'];
+        $total += $item['line_total'] * (($this->tax_rate / 100) + 1);
+        $label = $item['label'] . ($item['qty'] > 1 ? " ({$item['qty']})" : '');
+        $rows[] = array(
+          'data' => array($label, CRM_Utils_Money::format($item['line_total'] * (($this->tax_rate / 100) + 1))),
+          'class' => array($item['element'], 'line-item'),
+          'data-amount' => $item['line_total'] * (($this->tax_rate / 100) + 1),
+          'data-tax' => (int)$this->tax_rate,
+        );
+      }else{
+        $total += $item['line_total'];
+      
+        $label = $item['label'] . ($item['qty'] > 1 ? " ({$item['qty']})" : '');
+        $rows[] = array(
+          'data' => array($label, CRM_Utils_Money::format($item['line_total'])),
+          'class' => array($item['element'], 'line-item'),
+          'data-amount' => $item['line_total'],
+        );
+      }
     }
     $rows[] = array(
       'data' => array(t('Total'), CRM_Utils_Money::format($total)),

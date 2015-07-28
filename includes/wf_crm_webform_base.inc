@@ -17,11 +17,11 @@ abstract class wf_crm_webform_base {
   protected $line_items = array();
   protected $membership_types = array();
 
-
   // No direct access - storage for variables fetched via __get
   private $_payment_processor;
   private $_contribution_page;
-
+  // tax integration
+  private $_tax_rate;
 
   /**
    * Magic method to retrieve otherwise inaccessible properties
@@ -44,6 +44,18 @@ abstract class wf_crm_webform_base {
           $this->_contribution_page = wf_civicrm_api('contribution_page', 'getsingle', array('id' => $contribution_page_id));
         }
         return $this->_contribution_page;
+        
+      case 'tax_rate':
+        $taxSettings = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::CONTRIBUTE_PREFERENCES_NAME, 'contribution_invoice_settings');
+        if (is_array($taxSettings) && !empty($taxSettings['invoicing'])) {
+            if ($this->contribution_page) {
+              // tax integration
+              $taxRates = CRM_Core_PseudoConstant::getTaxRates();
+              $this->_tax_rate = $taxRates[$this->_contribution_page['financial_type_id']];
+            }
+            return $this->_tax_rate;
+        }
+        return;
       
       default:
         throw new Exception('Unknown property');
