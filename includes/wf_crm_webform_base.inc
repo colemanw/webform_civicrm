@@ -514,9 +514,10 @@ abstract class wf_crm_webform_base {
    * @param string $fieldName
    * @param string|int $val: url or civi file id
    * @param string|null $entity: entity name
+   * @param int|null $n: entity id
    * @return array|null
    */
-  function getFileInfo($fieldName, $val, $entity = null) {
+  function getFileInfo($fieldName, $val, $entity = null, $n = null) {
     if (!$val) {
       return NULL;
     }
@@ -529,15 +530,8 @@ abstract class wf_crm_webform_base {
     }
     $file = wf_crm_apivalues('file', 'get', $val);
     $entity_id = '';
-    if ($entity && strpos($fieldName, 'custom_') === 0 ) {
-      switch ( $entity ) {
-      case 'contact':
-        $entity_id = $_GET['cid1'];
-        break;
-      case 'activity':
-        $entity_id = $_GET['activity1'];
-        break;
-      }
+    if ($entity && $n && ( strpos($fieldName, 'custom_') === 0 || strpos($fieldName, 'file_') === 0)) {
+      $entity_id = $this->ent[$entity][$n]['id'];
     }
     if (!empty($file[$val])) {
       return array(

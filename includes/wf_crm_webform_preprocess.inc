@@ -512,7 +512,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             }
             // Contact image & custom file fields
             if ($dt == 'File') {
-              $fileInfo = $this->getFileInfo($name, $val, $ent);
+              $fileInfo = $this->getFileInfo($name, $val, $ent, $n);
               if ($fileInfo && in_array($element['#type'], array('file', 'managed_file'))) {
                 $fileInfo = json_encode($fileInfo);
                 $js = "jQuery(function() {wfCivi.initFileField('$eid', $fileInfo)});";
