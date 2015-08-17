@@ -1058,6 +1058,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     $existing = $this->findMemberships($cid);
     foreach (wf_crm_aval($this->data, "membership:$c:membership", array()) as $n => $params) {
+      $membershipStatus = "";
+      $is_active = FALSE;
+      
       if (empty($params['membership_type_id'])) {
         continue;
       }
@@ -1071,6 +1074,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             $params['id'] = $mem['id'];
             // If we have an exact match, look no further
             if ($mem['membership_type_id'] == $params['membership_type_id']) {
+              $is_active = $mem['is_active'];
+              $membershipStatus = $mem['status'];
               break;
             }
           }
@@ -1090,7 +1095,16 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         // Pending payment status
         if ($this->contributionIsIncomplete && $this->getMembershipTypeField($params['membership_type_id'], 'minimum_fee')) {
           $params['is_pay_later'] = $this->contributionIsPayLater;
-          $params['status_id'] = 'Pending';
+          
+          if ($params['is_pay_later'] === TRUE) { // If user choose Pay later option.
+            if ($is_active == FALSE) {
+              $params['status_id'] = 'Pending';
+            } else {
+              $params['status_id'] = $membershipStatus;
+            }
+          }else{
+            $params['status_id'] = 'Pending';
+          }
         }
       }
       // Override status
