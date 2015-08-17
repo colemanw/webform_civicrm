@@ -1059,6 +1059,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $existing = $this->findMemberships($cid);
     foreach (wf_crm_aval($this->data, "membership:$c:membership", array()) as $n => $params) {
       $membershipStatus = "";
+      $membershipEndDate = "";
       $is_active = FALSE;
       
       if (empty($params['membership_type_id'])) {
@@ -1076,6 +1077,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             if ($mem['membership_type_id'] == $params['membership_type_id']) {
               $is_active = $mem['is_active'];
               $membershipStatus = $mem['status'];
+              $membershipEndDate = $mem['end_date'];
               break;
             }
           }
@@ -1101,6 +1103,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
               $params['status_id'] = 'Pending';
             } else {
               $params['status_id'] = $membershipStatus;
+              $params['end_date'] = $membershipEndDate;
             }
           }else{
             $params['status_id'] = 'Pending';
