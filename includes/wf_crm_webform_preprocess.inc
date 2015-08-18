@@ -459,8 +459,8 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         // Don't pick the same contact twice unless explicitly told to do so
         if (!$dupes_allowed) {
           foreach($this->ent['contact'] as $contact) {
-            if ($cid == $contact['id']) {
-              continue;
+            if (!empty($contact['id']) && $cid == $contact['id']) {
+              continue 2;
             }
           }
         }
