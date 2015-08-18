@@ -73,13 +73,11 @@ cj(function($) {
     else {
       var taxPara = 1;
       var tax = $lineItem.data('tax');
-      if (tax !== null) {
-        if (tax !== 0) {
-          taxPara = 1 + (tax / 100);
-        }
-        $('td+td', $lineItem).html(CRM.formatMoney(amount * taxPara));
-        $lineItem.data('amount', amount * taxPara);
+      if (tax && tax !== '0') {
+        taxPara = 1 + (tax / 100);
       }
+      $('td+td', $lineItem).html(CRM.formatMoney(amount * taxPara));
+      $lineItem.data('amount', amount * taxPara);
     }
     tally();
   }
