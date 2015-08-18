@@ -17,7 +17,7 @@ cj(function($) {
     var type = getPaymentProcessor();
     if (type && type != '0') {
       $('#billing-payment-block').load(setting.contributionCallback + '&type=' + type, function() {
-        $('#billing-payment-block').trigger('crmFormLoad');
+        $('#billing-payment-block').trigger('crmLoad').trigger('crmFormLoad');
         if (setting.billingSubmission) {
           $.each(setting.billingSubmission, function(key, val) {
             $('[name="' + key + '"]').val(val);
