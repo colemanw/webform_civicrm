@@ -142,6 +142,7 @@ var wfCivi = (function ($, D) {
         }
         var type = (n[6] === 'name') ? 'name' : n[4];
         if ($.inArray(type, toHide) >= 0) {
+          $(':input', $el).webformProp('disabled', op === 'hide');
           $el[op](speed, function() {$el[op];});
         }
       }
