@@ -1782,6 +1782,19 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (empty($item['contribution_id'])) {
         $item['contribution_id'] = $id;
       }
+      
+      if (!empty($item['membership_id'])) {
+                
+        // only update contribution_id in civicrm_line_item rather than creating a new record.
+        $item['entity_id'] = $item['membership_id'];
+        $lineItemId = wf_civicrm_api('LineItem', 'getsingle', array(
+                        'return' => "id",
+                        'entity_id' => $item['entity_id'],
+                        'entity_table' => 'civicrm_membership',
+                      ));
+        $item['id'] = $lineItemId['id'];
+      }
+      
       $line_result = wf_civicrm_api('line_item', 'create', $item);
       $item['id'] = $line_result['id'];
   
