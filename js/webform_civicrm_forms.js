@@ -199,7 +199,7 @@ var wfCivi = (function ($, D) {
           // Checkboxes & radios
           else {
             $.each($.makeArray(val), function(k, v) {
-              $(':input[value="'+v+'"]', $wrapper).attr('checked', 'checked').trigger('change', 'webform_civicrm:autofill');
+              $(':input[value="'+v+'"]', $wrapper).webformProp('checked', true).trigger('change', 'webform_civicrm:autofill');
             });
           }
         }
@@ -218,7 +218,7 @@ var wfCivi = (function ($, D) {
   }
 
   function populateStates(stateSelect, countryId) {
-    $(stateSelect).attr('disabled', 'disabled');
+    $(stateSelect).webformProp('disabled', true);
     if (stateProvinceCache[countryId]) {
       fillOptions(stateSelect, stateProvinceCache[countryId]);
     }
@@ -283,7 +283,7 @@ var wfCivi = (function ($, D) {
     var fields = $(item).parents('form.webform-client-form').find('[name*="['+(name.replace('master_id', ''))+'"]').not('[name*=location_type_id]').not('[name*=master_id]').not('[type="hidden"]');
     if (action === 'hide') {
       fields.parent().hide(speed, function() {$(this).css('display', 'none');});
-      fields.attr('disabled', 'disabled');
+      fields.webformProp('disabled', true);
     }
     else {
       fields.removeAttr('disabled');
