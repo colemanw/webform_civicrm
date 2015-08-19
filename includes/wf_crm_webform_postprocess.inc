@@ -1418,7 +1418,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                 'financial_type_id' => $this->getMembershipTypeField($type, 'financial_type_id'),
                 'label' => $this->getMembershipTypeField($type, 'name'),
                 'element' => "civicrm_{$c}_membership_{$n}",
-                // Seems strange to not be civicrm_membership, but this is how it's done in core
                 'entity_table' => 'civicrm_membership',
               );
             }
