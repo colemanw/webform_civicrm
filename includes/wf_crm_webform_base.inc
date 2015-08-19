@@ -547,7 +547,7 @@ abstract class wf_crm_webform_base {
    * @param int|null $n: entity id
    * @return array|null
    */
-  function getFileInfo($fieldName, $val, $entity = null, $n = null) {
+  function getFileInfo($fieldName, $val, $entity, $n) {
     if (!$val) {
       return NULL;
     }
@@ -560,14 +560,14 @@ abstract class wf_crm_webform_base {
     }
     $file = wf_crm_apivalues('file', 'get', $val);
     $entity_id = '';
-    if ($entity && $n && ( strpos($fieldName, 'custom_') === 0 || strpos($fieldName, 'file_') === 0)) {
+    if ($entity && $n && (strpos($fieldName, 'custom_') === 0 || strpos($fieldName, 'file_') === 0)) {
       $entity_id = $this->ent[$entity][$n]['id'];
     }
     if (!empty($file[$val])) {
       return array(
         'data_type' => 'File',
         'name' => CRM_Utils_File::cleanFileName($file[$val]['uri']),
-        'file_url'=> CRM_Utils_System::url('civicrm/file', "reset=1&id={$val}&eid={$entity_id}", true, true),
+        'file_url'=> CRM_Utils_System::url('civicrm/file', "reset=1&id={$val}&eid={$entity_id}", TRUE),
         'icon' => file_icon_url((object) array('filemime' => $file[$val]['mime_type'])),
       );
     }
