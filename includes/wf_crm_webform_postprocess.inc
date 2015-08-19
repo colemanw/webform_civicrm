@@ -1781,8 +1781,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // tax integration
       if (empty($item['contribution_id'])) {
         $item['contribution_id'] = $id;
-      }
-      
+      }   
       // Membership
       if (!empty($item['membership_id'])) {
         $item['entity_id'] = $item['membership_id'];
@@ -1790,9 +1789,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           'entity_table' => "civicrm_membership",
           'entity_id' => $item['entity_id'],
         ));
-
-        if($lineItemArray['count'] != 0){
-        
+        if($lineItemArray['count'] != 0){     
           // We only require first membership (signup) entry to make this work.
           $firstLineItem = array_shift($lineItemArray['values']);
           
@@ -1801,13 +1798,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           // Just need to upgrade contribution_id column in the record.
           if(!isset($firstLineItem['contribution_id'])){
             $item['id'] = $firstLineItem['id'];
-          }else{
-            // Membership renewal line item entry.
-            // These fields are NULL when renewal form is submitted.
-            // Below code will provide values as the Line Item record created by CiviCRM Core on Membership Renewal.
-            $item['price_field_id'] = $firstLineItem['price_field_id'];
-            $item['price_field_value_id'] = $firstLineItem['price_field_value_id'];
-          }           
+          }         
         }
       }
       
