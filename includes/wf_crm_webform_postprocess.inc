@@ -1435,8 +1435,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                 'financial_type_id' => $this->getMembershipTypeField($type, 'financial_type_id'),
                 'label' => $this->getMembershipTypeField($type, 'name'),
                 'element' => "civicrm_{$c}_membership_{$n}",
-                // Seems strange to not be civicrm_membership, but this is how it's done in core
-                'entity_table' => 'civicrm_contribution',
+                'entity_table' => 'civicrm_membership',
               );
             }
           }
@@ -1798,7 +1797,27 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // tax integration
       if (empty($item['contribution_id'])) {
         $item['contribution_id'] = $id;
+      }   
+      // Membership
+      if (!empty($item['membership_id'])) {
+        $item['entity_id'] = $item['membership_id'];
+        $lineItemArray = wf_civicrm_api('LineItem', 'get', array(
+          'entity_table' => "civicrm_membership",
+          'entity_id' => $item['entity_id'],
+        ));
+        if($lineItemArray['count'] != 0){     
+          // We only require first membership (signup) entry to make this work.
+          $firstLineItem = array_shift($lineItemArray['values']);
+          
+          // Membership signup line item entry.
+          // Line Item record is already present for membership by this stage.
+          // Just need to upgrade contribution_id column in the record.
+          if(!isset($firstLineItem['contribution_id'])){
+            $item['id'] = $firstLineItem['id'];
+          }         
+        }
       }
+      
       $line_result = wf_civicrm_api('line_item', 'create', $item);
       $item['id'] = $line_result['id'];
   
