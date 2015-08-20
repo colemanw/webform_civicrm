@@ -202,7 +202,8 @@ function _webform_edit_civicrm_contact($component) {
     '#id' => 'default-contact-id',
     '#parents' => array('extra', 'default_contact_id'),
   );
-  if ($cid = $component['extra']['default_contact_id']) {
+  $cid = $component['extra']['default_contact_id'];
+  if ($cid) {
     if ($name = wf_crm_contact_access($component, array('check_permissions' => 1), $cid)) {
       $form['defaults']['default_contact_id']['#default_value'] = $cid;
       $form['defaults']['default_contact_id']['#attributes'] = array(
