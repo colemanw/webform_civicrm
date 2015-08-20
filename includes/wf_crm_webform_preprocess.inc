@@ -417,7 +417,8 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         if ($cid === 0) {
           $this->ent['contact'][$c]['id'] = $cid;
         }
-        else {
+        // This property may not exist in components created before v4.12 so default to TRUE if not set
+        elseif (wf_crm_aval($component['extra'], 'allow_url_autofill', TRUE, TRUE)) {
           if (wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
             $this->ent['contact'][$c]['id'] = $cid;
           }

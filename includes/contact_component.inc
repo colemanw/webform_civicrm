@@ -36,6 +36,7 @@ function _webform_defaults_civicrm_contact() {
       'default' => '',
       'default_contact_id' => '',
       'default_relationship' => '',
+      'allow_url_autofill' => TRUE,
       'dupes_allowed' => FALSE,
       'filters' => array(
         'contact_sub_type' => 0,
@@ -162,7 +163,7 @@ function _webform_edit_civicrm_contact($component) {
   $form['defaults'] = array(
     '#type' => 'fieldset',
     '#title' => t('Default value'),
-    '#description' => t('Should the form be pre-populated with an existing contact?<ul><li>This setting will be overridden if a contact id is passed in the url, i.e. !url</li><li>Any filters you have set will restrict this default.</li><li>If more than one contact meets the criteria, the first match will be picked. If multiple existing contact fields exist on the webform, each will select a different contact.</li></ul>', array('!url' => "cid$c=123")),
+    '#description' => t('Should the form be pre-populated with an existing contact?<ul><li>Any filters set below will restrict this default.</li><li>If more than one contact meets the criteria, the first match will be picked. If multiple existing contact fields exist on the webform, each will select a different contact.</li></ul>'),
     '#collapsible' => TRUE,
   );
   $form['defaults']['default'] = array(
@@ -210,13 +211,20 @@ function _webform_edit_civicrm_contact($component) {
       );
     }
   }
+  $form['defaults']['allow_url_autofill'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use contact id from URL'),
+    '#default_value' => $component['extra']['allow_url_autofill'],
+    '#parents' => array('extra', 'allow_url_autofill'),
+    '#description' => t('If the url contains e.g. %arg, it will be used to pre-populate this contact (takes precidence over other default values).', array('%arg' => "cid$c=123")),
+  );
   if ($c > 1) {
     $form['defaults']['dupes_allowed'] = array(
       '#type' => 'checkbox',
       '#title' => t('Allow Duplicate Autofill'),
       '#default_value' => $component['extra']['dupes_allowed'],
       '#parents' => array('extra', 'dupes_allowed'),
-      '#description' => t('Check this box to allow a contact to be selected even if they already autofilled a prior field on the form. (For example, if contact 1 was autofilled with Bob Smith, should this field also be allowed to select Bob Smith?)'),
+      '#description' => t('Check this box to allow a contact to be selected even if they already autofilled a prior field on the form. (For example, if contact 1 was autofilled with Bob Smith, should this field also be allowed to select Bob Smith or should it pick a different contact?)'),
     );
   }
   $form['defaults']['randomize'] = array(
