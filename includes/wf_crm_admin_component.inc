@@ -62,7 +62,9 @@ class wf_crm_admin_component {
         ++$this->form['position']['weight']['#default_value'];
         array_unshift($this->form['#submit'], 'wf_crm_contact_clone');
         if (empty($this->form_state['input'])) {
-          drupal_set_message(t('Press the button below to clone this contact. A new CiviCRM contact will be added to the form with all the settings for !contact. All fields from within this fieldset will be cloned (be careful, that may include non-contact fields).', array('!contact' => wf_crm_contact_label($i, $this->data))), 'status', FALSE);
+          $types = wf_crm_get_contact_types();
+          $type = $types[0][$this->data['contact'][$i]['contact'][1]['contact_type']];
+          drupal_set_message(t('Press the "Clone Contact" button below and a new @type will be added to the form with all the settings for !contact. All fields within this fieldset will be cloned (be careful, that may include non-contact fields).', array('@type' => $type, '!contact' => wf_crm_contact_label($i, $this->data))), 'status', FALSE);
         }
       }
     }
