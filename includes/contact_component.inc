@@ -371,6 +371,9 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
           $js = "wfCivi.existingInit(field, $c, {$node->nid}, $callback_path, toHide);";
         }
         $element['#theme_wrappers'] = array('static_contact_element');
+        if ($component['required']) {
+          $element['#element_validate'] = array('wf_crm_contact_component_required');
+        }
       }
   }
   // Add inline javascript
@@ -820,7 +823,7 @@ function theme_static_contact_element($vars) {
   if ($type == 'civicrm_contact' && !empty($element['#attributes']['data-civicrm-name'])) {
 
     if ($component['extra']['title_display'] != 'none') {
-      $output .= ' <label for="' . $element['#id'] . '">' . check_plain($element['#title']) . "</label>\n";
+      $output .= theme('form_element_label', array('element' => $element));
     }
 
     $output .= '<ul class="token-input-list"><li class="token-input-token"><p>' . $element['#attributes']['data-civicrm-name'] . "</p></li></ul>\n";
@@ -890,4 +893,16 @@ function wf_crm_tokeninput_path() {
     }
   }
   return $ret;
+}
+
+/**
+ * Validation callback
+ *
+ * @param array $element
+ * @param array $form_state
+ */
+function wf_crm_contact_component_required($element, &$form_state) {
+  if (empty($element['#value'])) {
+    form_error($element, t('!name field is required.', array('!name' => $element['#title'])));
+  }
 }
