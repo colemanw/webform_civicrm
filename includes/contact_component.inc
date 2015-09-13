@@ -330,11 +330,11 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
         $element['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/token-input.css';
         $settings = '{
           queryParam: "str",
-          hintText: "' . $component['extra']['search_prompt'] . '",
-          noResultsText: "' . $component['extra']['none_prompt'] . '",
-          searchingText: "' . t('Searching...') . '",
+          hintText: ' . json_encode($component['extra']['search_prompt']) . ',
+          noResultsText: ' . json_encode($component['extra']['none_prompt']) . ',
+          searchingText: ' . json_encode(t('Searching...')) . ',
           tokenLimit: 1,
-          onAdd: function(item) {wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, item.id,' . $ajax . ');},
+          onAdd: function(item) {wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, item.id, ' . $ajax . ');},
           onDelete: function(item) {wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, "", false);},
           prePopulate: prep
         }';
