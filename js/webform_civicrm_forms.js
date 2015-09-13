@@ -49,12 +49,7 @@ var wfCivi = (function ($, D) {
   pub.existingInit = function (field, num, nid, path, toHide) {
     var cid, ret = null;
     if (field.length) {
-      if (field.is('select')) {
-        cid = $('option:selected', field).val();
-      }
-      else {
-        cid = field.attr('defaultValue');
-      }
+      cid = field.val();
       if (!cid || cid.charAt(0) !== '-') {
         resetFields(num, nid, false, 'hide', toHide);
       }
