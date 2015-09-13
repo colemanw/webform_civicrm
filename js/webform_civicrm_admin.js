@@ -50,15 +50,14 @@ var wfCiviAdmin = (function ($, D) {
 
   pub.participantConditional = function (fs) {
     var info = {
-      roleid:$(fs + ' .participant_role_id').val(),
+      roleid:$('.participant_role_id', fs).val(),
       eventid:'0',
       eventtype:$('#edit-reg-options-event-type').val()
     };
-    var events = [];
-    var i = 0;
-    $(fs + ' .participant_event_id :selected').each(function(a, selected) {
+    var i, events = [];
+    $('.participant_event_id :selected', fs).each(function(a, selected) {
       if ($(selected).val() !== 'create_civicrm_webform_element') {
-        events[i++] = $(selected).val();
+        events.push($(selected).val());
       }
     });
     for (i in events) {
@@ -74,7 +73,7 @@ var wfCiviAdmin = (function ($, D) {
       }
     }
 
-    $(fs + ' fieldset.extends-condition').each(function() {
+    $('fieldset.extends-condition', fs).each(function() {
       var hide = true;
       var classes = $(this).attr('class').split(' ');
       for (var cl in classes) {
@@ -82,21 +81,14 @@ var wfCiviAdmin = (function ($, D) {
         var type = c[0];
         if (type === 'roleid' || type === 'eventtype' || type === 'eventid') {
           for (var cid in c) {
-            if (c[cid] === info[type]) {
+            if (c[cid] === info[type] || ($.isArray(info[type]) && $.inArray(c[cid], info[type]) !== -1)) {
               hide = false;
             }
           }
           break;
         }
       }
-      if (hide) {
-        $(this).find(':checkbox').prop('disabled', true);
-        $(this).hide(300);
-      }
-      else {
-        $(this).find(':checkbox').prop('disabled', false);
-        $(this).show(300);
-      }
+      $(this)[hide? 'hide' : 'show'](300).find(':checkbox').prop('disabled', hide);
     });
   };
 

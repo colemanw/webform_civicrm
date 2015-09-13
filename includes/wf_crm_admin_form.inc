@@ -842,7 +842,7 @@ class wf_crm_admin_form {
               }
               if ($fid == 'participant_event_id' || $fid == 'participant_role_id') {
                 $item['#attributes']['onchange'] = "wfCiviAdmin.participantConditional('#$fs');";
-                $item['#attributes']['class'] = array($fid);
+                $item['#attributes']['class'][] = $fid;
                 $$fid = wf_crm_aval($item, '#default_value');
               }
               $this->form['participant']['participants'][$n]['div'][$fs][$sid][$id] = $item;

@@ -1005,6 +1005,7 @@ function wf_crm_get_fields($var = 'fields') {
         'type' => 'select',
         'expose_list' => TRUE,
         'value' => '1',
+        'extra' => array('multiple' => 1, 'required' => 1),
       );
       $fields['participant_status_id'] = array(
         'name' => t('Registration Status'),
