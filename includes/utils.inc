@@ -399,6 +399,12 @@ function wf_crm_get_contact_relationship_types($type_a, $type_b, $sub_type_a, $s
   return $ret;
 }
 
+/**
+ * List dedupe rules available for a contact type
+ *
+ * @param string $contact_type
+ * @return array
+ */
 function wf_crm_get_matching_rules($contact_type) {
   static $rules;
   $contact_type = ucfirst($contact_type);
@@ -455,7 +461,7 @@ function wf_crm_enabled_fields($node, $submission = NULL, $show_all = FALSE) {
  * @param string $var
  *   Name of variable to return: fields, tokens, or sets
  *
- * @return array - one of:
+ * @return array
  *   fields: The CiviCRM contact fields this module supports
  *   tokens: Available tokens keyed to field ids
  *   sets: Info on fieldsets (entities)
@@ -1477,7 +1483,8 @@ function wf_civicrm_api($entity, $operation, $params) {
     $bt = debug_backtrace();
     $n = $bt[0]['function'] == 'wf_civicrm_api' ? 1 : 0;
     $file = explode('/', $bt[$n]['file']);
-    watchdog('webform_civicrm', 'The CiviCRM "%function" API returned the error: "%msg" when called by function "!fn" on line !line of !file with parameters: "!params"',
+    watchdog('webform_civicrm',
+      'The CiviCRM "%function" API returned the error: "%msg" when called by function "!fn" on line !line of !file with parameters: "!params"',
       array(
         '%function' => $entity . ' ' . $operation,
         '%msg' => $result['error_message'],
@@ -1564,6 +1571,7 @@ function wf_crm_required_contact_fields($contact_type) {
 
 /**
  * These are the contact location fields this module supports
+ *
  * @return array
  */
 function wf_crm_location_fields() {
@@ -1571,7 +1579,11 @@ function wf_crm_location_fields() {
 }
 
 /**
- * Returns the children of a webform component
+ * Returns a count of children of a webform component
+ *
+ * @param int $nid
+ * @param int $id
+ * @return int
  */
 function _wf_crm_child_components($nid, $id) {
   return db_select('webform_component', 'c')
