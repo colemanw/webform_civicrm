@@ -1229,12 +1229,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           // Save case roles
           foreach ($params as $param => $val) {
             if ($val && strpos($param, 'role_') === 0) {
-              wf_civicrm_api('relationship', 'create', array(
-                'relationship_type_id' => substr($param, 5),
-                'contact_id_a' => $params['client_id'],
-                'contact_id_b' => $val,
-                'case_id' => $result['id'],
-              ));
+              foreach ((array) $params['client_id'] as $client) {
+                wf_civicrm_api('relationship', 'create', array(
+                  'relationship_type_id' => substr($param, 5),
+                  'contact_id_a' => $client,
+                  'contact_id_b' => $val,
+                  'case_id' => $result['id'],
+                ));
+              }
             }
           }
         }
