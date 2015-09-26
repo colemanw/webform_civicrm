@@ -471,8 +471,11 @@ abstract class wf_crm_webform_base {
   }
 
   /**
+   * Find a case matching criteria
+   *
    * Normally we could do this by passing filters into the api, but legacy case api doesn't support them
-   * So instead we fetch every case for the contact and loop through them
+   * So instead we fetch every case for the contact and loop through them to test against filters.
+   *
    * @param array|int $cid
    * @param array $filters
    * @return null|array
@@ -481,11 +484,15 @@ abstract class wf_crm_webform_base {
     $case = NULL;
     foreach (wf_crm_apivalues('case', 'get', array('client_id' => $cid)) as $item) {
       if (empty($item['is_deleted'])) {
+        $match = TRUE;
         foreach (array_filter($filters) as $filter => $value) {
-          if (array_intersect((array)$item[$filter], (array)$value)) {
-            // Note: this loop has no break on purpose - this way we find the most recent case instead of stopping at the first
-            $case = $item;
+          if (!array_intersect((array)$item[$filter], (array)$value)) {
+            $match = FALSE;
           }
+        }
+        // Note: this loop has no break on purpose - this way we find the most recent case instead of stopping at the first
+        if ($match) {
+          $case = $item;
         }
       }
     }
