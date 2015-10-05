@@ -1707,7 +1707,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $url = url('node/' . $this->node->nid, array('absolute' => TRUE));
     }
     elseif ($url == '<confirmation>') {
-      $url = url("node/{$this->node->nid}/done", array('query' => array('sid' => $this->submission->sid), 'absolute' => TRUE));
+      $query = array('sid' => $this->submission->sid);
+      // Add token if user is not authenticated, inline with 'webform_client_form_submit()'
+      if (user_is_anonymous()) {
+        $query['token'] = webform_get_submission_access_token($this->submission);
+      }
+      $url = url("node/{$this->node->nid}/done", array('query' => $query, 'absolute' => TRUE));
     }
     else {
       $parsed = webform_replace_url_tokens($url, $this->node, $this->submission);
