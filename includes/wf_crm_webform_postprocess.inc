@@ -139,7 +139,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       unset($contact['contact'][1]['employer_id']);
 
       // Create new contact
-      if (empty($this->ent['contact'][$c]['id'])) {
+      if (empty($this->ent['contact'][$c]['id']) || $this->ent['contact'][$c]['id'] < 0 ) {
         $this->ent['contact'][$c]['id'] = $this->createContact($contact);
       }
       // Update existing contact
