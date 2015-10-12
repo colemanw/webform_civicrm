@@ -264,7 +264,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         }
         elseif ($event['full']) {
           if (!empty($reg['show_remaining'])) {
-            $this->setMessage('<em>' . $event['title'] . '</em>: ' . $event['full_message'], 'warning');
+            $this->setMessage('<em>' . check_plain($event['title']) . '</em>: ' . check_plain($event['full_message']), 'warning');
           }
         }
         else {
@@ -860,7 +860,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       if (is_array($value)) {
         $value = implode(', ', $value);
       }
-      $values[] = implode(' &amp; ', wf_crm_explode_multivalue_str($value));
+      $values[] = implode(' &amp; ', wf_crm_explode_multivalue_str(check_plain($value)));
       $t = "[$t]";
     }
     return str_ireplace($tokens, $values, $str);

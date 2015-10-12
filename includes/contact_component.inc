@@ -330,8 +330,8 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
         $element['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/token-input.css';
         $settings = '{
           queryParam: "str",
-          hintText: ' . json_encode($component['extra']['search_prompt']) . ',
-          noResultsText: ' . json_encode($component['extra']['none_prompt']) . ',
+          hintText: ' . json_encode(filter_xss($component['extra']['search_prompt'])) . ',
+          noResultsText: ' . json_encode(filter_xss($component['extra']['none_prompt'])) . ',
           searchingText: ' . json_encode(t('Searching...')) . ',
           tokenLimit: 1,
           onAdd: function(item) {wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, item.id, ' . $ajax . ');},
@@ -355,7 +355,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
       }
       // Display empty option unless there are no results
       if (!$component['extra']['allow_create'] || count($element['#options']) > 1) {
-        $element['#empty_option'] = $component['extra'][$element['#options'] ? 'search_prompt' : 'none_prompt'];
+        $element['#empty_option'] = filter_xss($component['extra'][$element['#options'] ? 'search_prompt' : 'none_prompt']);
       }
       break;
 
@@ -438,7 +438,7 @@ function wf_crm_fill_contact_value($node, $component, &$element) {
     }
   }
   if (empty($cid) && $element['#type'] == 'hidden' && $component['extra']['none_prompt']) {
-    $element['#attributes']['data-civicrm-name'] = $component['extra']['none_prompt'];
+    $element['#attributes']['data-civicrm-name'] = filter_xss($component['extra']['none_prompt']);
   }
 }
 
@@ -543,13 +543,13 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
     }
     if (count($ret) < $limit && $component['extra']['allow_create']) {
       // HTML hack to get prompt to show up different than search results
-      $ret[] = array('id' => "-$str", 'name' => '<em><i>' . $component['extra']['none_prompt'] . '</i></em>');
+      $ret[] = array('id' => "-$str", 'name' => '<em><i>' . filter_xss($component['extra']['none_prompt']) . '</i></em>');
     }
   }
   // Select results
   else {
     if ($component['extra']['allow_create']) {
-      $ret['-'] = $component['extra']['none_prompt'];
+      $ret['-'] = filter_xss($component['extra']['none_prompt']);
     }
     foreach (wf_crm_aval($result, 'values', array()) as $contact) {
       if ($name = wf_crm_format_contact($contact, $display)) {
@@ -595,7 +595,7 @@ function wf_crm_contact_access($component, $filters, $cid) {
   $cid = "$cid";
   list(, $c, ) = explode('_', $component['form_key'], 3);
   if ($cid && $cid[0] === '-' && !empty($component['extra']['allow_create']) && !empty($component['extra']['none_prompt'])) {
-    return $component['extra']['none_prompt'];
+    return filter_xss($component['extra']['none_prompt']);
   }
   if (!is_numeric($cid)) {
     return FALSE;
@@ -638,7 +638,7 @@ function wf_crm_format_contact($contact, $display_fields) {
   $display = array();
   foreach ($display_fields as $field) {
     if ($field && !empty($contact[$field])) {
-      $display[] = $contact[$field];
+      $display[] = check_plain($contact[$field]);
     }
   }
   return implode(' :: ', $display);

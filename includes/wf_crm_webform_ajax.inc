@@ -77,7 +77,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
       if ($_GET['load'] == 'name') {
         if ($_GET['cid'][0] === '-') {
           // HTML hack to get prompt to show up different than search results
-          $data = '<em><i>' . $component['extra']['none_prompt'] . '</i></em>';
+          $data = '<em><i>' . filter_xss($component['extra']['none_prompt']) . '</i></em>';
         }
         else {
           $data = $name;
