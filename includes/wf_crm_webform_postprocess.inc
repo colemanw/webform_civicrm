@@ -502,7 +502,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @return int
    */
   private function verifyExistingContact($cid, $fid) {
-    if ($cid && is_numeric($cid) && !empty($this->enabled[$fid])) {
+    if (wf_crm_is_positive($cid) && !empty($this->enabled[$fid])) {
       module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
       $component = $this->getComponent($fid);
       $filters = wf_crm_search_filters($this->node, $component);
