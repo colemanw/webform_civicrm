@@ -8,7 +8,7 @@
 module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_base');
 
 class wf_crm_webform_ajax extends wf_crm_webform_base {
-  
+
   function __construct() {
     civicrm_initialize();
   }

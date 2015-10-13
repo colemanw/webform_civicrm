@@ -61,7 +61,7 @@ class wf_crm_admin_help {
   }
 
   static function contact_source() {
-     print '<p>' .
+    print '<p>' .
       t('This field will override the "Source Label" in "Additional Options".') .
       '</p>';
   }
@@ -94,7 +94,7 @@ class wf_crm_admin_help {
   static function contribution_contribution_page_id() {
     print '<p>' .
       t("It is recommended to <a !link>create a new contribution page</a> solely for webform use. When configuring the page, most options will be irrelevant (such as profiles, premiums, widgets, recurring, etc.). Only the following need to be configured:",
-      array('!link' => 'target="_blank" href="' . url('civicrm/admin/contribute/add', array('query' => array('reset' => 1, 'action' => 'add'))) . '"')) .
+        array('!link' => 'target="_blank" href="' . url('civicrm/admin/contribute/add', array('query' => array('reset' => 1, 'action' => 'add'))) . '"')) .
       '</p><ul>' .
       '<li>' . t('Title: Displayed on the webform.') . '</li>' .
       '<li>' . t('Financial Type: Controls overall contribution type.') . '</li>' .
@@ -116,7 +116,7 @@ class wf_crm_admin_help {
   static function contribution_total_amount() {
     print '<p>' .
       t('This amount will be in addition to any paid events and memberships.') .
-     '</p>';
+      '</p>';
     self::fee();
   }
 
@@ -125,16 +125,16 @@ class wf_crm_admin_help {
       t('Price for this event. If multiple events or participants are registered with this field, the amount will be multiplied per-person, per-event.') .
       '</p><p>' .
       t('Note that any event prices you have configured in CiviCRM are not imported into the Webform - you will need to reconfigure them here.') .
-     '</p>';
+      '</p>';
     self::fee();
   }
 
   static function fee() {
     print '<p>' .
       t('Once added to the webform, this field can be configured in a number of ways by changing its settings.') .
-     '</p><strong>' .
-     t('Possible Widgets:') .
-     '</strong><ul>' .
+      '</p><strong>' .
+      t('Possible Widgets:') .
+      '</strong><ul>' .
       '<li>' . t('Number (default): Allow the user to enter an amount, optionally constrained by min, max, and increments.') . '</li>' .
       '<li>' . t('Hidden: Set the amount without giving the user a choice.') . '</li>' .
       '<li>' . t('Select/Radios: Allow the user to choose from one of several options.') . '</li>' .
@@ -203,7 +203,7 @@ class wf_crm_admin_help {
       '</p>'.'<br /><p>'.t('Example for "Register all":') .
       '<br /><code>' . url("node", array('absolute' => TRUE)) . '/{node.nid}?event1={event1.event_id},{event2.event_id}</code></p><br />'.
       t('Example for "Register separately":') .
-      '<br /><code>' . url("node", array('absolute' => TRUE)) . 
+      '<br /><code>' . url("node", array('absolute' => TRUE)) .
       '/{node.nid}?c1event1={event1.event_id},{event2.event_id}&amp;c2event1={event3.event_id}</code></p>';
   }
 
@@ -226,23 +226,23 @@ class wf_crm_admin_help {
   static function membership_membership_type_id() {
     print '<p>' .
       t('Fee will be calculated automatically based on selected membership type and number of terms chosen. A contribution page must be enabled to collect fees.') .
-     '</p>';
+      '</p>';
   }
 
   static function membership_status_id() {
     print '<p>' .
       t('If number of terms is enabled, status can be calculated automatically based on new/renewal status and payment.') .
-     '</p>';
+      '</p>';
   }
 
   static function membership_num_terms() {
     print '<p>' .
       t('Membership dates will be filled automatically by selecting terms. This can be overridden by entering dates manually.') .
-     '</p><p>' .
+      '</p><p>' .
       t('Note: Number of terms is required to calculate membership fees for paid memberships.') .
-     '</p><p>'.
+      '</p><p>'.
       t('If you choose to enter dates manually, enabling membership fee field will provide the price. Otherwise the membership will be free') .
-     '</p>';
+      '</p>';
   }
 
   static function membership_fee_amount() {
@@ -250,7 +250,7 @@ class wf_crm_admin_help {
       t('Price for this membership per term. If this field is enabled, the default minimum membership fee from CiviCRM membership type settings will not be loaded.') .
       '</p><p>' .
       t('Note that if this field is enabled, the default minimum membership fee from CiviCRM membership type settings will not be loaded.') .
-     '</p>';
+      '</p>';
     self::fee();
   }
 

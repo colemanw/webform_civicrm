@@ -8,7 +8,7 @@
  */
 
 /**
- * The versions of CiviCRM and WebForm. Min is >=.  Max is <. FALSE = no MAX  
+ * The versions of CiviCRM and WebForm. Min is >=.  Max is <. FALSE = no MAX
  */
 define('WEBFROM_CIVICRM_CIVICRM_VERSION_MIN', '4.4');
 define('WEBFROM_CIVICRM_CIVICRM_VERSION_MAX', FALSE);
@@ -80,7 +80,7 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
 
   // Alter front-end of webforms
   elseif (strpos($form_id, 'webform_client_form_') !== FALSE
-  && !empty($form['#node']->webform_civicrm)) {
+    && !empty($form['#node']->webform_civicrm)) {
     form_load_include($form_state, 'inc', 'webform_civicrm', 'includes/wf_crm_webform_preprocess');
     $processor = new wf_crm_webform_preprocess($form, $form_state);
     $processor->alterForm();
@@ -98,7 +98,7 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
 
 /**
  * Implements hook_node_load().
- * 
+ *
  * @param array $nodes
  */
 function webform_civicrm_node_load($nodes, $types) {
@@ -143,13 +143,13 @@ function webform_civicrm_node_insert($node) {
 function webform_civicrm_node_delete($node) {
   if (!empty($node->webform)) {
     db_delete('webform_civicrm_forms')
-    ->condition('nid', $node->nid)
-    ->execute();
+      ->condition('nid', $node->nid)
+      ->execute();
     // Submissions have already been deleted from webform_submissions table
     // So we'll do the opposite of a join to find them
     db_delete('webform_civicrm_submissions')
-    ->where('sid NOT IN (SELECT sid FROM {webform_submissions})')
-    ->execute();
+      ->where('sid NOT IN (SELECT sid FROM {webform_submissions})')
+      ->execute();
   }
 }
 
@@ -233,8 +233,8 @@ function webform_civicrm_webform_submission_update($node, $submission) {
  */
 function webform_civicrm_webform_submission_delete($node, $submission) {
   db_delete('webform_civicrm_submissions')
-  ->condition('sid', $submission->sid)
-  ->execute();
+    ->condition('sid', $submission->sid)
+    ->execute();
 }
 
 /**
@@ -331,9 +331,9 @@ function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = N
   if (!empty($new_id) && !empty($old_id) && $type == 'sqls') {
     // Update civicrm submissions table
     db_update('webform_civicrm_submissions')
-    ->expression('contact_id', 'REPLACE(contact_id, :old, :new)', array(':old' => '-' . $old_id . '-', ':new' => '-' . $new_id . '-'))
-    ->condition('contact_id', '%-' . $old_id . '-%', 'LIKE')
-    ->execute();
+      ->expression('contact_id', 'REPLACE(contact_id, :old, :new)', array(':old' => '-' . $old_id . '-', ':new' => '-' . $new_id . '-'))
+      ->condition('contact_id', '%-' . $old_id . '-%', 'LIKE')
+      ->execute();
     // Update contact reference field data
     db_query("UPDATE {webform_submitted_data} d, {webform_component} c SET d.data = :new
       WHERE d.data = :old AND d.cid = c.cid AND d.nid = c.nid AND c.type = 'civicrm_contact'",
@@ -544,21 +544,21 @@ function _webform_civicrm_status() {
 
   $path = drupal_get_path('module', 'civicrm') . '/civicrm.info';
   $civicrm = drupal_parse_info_file($path);
-  
+
   $path = drupal_get_path('module', 'webform') . '/webform.info';
   $webform = drupal_parse_info_file($path);
   //strip the 7.x- from version so version_compare works
   $webform['version'] = str_replace('7.x-', '', $webform['version']);
-    
-  if (version_compare($civicrm['version'], WEBFROM_CIVICRM_CIVICRM_VERSION_MIN, '>=') && 
-  version_compare($webform['version'], WEBFROM_CIVICRM_WEBFORM_VERSION, '>=')) {
+
+  if (version_compare($civicrm['version'], WEBFROM_CIVICRM_CIVICRM_VERSION_MIN, '>=') &&
+    version_compare($webform['version'], WEBFROM_CIVICRM_WEBFORM_VERSION, '>=')) {
     $status['webform_civicrm'] = TRUE;
   }
-  
+
   // if there is a max version of CiviCRM supported, check it too
   if (WEBFROM_CIVICRM_CIVICRM_VERSION_MAX && version_compare($civicrm['version'], WEBFROM_CIVICRM_CIVICRM_VERSION_MAX, '>=')) {
     $status['webform_civicrm'] = FALSE;
   }
-  
+
   return $status;
 }

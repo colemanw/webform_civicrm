@@ -54,7 +54,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     }
     // Early return if the form (or page) was already submitted
     if (wf_crm_aval($this->form_state, 'triggering_element:#id') == 'edit-previous'
-    || (empty($this->form_state['rebuild']) && !empty($this->form_state['storage']))) {
+      || (empty($this->form_state['rebuild']) && !empty($this->form_state['storage']))) {
       $this->fillForm($this->form['submitted']);
       return;
     }
@@ -185,7 +185,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       $page_id = $this->data['contribution'][1]['contribution'][1]['contribution_page_id'];
       $contributionCallbackQuery = array('reset' => 1, 'id' => $page_id, 'qfKey' => $this->getQfKey(), 'snippet' => 4);
       if (!empty($this->data['contribution'][1]['contribution'][1]['is_test'])) {
-         // RM: This is needed in order for CiviCRM to know that this is a 'test' (i.e. 'preview' action in CiviCRM) transaction - otherwise, CiviCRM defaults to 'live' and returns the payment form with public key for the live payment processor!
+        // RM: This is needed in order for CiviCRM to know that this is a 'test' (i.e. 'preview' action in CiviCRM) transaction - otherwise, CiviCRM defaults to 'live' and returns the payment form with public key for the live payment processor!
         $contributionCallbackQuery['action'] = CRM_Core_Action::description(CRM_Core_Action::PREVIEW);
       }
       $js_vars['contributionCallback'] = url('civicrm/contribute/transact', array('query' => $contributionCallbackQuery, 'alias' => TRUE));
@@ -351,7 +351,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           $urlParam = "event$e";
         }
         else {
-          $urlParam = "c$c"."event$e";
+          $urlParam = "c{$c}event{$e}";
         }
         foreach (explode(',', wf_crm_aval($_GET, $urlParam)) as $key => $value) {
           if (isset($eids[$value])){
@@ -389,7 +389,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       for ($n = 1; $n <= $this->data['membership'][$c]['number_of_membership']; ++$n) {
         $fid = "civicrm_{$c}_membership_{$n}_membership_membership_type_id";
         if (empty($info['membership'][$c]['membership'][$n]) && ($this->getData($fid) == $type ||
-          array_key_exists($type, $this->getExposedOptions($fid)))
+            array_key_exists($type, $this->getExposedOptions($fid)))
         ) {
           $this->info['membership'][$c]['membership'][$n] = $membership;
           break;
@@ -407,7 +407,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    */
   private function findContact($component) {
     module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
-    list(, $c, ) = explode('_', $component['form_key'], 3);
+    list(, $c,) = explode('_', $component['form_key'], 3);
     $filters = wf_crm_search_filters($this->node, $component);
     // Start with the url - that trumps everything.
     if (isset($_GET["cid$c"]) || ($c == 1 && isset($_GET['cid']))) {
@@ -473,7 +473,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       }
     }
   }
-  
+
   /**
    * Recursively walk through form array and set properties of CiviCRM fields
    *
@@ -528,13 +528,13 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           }
           // If the user has already entered a value for this field, don't change it
           if (isset($this->info[$ent][$c][$table][$n][$name])
-          && !(isset($component['cid']) && isset($submitted[$component['cid']]))) {
+            && !(isset($component['cid']) && isset($submitted[$component['cid']]))) {
             $val = $this->info[$ent][$c][$table][$n][$name];
             if (($element['#type'] == 'checkboxes' || !empty($element['#multiple'])) && !is_array($val)) {
               $val = wf_crm_explode_multivalue_str($val);
             }
             if ($element['#type'] != 'checkboxes' && $element['#type'] != 'date'
-            && empty($element['#multiple']) && is_array($val)) {
+              && empty($element['#multiple']) && is_array($val)) {
               // If there's more than one value for a non-multi field, pick the most appropriate
               if (!empty($element['#options'])) {
                 foreach ($element['#options'] as $k => $v) {
@@ -606,11 +606,11 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       if (!is_null($this->tax_rate)) {
         // Change the line item label to display the tax rate it contains
         $taxSettings = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::CONTRIBUTE_PREFERENCES_NAME, 'contribution_invoice_settings');
-        
+
         if ($taxSettings['tax_display_settings'] != 'Do_not_show') {
           $item['label'] .= ' (' . t('includes !rate @tax', array('!rate' => $this->tax_rate . '%', '@tax' => $taxSettings['tax_term'])) . ')';
         }
-      
+
         // Add calculation for financial type that contains tax
         $item['tax_amount'] = ($this->tax_rate / 100) * $item['line_total'];
         $total += $item['line_total'] * (($this->tax_rate / 100) + 1);
@@ -623,7 +623,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         );
       }else{
         $total += $item['line_total'];
-      
+
         $label = $item['label'] . ($item['qty'] > 1 ? " ({$item['qty']})" : '');
         $rows[] = array(
           'data' => array($label, CRM_Utils_Money::format($item['line_total'])),
@@ -739,7 +739,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       }
     }
   }
-  
+
   /**
    * Find grant ids based on url input or "existing grant" settings
    */

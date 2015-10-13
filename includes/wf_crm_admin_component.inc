@@ -260,18 +260,18 @@ class wf_crm_admin_component {
       );
       $this->form['civicrm_options_fieldset']['intro'] = array(
         '#markup' => '<p><div class="live-options-hide">' .
-        t('Drag the arrows to re-order these options. Click the "enabled" checkbox to show/remove an item from the form. Set the label as you want it to appear on the form.') .
-        '</div><div class="live-options-show">' .
-        t('You cannot control the presentation of live options. They will be loaded from the CiviCRM database every time the form is displayed.') .
-        '</div><div>' .
-        t('Check the "default" box for an option to be selected by default when a user views the form.') .
-        '</div></p>',
+          t('Drag the arrows to re-order these options. Click the "enabled" checkbox to show/remove an item from the form. Set the label as you want it to appear on the form.') .
+          '</div><div class="live-options-show">' .
+          t('You cannot control the presentation of live options. They will be loaded from the CiviCRM database every time the form is displayed.') .
+          '</div><div>' .
+          t('Check the "default" box for an option to be selected by default when a user views the form.') .
+          '</div></p>',
       );
       // Special instructions for contact reference fields
       if (wf_crm_aval($this->field, 'data_type') == 'ContactReference') {
         $this->form['civicrm_options_fieldset']['intro'] = array(
           '#markup' => '<p>' . t('This is a contact reference field. It points to another contact on the webform. You can configure how that contact is presented by editing their "Existing Contact" field.') . '</p>' .
-          '<p>' . t("Note: In most cases it is not desirable to have the selection of webform contacts exposed to the end-user so you may wish to set this field's value on the CiviCRM tab instead.") . '</p>',
+            '<p>' . t("Note: In most cases it is not desirable to have the selection of webform contacts exposed to the end-user so you may wish to set this field's value on the CiviCRM tab instead.") . '</p>',
         );
       }
       $options_selected = wf_crm_str2array($this->component['extra']['items']);

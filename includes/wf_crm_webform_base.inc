@@ -37,26 +37,26 @@ abstract class wf_crm_webform_base {
           $this->_payment_processor = wf_civicrm_api('payment_processor', 'getsingle', array('id' => $payment_processor_id));
         }
         return $this->_payment_processor;
-      
+
       case 'contribution_page':
         $contribution_page_id = wf_crm_aval($this->data, 'contribution:1:contribution:1:contribution_page_id');
         if ($contribution_page_id && !$this->_contribution_page) {
           $this->_contribution_page = wf_civicrm_api('contribution_page', 'getsingle', array('id' => $contribution_page_id));
         }
         return $this->_contribution_page;
-        
+
       case 'tax_rate':
         $taxSettings = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::CONTRIBUTE_PREFERENCES_NAME, 'contribution_invoice_settings');
         if (is_array($taxSettings) && !empty($taxSettings['invoicing'])) {
-            if ($this->contribution_page) {
-              // tax integration
-              $taxRates = CRM_Core_PseudoConstant::getTaxRates();
-              $this->_tax_rate = $taxRates[$this->_contribution_page['financial_type_id']];
-            }
-            return $this->_tax_rate;
+          if ($this->contribution_page) {
+            // tax integration
+            $taxRates = CRM_Core_PseudoConstant::getTaxRates();
+            $this->_tax_rate = $taxRates[$this->_contribution_page['financial_type_id']];
+          }
+          return $this->_tax_rate;
         }
         return;
-      
+
       default:
         throw new Exception('Unknown property');
     }
@@ -242,16 +242,16 @@ abstract class wf_crm_webform_base {
    */
   protected function getExposedOptions($field_key, $exclude = array()) {
     $field = $this->getComponent($field_key);
-    
+
     if ($field && $field['type'] == 'hidden') {
       // Fetch live options
       $exposed = wf_crm_field_options($field, 'live_options', $this->data);
       foreach ($exclude as $i) {
-       unset($exposed[$i]);
+        unset($exposed[$i]);
       }
       return $exposed;
     }
-    
+
     if ($field && $field['type'] == 'select') {
       // Fetch static options
       if (empty($field['extra']['civicrm_live_options'])) {
@@ -618,4 +618,3 @@ abstract class wf_crm_webform_base {
   }
 
 }
-

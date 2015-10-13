@@ -221,7 +221,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
       // Save activities
       if (!empty($this->data['activity']['number_of_activity'])) {
-       $this->processActivities();
+        $this->processActivities();
       }
       // Save grants
       if (isset($this->data['grant']['number_of_grant'])) {
@@ -1061,7 +1061,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $membershipStatus = "";
       $membershipEndDate = "";
       $is_active = FALSE;
-      
+
       if (empty($params['membership_type_id'])) {
         continue;
       }
@@ -1097,7 +1097,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         // Pending payment status
         if ($this->contributionIsIncomplete && $this->getMembershipTypeField($params['membership_type_id'], 'minimum_fee')) {
           $params['is_pay_later'] = $this->contributionIsPayLater;
-          
+
           if ($params['is_pay_later'] === TRUE) { // If user choose Pay later option.
             if ($is_active == FALSE) {
               $params['status_id'] = 'Pending';
@@ -1801,7 +1801,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // tax integration
       if (empty($item['contribution_id'])) {
         $item['contribution_id'] = $id;
-      }   
+      }
       // Membership
       if (!empty($item['membership_id'])) {
         $item['entity_id'] = $item['membership_id'];
@@ -1809,22 +1809,22 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           'entity_table' => "civicrm_membership",
           'entity_id' => $item['entity_id'],
         ));
-        if($lineItemArray['count'] != 0){     
+        if ($lineItemArray['count'] != 0) {
           // We only require first membership (signup) entry to make this work.
           $firstLineItem = array_shift($lineItemArray['values']);
-          
+
           // Membership signup line item entry.
           // Line Item record is already present for membership by this stage.
           // Just need to upgrade contribution_id column in the record.
-          if(!isset($firstLineItem['contribution_id'])){
+          if (!isset($firstLineItem['contribution_id'])) {
             $item['id'] = $firstLineItem['id'];
-          }         
+          }
         }
       }
-      
+
       $line_result = wf_civicrm_api('line_item', 'create', $item);
       $item['id'] = $line_result['id'];
-  
+
       $lineItemRecord = json_decode(json_encode($item), FALSE);
       // Add financial_item and entity_financial_trxn
       $result = CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult);

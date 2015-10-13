@@ -806,11 +806,11 @@ function theme_static_contact_element($vars) {
   $parents = str_replace('_', '-', implode('--', array_slice($element['#parents'], $nested_level)));
 
   $wrapper_classes = array(
-   'form-item',
-   'webform-component',
-   'webform-component-' . $type,
-   'static',
-   'webform-component--' . $parents,
+    'form-item',
+    'webform-component',
+    'webform-component-' . $type,
+    'static',
+    'webform-component--' . $parents,
   );
 
   if ($component['extra']['title_display'] === 'inline') {

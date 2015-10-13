@@ -547,7 +547,7 @@ class wf_crm_admin_form {
       }
     }
   }
-  
+
   /**
    * Case settings
    * FIXME: This is exactly the same code as buildGrantTab. More utilities and less boilerplate needed.
@@ -1010,8 +1010,8 @@ class wf_crm_admin_form {
       '#group' => 'webform_civicrm',
       '#attributes' => array('class' => array('civi-icon-prefs')),
       '#description' => '<p>' .
-      t('To have this form auto-filled for anonymous users, enable the "Existing Contact" field for !contact and send the following link from CiviMail:', array('!contact' => wf_crm_contact_label(1, $this->data, TRUE))) .
-      '<br /><code>' . url("node/{$this->node->nid}", array('absolute' => TRUE, 'query' => array('cid1' => ''))) . '{contact.contact_id}&amp;{contact.checksum}</code></p>',
+        t('To have this form auto-filled for anonymous users, enable the "Existing Contact" field for !contact and send the following link from CiviMail:', array('!contact' => wf_crm_contact_label(1, $this->data, TRUE))) .
+        '<br /><code>' . url("node/{$this->node->nid}", array('absolute' => TRUE, 'query' => array('cid1' => ''))) . '{contact.contact_id}&amp;{contact.checksum}</code></p>',
     );
     $this->form['options']['create_fieldsets'] = array(
       '#type' => 'checkbox',
@@ -1140,7 +1140,7 @@ class wf_crm_admin_form {
       'civicrm_1_contact_1_contact_existing' => 'create_civicrm_webform_element',
     );
   }
-  
+
   /**
    * Build a field item for the admin form
    *
@@ -1300,7 +1300,7 @@ class wf_crm_admin_form {
     </div>',
     );
   }
-  
+
   /**
    * Build $this->data array for webform settings; called while rebuilding or post-processing the admin form.
    */
@@ -1833,7 +1833,7 @@ class wf_crm_admin_form {
       ->condition('nid', $this->node->nid)
       ->execute();
   }
-  
+
   private function contactRefOptions($exclude = NULL) {
     $ret = array();
     foreach ($this->data['contact'] as $num => $contact) {
