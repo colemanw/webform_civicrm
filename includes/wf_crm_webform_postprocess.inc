@@ -240,6 +240,20 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     if (empty($this->submission->is_draft) && !empty($this->ent['contribution'][1]['id']) && $this->contributionIsIncomplete && !$this->contributionIsPayLater) {
       $this->submitIPNPayment();
     }
+
+    // Send receipt
+    // TODO: In pay later case, pay later message template has not been used.
+    if ( !empty($this->contribution_page['is_email_receipt']) 
+      && (!$this->contributionIsIncomplete || $this->contributionIsPayLater) ) {
+        // tax integration
+        if (!is_null($this->tax_rate)) {
+          $template = CRM_Core_Smarty::singleton();
+          $template->assign('dataArray', array( "{$this->tax_rate}" => $this->tax_rate/100 ));
+        }      
+        $contribute_id = $this->ent['contribution'][1]['id'];
+        $params = array('id' => $contribute_id) + $this->contribution_page;
+        wf_civicrm_api('contribution', 'sendconfirmation', $params); 
+    }
   }
 
   /**
@@ -1839,15 +1853,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           'contribution_id' => $id,
         ));
       }
-    }
-    // Send receipt
-    if (!empty($this->contribution_page['is_email_receipt'])) {
-      // tax integration
-      if (!is_null($this->tax_rate)) {
-        $template = CRM_Core_Smarty::singleton();
-        $template->assign('dataArray', array( "{$this->tax_rate}" => $this->tax_rate/100 ));
-      }
-      wf_civicrm_api('contribution', 'sendconfirmation', array('id' => $id) + $this->contribution_page);
     }
   }
 
