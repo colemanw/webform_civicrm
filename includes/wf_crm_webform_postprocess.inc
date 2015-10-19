@@ -256,6 +256,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $template = CRM_Core_Smarty::singleton();
       $template->assign('dataArray', array( "{$this->tax_rate}" => $this->tax_rate/100 ));
     }
+    if ($this->contributionIsIncomplete) {
+      $template = CRM_Core_Smarty::singleton();
+      $template->assign('is_pay_later', 1);
+    }
     $contribute_id = $this->ent['contribution'][1]['id'];
     wf_civicrm_api('contribution', 'sendconfirmation', array('id' => $contribute_id) + $this->contribution_page);
   }
