@@ -235,7 +235,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     drupal_write_record('webform_civicrm_submissions', $record, $this->update);
 
     // Calling an IPN payment processor will result in a redirect so this happens after everything else
-    if (empty($this->submission->is_draft) && !empty($this->ent['contribution'][1]['id']) && $this->contributionIsIncomplete && !$this->contributionIsPayLater) {
+    if (empty($this->submission->is_draft) && !empty($this->ent['contribution'][1]['id']) && $this->isIpnPayment()) {
       $this->submitIPNPayment();
     }
       // Send receipt 
@@ -1509,6 +1509,20 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
+   * @return bool
+   */
+  private function isIpnPayment() {
+    if ($this->payment_processor) {
+      // In mixed mode (where there is e.g. a PayPal button + credit card fields) the cc field will contain a placeholder if the button was clicked
+      if ($this->payment_processor['billing_mode'] == self::BILLING_MODE_MIXED) {
+        return wf_crm_aval($_POST, 'credit_card_number') === 'express';
+      }
+      return $this->payment_processor['billing_mode'] != self::BILLING_MODE_LIVE;
+    }
+    return FALSE;
+  }
+
+  /**
    * Normalize and validate billing input
    * @return bool
    */
@@ -1672,7 +1686,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function createDeferredPayment() {
     $this->contributionIsIncomplete = TRUE;
-    $this->contributionIsPayLater = empty($this->data['contribution'][1]['contribution'][1]['payment_processor_id']);
+    $this->contributionIsPayLater = !$this->isIpnPayment();
     $params = $this->contributionParams();
     $params['contribution_status_id'] = 'Pending';
     $params['is_pay_later'] = $this->contributionIsPayLater;

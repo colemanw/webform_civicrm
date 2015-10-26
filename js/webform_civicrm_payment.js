@@ -28,7 +28,7 @@ cj(function($) {
         if ($expressButton.length) {
           $expressButton.removeClass('crm-form-submit').click(function(e) {
             e.preventDefault();
-            $('input[name=credit_card_number]', '#billing-payment-block').val('express');
+            $('input[name=credit_card_number]', '#billing-payment-block').val('express').prop('readonly', true);
             $(this).closest('form').find('input.webform-submit.button-primary').click();
           })
         }
