@@ -1354,15 +1354,19 @@ function wf_crm_user_cid($id = NULL, $type = 'uf') {
   // Lookup current domain for multisite support
   static $domain = 0;
   if (!$domain) {
-    $domain = wf_civicrm_api('domain', 'get', array('current_domain' => 1, 'return.id' => 1));
+    $domain = wf_civicrm_api('domain', 'get', array('current_domain' => 1, 'return' => 'id'));
     $domain = wf_crm_aval($domain, 'id', 1);
   }
-  $result = wf_civicrm_api('uf_match', 'getsingle', array($type . '_id' => $id, 'domain_id' => $domain));
-  if (empty($result['is_error'])) {
+  $result = wf_crm_apivalues('uf_match', 'get', array(
+    $type . '_id' => $id,
+    'domain_id' => $domain,
+    'sequential' => 1,
+  ));
+  if ($result) {
     if (!empty($user_lookup)) {
-      $current_user = $result['contact_id'];
+      $current_user = $result[0]['contact_id'];
     }
-    return $type == 'uf' ? $result['contact_id'] : $result['uf_id'];
+    return $type == 'uf' ? $result[0]['contact_id'] : $result[0]['uf_id'];
   }
 }
 
