@@ -1118,17 +1118,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         unset($params['status_id']);
         // Pending payment status
         if ($this->contributionIsIncomplete && $this->getMembershipTypeField($params['membership_type_id'], 'minimum_fee')) {
-          $params['is_pay_later'] = $this->contributionIsPayLater;
-
-          if ($params['is_pay_later'] === TRUE) { // If user choose Pay later option.
-            if ($is_active == FALSE) {
-              $params['status_id'] = 'Pending';
-            } else {
-              $params['status_id'] = $membershipStatus;
-              $params['end_date'] = $membershipEndDate;
-            }
-          }else{
+          if ($is_active == FALSE) {
             $params['status_id'] = 'Pending';
+          } else {
+            $params['status_id'] = $membershipStatus;
+            $params['end_date'] = $membershipEndDate;
           }
         }
       }
