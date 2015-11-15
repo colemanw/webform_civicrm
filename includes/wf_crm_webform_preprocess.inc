@@ -529,21 +529,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           // If the user has already entered a value for this field, don't change it
           if (isset($this->info[$ent][$c][$table][$n][$name])
             && !(isset($component['cid']) && isset($submitted[$component['cid']]))) {
-            // pick phone number and email according to selecte location type
-            if (($table == 'phone' && $name == 'phone')
-              || ($table == 'email' && $name == 'email')) {
-              $location_type_id = $this->node->webform_civicrm['data']['contact'][$c][$name][$n]['location_type_id'];
-              $cDetails = $this->info[$ent][$c][$table];
-              foreach($cDetails as $cDetail) {
-                if($cDetail['location_type_id'] == $location_type_id) {
-                  $val = $cDetail[$name];
-                  break;
-                }
-              }
-            }
-            else {
-              $val = $this->info[$ent][$c][$table][$n][$name];
-            }
+            $val = $this->info[$ent][$c][$table][$n][$name];
             if (($element['#type'] == 'checkboxes' || !empty($element['#multiple'])) && !is_array($val)) {
               $val = wf_crm_explode_multivalue_str($val);
             }

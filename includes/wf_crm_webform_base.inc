@@ -85,6 +85,10 @@ abstract class wf_crm_webform_base {
           $params['options']['sort'] = 'is_primary DESC';
         }
         $result = wf_civicrm_api($ent, 'get', $params);
+        // Handle location field sorting
+        if(in_array($ent, wf_crm_location_fields())){
+          $result['values'] = $this->reorderByLocationType($ent, $result['values']);
+        }
         if (!empty($result['values'])) {
           // Index array from 1 instead of 0
           $result = array_merge(array(0), array_values($result['values']));
@@ -183,6 +187,36 @@ abstract class wf_crm_webform_base {
       }
     }
     return $info;
+  }
+
+  /**
+   * Reorder returned results according to settings chosen in wf_civicrm backend
+   *
+   * @param string $ent
+   * @param array $values
+   * @return array $reorderedArray
+   * @todo Handle user-select case
+   */
+  protected function reorderByLocationType($ent, $values = array()){
+    $reorderedArray = array();
+    // For every location field setting
+    foreach ($this->settings['data']['contact'] as $setting) {
+      // For every Entity
+      foreach($setting[$ent] as $e){
+        // For every result row
+        foreach($values as $key => $value){
+          if((in_array($ent, array('address', 'email')) && $value['location_type_id'] == $e['location_type_id'])
+            ||
+            ($value['location_type_id'] == $e['location_type_id'] && $value[$ent.'_type_id'] == $e[$ent.'_type_id'])     
+            ){
+              $reorderedArray[$key] = $value;
+              unset($values[$key]);
+              break;
+          }
+        }
+      }
+    }
+    return $reorderedArray;
   }
 
   /**
