@@ -87,7 +87,7 @@ abstract class wf_crm_webform_base {
         $result = wf_civicrm_api($ent, 'get', $params);
         // Handle location field sorting
         if(in_array($ent, wf_crm_location_fields())){
-          $result['values'] = $this->reorderByLocationType($ent, $result['values']);
+          $result['values'] = $this->reorderByLocationType($c, $ent, $result['values']);
         }
         if (!empty($result['values'])) {
           // Index array from 1 instead of 0
@@ -192,27 +192,24 @@ abstract class wf_crm_webform_base {
   /**
    * Reorder returned results according to settings chosen in wf_civicrm backend
    *
+   * @param integer $c
    * @param string $ent
    * @param array $values
    * @return array $reorderedArray
    * @todo Handle user-select case
    */
-  protected function reorderByLocationType($ent, $values = array()){
+  protected function reorderByLocationType($c, $ent, $values = array()){
     $reorderedArray = array();
     // For every location field setting
-    foreach ($this->settings['data']['contact'] as $setting) {
-      // For every Entity
-      foreach($setting[$ent] as $e){
-        // For every result row
-        foreach($values as $key => $value){
-          if((in_array($ent, array('address', 'email')) && $value['location_type_id'] == $e['location_type_id'])
-            ||
-            ($value['location_type_id'] == $e['location_type_id'] && $value[$ent.'_type_id'] == $e[$ent.'_type_id'])     
-            ){
-              $reorderedArray[$key] = $value;
-              unset($values[$key]);
-              break;
-          }
+    foreach ($this->settings['data']['contact'][$c][$ent] as $setting) {
+      foreach($values as $key => $value){
+        if((in_array($ent, array('address', 'email')) && $value['location_type_id'] == $setting['location_type_id'])
+          ||
+          ($value['location_type_id'] == $setting['location_type_id'] && $value[$ent.'_type_id'] == $setting[$ent.'_type_id'])
+          ){
+          $reorderedArray[$key] = $value;
+          unset($values[$key]);
+          break;
         }
       }
     }
