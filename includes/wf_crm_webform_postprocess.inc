@@ -1648,7 +1648,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * This happens during form validation and sets a form error if unsuccessful
    */
   private function submitLivePayment() {
-    $result = wf_civicrm_api('contribution', 'transact', $this->contributionParams());
+    $params = $this->contributionParams();
+    $params['invoice_id'] = $this->data['contribution'][1]['contribution'][1]['invoiceID'] = md5(uniqid(rand(), TRUE));
+    $result = wf_civicrm_api('contribution', 'transact', $params);
     if (empty($result['id'])) {
       if (!empty($result['error_message'])) {
         form_set_error('contribution', $result['error_message']);
