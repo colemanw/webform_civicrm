@@ -116,9 +116,11 @@ abstract class wf_crm_webform_base {
                 $address['state_province_id'] = wf_crm_state_abbr($address['state_province_id']);
               }
               // Load custom data
-              $custom = $this->getCustomData($address['id'], 'address');
-              if (!empty($custom['address'])) {
-                $address += $custom['address'][1];
+              if(isset($address['id'])){
+                $custom = $this->getCustomData($address['id'], 'address');
+                if (!empty($custom['address'])) {
+                  $address += $custom['address'][1];
+                }
               }
             }
           }
@@ -200,17 +202,25 @@ abstract class wf_crm_webform_base {
    */
   protected function reorderByLocationType($c, $ent, $values = array()){
     $reorderedArray = array();
-    // For every location field setting
+    // For every entity setting per contact
     foreach ($this->settings['data']['contact'][$c][$ent] as $setting) {
+      $valueFound = false;
       foreach($values as $key => $value){
         if((in_array($ent, array('address', 'email')) && $value['location_type_id'] == $setting['location_type_id'])
-          ||
-          ($value['location_type_id'] == $setting['location_type_id'] && $value[$ent.'_type_id'] == $setting[$ent.'_type_id'])
+           ||
+          ($value['location_type_id'] == $setting['location_type_id'] && $value[$ent.'_type_id'] == $setting[$ent.'_type_id'])     
           ){
           $reorderedArray[$key] = $value;
+          $valueFound = true;
           unset($values[$key]);
           break;
         }
+      }
+
+      // always keep number of returned values equal to chosen settings
+      // if value is not found then set an empty array
+      if(!$valueFound){
+        $reorderedArray[] = array();
       }
     }
     return $reorderedArray;
