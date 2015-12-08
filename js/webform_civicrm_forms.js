@@ -47,9 +47,12 @@ var wfCivi = (function ($, D) {
   };
 
   pub.existingInit = function (field, num, nid, path, toHide) {
-    var cid, ret = null;
+    var cid = field.val(),
+      ret = null;
     if (field.length) {
-      cid = field.val();
+      if (field.is('[type=hidden]') && !cid) {
+        return;
+      }
       if (!cid || cid.charAt(0) !== '-') {
         resetFields(num, nid, false, 'hide', toHide);
       }
