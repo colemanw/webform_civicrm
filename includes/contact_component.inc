@@ -31,6 +31,8 @@ function _webform_defaults_civicrm_contact() {
       'randomize' => 0,
       'description' => '',
       'hide_fields' => array(),
+      'hide_method' => 'hide',
+      'no_hide_blank' => FALSE,
       'attributes' => array(),
       'private' => FALSE,
       'default' => '',
@@ -138,14 +140,32 @@ function _webform_edit_civicrm_contact($component) {
     '#parents' => array('extra', 'show_hidden_contact'),
     '#weight' => -5,
   );
-  $form['display']['hide_fields'] = array(
+  $form['field_locking'] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#title' => t('Field Locking'),
+    '#description' => t('Prevent editing of existing contact data.'),
+  );
+  $form['field_locking']['hide_fields'] = array(
     '#type' => 'select',
     '#multiple' => TRUE,
-    '#title' => t('Fields to Hide'),
+    '#title' => t('Fields to Lock'),
     '#default_value' => $component['extra']['hide_fields'],
     '#options' => array('' => '- ' . t('None') . ' -') + wf_crm_contact_fields($node, $c),
-    '#weight' => -4,
     '#parents' => array('extra', 'hide_fields'),
+  );
+  $form['field_locking']['hide_method'] = array(
+    '#type' => 'select',
+    '#title' => t('Locked fields should be'),
+    '#default_value' => $component['extra']['hide_method'],
+    '#options' => array('hide' => t('Hidden'), 'disable' => t('Disabled')),
+    '#parents' => array('extra', 'hide_method'),
+  );
+  $form['field_locking']['no_hide_blank'] = array(
+    '#type' => 'checkbox',
+    '#title' => t("Don't lock fields that are empty"),
+    '#default_value' => $component['extra']['no_hide_blank'],
+    '#parents' => array('extra', 'no_hide_blank'),
   );
   $form['validation']['unique'] = array(
     '#type' => 'checkbox',
@@ -297,12 +317,16 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
   civicrm_initialize();
   list(, $c, ) = explode('_', $component['form_key'], 3);
   $hide_fields = array_filter($component['extra']['hide_fields']);
+  $hide_method = wf_crm_aval($component['extra'], 'hide_method', 'hide');
+  $no_hide_blank = (int) wf_crm_aval($component['extra'], 'no_hide_blank', 0);
   $js = '';
   $element = array(
     '#type' => $component['extra']['widget'] == 'autocomplete' ? 'textfield' : $component['extra']['widget'],
     '#weight' => $component['weight'],
     '#attributes' => $component['extra']['attributes'],
   );
+  $element['#attributes']['data-hide-method'] = $hide_method;
+  $element['#attributes']['data-no-hide-blank'] = $no_hide_blank;
   if ($component['extra']['widget'] != 'hidden' || $component['extra']['show_hidden_contact']) {
     $element += array(
       '#title' => $filter ? webform_filter_xss($component['name']) : $component['name'],
@@ -314,8 +338,10 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
     );
     // See if there are any fields to fetch via ajax
     $other_fields = wf_crm_contact_fields($node, $c);
-    foreach ($hide_fields as $h) {
-      unset($other_fields[$h]);
+    if ($hide_method == 'hide') {
+      foreach ($hide_fields as $h) {
+        unset($other_fields[$h]);
+      }
     }
     $ajax = $other_fields ? 'true' : 'false';
   }
@@ -334,8 +360,8 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
           noResultsText: ' . json_encode(filter_xss($component['extra']['none_prompt'])) . ',
           searchingText: ' . json_encode(t('Searching...')) . ',
           tokenLimit: 1,
-          onAdd: function(item) {wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, item.id, ' . $ajax . ');},
-          onDelete: function(item) {wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, "", false);},
+          onAdd: function(item) {wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, "' . $hide_method . '", ' . $no_hide_blank . ', item.id, ' . $ajax . ');},
+          onDelete: function(item) {wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, "' . $hide_method . '", ' . $no_hide_blank . ', "", false);},
           prePopulate: prep
         }';
         $js = "var prep = wfCivi.existingInit(field, $c, {$node->nid}, $callback_path, toHide);
@@ -349,7 +375,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
         $filters = wf_crm_search_filters($node, $component);
         $element['#options'] = wf_crm_contact_search($node, $component, $filters);
         $js = "field.change(function() {
-                  wfCivi.existingSelect($c, {$node->nid}, $callback_path, toHide, \$(this).val(), $ajax);
+                  wfCivi.existingSelect($c, {$node->nid}, $callback_path, toHide, '$hide_method', $no_hide_blank, \$(this).val(), $ajax);
                 });
                 wfCivi.existingInit(field, $c, {$node->nid}, $callback_path, toHide);";
       }

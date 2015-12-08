@@ -95,7 +95,9 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
           }
           $this->ent['contact'][$c]['id'] = (int) $_GET['cid'];
         }
-        $contact = $this->loadContact($c, $component['extra']['hide_fields']);
+        // Redact fields if they are to be hidden unconditionally, otherwise they are needed on the client side
+        $to_hide = (wf_crm_aval($component['extra'], 'hide_method', 'hide') == 'hide' && !wf_crm_aval($component['extra'], 'no_hide_blank')) ? $component['extra']['hide_fields'] : array();
+        $contact = $this->loadContact($c, $to_hide);
         $states = $countries = array();
         // Format as json array
         foreach ($this->enabled as $fid => $f) {
@@ -103,7 +105,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
           if ($i == $c && $ent == 'contact' && isset($contact[$table][$n][$field])) {
             $type = ($table == 'contact' && strpos($field, 'name')) ? 'name' : $table;
             // Exclude blank and hidden fields
-            if ($contact[$table][$n][$field] !== '' && $contact[$table][$n][$field] !== array() && !in_array($type, $component['extra']['hide_fields'])) {
+            if ($contact[$table][$n][$field] !== '' && $contact[$table][$n][$field] !== array() && !in_array($type, $to_hide)) {
               $dataType = wf_crm_aval(wf_crm_get_field("{$table}_$field"), 'data_type');
               $val = array('val' => $contact[$table][$n][$field]);
               // Retrieve file info

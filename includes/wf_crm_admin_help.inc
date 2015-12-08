@@ -379,7 +379,7 @@ class wf_crm_admin_help {
 
   static function contact_component_hide_fields() {
     print '<p>' .
-      t('When an existing contact is selected, which fields should the user be allowed to edit and which should be hidden?') .
+      t('When an existing contact is selected or prepopulated, which fields should the user not be allowed to edit?') .
       '</p><p>' .
       t("This is useful for preventing changes to existing data.") .
       '</p>';

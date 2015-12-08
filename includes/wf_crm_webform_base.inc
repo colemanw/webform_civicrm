@@ -16,6 +16,7 @@ abstract class wf_crm_webform_base {
   protected $events = array();
   protected $line_items = array();
   protected $membership_types = array();
+  protected $loadedContacts = array();
 
   // No direct access - storage for variables fetched via __get
   private $_payment_processor;
@@ -74,6 +75,9 @@ abstract class wf_crm_webform_base {
    * @return array of contact data
    */
   protected function loadContact($c, $exclude = array()) {
+    if (!empty($this->loadedContacts[$c])) {
+      return $this->loadedContacts[$c];
+    }
     $info = array();
     $cid = $this->ent['contact'][$c]['id'];
     $contact = $this->data['contact'][$c];
@@ -182,6 +186,7 @@ abstract class wf_crm_webform_base {
         }
       }
     }
+    $this->loadedContacts[$c] = $info;
     return $info;
   }
 

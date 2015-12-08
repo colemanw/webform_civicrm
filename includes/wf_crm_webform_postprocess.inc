@@ -2038,7 +2038,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (!$existing_contact_val[0] || is_numeric($existing_contact_val[0])) {
         $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
         if (in_array($type, $component['extra']['hide_fields'])) {
-          return TRUE;
+          // With the no_hide_blank setting we must load the contact to determine if the field was hidden
+          if (wf_crm_aval($component['extra'], 'no_hide_blank')) {
+            $value = wf_crm_aval($this->loadContact($c), "$table:$n:$name");
+            return !(!$value && !is_numeric($value));
+          }
+          else {
+            return TRUE;
+          }
         }
       }
     }

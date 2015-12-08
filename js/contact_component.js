@@ -63,6 +63,10 @@ var wfCiviContact = (function ($, D) {
         }
       }).change();
 
+      $('select[name*=hide_fields]', context).once('wf-civi').change(function() {
+        $(this).parent().siblings('.form-item').toggle(!!$(this).val());
+      }).change();
+
       // Warning if enforce permissions is disabled
       $('#webform-component-edit-form', context).once('wf-civi').submit(function() {
         if (!$('input[name="extra[filters][check_permissions]"]').is(':checked') && $('input[name="extra[allow_url_autofill]"]').is(':checked')) {

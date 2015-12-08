@@ -10,9 +10,9 @@ var wfCivi = (function ($, D) {
    */
   var pub = {};
 
-  pub.existingSelect = function (num, nid, path, toHide, cid, fetch) {
+  pub.existingSelect = function (num, nid, path, toHide, hideOrDisable, showEmpty, cid, fetch) {
     if (cid.charAt(0) === '-') {
-      resetFields(num, nid, true, 'show', toHide, 500);
+      resetFields(num, nid, true, 'show', toHide, hideOrDisable, showEmpty, 500);
       // Fill name fields with name typed
       if (cid.length > 1) {
         var names = {first: '', last: ''};
@@ -33,7 +33,7 @@ var wfCivi = (function ($, D) {
       }
       return;
     }
-    resetFields(num, nid, true, 'hide', toHide, 500);
+    resetFields(num, nid, true, 'hide', toHide, hideOrDisable, showEmpty, 500);
     if (cid && fetch) {
       $('.webform-client-form-'+nid).addClass('contact-loading');
       var params = getCids(nid);
@@ -41,26 +41,29 @@ var wfCivi = (function ($, D) {
       params.cid = cid;
       $.getJSON(path, params, function(data) {
         fillValues(data, nid);
+        resetFields(num, nid, false, 'hide', toHide, hideOrDisable, showEmpty);
         $('.webform-client-form-'+nid).removeClass('contact-loading');
       });
     }
   };
 
-  pub.existingInit = function (field, num, nid, path, toHide) {
-    var cid = field.val(),
-      ret = null;
-    if (field.length) {
-      if (field.is('[type=hidden]') && !cid) {
+  pub.existingInit = function ($field, num, nid, path, toHide) {
+    var cid = $field.val(),
+      ret = null,
+      hideOrDisable = $field.attr('data-hide-method'),
+      showEmpty = $field.attr('data-no-hide-blank') == '1';
+    if ($field.length) {
+      if ($field.is('[type=hidden]') && !cid) {
         return;
       }
       if (!cid || cid.charAt(0) !== '-') {
-        resetFields(num, nid, false, 'hide', toHide);
+        resetFields(num, nid, false, 'hide', toHide, hideOrDisable, showEmpty);
       }
       if (cid) {
-        if (cid == field.attr('data-civicrm-id')) {
-          ret = [{id: cid, name: field.attr('data-civicrm-name')}];
+        if (cid == $field.attr('data-civicrm-id')) {
+          ret = [{id: cid, name: $field.attr('data-civicrm-name')}];
         }
-        else if (field.is(':text')) {
+        else if ($field.is(':text')) {
           // If for some reason the data is not embedded, fetch it from the server
           $.ajax({
             url: path,
@@ -112,7 +115,7 @@ var wfCivi = (function ($, D) {
 
   var stateProvinceCache = {};
 
-  function resetFields(num, nid, clear, op, toHide, speed) {
+  function resetFields(num, nid, clear, op, toHide, hideOrDisable, showEmpty, speed) {
     $('div.form-item.webform-component[class*="--civicrm-'+num+'-contact-"]', '.webform-client-form-'+nid).each(function() {
       var $el = $(this);
       var name = getFieldNameFromClass($el);
@@ -140,11 +143,27 @@ var wfCivi = (function ($, D) {
         }
         var type = (n[6] === 'name') ? 'name' : n[4];
         if ($.inArray(type, toHide) >= 0) {
-          $(':input', $el).webformProp('disabled', op === 'hide');
-          $el[op](speed, function() {$el[op];});
+          var fn = (op === 'hide' && (!showEmpty || !isFormItemBlank($el))) ? 'hide' : 'show';
+          $(':input', $el).webformProp('disabled', fn === 'hide');
+          if (hideOrDisable === 'hide') {
+            $el[fn](speed, function() {$el[fn];});
+          }
         }
       }
     });
+  }
+
+  function isFormItemBlank($el) {
+    var isBlank = true;
+    if ($(':input:checked', $el).length) {
+      return false;
+    }
+    $(':input', $el).not(':radio, :checkbox, :button, :submit').each(function() {
+      if ($(this).val()) {
+        isBlank = false;
+      }
+    });
+    return isBlank;
   }
 
   function getFieldNameFromClass($el) {
@@ -174,7 +193,6 @@ var wfCivi = (function ($, D) {
       if ($el.length) {
         // For chain-select fields, store value for later if it's not available
         if ((fid.substr(fid.length - 9) === 'county_id' || fid.substr(fid.length - 11) === 'province_id') && !$('option[value='+val+']', $el).length) {
-          console.log($el);
           $el.attr('data-val', val);
         }
         else if ($el.val() !== val) {
