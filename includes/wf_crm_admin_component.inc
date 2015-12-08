@@ -464,7 +464,7 @@ class wf_crm_admin_component {
       elseif (in_array('webform-add-form', $row['class'])) {
         unset($form['add']['type']['#options']['civicrm_contact']);
         $form['add']['type']['#printed'] = FALSE;
-        $row['data'][2] = drupal_render($form['add']['type']);
+        $row['data'][1] = drupal_render($form['add']['type']);
       }
       // Component row
       elseif (!empty($row['data-cid']) && isset($node->webform['components'][$row['data-cid']])) {
