@@ -145,6 +145,7 @@ var wfCivi = (function ($, D) {
         if ($.inArray(type, toHide) >= 0) {
           var fn = (op === 'hide' && (!showEmpty || !isFormItemBlank($el))) ? 'hide' : 'show';
           $(':input', $el).webformProp('disabled', fn === 'hide');
+          $(':input', $el).webformProp('readonly', fn === 'hide');
           if (hideOrDisable === 'hide') {
             $el[fn](speed, function() {$el[fn];});
           }
