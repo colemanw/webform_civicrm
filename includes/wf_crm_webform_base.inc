@@ -72,7 +72,8 @@ abstract class wf_crm_webform_base {
    * @param array $exclude
    *   Fields to ignore
    *
-   * @return array of contact data
+   * @return array
+   *   Contact data
    */
   protected function loadContact($c, $exclude = array()) {
     if (!empty($this->loadedContacts[$c])) {
@@ -80,6 +81,9 @@ abstract class wf_crm_webform_base {
     }
     $info = array();
     $cid = $this->ent['contact'][$c]['id'];
+    if (!$cid) {
+      return $info;
+    }
     $contact = $this->data['contact'][$c];
     $prefix = 'civicrm_' . $c . '_contact_1_';
     foreach (array_merge(array('contact'), wf_crm_location_fields()) as $ent) {
