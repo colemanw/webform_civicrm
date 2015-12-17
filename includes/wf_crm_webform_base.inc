@@ -227,7 +227,7 @@ abstract class wf_crm_webform_base {
     // create temporary settings array to include 'user-select' fields
     // on the right place in array
     $settingsArray = $this->add_user_select_field_placeholder($ent, $this->settings['data']['contact'][$c]);
-
+    $userSelectIndex = 0;
     // Go through the array and match up locations by type
     // Put placeholder 'user-select' where location_type_id == -1 for second pass
     foreach ($settingsArray[$ent] as $setting) {
@@ -243,7 +243,8 @@ abstract class wf_crm_webform_base {
             break;
         } else if($setting['location_type_id'] == -1) { // for 'user-select' fields
             $valueFound = true;
-            $reorderedArray[] = 'user-select';
+            $reorderedArray['us'.$userSelectIndex] = 'user-select';
+            $userSelectIndex ++;
             break;
         }
       }
