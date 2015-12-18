@@ -229,7 +229,7 @@ abstract class wf_crm_webform_base {
     $settingsArray = $this->add_user_select_field_placeholder($ent, $this->settings['data']['contact'][$c]);
     $userSelectIndex = 0;
     // Go through the array and match up locations by type
-    // Put placeholder 'user-select' where location_type_id == -1 for second pass
+    // Put placeholder 'user-select' where location_type_id is empty for second pass
     foreach ($settingsArray[$ent] as $setting) {
       $valueFound = false;
       foreach($values as $key => $value){
@@ -241,7 +241,7 @@ abstract class wf_crm_webform_base {
             $valueFound = true;
             unset($values[$key]);
             break;
-        } else if($setting['location_type_id'] == -1) { // for 'user-select' fields
+        } else if(empty($setting['location_type_id'])) { // for 'user-select' fields
             $valueFound = true;
             $reorderedArray['us'.$userSelectIndex] = 'user-select';
             $userSelectIndex ++;
@@ -276,7 +276,7 @@ abstract class wf_crm_webform_base {
   }
 
   /**
-   * Add location_type_id = -1 for user-select fields for identification later
+   * Add location_type_id = NULL for user-select fields for identification later
    *
    * @param string $ent
    * @param array $settings
@@ -286,7 +286,7 @@ abstract class wf_crm_webform_base {
     if($settings['number_of_'.$ent] > count($settings[$ent])){
       for($i = 1; $i <= $settings['number_of_'.$ent]; $i++){
         if(!array_key_exists($i, $settings[$ent])){
-          $settings[$ent][$i]['location_type_id'] = -1;
+          $settings[$ent][$i]['location_type_id'] = NULL;
         }
       }
       ksort($settings[$ent]);
