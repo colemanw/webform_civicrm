@@ -96,7 +96,7 @@ function _webform_edit_civicrm_contact($component) {
     '#type' => 'select',
     '#title' => t('Form Widget'),
     '#default_value' => $component['extra']['widget'],
-    '#options' => array('autocomplete' => t('Autocomplete'), 'select' => t('Select List'), 'hidden' => t('Static')),
+    '#options' => array('autocomplete' => t('Autocomplete'), 'select' => t('Select List'), 'hidden' => t('Static'), 'textfield' => t('Enter Contact ID')),
     '#weight' => -9,
     '#parents' => array('extra', 'widget'),
   );
@@ -401,6 +401,22 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
           $element['#element_validate'] = array('wf_crm_contact_component_required');
         }
       }
+      break;
+
+    case 'textfield':
+      $element['#description'] = t('Lookup by Contact ID.');
+      $element['#size'] = 8;
+      if ($node && isset($node->webform_civicrm)) {
+        $js = "field.change(function() {
+                  wfCivi.existingSelect($c, {$node->nid}, $callback_path, toHide, '$hide_method', $no_hide_blank, \$(this).val(), $ajax);
+                });
+                wfCivi.existingInit(field, $c, {$node->nid}, $callback_path, toHide);";
+      }
+      // Display empty option unless there are no results
+      if (!$component['extra']['allow_create'] || count($element['#options']) > 1) {
+        $element['#empty_option'] = $component['extra'][$element['#options'] ? 'search_prompt' : 'none_prompt'];
+      }
+
   }
   // Add inline javascript
   if ($js) {
