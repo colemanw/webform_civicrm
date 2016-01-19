@@ -1,10 +1,10 @@
 // Webform payment processing using CiviCRM's jQuery
-cj(function($) {
+(function ($) {
   'use strict';
   var
-    setting = Drupal.settings.webform_civicrm,
-    $contributionAmount = $('[name*="[civicrm_1_contribution_1_contribution_total_amount]"]'),
-    $processorFields = $('.civicrm-enabled[name$="civicrm_1_contribution_1_contribution_payment_processor_id]"]');
+    setting,
+    $contributionAmount,
+    $processorFields;
 
   function getPaymentProcessor() {
     if (!$processorFields.length) {
@@ -38,15 +38,6 @@ cj(function($) {
       $('#billing-payment-block').html('');
     }
   }
-  $processorFields.on('change', function() {
-    setting.billingSubmission || (setting.billingSubmission = {});
-    $('input:visible, select', '#billing-payment-block').each(function() {
-      var name = $(this).attr('name');
-      name && (setting.billingSubmission[name] = $(this).val());
-    });
-    loadBillingBlock();
-  });
-  loadBillingBlock();
 
   function tally() {
     var total = 0;
@@ -103,11 +94,30 @@ cj(function($) {
     updateLineItem('civicrm_1_contribution_1', amount, label);
   }
 
-  if ($contributionAmount.length) {
-    calculateContributionAmount();
-    $contributionAmount.on('change keyup', calculateContributionAmount);
-  }
-  else {
-    tally();
-  }
-});
+  Drupal.behaviors.webform_civicrm_payment = {
+    attach: function (context, settings) {
+      setting = settings.webform_civicrm;
+      $contributionAmount = $('[name*="[civicrm_1_contribution_1_contribution_total_amount]"]', context);
+      $processorFields = $('.civicrm-enabled[name$="civicrm_1_contribution_1_contribution_payment_processor_id]"]', context);
+
+      $processorFields.on('change', function () {
+        setting.billingSubmission || (setting.billingSubmission = {});
+        $('input:visible, select', '#billing-payment-block').each(function () {
+          var name = $(this).attr('name');
+          name && (setting.billingSubmission[name] = $(this).val());
+        });
+        loadBillingBlock();
+      });
+      if ($processorFields.length) {
+        loadBillingBlock();
+      }
+
+      if ($contributionAmount.length) {
+        calculateContributionAmount();
+        $contributionAmount.on('change keyup', calculateContributionAmount);
+      } else {
+        tally();
+      }
+    }
+  };
+})(CRM.$);
