@@ -542,11 +542,9 @@ function _webform_civicrm_status() {
   $status = array();
   $status['webform_civicrm'] = FALSE;
 
-  $path = drupal_get_path('module', 'civicrm') . '/civicrm.info';
-  $civicrm = drupal_parse_info_file($path);
+  $civicrm = system_get_info('module', 'civicrm');
 
-  $path = drupal_get_path('module', 'webform') . '/webform.info';
-  $webform = drupal_parse_info_file($path);
+  $webform = system_get_info('module', 'webform');
   //strip the 7.x- from version so version_compare works
   $webform['version'] = str_replace('7.x-', '', $webform['version']);
 
