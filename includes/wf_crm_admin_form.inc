@@ -689,11 +689,11 @@ class wf_crm_admin_form {
     $this->form['participant']['show_past_events'] = array(
       '#type' => 'select',
       '#title' => t('Show Past Events'),
-      '#default_value' => wf_crm_aval($this->data, 'reg_options:show_past_events', 0),
+      '#default_value' => wf_crm_aval($this->data, 'reg_options:show_past_events', 'now'),
       '#parents' => array('reg_options', 'show_past_events'),
       '#tree' => TRUE,
       '#options' => array(
-        0 => t('- None -'),
+        'now' => t('- None -'),
         1 => t('All'),
         '-1 day' => t('Past Day'),
         '-1 week' => t('Past Week'),
@@ -706,6 +706,26 @@ class wf_crm_admin_form {
       ),
     );
     $this->help($this->form['participant']['show_past_events'], 'reg_options_show_past_events');
+    $this->form['participant']['show_future_events'] = array(
+      '#type' => 'select',
+      '#title' => t('Show Future Events'),
+      '#default_value' => wf_crm_aval($this->data, 'reg_options:show_future_events', 1),
+      '#parents' => array('reg_options', 'show_future_events'),
+      '#tree' => TRUE,
+      '#options' => array(
+        'now' => t('- None -'),
+        1 => t('All'),
+        '+1 day' => t('Next Day'),
+        '+1 week' => t('Next Week'),
+        '+1 month' => t('Next Month'),
+        '+2 month' => t('Next 2 Months'),
+        '+3 month' => t('Next 3 Months'),
+        '+6 month' => t('Next 6 Months'),
+        '+1 year' => t('Next Year'),
+        '+2 year' => t('Next 2 Years'),
+      ),
+    );
+    $this->help($this->form['participant']['show_future_events'], 'reg_options_show_future_events');
     $this->form['participant']['title_display'] = array(
       '#type' => 'select',
       '#title' => t('Title Display'),
@@ -778,6 +798,7 @@ class wf_crm_admin_form {
     $this->addAjaxItem('participant', 'participant_reg_type', 'participants');
     $this->addAjaxItem('participant', 'event_type', 'participants');
     $this->addAjaxItem('participant', 'show_past_events', 'participants');
+    $this->addAjaxItem('participant', 'show_future_events', 'participants');
     $this->addAjaxItem('participant', 'title_display', 'participants');
 
     for ($n = 1; $reg_type && (($n <= count($this->data['contact']) && $reg_type != 'all') || $n == 1); ++$n) {
