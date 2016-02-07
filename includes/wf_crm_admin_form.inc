@@ -689,11 +689,11 @@ class wf_crm_admin_form {
     $this->form['participant']['show_past_events'] = array(
       '#type' => 'select',
       '#title' => t('Show Past Events'),
-      '#default_value' => wf_crm_aval($this->data, 'reg_options:show_past_events', 0),
+      '#default_value' => wf_crm_aval($this->data, 'reg_options:show_past_events', 'now'),
       '#parents' => array('reg_options', 'show_past_events'),
       '#tree' => TRUE,
       '#options' => array(
-        0 => t('- None -'),
+        'now' => t('- None -'),
         1 => t('All'),
         '-1 day' => t('Past Day'),
         '-1 week' => t('Past Week'),
@@ -713,7 +713,7 @@ class wf_crm_admin_form {
       '#parents' => array('reg_options', 'show_future_events'),
       '#tree' => TRUE,
       '#options' => array(
-        0 => t('- None -'),
+        'now' => t('- None -'),
         1 => t('All'),
         '+1 day' => t('Next Day'),
         '+1 week' => t('Next Week'),

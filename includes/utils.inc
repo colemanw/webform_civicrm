@@ -186,7 +186,7 @@ function wf_crm_get_events($reg_options, $context) {
   $sql = "SELECT id, title, start_date, end_date, event_type_id FROM civicrm_event WHERE is_template = 0 AND is_active = 1";
   // 0 means only current events, 1 means show all past events, other values are relative date strings
   $date_past = wf_crm_aval($reg_options, 'show_past_events', 'now');
-  $date_future = wf_crm_aval($reg_options, 'show_future_events', 'now');
+  $date_future = wf_crm_aval($reg_options, 'show_future_events', '1');
   if ($date_past != '1') {
     $date_past = date('Y-m-d H:i:s', strtotime($date_past));
     $sql .= " AND (end_date >= '$date_past' OR end_date IS NULL)";
