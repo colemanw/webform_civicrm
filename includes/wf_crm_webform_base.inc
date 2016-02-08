@@ -86,6 +86,8 @@ abstract class wf_crm_webform_base {
     }
     $contact = $this->data['contact'][$c];
     $prefix = 'civicrm_' . $c . '_contact_1_';
+    $existing_contact_field = $this->getComponent($prefix . 'contact_existing');
+    $exclude = array_merge($exclude, wf_crm_aval($existing_contact_field['extra'], 'no_autofill', array()));
     foreach (array_merge(array('contact'), wf_crm_location_fields()) as $ent) {
       if ((!empty($contact['number_of_' . $ent]) && !in_array($ent, $exclude)) || $ent == 'contact') {
         $params = array('contact_id' => $cid);
@@ -98,6 +100,13 @@ abstract class wf_crm_webform_base {
           $result = array_merge(array(0), array_values($result['values']));
           unset($result[0]);
           if ($ent == 'contact') {
+            // Exclude name fields
+            if (in_array('name', $exclude)) {
+              unset($result[1]['first_name'], $result[1]['middle_name'], $result[1]['last_name'],
+                $result[1]['formal_title'], $result[1]['prefix_id'], $result[1]['suffix_id'],
+                $result[1]['nick_name'], $result[1]['organization_name'], $result[1]['household_name']
+              );
+            }
             // Privacy fields
             if (isset($this->enabled[$prefix . 'contact_privacy'])) {
               foreach (array_keys(wf_crm_get_privacy_options()) as $key) {

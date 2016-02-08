@@ -30,6 +30,7 @@ function _webform_defaults_civicrm_contact() {
       'title_display' => 'before',
       'randomize' => 0,
       'description' => '',
+      'no_autofill' => array(),
       'hide_fields' => array(),
       'hide_method' => 'hide',
       'no_hide_blank' => FALSE,
@@ -140,28 +141,38 @@ function _webform_edit_civicrm_contact($component) {
     '#parents' => array('extra', 'show_hidden_contact'),
     '#weight' => -5,
   );
-  $form['field_locking'] = array(
+  $form['field_handling'] = array(
     '#type' => 'fieldset',
     '#collapsible' => TRUE,
-    '#title' => t('Field Locking'),
-    '#description' => t('Prevent editing of existing contact data.'),
+    '#title' => t('Contact Field Handling'),
+    '#description' => t('By default, all contact data will be autopopulated on the form for this existing contact. You can modify that behavior here.'),
   );
-  $form['field_locking']['hide_fields'] = array(
+  $form['field_handling']['no_autofill'] = array(
+    '#type' => 'select',
+    '#multiple' => TRUE,
+    '#title' => t('Skip Autofilling of'),
+    '#description' => t('Which fields should <em>not</em> be autofilled for this contact?'),
+    '#default_value' => $component['extra']['no_autofill'],
+    '#options' => array('' => '- ' . t('None') . ' -') + wf_crm_contact_fields($node, $c),
+    '#parents' => array('extra', 'no_autofill'),
+  );
+  $form['field_handling']['hide_fields'] = array(
     '#type' => 'select',
     '#multiple' => TRUE,
     '#title' => t('Fields to Lock'),
+    '#description' => t('Prevent editing by disabling or hiding fields when a contact already exists.'),
     '#default_value' => $component['extra']['hide_fields'],
     '#options' => array('' => '- ' . t('None') . ' -') + wf_crm_contact_fields($node, $c),
     '#parents' => array('extra', 'hide_fields'),
   );
-  $form['field_locking']['hide_method'] = array(
+  $form['field_handling']['hide_method'] = array(
     '#type' => 'select',
     '#title' => t('Locked fields should be'),
     '#default_value' => $component['extra']['hide_method'],
     '#options' => array('hide' => t('Hidden'), 'disable' => t('Disabled')),
     '#parents' => array('extra', 'hide_method'),
   );
-  $form['field_locking']['no_hide_blank'] = array(
+  $form['field_handling']['no_hide_blank'] = array(
     '#type' => 'checkbox',
     '#title' => t("Don't lock fields that are empty"),
     '#default_value' => $component['extra']['no_hide_blank'],

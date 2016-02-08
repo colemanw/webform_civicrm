@@ -64,7 +64,7 @@ var wfCiviContact = (function ($, D) {
       }).change();
 
       $('select[name*=hide_fields]', context).once('wf-civi').change(function() {
-        $(this).parent().siblings('.form-item').toggle(!!$(this).val());
+        $(this).parent().nextAll('.form-item').toggle(!!$(this).val());
       }).change();
 
       // Warning if enforce permissions is disabled
