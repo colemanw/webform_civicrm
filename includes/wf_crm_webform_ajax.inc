@@ -53,6 +53,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
     }
     list($nid, $fid) = explode('-', $key, 2);
     $this->node = node_load($nid);
+    $this->settings = $this->node->webform_civicrm;
     if (!$this->autocompleteAccess($fid)) {
       drupal_access_denied();
     }
