@@ -238,17 +238,17 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     if (empty($this->submission->is_draft) && !empty($this->ent['contribution'][1]['id']) && $this->contributionIsIncomplete && !$this->contributionIsPayLater) {
       $this->submitIPNPayment();
     }
-      // Send receipt 
-    if (empty($this->submission->is_draft) 
-        && !empty($this->ent['contribution'][1]['id']) 
-        && !empty($this->contribution_page['is_email_receipt']) 
+      // Send receipt
+    if (empty($this->submission->is_draft)
+        && !empty($this->ent['contribution'][1]['id'])
+        && !empty($this->contribution_page['is_email_receipt'])
         && (!$this->contributionIsIncomplete || $this->contributionIsPayLater) ) {
       $this->sendReceipt();
     }
   }
 
   /**
-   * Send receipt 
+   * Send receipt
    */
   private function sendReceipt(){
     // tax integration
@@ -1670,6 +1670,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params = $this->contributionParams();
     $params['contribution_status_id'] = 'Pending';
     $params['is_pay_later'] = $this->contributionIsPayLater;
+    //Fix IPN payments marked as paid by cheque
+    if (empty($params['payment_instrument_id'])) {
+      if ($params['payment_processor_id'] && $this->contribution_page['is_monetary']) {
+        $params['payment_instrument_id'] = 'Check';
+      }
+    }
     $result = wf_civicrm_api('contribution', 'create', $params);
     $this->ent['contribution'][1]['id'] = $result['id'];
   }
