@@ -1672,8 +1672,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['is_pay_later'] = $this->contributionIsPayLater;
     //Fix IPN payments marked as paid by cheque
     if (empty($params['payment_instrument_id'])) {
-      if ($params['payment_processor_id'] != 0 && $this->contribution_page['is_monetary'] == 1) {
-        $params['payment_instrument_id'] = 1;
+      if ($params['payment_processor_id'] && $this->contribution_page['is_monetary']) {
+        $params['payment_instrument_id'] = 'Check';
       }
     }
     $result = wf_civicrm_api('contribution', 'create', $params);
