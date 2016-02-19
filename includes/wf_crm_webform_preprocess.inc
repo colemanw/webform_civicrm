@@ -54,12 +54,12 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     }
     // Early return if the form (or page) was already submitted
     if (wf_crm_aval($this->form_state, 'triggering_element:#id') == 'edit-previous'
-      || (empty($this->form_state['rebuild']) && !empty($this->form_state['storage']))) {
+      || (empty($this->form_state['rebuild']) && !empty($this->form_state['storage']) && $this->form['#submission']->is_draft != '1' )) {
       $this->fillForm($this->form['submitted']);
       return;
     }
     // If this is an edit op, use the original IDs and return
-    if (isset($this->form['#submission']->sid)) {
+    if (isset($this->form['#submission']->sid) && $this->form['#submission']->is_draft != '1') {
       if (isset($this->form['#submission']->civicrm)) {
         $this->form_state['civicrm']['ent'] = $this->form['#submission']->civicrm;
         foreach ($this->form_state['civicrm']['ent']['contact'] as $c => $contact) {
