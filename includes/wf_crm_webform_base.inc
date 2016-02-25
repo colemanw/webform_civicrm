@@ -306,7 +306,15 @@ abstract class wf_crm_webform_base {
    */
   protected function findMemberships($cid) {
     static $status_types;
-    $existing = wf_crm_apivalues('membership', 'get', array('contact_id' => $cid));
+    static $membership_types;
+    if (!isset($membership_types)) {
+      $membership_types = array_keys(wf_crm_apivalues('membershipType', 'get', array('is_active' => 1, 'return' => 'id')));
+    }
+    $existing = wf_crm_apivalues('membership', 'get', array(
+      'contact_id' => $cid,
+      // Limit to only enabled membership types
+      'membership_type_id' => array('IN' => $membership_types),
+    ));
     if (!$existing) {
       return array();
     }
