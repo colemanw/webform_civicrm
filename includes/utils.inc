@@ -1495,6 +1495,9 @@ function wf_civicrm_api($entity, $operation, $params) {
     $bt = debug_backtrace();
     $n = $bt[0]['function'] == 'wf_civicrm_api' ? 1 : 0;
     $file = explode('/', $bt[$n]['file']);
+    if (isset($params['credit_card_number'])) {
+      $params['credit_card_number']="xxxxxxxxxxxx".substr($params['credit_card_number'], -4);
+    }
     watchdog('webform_civicrm',
       'The CiviCRM "%function" API returned the error: "%msg" when called by function "!fn" on line !line of !file with parameters: "!params"',
       array(
