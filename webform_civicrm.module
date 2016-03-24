@@ -10,11 +10,10 @@
 /**
  * The versions of CiviCRM and WebForm. Min is >=.  Max is <. FALSE = no MAX
  */
-define('WEBFROM_CIVICRM_CIVICRM_VERSION_MIN', '4.4');
-define('WEBFROM_CIVICRM_CIVICRM_VERSION_MAX', FALSE);
+define('WEBFORM_CIVICRM_CIVICRM_VERSION_MIN', '4.4');
+define('WEBFORM_CIVICRM_CIVICRM_VERSION_MAX', FALSE);
 
-define('WEBFROM_CIVICRM_WEBFORM_VERSION', '4.12');
-
+define('WEBFORM_CIVICRM_WEBFORM_VERSION', '4.12');
 
 /**
  * Implements hook_menu().
@@ -543,18 +542,17 @@ function _webform_civicrm_status() {
   $status['webform_civicrm'] = FALSE;
 
   $civicrm = system_get_info('module', 'civicrm');
-
   $webform = system_get_info('module', 'webform');
   //strip the 7.x- from version so version_compare works
   $webform['version'] = str_replace('7.x-', '', $webform['version']);
 
-  if (version_compare($civicrm['version'], WEBFROM_CIVICRM_CIVICRM_VERSION_MIN, '>=') &&
-    version_compare($webform['version'], WEBFROM_CIVICRM_WEBFORM_VERSION, '>=')) {
+  if (version_compare($civicrm['version'], WEBFORM_CIVICRM_CIVICRM_VERSION_MIN, '>=') &&
+    version_compare($webform['version'], WEBFORM_CIVICRM_WEBFORM_VERSION, '>=')) {
     $status['webform_civicrm'] = TRUE;
   }
 
-  // if there is a max version of CiviCRM supported, check it too
-  if (WEBFROM_CIVICRM_CIVICRM_VERSION_MAX && version_compare($civicrm['version'], WEBFROM_CIVICRM_CIVICRM_VERSION_MAX, '>=')) {
+  // If there is a max version of CiviCRM supported, check it too.
+  if (WEBFORM_CIVICRM_CIVICRM_VERSION_MAX && version_compare($civicrm['version'], WEBFORM_CIVICRM_CIVICRM_VERSION_MAX, '>=')) {
     $status['webform_civicrm'] = FALSE;
   }
 
