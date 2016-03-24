@@ -543,8 +543,6 @@ function _webform_civicrm_status() {
 
   $civicrm = system_get_info('module', 'civicrm');
   $webform = system_get_info('module', 'webform');
-  //strip the 7.x- from version so version_compare works
-  $webform['version'] = str_replace('7.x-', '', $webform['version']);
 
   if (version_compare($civicrm['version'], WEBFORM_CIVICRM_CIVICRM_VERSION_MIN, '>=') &&
     version_compare($webform['version'], WEBFORM_CIVICRM_WEBFORM_VERSION, '>=')) {
