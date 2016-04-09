@@ -95,6 +95,10 @@ abstract class wf_crm_webform_base {
           $params['options']['sort'] = 'is_primary DESC';
         }
         $result = wf_civicrm_api($ent, 'get', $params);
+        // Handle location field sorting
+        if(in_array($ent, wf_crm_location_fields())){
+          $result['values'] = $this->reorderByLocationType($c, $ent, $result['values']);
+        }
         if (!empty($result['values'])) {
           // Index array from 1 instead of 0
           $result = array_merge(array(0), array_values($result['values']));
@@ -129,9 +133,11 @@ abstract class wf_crm_webform_base {
                 $address['state_province_id'] = wf_crm_state_abbr($address['state_province_id']);
               }
               // Load custom data
-              $custom = $this->getCustomData($address['id'], 'address');
-              if (!empty($custom['address'])) {
-                $address += $custom['address'][1];
+              if(isset($address['id'])){
+                $custom = $this->getCustomData($address['id'], 'address');
+                if (!empty($custom['address'])) {
+                  $address += $custom['address'][1];
+                }
               }
             }
           }
@@ -201,6 +207,109 @@ abstract class wf_crm_webform_base {
     }
     $this->loadedContacts[$c] = $info;
     return $info;
+  }
+
+  /**
+   * Reorder returned results according to settings chosen in wf_civicrm backend
+   *
+   * @param integer $c
+   * @param string $ent
+   * @param array $values
+   * @return array $reorderedArray
+   */
+  protected function reorderByLocationType($c, $ent, $values = array()){
+    $reorderedArray = array();
+
+    if(isset($this->settings['data']['contact'][$c][$ent])){
+      // First pass
+      $reorderedArray = $this->matchLocationTypes($c, $ent, $values);
+
+      // Second pass
+      $reorderedArray = $this->handleRemainingValues($reorderedArray, $values);
+
+      return $reorderedArray;
+    } else {
+      return $values;
+    }
+  }
+
+  /**
+   * Organize values according to location types
+   *
+   * @param integer $c
+   * @param string $ent
+   * @param array $values
+   * @return array $reorderedArray
+   */
+  protected function matchLocationTypes($c, $ent, &$values){
+    // create temporary settings array to include 'user-select' fields
+    // on the right place in array
+    $settingsArray = $this->add_user_select_field_placeholder($ent, $this->settings['data']['contact'][$c]);
+    $userSelectIndex = 0;
+    // Go through the array and match up locations by type
+    // Put placeholder 'user-select' where location_type_id is empty for second pass
+    foreach ($settingsArray[$ent] as $setting) {
+      $valueFound = false;
+      foreach($values as $key => $value){
+        if((in_array($ent, array('address', 'email')) && $value['location_type_id'] == $setting['location_type_id'])
+           ||
+          ($value['location_type_id'] == $setting['location_type_id'] && $value[$ent.'_type_id'] == $setting[$ent.'_type_id'])     
+          ){
+            $reorderedArray[$key] = $value;
+            $valueFound = true;
+            unset($values[$key]);
+            break;
+        } else if(empty($setting['location_type_id'])) { // for 'user-select' fields
+            $valueFound = true;
+            $reorderedArray['us'.$userSelectIndex] = 'user-select';
+            $userSelectIndex ++;
+            break;
+        }
+      }
+
+      // always keep number of returned values equal to chosen settings
+      // if value is not found then set an empty array
+      if(!$valueFound){
+        $reorderedArray[] = array();
+      }
+    }
+    return $reorderedArray;
+  }
+
+  /**
+   * Put remaining values in 'user-select' fields
+   *
+   * @param array $reorderedArray
+   * @param array $values
+   * @return array $reorderedArray
+   */
+  protected function handleRemainingValues($reorderedArray, &$values){
+    // Put leftover values in fields marked as 'user-select'
+    foreach($reorderedArray as $key => $value){
+      if($reorderedArray[$key] == 'user-select'){
+        $reorderedArray[$key] = !empty($values) ? array_shift($values) : '';
+      }
+    }
+    return $reorderedArray;
+  }
+
+  /**
+   * Add location_type_id = NULL for user-select fields for identification later
+   *
+   * @param string $ent
+   * @param array $settings
+   * @return array $settings
+   */
+  protected function add_user_select_field_placeholder($ent, $settings = array()){
+    if($settings['number_of_'.$ent] > count($settings[$ent])){
+      for($i = 1; $i <= $settings['number_of_'.$ent]; $i++){
+        if(!array_key_exists($i, $settings[$ent])){
+          $settings[$ent][$i]['location_type_id'] = NULL;
+        }
+      }
+      ksort($settings[$ent]);
+    }
+    return $settings;
   }
 
   /**
