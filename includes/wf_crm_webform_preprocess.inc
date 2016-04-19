@@ -189,7 +189,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         $contributionCallbackUrl = 'civicrm/payment/form';
         $js_vars['processor_id_key'] = 'processor_id';
       } else {
-        $contributionCallbackQuery = array('currency' => '$', 'reset' => 1, 'id' => $page_id, 'qfKey' => $this->getQfKey(), 'snippet' => 4);
+        $contributionCallbackQuery = array('reset' => 1, 'id' => $page_id, 'qfKey' => $this->getQfKey(), 'snippet' => 4);
         $contributionCallbackUrl = 'civicrm/contribute/transact';
         $js_vars['processor_id_key'] = 'type';
       }
