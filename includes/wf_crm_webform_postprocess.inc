@@ -726,6 +726,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
         $result = wf_civicrm_api($location, 'get', $params);
         if (!empty($result['values'])) {
+          $contact[$location] = self::reorderLocationValues($contact[$location], $result['values'], $location);
           // start array index at 1
           $existing = array_merge(array(array()), $result['values']);
         }
@@ -2152,4 +2153,57 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
   }
 
+  /**
+   * reorder submitted location values according to existing location values
+   *
+   * @param array $submittedLocationValues
+   * @param array $existingLocationValues
+   * @param string $entity
+   * @return array
+   */
+  protected function reorderLocationValues($submittedLocationValues, $existingLocationValues, $entity) {
+    $reorderedArray = array();
+    $index = 1;
+    $entityTypeIdIndex = $entity.'_type_id';
+    $entity = $entity == 'website' ? 'url' : $entity; // for website only
+
+    foreach($existingLocationValues as $eValue) {
+      $existingLocationTypeId = $entity != 'url' ? $eValue['location_type_id'] : NULL;
+      $existingEntityTypeId = isset($eValue[$entityTypeIdIndex]) ? $eValue[$entityTypeIdIndex] : NULL;
+
+      if(!empty($existingEntityTypeId)) {
+        $reorderedArray[$index][$entityTypeIdIndex] = $existingEntityTypeId;
+      } else if(!empty($existingLocationTypeId)) {
+        $reorderedArray[$index]['location_type_id'] = $existingLocationTypeId;
+      }
+
+      $reorderedArray[$index][$entity] = $eValue[$entity];
+
+      foreach($submittedLocationValues as $key => $sValue) {
+        $sLocationTypeId = isset($sValue['location_type_id']) ? $sValue['location_type_id'] : NULL;
+        $sEntityTypeId = isset($sValue[$entityTypeIdIndex]) ? $sValue[$entityTypeIdIndex] : NULL;
+
+        if(($existingLocationTypeId == $sLocationTypeId && empty($sEntityTypeId))
+            ||
+           ($existingEntityTypeId == $sEntityTypeId && empty($sLocationTypeId))
+            ||
+           ($existingLocationTypeId == $sLocationTypeId && $existingEntityTypeId == $sEntityTypeId)) {
+
+           $reorderedArray[$index][$entity] = $sValue[$entity];
+           unset($submittedLocationValues[$key]);
+        }
+      }
+      $index++;
+    }
+
+    // handle remaining values
+    if(!empty($submittedLocationValues)) {
+      // cannot use array_push, array_merge because preserving array keys is important
+      foreach($submittedLocationValues as $sValue) {
+        $reorderedArray[] = $sValue;
+      }
+    }
+
+    return $reorderedArray;
+  }
 }
