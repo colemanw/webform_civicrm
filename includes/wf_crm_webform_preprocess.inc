@@ -184,7 +184,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       );
       $page_id = $this->data['contribution'][1]['contribution'][1]['contribution_page_id'];
       if ($this->civicrm_version >= '4.7') {
-        $currency = '$'; // FIXME
+        $currency = $config->defaultCurrencySymbol; 
         $contributionCallbackQuery = array('currency' => $currency, 'snippet' => 4);
         $contributionCallbackUrl = 'civicrm/payment/form';
         $js_vars['processor_id_key'] = 'processor_id';
