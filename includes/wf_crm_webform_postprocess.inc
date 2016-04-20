@@ -1776,6 +1776,32 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
     }
 
+    // Fix bug for testing.
+    if ($params['is_test'] == 1) {
+      $liveProcessorName = wf_civicrm_api('payment_processor', 'getvalue', array(
+        'id' => $params['payment_processor_id'],
+        'return' => 'name',
+      ));
+      // Lookup current domain for multisite support
+      static $domain = 0;
+      if (!$domain) {
+        $domain = wf_civicrm_api('domain', 'get', array('current_domain' => 1, 'return' => 'id'));
+        $domain = wf_crm_aval($domain, 'id', 1);
+      }
+      $params['payment_processor_id'] = wf_civicrm_api('payment_processor', 'getvalue', array(
+        'return' => 'id',
+        'name' => $liveProcessorName,
+        'is_test' => 1,
+        'domain_id' => $domain,
+      ));
+    }
+
+    // doPayment requries payment_processor and payment_processor_mode fields.
+    if ($this->civicrm_version >= '4.7') {
+      $params['payment_processor'] = $params['payment_processor_id'];
+
+    }
+
     // Save this stuff for later
     unset($params['soft'], $params['honor_contact_id'], $params['honor_type_id']);
     return $params;

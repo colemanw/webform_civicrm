@@ -183,12 +183,21 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         'scope' => 'footer',
       );
       $page_id = $this->data['contribution'][1]['contribution'][1]['contribution_page_id'];
-      $contributionCallbackQuery = array('reset' => 1, 'id' => $page_id, 'qfKey' => $this->getQfKey(), 'snippet' => 4);
+      if ($this->civicrm_version >= '4.7') {
+        $currency = $this->contribution_page['currency'];
+        $contributionCallbackQuery = array('currency' => $currency, 'snippet' => 4);
+        $contributionCallbackUrl = 'civicrm/payment/form';
+        $js_vars['processor_id_key'] = 'processor_id';
+      } else {
+        $contributionCallbackQuery = array('reset' => 1, 'id' => $page_id, 'qfKey' => $this->getQfKey(), 'snippet' => 4);
+        $contributionCallbackUrl = 'civicrm/contribute/transact';
+        $js_vars['processor_id_key'] = 'type';
+      }
       if (!empty($this->data['contribution'][1]['contribution'][1]['is_test'])) {
         // RM: This is needed in order for CiviCRM to know that this is a 'test' (i.e. 'preview' action in CiviCRM) transaction - otherwise, CiviCRM defaults to 'live' and returns the payment form with public key for the live payment processor!
         $contributionCallbackQuery['action'] = CRM_Core_Action::description(CRM_Core_Action::PREVIEW);
       }
-      $js_vars['contributionCallback'] = url('civicrm/contribute/transact', array('query' => $contributionCallbackQuery, 'alias' => TRUE));
+      $js_vars['contributionCallback'] = url($contributionCallbackUrl, array('query' => $contributionCallbackQuery, 'alias' => TRUE));
       // Add payment processor - note we have to search in 2 places because $this->loadMultipageData hasn't been run. Maybe it should be?
       $fid = 'civicrm_1_contribution_1_contribution_payment_processor_id';
       if (!empty($this->enabled[$fid])) {
