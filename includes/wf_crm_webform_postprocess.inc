@@ -2166,6 +2166,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $index = 1;
     $entityTypeIdIndex = $entity.'_type_id';
     $entity = $entity == 'website' ? 'url' : $entity; // for website only
+    $submittedLocationValues = self::unsetEmptyValueIndexes($submittedLocationValues, $entity);
 
     foreach($existingLocationValues as $eValue) {
       $existingLocationTypeId = $entity != 'url' ? $eValue['location_type_id'] : NULL;
@@ -2205,5 +2206,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     return $reorderedArray;
+  }
+
+  private function unsetEmptyValueIndexes($values, $entity) {
+    foreach($values as $k => $v) {
+      if(!isset($v[$entity])) {
+        unset($values[$k]);
+      }
+    }
+
+    return $values;
   }
 }
