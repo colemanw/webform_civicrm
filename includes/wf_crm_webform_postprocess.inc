@@ -567,10 +567,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         if (is_array($field) && !empty($field[1])) {
           if (substr($table, 0, 2) == 'cg') {
             // pass custom data to deduper
-			foreach ($field[1] as $custom_key => $custom_value) {
-             if(!empty($custom_value)) {
-              $params_custom[$custom_key] = $custom_value;
-             }
+            foreach ($field[1] as $custom_key => $custom_value) {
+              if(!empty($custom_value)) {
+                $params_custom[$custom_key] = $custom_value;
+              }
             }
           }
           // If sharing an address, use the master
