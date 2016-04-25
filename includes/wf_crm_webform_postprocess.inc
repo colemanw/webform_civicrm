@@ -559,12 +559,18 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function findDuplicateContact($contact) {
     $dupes = $rule_type = $rule_id = NULL;
     $rule = wf_crm_aval($contact, 'matching_rule', 'Unsupervised', TRUE);
+	$contact_type = ucfirst($contact['contact'][1]['contact_type']);
     if ($rule) {
       $params = array('check_permission' => FALSE);
       foreach ($contact as $table => $field) {
         if (is_array($field) && !empty($field[1])) {
           if (substr($table, 0, 2) == 'cg') {
-            //TODO pass custom data to deduper
+            // pass custom data to deduper
+			foreach ($field[1] as $custom_key => $custom_value) {
+             if(!empty($custom_value)) {
+              $params_custom[$custom_key] = $custom_value;
+             }
+            }
           }
           // If sharing an address, use the master
           elseif ($table == 'address' && !empty($field[1]['master_id'])) {
@@ -603,7 +609,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       else {
         $rule_type = $rule;
       }
-      $dupes = CRM_Dedupe_Finder::dupesByParams($params, ucfirst($contact['contact'][1]['contact_type']), $rule_type, array(), $rule_id);
+      $params_custom = CRM_Dedupe_Finder::formatParams($params_custom, $contact_type);
+      $params = array_merge($params,$params_custom);
+      $dupes = CRM_Dedupe_Finder::dupesByParams($params, $contact_type, $rule_type, array(), $rule_id);
     }
     if ($dupes) {
       return $dupes[0];
