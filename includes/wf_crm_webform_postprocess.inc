@@ -560,7 +560,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function findDuplicateContact($contact) {
     $dupes = $rule_type = $rule_id = NULL;
     $rule = wf_crm_aval($contact, 'matching_rule', 'Unsupervised', TRUE);
-	$contact_type = ucfirst($contact['contact'][1]['contact_type']);
+    $contact_type = ucfirst($contact['contact'][1]['contact_type']);
     if ($rule) {
       $params = array('check_permission' => FALSE);
       foreach ($contact as $table => $field) {
