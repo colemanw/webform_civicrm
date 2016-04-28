@@ -2168,23 +2168,24 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $entity = $entity == 'website' ? 'url' : $entity; // for website only
     $submittedLocationValues = self::unsetEmptyValueIndexes($submittedLocationValues, $entity);
 
-    foreach($existingLocationValues as $eValue) {
+    foreach ($existingLocationValues as $eValue) {
       $existingLocationTypeId = $entity != 'url' ? $eValue['location_type_id'] : NULL;
       $existingEntityTypeId = isset($eValue[$entityTypeIdIndex]) ? $eValue[$entityTypeIdIndex] : NULL;
 
-      if(!empty($existingEntityTypeId)) {
+      if (!empty($existingEntityTypeId)) {
         $reorderedArray[$index][$entityTypeIdIndex] = $existingEntityTypeId;
-      } else if(!empty($existingLocationTypeId)) {
+      }
+      elseif (!empty($existingLocationTypeId)) {
         $reorderedArray[$index]['location_type_id'] = $existingLocationTypeId;
       }
 
       $reorderedArray[$index][$entity] = $eValue[$entity];
 
-      foreach($submittedLocationValues as $key => $sValue) {
+      foreach ($submittedLocationValues as $key => $sValue) {
         $sLocationTypeId = isset($sValue['location_type_id']) ? $sValue['location_type_id'] : NULL;
         $sEntityTypeId = isset($sValue[$entityTypeIdIndex]) ? $sValue[$entityTypeIdIndex] : NULL;
 
-        if(($existingLocationTypeId == $sLocationTypeId && empty($sEntityTypeId))
+        if (($existingLocationTypeId == $sLocationTypeId && empty($sEntityTypeId))
             ||
            ($existingEntityTypeId == $sEntityTypeId && empty($sLocationTypeId))
             ||
@@ -2198,9 +2199,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     // handle remaining values
-    if(!empty($submittedLocationValues)) {
+    if (!empty($submittedLocationValues)) {
       // cannot use array_push, array_merge because preserving array keys is important
-      foreach($submittedLocationValues as $sValue) {
+      foreach ($submittedLocationValues as $sValue) {
         $reorderedArray[] = $sValue;
       }
     }
@@ -2209,8 +2210,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   private function unsetEmptyValueIndexes($values, $entity) {
-    foreach($values as $k => $v) {
-      if(!isset($v[$entity])) {
+    foreach ($values as $k => $v) {
+      if (!isset($v[$entity])) {
         unset($values[$k]);
       }
     }
