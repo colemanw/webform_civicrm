@@ -1990,6 +1990,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
         $dataType = wf_crm_aval($field, 'data_type');
         if (!empty($field['extra']['multiple'])) {
+          if ($val === array('')) {
+            $val = array();
+          }
           // Merge with existing data
           if (!empty($this->data[$ent][$c][$table][$n][$name]) && is_array($this->data[$ent][$c][$table][$n][$name])) {
             $val = array_unique(array_merge($val, $this->data[$ent][$c][$table][$n][$name]));
@@ -2047,7 +2050,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $val = $date . str_replace(':', '', $val);
         }
         // Only known contacts are allowed to empty a field
-        if (($val !== '' && $val !== NULL) || !empty($this->existing_contacts[$c])) {
+        if (($val !== '' && $val !== NULL && $val !== array()) || !empty($this->existing_contacts[$c])) {
           $this->data[$ent][$c][$table][$n][$name] = $val;
         }
       }
