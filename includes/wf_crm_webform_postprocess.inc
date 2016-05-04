@@ -1530,6 +1530,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $billing_fields['credit_card_number'] = FALSE;
       $billing_fields['cvv2'] = FALSE;
     }
+    if (!empty($_POST['bank_account_type'])) {
+      // unset/bypass the CC validation if we're doing Direct Debit (ACHEFT) - in that case we have a Bank Account Type
+      $billing_fields['credit_card_number'] = FALSE;
+      $billing_fields['cvv2'] = FALSE;
+      $billing_fields['credit_card_type'] = FALSE;
+      $_POST['credit_card_exp_date']['M'] = '12';
+      $_POST['credit_card_exp_date']['Y'] = '2099';
+    }
     foreach ($billing_fields as $field => $label) {
       if (empty($_POST[$field]) && $label !== FALSE) {
         form_set_error($field, t('!name field is required.', array('!name' => check_plain($label))));
