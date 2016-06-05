@@ -431,11 +431,10 @@ function webform_civicrm_preprocess_webform_components_form(&$vars) {
 /**
  * Implements hook_civicrm_alterPaymentProcessorParams().
  *
- * This hook is problematic and pretty much only works for paypal.
+ * Legacy handling for paypal.
  * We use it to override the return url so that the user gets redirected to the right place from paypal.
  *
- * TODO: A better solution would be for the payment processor to accept this as a param
- * so we don't have to come in with this hook to override it later.
+ * Remove when dropping support for CiviCRM 4.6 and below.
  */
 function webform_civicrm_civicrm_alterPaymentProcessorParams($paymentObj, $rawParams, &$cookedParams) {
   if (!empty($rawParams['webform_redirect_cancel']) && !empty($rawParams['webform_redirect_success'])
