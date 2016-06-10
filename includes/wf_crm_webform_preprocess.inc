@@ -183,12 +183,13 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         'scope' => 'footer',
       );
       $page_id = $this->data['contribution'][1]['contribution'][1]['contribution_page_id'];
-      if ($this->civicrm_version >= '4.7') {
+      if (version_compare($this->civicrm_version, '4.7', '>=')) {
         $currency = $this->contribution_page['currency'];
         $contributionCallbackQuery = array('currency' => $currency, 'snippet' => 4);
         $contributionCallbackUrl = 'civicrm/payment/form';
         $js_vars['processor_id_key'] = 'processor_id';
-      } else {
+      }
+      else {
         $contributionCallbackQuery = array('reset' => 1, 'id' => $page_id, 'qfKey' => $this->getQfKey(), 'snippet' => 4);
         $contributionCallbackUrl = 'civicrm/contribute/transact';
         $js_vars['processor_id_key'] = 'type';

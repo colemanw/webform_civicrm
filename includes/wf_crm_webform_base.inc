@@ -7,6 +7,14 @@
 
 module_load_include('inc', 'webform_civicrm', 'includes/utils');
 
+/**
+ * Class wf_crm_webform_base
+ *
+ * @property array $payment_processor
+ * @property array $contribution_page
+ * @property number $tax_rate
+ * @property number $civicrm_version
+ */
 abstract class wf_crm_webform_base {
   protected $node;
   protected $settings = array();
@@ -23,8 +31,6 @@ abstract class wf_crm_webform_base {
   private $_contribution_page;
   // tax integration
   private $_tax_rate;
-
-  private $_civicrm_version;
 
   /**
    * Magic method to retrieve otherwise inaccessible properties
@@ -58,14 +64,10 @@ abstract class wf_crm_webform_base {
           }
           return $this->_tax_rate;
         }
-        return;
+        return NULL;
 
       case 'civicrm_version':
-        if (!$this->_civicrm_version) {
-          $civicrm = system_get_info('module', 'civicrm');
-          $this->_civicrm_version = $civicrm['version'];
-        }
-        return $this->_civicrm_version;
+        return CRM_Utils_System::version();
 
       default:
         throw new Exception('Unknown property');

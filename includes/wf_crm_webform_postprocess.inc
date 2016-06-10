@@ -1696,7 +1696,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $config = CRM_Core_Config::singleton();
     $params = $this->data['contribution'][1]['contribution'][1];
     $processor_type = wf_civicrm_api('payment_processor', 'getsingle', array('id' => $params['payment_processor_id']));
-    if (version_compare($config->civiVersion, 4.7, '<')) {
+    if (version_compare($this->civicrm_version, 4.7, '<')) {
       $mode = empty($params['is_test']) ? 'live' : 'test';
       $paymentProcessor = CRM_Core_Payment::singleton($mode, $processor_type);
     }
@@ -1814,9 +1814,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     // doPayment requries payment_processor and payment_processor_mode fields.
-    if ($this->civicrm_version >= '4.7') {
+    if (version_compare($this->civicrm_version, '4.7', '>=')) {
       $params['payment_processor'] = $params['payment_processor_id'];
-
     }
 
     // Save this stuff for later
