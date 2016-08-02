@@ -2204,7 +2204,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $index = 1;
     $entityTypeIdIndex = $entity.'_type_id';
     $entity = $entity == 'website' ? 'url' : $entity; // for website only
-    $submittedLocationValues = self::unsetEmptyValueIndexes($submittedLocationValues, $entity);
 
     foreach ($existingLocationValues as $eValue) {
       $existingLocationTypeId = $entity != 'url' ? $eValue['location_type_id'] : NULL;
@@ -2219,6 +2218,24 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
       $reorderedArray[$index][$entity] = $eValue[$entity];
 
+      // address field contain many sub fields and should be handled differently
+      if ($entity != 'address')  {
+        $submittedLocationValues = self::unsetEmptyValueIndexes($submittedLocationValues, $entity);
+        $reorderedArray[$index][$entity] = $eValue[$entity];
+      }
+      else {
+        foreach (wf_crm_address_fields() as $field)  {
+          $reorderedArray[$index][$field] = isset($eValue[$field]) ? $eValue[$field] : '';
+        }
+        // handle supplemental addresses
+        $subAddressIndex = 1;
+        $subAddField = 'supplemental_address_' . $subAddressIndex;
+        while(isset($eValue[$subAddField]))  {
+          $reorderedArray[$index][$subAddField] = $eValue[$subAddField];
+          $subAddField = 'supplemental_address_' . ++$subAddressIndex;
+        }
+      }
+
       foreach ($submittedLocationValues as $key => $sValue) {
         $sLocationTypeId = isset($sValue['location_type_id']) ? $sValue['location_type_id'] : NULL;
         $sEntityTypeId = isset($sValue[$entityTypeIdIndex]) ? $sValue[$entityTypeIdIndex] : NULL;
@@ -2229,7 +2246,24 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             ||
            ($existingLocationTypeId == $sLocationTypeId && $existingEntityTypeId == $sEntityTypeId)) {
 
-           $reorderedArray[$index][$entity] = $sValue[$entity];
+          // address field contain many sub fields and should be handled differently
+          if ($entity != 'address')  {
+            $reorderedArray[$index][$entity] = $sValue[$entity];
+          }
+          else {
+            foreach (wf_crm_address_fields() as $field)  {
+              if (isset($sValue[$field]))  {
+                $reorderedArray[$index][$field] = $sValue[$field];
+              }
+            }
+            // handle supplemental addresses
+            $subAddressIndex = 1;
+            $subAddField = 'supplemental_address_' . $subAddressIndex;
+            while(isset($sValue[$subAddField]))  {
+              $reorderedArray[$index][$subAddField] = $sValue[$subAddField];
+              $subAddField = 'supplemental_address_' . ++$subAddressIndex;
+            }
+          }
            unset($submittedLocationValues[$key]);
         }
       }
