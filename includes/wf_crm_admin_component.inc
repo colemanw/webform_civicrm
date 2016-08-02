@@ -151,12 +151,8 @@ class wf_crm_admin_component {
     }
     // Allow widget to be altered, unless it's a contact or file
     elseif ($this->field && !in_array($this->field['type'], array('civicrm_contact', 'file')) && empty($_GET['type'])) {
-      $widgets = array();
-      foreach (webform_components() as $k => $v) {
-        if ($k !== 'civicrm_contact' && $k !== 'pagebreak' && $k !== 'markup' && empty($v['features']['group'])) {
-          $widgets[$k] = $v['label'];
-        }
-      }
+      $unusable_widgets = array('civicrm_contact', 'pagebreak', 'markup', 'layout_box', 'fieldset');
+      $widgets = array_diff_key(webform_component_options(), array_flip($unusable_widgets));
       if ($this->form['type']['#value'] == 'textfield' && $table === 'address') {
         if ($name === 'state_province_id' || $name === 'county_id') {
           $widgets['textfield'] = t('Textfield / AJAX Select');
