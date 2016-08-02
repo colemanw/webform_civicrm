@@ -1694,10 +1694,16 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * Call IPN payment processor to redirect to payment site
    */
   private function submitIPNPayment() {
+    $config = CRM_Core_Config::singleton();
     $params = $this->data['contribution'][1]['contribution'][1];
     $processor_type = wf_civicrm_api('payment_processor', 'getsingle', array('id' => $params['payment_processor_id']));
-    $mode = empty($params['is_test']) ? 'live' : 'test';
-    $paymentProcessor = CRM_Core_Payment::singleton($mode, $processor_type);
+    if (version_compare($this->civicrm_version, 4.7, '<')) {
+      $mode = empty($params['is_test']) ? 'live' : 'test';
+      $paymentProcessor = CRM_Core_Payment::singleton($mode, $processor_type);
+    }
+    else {
+      $paymentProcessor = \Civi\Payment\System::singleton()->getByName($processor_type, $params['is_test']);
+    }
     // Add contact details to params (most processors want a first_name and last_name)
     $contact = wf_civicrm_api('contact', 'getsingle', array('id' => $this->ent['contact'][1]['id']));
     $params += $contact;
@@ -1716,8 +1722,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['source'] = $this->settings['new_contact_source'];
     $params['item_name'] = t('Webform Payment: @title', array('@title' => $this->node->title));
 
-    // TODO: Someday payment processors will accept params like these.
-    // For now, we fake it with these placeholders and a hook to cajole the processor to respect them
+    if (method_exists($paymentProcessor, 'setSuccessUrl')) {
+      $paymentProcessor->setSuccessUrl($this->getIpnRedirectUrl('success'));
+      $paymentProcessor->setCancelUrl($this->getIpnRedirectUrl('cancel'));
+    }
+    // Legacy paypal settings. Remove when dropping support for CiviCRM 4.6 and below.
     // @see webform_civicrm_civicrm_alterPaymentProcessorParams
     $params['webform_redirect_cancel'] = $this->getIpnRedirectUrl('cancel');
     $params['webform_redirect_success'] = $this->getIpnRedirectUrl('success');
@@ -1806,9 +1815,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     // doPayment requries payment_processor and payment_processor_mode fields.
-    if ($this->civicrm_version >= '4.7') {
+    if (version_compare($this->civicrm_version, '4.7', '>=')) {
       $params['payment_processor'] = $params['payment_processor_id'];
-
     }
 
     // Save this stuff for later
