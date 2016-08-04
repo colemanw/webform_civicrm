@@ -1594,6 +1594,21 @@ function wf_crm_location_fields() {
 }
 
 /**
+ * These are the address fields this module supports
+ *
+ * @return array
+ */
+function wf_crm_address_fields() {
+  return array(
+    'street_address',
+    'city',
+    'state_province_id',
+    'country_id',
+    'postal_code'
+  );
+}
+
+/**
  * Returns a count of children of a webform component
  *
  * @param int $nid
