@@ -46,6 +46,7 @@ function _webform_defaults_civicrm_contact() {
         'group' => array(),
         'tag' => array(),
         'check_permissions' => 1,
+        'relationship' => array(),
       ),
     ),
   );
@@ -299,6 +300,22 @@ function _webform_edit_civicrm_contact($component) {
     '#default_value' => $component['extra']['filters']['tag'],
     '#description' => t('Listed contacts must be have at least one of the selected tags (leave blank to not filter by tag).'),
   );
+
+  if ($c > 1) {
+    $form['filters']['relationship'] = array(
+      '#type' => 'select',
+      '#multiple' => TRUE,
+      '#title' => t('Relationship to !contact', array('!contact' => wf_crm_contact_label(1, $data))),
+      '#options' => array('' => '- ' . t('None') . ' -'),
+      '#default_value' => $component['extra']['filters']['relationship'],
+      '#description' => t('Listed contacts must be have at least one of the selected relationships (leave blank to not filter by relationship).'),
+    );
+    $rtypes = wf_crm_get_contact_relationship_types($contact_type, $data['contact'][1]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][1]['contact'][1]['contact_sub_type']);
+    foreach ($rtypes as $k => $v) {
+      $form['filters']['relationship']['#options'][$k] = $v . ' ' . wf_crm_contact_label(1, $data, 'plain');
+    }
+  }
+
   $form['filters']['check_permissions'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enforce Permissions'),
@@ -586,7 +603,7 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
   if ($str) {
     $params['display_name'] = str_replace(' ', '%', CRM_Utils_Type::escape($str, 'String'));
   }
-  $result = wf_civicrm_api('contact', 'get', $params);
+  $result = wf_crm_get_contacts($component, $params);
   // Autocomplete results
   if ($str) {
     foreach (wf_crm_aval($result, 'values', array()) as $contact) {
@@ -631,6 +648,23 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
   return $ret;
 }
 
+function wf_crm_get_contacts($component, $params) {
+  // TODO: need to get cid's of previous selected contacts passed here
+  // for testing, fix this as cid = 203
+  $cid[1] = "203";
+  if (!empty($component['extra']['filters']['relationship'])) {
+    $rels = wf_crm_find_relations($cid[1], $component['extra']['filters']['relationship']);
+    if (isset($params['id'])) {
+      if (!in_array($params['id'], $rels)) {
+        return NULL;
+      }
+    }
+    else {
+      $params['id'] = array('IN' => $rels);
+    }
+  }
+  return wf_civicrm_api('contact', 'get', $params);
+}
 /**
  * Load contact name if user has permission. Else return FALSE.
  *
@@ -673,7 +707,7 @@ function wf_crm_contact_access($component, $filters, $cid) {
     }
   }
   // Fetch contact name with filters applied
-  $result = wf_civicrm_api('contact', 'get', $filters);
+  $result = wf_crm_get_contacts($component, $filters);
   return wf_crm_format_contact(wf_crm_aval($result, "values:$cid"), $component['extra']['results_display']);
 }
 
@@ -830,6 +864,9 @@ function wf_crm_search_filters($node, $component) {
   list(, $c, ) = explode('_', $component['form_key'], 3);
   $params['contact_type'] = ucfirst($node->webform_civicrm['data']['contact'][$c]['contact'][1]['contact_type']);
   foreach ($component['extra']['filters'] as $key => $val) {
+    if ($key == 'relationship') {
+      continue;  // relationship filters are handled separately
+    }
     if (is_array($val)) {
       $val = array_filter($val);
     }
