@@ -380,6 +380,7 @@ class wf_crm_admin_help {
       <li>' . t('Autocomplete will suggest names of contacts as the user types. Good for large numbers of contacts.') . '</li>
       <li>' . t('A select list will show all possible contacts in a dropdown menu. Good for small lists - use filters.') . '</li>
       <li>' . t('A static element will select a contact automatically without giving the user a choice. Use in conjunction with a default value setting or a cid passed in the url.') . '</li>
+      <li>' . t('A contact id element is a simple field in which the CiviCRM contact id number can be entered.') . '</li>
       </ul>';
   }
 
