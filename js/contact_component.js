@@ -70,11 +70,11 @@ var wfCiviContact = (function ($, D) {
       // Warning if enforce permissions is disabled
       $('#webform-component-edit-form', context).once('wf-civi').submit(function() {
         if (!$('input[name="extra[filters][check_permissions]"]').is(':checked') && $('input[name="extra[allow_url_autofill]"]').is(':checked')) {
-          return confirm(Drupal.t('Warning: "Enforce Permissions" is disabled but "Use contact id from URL" is enabled. Anyone with access to this webform will be able to view any contact in the database (who meets the filter criteria) by typing their contact id in the URL.'));
+          return confirm(Backdrop.t('Warning: "Enforce Permissions" is disabled but "Use contact id from URL" is enabled. Anyone with access to this webform will be able to view any contact in the database (who meets the filter criteria) by typing their contact id in the URL.'));
         }
       });
     }
   };
 
   return pub;
-})(jQuery, Drupal);
+})(jQuery, Backdrop);

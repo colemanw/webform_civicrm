@@ -232,7 +232,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     // Write record; we do this when creating, updating, or saving a draft of a webform submission.
     $record = $this->formatSubmission();
-    drupal_write_record('webform_civicrm_submissions', $record, $this->update);
+    backdrop_write_record('webform_civicrm_submissions', $record, $this->update);
 
     // Calling an IPN payment processor will result in a redirect so this happens after everything else
     if (empty($this->submission->is_draft) && !empty($this->ent['contribution'][1]['id']) && $this->contributionIsIncomplete && !$this->contributionIsPayLater) {
@@ -282,7 +282,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
-   * Force Drupal to ignore errors for fields hidden by this module
+   * Force Backdrop to ignore errors for fields hidden by this module
    */
   private function hiddenFieldValidation() {
     $errors = form_get_errors();
@@ -489,7 +489,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
-   * If this is an update op, set param for drupal_write_record()
+   * If this is an update op, set param for backdrop_write_record()
    */
   private function setUpdateParam() {
     if (!empty($this->submission->sid)) {
@@ -657,7 +657,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $existing = wf_civicrm_api('contact', 'get', array('id' => $this->ent['contact'][$c]['id']) + $fetch);
       $existing = wf_crm_aval($existing, 'values:' . $this->ent['contact'][$c]['id'], array());
       foreach ($multi as $name) {
-        $exist = array_filter(drupal_map_assoc((array) wf_crm_aval($existing, $name, array())));
+        $exist = array_filter(backdrop_map_assoc((array) wf_crm_aval($existing, $name, array())));
         // Only known contacts are allowed to empty a field
         if (!empty($this->existing_contacts[$c])) {
           foreach ($this->getExposedOptions("civicrm_{$c}_contact_1_contact_$name") as $k => $v) {
@@ -742,7 +742,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           if (isset($params['county_id']) && $params['county_id'] === '-') {
             $params['county_id'] = '';
           }
-          // Update drupal email address
+          // Update backdrop email address
           if ($location == 'email' && !empty($params['email']) && $i == 1) {
             $uid = wf_crm_user_cid($cid, 'contact');
             if ($uid) {
@@ -843,7 +843,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function addOrRemoveMultivaluedData($data_type, $entity_type, $id, $add, $remove = array()) {
     $confirmations_sent = $existing = $params = array();
-    $add = drupal_map_assoc($add);
+    $add = backdrop_map_assoc($add);
     static $mailing_lists = array();
 
     switch ($data_type) {
@@ -912,7 +912,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
       }
       if ($confirmations_sent) {
-        drupal_set_message(t('A message has been sent to %email to confirm subscription to !group.', array('%email' => $email, '!group' => '<em>' . implode('</em> ' . t('and') . ' <em>', $confirmations_sent) . '</em>')));
+        backdrop_set_message(t('A message has been sent to %email to confirm subscription to !group.', array('%email' => $email, '!group' => '<em>' . implode('</em> ' . t('and') . ' <em>', $confirmations_sent) . '</em>')));
       }
     }
     // Remove data from entity
@@ -923,7 +923,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     if (!empty($remove) && $data_type == 'group') {
       $display_name = wf_civicrm_api('contact', 'get', array('contact_id' => $id, 'return.display_name' => 1));
       $display_name = wf_crm_aval($display_name, "values:$id:display_name", t('Contact'));
-      drupal_set_message(t('%contact has been removed from !group.', array('%contact' => $display_name, '!group' => '<em>' . implode('</em> ' . t('and') . ' <em>', $remove) . '</em>')));
+      backdrop_set_message(t('%contact has been removed from !group.', array('%contact' => $display_name, '!group' => '<em>' . implode('</em> ' . t('and') . ' <em>', $remove) . '</em>')));
     }
   }
 
@@ -1062,7 +1062,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
         foreach ($remove as $eid => $title) {
           wf_civicrm_api('participant', 'create', array('status_id' => "Cancelled", 'id' => $existing[$eid]));
-          drupal_set_message(t('Registration cancelled for !event', array('!event' => $title)));
+          backdrop_set_message(t('Registration cancelled for !event', array('!event' => $title)));
         }
       }
     }
@@ -1289,7 +1289,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           if (!empty($this->data['activity'][$n]['details']['entire_result'])) {
             module_load_include('inc', 'webform', 'includes/webform.submissions');
             $submission = webform_submission_render($this->node, $this->submission, NULL, 'html');
-            $params['details'] .= drupal_render($submission);
+            $params['details'] .= backdrop_render($submission);
           }
           if (!empty($this->data['activity'][$n]['details']['view_link'])) {
             $params['details'] .= '<p>' . l(t('View Webform Submission'), "node/{$this->node->nid}/submission/{$this->submission->sid}", array('absolute' => TRUE, 'alias' => TRUE)) . '</p>';
@@ -1594,7 +1594,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     // Since billing fields are not "real" form fields they get cleared if the page reloads.
     // We add a bit of js to fix this annoyance.
-    drupal_add_js(array('webform_civicrm' => array('billingSubmission' => $submitted)), 'setting');
+    backdrop_add_js(array('webform_civicrm' => array('billingSubmission' => $submitted)), 'setting');
     return $valid;
   }
 
@@ -2020,13 +2020,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
         }
         elseif ($name === 'image_URL') {
-          if (empty($val[0]) || !($val = $this->getDrupalFileUrl($val[0]))) {
+          if (empty($val[0]) || !($val = $this->getBackdropFileUrl($val[0]))) {
             // This field can't be emptied due to the nature of file uploads
             continue;
           }
         }
         elseif ($dataType == 'File') {
-          if (empty($val[0]) || !($val = $this->saveDrupalFileToCivi($val[0]))) {
+          if (empty($val[0]) || !($val = $this->saveBackdropFileToCivi($val[0]))) {
             // This field can't be emptied due to the nature of file uploads
             continue;
           }
@@ -2132,12 +2132,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   /**
    * Clears an error against a form element.
    * Used to disable validation when this module hides a field
-   * @see https://api.drupal.org/comment/49163#comment-49163
+   * @see https://api.backdrop.org/comment/49163#comment-49163
    *
    * @param $name string
    */
   private function unsetError($name) {
-    $errors = &drupal_static('form_set_error', array());
+    $errors = &backdrop_static('form_set_error', array());
     $removed_messages = array();
     if (isset($errors[$name])) {
       $removed_messages[] = $errors[$name];

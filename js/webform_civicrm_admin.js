@@ -143,12 +143,12 @@ var wfCiviAdmin = (function ($, D) {
       if (options.length > 0) {
         $(this).append(options).val(val).prop('disabled', false).removeAttr('style');
         $(this).parent().removeAttr('title');
-        $('option[value=0]', this).text(Drupal.t('- None -'));
+        $('option[value=0]', this).text(Backdrop.t('- None -'));
       }
       else {
         $(this).val(0).prop('disabled', true).css('color', 'gray');
-        $(this).parent().attr('title', Drupal.t('To create an employer relationship, first add an organization-type contact to the webform.'));
-        $('option[value=0]', this).text(Drupal.t('- first add an org -'));
+        $(this).parent().attr('title', Backdrop.t('To create an employer relationship, first add an organization-type contact to the webform.'));
+        $('option[value=0]', this).text(Backdrop.t('- first add an org -'));
       }
     });
   }
@@ -215,7 +215,7 @@ var wfCiviAdmin = (function ($, D) {
         triggerChange = true;
       }
       if (!$el.hasClass('required') && $('option[value=""]', $el).length < 1) {
-        $el.prepend('<option value="">'+ Drupal.t('- None -') +'</option>');
+        $el.prepend('<option value="">'+ Backdrop.t('- None -') +'</option>');
       }
       $el.removeAttr('multiple');
       // Choose first option if nothing is already selected
@@ -236,7 +236,7 @@ var wfCiviAdmin = (function ($, D) {
 
   // HTML multiselect elements are awful. This is a simple/lightweight way to make them better.
   function initMultiSelect() {
-    $(this).after('<a href="#" class="wf-crm-change-select civi-icon" title="'+ Drupal.t('Toggle Multiple Options') +'"></a>');
+    $(this).after('<a href="#" class="wf-crm-change-select civi-icon" title="'+ Backdrop.t('Toggle Multiple Options') +'"></a>');
     $(this).siblings('.wf-crm-change-select').click(changeSelect);
     if (!$(this).val() || $(this).val().length < 2) {
       $(this).siblings('.wf-crm-change-select').click();
@@ -247,7 +247,7 @@ var wfCiviAdmin = (function ($, D) {
   }
 
   /**
-   * Add Drupal behaviors.
+   * Add Backdrop behaviors.
    */
   D.behaviors.webform_civicrmAdmin = {
     attach: function (context) {
@@ -258,7 +258,7 @@ var wfCiviAdmin = (function ($, D) {
       $('select[multiple]', '#wf-crm-configure-form, #webform-component-edit-form').once('wf-crm-multiselect').each(initMultiSelect);
 
       // Summaries for vertical tabs
-      $('fieldset[id^="edit-contact-"]', context).once('wf-civi').drupalSetSummary(function (context) {
+      $('fieldset[id^="edit-contact-"]', context).once('wf-civi').backdropSetSummary(function (context) {
         var label = $('select[name$="_contact_type"] option:selected', context).text();
         if ($('select[name$="_contact_sub_type[]"]', context).val()) {
           var first = true;
@@ -270,58 +270,58 @@ var wfCiviAdmin = (function ($, D) {
         }
         return label;
       });
-      $('fieldset#edit-st-message', context).once('wf-civi').drupalSetSummary(function (context) {
+      $('fieldset#edit-st-message', context).once('wf-civi').backdropSetSummary(function (context) {
         if ($('[name="toggle_message"]', context).is(':checked')) {
           return CheckLength($('#edit-message', context).val());
         }
         else {
-          return Drupal.t('- None -');
+          return Backdrop.t('- None -');
         }
       });
-      $('fieldset#edit-prefix', context).once('wf-civi').drupalSetSummary(function (context) {
+      $('fieldset#edit-prefix', context).once('wf-civi').backdropSetSummary(function (context) {
         var label = $('[name="prefix_known"]', context).val() || $('[name="prefix_unknown"]', context).val();
-        return CheckLength(label) || Drupal.t('- None -');
+        return CheckLength(label) || Backdrop.t('- None -');
       });
-      $('#edit-participant, #edit-contribution', context).once('wf-civi').drupalSetSummary(function (context) {
+      $('#edit-participant, #edit-contribution', context).once('wf-civi').backdropSetSummary(function (context) {
         return $('select:first option:selected', context).text();
       });
-      $('fieldset#edit-activitytab', context).once('wf-civi').drupalSetSummary(function (context) {
+      $('fieldset#edit-activitytab', context).once('wf-civi').backdropSetSummary(function (context) {
         var label = [];
         $('fieldset.activity-wrapper', context).each(function() {
           var caseType = $('select[name$=case_type_id]', this).val();
           var prefix = caseType && caseType != '0' ? $('select[name$=case_type_id] option:selected', this).text() + ': ' : '';
           label.push(prefix + $('select[name$=activity_type_id] option:selected', this).text());
         });
-        return label.join('<br />') || Drupal.t('- None -');
+        return label.join('<br />') || Backdrop.t('- None -');
       });
-      $('fieldset#edit-casetab', context).once('wf-civi').drupalSetSummary(function (context) {
+      $('fieldset#edit-casetab', context).once('wf-civi').backdropSetSummary(function (context) {
         var label = [];
         $('select[name$=case_type_id]', context).each(function() {
           label.push($(this).find('option:selected').text());
         });
-        return label.join('<br />') || Drupal.t('- None -');
+        return label.join('<br />') || Backdrop.t('- None -');
       });
-      $('fieldset#edit-membership', context).once('wf-civi').drupalSetSummary(function (context) {
+      $('fieldset#edit-membership', context).once('wf-civi').backdropSetSummary(function (context) {
         var memberships = [];
         $('select[name$=membership_type_id]', context).each(function() {
           var label = getContactLabel($(this).attr('name').split('_')[1]);
           memberships.push(label + ': ' + $(this).find('option:selected').text());
         });
-        return memberships.join('<br />') || Drupal.t('- None -');
+        return memberships.join('<br />') || Backdrop.t('- None -');
       });
-      $('#edit-granttab', context).once('wf-civi').drupalSetSummary(function (context) {
+      $('#edit-granttab', context).once('wf-civi').backdropSetSummary(function (context) {
         var label = [];
         $('select[name$=grant_type_id]', context).each(function() {
           label.push($(this).find('option:selected').text());
         });
-        return label.join('<br />') || Drupal.t('- None -');
+        return label.join('<br />') || Backdrop.t('- None -');
       });
-      $('fieldset#edit-options', context).once('wf-civi').drupalSetSummary(function (context) {
+      $('fieldset#edit-options', context).once('wf-civi').backdropSetSummary(function (context) {
         var label = '';
         $(':checked', context).each(function() {
           label = (label ? label + ', ' : '') + $.trim($(this).siblings('label').text());
         });
-        return label || Drupal.t('- None -');
+        return label || Backdrop.t('- None -');
       });
 
       $('select[name=participant_reg_type]', context).once('wf-civi').change(function() {
@@ -443,7 +443,7 @@ var wfCiviAdmin = (function ($, D) {
         var label = $(this).val().replace(/^\s+|\s+$/g,'');
         if (!label.length) {
           var c = $(this).attr('name').split('_')[0];
-          label = Drupal.t('Contact !num', {'!num': c});
+          label = Backdrop.t('Contact !num', {'!num': c});
         }
         $(this).val(label);
         changeContactLabel.call(this);
@@ -461,7 +461,7 @@ var wfCiviAdmin = (function ($, D) {
       $('select[name$=contribution_honor_type_id]', context).once('crm-contrib').change(function() {
         var $label = $('.form-item-civicrm-1-contribution-1-contribution-honor-contact-id label');
         if ($(this).val() == 'create_civicrm_webform_element') {
-          $label.html(Drupal.t('In Honor/Memory of'));
+          $label.html(Backdrop.t('In Honor/Memory of'));
         }
         else {
           $label.html($('option:selected', this).html());
@@ -486,16 +486,16 @@ var wfCiviAdmin = (function ($, D) {
         var $pageSelect = $('[name=civicrm_1_contribution_1_contribution_contribution_page_id]');
         // Warning about contribution page with no email
         if ($pageSelect.val() !== '0' && ($('[name=civicrm_1_contact_1_email_email]:checked').length < 1 || $('[name=contact_1_number_of_email]').val() == '0')) {
-          var msg = Drupal.t('You must enable an email field for !contact in order to process transactions.', {'!contact': getContactLabel(1)});
+          var msg = Backdrop.t('You must enable an email field for !contact in order to process transactions.', {'!contact': getContactLabel(1)});
           if (!$('.wf-crm-billing-email-alert').length) {
-            $pageSelect.after('<div class="messages error wf-crm-billing-email-alert">' + msg + ' <button>' + Drupal.t('Enable It') + '</button></div>');
+            $pageSelect.after('<div class="messages error wf-crm-billing-email-alert">' + msg + ' <button>' + Backdrop.t('Enable It') + '</button></div>');
             $('.wf-crm-billing-email-alert button').click(function() {
               $('input[name=civicrm_1_contact_1_email_email]').prop('checked', true).change();
               $('select[name=contact_1_number_of_email]').val('1').change();
               return false;
             });
             if ($('.wf-crm-billing-email-alert').is(':hidden')) {
-              billingEmailMsg = CRM.alert(msg, Drupal.t('Email Required'), 'error');
+              billingEmailMsg = CRM.alert(msg, Backdrop.t('Email Required'), 'error');
             }
           }
         }
@@ -506,8 +506,8 @@ var wfCiviAdmin = (function ($, D) {
         // Info about paid events/memberships
         $('.wf-crm-paid-entities-info').remove();
         if ($pageSelect.val() == '0') {
-          $('#edit-membership').prepend('<div class="wf-crm-paid-entities-info messages status">' + Drupal.t('Configure the Contribution settings to enable paid memberships.') + '</div>');
-          $('#edit-participant').prepend('<div class="wf-crm-paid-entities-info messages status">' + Drupal.t('Configure the Contribution settings to enable paid events.') + '</div>');
+          $('#edit-membership').prepend('<div class="wf-crm-paid-entities-info messages status">' + Backdrop.t('Configure the Contribution settings to enable paid memberships.') + '</div>');
+          $('#edit-participant').prepend('<div class="wf-crm-paid-entities-info messages status">' + Backdrop.t('Configure the Contribution settings to enable paid events.') + '</div>');
         }
       }
       $('[name=civicrm_1_contribution_1_contribution_contribution_page_id], [name=civicrm_1_contact_1_email_email]', context).once('email-alert').change(billingMessages);
@@ -533,8 +533,8 @@ var wfCiviAdmin = (function ($, D) {
   };
 
   /**
-   * This block uses CiviCRM's jQuery not Drupal's version
-   * TODO: Move more code here! Drupal's version of jQuery is ancient.
+   * This block uses CiviCRM's jQuery not Backdrop's version
+   * TODO: Move more code here! Backdrop's version of jQuery is ancient.
    * TODO: change 'cj' to 'CRM.$' when we drop support for Civi v4.4
    */
   cj(function($) {
@@ -547,4 +547,4 @@ var wfCiviAdmin = (function ($, D) {
   });
 
   return pub;
-})(jQuery, Drupal);
+})(jQuery, Backdrop);

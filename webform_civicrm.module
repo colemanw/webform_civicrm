@@ -24,7 +24,7 @@ function webform_civicrm_menu() {
   $items = array();
   $items['node/%webform_menu/civicrm'] = array(
     'title' => 'CiviCRM',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('wf_crm_configure_form', 1),
     'access callback' => 'wf_crm_admin_access',
     'access arguments' => array(1),
@@ -130,7 +130,7 @@ function webform_civicrm_node_load($nodes, $types) {
 function webform_civicrm_node_insert($node) {
   if (isset($node->webform_civicrm)) {
     $node->webform_civicrm['nid'] = $node->nid;
-    drupal_write_record('webform_civicrm_forms', $node->webform_civicrm);
+    backdrop_write_record('webform_civicrm_forms', $node->webform_civicrm);
   }
 }
 
@@ -282,7 +282,7 @@ function webform_civicrm_webform_submission_load(&$submissions) {
  */
 function webform_civicrm_webform_submission_render_alter(&$sub) {
   if (!empty($sub['#submission']->civicrm['contact'][1]['display_name']) && empty($sub['#email']) && $sub['#format'] == 'html') {
-    drupal_set_title(t('Submission #!num by @name', array('!num' => $sub['#submission']->sid, '@name' => $sub['#submission']->civicrm['contact'][1]['display_name'])));
+    backdrop_set_title(t('Submission #!num by @name', array('!num' => $sub['#submission']->sid, '@name' => $sub['#submission']->civicrm['contact'][1]['display_name'])));
   }
 }
 
@@ -354,7 +354,7 @@ function webform_civicrm_admin_paths() {
 function webform_civicrm_help($section) {
   if ($section == 'admin/help#webform_civicrm') {
     // Return a line-break version of the module README.txt
-    return nl2br(file_get_contents(drupal_get_path('module', 'webform_civicrm') . '/README.txt'));
+    return nl2br(file_get_contents(backdrop_get_path('module', 'webform_civicrm') . '/README.txt'));
   }
 }
 
@@ -514,7 +514,7 @@ function wf_crm_contact_clone($form, $form_state) {
     $storage['old'][] = "civicrm_{$old}_participant_";
     $storage['new'][] = "civicrm_{$new}_participant_";
   }
-  drupal_write_record('webform_civicrm_forms', $settings, 'nid');
+  backdrop_write_record('webform_civicrm_forms', $settings, 'nid');
   // Store data to rewrite form keys
   wf_crm_contact_clone_storage($storage);
 }

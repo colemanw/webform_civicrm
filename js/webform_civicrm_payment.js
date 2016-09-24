@@ -2,7 +2,7 @@
 cj(function($) {
   'use strict';
   var
-    setting = Drupal.settings.webform_civicrm,
+    setting = Backdrop.settings.webform_civicrm,
     $contributionAmount = $('[name*="[civicrm_1_contribution_1_contribution_total_amount]"]'),
     $processorFields = $('.civicrm-enabled[name$="civicrm_1_contribution_1_contribution_payment_processor_id]"]');
 
@@ -99,7 +99,7 @@ cj(function($) {
 
   function calculateContributionAmount() {
     var amount = getFieldAmount('civicrm_1_contribution_1_contribution_total_amount');
-    var label = $contributionAmount.closest('div.webform-component').find('label').html() || Drupal.t('Contribution');
+    var label = $contributionAmount.closest('div.webform-component').find('label').html() || Backdrop.t('Contribution');
     updateLineItem('civicrm_1_contribution_1', amount, label);
   }
 

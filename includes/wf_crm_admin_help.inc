@@ -46,7 +46,7 @@ class wf_crm_admin_help {
 
   static function contact_image_URL() {
     print '<p>' .
-      t('Allows an image to be associated with a contact. This image will appear in CiviCRM, but the file is stored in Drupal. If the webform submission or entire webform were to be deleted, the image would be lost.') .
+      t('Allows an image to be associated with a contact. This image will appear in CiviCRM, but the file is stored in Backdrop. If the webform submission or entire webform were to be deleted, the image would be lost.') .
       '</p>';
   }
 

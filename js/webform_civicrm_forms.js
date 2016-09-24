@@ -97,9 +97,9 @@ var wfCivi = (function ($, D) {
       }
       else {
         $(':visible', container).hide();
-        container.append('<input type="submit" class="form-submit ajax-processed civicrm-remove-file" value="' + Drupal.t('Change') + '" onclick="wfCivi.clearFileField(\'' + field + '\'); return false;">');
+        container.append('<input type="submit" class="form-submit ajax-processed civicrm-remove-file" value="' + Backdrop.t('Change') + '" onclick="wfCivi.clearFileField(\'' + field + '\'); return false;">');
       }
-      container.prepend('<span class="civicrm-file-icon"><img alt="' + Drupal.t('File') + '" src="' + info.icon + '" /> ' + (info.name ? ('<a href="'+ info.file_url+ '" target="_blank">'+info.name +'</a>') : '') + '</span>');
+      container.prepend('<span class="civicrm-file-icon"><img alt="' + Backdrop.t('File') + '" src="' + info.icon + '" /> ' + (info.name ? ('<a href="'+ info.file_url+ '" target="_blank">'+info.name +'</a>') : '') + '</span>');
     }
   };
 
@@ -256,7 +256,7 @@ var wfCivi = (function ($, D) {
       stateVal = stateSelect.val();
     if (countySelect.length) {
       if (!stateVal) {
-        fillOptions(countySelect, {'': Drupal.t('- First Choose a State -')});
+        fillOptions(countySelect, {'': Backdrop.t('- First Choose a State -')});
       }
       else if (stateVal === '-') {
         fillOptions(countySelect, null);
@@ -275,7 +275,7 @@ var wfCivi = (function ($, D) {
     $el.find('option').remove();
     if (!$.isEmptyObject(data || [])) {
       if (!data['']) {
-        var text = $el.hasClass('required') ? Drupal.t('- Select -') : Drupal.t('- None -');
+        var text = $el.hasClass('required') ? Backdrop.t('- Select -') : Backdrop.t('- None -');
         if ($el.hasClass('has-default')) {
           $el.removeClass('has-default');
         }
@@ -290,7 +290,7 @@ var wfCivi = (function ($, D) {
     }
     else {
       $el.removeClass('has-default');
-      $el.append('<option value="-">'+Drupal.t('- N/A -')+'</option>');
+      $el.append('<option value="-">'+Backdrop.t('- N/A -')+'</option>');
     }
     $el.removeAttr('disabled').trigger('change', 'webform_civicrm:chainselect');
   }
@@ -400,4 +400,4 @@ var wfCivi = (function ($, D) {
     }
   };
   return pub;
-})(jQuery, Drupal);
+})(jQuery, Backdrop);

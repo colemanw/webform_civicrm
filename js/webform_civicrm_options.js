@@ -101,4 +101,4 @@ if (typeof jQuery.fn.prop !== 'function') {
       }).change();
     }
   };
-})(jQuery, Drupal);
+})(jQuery, Backdrop);

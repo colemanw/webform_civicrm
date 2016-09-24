@@ -19,10 +19,10 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
    */
   function stateProvince($input) {
     if (!$input || (intval($input) != $input && $input != 'default')) {
-      drupal_json_output(array('' => t('- first choose a country -')));
+      backdrop_json_output(array('' => t('- first choose a country -')));
       exit();
     }
-    drupal_json_output(wf_crm_get_states($input));
+    backdrop_json_output(wf_crm_get_states($input));
     exit();
   }
 
@@ -37,7 +37,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
         'field' => 'county_id',
         'state_province_id' => wf_crm_state_abbr($state, 'id', $country)
       );
-      drupal_json_output(wf_crm_apivalues('address', 'getoptions', $params));
+      backdrop_json_output(wf_crm_apivalues('address', 'getoptions', $params));
       exit();
     }
   }
@@ -55,7 +55,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
     $this->node = node_load($nid);
     $this->settings = $this->node->webform_civicrm;
     if (!$this->autocompleteAccess($fid)) {
-      drupal_access_denied();
+      backdrop_access_denied();
     }
     $this->data = $this->node->webform_civicrm['data'];
     $component = $this->node->webform['components'][$fid];
@@ -68,7 +68,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
     // Autocomplete contact names
     if (!empty($_GET['str'])) {
       if ($str = trim($_GET['str'])) {
-        drupal_json_output(wf_crm_contact_search($this->node, $component, $filters, $str));
+        backdrop_json_output(wf_crm_contact_search($this->node, $component, $filters, $str));
       }
       exit();
     }
@@ -137,7 +137,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
         $data = array_merge($data, $states, $countries);
       }
     }
-    drupal_json_output($data);
+    backdrop_json_output($data);
     exit();
   }
 
@@ -178,7 +178,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
 }
 
 /**
- * Drupal page callback to serve AJAX requests.
+ * Backdrop page callback to serve AJAX requests.
  *
  * @param $key
  *   Type of AJAX request
@@ -195,5 +195,5 @@ function wf_crm_ajax($key, $input = '') {
   elseif (strpos($key, '-')) {
     $processor->contactAjax($key);
   }
-  drupal_access_denied();
+  backdrop_access_denied();
 }

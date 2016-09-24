@@ -22,7 +22,7 @@ function webform_civicrm_requirements($phase) {
         'value' => $t('Version error'),
         'severity' => REQUIREMENT_ERROR,
         'description' => $t('The versions of the Webform CiviCRM Integration, Webform, CiviCRM enabled are not compatible. ') . 
-        l($t('See the Webform CiviCRM Integration project page for version compatibility'), 'https://drupal.org/project/webform_civicrm'),
+        l($t('See the Webform CiviCRM Integration project page for version compatibility'), 'https://backdrop.org/project/webform_civicrm'),
       );
     }
     else {
@@ -388,7 +388,7 @@ function webform_civicrm_update_6204() {
       );
       $form = (array) $form;
       $form['data'] = $data;
-      drupal_write_record('webform_civicrm_forms', $form, 'nid');
+      backdrop_write_record('webform_civicrm_forms', $form, 'nid');
     }
   }
 
@@ -443,7 +443,7 @@ function webform_civicrm_update_6205() {
         $data['contact'][$c]['number_of_other'] = 1;
         if (!empty($tag[$nid][$c])) {
           $tag_ids = array();
-          $tag_names = drupal_explode_tags($tag[$nid][$c]['value']);
+          $tag_names = backdrop_explode_tags($tag[$nid][$c]['value']);
           foreach ($tag_names as $t) {
             $result = wf_civicrm_api('tag', 'get', array('name' => $t));
             if ($tid = wf_crm_aval($result, 'id')) {
@@ -458,14 +458,14 @@ function webform_civicrm_update_6205() {
             $data['contact'][$c]['other'][1]['group'] = array();
           }
           else {
-            $data['contact'][$c]['other'][1]['group'] = drupal_map_assoc(explode(',', $group[$nid][$c]['value']));
+            $data['contact'][$c]['other'][1]['group'] = backdrop_map_assoc(explode(',', $group[$nid][$c]['value']));
           }
           webform_component_delete($node, $group[$nid][$c]);
         }
       }
     }
     $form->data = $data;
-    drupal_write_record('webform_civicrm_forms', $form, 'nid');
+    backdrop_write_record('webform_civicrm_forms', $form, 'nid');
   }
 
   return st('Hidden tag and group fields have been removed, those options are now integrated into the CiviCRM tab of webforms.');
@@ -473,7 +473,7 @@ function webform_civicrm_update_6205() {
 
 /**
  * Note: There are differences in how contact references and relationships work in the 3.x branch.
- * Read the upgrade instructions at http://drupal.org/node/1615380
+ * Read the upgrade instructions at http://backdrop.org/node/1615380
  */
 function webform_civicrm_update_7300() {
   module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_form');
@@ -663,12 +663,12 @@ function webform_civicrm_update_7300() {
         webform_component_update($field);
       }
     }
-    drupal_write_record('webform_civicrm_forms', $form, 'nid');
+    backdrop_write_record('webform_civicrm_forms', $form, 'nid');
   }
   db_drop_field('webform_civicrm_forms', 'contact_matching');
 
-  $msg = st('There are important changes in Webform CiviCRM 3 that require your attention. Read the upgrade instructions at http://drupal.org/node/1615380 and review your existing webforms to ensure they are working as expected. Enjoy the new contact matching features!');
-  drupal_set_message($msg, 'warning');
+  $msg = st('There are important changes in Webform CiviCRM 3 that require your attention. Read the upgrade instructions at http://backdrop.org/node/1615380 and review your existing webforms to ensure they are working as expected. Enjoy the new contact matching features!');
+  backdrop_set_message($msg, 'warning');
   return $msg;
 }
 
@@ -685,7 +685,7 @@ function webform_civicrm_update_7301() {
       $data['case'][1]['existing_case_status'] = (array) wf_crm_aval($data['case'][1], 'case:1:status_id');
       $data['case'][1]['case'][1]['client_id'] = 1;
       $form->data = $data;
-      drupal_write_record('webform_civicrm_forms', $form, 'nid');
+      backdrop_write_record('webform_civicrm_forms', $form, 'nid');
     }
   }
 

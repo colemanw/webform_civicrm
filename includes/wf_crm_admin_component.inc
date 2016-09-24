@@ -6,7 +6,7 @@
  */
 module_load_include('inc', 'webform_civicrm', 'includes/utils');
 
-// FIXME: Temporary workaround for https://www.drupal.org/node/2389537
+// FIXME: Temporary workaround for https://www.backdrop.org/node/2389537
 config_set('webform_table', TRUE);
 
 class wf_crm_admin_component {
@@ -44,7 +44,7 @@ class wf_crm_admin_component {
     if (!$this->field && $table != 'fieldset') {
       return;
     }
-    $this->form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_admin.css';
+    $this->form['#attached']['css'][] = backdrop_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_admin.css';
 
     if (empty($this->form['clone']['#value']) || $name == 'fieldset') {
       // Prevent users from editing the form_key and breaking things
@@ -64,13 +64,13 @@ class wf_crm_admin_component {
         if (empty($this->form_state['input'])) {
           $types = wf_crm_get_contact_types();
           $type = $types[0][$this->data['contact'][$i]['contact'][1]['contact_type']];
-          drupal_set_message(t('Press the "Clone Contact" button below and a new @type will be added to the form with all the settings for !contact. All fields within this fieldset will be cloned (be careful, that may include non-contact fields).', array('@type' => $type, '!contact' => wf_crm_contact_label($i, $this->data))), 'status', FALSE);
+          backdrop_set_message(t('Press the "Clone Contact" button below and a new @type will be added to the form with all the settings for !contact. All fields within this fieldset will be cloned (be careful, that may include non-contact fields).', array('@type' => $type, '!contact' => wf_crm_contact_label($i, $this->data))), 'status', FALSE);
         }
       }
     }
     elseif (empty($this->form_state['input'])) {
       // Clone a single CiviCRM field
-      drupal_set_message(t('You are cloning a CiviCRM component. Refer to the Webform CiviCRM instructions for how to set the key if you want the new field to be processed by CiviCRM. You can also clone an entire contact by clicking the clone button by their fieldset.'), 'status', FALSE);
+      backdrop_set_message(t('You are cloning a CiviCRM component. Refer to the Webform CiviCRM instructions for how to set the key if you want the new field to be processed by CiviCRM. You can also clone an entire contact by clicking the clone button by their fieldset.'), 'status', FALSE);
     }
 
     // Show dropdown list of states
@@ -222,7 +222,7 @@ class wf_crm_admin_component {
     if (!$options) {
       return FALSE;
     }
-    $this->form['#attached']['js'] = array(drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_options.js');
+    $this->form['#attached']['js'] = array(backdrop_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_options.js');
 
     $defaults_selected = array();
     if (isset($this->component['value']) && strlen($this->component['value'])) {
@@ -367,7 +367,7 @@ class wf_crm_admin_component {
     }
     // CSS trick to add currency symbol to options element keys
     $symbol = wf_crm_aval(CRM_Core_Config::singleton(), 'defaultCurrencySymbol', '$');
-    drupal_add_css('
+    backdrop_add_css('
       .option-key-cell:before {
         content:"' . $symbol . '";
       }
@@ -443,13 +443,13 @@ class wf_crm_admin_component {
       civicrm_initialize();
       $enabled = wf_crm_enabled_fields($node);
       $data = $node->webform_civicrm['data'];
-      $form['components']['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_admin.css';
+      $form['components']['#attached']['css'][] = backdrop_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_admin.css';
     }
     foreach ($rows as &$row) {
       // Empty message when no components have been added
       if (!empty($row[0]['colspan'])) {
         if (empty($node->webform['components']) && wf_crm_admin_access($node)) {
-          $form['components']['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/js/webform_tab.js';
+          $form['components']['#attached']['js'][] = backdrop_get_path('module', 'webform_civicrm') . '/js/webform_tab.js';
           $row[0]['data'] = t(
             'Add a webform component below, or click the <a class="webform-civicrm-tab-link" href="!url">CiviCRM tab</a> to add CRM fields.',
             (array('!url' => url("node/{$node->nid}/civicrm")))
@@ -460,7 +460,7 @@ class wf_crm_admin_component {
       elseif (in_array('webform-add-form', $row['class'])) {
         unset($form['add']['type']['#options']['civicrm_contact']);
         $form['add']['type']['#printed'] = FALSE;
-        $row['data'][1] = drupal_render($form['add']['type']);
+        $row['data'][1] = backdrop_render($form['add']['type']);
       }
       // Component row
       elseif (!empty($row['data-cid']) && isset($node->webform['components'][$row['data-cid']])) {
@@ -606,19 +606,19 @@ class wf_crm_admin_component {
     if ($message) {
       $message = t('In order for line-items to be displayed correctly to the user, it is recommended to add a page break in-between Contribution Billing Fields and the following:') .
         '<ul>' . $message . '</ul>';
-      drupal_set_message($message, 'warning', FALSE);
+      backdrop_set_message($message, 'warning', FALSE);
     }
   }
 }
 
 /**
- * Drupal theme callback
+ * Backdrop theme callback
  * Format civicrm options form as a table
  */
 function theme_webform_civicrm_options_table($variables) {
   $element = $variables['element'];
   $element['civicrm_defaults']['']['#attributes']['class'][] = 'select-all-civi-defaults';
-  $default_box = drupal_render($element['civicrm_defaults']['']);
+  $default_box = backdrop_render($element['civicrm_defaults']['']);
   $select_box = '<input class="select-all-civi-options" type="checkbox" checked="checked" title="' . t('Select All') . '"> ';
   $table = array(
     'rows' => array(),
@@ -636,33 +636,33 @@ function theme_webform_civicrm_options_table($variables) {
       array('data' => t('Label'), 'class' => array('live-options-hide')),
       $default_box . t('Default'),
     );
-    drupal_add_tabledrag('civicrm-options-table', 'order', 'self', 'civicrm-option-weight');
+    backdrop_add_tabledrag('civicrm-options-table', 'order', 'self', 'civicrm-option-weight');
   }
   foreach (element_children($element['civicrm_defaults']) as $k) {
     if ($k) {
       $v = str_replace('_web_civi_option_selected_', '', $k);
-      $row = array(drupal_render($element['civicrm_option_name_' . $v]));
+      $row = array(backdrop_render($element['civicrm_option_name_' . $v]));
       if (!empty($element['civicrm_options'])) {
         $element['civicrm_option_weight_' . $v]['#attributes']['class'] = array('civicrm-option-weight');
         $element['civicrm_options'][$k]['#attributes']['class'] = array('civicrm-enabled');
         $element['civicrm_option_label_' . $v]['#attributes']['class'] = array('civicrm-label');
-        $row[] = drupal_render($element['civicrm_option_weight_' . $v]);
-        $row[] = array('data' => drupal_render($element['civicrm_options'][$k]), 'class' => array('live-options-hide'));
-        $row[] = array('data' => drupal_render($element['civicrm_option_label_' . $v]), 'class' => array('live-options-hide'));
+        $row[] = backdrop_render($element['civicrm_option_weight_' . $v]);
+        $row[] = array('data' => backdrop_render($element['civicrm_options'][$k]), 'class' => array('live-options-hide'));
+        $row[] = array('data' => backdrop_render($element['civicrm_option_label_' . $v]), 'class' => array('live-options-hide'));
       }
       $element['civicrm_defaults'][$k]['#attributes']['class'] = array('civicrm-default');
-      $row[] = drupal_render($element['civicrm_defaults'][$k]);
+      $row[] = backdrop_render($element['civicrm_defaults'][$k]);
       $table['rows'][] = array(
         'data' => $row,
         'class' => array('draggable'),
       );
     }
   }
-  return drupal_render_children($element) . theme('table', $table);
+  return backdrop_render_children($element) . theme('table', $table);
 }
 
 /**
- * Drupal FAPI validate callback
+ * Backdrop FAPI validate callback
  * Validate checksum lifespan
  */
 function wf_crm_cs_validate($form, &$form_state) {
@@ -672,7 +672,7 @@ function wf_crm_cs_validate($form, &$form_state) {
 }
 
 /**
- * Drupal FAPI validate callback
+ * Backdrop FAPI validate callback
  * Validate money options & default value
  */
 function wf_crm_money_validate($form, &$form_state) {
@@ -693,13 +693,13 @@ function wf_crm_money_validate($form, &$form_state) {
 }
 
 /**
- * Drupal FAPI submit callback
+ * Backdrop FAPI submit callback
  * Alter a webform component type.
  */
 function wf_crm_change_widget($form, &$form_state) {
   // Get rid of default message
   unset($_SESSION['messages']['status']);
-  drupal_set_message(t('Click "Save component" to change this field to %type (or go back to cancel). Test your form to ensure that the new widget works with this CiviCRM field.', array('%type' => $form['widget']['type']['#options'][$form_state['values']['widget']['type']])));
+  backdrop_set_message(t('Click "Save component" to change this field to %type (or go back to cancel). Test your form to ensure that the new widget works with this CiviCRM field.', array('%type' => $form['widget']['type']['#options'][$form_state['values']['widget']['type']])));
   // Set redirect to current form with 'type' arg to trigger type change
   // @see webform_civicrm_node_load
   $form_state['redirect'] = array(
@@ -713,7 +713,7 @@ function wf_crm_change_widget($form, &$form_state) {
 }
 
 /**
- * Drupal FAPI submit callback for single-component form
+ * Backdrop FAPI submit callback for single-component form
  */
 function wf_crm_process_options_selection($form, &$form_state) {
   $admin_form = new wf_crm_admin_component($form, $form_state);
@@ -721,7 +721,7 @@ function wf_crm_process_options_selection($form, &$form_state) {
 }
 
 /**
- * Drupal FAPI validation callback for all-components form
+ * Backdrop FAPI validation callback for all-components form
  */
 function wf_crm_components_form_validate($form, &$form_state) {
   $components = wf_crm_aval($form_state, 'values:components', array());

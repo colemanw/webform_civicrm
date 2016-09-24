@@ -107,7 +107,7 @@ class wf_crm_admin_form {
     );
     foreach ($incompatibilities as $module => $label) {
       if (module_exists($module)) {
-        drupal_set_message(t('The module %module is not compatible with Webform CiviCRM Integration. Please disable it before continuing.', array('%module' => $label)), 'error');
+        backdrop_set_message(t('The module %module is not compatible with Webform CiviCRM Integration. Please disable it before continuing.', array('%module' => $label)), 'error');
       }
     }
   }
@@ -149,8 +149,8 @@ class wf_crm_admin_form {
    * Add necessary css & js
    */
   private function addResources() {
-    $this->form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_admin.css';
-    $this->form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_admin.js';
+    $this->form['#attached']['css'][] = backdrop_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_admin.css';
+    $this->form['#attached']['js'][] = backdrop_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_admin.js';
     $this->form['#attached']['js'][] = array(
       'data' => array('webform_civicrm' => array('rTypes' => wf_crm_get_relationship_types())),
       'type' => 'setting',
@@ -176,7 +176,7 @@ class wf_crm_admin_form {
       '#type' => 'select',
       '#title' => t('Number of Contacts'),
       '#default_value' => count($this->data['contact']),
-      '#options' => drupal_map_assoc(range(1, 30)),
+      '#options' => backdrop_map_assoc(range(1, 30)),
     );
     $this->form['change_form_settings'] = array(
       '#type' => 'button',
@@ -188,7 +188,7 @@ class wf_crm_admin_form {
     // Display intro help to virgins
     if (!config_get('webform_civicrm_help_seen')) {
       config_set('webform_civicrm_help_seen', TRUE);
-      drupal_add_js('cj(function() {CRM.help("' . t('Welcome to Webform-CiviCRM') . '", {}, "' . url('webform-civicrm/help/intro') . '");});', array('type' => 'inline', 'scope' => 'footer'));
+      backdrop_add_js('cj(function() {CRM.help("' . t('Welcome to Webform-CiviCRM') . '", {}, "' . url('webform-civicrm/help/intro') . '");});', array('type' => 'inline', 'scope' => 'footer'));
     }
   }
 
@@ -1091,12 +1091,12 @@ class wf_crm_admin_form {
           ->fields(array('submit_limit' => $submit_limit, 'submit_interval' => $submit_interval))
           ->execute();
       }
-      drupal_set_message(t('Per-user submission limit has been updated. You may revisit these options any time on the <em>Form Settings</em> tab of this webform.'));
+      backdrop_set_message(t('Per-user submission limit has been updated. You may revisit these options any time on the <em>Form Settings</em> tab of this webform.'));
     }
     // Handle ajax submission from "webform_tracking_mode" mini-form below
     if (!empty($_POST['webform_tracking_mode']) && $_POST['webform_tracking_mode'] == 'strict') {
       config_set('webform_tracking_mode', 'strict');
-      drupal_set_message(t('Webform anonymous user tracking has been updated to use the strict method. You may revisit this option any time on the global <a !link>Webform Settings</a> page.',
+      backdrop_set_message(t('Webform anonymous user tracking has been updated to use the strict method. You may revisit this option any time on the global <a !link>Webform Settings</a> page.',
         array('!link' => 'href="/admin/config/content/webform" target="_blank"')
       ));
     }
@@ -1363,7 +1363,7 @@ class wf_crm_admin_form {
           'civicrm_' . $c . '_contact_1_contact_last_name' => 'create_civicrm_webform_element',
         );
         $link = array('!link' => 'href="http://wiki.civicrm.org/confluence/display/CRMDOC/Webform+CiviCRM+Integration#WebformCiviCRMIntegration-CloningaContact" target="_blank"');
-        drupal_set_message(t('Tip: Consider using the clone feature to add multiple similar contacts. (<a !link>more info</a>)', $link), 'status', FALSE);
+        backdrop_set_message(t('Tip: Consider using the clone feature to add multiple similar contacts. (<a !link>more info</a>)', $link), 'status', FALSE);
       }
     }
     // Store meta settings, i.e. number of email for contact 1
@@ -1490,14 +1490,14 @@ class wf_crm_admin_form {
       }
       if ($deleted == 1) {
         $p = array('%name' => $field['name']);
-        drupal_set_message($button === 'edit-delete' ? t('Deleted field: %name', $p) : t('Disabled field: %name', $p));
+        backdrop_set_message($button === 'edit-delete' ? t('Deleted field: %name', $p) : t('Disabled field: %name', $p));
       }
       else {
         $p = array('!num' => $deleted);
-        drupal_set_message($button === 'edit-delete' ? t('Deleted !num fields.', $p) : t('Disabled !num fields.', $p));
+        backdrop_set_message($button === 'edit-delete' ? t('Deleted !num fields.', $p) : t('Disabled !num fields.', $p));
       }
       if ($button === 'edit-disable') {
-        drupal_set_message(t('Disabled fields will still be processed as normal Webform fields, but they will not be autofilled from or saved to the CiviCRM database.'));
+        backdrop_set_message(t('Disabled fields will still be processed as normal Webform fields, but they will not be autofilled from or saved to the CiviCRM database.'));
       }
       else {
         // Remove empty fieldsets for deleted contacts
@@ -1517,7 +1517,7 @@ class wf_crm_admin_form {
     // Disable CiviCRM for this form
     if (!$this->settings['nid']) {
       $this->disable();
-      drupal_set_message(t('CiviCRM processing for this form is now disabled.'));
+      backdrop_set_message(t('CiviCRM processing for this form is now disabled.'));
     }
 
     // CiviCRM enabled
@@ -1549,7 +1549,7 @@ class wf_crm_admin_form {
               if (isset($disabled[$key])) {
                 webform_component_update($disabled[$key]);
                 $enabled[$key] = $disabled[$key]['cid'];
-                drupal_set_message(t('Re-enabled field: %name', array('%name' => $disabled[$key]['name'])));
+                backdrop_set_message(t('Re-enabled field: %name', array('%name' => $disabled[$key]['name'])));
               }
               // Create new component
               else {
@@ -1574,21 +1574,21 @@ class wf_crm_admin_form {
         }
       }
       if (count($created) == 1) {
-        drupal_set_message(t('Added field: %name', array('%name' => $created[0])));
+        backdrop_set_message(t('Added field: %name', array('%name' => $created[0])));
       }
       elseif ($created) {
-        drupal_set_message(t('Added !num fields to the form.', array('!num' => count($created))));
+        backdrop_set_message(t('Added !num fields to the form.', array('!num' => count($created))));
       }
 
       // Create record
       if (empty($this->node->webform_civicrm)) {
-        drupal_write_record('webform_civicrm_forms', $this->settings);
-        drupal_set_message(t('CiviCRM processing for this form is now enabled.'));
+        backdrop_write_record('webform_civicrm_forms', $this->settings);
+        backdrop_set_message(t('CiviCRM processing for this form is now enabled.'));
       }
       // Update record
       else {
-        drupal_write_record('webform_civicrm_forms', $this->settings, 'nid');
-        drupal_set_message(t('Your CiviCRM form settings have been updated.'));
+        backdrop_write_record('webform_civicrm_forms', $this->settings, 'nid');
+        backdrop_set_message(t('Your CiviCRM form settings have been updated.'));
       }
       // Update existing contact fields
       foreach ($existing as $fid => $id) {
@@ -1727,7 +1727,7 @@ class wf_crm_admin_form {
         );
       }
     }
-    // A width of 20 is more sensible than Drupal's default of 60
+    // A width of 20 is more sensible than Backdrop's default of 60
     if (($field['type'] == 'textfield' || $field['type'] == 'email') && empty($field['extra']['width'])) {
       $field['extra']['width'] = 20;
     }
@@ -1867,7 +1867,7 @@ class wf_crm_admin_form {
 }
 
 /**
- * Drupal FAPI form builder callback
+ * Backdrop FAPI form builder callback
  */
 function wf_crm_configure_form($form, &$form_state, $node) {
   $admin_form = new wf_crm_admin_form(array(), $form_state, $node);
@@ -1875,7 +1875,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
 }
 
 /**
- * Drupal FAPI submit callback
+ * Backdrop FAPI submit callback
  */
 function wf_crm_configure_form_submit($form, &$form_state) {
   $node = node_load($form_state['storage']['nid']);

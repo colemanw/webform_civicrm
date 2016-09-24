@@ -73,7 +73,7 @@ function wf_crm_field_options($field, $context, $data) {
     }
     // Not a real field so can't call getoptions for this one
     elseif ($table == 'membership' && $name == 'num_terms') {
-      $ret = drupal_map_assoc(range(1, 9));
+      $ret = backdrop_map_assoc(range(1, 9));
     }
     // Aside from the above special cases, most lists can be fetched from api.getoptions
     else {

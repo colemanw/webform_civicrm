@@ -658,7 +658,7 @@ abstract class wf_crm_webform_base {
   }
 
   /**
-   * CiviCRM JS can't be attached to a drupal form so have to manually re-add this during validation
+   * CiviCRM JS can't be attached to a backdrop form so have to manually re-add this during validation
    *
    * @return int|null
    */
@@ -671,12 +671,12 @@ abstract class wf_crm_webform_base {
   }
 
   /**
-   * Copies a drupal file into the Civi file system
+   * Copies a backdrop file into the Civi file system
    *
-   * @param int $id: drupal file id
+   * @param int $id: backdrop file id
    * @return int|null Civi file id
    */
-  static function saveDrupalFileToCivi($id) {
+  static function saveBackdropFileToCivi($id) {
     $file = file_load($id);
     if ($file) {
       $config = CRM_Core_Config::singleton();
@@ -728,13 +728,13 @@ abstract class wf_crm_webform_base {
   }
 
   /**
-   * Fetch the public url of a file in the Drupal file system
+   * Fetch the public url of a file in the Backdrop file system
    *
-   * @param int $id Drupal file id
+   * @param int $id Backdrop file id
    *
    * @return string|bool: url of file if found
    */
-  function getDrupalFileUrl($id) {
+  function getBackdropFileUrl($id) {
     $file = file_load($id);
     return $file ? file_create_url($file->uri) : FALSE;
   }

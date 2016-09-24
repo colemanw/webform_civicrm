@@ -156,10 +156,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    */
   private function addResources() {
     $this->form['#attached']['js'][] = array(
-      'data' => drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_forms.js',
+      'data' => backdrop_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_forms.js',
       'scope' => 'footer',
     );
-    $this->form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_forms.css';
+    $this->form['#attached']['css'][] = backdrop_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_forms.css';
     $config = CRM_Core_Config::singleton();
     // Variables to push to the client-side
     $js_vars = array();
@@ -179,7 +179,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     if (!empty($this->data['contribution'])) {
       $this->addPaymentJs();
       $this->form['#attached']['js'][] = array(
-        'data' => drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_payment.js',
+        'data' => backdrop_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_payment.js',
         'scope' => 'footer',
       );
       $page_id = $this->data['contribution'][1]['contribution'][1]['contribution_page_id'];
@@ -814,14 +814,14 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
   }
 
   /**
-   * Wrapper for drupal_set_message
+   * Wrapper for backdrop_set_message
    * Ensures we only set the message on the first page of the node display
    * @param $message
    * @param string $type
    */
   function setMessage($message, $type='status') {
     if (node_is_page($this->node) && empty($_POST)) {
-      drupal_set_message($message, $type, FALSE);
+      backdrop_set_message($message, $type, FALSE);
     }
   }
 
