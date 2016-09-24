@@ -186,8 +186,8 @@ class wf_crm_admin_form {
     );
     $this->form['webform_civicrm'] = array('#type' => 'vertical_tabs');
     // Display intro help to virgins
-    if (!variable_get('webform_civicrm_help_seen')) {
-      variable_set('webform_civicrm_help_seen', TRUE);
+    if (!config_get('webform_civicrm_help_seen')) {
+      config_set('webform_civicrm_help_seen', TRUE);
       drupal_add_js('cj(function() {CRM.help("' . t('Welcome to Webform-CiviCRM') . '", {}, "' . url('webform-civicrm/help/intro') . '");});', array('type' => 'inline', 'scope' => 'footer'));
     }
   }
@@ -1095,7 +1095,7 @@ class wf_crm_admin_form {
     }
     // Handle ajax submission from "webform_tracking_mode" mini-form below
     if (!empty($_POST['webform_tracking_mode']) && $_POST['webform_tracking_mode'] == 'strict') {
-      variable_set('webform_tracking_mode', 'strict');
+      config_set('webform_tracking_mode', 'strict');
       drupal_set_message(t('Webform anonymous user tracking has been updated to use the strict method. You may revisit this option any time on the global <a !link>Webform Settings</a> page.',
         array('!link' => 'href="/admin/config/content/webform" target="_blank"')
       ));
@@ -1122,7 +1122,7 @@ class wf_crm_admin_form {
       );
     }
     // Mini-form to conveniently update global cookie setting
-    elseif (variable_get('webform_tracking_mode', 'cookie') == 'cookie') {
+    elseif (config_get('webform_tracking_mode', 'cookie') == 'cookie') {
       $this->form['contribution']['sets']['webform_tracking_mode'] = array(
         '#markup' => '<div class="messages warning">' .
           t('Per-user submission limit is enabled for this form, however the webform anonymous user tracking method is configured to use cookies only, which is not secure enough to prevent Credit Card abuse.') .
