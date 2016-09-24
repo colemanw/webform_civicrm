@@ -163,7 +163,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
     if (!empty($this->node->webform['components'][$fid]['private'])) {
       return FALSE;
     }
-    if (config_get('webform_submission_access_control', 1)) {
+    if (config_get('webform.settings', 'webform_submission_access_control') == 1) {
       $allowed_roles = array();
       foreach ($this->node->webform['roles'] as $rid) {
         $allowed_roles[$rid] = isset($user->roles[$rid]) ? TRUE : FALSE;
