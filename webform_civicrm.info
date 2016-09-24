@@ -5,5 +5,5 @@ package = CiviCRM
 dependencies[] = civicrm (>=4.4)
 dependencies[] = webform
 dependencies[] = libraries
+dependencies[] = options_element
 # TODO: uncomment the dependency below once the module has been ported
-# dependencies[] = options_element
