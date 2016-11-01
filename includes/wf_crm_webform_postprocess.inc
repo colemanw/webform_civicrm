@@ -2132,7 +2132,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   /**
    * Clears an error against a form element.
    * Used to disable validation when this module hides a field
-   * @see https://api.backdrop.org/comment/49163#comment-49163
+   * @see https://api.drupal.org/comment/49163#comment-49163
    *
    * @param $name string
    */

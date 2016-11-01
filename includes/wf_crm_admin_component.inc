@@ -6,7 +6,7 @@
  */
 module_load_include('inc', 'webform_civicrm', 'includes/utils');
 
-// FIXME: Temporary workaround for https://www.backdrop.org/node/2389537
+// FIXME: Temporary workaround for https://www.drupal.org/node/2389537
 config_set('webform_civicrm.settings', 'webform_table', TRUE);
 
 class wf_crm_admin_component {

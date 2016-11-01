@@ -22,7 +22,7 @@ function webform_civicrm_requirements($phase) {
         'value' => $t('Version error'),
         'severity' => REQUIREMENT_ERROR,
         'description' => $t('The versions of the Webform CiviCRM Integration, Webform, CiviCRM enabled are not compatible. ') . 
-        l($t('See the Webform CiviCRM Integration project page for version compatibility'), 'https://backdrop.org/project/webform_civicrm'),
+        l($t('See the Webform CiviCRM Integration project page for version compatibility'), 'https://drupal.org/project/webform_civicrm'),
       );
     }
     else {
@@ -473,7 +473,7 @@ function webform_civicrm_update_6205() {
 
 /**
  * Note: There are differences in how contact references and relationships work in the 3.x branch.
- * Read the upgrade instructions at http://backdrop.org/node/1615380
+ * Read the upgrade instructions at http://drupal.org/node/1615380
  */
 function webform_civicrm_update_7300() {
   module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_form');
@@ -667,7 +667,7 @@ function webform_civicrm_update_7300() {
   }
   db_drop_field('webform_civicrm_forms', 'contact_matching');
 
-  $msg = st('There are important changes in Webform CiviCRM 3 that require your attention. Read the upgrade instructions at http://backdrop.org/node/1615380 and review your existing webforms to ensure they are working as expected. Enjoy the new contact matching features!');
+  $msg = st('There are important changes in Webform CiviCRM 3 that require your attention. Read the upgrade instructions at http://drupal.org/node/1615380 and review your existing webforms to ensure they are working as expected. Enjoy the new contact matching features!');
   backdrop_set_message($msg, 'warning');
   return $msg;
 }
