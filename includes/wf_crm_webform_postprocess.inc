@@ -236,6 +236,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     // Calling an IPN payment processor will result in a redirect so this happens after everything else
     if (empty($this->submission->is_draft) && !empty($this->ent['contribution'][1]['id']) && $this->contributionIsIncomplete && !$this->contributionIsPayLater) {
+      webform_submission_send_mail($this->node, $this->submission);
       $this->submitIPNPayment();
     }
       // Send receipt
@@ -1564,7 +1565,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
     }
     // Validate credit card number & cvv2
-    CRM_Core_Payment_Form::validateCreditCard($params, $card_errors);
+    CRM_Core_Payment_Form::validateCreditCard($params, $card_errors, wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id'));
     foreach ($card_errors as $field => $msg) {
       form_set_error($field, $msg);
       $valid = FALSE;
@@ -1681,7 +1682,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['is_pay_later'] = $this->contributionIsPayLater;
     //Fix IPN payments marked as paid by cheque
     if (empty($params['payment_instrument_id'])) {
-      if ($params['payment_processor_id'] && $this->contribution_page['is_monetary']) {
+      if (!empty($params['payment_processor_id']) && $this->contribution_page['is_monetary']) {
         $defaultPaymentInstrument = CRM_Core_OptionGroup::values('payment_instrument', FALSE, FALSE, FALSE, 'AND is_default = 1');
         $params['payment_instrument_id'] = key($defaultPaymentInstrument);
       }
@@ -1694,7 +1695,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * Call IPN payment processor to redirect to payment site
    */
   private function submitIPNPayment() {
-    $config = CRM_Core_Config::singleton();
     $params = $this->data['contribution'][1]['contribution'][1];
     $processor_type = wf_civicrm_api('payment_processor', 'getsingle', array('id' => $params['payment_processor_id']));
     if (version_compare($this->civicrm_version, 4.7, '<')) {
@@ -1816,7 +1816,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     // doPayment requries payment_processor and payment_processor_mode fields.
     if (version_compare($this->civicrm_version, '4.7', '>=')) {
-      $params['payment_processor'] = $params['payment_processor_id'];
+      $params['payment_processor'] = wf_crm_aval($params, 'payment_processor_id');
     }
 
     // Save this stuff for later
