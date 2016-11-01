@@ -264,7 +264,7 @@ abstract class wf_crm_webform_base {
       foreach($values as $key => $value){
         if((in_array($ent, array('address', 'email')) && $value['location_type_id'] == $setting['location_type_id'])
            ||
-          ($value['location_type_id'] == $setting['location_type_id'] && $value[$ent.'_type_id'] == $setting[$ent.'_type_id'])     
+          ($value['location_type_id'] == $setting['location_type_id'] && $value[$ent.'_type_id'] == $setting[$ent.'_type_id'])
           ){
             $reorderedArray[$key] = $value;
             $valueFound = true;
@@ -658,7 +658,7 @@ abstract class wf_crm_webform_base {
   }
 
   /**
-   * CiviCRM JS can't be attached to a backdrop form so have to manually re-add this during validation
+   * CiviCRM JS can't be attached to a Backdrop form so have to manually re-add this during validation
    *
    * @return int|null
    */
@@ -671,9 +671,9 @@ abstract class wf_crm_webform_base {
   }
 
   /**
-   * Copies a backdrop file into the Civi file system
+   * Copies a Backdrop file into the Civi file system
    *
-   * @param int $id: backdrop file id
+   * @param int $id: Backdrop file id
    * @return int|null Civi file id
    */
   static function saveBackdropFileToCivi($id) {

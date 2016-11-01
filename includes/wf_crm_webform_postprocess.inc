@@ -743,7 +743,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           if (isset($params['county_id']) && $params['county_id'] === '-') {
             $params['county_id'] = '';
           }
-          // Update backdrop email address
+          // Update Backdrop email address
           if ($location == 'email' && !empty($params['email']) && $i == 1) {
             $uid = wf_crm_user_cid($cid, 'contact');
             if ($uid) {
