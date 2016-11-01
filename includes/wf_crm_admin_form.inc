@@ -100,16 +100,6 @@ class wf_crm_admin_form {
   private function initializeForm() {
     $this->settings = isset($this->node->webform_civicrm) ? $this->node->webform_civicrm : $this->defaultSettings();
     $this->data = &$this->settings['data'];
-    // Warn of incompatible modules
-    $incompatibilities = array(
-      'form_builder_webform' => t('Form builder Webform UI'),
-      'webform_alt_ui' => t('Webform Alternate UI'),
-    );
-    foreach ($incompatibilities as $module => $label) {
-      if (module_exists($module)) {
-        drupal_set_message(t('The module %module is not compatible with Webform CiviCRM Integration. Please disable it before continuing.', array('%module' => $label)), 'error');
-      }
-    }
   }
 
   /**
