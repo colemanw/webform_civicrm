@@ -560,24 +560,27 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function findDuplicateContact($contact) {
     $dupes = $rule_type = $rule_id = $params_custom = NULL;
     $rule = wf_crm_aval($contact, 'matching_rule', 'Unsupervised', TRUE);
+    $contact_type = ucfirst($contact['contact'][1]['contact_type']);
     if ($rule) {
       $params = array('check_permission' => FALSE);
       foreach ($contact as $table => $field) {
         if (is_array($field) && !empty($field[1])) {
           if (substr($table, 0, 2) == 'cg') {
-            // pass custom data to deduper
+            // Collect custom params to pass to deduper
             foreach ($field[1] as $custom_key => $custom_value) {
               if (!empty($custom_value)) {
                 $params_custom[$custom_key] = $custom_value;
               }
             }
-          } // If sharing an address, use the master
+          }
+          // If sharing an address, use the master
           elseif ($table == 'address' && !empty($field[1]['master_id'])) {
             $m = $field[1]['master_id'];
             // If master address is exposed to the form, use it
             if (!empty($contact[$m]['address'][1])) {
               $params['civicrm_address'] = $contact[$m]['address'][1];
-            } // Else look up the master contact's address
+            }
+            // Else look up the master contact's address
             elseif (!empty($this->existing_contacts[$m])) {
               $masters = wf_civicrm_api('address', 'get',
                 array(
