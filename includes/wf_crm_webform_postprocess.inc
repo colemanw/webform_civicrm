@@ -606,14 +606,16 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // This is either a default type (Unsupervised or Supervised) or the id of a specific rule
       if (is_numeric($rule)) {
         $rule_id = $rule;
-      } else {
+      }
+      else {
         $rule_type = $rule;
       }
+      // Pass custom params to deduper
       if ($params_custom) {
         $params_custom = CRM_Dedupe_Finder::formatParams($params_custom, $contact_type);
         $params = array_merge($params, $params_custom);
       }
-      $dupes = CRM_Dedupe_Finder::dupesByParams($params, ucfirst($contact['contact'][1]['contact_type']), $rule_type, array(), $rule_id);
+      $dupes = CRM_Dedupe_Finder::dupesByParams($params, $contact_type, $rule_type, array(), $rule_id);
     }
     if ($dupes) {
       return $dupes[0];
