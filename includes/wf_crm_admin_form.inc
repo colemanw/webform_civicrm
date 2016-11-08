@@ -1409,7 +1409,7 @@ class wf_crm_admin_form {
         // Saves all non-empty values with a hack for fields which needs to be saved even when 0
         // FIXME: Really ought to change the select placeholder value to be '' instead of 0
         if (isset($this->fields[$table . '_' . $name]['expose_list']) &&
-          (!empty($val) || (in_array($name, array('num_terms', 'is_active', 'is_test'))))) {
+          (!empty($val) || (in_array($name, array('num_terms', 'is_active', 'is_test', 'payment_processor_id'))))) {
           // Don't add data for non-existent contacts
           if (!in_array($ent, array('contact', 'participant', 'membership')) || isset($this->data['contact'][$c])) {
             $this->data[$ent][$c][$table][$n][$name] = $val;
