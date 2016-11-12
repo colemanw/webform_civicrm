@@ -1683,7 +1683,7 @@ class wf_crm_admin_form {
   static function insertComponent(&$field, &$enabled, $settings) {
     $options = NULL;
     list(, $c, $ent, $n, $table, $name) = explode('_', $field['form_key'], 6);
-    $contact_type = $settings['data']['contact'][$c]['contact'][1]['contact_type'];
+    $contact_type = wf_crm_aval($settings['data']['contact'], "$c:contact:1:contact_type");
     // Replace the # token with set number (or append to the end if no token)
     if ($n > 1) {
       if (strpos($field['name'], '#') === FALSE) {
