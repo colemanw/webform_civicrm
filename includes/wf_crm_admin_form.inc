@@ -13,6 +13,10 @@ class wf_crm_admin_form {
   private $sets;
   private $settings;
   private $data;
+  /**
+   * @var array
+   */
+  public static $fieldset_entities = array('contact', 'activity', 'case', 'grant');
 
   function __construct($form, &$form_state, $node) {
     module_load_include('inc', 'webform_civicrm', 'includes/utils');
@@ -1575,7 +1579,7 @@ class wf_crm_admin_form {
                   'form_key' => $key,
                   'weight' => $i,
                 );
-                self::insertComponent($field, $enabled, $this->settings, TRUE);
+                self::insertComponent($field, $enabled, $this->settings, $this->isNewFieldset($key));
                 $created[] = $field['name'];
                 if (isset($field['civicrm_condition'])) {
                   $this->addConditionalRule($field, $enabled);
@@ -1811,8 +1815,7 @@ class wf_crm_admin_form {
    * @param bool $allow_create
    */
   static function addFieldset($c, &$field, &$enabled, $settings, $ent = 'contact', $allow_create = FALSE) {
-    $non_contact = array('activity', 'case', 'grant');
-    $type = in_array($ent, $non_contact) ? $ent : 'contact';
+    $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
     $sid = "civicrm_{$c}_{$type}_1_fieldset_fieldset";
     if (!empty($settings['create_fieldsets']) && !isset($enabled[$sid]) && $allow_create) {
       $new_set = array(
@@ -1827,7 +1830,7 @@ class wf_crm_admin_form {
       else {
         $sets = wf_crm_get_fields('sets');
         $new_set['name'] = $sets[$type]['label'] . ($c > 1 ? " $c" : '');
-        $new_set['weight'] = 200 + (array_search($type, $non_contact) * 10 + $c);
+        $new_set['weight'] = 200 + (array_search($type, self::$fieldset_entities) * 10 + $c);
       }
       $new_set += webform_component_invoke('fieldset', 'defaults');
       $enabled[$sid] = webform_component_insert($new_set);
@@ -1894,6 +1897,22 @@ class wf_crm_admin_form {
       }
     }
     return $ret;
+  }
+
+  /**
+   * Is this a new entity being added to the form?
+   *
+   * If so, create a new fieldset for them.
+   * Otherwise only use an existing one if it exists.
+   * This way we respect the user's choice and don't add a fieldset if they've already deleted it.
+   *
+   * @param $field_key
+   * @return bool
+   */
+  private function isNewFieldset($field_key) {
+    list(, $c, $ent) =  wf_crm_explode_key($field_key);
+    $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
+    return !isset($this->node->webform_civicrm['data'][$type][$c]);
   }
 
   /**
