@@ -495,7 +495,7 @@ function wf_crm_get_fields($var = 'fields') {
       'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship'), 'help_text' => TRUE),
     );
     $conditional_sets = array(
-      'CiviCase' => array('entity_type' => 'case', 'label' => t('Case Settings'), 'max_instances' => 30),
+      'CiviCase' => array('entity_type' => 'case', 'label' => t('Case'), 'max_instances' => 30),
       'CiviEvent' => array('entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9),
       'CiviContribute' => array('entity_type' => 'contribution', 'label' => t('Contribution')),
       'CiviMember' => array('entity_type' => 'membership', 'label' => t('Membership')),
