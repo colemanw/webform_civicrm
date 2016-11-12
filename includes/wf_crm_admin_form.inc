@@ -1028,7 +1028,7 @@ class wf_crm_admin_form {
       '#type' => 'checkbox',
       '#title' => t('Create Fieldsets'),
       '#default_value' => (bool) $this->settings['create_fieldsets'],
-      '#description' => t('Create a fieldset around each contact. Provides visual organization of your form. Also allows the contact clone feature to work.'),
+      '#description' => t('Create a fieldset around each contact, activity, etc. Provides visual organization of your form. Also allows the contact clone feature to work.'),
     );
     $this->form['options']['confirm_subscription'] = array(
       '#type' => 'checkbox',
@@ -1748,10 +1748,9 @@ class wf_crm_admin_form {
     if ($field['type'] == 'hidden' && !empty($field['expose_list']) && !empty($settings[$field['form_key']])) {
       $field['value'] = $settings[$field['form_key']];
     }
-    // Create fieldsets - for contact and contact-specific event fields only
-    if ($ent != 'activity' && $ent != 'case' && $ent != 'contribution' && $ent != 'grant'
-      && ($ent != 'participant' || wf_crm_aval($settings['data'], 'participant_reg_type') == 'separate')) {
-      self::addFieldset($c, $field, $enabled, $settings);
+    // Create fieldsets for multivalued entities
+    if ($ent != 'contribution' && ($ent != 'participant' || wf_crm_aval($settings['data'], 'participant_reg_type') == 'separate')) {
+      self::addFieldset($c, $field, $enabled, $settings, $ent);
     }
     // Create page break for contribution page
     if ($name == 'contribution_page_id') {
@@ -1772,22 +1771,31 @@ class wf_crm_admin_form {
   }
 
   /**
-   * Create a fieldset around a contact if it doesn't already exist
+   * Create a fieldset around an entity if it doesn't already exist
    * @param $c
    * @param $field
    * @param $enabled
    * @param $settings
    */
-  static function addFieldset($c, &$field, &$enabled, $settings) {
-    $sid = 'civicrm_' . $c . '_contact_1_fieldset_fieldset';
+  static function addFieldset($c, &$field, &$enabled, $settings, $ent = 'contact') {
+    $non_contact = array('activity', 'case', 'grant');
+    $type = in_array($ent, $non_contact) ? $ent : 'contact';
+    $sid = "civicrm_{$c}_{$type}_1_fieldset_fieldset";
     if (!empty($settings['create_fieldsets']) && !isset($enabled[$sid])) {
       $new_set = array(
         'nid' => $field['nid'],
         'form_key' => $sid,
         'type' => 'fieldset',
-        'name' => wf_crm_contact_label($c, $settings['data']),
         'weight' => $c,
       );
+      if ($type == 'contact') {
+        $new_set['name'] = wf_crm_contact_label($c, $settings['data']);
+      }
+      else {
+        $sets = wf_crm_get_fields('sets');
+        $new_set['name'] = $sets[$type]['label'] . ($c > 1 ? " $c" : '');
+        $new_set['weight'] = 200 + (array_search($type, $non_contact) * 10 + $c);
+      }
       $new_set += webform_component_invoke('fieldset', 'defaults');
       $enabled[$sid] = webform_component_insert($new_set);
     }
