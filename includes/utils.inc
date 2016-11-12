@@ -1264,11 +1264,11 @@ function wf_crm_get_fields($var = 'fields') {
         }
         $fields[$id]['name'] = $dao->label;
         $fields[$id]['required'] = $dao->is_required;
-        $fields[$id]['extra']['description'] = $dao->help_pre;
         $fields[$id]['value'] = implode(',', wf_crm_explode_multivalue_str($dao->default_value));
         $fields[$id]['data_type'] = $dao->data_type;
         if (!empty($dao->help_pre) || !empty($dao->help_post)) {
           $fields[$id]['extra']['description'] = $dao->help_pre ? $dao->help_pre : $dao->help_post;
+          $fields[$id]['extra']['description_above'] = (int) !$dao->help_pre;
           $fields[$id]['has_help'] = TRUE;
         }
         // Conditional rule - todo: support additional entities

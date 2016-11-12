@@ -17,13 +17,13 @@ var wfCiviAdmin = (function ($, D) {
     var context = $(id);
     switch (op) {
       case 'all':
-        $('input:enabled:checkbox', context).prop('checked', true);
+        $('input:enabled:checkbox', context).not('.dynamic-custom-checkbox input').prop('checked', true);
         $('select:enabled[multiple] option, select:enabled option[value="create_civicrm_webform_element"]', context).each(function() {
           $(this).prop('selected', true);
         });
         break;
       case 'none':
-        $('input:enabled:checkbox', context).prop('checked', false);
+        $('input:enabled:checkbox', context).not('.dynamic-custom-checkbox input').prop('checked', false);
         $('select:enabled:not([multiple])', context).each(function() {
           if ($(this).val() === 'create_civicrm_webform_element') {
             $('option', this).each(function() {
@@ -37,7 +37,7 @@ var wfCiviAdmin = (function ($, D) {
         $('select:enabled[multiple] option', context).prop('selected', false);
         break;
       case 'reset':
-        $('input:enabled:checkbox', context).each(function() {
+        $('input:enabled:checkbox', context).not('.dynamic-custom-checkbox input').each(function() {
           $(this).prop('checked', $(this).prop('defaultChecked'));
         });
         $('select:enabled option', context).each(function() {
@@ -362,6 +362,24 @@ var wfCiviAdmin = (function ($, D) {
           $('#edit-st-message .form-item-message').hide('fast');
         }
       }).change();
+
+      //
+      function handleDynamicCustom() {
+        var $fieldset = $(this).closest('fieldset'),
+          checked = $(this).is(':checked');
+        pub.selectReset(checked ? 'all' : 'reset', $fieldset);
+        $('input, select', $fieldset).not(this).prop('disabled', checked).each(function() {
+          var name = $(this).attr('name');
+          // Hidden element ensures value gets posted back when checkbox is disabled
+          if (checked) {
+            $fieldset.append('<input type="hidden" name="' + name + '" value="create_civicrm_webform_element"/>');
+          } else {
+            $('input[type=hidden][name="'+name+'"]', $fieldset).remove();
+          }
+        });
+        $('.web-civi-js-select', $fieldset).css('visibility', checked ? 'hidden' : '');
+      }
+      $('.dynamic-custom-checkbox input', context).once('wf-civi-dynamic').each(handleDynamicCustom).change(handleDynamicCustom);
 
       $('select[id*=contact-type], select[id*=contact-sub-type]', context).once('wf-civi-relationship').change(function() {
         relationshipOptions();

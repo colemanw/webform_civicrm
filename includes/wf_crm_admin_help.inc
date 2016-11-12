@@ -392,6 +392,12 @@ class wf_crm_admin_help {
       '</p>';
   }
 
+  static function dynamic_custom() {
+    print '<p>' .
+      t('Something') .
+      '</p>';
+  }
+
   /**
    * Get help for a custom field
    */

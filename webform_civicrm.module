@@ -323,6 +323,19 @@ function webform_civicrm_webform_submission_actions($node, $submission) {
 }
 
 /**
+ * Implements hook_civicrm_postProcess().
+ *
+ * @param string $formName
+ * @param CRM_Core_Form $form
+ */
+function webform_civicrm_civicrm_post($op, $name, $id, $object) {
+  if ($name == 'CustomField' && in_array($op, array('create', 'edit', 'delete'))) {
+    module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_form');
+    wf_crm_admin_form::handleDynamicCustomField($op, $id, $object->custom_group_id);
+  }
+}
+
+/**
  * Implements hook_civicrm_merge().
  * Update submission data to reflect new cids when contacts are merged.
  */
