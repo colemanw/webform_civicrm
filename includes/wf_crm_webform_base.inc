@@ -676,7 +676,7 @@ abstract class wf_crm_webform_base {
    * @param int $id: drupal file id
    * @return int|null Civi file id
    */
-  static function saveDrupalFileToCivi($id) {
+  public static function saveDrupalFileToCivi($id) {
     $file = file_load($id);
     if ($file) {
       $config = CRM_Core_Config::singleton();

@@ -436,7 +436,7 @@ class wf_crm_admin_component {
    * @param array $rows
    * @param stdClass $node
    */
-  static function preprocessComponentsForm(&$form, &$rows, $node) {
+  public static function preprocessComponentsForm(&$form, &$rows, $node) {
     // Prepare for CiviCRM processing
     $enabled = $data = array();
     if (!empty($node->webform_civicrm)) {
@@ -576,7 +576,7 @@ class wf_crm_admin_component {
    * Ensure billing fields are not on same page as event/member amounts
    * @param stdClass $node
    */
-  static function checkBillingPagination($node) {
+  public static function checkBillingPagination($node) {
     civicrm_initialize();
     $enabled = wf_crm_enabled_fields($node);
     $field_ids = array(

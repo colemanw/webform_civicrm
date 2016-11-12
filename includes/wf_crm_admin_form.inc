@@ -1712,7 +1712,7 @@ class wf_crm_admin_form {
    *   webform_civicrm configuration for this form
    * @param bool $create_fieldsets
    */
-  static function insertComponent(&$field, &$enabled, $settings, $create_fieldsets = FALSE) {
+  public static function insertComponent(&$field, &$enabled, $settings, $create_fieldsets = FALSE) {
     $options = NULL;
     list(, $c, $ent, $n, $table, $name) = explode('_', $field['form_key'], 6);
     $contact_type = wf_crm_aval($settings['data']['contact'], "$c:contact:1:contact_type");
@@ -1814,7 +1814,7 @@ class wf_crm_admin_form {
    * @param string $ent
    * @param bool $allow_create
    */
-  static function addFieldset($c, &$field, &$enabled, $settings, $ent = 'contact', $allow_create = FALSE) {
+  public static function addFieldset($c, &$field, &$enabled, $settings, $ent = 'contact', $allow_create = FALSE) {
     $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
     $sid = "civicrm_{$c}_{$type}_1_fieldset_fieldset";
     if (!empty($settings['create_fieldsets']) && !isset($enabled[$sid]) && $allow_create) {
@@ -1842,7 +1842,7 @@ class wf_crm_admin_form {
    * Create a page-break before the contribution-page field
    * @param $field
    */
-  static function addPageBreak($field) {
+  public static function addPageBreak($field) {
     $node = node_load($field['nid']);
     // Check if it already exists
     foreach (wf_crm_aval($node->webform, 'components', array()) as $component) {
@@ -1864,14 +1864,14 @@ class wf_crm_admin_form {
   /**
    * Default value callback
    */
-  static function get_default_contact_cs($fid, $options) {
+  public static function get_default_contact_cs($fid, $options) {
     return CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'checksum_timeout', NULL, 7);
   }
 
   /**
    * Default value callback
    */
-  static function get_default_contribution_payment_processor_id($fid, $options) {
+  public static function get_default_contribution_payment_processor_id($fid, $options) {
     $default = wf_civicrm_api('payment_processor', 'get', array('is_default' => 1, 'is_test' => 0));
     if (!empty($default['id']) && isset($options[$default['id']])) {
       return $default['id'];

@@ -55,7 +55,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @param stdClass $node
    * @return wf_crm_webform_postprocess
    */
-  static function singleton($node) {
+  public static function singleton($node) {
     if (!self::$singleton) {
       self::$singleton = new wf_crm_webform_postprocess($node);
     }
