@@ -56,6 +56,17 @@ th div.form-type-radio {
   padding:0;
 }
 
+#wf-crm-configure-form .dynamic-custom-checkbox > div {
+  float: none;
+  width: auto;
+  padding: .1em .5em;
+  position: absolute;
+  right: 0;
+  top: 0;
+  border-left: 1px solid #CCC;
+  border-bottom: 1px solid #CCC;
+}
+
 .web-civi-js-select {
   font-size:0.8em;
   position:absolute;
@@ -65,6 +76,10 @@ th div.form-type-radio {
   top:-10px;
   border:1px solid #CCCCCC;
   display:none;
+}
+
+.dynamic-custom-checkbox + .web-civi-js-select {
+  right: 15em;
 }
 
 .js fieldset:hover > div > .web-civi-js-select,

@@ -55,7 +55,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @param stdClass $node
    * @return wf_crm_webform_postprocess
    */
-  static function singleton($node) {
+  public static function singleton($node) {
     if (!self::$singleton) {
       self::$singleton = new wf_crm_webform_postprocess($node);
     }
@@ -558,14 +558,20 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @return int
    */
   private function findDuplicateContact($contact) {
-    $dupes = $rule_type = $rule_id = NULL;
+    $dupes = $rule_type = $rule_id = $params_custom = NULL;
     $rule = wf_crm_aval($contact, 'matching_rule', 'Unsupervised', TRUE);
+    $contact_type = ucfirst($contact['contact'][1]['contact_type']);
     if ($rule) {
       $params = array('check_permission' => FALSE);
       foreach ($contact as $table => $field) {
         if (is_array($field) && !empty($field[1])) {
           if (substr($table, 0, 2) == 'cg') {
-            //TODO pass custom data to deduper
+            // Collect custom params to pass to deduper
+            foreach ($field[1] as $custom_key => $custom_value) {
+              if (!empty($custom_value)) {
+                $params_custom[$custom_key] = $custom_value;
+              }
+            }
           }
           // If sharing an address, use the master
           elseif ($table == 'address' && !empty($field[1]['master_id'])) {
@@ -604,7 +610,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       else {
         $rule_type = $rule;
       }
-      $dupes = CRM_Dedupe_Finder::dupesByParams($params, ucfirst($contact['contact'][1]['contact_type']), $rule_type, array(), $rule_id);
+      // Pass custom params to deduper
+      if ($params_custom) {
+        $params_custom = CRM_Dedupe_Finder::formatParams($params_custom, $contact_type);
+        $params = array_merge($params, $params_custom);
+      }
+      $dupes = CRM_Dedupe_Finder::dupesByParams($params, $contact_type, $rule_type, array(), $rule_id);
     }
     if ($dupes) {
       return $dupes[0];
@@ -1559,7 +1570,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Validate state/province
     if (!empty($params['country_id'])) {
       $states = wf_crm_apivalues('address', 'getoptions', array('field' => 'state_province_id', 'country_id' => $params['country_id']));
-      if ($states && (empty($params['state_province_id']) || !isset($states[$params['state_province_id']]))) {
+      if ($states && array_key_exists('state_province_id', $params) && (empty($params['state_province_id']) || !isset($states[$params['state_province_id']]))) {
         form_set_error('billing_state_province_id-5', t('!name field is required.', array('!name' => check_plain(ts('State/Province')))));
         $valid = FALSE;
       }
