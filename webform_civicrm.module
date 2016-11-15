@@ -358,6 +358,32 @@ function webform_civicrm_civicrm_post($op, $name, $id, $dao) {
 }
 
 /**
+ * Implements hook_civicrm_buildForm().
+ * @param string $formName
+ * @param CRM_Core_Form $form
+ */
+function webform_civicrm_civicrm_buildForm($formName, $form) {
+  // Warn user when deleting custom fields used by webforms
+  if ($formName == 'CRM_Custom_Form_DeleteField') {
+    $nodes = array();
+    $fid = $form->getVar('_id');
+    if ($fid) {
+      $webforms = db_query("SELECT nid FROM {webform_component} WHERE form_key LIKE '%_custom_{$fid}' GROUP BY nid");
+      foreach ($webforms as $webform) {
+        $node = node_load($webform->nid);
+        $nodes[] = l($node->title, 'node/' . $webform->nid);
+      }
+    }
+    if ($nodes) {
+      $list = '<ul><li>' . implode('</li><li>', $nodes) . '</li></ul>';
+      CRM_Core_Region::instance('page-body')->add(array(
+        'markup' => '<strong>' . t('This field is used in the following webforms:') . '</strong>' . $list,
+      ));
+    }
+  }
+}
+
+/**
  * Implements hook_civicrm_merge().
  * Update submission data to reflect new cids when contacts are merged.
  */
