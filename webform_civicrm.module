@@ -368,7 +368,7 @@ function webform_civicrm_civicrm_buildForm($formName, $form) {
     $nodes = array();
     $fid = $form->getVar('_id');
     if ($fid) {
-      $webforms = db_query("SELECT nid FROM {webform_component} WHERE form_key LIKE '%_custom_{$fid}' GROUP BY nid");
+      $webforms = db_query("SELECT nid FROM {webform_component} WHERE form_key LIKE 'civicrm_%_custom_{$fid}' GROUP BY nid");
       foreach ($webforms as $webform) {
         $node = node_load($webform->nid);
         $nodes[] = l($node->title, 'node/' . $webform->nid);
