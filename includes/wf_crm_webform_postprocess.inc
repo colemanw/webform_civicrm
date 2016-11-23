@@ -73,6 +73,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->form_state = &$form_state;
     $this->rawValues = _webform_client_form_submit_flatten($this->node, wf_crm_aval($this->form_state, 'values:submitted'));
     $this->crmValues = wf_crm_enabled_fields($this->node, $this->rawValues);
+
+    // Grab existing contact IDs if they are available. These may not have saved to civicrm:ent yet, so populate now.
+    $this->getExistingContactIds();
+    if (!empty($this->existing_contacts)) {
+      foreach ($this->existing_contacts as $key => $value) {
+        $form_state['civicrm']['ent']['contact'][$key]['id'] = $value;
+      }
+    }
+
     // Even though this object is destroyed between page submissions, this trick allows us to persist some data - see below
     $this->ent = wf_crm_aval($form_state, 'civicrm:ent', array());
 
