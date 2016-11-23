@@ -2008,8 +2008,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
         // Ignore values from fields hidden by existing contact component
         if ($this->isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name)) {
-          // Also remove the value from the webform submission
-          $this->submissionValue($fid, array(NULL));
           continue;
         }
         $field = $this->all_fields[$table . '_' . $name];
