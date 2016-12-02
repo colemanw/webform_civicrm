@@ -797,7 +797,17 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       }
     }
     if ($items) {
-      $values = wf_crm_apivalues($type, 'get', array('id' => array('IN' => array_values($items))));
+      // Todo: Remove when we drop support for 4.4 - https://www.drupal.org/node/2832331
+      if (version_compare($this->civicrm_version, '4.6.0', '<') {
+        $values = array();
+        foreach ($items as $id) {
+          $value = wf_crm_apivalues($type, 'get', array('id' => $id));
+          $values[$id] = $value[$id];
+        }
+      }
+      else {
+        $values = wf_crm_apivalues($type, 'get', array('id' => array('IN' => array_values($items))));
+      }
       foreach ($items as $n => $id) {
         if (isset($values[$id])) {
           // Load core + custom data
