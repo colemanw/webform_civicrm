@@ -805,10 +805,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
        * So we check whether the version of CiviCRM is 4.4 and if so we will
        * do an API call on each item.
        */
-      $civiVersion = wf_crm_apivalues('Domain', 'get', array('return' => 'version'));
-      $civiVersion = reset($civiVersion);
-      $civiVersion = (float) substr($civiVersion['version'], 0, 3);
-      if ($civiVersion < 4.6) {
+      if (version_compare($this->civicrm_version, '4.6.0', '<') {
         $values = array();
         foreach($items as $id) {
           $value = wf_crm_apivalues($type, 'get', array('id' => $id));
