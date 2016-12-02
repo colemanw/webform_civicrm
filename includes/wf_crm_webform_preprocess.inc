@@ -797,7 +797,26 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       }
     }
     if ($items) {
-      $values = wf_crm_apivalues($type, 'get', array('id' => array('IN' => array_values($items))));
+      /**
+       * https://www.drupal.org/node/2832331
+       *
+       * Update an existing case from case1 url parameter fails.
+       * Problem is that IN parameter does not work with the case.get api in CiviCRM 4.4.
+       * So we check whether the version of CiviCRM is 4.4 and if so we will
+       * do an API call on each item.
+       */
+      $civiVersion = wf_crm_apivalues('Domain', 'get', array('return' => 'version'));
+      $civiVersion = reset($civiVersion);
+      $civiVersion = (float) substr($civiVersion['version'], 0, 3);
+      if ($civiVersion < 4.6) {
+        $values = array();
+        foreach($items as $id) {
+          $value = wf_crm_apivalues($type, 'get', array('id' => $id));
+          $values[$id] = $value[$id];
+        }
+      } else {
+        $values = wf_crm_apivalues($type, 'get', array('id' => array('IN' => array_values($items))));
+      }
       foreach ($items as $n => $id) {
         if (isset($values[$id])) {
           // Load core + custom data
