@@ -394,7 +394,7 @@ class wf_crm_admin_help {
 
   public static function dynamic_custom() {
     print '<p>' .
-      t('Something') .
+      t('A dynamic custom field set (group) will dynamically pull in any custom field changes within that set (group)') .
       '</p>';
   }
 
