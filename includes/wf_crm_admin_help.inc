@@ -394,7 +394,7 @@ class wf_crm_admin_help {
 
   public static function dynamic_custom() {
     print '<p>' .
-      t('Something') .
+      t("This will add all fields from this custom group, and automatically update the webform whenever this group's custom fields are added, edited, or deleted in CiviCRM.") .
       '</p>';
   }
 
