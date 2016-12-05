@@ -367,7 +367,9 @@ var wfCiviAdmin = (function ($, D) {
       function handleDynamicCustom() {
         var $fieldset = $(this).closest('fieldset'),
           checked = $(this).is(':checked');
-        pub.selectReset(checked ? 'all' : 'reset', $fieldset);
+        if (checked) {
+          pub.selectReset('all', $fieldset);
+        }
         $('input, select', $fieldset).not(this).prop('disabled', checked).each(function() {
           var name = $(this).attr('name');
           // Hidden element ensures value gets posted back when checkbox is disabled
@@ -377,6 +379,9 @@ var wfCiviAdmin = (function ($, D) {
             $('input[type=hidden][name="'+name+'"]', $fieldset).remove();
           }
         });
+        if (!checked) {
+          pub.selectReset('reset', $fieldset);
+        }
         $('.web-civi-js-select', $fieldset).css('visibility', checked ? 'hidden' : '');
       }
       $('.dynamic-custom-checkbox input', context).once('wf-civi-dynamic').each(handleDynamicCustom).change(handleDynamicCustom);
