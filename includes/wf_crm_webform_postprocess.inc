@@ -1713,7 +1713,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $paymentProcessor = CRM_Core_Payment::singleton($mode, $processor_type);
     }
     else {
-      $paymentProcessor = \Civi\Payment\System::singleton()->getByName($processor_type, $params['is_test']);
+      $paymentProcessor = \Civi\Payment\System::singleton()->getById($params['payment_processor_id']);
+      // Ideally we would pass the correct id for the test processor through but that seems not to be the
+      // case so load it here.
+      if (!empty($params['is_test'])) {
+        $paymentProcessor = \Civi\Payment\System::singleton()->getByName($processor_type['name'], TRUE);
+      }
     }
     // Add contact details to params (most processors want a first_name and last_name)
     $contact = wf_civicrm_api('contact', 'getsingle', array('id' => $this->ent['contact'][1]['id']));
