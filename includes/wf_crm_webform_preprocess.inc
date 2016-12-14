@@ -363,7 +363,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         else {
           $urlParam = "c{$c}event{$e}";
         }
-        foreach (explode(',', wf_crm_aval($_GET, $urlParam)) as $key => $value) {
+        foreach (explode(',', wf_crm_aval($_GET, $urlParam)) as $value) {
           if (isset($eids[$value])){
             $event_ids[] = $eids[$value];
           }
