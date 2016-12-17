@@ -221,6 +221,82 @@ abstract class wf_crm_webform_base {
   }
 
   /**
+   * Find an existing contact based on matching criteria
+   * Used to populate a webform existing contact field
+   *
+   * @param array $component
+   *   Webform component of type 'civicrm_contact'
+   */
+  protected function findContact($component) {
+    module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
+    list(, $c,) = explode('_', $component['form_key'], 3);
+    $filters = wf_crm_search_filters($this->node, $component);
+    // Start with the url - that trumps everything.
+    if (isset($_GET["cid$c"]) || ($c == 1 && isset($_GET['cid']))) {
+      $cid = isset($_GET["cid$c"]) ? $_GET["cid$c"] : $_GET['cid'];
+      if (wf_crm_is_positive($cid) || $cid == '0') {
+        $cid = (int) $cid;
+        if ($cid === 0) {
+          $this->ent['contact'][$c]['id'] = $cid;
+        }
+        // This property may not exist in components created before v4.12 so default to TRUE if not set
+        elseif (wf_crm_aval($component['extra'], 'allow_url_autofill', TRUE, TRUE)) {
+          if (wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
+            $this->ent['contact'][$c]['id'] = $cid;
+          }
+        }
+      }
+    }
+    if (!isset($this->ent['contact'][$c]['id'])) {
+      $found = array();
+      switch ($component['extra']['default']) {
+        case 'user':
+          $cid = wf_crm_user_cid();
+          $found = ($c == 1 && $cid) ? array($cid) : array();
+          break;
+        case 'contact_id':
+          if ($component['extra']['default_contact_id']) {
+            $found = array($component['extra']['default_contact_id']);
+          }
+          break;
+        case 'relationship':
+          if (!empty($this->ent['contact'][1]['id'])) {
+            $found = wf_crm_find_relations($this->ent['contact'][1]['id'], $component['extra']['default_relationship']);
+          }
+          break;
+        case 'auto':
+          $component['extra']['allow_create'] = FALSE;
+          $found = array_keys(wf_crm_contact_search($this->node, $component, $filters));
+          break;
+      }
+      if ($component['extra']['randomize']) {
+        shuffle($found);
+      }
+      if (in_array($component['extra']['default'], array('user', 'contact_id'))) {
+        $dupes_allowed = TRUE;
+      }
+      else {
+        $dupes_allowed = $component['extra']['dupes_allowed'];
+      }
+      foreach ($found as $cid) {
+        // Don't pick the same contact twice unless explicitly told to do so
+        if (!$dupes_allowed) {
+          foreach($this->ent['contact'] as $contact) {
+            if (!empty($contact['id']) && $cid == $contact['id']) {
+              continue 2;
+            }
+          }
+        }
+        // Check filters except for 'auto' which already applied them
+        if ($component['extra']['default'] == 'auto' || wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
+          $this->ent['contact'][$c]['id'] = $cid;
+          break;
+        }
+      }
+    }
+  }
+
+  /**
    * Reorder returned results according to settings chosen in wf_civicrm backend
    *
    * @param integer $c

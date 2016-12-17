@@ -132,6 +132,25 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
               }
             }
           }
+          // Populate related contacts
+          elseif ($c == 1 && $i > $c && $field == 'existing') {
+            $related_component = $this->getComponent($fid);
+            if (wf_crm_aval($related_component['extra'], 'default') == 'relationship') {
+              $old_related_cid = wf_crm_aval($this->ent, "contact:$i:id");
+              // Don't be fooled by old data
+              $related_component['extra']['allow_url_autofill'] = FALSE;
+              unset($this->ent['contact'][$i]);
+              $this->findContact($related_component);
+              $related_cid = wf_crm_aval($this->ent, "contact:$i:id");
+              if ($related_cid && $related_cid != $old_related_cid) {
+                $data[] = array(
+                  'fid' => $fid,
+                  'val' => $related_cid,
+                  'display' => wf_crm_contact_access($related_component,  wf_crm_search_filters($this->node, $related_component), $related_cid),
+                );
+              }
+            }
+          }
         }
         // We want counties, states and countries in that order to avoid race-conditions client-side
         $data = array_merge($data, $states, $countries);
