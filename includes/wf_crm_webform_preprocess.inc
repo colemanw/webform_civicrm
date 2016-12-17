@@ -40,12 +40,18 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     $this->addResources();
     // Add validation handler
     $this->form['#validate'][] = 'wf_crm_validate';
+    // If this form is already in-process, IDs will be stored
+    if (!empty($this->form_state['civicrm'])) {
+      $this->ent = $this->form_state['civicrm']['ent'];
+    }
+    $submitted_contacts = array();
     // Keep track of cids across multipage forms
     if (!empty($this->form_state['values']['submitted']) && wf_crm_aval($this->form_state, 'webform:page_count') > 1) {
       foreach ($this->enabled as $k => $v) {
-        if (substr($k, -8) == 'existing' && !empty($this->form_state['values']['submitted'][$v])) {
+        if (substr($k, -8) == 'existing' && isset($this->form_state['values']['submitted'][$v])) {
           list(, $c) = explode('_', $k);
-          $cid_data["cid$c"] = $this->form_state['values']['submitted'][$v];
+          $cid_data["cid$c"] = $this->ent['contact'][$c]['id'] = (int) $this->form_state['values']['submitted'][$v];
+          $submitted_contacts[$c] = TRUE;
         }
       }
       if (!empty($cid_data)) {
@@ -69,22 +75,19 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       $this->fillForm($this->form['submitted']);
       return;
     }
-    // If this form is already in-process, IDs will be stored
-    if (!empty($this->form_state['civicrm'])) {
-      $this->ent = $this->form_state['civicrm']['ent'];
-    }
-    else {
-      // Search for existing contacts
-      for ($i = 1; $i <= count($this->data['contact']); ++$i) {
-        $this->ent['contact'][$i] = array();
-        $existing_component = $this->getComponent("civicrm_{$i}_contact_1_contact_existing");
-        if ($existing_component) {
-          $this->findContact($existing_component);
-        }
-        // Fill cid with '0' if unknown
-        $this->ent['contact'][$i] += array('id' => 0);
+    // Search for existing contacts
+    for ($c = 1; $c <= count($this->data['contact']); ++$c) {
+      $this->ent['contact'][$c] = wf_crm_aval($this->ent, "contact:$c", array());
+      $existing_component = $this->getComponent("civicrm_{$c}_contact_1_contact_existing");
+      // Search for contact if the user hasn't already chosen one
+      if ($existing_component && empty($submitted_contacts[$c])) {
+        $this->findContact($existing_component);
       }
-      // Search for other existing entities
+      // Fill cid with '0' if unknown
+      $this->ent['contact'][$c] += array('id' => 0);
+    }
+    // Search for other existing entities
+    if (empty($this->form_state['civicrm'])) {
       if (!empty($this->data['case']['number_of_case'])) {
         $this->findExistingCases();
       }

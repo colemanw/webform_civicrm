@@ -234,10 +234,11 @@ abstract class wf_crm_webform_base {
     // Start with the url - that trumps everything.
     if (isset($_GET["cid$c"]) || ($c == 1 && isset($_GET['cid']))) {
       $cid = isset($_GET["cid$c"]) ? $_GET["cid$c"] : $_GET['cid'];
-      if (wf_crm_is_positive($cid) || $cid == '0') {
+      if (wf_crm_is_positive($cid) || $cid === '0' || $cid === 0) {
         $cid = (int) $cid;
         if ($cid === 0) {
           $this->ent['contact'][$c]['id'] = $cid;
+          return;
         }
         // This property may not exist in components created before v4.12 so default to TRUE if not set
         elseif (wf_crm_aval($component['extra'], 'allow_url_autofill', TRUE, TRUE)) {
@@ -247,7 +248,7 @@ abstract class wf_crm_webform_base {
         }
       }
     }
-    if (!isset($this->ent['contact'][$c]['id'])) {
+    if (empty($this->ent['contact'][$c]['id'])) {
       $found = array();
       switch ($component['extra']['default']) {
         case 'user':
