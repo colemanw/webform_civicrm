@@ -50,7 +50,8 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       foreach ($this->enabled as $k => $v) {
         if (substr($k, -8) == 'existing' && isset($this->form_state['values']['submitted'][$v])) {
           list(, $c) = explode('_', $k);
-          $cid_data["cid$c"] = $this->ent['contact'][$c]['id'] = (int) $this->form_state['values']['submitted'][$v];
+          $val = $this->form_state['values']['submitted'][$v];
+          $cid_data["cid$c"] = $this->ent['contact'][$c]['id'] = (int) (is_array($val) ? $val[0] : $val);
           $submitted_contacts[$c] = TRUE;
         }
       }
@@ -60,7 +61,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     }
     // Early return if the form (or page) was already submitted
     if (wf_crm_aval($this->form_state, 'triggering_element:#id') == 'edit-previous'
-      || (empty($this->form_state['rebuild']) && !empty($this->form_state['storage']) && $this->form['#submission']->is_draft != '1' )) {
+      || (empty($this->form_state['rebuild']) && !empty($this->form_state['storage']) && empty($this->form['#submission']->is_draft))
+      // When resuming from a draft
+      || (!empty($this->form['#submission']->is_draft) && empty($this->form_state['input']))
+    ) {
       $this->fillForm($this->form['submitted']);
       return;
     }
