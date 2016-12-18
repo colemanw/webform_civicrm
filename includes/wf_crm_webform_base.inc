@@ -107,7 +107,7 @@ abstract class wf_crm_webform_base {
         }
         $result = wf_civicrm_api($ent, 'get', $params);
         // Handle location field sorting
-        if(in_array($ent, wf_crm_location_fields())){
+        if (in_array($ent, wf_crm_location_fields()) && $ent != 'website') {
           $result['values'] = $this->reorderByLocationType($c, $ent, $result['values']);
         }
         if (!empty($result['values'])) {
