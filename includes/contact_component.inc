@@ -347,16 +347,19 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
       '#translatable' => array('title', 'description'),
       '#theme_wrappers' => array('webform_element'),
     );
-    // See if there are any fields to fetch via ajax
-    $other_fields = wf_crm_contact_fields($node, $c);
-    if ($hide_method == 'hide') {
-      foreach ($hide_fields as $h) {
-        unset($other_fields[$h]);
-      }
-    }
-    $ajax = $other_fields ? 'true' : 'false';
   }
+  // See if there are any fields to fetch via ajax
+  $other_fields = wf_crm_contact_fields($node, $c);
+  if ($hide_method == 'hide') {
+    foreach ($hide_fields as $h) {
+      unset($other_fields[$h]);
+    }
+  }
+  $ajax = $other_fields ? 'true' : 'false';
   $callback_path = '"' . url('webform-civicrm/js/' . $node->nid . '-' . $component['cid'], array('alias' => TRUE)) . '"';
+  $onChange = "field.change(function() {
+                  wfCivi.existingSelect($c, {$node->nid}, $callback_path, toHide, '$hide_method', $no_hide_blank, \$(this).val(), $ajax);
+                });";
 
   // Render component based on type
   switch ($component['extra']['widget']) {
@@ -371,12 +374,11 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
           noResultsText: ' . json_encode(filter_xss($component['extra']['none_prompt'])) . ',
           searchingText: ' . json_encode(t('Searching...')) . ',
           tokenLimit: 1,
-          onAdd: function(item) {wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, "' . $hide_method . '", ' . $no_hide_blank . ', item.id, ' . $ajax . ');},
-          onDelete: function(item) {wfCivi.existingSelect(' . $c . ', ' . $node->nid . ', ' . $callback_path . ', toHide, "' . $hide_method . '", ' . $no_hide_blank . ', "", false);},
           prePopulate: prep
         }';
         $js = "var prep = wfCivi.existingInit(field, $c, {$node->nid}, $callback_path, toHide);
-                field.tokenInput($callback_path, $settings);";
+                field.tokenInput($callback_path, $settings);
+                $onChange";
       }
       break;
 
@@ -385,10 +387,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
       if ($node && isset($node->webform_civicrm)) {
         $filters = wf_crm_search_filters($node, $component);
         $element['#options'] = wf_crm_contact_search($node, $component, $filters);
-        $js = "field.change(function() {
-                  wfCivi.existingSelect($c, {$node->nid}, $callback_path, toHide, '$hide_method', $no_hide_blank, \$(this).val(), $ajax);
-                });
-                wfCivi.existingInit(field, $c, {$node->nid}, $callback_path, toHide);";
+        $js = "$onChange wfCivi.existingInit(field, $c, {$node->nid}, $callback_path, toHide);";
       }
       // Display empty option unless there are no results
       if (!$component['extra']['allow_create'] || count($element['#options']) > 1) {
@@ -401,11 +400,12 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
         $element['#value'] = $value[0];
       }
       if ($node && isset($node->webform_civicrm)) {
+        $js = $onChange;
         if ($component['extra']['show_hidden_contact']) {
           $element['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/token-input.css';
         }
         if ($hide_fields) {
-          $js = "wfCivi.existingInit(field, $c, {$node->nid}, $callback_path, toHide);";
+          $js .= "wfCivi.existingInit(field, $c, {$node->nid}, $callback_path, toHide);";
         }
         $element['#theme_wrappers'] = array('static_contact_element');
         if ($component['required']) {
@@ -418,10 +418,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
       $element['#description'] = t('Lookup by Contact ID.');
       $element['#size'] = 8;
       if ($node && isset($node->webform_civicrm)) {
-        $js = "field.change(function() {
-                  wfCivi.existingSelect($c, {$node->nid}, $callback_path, toHide, '$hide_method', $no_hide_blank, \$(this).val(), $ajax);
-                });
-                wfCivi.existingInit(field, $c, {$node->nid}, $callback_path, toHide);";
+        $js = "$onChange wfCivi.existingInit(field, $c, {$node->nid}, $callback_path, toHide);";
       }
       // Display empty option unless there are no results
       if (!$component['extra']['allow_create'] || count($element['#options']) > 1) {

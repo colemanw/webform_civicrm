@@ -40,12 +40,19 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     $this->addResources();
     // Add validation handler
     $this->form['#validate'][] = 'wf_crm_validate';
+    // If this form is already in-process, IDs will be stored
+    if (!empty($this->form_state['civicrm'])) {
+      $this->ent = $this->form_state['civicrm']['ent'];
+    }
+    $submitted_contacts = array();
     // Keep track of cids across multipage forms
     if (!empty($this->form_state['values']['submitted']) && wf_crm_aval($this->form_state, 'webform:page_count') > 1) {
       foreach ($this->enabled as $k => $v) {
-        if (substr($k, -8) == 'existing' && !empty($this->form_state['values']['submitted'][$v])) {
+        if (substr($k, -8) == 'existing' && isset($this->form_state['values']['submitted'][$v])) {
           list(, $c) = explode('_', $k);
-          $cid_data["cid$c"] = $this->form_state['values']['submitted'][$v];
+          $val = $this->form_state['values']['submitted'][$v];
+          $cid_data["cid$c"] = $this->ent['contact'][$c]['id'] = (int) (is_array($val) ? $val[0] : $val);
+          $submitted_contacts[$c] = TRUE;
         }
       }
       if (!empty($cid_data)) {
@@ -54,7 +61,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     }
     // Early return if the form (or page) was already submitted
     if (wf_crm_aval($this->form_state, 'triggering_element:#id') == 'edit-previous'
-      || (empty($this->form_state['rebuild']) && !empty($this->form_state['storage']) && $this->form['#submission']->is_draft != '1' )) {
+      || (empty($this->form_state['rebuild']) && !empty($this->form_state['storage']) && empty($this->form['#submission']->is_draft))
+      // When resuming from a draft
+      || (!empty($this->form['#submission']->is_draft) && empty($this->form_state['input']))
+    ) {
       $this->fillForm($this->form['submitted']);
       return;
     }
@@ -69,22 +79,19 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       $this->fillForm($this->form['submitted']);
       return;
     }
-    // If this form is already in-process, IDs will be stored
-    if (!empty($this->form_state['civicrm'])) {
-      $this->ent = $this->form_state['civicrm']['ent'];
-    }
-    else {
-      // Search for existing contacts
-      for ($i = 1; $i <= count($this->data['contact']); ++$i) {
-        $this->ent['contact'][$i] = array();
-        $existing_component = $this->getComponent("civicrm_{$i}_contact_1_contact_existing");
-        if ($existing_component) {
-          $this->findContact($existing_component);
-        }
-        // Fill cid with '0' if unknown
-        $this->ent['contact'][$i] += array('id' => 0);
+    // Search for existing contacts
+    for ($c = 1; $c <= count($this->data['contact']); ++$c) {
+      $this->ent['contact'][$c] = wf_crm_aval($this->ent, "contact:$c", array());
+      $existing_component = $this->getComponent("civicrm_{$c}_contact_1_contact_existing");
+      // Search for contact if the user hasn't already chosen one
+      if ($existing_component && empty($submitted_contacts[$c])) {
+        $this->findContact($existing_component);
       }
-      // Search for other existing entities
+      // Fill cid with '0' if unknown
+      $this->ent['contact'][$c] += array('id' => 0);
+    }
+    // Search for other existing entities
+    if (empty($this->form_state['civicrm'])) {
       if (!empty($this->data['case']['number_of_case'])) {
         $this->findExistingCases();
       }
@@ -402,82 +409,6 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             array_key_exists($type, $this->getExposedOptions($fid)))
         ) {
           $this->info['membership'][$c]['membership'][$n] = $membership;
-          break;
-        }
-      }
-    }
-  }
-
-  /**
-   * Find an existing contact based on matching criteria
-   * Used to populate a webform existing contact field
-   *
-   * @param array $component
-   *   Webform component of type 'civicrm_contact'
-   */
-  private function findContact($component) {
-    module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
-    list(, $c,) = explode('_', $component['form_key'], 3);
-    $filters = wf_crm_search_filters($this->node, $component);
-    // Start with the url - that trumps everything.
-    if (isset($_GET["cid$c"]) || ($c == 1 && isset($_GET['cid']))) {
-      $cid = isset($_GET["cid$c"]) ? $_GET["cid$c"] : $_GET['cid'];
-      if (wf_crm_is_positive($cid) || $cid == '0') {
-        $cid = (int) $cid;
-        if ($cid === 0) {
-          $this->ent['contact'][$c]['id'] = $cid;
-        }
-        // This property may not exist in components created before v4.12 so default to TRUE if not set
-        elseif (wf_crm_aval($component['extra'], 'allow_url_autofill', TRUE, TRUE)) {
-          if (wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
-            $this->ent['contact'][$c]['id'] = $cid;
-          }
-        }
-      }
-    }
-    if (!isset($this->ent['contact'][$c]['id'])) {
-      $found = array();
-      switch ($component['extra']['default']) {
-        case 'user':
-          $cid = wf_crm_user_cid();
-          $found = ($c == 1 && $cid) ? array($cid) : array();
-          break;
-        case 'contact_id':
-          if ($component['extra']['default_contact_id']) {
-            $found = array($component['extra']['default_contact_id']);
-          }
-          break;
-        case 'relationship':
-          if (!empty($this->ent['contact'][1]['id'])) {
-            $found = wf_crm_find_relations($this->ent['contact'][1]['id'], $component['extra']['default_relationship']);
-          }
-          break;
-        case 'auto':
-          $component['extra']['allow_create'] = FALSE;
-          $found = array_keys(wf_crm_contact_search($this->node, $component, $filters));
-          break;
-      }
-      if ($component['extra']['randomize']) {
-        shuffle($found);
-      }
-      if (in_array($component['extra']['default'], array('user', 'contact_id'))) {
-        $dupes_allowed = TRUE;
-      }
-      else {
-        $dupes_allowed = $component['extra']['dupes_allowed'];
-      }
-      foreach ($found as $cid) {
-        // Don't pick the same contact twice unless explicitly told to do so
-        if (!$dupes_allowed) {
-          foreach($this->ent['contact'] as $contact) {
-            if (!empty($contact['id']) && $cid == $contact['id']) {
-              continue 2;
-            }
-          }
-        }
-        // Check filters except for 'auto' which already applied them
-        if ($component['extra']['default'] == 'auto' || wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
-          $this->ent['contact'][$c]['id'] = $cid;
           break;
         }
       }

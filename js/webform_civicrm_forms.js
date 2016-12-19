@@ -197,6 +197,12 @@ var wfCivi = (function ($, D) {
           $el.attr('data-val', val);
         }
         else if ($el.val() !== val) {
+          if ($el.data('tokenInputObject')) {
+            $el.tokenInput('clear').tokenInput('add', {id: val, name: this.display});
+          }
+          else if ($el.is('[type=hidden]')) {
+            $el.siblings('.token-input-list').find('p').text(this.display);
+          }
           $el.val(val).trigger('change', 'webform_civicrm:autofill');
         }
       }
