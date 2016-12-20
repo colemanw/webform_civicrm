@@ -1301,6 +1301,30 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         // Update mode
         else {
           $params['id'] = $this->ent['activity'][$n]['id'];
+
+          // Update details when user has selected he wants to update the details
+          if (empty($this->data['activity'][$n]['details']['no_update_existing'])) {
+            // Format details as html
+            $params['details'] = nl2br(wf_crm_aval($params, 'details', ''));
+            // Add webform results to details
+            if (!empty($this->data['activity'][$n]['details']['entire_result'])) {
+              module_load_include('inc', 'webform', 'includes/webform.submissions');
+              $submission = webform_submission_render($this->node, $this->submission, NULL, 'html');
+              $params['details'] .= drupal_render($submission);
+            }
+            if (!empty($this->data['activity'][$n]['details']['view_link'])) {
+              $params['details'] .= '<p>' . l(t('View Webform Submission'), "node/{$this->node->nid}/submission/{$this->submission->sid}", array(
+                  'absolute' => TRUE,
+                  'alias' => TRUE
+                )) . '</p>';
+            }
+            if (!empty($this->data['activity'][$n]['details']['edit_link'])) {
+              $params['details'] .= '<p>' . l(t('Edit Submission'), "node/{$this->node->nid}/submission/{$this->submission->sid}/edit", array(
+                  'absolute' => TRUE,
+                  'alias' => TRUE
+                )) . '</p>';
+            }
+          }
         }
         // Allow "automatic" values to pass-thru if empty
         foreach ($params as $field => $value) {
