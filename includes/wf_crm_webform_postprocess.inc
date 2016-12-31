@@ -1303,7 +1303,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $params['id'] = $this->ent['activity'][$n]['id'];
 
           // Update details when user has selected he wants to update the details
-          if (empty($this->data['activity'][$n]['details']['no_update_existing'])) {
+          if (!empty($this->data['activity'][$n]['details']['update_existing'])) {
             // Format details as html
             $params['details'] = nl2br(wf_crm_aval($params, 'details', ''));
             // Add webform results to details

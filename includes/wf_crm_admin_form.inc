@@ -444,7 +444,7 @@ class wf_crm_admin_form {
           'entire_result' => t('Include <em>entire</em> webform submission in activity details'),
           'view_link' => t('Include link to <em>view</em> webform submission in activity details'),
           'edit_link' => t('Include link to <em>edit</em> webform submission in activity details'),
-          'no_update_existing' => t('<strong>Do not </strong> update the details when an existing activity is updated'),
+          'update_existing' => t('Update the details when an existing activity is updated'),
         ),
         '#default_value' => wf_crm_aval($this->data, "activity:$n:details", array('view_link'), TRUE),
       );
