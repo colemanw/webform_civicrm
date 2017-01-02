@@ -1284,19 +1284,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             }
           }
           // Format details as html
-          $params['details'] = nl2br(wf_crm_aval($params, 'details', ''));
-          // Add webform results to details
-          if (!empty($this->data['activity'][$n]['details']['entire_result'])) {
-            module_load_include('inc', 'webform', 'includes/webform.submissions');
-            $submission = webform_submission_render($this->node, $this->submission, NULL, 'html');
-            $params['details'] .= drupal_render($submission);
-          }
-          if (!empty($this->data['activity'][$n]['details']['view_link'])) {
-            $params['details'] .= '<p>' . l(t('View Webform Submission'), "node/{$this->node->nid}/submission/{$this->submission->sid}", array('absolute' => TRUE, 'alias' => TRUE)) . '</p>';
-          }
-          if (!empty($this->data['activity'][$n]['details']['edit_link'])) {
-            $params['details'] .= '<p>' . l(t('Edit Submission'), "node/{$this->node->nid}/submission/{$this->submission->sid}/edit", array('absolute' => TRUE, 'alias' => TRUE)) . '</p>';
-          }
+          $this->formatSubmissionDetails($parmas, $n);
         }
         // Update mode
         else {
@@ -1305,25 +1293,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           // Update details when user has selected he wants to update the details
           if (!empty($this->data['activity'][$n]['details']['update_existing'])) {
             // Format details as html
-            $params['details'] = nl2br(wf_crm_aval($params, 'details', ''));
-            // Add webform results to details
-            if (!empty($this->data['activity'][$n]['details']['entire_result'])) {
-              module_load_include('inc', 'webform', 'includes/webform.submissions');
-              $submission = webform_submission_render($this->node, $this->submission, NULL, 'html');
-              $params['details'] .= drupal_render($submission);
-            }
-            if (!empty($this->data['activity'][$n]['details']['view_link'])) {
-              $params['details'] .= '<p>' . l(t('View Webform Submission'), "node/{$this->node->nid}/submission/{$this->submission->sid}", array(
-                  'absolute' => TRUE,
-                  'alias' => TRUE
-                )) . '</p>';
-            }
-            if (!empty($this->data['activity'][$n]['details']['edit_link'])) {
-              $params['details'] .= '<p>' . l(t('Edit Submission'), "node/{$this->node->nid}/submission/{$this->submission->sid}/edit", array(
-                  'absolute' => TRUE,
-                  'alias' => TRUE
-                )) . '</p>';
-            }
+            $this->formatSubmissionDetails($parmas, $n);
           }
         }
         // Allow "automatic" values to pass-thru if empty
@@ -1391,6 +1361,32 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
         }
       }
+    }
+  }
+
+ /**
+  * Process the submission into the details of the activity.
+  */
+ private function formatSubmissionDetails(&$params, $activity_number) {
+    // Format details as html
+    $params['details'] = nl2br(wf_crm_aval($params, 'details', ''));
+    // Add webform results to details
+    if (!empty($this->data['activity'][$activity_number]['details']['entire_result'])) {
+      module_load_include('inc', 'webform', 'includes/webform.submissions');
+      $submission = webform_submission_render($this->node, $this->submission, NULL, 'html');
+      $params['details'] .= drupal_render($submission);
+    }
+    if (!empty($this->data['activity'][$activity_number]['details']['view_link'])) {
+      $params['details'] .= '<p>' . l(t('View Webform Submission'), "node/{$this->node->nid}/submission/{$this->submission->sid}", array(
+          'absolute' => TRUE,
+          'alias' => TRUE
+        )) . '</p>';
+    }
+    if (!empty($this->data['activity'][$activity_number]['details']['edit_link'])) {
+      $params['details'] .= '<p>' . l(t('Edit Submission'), "node/{$this->node->nid}/submission/{$this->submission->sid}/edit", array(
+          'absolute' => TRUE,
+          'alias' => TRUE
+        )) . '</p>';
     }
   }
 
