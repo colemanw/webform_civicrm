@@ -2240,7 +2240,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $reorderedArray[$index]['location_type_id'] = $existingLocationTypeId;
       }
 
-      $reorderedArray[$index][$entity] = $eValue[$entity];
+      if (!empty($eValue[$entity])) {
+        $reorderedArray[$index][$entity] = $eValue[$entity];
+      }
 
       // address field contain many sub fields and should be handled differently
       if ($entity != 'address')  {
