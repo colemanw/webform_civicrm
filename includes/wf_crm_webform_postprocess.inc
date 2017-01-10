@@ -94,7 +94,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           if ($this->validateBillingFields()) {
             if ($this->createBillingContact()) {
               $this->submitLivePayment();
-              //  $this->totalContribution = 330;
             }
           }
         }
