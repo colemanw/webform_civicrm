@@ -1730,7 +1730,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       'currency' => $contributionParams['currency'],
       'payment_processor_id' =>  $contributionParams['payment_processor_id'],
       'financial_type_id' =>  $contributionParams['financial_type_id'],
-
     );
     $resultRecur = wf_civicrm_api('ContributionRecur', 'create', $contributionRecurParams);
 
