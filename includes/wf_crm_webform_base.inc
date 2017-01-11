@@ -676,7 +676,7 @@ abstract class wf_crm_webform_base {
    * @param int $id: Backdrop file id
    * @return int|null Civi file id
    */
-  static function saveBackdropFileToCivi($id) {
+  public static function saveBackdropFileToCivi($id) {
     $file = file_load($id);
     if ($file) {
       $config = CRM_Core_Config::singleton();

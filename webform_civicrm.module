@@ -323,6 +323,67 @@ function webform_civicrm_webform_submission_actions($node, $submission) {
 }
 
 /**
+ * Implements hook_civicrm_postSave_tableName().
+ *
+ * Handles adding/editing a custom field.
+ *
+ * @param CRM_Core_DAO_CustomField $dao
+ */
+function webform_civicrm_civicrm_postSave_civicrm_custom_field($dao) {
+  module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_form');
+  if (empty($dao->custom_group_id)) {
+    $dao->find(TRUE);
+  }
+  wf_crm_admin_form::handleDynamicCustomField('create', $dao->id, $dao->custom_group_id);
+}
+
+/**
+ * Implements hook_civicrm_post().
+ *
+ * Handles delete of a custom field.
+ *
+ * TODO: In theory, this could also handle save, and we don't need to impliment the above hook.
+ * However, this hook dosen't support CustomField in CiviCRM < 4.7.14 (or LTS < 4.6.24).
+ *
+ * @param string $op
+ * @param string $name
+ * @param int $id
+ * @param CRM_Core_DAO $dao
+ */
+function webform_civicrm_civicrm_post($op, $name, $id, $dao) {
+  if ($name == 'CustomField' && $op == 'delete') {
+    module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_form');
+    wf_crm_admin_form::handleDynamicCustomField($op, $id, $dao->custom_group_id);
+  }
+}
+
+/**
+ * Implements hook_civicrm_buildForm().
+ * @param string $formName
+ * @param CRM_Core_Form $form
+ */
+function webform_civicrm_civicrm_buildForm($formName, $form) {
+  // Warn user when deleting custom fields used by webforms
+  if ($formName == 'CRM_Custom_Form_DeleteField') {
+    $nodes = array();
+    $fid = $form->getVar('_id');
+    if ($fid) {
+      $webforms = db_query("SELECT nid FROM {webform_component} WHERE form_key LIKE 'civicrm_%_custom_{$fid}' GROUP BY nid");
+      foreach ($webforms as $webform) {
+        $node = node_load($webform->nid);
+        $nodes[] = l($node->title, 'node/' . $webform->nid);
+      }
+    }
+    if ($nodes) {
+      $list = '<ul><li>' . implode('</li><li>', $nodes) . '</li></ul>';
+      CRM_Core_Region::instance('page-body')->add(array(
+        'markup' => '<strong>' . t('This field is used in the following webforms:') . '</strong>' . $list,
+      ));
+    }
+  }
+}
+
+/**
  * Implements hook_civicrm_merge().
  * Update submission data to reflect new cids when contacts are merged.
  */

@@ -106,6 +106,8 @@ cj(function($) {
   if ($contributionAmount.length) {
     calculateContributionAmount();
     $contributionAmount.on('change keyup', calculateContributionAmount);
+    // Also use Drupal's jQuery to listen to this event, for compatibility with other modules
+    jQuery($contributionAmount[0]).change(calculateContributionAmount);
   }
   else {
     tally();

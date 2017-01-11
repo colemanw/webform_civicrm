@@ -495,7 +495,7 @@ function wf_crm_get_fields($var = 'fields') {
       'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship'), 'help_text' => TRUE),
     );
     $conditional_sets = array(
-      'CiviCase' => array('entity_type' => 'case', 'label' => t('Case Settings'), 'max_instances' => 30),
+      'CiviCase' => array('entity_type' => 'case', 'label' => t('Case'), 'max_instances' => 30),
       'CiviEvent' => array('entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9),
       'CiviContribute' => array('entity_type' => 'contribution', 'label' => t('Contribution')),
       'CiviMember' => array('entity_type' => 'membership', 'label' => t('Membership')),
@@ -1264,11 +1264,11 @@ function wf_crm_get_fields($var = 'fields') {
         }
         $fields[$id]['name'] = $dao->label;
         $fields[$id]['required'] = $dao->is_required;
-        $fields[$id]['extra']['description'] = $dao->help_pre;
         $fields[$id]['value'] = implode(',', wf_crm_explode_multivalue_str($dao->default_value));
         $fields[$id]['data_type'] = $dao->data_type;
         if (!empty($dao->help_pre) || !empty($dao->help_post)) {
           $fields[$id]['extra']['description'] = $dao->help_pre ? $dao->help_pre : $dao->help_post;
+          $fields[$id]['extra']['description_above'] = (int) !$dao->help_pre;
           $fields[$id]['has_help'] = TRUE;
         }
         // Conditional rule - todo: support additional entities

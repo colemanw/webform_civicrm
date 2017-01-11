@@ -605,7 +605,8 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
       $ret['-'] = filter_xss($component['extra']['none_prompt']);
     }
     foreach (wf_crm_aval($result, 'values', array()) as $contact) {
-      if ($name = wf_crm_format_contact($contact, $display)) {
+      // Select lists will be escaped by FAPI
+      if ($name = wf_crm_format_contact($contact, $display, FALSE)) {
         $ret[$contact['id']] = $name;
       }
     }
@@ -682,16 +683,17 @@ function wf_crm_contact_access($component, $filters, $cid) {
  *
  * @param array $contact
  * @param array $display_fields
+ * @param bool $escape
  * @return bool|string
  */
-function wf_crm_format_contact($contact, $display_fields) {
+function wf_crm_format_contact($contact, $display_fields, $escape = TRUE) {
   if (!$contact) {
     return FALSE;
   }
   $display = array();
   foreach ($display_fields as $field) {
     if ($field && !empty($contact[$field])) {
-      $display[] = check_plain($contact[$field]);
+      $display[] = $escape ? check_plain($contact[$field]) : $contact[$field];
     }
   }
   return implode(' :: ', $display);

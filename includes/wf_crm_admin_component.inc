@@ -436,7 +436,7 @@ class wf_crm_admin_component {
    * @param array $rows
    * @param stdClass $node
    */
-  static function preprocessComponentsForm(&$form, &$rows, $node) {
+  public static function preprocessComponentsForm(&$form, &$rows, $node) {
     // Prepare for CiviCRM processing
     $enabled = $data = array();
     if (!empty($node->webform_civicrm)) {
@@ -491,7 +491,7 @@ class wf_crm_admin_component {
           $field = wf_crm_aval($fields, $table . '_' . $name, array('type' => 'fieldset'));
           // Don't allow CiviCRM fields to be cloned
           $row['data'][7]['data'] = '';
-          if ($component['type'] == 'fieldset') {
+          if ($component['type'] == 'fieldset' && $ent == 'contact') {
             $title = t('Contact !num', array('!num' => $c));
             $type = t('Fieldset for !contact', array('!contact' => wf_crm_contact_label($c, $data)));
             $row['data'][7]['data'] = l(t('Clone Contact'), "node/{$node->nid}/webform/components/$cid/clone", array(
@@ -503,8 +503,11 @@ class wf_crm_admin_component {
             $field_type = ($table == 'contact' || $table == 'other') ? $field['name'] : $sets[$table]['label'];
             $title = t('!type Field for !contact', array('!contact' => wf_crm_contact_label($c, $data), '!type' => $field_type));
           }
-          else {
+          elseif ($component['type'] != 'fieldset') {
             $title = t('Field for !type', array('!type' => $sets[$table]['label']));
+          }
+          else {
+            $title = $type = t('Fieldset for !type !num', array('!type' => $sets[$ent]['label'], '!num' => $c));
           }
           if ($table === 'address' && $component['type'] === 'textfield') {
             if ($name === 'state_province_id' || $name === 'county_id') {
@@ -512,7 +515,7 @@ class wf_crm_admin_component {
             }
           }
           if ($component['type'] == 'civicrm_contact' || $component['type'] == 'fieldset') {
-            $class .= ' ' . $node->webform_civicrm['data']['contact'][$c]['contact'][1]['contact_type'];
+            $class .= ' ' . ($ent == 'contact' ? $node->webform_civicrm['data']['contact'][$c]['contact'][1]['contact_type'] : $ent);
           }
           if ($component['type'] == 'select') {
             $type .= ' (' . (empty($component['extra']['civicrm_live_options']) ? t('static') : t('live')) . ')';
@@ -573,7 +576,7 @@ class wf_crm_admin_component {
    * Ensure billing fields are not on same page as event/member amounts
    * @param stdClass $node
    */
-  static function checkBillingPagination($node) {
+  public static function checkBillingPagination($node) {
     civicrm_initialize();
     $enabled = wf_crm_enabled_fields($node);
     $field_ids = array(
