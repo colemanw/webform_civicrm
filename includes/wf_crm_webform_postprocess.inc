@@ -1689,15 +1689,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * This happens during form validation and sets a form error if unsuccessful
    */
   private function submitLivePayment() {
+    $contributionParams = $this->contributionParams();
 
-    $installments = 10;
-
-    if ($installments == 1) {
-      $result = wf_civicrm_api('contribution', 'transact', $this->contributionParams());
+    if (wf_crm_aval($contributionParams, 'installments', 1) > 1) {
+      $result = $this->contributionRecur($contributionParams);
     }
-    elseif ($installments > 1) {
-      $contributionParams = $this->contributionParams();
-      $result = $this->contributionRecur($contributionParams, $installments);
+    else {
+      $result = wf_civicrm_api('contribution', 'transact', $contributionParams);
     }
 
     if (empty($result['id'])) {
@@ -1715,15 +1713,16 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   /**
    * Generate recurring contribution and transact the first one
    */
-  private function contributionRecur($contributionParams, $installments) {
+  private function contributionRecur($contributionParams) {
+    $installments = $contributionParams['installments'];
     $contributionParams['total_amount'] = $contributionParams['total_amount']/$installments;
 
     // Create Params for Creating the Recurring Contribution Series and Create it
     $contributionRecurParams = array(
       'sequential' => 1,
       'contact_id' => $contributionParams['contact_id'],
-      'frequency_interval' => 1,
-      'frequency_unit' => 'month',
+      'frequency_interval' => wf_crm_aval($contributionParams, 'frequency_interval', 1),
+      'frequency_unit' => wf_crm_aval($contributionParams, 'frequency_unit', 'month'),
       'installments' => $installments,
       'amount' => $contributionParams['total_amount'],
       'contribution_status_id' => 5,
@@ -1739,8 +1738,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       'contributionRecurID' => $resultRecur['id'],
       'is_recur' => 1,
       'contactID' => $contributionParams['contact_id'],
-      'frequency_interval' => 1,
-      'frequency_unit' => 'month',
+      'frequency_interval' => wf_crm_aval($contributionParams, 'frequency_interval', 1),
+      'frequency_unit' => wf_crm_aval($contributionParams, 'frequency_unit', 'month'),
     );
     $result = wf_civicrm_api('contribution', 'transact', $contributionParams + $additionalParams);
 
