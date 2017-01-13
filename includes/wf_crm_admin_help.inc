@@ -120,6 +120,27 @@ class wf_crm_admin_help {
     self::fee();
   }
 
+  public static function contribution_frequency_unit() {
+    print '<p>' .
+      t('Frequency of Installments. ') .
+      t('Set the frequency for the installments - options are: day, week, month, year - or make this a user-select element on the webform.') .
+      '</p>';
+  }
+
+  public static function contribution_installments() {
+    print '<p>' .
+      t('Number of Installments. ') .
+      t('Create a webform element that allows the Number of Installments to be specified: for example - total amount is paid in 10 installments. For a Contribution of unspecified duration/commitment use installments = 0.') .
+      '</p>';
+  }
+
+  public static function contribution_frequency_interval() {
+    print '<p>' .
+      t('Interval of Installments. ') .
+      t('Create a webform elements that allows the Interval of Installments to be specified: for example - every second (month).') .
+      '</p>';
+  }
+
   public static function participant_fee_amount() {
     print '<p>' .
       t('Price for this event. If multiple events or participants are registered with this field, the amount will be multiplied per-person, per-event.') .

@@ -1691,11 +1691,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function submitLivePayment() {
     $contributionParams = $this->contributionParams();
 
-    if (wf_crm_aval($contributionParams, 'installments', 1) > 1) {
-      $result = $this->contributionRecur($contributionParams);
+    // Only if #installments = 1, do we process a single transaction/contribution. #installments = 0 in CiviCRM Core means open ended commitment;
+    if (wf_crm_aval($contributionParams, 'installments', 1) === 1) {
+      $result = wf_civicrm_api('contribution', 'transact', $contributionParams);
     }
     else {
-      $result = wf_civicrm_api('contribution', 'transact', $contributionParams);
+      $result = $this->contributionRecur($contributionParams);
+
     }
 
     if (empty($result['id'])) {
@@ -1715,7 +1717,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function contributionRecur($contributionParams) {
     $installments = $contributionParams['installments'];
-    $contributionParams['total_amount'] = $contributionParams['total_amount']/$installments;
+    if ($installments != 0) {
+      $contributionParams['total_amount'] = $contributionParams['total_amount'] / $installments;
+    }
 
     // Create Params for Creating the Recurring Contribution Series and Create it
     $contributionRecurParams = array(

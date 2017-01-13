@@ -1011,18 +1011,25 @@ function wf_crm_get_fields($var = 'fields') {
         'type' => 'textfield',
       );
       $sets['contributionRecur'] = array('entity_type' => 'contribution', 'label' => t('Recurring Contribution'));
+      $fields['contribution_frequency_unit'] = array(
+        'name' => t('Frequency of Installments'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'value' => 'month',
+        'set' => 'contributionRecur',
+      );
       $fields['contribution_installments'] = array(
         'name' => t('Number of Installments'),
         'type' => 'number',
         'value' => '1',
         'extra' => array(
           'integer' => 1,
-          'min' => 1,
+          'min' => 0,
         ),
         'set' => 'contributionRecur',
       );
       $fields['contribution_frequency_interval'] = array(
-        'name' => t('Recur Every'),
+        'name' => t('Interval of Installments'),
         'type' => 'number',
         'value' => '1',
         'extra' => array(
@@ -1031,14 +1038,7 @@ function wf_crm_get_fields($var = 'fields') {
         ),
         'set' => 'contributionRecur',
       );
-      $fields['contribution_frequency_unit'] = array(
-        'name' => t('Recur By'),
-        'type' => 'select',
-        'expose_list' => TRUE,
-        'value' => 'month',
-        'set' => 'contributionRecur',
-      );
-    }
+     }
     if (isset($sets['participant'])) {
       $fields['participant_event_id'] = array(
         'name' => t('Event(s)'),
