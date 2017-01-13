@@ -1698,7 +1698,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     else {
       $result = $this->contributionRecur($contributionParams);
-
     }
 
     if (empty($result['id'])) {
