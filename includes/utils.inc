@@ -1015,7 +1015,8 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Frequency of Installments'),
         'type' => 'select',
         'expose_list' => TRUE,
-        'value' => 'month',
+        'value' => 0,
+        'exposed_empty_option' => '- ' . t('No Installments') . ' -',
         'set' => 'contributionRecur',
       );
       $fields['contribution_installments'] = array(

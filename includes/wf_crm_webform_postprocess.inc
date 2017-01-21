@@ -1693,11 +1693,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     // Only if #installments = 1, do we process a single transaction/contribution. #installments = 0 in CiviCRM Core means open ended commitment;
     $numInstallments = wf_crm_aval($contributionParams, 'installments', 1, TRUE);
-    if ($numInstallments == 1) {
-      $result = wf_civicrm_api('contribution', 'transact', $contributionParams);
+    $frequencyInterval = wf_crm_aval($contributionParams, 'frequency_unit', NULL, TRUE);
+    if ($numInstallments != 1 && !empty($frequencyInterval)) {
+      $result = $this->contributionRecur($contributionParams);
     }
     else {
-      $result = $this->contributionRecur($contributionParams);
+      $result = wf_civicrm_api('contribution', 'transact', $contributionParams);
     }
 
     if (empty($result['id'])) {
