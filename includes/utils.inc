@@ -78,6 +78,10 @@ function wf_crm_field_options($field, $context, $data) {
     // Aside from the above special cases, most lists can be fetched from api.getoptions
     else {
       $params = array('field' => $name, 'context' => 'create');
+      // Special case for contribution_recur fields
+      if ($table == 'contribution' && strpos($name, 'frequency_') === 0) {
+        $table = 'contribution_recur';
+      }
       // Custom fields - use main entity
       if (substr($table, 0, 2) == 'cg') {
         $table = $ent;
@@ -1006,7 +1010,36 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Contribution Source'),
         'type' => 'textfield',
       );
-    }
+      $sets['contributionRecur'] = array('entity_type' => 'contribution', 'label' => t('Recurring Contribution'));
+      $fields['contribution_frequency_unit'] = array(
+        'name' => t('Frequency of Installments'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'value' => 0,
+        'exposed_empty_option' => '- ' . t('No Installments') . ' -',
+        'set' => 'contributionRecur',
+      );
+      $fields['contribution_installments'] = array(
+        'name' => t('Number of Installments'),
+        'type' => 'number',
+        'value' => '1',
+        'extra' => array(
+          'integer' => 1,
+          'min' => 0,
+        ),
+        'set' => 'contributionRecur',
+      );
+      $fields['contribution_frequency_interval'] = array(
+        'name' => t('Interval of Installments'),
+        'type' => 'number',
+        'value' => '1',
+        'extra' => array(
+          'integer' => 1,
+          'min' => 1,
+        ),
+        'set' => 'contributionRecur',
+      );
+     }
     if (isset($sets['participant'])) {
       $fields['participant_event_id'] = array(
         'name' => t('Event(s)'),

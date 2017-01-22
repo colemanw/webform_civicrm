@@ -1689,7 +1689,18 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * This happens during form validation and sets a form error if unsuccessful
    */
   private function submitLivePayment() {
-    $result = wf_civicrm_api('contribution', 'transact', $this->contributionParams());
+    $contributionParams = $this->contributionParams();
+
+    // Only if #installments = 1, do we process a single transaction/contribution. #installments = 0 in CiviCRM Core means open ended commitment;
+    $numInstallments = wf_crm_aval($contributionParams, 'installments', 1, TRUE);
+    $frequencyInterval = wf_crm_aval($contributionParams, 'frequency_unit');
+    if ($numInstallments != 1 && !empty($frequencyInterval)) {
+      $result = $this->contributionRecur($contributionParams);
+    }
+    else {
+      $result = wf_civicrm_api('contribution', 'transact', $contributionParams);
+    }
+
     if (empty($result['id'])) {
       if (!empty($result['error_message'])) {
         form_set_error('contribution', $result['error_message']);
@@ -1700,6 +1711,54 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       return;
     }
     $this->ent['contribution'][1]['id'] = $result['id'];
+  }
+
+  /**
+   * Generate recurring contribution and transact the first one
+   */
+  private function contributionRecur($contributionParams) {
+    $installments = $contributionParams['installments'];
+    if ($installments != 0) {
+      $contributionParams['total_amount'] = $contributionParams['total_amount'] / $installments;
+    }
+
+    // Create Params for Creating the Recurring Contribution Series and Create it
+    $contributionRecurParams = array(
+      'sequential' => 1,
+      'contact_id' => $contributionParams['contact_id'],
+      'frequency_interval' => wf_crm_aval($contributionParams, 'frequency_interval', 1),
+      'frequency_unit' => wf_crm_aval($contributionParams, 'frequency_unit', 'month'),
+      'installments' => $installments,
+      'amount' => $contributionParams['total_amount'],
+      'contribution_status_id' => 5,
+      'currency' => $contributionParams['currency'],
+      'payment_processor_id' =>  $contributionParams['payment_processor_id'],
+      'financial_type_id' =>  $contributionParams['financial_type_id'],
+    );
+    $resultRecur = wf_civicrm_api('ContributionRecur', 'create', $contributionRecurParams);
+
+    // Run the Transaction - and Create the Contribution Record - relay Recurring Series information in addition to the already existing Params [and re-key where needed]; at times two keys are required
+    $additionalParams = array(
+      'contribution_recur_id' => $resultRecur['id'],
+      'contributionRecurID' => $resultRecur['id'],
+      'is_recur' => 1,
+      'contactID' => $contributionParams['contact_id'],
+      'frequency_interval' => wf_crm_aval($contributionParams, 'frequency_interval', 1),
+      'frequency_unit' => wf_crm_aval($contributionParams, 'frequency_unit', 'month'),
+    );
+    $result = wf_civicrm_api('contribution', 'transact', $contributionParams + $additionalParams);
+
+    // If transaction was successful - Update the Recurring Series - currency must be resubmitted or else it will re-default to USD; invoice_id is that of the initiating Contribution
+    if (empty($result['error_message'])) {
+      $resultUpdateRecur = wf_civicrm_api('ContributionRecur', 'create', array(
+        'id' => $resultRecur['id'],
+        'currency' => $contributionParams['currency'],
+        'next_sched_contribution_date' => date("Y-m-d H:i:s", strtotime('+' . $contributionRecurParams['frequency_interval'] . ' ' . $contributionRecurParams['frequency_unit'])),
+        'invoice_id' => $result['values'][$result['id']]['invoice_id'],
+        'payment_instrument_id' => $result['values'][$result['id']]['payment_instrument_id'],
+      ));
+    }
+    return $result;
   }
 
   /**
