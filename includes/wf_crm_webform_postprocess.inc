@@ -1579,7 +1579,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       ));
     }
     foreach ($billing_fields as $field => $label) {
-      if (empty($_POST[$field]) && $label !== FALSE) {
+      if (isset($_POST[$field]) && empty($_POST[$field]) && $label !== FALSE) {
         form_set_error($field, t('!name field is required.', array('!name' => check_plain($label))));
         $valid = FALSE;
       }
