@@ -884,6 +884,20 @@ function wf_crm_get_fields($var = 'fields') {
         'set' => 'caseRoles',
         'exposed_empty_option' => '- ' . t('Automatic') . ' -',
       );
+      $fields['case_start_date'] = array(
+        'name' => t('Case # Start Date'),
+        'type' => 'date',
+        'value' => 'now',
+      );
+      $fields['case_end_date'] = array(
+        'name' => t('Case # End Date'),
+        'type' => 'date',
+        'value' => 'now',
+      );
+      $fields['case_details'] = array(
+        'name' => t('Case # Details'),
+        'type' => 'textarea',
+      );
       // Fetch case roles
       $sets['caseRoles'] = array('entity_type' => 'case', 'label' => t('Case Roles'));
       // Use the vanilla civicrm_api for this because it will throw an error in CiviCRM 4.4 (api doesn't exist)
