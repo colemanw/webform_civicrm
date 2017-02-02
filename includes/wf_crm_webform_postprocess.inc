@@ -1953,6 +1953,33 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $contributionResult = CRM_Contribute_BAO_Contribution::getValues(array('id' => $id), CRM_Core_DAO::$_nullArray, CRM_Core_DAO::$_nullArray);
 
     // Save line-items
+    // Get all available price field values that we might be able to match line items with.
+    $price_set_id = CRM_Price_BAO_PriceSet::getFor('civicrm_contribution_page',$this->contribution_page['id']);
+    $price_field_values = array();
+    if ($price_set_id) {
+      $price_fields_result = wf_civicrm_api('PriceField', 'get',
+        array(
+          'return' => array('id'),
+          'price_set_id' => $price_set_id,
+          'is_active' => 1,
+        )
+      );
+      if ($price_fields_result['count'] != 0) {
+        foreach($price_fields_result['values'] as $price_field) {
+          $price_field_values_result = wf_civicrm_api('PriceFieldValue', 'get',
+            array(
+              'price_field_id' => $price_field['id'],
+              'is_active' => 1,
+            )
+          );
+          if ($price_field_values_result['count'] != 0) {
+            foreach($price_field_values_result['values'] as $price_field_value) {
+              $price_field_values[] = $price_field_value;
+            }
+          }
+        }
+      }
+    }
     foreach ($this->line_items as &$item) {
       if (empty($item['line_total'])) {
         continue;
@@ -1983,7 +2010,39 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
         }
       }
-
+      // Find the financial type id and price field id by trying to match one of
+      // the contribution pages's price_field_values
+      if (count($price_field_values)) {
+        $not_membership = empty($item['membership_id']);
+        // Try to find a match so we can assign a price field id from the
+        // corresponding contribution page.
+        foreach($price_field_values as $price_field_value) {
+          $is_membership_match =  ($not_membership == empty($price_field_value['membership_type_id']));
+          if (
+            ($price_field_value['amount'] == $item['line_total'])
+            && $is_membership_match
+          ) {
+            $item['price_field_id'] = $price_field_value['price_field_id'];
+            $item['financial_type_id'] = $price_field_value['financial_type_id'];
+            break;
+          }
+        }
+        if (empty($item['price_field_id']) && $not_membership) {
+          // get super-hackish and look for an other amount type field
+          foreach($price_field_values as $price_field_value) {
+            if (
+              ($price_field_value['amount'] == '1.00')
+              && ($price_field_value['count'] == '0')
+              && empty($price_field_value['membership_type_id'])
+            ) {
+              $item['price_field_id'] = $price_field_value['price_field_id'];
+              $item['financial_type_id'] = $price_field_value['financial_type_id'];
+              break;
+            }
+          }
+        }
+          
+      }
       $line_result = wf_civicrm_api('line_item', 'create', $item);
       $item['id'] = $line_result['id'];
 
