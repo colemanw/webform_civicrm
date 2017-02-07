@@ -576,12 +576,27 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
   $limit = $str ? 12 : 500;
   $ret = array();
   $display = $component['extra']['results_display'];
+  $search_field = 'display_name';
+  $sort_field = 'sort_name';
+  // Search and sort based on the selected display field
+  if (!in_array('display_name', $display)) {
+    $display_options = array_values($display);
+    $search_field = $sort_field = $display_options[0];
+  }
   $params += array(
     'rowCount' => $limit,
-    'sort' => 'sort_name',
+    'sort' => $sort_field,
   );
   if ($str) {
-    $params['display_name'] = str_replace(' ', '%', CRM_Utils_Type::escape($str, 'String'));
+    $str = str_replace(' ', '%', CRM_Utils_Type::escape($str, 'String'));
+    // The contact api takes a quirky format for display_name and sort_name
+    if (in_array($search_field, array('sort_name', 'display_name'))) {
+      $params[$search_field] = $str;
+    }
+    // Others use the standard convention
+    else {
+      $params[$search_field] = array('LIKE' => "%$str%");
+    }
   }
   $result = wf_civicrm_api('contact', 'get', $params);
   // Autocomplete results
