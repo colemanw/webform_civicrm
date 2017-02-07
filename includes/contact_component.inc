@@ -575,17 +575,17 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
   }
   $limit = $str ? 12 : 500;
   $ret = array();
-  $display = $component['extra']['results_display'];
+  $display_fields = array_values($component['extra']['results_display']);
   $search_field = 'display_name';
   $sort_field = 'sort_name';
   // Search and sort based on the selected display field
-  if (!in_array('display_name', $display)) {
-    $display_options = array_values($display);
-    $search_field = $sort_field = $display_options[0];
+  if (!in_array('display_name', $display_fields)) {
+    $search_field = $sort_field = $display_fields[0];
   }
   $params += array(
     'rowCount' => $limit,
     'sort' => $sort_field,
+    'return' => $display_fields,
   );
   if ($str) {
     $str = str_replace(' ', '%', CRM_Utils_Type::escape($str, 'String'));
@@ -602,7 +602,7 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
   // Autocomplete results
   if ($str) {
     foreach (wf_crm_aval($result, 'values', array()) as $contact) {
-      if ($name = wf_crm_format_contact($contact, $display)) {
+      if ($name = wf_crm_format_contact($contact, $display_fields)) {
         $ret[] = array('id' => $contact['id'], 'name' => $name);
       }
     }
@@ -618,7 +618,7 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
     }
     foreach (wf_crm_aval($result, 'values', array()) as $contact) {
       // Select lists will be escaped by FAPI
-      if ($name = wf_crm_format_contact($contact, $display, FALSE)) {
+      if ($name = wf_crm_format_contact($contact, $display_fields, FALSE)) {
         $ret[$contact['id']] = $name;
       }
     }
