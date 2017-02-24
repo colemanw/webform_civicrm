@@ -190,6 +190,10 @@ function webform_civicrm_webform_component_info() {
       ),
       'file' => 'includes/contact_component.inc',
     ),
+    'civipostcode' => array(
+       'label' => t('Civi Postcode'),
+       'file' => 'includes/civipostcode_component.inc',
+    ),
   );
 }
 
