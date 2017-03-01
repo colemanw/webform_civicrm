@@ -80,16 +80,20 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
   // Alter front-end of webforms
   elseif (strpos($form_id, 'webform_client_form_') !== FALSE
     && !empty($form['#node']->webform_civicrm)) {
-    // attach javascript needed for civipostcode lookup
-    drupal_add_library('system', 'ui.autocomplete');
-    $form['#attached']['js'] = array(
-      drupal_get_path('module', 'webform_civicrm') . '/js/civipostcode_component.js' => array(),
-        array(
-        // Pass PHP variables to Drupal.settings.
-        'data' => array('baseUrl' => $base_url),
-        'type' => 'setting',
-       ),
-    );
+
+    // attach javascript needed if civipostcode lookup is enabled
+    if(isPostcodeLookupExtensionEnabled()) {
+      drupal_add_library('system', 'ui.autocomplete');
+      $form['#attached']['js'] = array(
+        drupal_get_path('module', 'webform_civicrm') . '/js/civipostcode_component.js' => array(),
+          array(
+          // Pass PHP variables to Drupal.settings.
+          'data' => array('baseUrl' => $base_url),
+          'type' => 'setting',
+         ),
+      );
+    }
+
     form_load_include($form_state, 'inc', 'webform_civicrm', 'includes/wf_crm_webform_preprocess');
     $processor = new wf_crm_webform_preprocess($form, $form_state);
     $processor->alterForm();
@@ -191,20 +195,25 @@ function webform_civicrm_theme() {
  * @return array
  */
 function webform_civicrm_webform_component_info() {
-  return array(
-    'civicrm_contact' => array(
-      'label' => t('CiviCRM Contact'),
-      'description' => t('Choose existing contact.'),
-      'features' => array(
-        'email_name' => TRUE,
-      ),
-      'file' => 'includes/contact_component.inc',
+  $components = array();
+
+  $components['civicrm_contact'] = array(
+    'label' => t('CiviCRM Contact'),
+    'description' => t('Choose existing contact.'),
+    'features' => array(
+      'email_name' => TRUE,
     ),
-    'civipostcode' => array(
-       'label' => t('Civi Postcode'),
-       'file' => 'includes/civipostcode_component.inc',
-    ),
+    'file' => 'includes/contact_component.inc',
   );
+
+  if(isPostcodeLookupExtensionEnabled()) {
+    $components['civipostcode'] = array(
+      'label' => t('Civi Postcode'),
+      'file' => 'includes/civipostcode_component.inc',
+    );
+  }
+
+  return $components;
 }
 
 /**
@@ -629,4 +638,20 @@ function _webform_civicrm_status() {
   }
 
   return $status;
+}
+
+/**
+ * check if civipostcodelookup extension is enabled.
+ *
+ * @return boolean
+ */
+function isPostcodeLookupExtensionEnabled() {
+  $isPostcodeLookupEnabled = CRM_Core_DAO::getFieldValue(
+    'CRM_Core_DAO_Extension',
+    'uk.co.vedaconsulting.module.civicrmpostcodelookup',
+    'is_active',
+    'full_name'
+  );
+
+  return $isPostcodeLookupEnabled;
 }

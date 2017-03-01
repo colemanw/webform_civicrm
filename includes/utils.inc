@@ -701,14 +701,7 @@ function wf_crm_get_fields($var = 'fields') {
     );
 
     // add postcode lookup field if civicrmpostcodelookup extension is enabled.
-    $isPostcodeLookupEnabled = CRM_Core_DAO::getFieldValue(
-      'CRM_Core_DAO_Extension',
-      'uk.co.vedaconsulting.module.civicrmpostcodelookup',
-      'is_active',
-      'full_name'
-    );
-
-    if($isPostcodeLookupEnabled) {
+    if(isPostcodeLookupExtensionEnabled()) {
       $fields['address_webform_civipostcode'] = array(
         'name' => t('Postcode Autocomplete'),
         'type' => 'civipostcode',
