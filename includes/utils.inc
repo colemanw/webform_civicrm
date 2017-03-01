@@ -699,6 +699,22 @@ function wf_crm_get_fields($var = 'fields') {
       ),
       'data_type' => 'state_province_abbr',
     );
+
+    // add postcode lookup field if civicrmpostcodelookup extension is enabled.
+    $isPostcodeLookupEnabled = CRM_Core_DAO::getFieldValue(
+      'CRM_Core_DAO_Extension',
+      'uk.co.vedaconsulting.module.civicrmpostcodelookup',
+      'is_active',
+      'full_name'
+    );
+
+    if($isPostcodeLookupEnabled) {
+      $fields['address_webform_civipostcode'] = array(
+        'name' => t('Postcode Autocomplete'),
+        'type' => 'civipostcode',
+      );
+    }
+
     $fields['address_county_id'] = array(
       'name' => t('District/County'),
       'type' => 'textfield',

@@ -80,6 +80,16 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
   // Alter front-end of webforms
   elseif (strpos($form_id, 'webform_client_form_') !== FALSE
     && !empty($form['#node']->webform_civicrm)) {
+    // attach javascript needed for civipostcode lookup
+    drupal_add_library('system', 'ui.autocomplete');
+    $form['#attached']['js'] = array(
+      drupal_get_path('module', 'webform_civicrm') . '/js/civipostcode_component.js' => array(),
+        array(
+        // Pass PHP variables to Drupal.settings.
+        'data' => array('baseUrl' => $base_url),
+        'type' => 'setting',
+       ),
+    );
     form_load_include($form_state, 'inc', 'webform_civicrm', 'includes/wf_crm_webform_preprocess');
     $processor = new wf_crm_webform_preprocess($form, $form_state);
     $processor->alterForm();

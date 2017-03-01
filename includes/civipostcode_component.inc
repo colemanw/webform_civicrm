@@ -37,6 +37,7 @@ function _webform_display_civipostcode($component, $value, $format = 'html') {
 }
 
 function _webform_render_civipostcode($component, $value = NULL, $filter = TRUE) {
+
    $element['postcode'] = array(
     '#type' => 'textfield',
     '#title' => $filter ? webform_filter_xss($component['name']) : $component['name'],
@@ -46,11 +47,6 @@ function _webform_render_civipostcode($component, $value = NULL, $filter = TRUE)
     '#attributes' => array(),
     '#theme_wrappers' => array('webform_element'),
     '#webform_component' => array('type' => $component['type'] . '_civipostcode') + $component,
-    '#attached' => array(
-      'js' => array(
-        drupal_get_path('module', 'webform_civicrm') . '/js/civipostcode_component.js',
-      ),
-    )
   );
 
   return $element;
