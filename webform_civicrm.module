@@ -83,12 +83,22 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
 
     // attach javascript needed if civipostcode lookup is enabled
     if(isPostcodeLookupExtensionEnabled()) {
+      global $base_url;
+
       drupal_add_library('system', 'ui.autocomplete');
+
+      // Assign the postcode lookup provider to form, so that we can call the related function in AJAX
+      $settingsStr = CRM_Core_BAO_Setting::getItem('CiviCRM Postcode Lookup', 'api_details');
+      $settingsArray = unserialize($settingsStr);
+
       $form['#attached']['js'] = array(
         drupal_get_path('module', 'webform_civicrm') . '/js/civipostcode_component.js' => array(),
           array(
           // Pass PHP variables to Drupal.settings.
-          'data' => array('baseUrl' => $base_url),
+          'data' => array(
+            'baseUrl' => $base_url,
+            'civiPostCodeLookupProvider' => $settingsArray['provider'],
+          ),
           'type' => 'setting',
          ),
       );

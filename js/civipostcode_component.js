@@ -1,12 +1,13 @@
 jQuery(document).ready(function ($) {
-  var sourceUrl = Drupal.settings.baseUrl + "/civicrm/civipostcode/ajax/search?json=1&term=";
+  var civiPostCodeLookupProvider = Drupal.settings.civiPostCodeLookupProvider;
+  var sourceUrl = Drupal.settings.baseUrl + "/civicrm/" + civiPostCodeLookupProvider + "/ajax/search?json=1&term=";
   $('[id*="address-webform-civipostcode"]').each(function () {
     $(this).autocomplete({
       source: sourceUrl + $(this).val().replace(" ", "+"),
       minLength: 3,
       select: function (event, ui) {
                 var id = ui.item.id;
-                var sourceUrl = Drupal.settings.baseUrl + '/civicrm/civipostcode/ajax/get?json=1';
+                var sourceUrl = Drupal.settings.baseUrl + '/civicrm/' + civiPostCodeLookupProvider + '/ajax/get?json=1';
                 var postcodeElementId = $(this).attr('id');
                 var result = getCivicrmAndContactSequence(postcodeElementId);
 
