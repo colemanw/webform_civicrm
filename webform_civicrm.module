@@ -82,6 +82,7 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
     && !empty($form['#node']->webform_civicrm)) {
 
       // attach javascript needed for postcode lookup when civipostcode extension is installed and enabled
+    if(isPostcodeLookupExtensionEnabled()) {
       global $base_url;
 
       drupal_add_library('system', 'ui.autocomplete');
