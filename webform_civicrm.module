@@ -81,8 +81,7 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
   elseif (strpos($form_id, 'webform_client_form_') !== FALSE
     && !empty($form['#node']->webform_civicrm)) {
 
-    // attach javascript needed if civipostcode lookup is enabled
-    if(isPostcodeLookupExtensionEnabled()) {
+      // attach javascript needed for postcode lookup when civipostcode extension is installed and enabled
       global $base_url;
 
       drupal_add_library('system', 'ui.autocomplete');
@@ -216,6 +215,7 @@ function webform_civicrm_webform_component_info() {
     'file' => 'includes/contact_component.inc',
   );
 
+  // when civipostcode extension is installed and enabled, civipostcode webform component will be made available
   if(isPostcodeLookupExtensionEnabled()) {
     $components['civipostcode'] = array(
       'label' => t('Civi Postcode'),
