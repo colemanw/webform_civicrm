@@ -2,9 +2,7 @@
 
 function _webform_edit_civipostcode($component) { 
   $form = array();
-
   $form['#attached']['js'][] = wf_crm_tokeninput_path();
-  $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/js/civipostcode_component.js';
   return $form;
 }
 
