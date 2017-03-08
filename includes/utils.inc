@@ -699,16 +699,6 @@ function wf_crm_get_fields($var = 'fields') {
       ),
       'data_type' => 'state_province_abbr',
     );
-
-    // add postcode autocomplete checkbox to address field selection section
-    // in webform_civicrm screen when civipostcode extension is installed and enabled
-    if(isPostcodeLookupExtensionEnabled()) {
-      $fields['address_webform_civipostcode'] = array(
-        'name' => t('Postcode Autocomplete'),
-        'type' => 'civipostcode',
-      );
-    }
-
     $fields['address_county_id'] = array(
       'name' => t('District/County'),
       'type' => 'textfield',

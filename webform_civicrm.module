@@ -87,6 +87,7 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
 
       drupal_add_library('system', 'ui.autocomplete');
 
+      $civiPostcodeFields = getCivipostcodeFieldIds($form['#node']->webform['components']);
       // Assign the postcode lookup provider to form, so that we can call the related function in AJAX
       $settingsStr = CRM_Core_BAO_Setting::getItem('CiviCRM Postcode Lookup', 'api_details');
       $settingsArray = unserialize($settingsStr);
@@ -98,6 +99,7 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
           'data' => array(
             'baseUrl' => $base_url,
             'civiPostCodeLookupProvider' => $settingsArray['provider'],
+            'civiPostCodeFields' => $civiPostcodeFields,
           ),
           'type' => 'setting',
          ),
@@ -657,6 +659,7 @@ function _webform_civicrm_status() {
  * @return boolean
  */
 function isPostcodeLookupExtensionEnabled() {
+  civicrm_initialize(true);
   $isPostcodeLookupEnabled = CRM_Core_DAO::getFieldValue(
     'CRM_Core_DAO_Extension',
     'uk.co.vedaconsulting.module.civicrmpostcodelookup',
@@ -665,4 +668,21 @@ function isPostcodeLookupExtensionEnabled() {
   );
 
   return $isPostcodeLookupEnabled;
+}
+
+/**
+ * Get list of fields which are of type 'civipostcode'
+ *
+ * @param array $components
+ * @return array $civiPostcodeFields
+ */
+function getCivipostcodeFieldIds($components) {
+  $civiPostcodeFields = array();
+  foreach($components as $component) {
+    if($component['type'] == 'civipostcode') {
+      $civiPostcodeFields[] = str_replace("_", "-", $component['form_key']);
+    }
+  }
+
+  return $civiPostcodeFields;
 }

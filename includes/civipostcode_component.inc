@@ -38,15 +38,14 @@ function _webform_display_civipostcode($component, $value, $format = 'html') {
 
 function _webform_render_civipostcode($component, $value = NULL, $filter = TRUE) {
 
-   $element['postcode'] = array(
+   $element = array(
     '#type' => 'textfield',
     '#title' => $filter ? webform_filter_xss($component['name']) : $component['name'],
     '#title_display' => $component['extra']['title_display'] ? $component['extra']['title_display'] : 'before',
-    '#default_value' => isset($value['city']) ? $value['city'] : '',
     '#required' => $component['required'],
+    '#weight' => $component['weight'],
     '#attributes' => array(),
     '#theme_wrappers' => array('webform_element'),
-    '#webform_component' => array('type' => $component['type'] . '_civipostcode') + $component,
   );
 
   return $element;
