@@ -1296,7 +1296,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             }
           }
           // Format details as html
-          $this->formatSubmissionDetails($parmas, $n);
+          $this->formatSubmissionDetails($params, $n);
         }
         // Update mode
         else {
@@ -1305,7 +1305,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           // Update details when user has selected he wants to update the details
           if (!empty($this->data['activity'][$n]['details']['update_existing'])) {
             // Format details as html
-            $this->formatSubmissionDetails($parmas, $n);
+            $this->formatSubmissionDetails($params, $n);
           }
         }
         // Allow "automatic" values to pass-thru if empty
