@@ -1282,6 +1282,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $params = $data['activity'][1];
         // Create mode
         if (empty($this->ent['activity'][$n]['id'])) {
+          // Skip if no activity type
+          if (empty($params['activity_type_id'])) {
+            continue;
+          }
           // Automatic status based on whether activity_date_time is in the future
           if (empty($params['status_id'])) {
             $params['status_id'] = strtotime(wf_crm_aval($params, 'activity_date_time', 'now')) > time() ? 'Scheduled' : 'Completed';
