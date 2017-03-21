@@ -1723,7 +1723,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function contributionRecur($contributionParams) {
     $installments = $contributionParams['installments'];
     if ($installments != 0) {
-      $contributionParams['total_amount'] = $contributionParams['total_amount'] / $installments;
+      // DRU-2862396 - we must ensure to only present 2 decimals to CiviCRM:
+      $contributionRecurAmount = floor(($contributionParams['total_amount'] / $installments) * 100) / 100;
+      $contributionFirstAmount = $contributionParams['total_amount'] - $contributionRecurAmount * ($installments - 1);
     }
 
     // Create Params for Creating the Recurring Contribution Series and Create it
@@ -1733,7 +1735,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       'frequency_interval' => wf_crm_aval($contributionParams, 'frequency_interval', 1),
       'frequency_unit' => wf_crm_aval($contributionParams, 'frequency_unit', 'month'),
       'installments' => $installments,
-      'amount' => $contributionParams['total_amount'],
+      'amount' => $contributionRecurAmount,
       'contribution_status_id' => 5,
       'currency' => $contributionParams['currency'],
       'payment_processor_id' =>  $contributionParams['payment_processor_id'],
@@ -1742,6 +1744,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $resultRecur = wf_civicrm_api('ContributionRecur', 'create', $contributionRecurParams);
 
     // Run the Transaction - and Create the Contribution Record - relay Recurring Series information in addition to the already existing Params [and re-key where needed]; at times two keys are required
+    $contributionParams['total_amount'] = $contributionFirstAmount;
     $additionalParams = array(
       'contribution_recur_id' => $resultRecur['id'],
       'contributionRecurID' => $resultRecur['id'],
