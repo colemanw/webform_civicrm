@@ -1,11 +1,4 @@
 <?php
-
-function _webform_edit_civipostcode($component) { 
-  $form = array();
-  $form['#attached']['js'][] = wf_crm_tokeninput_path();
-  return $form;
-}
-
 function _webform_defaults_civipostcode() {
   return array(
     'name' => '',
@@ -24,13 +17,13 @@ function _webform_defaults_civipostcode() {
 
 function _webform_display_civipostcode($component, $value, $format = 'html') {
   return array(
-    '#title' => $component['extra']['field_prefix'] .' / '. $component['extra']['field_suffix'],
+    '#title' => $component['name'],
     '#weight' => $component['weight'],
-    '#theme' => 'webform_display_civipostcode',
+    '#theme' => 'webform_display_textfield',
     '#theme_wrappers' => $format == 'html' ? array('webform_element') : array('webform_element_text'),
     '#format' => $format,
     '#value' => isset($value[0]) ? $value[0] : '',
-    '#translatable' => array('title', 'field_prefix', 'field_suffix'),
+    '#translatable' => array('title'),
   );
 }
 
@@ -46,5 +39,9 @@ function _webform_render_civipostcode($component, $value = NULL, $filter = TRUE)
     '#theme_wrappers' => array('webform_element'),
   );
 
+  // Preseve value during pagebreaks
+  if (isset($value)) {
+    $element['#default_value'] = $value[0];
+  }
   return $element;
 }
