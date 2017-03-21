@@ -1566,6 +1566,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $billing_fields['credit_card_number'] = FALSE;
       $billing_fields['cvv2'] = FALSE;
     }
+    if (!empty($_POST['stripe_source'])) {
+      // Using Stripe payment processor - cc fields not posted using sources
+      $billing_fields['credit_card_number'] = FALSE;
+      $billing_fields['cvv2'] = FALSE;
+    }
     if (!empty($_POST['bank_account_type'])) {
       // unset/bypass the CC validation if we're doing Direct Debit (ACHEFT) - in that case we have a Bank Account Type
       $billing_fields['credit_card_number'] = FALSE;
