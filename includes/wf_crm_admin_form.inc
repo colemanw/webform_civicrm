@@ -961,7 +961,7 @@ class wf_crm_admin_form {
     $this->checkSubmissionLimit();
     // Add contribution fields
     foreach ($this->sets as $sid => $set) {
-      if ($set['entity_type'] == 'contribution' && (empty($set['sub_types']) || $set['sub_types'][0] == $page['financial_type_id'])) {
+      if ($set['entity_type'] == 'contribution' && (empty($set['sub_types']) || in_array($page['financial_type_id'], $set['sub_types']) )) {
         $this->form['contribution']['sets'][$sid] = array(
           '#type' => 'fieldset',
           '#title' => $set['label'],
