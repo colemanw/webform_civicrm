@@ -2121,6 +2121,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           if (!empty($this->data[$ent][$c][$table][$n][$name]) && is_array($this->data[$ent][$c][$table][$n][$name])) {
             $val = array_unique(array_merge($val, $this->data[$ent][$c][$table][$n][$name]));
           }
+
+          // Set NULL if custom field value not present
+          if (is_array($val)) {
+            $val = array_filter($val);
+            if (empty($val)) {
+              $val = NULL;
+            }
+          }
+
           // Implode data that will be stored as a string
           if ($table !== 'other' && $name !== 'event_id' && $name !== 'relationship_type_id' && $table !== 'contact' && $dataType != 'ContactReference') {
             $val = CRM_Utils_Array::implodePadded($val);
