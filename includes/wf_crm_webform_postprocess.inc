@@ -1960,12 +1960,24 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->saveCustomData($this->data['contribution'][1], $id, 'Contribution', FALSE);
     // Save soft credits
     if (!empty($contribution['soft'])) {
+      // Get total amount either from contribution object or the total amount after line item calculation
+      $amount = $contribution['total_amount'] != null ? $contribution['total_amount'] : $this->totalContribution;
+      
+      // Get Default softcredit type
+      $default_soft_credit_type = wf_civicrm_api('OptionValue', 'getsingle', array(
+        'sequential' => 1,
+        'return' => "value",
+        'option_group_id' => "soft_credit_type",
+        'is_default' => 1,
+      ));
+
       foreach (array_filter($contribution['soft']) as $cid) {
         wf_civicrm_api('contribution_soft', 'create', array(
           'contact_id' => $cid,
           'contribution_id' => $id,
-          'amount' => $contribution['total_amount'],
+          'amount' => $amount,
           'currency' => $this->contribution_page['currency'],
+          'soft_credit_type_id' => $default_soft_credit_type['value'],
         ));
       }
     }
