@@ -202,24 +202,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $this->processMemberships($c, $contact['id']);
       }
     }
-
-    // Process relationships AGAIN! To ensure the inheritance of Memberships works...
-    foreach ($this->data['contact'] as $c => $contact) {
-      $cid = $this->ent['contact'][$c]['id'];
-      if (!$cid) {
-        continue;
-      }
-
-      foreach (wf_crm_aval($contact, 'relationship', array()) as $n => $params) {
-        $relationship_type_id = wf_crm_aval($params, 'relationship_type_id');
-        if ($relationship_type_id) {
-          foreach ((array) $relationship_type_id as $params['relationship_type_id']) {
-            $this->processRelationship($params, $cid, $this->ent['contact'][$n]['id']);
-          }
-        }
-      }
-    }
-
   }
 
   /**
