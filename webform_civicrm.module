@@ -155,15 +155,15 @@ function webform_civicrm_node_delete($node) {
 /**
  * Implements hook_node_view().
  *
- * @param $node
- * @param $view_mode
- * @param $langcode
+ * Handles localization.
  */
 function webform_civicrm_node_view($node, $view_mode, $langcode) {
-  if (module_exists('webform_localization') && ($node->type == 'webform') && !isset($node->webform_civicrm)) {
+  if (module_exists('webform_localization') && in_array($node->type, webform_node_types()) && !isset($node->webform_civicrm)) {
     if ($nid = webform_localization_single_webform_nid($node)) {
       $source_node = node_load($nid);
-      $node->webform_civicrm = $source_node->webform_civicrm;
+      if (!empty($source_node->webform_civicrm)) {
+        $node->webform_civicrm = $source_node->webform_civicrm;
+      }
     }
   }
 }
