@@ -153,6 +153,22 @@ function webform_civicrm_node_delete($node) {
 }
 
 /**
+ * Implements hook_node_view().
+ *
+ * @param $node
+ * @param $view_mode
+ * @param $langcode
+ */
+function webform_civicrm_node_view($node, $view_mode, $langcode) {
+	if (module_exists('webform_localization')) {
+		if ($nid = webform_localization_single_webform_nid($node)) {
+			$source_node = node_load($nid);
+			$node->webform_civicrm = $source_node->webform_civicrm;
+		}
+	}
+}
+
+/**
  * Implements hook_theme().
  *
  * @return array
