@@ -623,6 +623,10 @@ function wf_crm_get_fields($var = 'fields') {
       'name' => t('Contact ID'),
       'type' => 'hidden',
     );
+    $fields['contact_user_id'] = array(
+      'name' => t('User ID'),
+      'type' => 'hidden',
+    );
     $fields['contact_external_identifier'] = array(
       'name' => t('External ID'),
       'type' => 'hidden',
@@ -1390,7 +1394,7 @@ function wf_crm_get_field($key) {
  *   (optional) uf or contact ID - defaults to current user
  * @param $type
  *   (optional) what type of ID is supplied - defaults to user id
- * @return null
+ * @return int|null
  */
 function wf_crm_user_cid($id = NULL, $type = 'uf') {
   static $current_user = NULL;

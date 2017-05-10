@@ -707,6 +707,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     if (!empty($this->enabled[$fid . 'contact_id'])) {
       $this->submissionValue($this->enabled[$fid . 'contact_id'], $cid);
     }
+    if (!empty($this->enabled[$fid . 'user_id'])) {
+      $user_id = wf_crm_user_cid($cid, 'contact');
+      $user_id = $user_id ? $user_id : '';
+      $this->submissionValue($this->enabled[$fid . 'user_id'], $user_id);
+    }
     if (!empty($this->enabled[$fid . 'existing'])) {
       $this->submissionValue($this->enabled[$fid . 'existing'], $cid);
     }

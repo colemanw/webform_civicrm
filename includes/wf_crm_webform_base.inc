@@ -130,6 +130,10 @@ abstract class wf_crm_webform_base {
                 }
               }
             }
+            // User id
+            if (isset($this->enabled[$prefix . 'contact_user_id'])) {
+              $result[1]['user_id'] = wf_crm_user_cid($cid, 'contact');
+            }
             // Hack for gender as textfield. More general solution needed for all pseudoconsant fields
             $gender_field = $this->getComponent("civicrm_{$c}_contact_1_contact_gender_id");
             if ($gender_field && $gender_field['type'] == 'textfield') {

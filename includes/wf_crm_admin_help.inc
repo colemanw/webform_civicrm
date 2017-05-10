@@ -52,7 +52,13 @@ class wf_crm_admin_help {
 
   public static function contact_contact_id() {
     print '<p>' .
-      t('This hidden field can be used to as a token to generate links, for example to include an email link back to this form to update their info.') .
+      t('This read-only field can be used to as a token to generate links, for example to include an email link back to this form to update their info.') .
+      '</p>';
+  }
+
+  public static function contact_user_id() {
+    print '<p>' .
+      t("This read-only field will load the contact's drupal user id. Works even for anonymous users following a checksum.") .
       '</p>';
   }
 
