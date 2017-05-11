@@ -549,9 +549,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         $taxSettings = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::CONTRIBUTE_PREFERENCES_NAME, 'contribution_invoice_settings');
 
         if ($taxSettings['tax_display_settings'] != 'Do_not_show') {
-          //strip trailing zeros from tax_rate e.g 20.00000% => 20.00%
-          $tax_rate = number_format($this->tax_rate, 2);
-          $item['label'] .= ' (' . t('includes !rate @tax', array('!rate' => $tax_rate . '%', '@tax' => $taxSettings['tax_term'])) . ')';
+          $item['label'] .= ' (' . t('includes !rate @tax', array('!rate' => (float)$this->tax_rate . '%', '@tax' => $taxSettings['tax_term'])) . ')';
         }
 
         // Add calculation for financial type that contains tax
