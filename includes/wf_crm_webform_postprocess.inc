@@ -1515,6 +1515,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $this->totalContribution += $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
       }
     }
+    $this->totalContribution = round($this->totalContribution, 2);
     return $this->totalContribution;
   }
 
@@ -1892,7 +1893,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // TODO: needs review if this is changed in 4.6
     if (!is_null($this->tax_rate)) {
       $params['non_deductible_amount']  = $this->totalContribution;
-      $params['tax_amount'] = ($params['total_amount'] / ($this->tax_rate + 100)) * $this->tax_rate;
+      $params['tax_amount'] = round(($params['total_amount'] / ($this->tax_rate + 100)) * $this->tax_rate, 2);
     }
     $params['description'] = t('Webform Payment: @title', array('@title' => $this->node->title));
     if (!isset($params['source'])) {
