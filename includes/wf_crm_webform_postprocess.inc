@@ -1106,20 +1106,19 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         continue;
       }
       // Search for existing membership to renew - must belong to same domain and organization
-      // But not necessarily the same membership type to allow for upsell
       if (!empty($params['num_terms'])) {
         $type = $types[$params['membership_type_id']];
         foreach ($existing as $mem) {
           $existing_type = $types[$mem['membership_type_id']];
-          if ($type['domain_id'] == $existing_type['domain_id'] && $type['member_of_contact_id'] == $existing_type['member_of_contact_id']) {
-            $params['id'] = $mem['id'];
-            // If we have an exact match, look no further
-            if ($mem['membership_type_id'] == $params['membership_type_id']) {
+          if ($type['domain_id'] == $existing_type['domain_id'] &&
+            $type['member_of_contact_id'] == $existing_type['member_of_contact_id'] &&
+            $mem['membership_type_id'] == $params['membership_type_id']) {
+              // If we have an exact match, look no further
+              $params['id'] = $mem['id'];
               $is_active = $mem['is_active'];
               $membershipStatus = $mem['status'];
               $membershipEndDate = $mem['end_date'];
               break;
-            }
           }
         }
       }
