@@ -374,6 +374,12 @@ var wfCivi = (function ($, D) {
         }
       });
 
+      // Support CiviCRM's quirky way of doing optgroups
+      $('option[value^=crm_optgroup]', context).each(function () {
+        $(this).nextUntil('option[value^=crm_optgroup]').wrapAll('<optgroup label="' + $(this).text() + '" />');
+        $(this).remove();
+      });
+
       // Add handler to country field to trigger ajax refresh of corresponding state/prov
       $('form.webform-client-form .civicrm-enabled[name*="_address_country_id]"]').once('civicrm').change(countrySelect);
 
