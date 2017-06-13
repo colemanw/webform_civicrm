@@ -345,7 +345,7 @@ abstract class wf_crm_webform_base {
       foreach($values as $key => $value){
         if((in_array($ent, array('address', 'email')) && $value['location_type_id'] == $setting['location_type_id'])
            ||
-          ($value['location_type_id'] == $setting['location_type_id'] && $value[$ent.'_type_id'] == $setting[$ent.'_type_id'])     
+          ($value['location_type_id'] == $setting['location_type_id'] && $value[$ent.'_type_id'] == $setting[$ent.'_type_id'])
           ){
             $reorderedArray[$key] = $value;
             $valueFound = true;
@@ -417,6 +417,10 @@ abstract class wf_crm_webform_base {
    */
   protected function getRelationship($r_types, $cid1, $cid2) {
     $found = array();
+    $active_clause = '';
+    if ($this->settings['create_new_relationship']) {
+      $active_clause = 'AND is_active = 1 AND end_date >= now()';
+    }
     if ($r_types && $cid1 && $cid2) {
       $types = array();
       foreach ($r_types as $r_type) {
@@ -425,7 +429,7 @@ abstract class wf_crm_webform_base {
       }
       $sql = "SELECT * FROM civicrm_relationship
       WHERE relationship_type_id IN (" . implode(',', $types) . ")
-      AND ((contact_id_a = $cid1 AND contact_id_b = $cid2) OR (contact_id_a = $cid2 AND contact_id_b = $cid1))
+      AND ((contact_id_a = $cid1 AND contact_id_b = $cid2) OR (contact_id_a = $cid2 AND contact_id_b = $cid1)) $active_clause
       ORDER BY is_active DESC, IF(end_date, 1, 0), end_date DESC";
       $dao = CRM_Core_DAO::executeQuery($sql);
       while ($dao->fetch()) {
