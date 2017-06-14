@@ -87,7 +87,7 @@ function webform_civicrm_schema() {
         'default' => 0,
       ),
       'create_new_relationship' => array(
-        'description' => 'Create new relationship if the same already exist.',
+        'description' => 'Create new relationship if duplicate record exists and is expired or inactive.',
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
@@ -820,11 +820,11 @@ function webform_civicrm_update_7402() {
   }
 }
 /**
- * Add new field to create new relationship.
+ * Add field to create new relationship for duplicate records(expired/inactive).
  */
 function webform_civicrm_update_7403() {
   $field =  array(
-    'description' => 'Create new relationship if the same already exist.',
+    'description' => 'Create new relationship if duplicate record exists and is expired or inactive.',
     'type' => 'int',
     'size' => 'tiny',
     'not null' => TRUE,
