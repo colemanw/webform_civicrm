@@ -966,6 +966,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $perm = $perm == 1 ? 2 : 1;
         }
       }
+      //initialise start_date for create action.
+      if (empty($existing) && !array_key_exists('start_date', $params)) {
+        $params['start_date'] = NULL;
+      }
       $params += $existing;
       $params['contact_id_a'] = $cid1;
       $params['contact_id_b'] = $cid2;
