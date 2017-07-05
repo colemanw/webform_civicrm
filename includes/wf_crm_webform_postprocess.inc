@@ -968,7 +968,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
       //initialise start_date for create action.
       if (empty($existing) && !array_key_exists('start_date', $params)) {
-        $params['start_date'] = NULL;
+        $today = date('Y-m-d');
+        $params['start_date'] = $today;
       }
       $params += $existing;
       $params['contact_id_a'] = $cid1;
