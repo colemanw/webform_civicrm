@@ -1085,6 +1085,12 @@ class wf_crm_admin_form {
       '#default_value' => !empty($this->settings['block_unknown_users']),
       '#description' => t('Only allow users to see this form if they are logged in or following a personalized link from CiviMail.'),
     );
+    $this->form['options']['create_new_relationship'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Create New Relationship'),
+      '#default_value' => !empty($this->settings['create_new_relationship']),
+      '#description' => t('Create new relationship if duplicate record exists and is expired or inactive.'),
+    );
     $this->form['options']['new_contact_source'] = array(
       '#type' => 'textfield',
       '#title' => t('Source Label'),
