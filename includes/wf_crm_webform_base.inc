@@ -419,7 +419,7 @@ abstract class wf_crm_webform_base {
     $found = array();
     $active_clause = '';
     if (!empty($this->settings['create_new_relationship'])) {
-      $active_clause = 'AND is_active = 1 AND end_date >= now()';
+      $active_clause = 'AND is_active = 1 AND (end_date IS NULL OR end_date >= now())';
     }
     if ($r_types && $cid1 && $cid2) {
       $types = array();
