@@ -632,3 +632,49 @@ function _webform_civicrm_status() {
 
   return $status;
 }
+
+/**
+ * Implements hook_token_info().
+ */
+function webform_civicrm_token_info() {
+  // Create case link token
+  $info['tokens']['submission']['case_link'] = array(
+    'name' => t('Case Link'),
+    'description' => t('The link to case that got created after submission.'),
+  );
+
+  return $info;
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function webform_civicrm_tokens($type, $tokens, array $data = array(), array $options = array()) {
+  global $base_url;
+
+  // Return early unless submission tokens are needed and there is a submission.
+  if ($type != 'submission' || empty($data['webform-submission']) || !webform_variable_get('webform_token_access')) {
+    return array();
+  }
+
+  // Generate Webform tokens.
+  $replacements = array();
+
+  $submission = $data['webform-submission'];
+
+  // Replace individual tokens that have an exact replacement.
+  foreach ($tokens as $name => $original) {
+    switch ($name) {
+      case 'case_link': // replace case_link token with value
+        $caseId = $submission->civicrm['case'][1]['id'] ? $submission->civicrm['case'][1]['id'] : '';
+        $contactId = $submission->civicrm['contact'][1]['id'] ? $submission->civicrm['contact'][1]['id'] : '';
+
+        $link = "{$base_url}/civicrm/contact/view/case?reset=1&id={$caseId}&cid={$contactId}&action=view";
+
+        $replacements[$original] = !empty($caseId) && !empty($contactId) ? l(t('Click here to manage case'), $link) : '';
+        break;
+    }
+  }
+
+  return $replacements;
+}
