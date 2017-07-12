@@ -15,6 +15,8 @@ define('WEBFORM_CIVICRM_CIVICRM_VERSION_MAX', FALSE);
 
 define('WEBFORM_CIVICRM_WEBFORM_VERSION', '4.12');
 
+define('WEBFORM_CIVICRM_DEFAULT_CONTACT_ID', 1);
+
 /**
  * Implements hook_menu().
  *
@@ -637,10 +639,22 @@ function _webform_civicrm_status() {
  * Implements hook_token_info().
  */
 function webform_civicrm_token_info() {
-  // Create case link token
-  $info['tokens']['submission']['case_link'] = array(
-    'name' => t('Case Link'),
-    'description' => t('The link to case that got created after submission.'),
+  $info['tokens']['submission']['contact-links'] = array(
+    'name' => t('Webform CiviCRM Contacts Links'),
+    'description' => t('The links to Contacts that got created after submission the webform. Replace the "?" with the contact number starting from 1'),
+    'dynamic' => TRUE,
+  );
+
+  $info['tokens']['submission']['activity-links'] = array(
+    'name' => t('Webform CiviCRM Activity Links'),
+    'description' => t('The links to activities that got created after submission webform. Replace the "?" with the activity number starting from 1'),
+    'dynamic' => TRUE,
+  );
+
+  $info['tokens']['submission']['case-links'] = array(
+    'name' => t('Webform CiviCRM Case Links'),
+    'description' => t('The links to cases that got created after submission webform. Replace the "?" with the case number starting from 1'),
+    'dynamic' => TRUE,
   );
 
   return $info;
@@ -649,32 +663,171 @@ function webform_civicrm_token_info() {
 /**
  * Implements hook_tokens().
  */
-function webform_civicrm_tokens($type, $tokens, array $data = array(), array $options = array()) {
-  global $base_url;
-
-  // Return early unless submission tokens are needed and there is a submission.
-  if ($type != 'submission' || empty($data['webform-submission']) || !webform_variable_get('webform_token_access')) {
-    return array();
+function webform_civicrm_tokens($type, $tokens = '', array $data = array(), array $options = array()) {
+  // Skip token processing if this is not a webform submission
+  if (!_webform_civicrm_isWebformSubmission($type, $data)) {
+    return [];
   }
 
-  // Generate Webform tokens.
-  $replacements = array();
+  $replacedTokens = array();
+  $webformSubmissionData = $data['webform-submission'];
 
-  $submission = $data['webform-submission'];
+  $contactLinksReplacedTokens = _webform_civicrm_replaceContactLinksToken($tokens, $webformSubmissionData);
+  $replacedTokens = array_merge($replacedTokens, $contactLinksReplacedTokens);
 
-  // Replace individual tokens that have an exact replacement.
-  foreach ($tokens as $name => $original) {
-    switch ($name) {
-      case 'case_link': // replace case_link token with value
-        $caseId = $submission->civicrm['case'][1]['id'] ? $submission->civicrm['case'][1]['id'] : '';
-        $contactId = $submission->civicrm['contact'][1]['id'] ? $submission->civicrm['contact'][1]['id'] : '';
+  $activityLinksReplacedTokens = _webform_civicrm_replaceActivityLinksToken($tokens, $webformSubmissionData);
+  $replacedTokens = array_merge($replacedTokens, $activityLinksReplacedTokens);
 
-        $link = "{$base_url}/civicrm/contact/view/case?reset=1&id={$caseId}&cid={$contactId}&action=view";
+  $caseLinksReplacedTokens  = _webform_civicrm_replaceCaseLinksToken($tokens, $webformSubmissionData);
+  $replacedTokens = array_merge($replacedTokens, $caseLinksReplacedTokens);
 
-        $replacements[$original] = !empty($caseId) && !empty($contactId) ? l(t('Click here to manage case'), $link) : '';
-        break;
+  return $replacedTokens;
+}
+
+/**
+ * Determines if there is a webform get submitted
+ *
+ * @param $tokenType
+ * @param $webformData
+ *
+ * @return bool
+ *   True if this is a webform submisstion and false if not
+ */
+function _webform_civicrm_isWebformSubmission($tokenType, $webformData){
+  if (
+    $tokenType === 'submission' &&
+    !empty($webformData['webform-submission']) &&
+    webform_variable_get('webform_token_access')
+  ) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Replaces contact-links tokens with civicrm contact page links
+ *
+ * @param array $tokens
+ *   Tokens to process
+ * @param array $webformSubmissionData
+ *   Data submitted by the webform
+ *
+ * @return array
+ *   List of replaced contact-links tokens replaced with actual contacts links
+ */
+function _webform_civicrm_replaceContactLinksToken($tokens, $webformSubmissionData) {
+  $replacedTokens = array();
+
+  $tokenValues = token_find_with_prefix($tokens, 'contact-links');
+  if (!$tokenValues) {
+    return $replacedTokens;
+  }
+
+  foreach ($tokenValues as $entityID => $tokenName) {
+    $tokenNewValue = '';
+    if (!empty($webformSubmissionData->civicrm['contact'][$entityID]['id'])) {
+      $contactID = $webformSubmissionData->civicrm['contact'][$entityID]['id'];
+      $tokenNewValue = url("/civicrm/contact/view?reset=1&cid={$contactID}", array('absolute' => TRUE));
     }
+
+    $replacedTokens[$tokenName] = $tokenNewValue;
   }
 
-  return $replacements;
+
+  return $replacedTokens;
+}
+
+/**
+ * Replaces activity-links tokens with civicrm activity page links
+ *
+ * @param array $tokens
+ *   Tokens to process
+ * @param array $webformSubmissionData
+ *   Data submitted by the webform
+ *
+ * @return array
+ *   List of replaced activity-links tokens replaced with actual activity links
+ */
+function _webform_civicrm_replaceActivityLinksToken($tokens, $webformSubmissionData) {
+  $replacedTokens = array();
+
+  $tokenValues = token_find_with_prefix($tokens, 'activity-links');
+  if (!$tokenValues) {
+    return $replacedTokens;
+  }
+
+  foreach ($tokenValues as $entityID => $tokenName) {
+    $tokenNewValue = '';
+    if (!empty($webformSubmissionData->civicrm['activity'][$entityID]['id'])) {
+      $activityId = $webformSubmissionData->civicrm['activity'][$entityID]['id'];
+
+      $tokenNewValue = url("/civicrm/activity?action=view&reset=1&id={$activityId}", array('absolute' => TRUE));
+    }
+
+    $replacedTokens[$tokenName] = $tokenNewValue;
+  }
+
+
+  return $replacedTokens;
+}
+
+/**
+ * Replaces case-links tokens with civicrm case page links
+ *
+ * @param array $tokens
+ *   Tokens to process
+ * @param array $webformSubmissionData
+ *   Data submitted by the webform
+ *
+ * @return array
+ *   List of replaced case-links tokens replaced with actual case links
+ */
+function _webform_civicrm_replaceCaseLinksToken($tokens, $webformSubmissionData) {
+  $replacedTokens = array();
+
+  $tokenValues = token_find_with_prefix($tokens, 'case-links');
+  if (!$tokenValues) {
+    return $replacedTokens;
+  }
+
+  foreach ($tokenValues as $entityID => $tokenName) {
+    $tokenNewValue = '';
+    if (!empty($webformSubmissionData->civicrm['case'][$entityID]['id'])) {
+      $caseID = $webformSubmissionData->civicrm['case'][$entityID]['id'];
+      $caseContactID = _webform_civicrm_getCaseContactID($caseID);
+
+      $tokenNewValue = url("/civicrm/contact/view/case?reset=1&id={$caseID}&cid={$caseContactID}&action=view", array('absolute' => TRUE));
+    }
+
+    $replacedTokens[$tokenName] = $tokenNewValue;
+  }
+
+
+  return $replacedTokens;
+}
+
+/**
+ * Gets specified case contact ID or the default
+ * contact ID if the case contact ID is not found
+ *
+ * @param int $caseID
+ *
+ * @return int
+ */
+function _webform_civicrm_getCaseContactID($caseID) {
+  civicrm_initialize();
+
+  $caseEntity = civicrm_api3('Case', 'get', array(
+    'sequential' => 1,
+    'return' => array('contact_id'),
+    'id' => $caseID,
+  ));
+
+  $caseContactID = WEBFORM_CIVICRM_DEFAULT_CONTACT_ID;
+  if(!empty($caseEntity['values'][0]['contact_id'][1])) {
+    $caseContactID =  $caseEntity['values'][0]['contact_id'][1];
+  }
+
+  return $caseContactID;
 }
