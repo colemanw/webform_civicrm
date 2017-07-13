@@ -675,19 +675,19 @@ function webform_civicrm_token_info() {
   $info = array();
   $info['tokens']['submission']['contact-link'] = array(
     'name' => t('Webform CiviCRM Contacts Links'),
-    'description' => t('The links to Contacts that got created after submission the webform. Replace the "?" with the contact number starting from 1'),
+    'description' => t('The links to Contacts that got created after submitting the webform. Replace the "?" with the contact number starting from 1'),
     'dynamic' => TRUE,
   );
 
   $info['tokens']['submission']['activity-link'] = array(
     'name' => t('Webform CiviCRM Activity Links'),
-    'description' => t('The links to activities that got created after submission webform. Replace the "?" with the activity number starting from 1'),
+    'description' => t('The links to activities that got created after submitting the webform. Replace the "?" with the activity number starting from 1'),
     'dynamic' => TRUE,
   );
 
   $info['tokens']['submission']['case-link'] = array(
     'name' => t('Webform CiviCRM Case Links'),
-    'description' => t('The links to cases that got created after submission webform. Replace the "?" with the case number starting from 1'),
+    'description' => t('The links to cases that got created after submitting the webform. Replace the "?" with the case number starting from 1'),
     'dynamic' => TRUE,
   );
 
