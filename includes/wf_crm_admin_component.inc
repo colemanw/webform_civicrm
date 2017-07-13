@@ -40,6 +40,11 @@ class wf_crm_admin_component {
     }
     list(, $i, $ent, $n, $table, $name) = $pieces;
     $this->field = wf_crm_aval(wf_crm_get_fields(), $table . '_' . $name);
+    // Is this a crm custom group fieldset?
+    if(isCustomGroupFieldset($fid)) {
+      $this->form['form_key']['#disabled'] = TRUE;
+      $this->form['form_key']['#value'] = $fid;
+    }
     // Is this a crm field or fieldset?
     if (!$this->field && $table != 'fieldset') {
       return;
@@ -746,4 +751,12 @@ function wf_crm_components_form_validate($form, &$form_state) {
       }
     }
   }
+}
+
+function isCustomGroupFieldset($fid) {
+  $pieces = wf_crm_explode_key($fid);
+  if($pieces[0] == 'civicrm' && strpos($pieces[4], 'cg') !== FALSE && $pieces[5] == 'fieldset') {
+    return true;
+  }
+  return false;
 }
