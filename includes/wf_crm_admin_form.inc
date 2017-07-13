@@ -310,7 +310,7 @@ class wf_crm_admin_form {
         else {
           $this->addDynamicCustomSetting($fieldset, $sid, 'contact', $n);
         }
-        if(isset($set['fields'])) {
+        if (isset($set['fields'])) {
           foreach ($set['fields'] as $fid => $field) {
             if ($fid == 'contact_contact_sub_type' ||
               ($fid == 'address_master_id' && count($this->data['contact']) == 1) ||
@@ -540,7 +540,7 @@ class wf_crm_admin_form {
             'js_select' => $this->addToggle($fs1),
           );
           $this->addDynamicCustomSetting($wrap['custom'][$fs1], $sid, 'activity', $n);
-          if(isset($set['fields'])) {
+          if (isset($set['fields'])) {
             foreach ($set['fields'] as $fid => $field) {
               $fid = "civicrm_{$n}_activity_1_$fid";
               $wrap['custom'][$fs1][$fid] = $this->addItem($fid, $field);
@@ -626,7 +626,7 @@ class wf_crm_admin_form {
           'js_select' => $this->addToggle($fs1),
         );
         $this->addDynamicCustomSetting($pos[$fs1], $sid, 'case', $n);
-        if(isset($set['fields'])) {
+        if (isset($set['fields'])) {
           foreach ($set['fields'] as $fid => $field) {
             $fid = "civicrm_{$n}_case_1_$fid";
             if (!$case_type || empty($field['case_types']) || in_array($case_type, $field['case_types'])) {
@@ -975,7 +975,7 @@ class wf_crm_admin_form {
           'js_select' => $this->addToggle($sid),
         );
         $this->addDynamicCustomSetting($this->form['contribution']['sets'][$sid], $sid, 'contribution', 1);
-        if(isset($set['fields'])) {
+        if (isset($set['fields'])) {
           foreach ($set['fields'] as $fid => $field) {
             $fid = "civicrm_1_contribution_1_$fid";
             $this->form['contribution']['sets'][$sid][$fid] = $this->addItem($fid, $field);
@@ -1041,7 +1041,7 @@ class wf_crm_admin_form {
             'js_select' => $this->addToggle($fs1),
           );
           $this->addDynamicCustomSetting($pos[$fs1], $sid, 'grant', $n);
-          if(isset($set['fields'])) {
+          if (isset($set['fields'])) {
             foreach ($set['fields'] as $fid => $field) {
               $fid = "civicrm_{$n}_grant_1_$fid";
               $pos[$fs1][$fid] = $this->addItem($fid, $field);
@@ -1615,7 +1615,7 @@ class wf_crm_admin_form {
           $emptySets = wf_crm_get_empty_sets();
           list($ent, $n, , , ,$cgId) = explode('_', $key, 6);
           $fieldsetKey = "civicrm_{$n}_{$ent}_1_{$cgId}_fieldset";
-          if(array_key_exists($cgId, $emptySets) && !isset($existing[$fieldsetKey])) {
+          if (array_key_exists($cgId, $emptySets) && !isset($existing[$fieldsetKey])) {
             $fieldset = array (
               'nid' => $nid,
               'pid' => 0,
@@ -1850,11 +1850,11 @@ class wf_crm_admin_form {
    */
   public static function addFieldset($c, &$field, &$enabled, $settings, $ent = 'contact', $allow_create = FALSE) {
     $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
-    if(strpos($field['form_key'], "_custom_")) {
-      $sid = explode('_custom', $field['form_key'])[0] . '_fieldset';
+    if (strpos($field['form_key'], '_custom_')) {
+      $sid = explode('_custom', $field['form_key']);
+      $sid = $sid[0] . '_fieldset';
       $customGroupKey = explode('_', $field['form_key'])[4];
-      $allow_create = TRUE;
-      $isCustom = TRUE; // for custom fields only
+      $allow_create = $isCustom = TRUE;
     }
     else {
       $sid = "civicrm_{$c}_{$type}_1_fieldset_fieldset";
@@ -1867,7 +1867,7 @@ class wf_crm_admin_form {
         'weight' => $c,
       );
       $sets = wf_crm_get_fields('sets');
-      if(isset($isCustom)) {
+      if (isset($isCustom)) {
         $new_set['name'] = $sets[$customGroupKey]['label'];
         $new_set['weight'] = 200 + (array_search($type, self::$fieldset_entities) * 10 + $c);
       }
@@ -2017,7 +2017,7 @@ class wf_crm_admin_form {
                 $new['pid'] = $component['pid'];
               }
             }
-            if($op == 'enable') {
+            if ($op == 'enable') {
               $queryParams = array(
                 'sequential' => 1,
                 'id' => $fid,

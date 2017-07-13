@@ -148,7 +148,7 @@ abstract class wf_crm_webform_base {
                 $address['state_province_id'] = wf_crm_state_abbr($address['state_province_id']);
               }
               // Load custom data
-              if(isset($address['id'])){
+              if (isset($address['id'])){
                 $custom = $this->getCustomData($address['id'], 'address');
                 if (!empty($custom['address'])) {
                   $address += $custom['address'][1];
@@ -312,7 +312,7 @@ abstract class wf_crm_webform_base {
   protected function reorderByLocationType($c, $ent, $values = array()){
     $reorderedArray = array();
 
-    if(isset($this->settings['data']['contact'][$c][$ent])){
+    if (isset($this->settings['data']['contact'][$c][$ent])){
       // First pass
       $reorderedArray = $this->matchLocationTypes($c, $ent, $values);
 
@@ -343,25 +343,27 @@ abstract class wf_crm_webform_base {
     foreach ($settingsArray[$ent] as $setting) {
       $valueFound = false;
       foreach($values as $key => $value){
-        if((in_array($ent, array('address', 'email')) && $value['location_type_id'] == $setting['location_type_id'])
+        if ((in_array($ent, array('address', 'email')) && $value['location_type_id'] == $setting['location_type_id'])
            ||
           ($value['location_type_id'] == $setting['location_type_id'] && $value[$ent.'_type_id'] == $setting[$ent.'_type_id'])
-          ){
+          ) {
             $reorderedArray[$key] = $value;
             $valueFound = true;
             unset($values[$key]);
             break;
-        } else if(empty($setting['location_type_id'])) { // for 'user-select' fields
-            $valueFound = true;
-            $reorderedArray['us'.$userSelectIndex] = 'user-select';
-            $userSelectIndex ++;
-            break;
+        }
+        // For 'user-select' fields
+        else if (empty($setting['location_type_id'])) {
+          $valueFound = true;
+          $reorderedArray['us'.$userSelectIndex] = 'user-select';
+          $userSelectIndex ++;
+          break;
         }
       }
 
       // always keep number of returned values equal to chosen settings
       // if value is not found then set an empty array
-      if(!$valueFound){
+      if (!$valueFound){
         $reorderedArray[] = array();
       }
     }
@@ -378,7 +380,7 @@ abstract class wf_crm_webform_base {
   protected function handleRemainingValues($reorderedArray, &$values){
     // Put leftover values in fields marked as 'user-select'
     foreach($reorderedArray as $key => $value){
-      if($reorderedArray[$key] == 'user-select'){
+      if ($reorderedArray[$key] == 'user-select'){
         $reorderedArray[$key] = !empty($values) ? array_shift($values) : '';
       }
     }
@@ -393,9 +395,9 @@ abstract class wf_crm_webform_base {
    * @return array $settings
    */
   protected function add_user_select_field_placeholder($ent, $settings = array()){
-    if($settings['number_of_'.$ent] > count($settings[$ent])){
+    if ($settings['number_of_'.$ent] > count($settings[$ent])){
       for($i = 1; $i <= $settings['number_of_'.$ent]; $i++){
-        if(!array_key_exists($i, $settings[$ent])){
+        if (!array_key_exists($i, $settings[$ent])){
           $settings[$ent][$i]['location_type_id'] = NULL;
         }
       }

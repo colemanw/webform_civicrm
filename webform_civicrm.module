@@ -392,8 +392,8 @@ function webform_civicrm_civicrm_postSave_civicrm_custom_group($dao) {
   $fieldsets = $dbResource->fetchAll(PDO::FETCH_ASSOC);
 
   // run only if the title of the custom group has changed in civicrm
-  if($fieldsets[0]['name'] != $dao->title) {
-    foreach($fieldsets as $field_info) {
+  if ($fieldsets[0]['name'] != $dao->title) {
+    foreach ($fieldsets as $field_info) {
       $component = array();
       $component['name'] = $dao->title;
       $component['type'] = $field_info['type'];
@@ -700,7 +700,7 @@ function webform_civicrm_token_info() {
 function webform_civicrm_tokens($type, $tokens = '', array $data = array(), array $options = array()) {
   // Skip token processing if this is not a webform submission
   if (!_webform_civicrm_isWebformSubmission($type, $data)) {
-    return [];
+    return array();
   }
 
   $replacedTokens = array();
@@ -727,16 +727,12 @@ function webform_civicrm_tokens($type, $tokens = '', array $data = array(), arra
  * @return bool
  *   True if this is a webform submisstion and false if not
  */
-function _webform_civicrm_isWebformSubmission($tokenType, $webformData){
-  if (
+function _webform_civicrm_isWebformSubmission($tokenType, $webformData) {
+  return (
     $tokenType === 'submission' &&
     !empty($webformData['webform-submission']) &&
     webform_variable_get('webform_token_access')
-  ) {
-    return TRUE;
-  }
-
-  return FALSE;
+  );
 }
 
 /**
@@ -859,8 +855,8 @@ function _webform_civicrm_getCaseContactID($caseID) {
   ));
 
   $caseContactID = WEBFORM_CIVICRM_DEFAULT_CONTACT_ID;
-  if(!empty($caseEntity['values'][0]['contact_id'][1])) {
-    $caseContactID =  $caseEntity['values'][0]['contact_id'][1];
+  if (!empty($caseEntity['values'][0]['contact_id'][1])) {
+    $caseContactID = $caseEntity['values'][0]['contact_id'][1];
   }
 
   return $caseContactID;
@@ -878,9 +874,9 @@ function _webform_civicrm_getCaseContactID($caseID) {
  * @param array $params
  */
 function webform_civicrm_civicrm_pre($op, $objectName, $id, &$params) {
-  if($op == 'edit' && $objectName == 'CustomField') {
+  if ($op == 'edit' && $objectName == 'CustomField') {
     // Run only if is_active is set, i.e. custom field is being enabled/disabled
-    if(isset($params['is_active'])) {
+    if (isset($params['is_active'])) {
       $statusToSet = $params['is_active'];
       $queryParams = array(
         'sequential' => 1,
@@ -890,17 +886,17 @@ function webform_civicrm_civicrm_pre($op, $objectName, $id, &$params) {
       );
       $result = civicrm_api3('CustomField', 'get', $queryParams);
       // run only if this field already exist in db to make sure we donot run it for create op
-      if($result['count'] == 1) {
+      if ($result['count'] == 1) {
         module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_form');
         $previousStatus = $result['values'][0]['is_active'];
         $customGroupId = $result['values'][0]['custom_group_id'];
-        if($statusToSet == FALSE && $previousStatus == TRUE) {
+        if ($statusToSet == FALSE && $previousStatus == TRUE) {
           $opName = 'disable';
         }
         else {
           $opName = 'enable';
         }
-        if(isset($opName)) {
+        if (isset($opName)) {
           wf_crm_admin_form::handleDynamicCustomField($opName, $id, $customGroupId);
         }
       }

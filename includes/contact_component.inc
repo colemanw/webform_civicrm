@@ -309,8 +309,13 @@ function _webform_edit_civicrm_contact($component) {
   return $form;
 }
 
+/**
+ * Adds help to the form
+ *
+ * @param $form
+ */
 function wf_crm_contact_component_form_help(&$form) {
-  foreach(element_children($form) as $element) {
+  foreach (element_children($form) as $element) {
     if (is_array($form[$element])) {
       wf_crm_contact_component_form_help($form[$element]);
       if (method_exists('wf_crm_admin_help', "contact_component_$element")) {

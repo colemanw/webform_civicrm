@@ -23,7 +23,7 @@ function wf_crm_field_options($field, $context, $data) {
   if ($pieces = wf_crm_explode_key($field['form_key'])) {
     list( , $c, $ent, $n, $table, $name) = $pieces;
     // Ensure we have complete info for this field
-    if(isset($fields[$table . '_' . $name])) {
+    if (isset($fields[$table . '_' . $name])) {
       $field += $fields[$table . '_' . $name];
     }
     if ($name === 'contact_sub_type') {
@@ -454,7 +454,7 @@ function wf_crm_enabled_fields($node, $submission = NULL, $show_all = FALSE) {
       if (count($exp) == 5) {
         list($lobo, $i, $ent, $n, $id) = $exp;
         $explodedId = explode('_', $id);
-        if($explodedId[1] == 'fieldset' && $explodedId[0] != 'fieldset') {
+        if ($explodedId[1] == 'fieldset' && $explodedId[0] != 'fieldset') {
           $customGroupFieldsetKey = $explodedId[0];
         }
         if ((isset($fields[$id]) || $id == 'fieldset_fieldset' || $id == $customGroupFieldsetKey . '_fieldset') && $lobo == 'civicrm' && is_numeric($i) && is_numeric($n)) {
@@ -1705,7 +1705,8 @@ function wf_crm_get_empty_sets() {
   $dao = CRM_Core_DAO::executeQuery($sql);
 
   while($dao->fetch()) {
-    if(empty($dao->custom_field_sum)) { // because a set with all fields disabled = empty set
+    // Because a set with all fields disabled = empty set
+    if (empty($dao->custom_field_sum)) {
       $set = 'cg' . $dao->id;
       if ($dao->extends == 'address' || $dao->extends == 'relationship' || $dao->extends == 'membership') {
         $set = $dao->extends;
