@@ -639,19 +639,20 @@ function _webform_civicrm_status() {
  * Implements hook_token_info().
  */
 function webform_civicrm_token_info() {
-  $info['tokens']['submission']['contact-links'] = array(
+  $info = array();
+  $info['tokens']['submission']['contact-link'] = array(
     'name' => t('Webform CiviCRM Contacts Links'),
     'description' => t('The links to Contacts that got created after submission the webform. Replace the "?" with the contact number starting from 1'),
     'dynamic' => TRUE,
   );
 
-  $info['tokens']['submission']['activity-links'] = array(
+  $info['tokens']['submission']['activity-link'] = array(
     'name' => t('Webform CiviCRM Activity Links'),
     'description' => t('The links to activities that got created after submission webform. Replace the "?" with the activity number starting from 1'),
     'dynamic' => TRUE,
   );
 
-  $info['tokens']['submission']['case-links'] = array(
+  $info['tokens']['submission']['case-link'] = array(
     'name' => t('Webform CiviCRM Case Links'),
     'description' => t('The links to cases that got created after submission webform. Replace the "?" with the case number starting from 1'),
     'dynamic' => TRUE,
@@ -672,13 +673,13 @@ function webform_civicrm_tokens($type, $tokens = '', array $data = array(), arra
   $replacedTokens = array();
   $webformSubmissionData = $data['webform-submission'];
 
-  $contactLinksReplacedTokens = _webform_civicrm_replaceContactLinksToken($tokens, $webformSubmissionData);
+  $contactLinksReplacedTokens = _webform_civicrm_replaceContactLinkTokens($tokens, $webformSubmissionData);
   $replacedTokens = array_merge($replacedTokens, $contactLinksReplacedTokens);
 
-  $activityLinksReplacedTokens = _webform_civicrm_replaceActivityLinksToken($tokens, $webformSubmissionData);
+  $activityLinksReplacedTokens = _webform_civicrm_replaceActivityLinkTokens($tokens, $webformSubmissionData);
   $replacedTokens = array_merge($replacedTokens, $activityLinksReplacedTokens);
 
-  $caseLinksReplacedTokens  = _webform_civicrm_replaceCaseLinksToken($tokens, $webformSubmissionData);
+  $caseLinksReplacedTokens  = _webform_civicrm_replaceCaseLinkTokens($tokens, $webformSubmissionData);
   $replacedTokens = array_merge($replacedTokens, $caseLinksReplacedTokens);
 
   return $replacedTokens;
@@ -706,7 +707,7 @@ function _webform_civicrm_isWebformSubmission($tokenType, $webformData){
 }
 
 /**
- * Replaces contact-links tokens with civicrm contact page links
+ * Replaces contact-link tokens with civicrm contact page links
  *
  * @param array $tokens
  *   Tokens to process
@@ -714,12 +715,12 @@ function _webform_civicrm_isWebformSubmission($tokenType, $webformData){
  *   Data submitted by the webform
  *
  * @return array
- *   List of replaced contact-links tokens replaced with actual contacts links
+ *   List of replaced contact-link tokens replaced with actual contacts links
  */
-function _webform_civicrm_replaceContactLinksToken($tokens, $webformSubmissionData) {
+function _webform_civicrm_replaceContactLinkTokens($tokens, $webformSubmissionData) {
   $replacedTokens = array();
 
-  $tokenValues = token_find_with_prefix($tokens, 'contact-links');
+  $tokenValues = token_find_with_prefix($tokens, 'contact-link');
   if (!$tokenValues) {
     return $replacedTokens;
   }
@@ -739,7 +740,7 @@ function _webform_civicrm_replaceContactLinksToken($tokens, $webformSubmissionDa
 }
 
 /**
- * Replaces activity-links tokens with civicrm activity page links
+ * Replaces activity-link tokens with civicrm activity page links
  *
  * @param array $tokens
  *   Tokens to process
@@ -747,12 +748,12 @@ function _webform_civicrm_replaceContactLinksToken($tokens, $webformSubmissionDa
  *   Data submitted by the webform
  *
  * @return array
- *   List of replaced activity-links tokens replaced with actual activity links
+ *   List of replaced activity-link tokens replaced with actual activity links
  */
-function _webform_civicrm_replaceActivityLinksToken($tokens, $webformSubmissionData) {
+function _webform_civicrm_replaceActivityLinkTokens($tokens, $webformSubmissionData) {
   $replacedTokens = array();
 
-  $tokenValues = token_find_with_prefix($tokens, 'activity-links');
+  $tokenValues = token_find_with_prefix($tokens, 'activity-link');
   if (!$tokenValues) {
     return $replacedTokens;
   }
@@ -773,7 +774,7 @@ function _webform_civicrm_replaceActivityLinksToken($tokens, $webformSubmissionD
 }
 
 /**
- * Replaces case-links tokens with civicrm case page links
+ * Replaces case-link tokens with civicrm case page links
  *
  * @param array $tokens
  *   Tokens to process
@@ -781,12 +782,12 @@ function _webform_civicrm_replaceActivityLinksToken($tokens, $webformSubmissionD
  *   Data submitted by the webform
  *
  * @return array
- *   List of replaced case-links tokens replaced with actual case links
+ *   List of replaced case-link tokens replaced with actual case links
  */
-function _webform_civicrm_replaceCaseLinksToken($tokens, $webformSubmissionData) {
+function _webform_civicrm_replaceCaseLinkTokens($tokens, $webformSubmissionData) {
   $replacedTokens = array();
 
-  $tokenValues = token_find_with_prefix($tokens, 'case-links');
+  $tokenValues = token_find_with_prefix($tokens, 'case-link');
   if (!$tokenValues) {
     return $replacedTokens;
   }
