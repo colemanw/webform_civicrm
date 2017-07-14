@@ -107,7 +107,7 @@ abstract class wf_crm_webform_base {
         }
         $result = wf_civicrm_api($ent, 'get', $params);
         // Handle location field sorting
-        if (in_array($ent, wf_crm_location_fields()) && $ent != 'website') {
+        if (in_array($ent, wf_crm_location_fields())) {
           $result['values'] = $this->reorderByLocationType($c, $ent, $result['values']);
         }
         if (!empty($result['values'])) {
@@ -314,8 +314,12 @@ abstract class wf_crm_webform_base {
 
     if (isset($this->settings['data']['contact'][$c][$ent])){
       // First pass
-      $reorderedArray = $this->matchLocationTypes($c, $ent, $values);
-
+      if ($ent == 'website') {
+        $reorderedArray = $this->matchWebsiteTypes($c, $ent, $values);
+      }
+      else {
+        $reorderedArray = $this->matchLocationTypes($c, $ent, $values);
+      }
       // Second pass
       $reorderedArray = $this->handleRemainingValues($reorderedArray, $values);
 
@@ -358,6 +362,50 @@ abstract class wf_crm_webform_base {
           $reorderedArray['us'.$userSelectIndex] = 'user-select';
           $userSelectIndex ++;
           break;
+        }
+      }
+
+      // always keep number of returned values equal to chosen settings
+      // if value is not found then set an empty array
+      if (!$valueFound){
+        $reorderedArray[] = array();
+      }
+    }
+    return $reorderedArray;
+  }
+
+  /**
+   * Organize values according to website types
+   *
+   * @param integer $c
+   * @param string $ent
+   * @param array $values
+   * @return array $reorderedArray
+   */
+  protected function matchWebsiteTypes($c, $ent, &$values) {
+    // create temporary settings array to include 'user-select' fields
+    // on the right place in array
+    $settingsArray = $this->add_user_select_field_placeholder($ent, $this->settings['data']['contact'][$c]);
+    $userSelectIndex = 0;
+    // Go through the array and match up locations by type
+    // Put placeholder 'user-select' where location_type_id is empty for second pass
+    foreach ($settingsArray[$ent] as $setting) {
+      $valueFound = FALSE;
+      foreach ($values as $key => $value) {
+        if (($value[$ent . '_type_id'] == $setting[$ent . '_type_id'])
+        ) {
+          $reorderedArray[$key] = $value;
+          $valueFound = TRUE;
+          unset($values[$key]);
+          break;
+        }
+        else {
+          if (empty($setting['website_type_id'])) { // for 'user-select' fields
+            $valueFound = TRUE;
+            $reorderedArray['us' . $userSelectIndex] = 'user-select';
+            $userSelectIndex++;
+            break;
+          }
         }
       }
 
