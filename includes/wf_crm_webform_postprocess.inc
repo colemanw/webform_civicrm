@@ -338,7 +338,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             }
           }
           elseif ($dt == 'Money') {
-            if (CRM_Utils_Rule::money($element['#value']) == FALSE) {
+            if (!preg_match('/^-?(?:0|[1-9]\d{0,2}(?:,?\d{3})*)(?:\.\d+)?$/', $element['#value'])) {
               form_error($element, t('Please enter a currency value for %field.', array('%field' => $element['#title'])));
             }
           }
