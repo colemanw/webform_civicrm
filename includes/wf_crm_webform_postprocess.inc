@@ -1893,15 +1893,23 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $params['invoice_id'] = $this->data['contribution'][1]['contribution'][1]['invoiceID'] = md5(uniqid(rand(), TRUE));
     }
 
-    // tax integration
-    // TODO: needs review if this is changed in 4.6
+    // Sales tax integration
     if (!is_null($this->tax_rate)) {
-      $params['non_deductible_amount']  = $this->totalContribution;
       $params['tax_amount'] = round(($params['total_amount'] / ($this->tax_rate + 100)) * $this->tax_rate, 2);
     }
     $params['description'] = t('Webform Payment: @title', array('@title' => $this->node->title));
     if (!isset($params['source'])) {
       $params['source'] = $this->settings['new_contact_source'];
+    }
+
+    // Calculate non-deductible amount for income tax purposes
+    $financialTypeId = $params['financial_type_id'];
+    $resultDeduct = wf_civicrm_api('FinancialType', 'get', array('return' => "is_deductible",'id' => $financialTypeId));
+    if ($resultDeduct['values'][$financialTypeId]['is_deductible'] == 1) {
+      // deductible
+      $params['non_deductible_amount'] = 0;
+    } else {
+      $params['non_deductible_amount']  = $params['total_amount'];
     }
 
     // pass all submitted values to payment processor
