@@ -1512,16 +1512,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // tax integration
       if (!is_null($this->tax_rate)) {
         $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
-        $taxAmount = ($this->tax_rate / 100) * $item['line_total'];
-        $item['tax_amount'] = round($taxAmount, 2);
+        $item['tax_amount'] = ($this->tax_rate / 100) * $item['line_total'];
         $this->totalContribution += (1 + $this->tax_rate / 100) * $item['unit_price'] * (int) $item['qty'];
       }
       else {
         $this->totalContribution += $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
       }
     }
-    $this->totalContribution = round($this->totalContribution, 2);
-    return $this->totalContribution;
+    return round($this->totalContribution, 2);
   }
 
   /**
@@ -1882,13 +1880,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @return array
    */
   private function contributionParams() {
-    $totalContributionAmount = round($this->totalContribution, 2);
     $params = $this->billing_params + $this->data['contribution'][1]['contribution'][1];
     $params['financial_type_id'] = $this->contribution_page['financial_type_id'];
     $params['currency'] = $params['currencyID'] = $this->contribution_page['currency'];
     $params['skipRecentView'] = $params['skipLineItem'] = 1;
     $params['contact_id'] = $this->ent['contact'][1]['id'];
-    $params['total_amount'] = $totalContributionAmount;
+    $params['total_amount'] = round($this->totalContribution, 2);
 
     // Some processors use this for matching and updating the contribution status
     if (!$this->contributionIsPayLater) {
@@ -1898,9 +1895,16 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // tax integration
     // TODO: needs review if this is changed in 4.6
     if (!is_null($this->tax_rate)) {
-      $params['non_deductible_amount']  = $totalContributionAmount;
-      $taxAmount = ($params['total_amount'] / ($this->tax_rate + 100)) * $this->tax_rate;
-      $params['tax_amount'] = round($taxAmount, 2);
+      $params['tax_amount'] = round(($params['total_amount'] / ($this->tax_rate + 100)) * $this->tax_rate, 2);
+    }
+    // Calculate non-deductible amount for income tax purposes
+    $financialTypeId = $params['financial_type_id'];
+    $resultDeduct = wf_civicrm_api('FinancialType', 'get', array('return' => "is_deductible",'id' => $financialTypeId));
+    if ($resultDeduct['values'][$financialTypeId]['is_deductible'] == 1) {
+      // deductible
+      $params['non_deductible_amount'] = 0;
+    } else {
+      $params['non_deductible_amount']  = $params['total_amount'];
     }
     $params['description'] = t('Webform Payment: @title', array('@title' => $this->node->title));
     if (!isset($params['source'])) {
