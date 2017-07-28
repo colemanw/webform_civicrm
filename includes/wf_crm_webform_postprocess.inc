@@ -1519,8 +1519,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $this->totalContribution += $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
       }
     }
-    $this->totalContribution = round($this->totalContribution, 2);
-    return $this->totalContribution;
+    return round($this->totalContribution, 2);
   }
 
   /**
@@ -1830,7 +1829,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     $params['contactID'] = $params['contact_id'];
     $params['currency'] = $params['currencyID'] = $this->contribution_page['currency'];
-    $params['total_amount'] = $this->totalContribution;
+    $params['total_amount'] = round($this->totalContribution, 2);
     // Some processors want this one way, some want it the other
     $params['amount'] = $params['total_amount'];
 
@@ -1886,7 +1885,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['currency'] = $params['currencyID'] = $this->contribution_page['currency'];
     $params['skipRecentView'] = $params['skipLineItem'] = 1;
     $params['contact_id'] = $this->ent['contact'][1]['id'];
-    $params['total_amount'] = $this->totalContribution;
+    $params['total_amount'] = round($this->totalContribution, 2);
 
     // Some processors use this for matching and updating the contribution status
     if (!$this->contributionIsPayLater) {
@@ -1896,6 +1895,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Sales tax integration
     if (!is_null($this->tax_rate)) {
       $params['tax_amount'] = round(($params['total_amount'] / ($this->tax_rate + 100)) * $this->tax_rate, 2);
+    }
+    // Calculate non-deductible amount for income tax purposes
+    $financialTypeId = $params['financial_type_id'];
+    $resultDeduct = wf_civicrm_api('FinancialType', 'get', array('return' => "is_deductible",'id' => $financialTypeId));
+    if ($resultDeduct['values'][$financialTypeId]['is_deductible'] == 1) {
+      // deductible
+      $params['non_deductible_amount'] = 0;
+    } else {
+      $params['non_deductible_amount']  = $params['total_amount'];
     }
     $params['description'] = t('Webform Payment: @title', array('@title' => $this->node->title));
     if (!isset($params['source'])) {
