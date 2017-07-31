@@ -1989,7 +1989,7 @@ class wf_crm_admin_form {
               if ($op == 'delete' || $op == 'disable') {
                 webform_component_delete($node, $component);
               }
-              else {
+              elseif (isset($field_info)) {
                 $component['name'] = $field_info['name'];
                 $component['required'] = $field_info['required'];
                 $component['value'] = $field_info['value'];
