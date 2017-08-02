@@ -1519,8 +1519,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $this->totalContribution += $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
       }
     }
-    $this->totalContribution = round($this->totalContribution, 2);
-    return $this->totalContribution;
+    return round($this->totalContribution, 2);
   }
 
   /**
@@ -1830,7 +1829,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     $params['contactID'] = $params['contact_id'];
     $params['currency'] = $params['currencyID'] = $this->contribution_page['currency'];
-    $params['total_amount'] = $this->totalContribution;
+    $params['total_amount'] = round($this->totalContribution, 2);
     // Some processors want this one way, some want it the other
     $params['amount'] = $params['total_amount'];
 
@@ -1886,7 +1885,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['currency'] = $params['currencyID'] = $this->contribution_page['currency'];
     $params['skipRecentView'] = $params['skipLineItem'] = 1;
     $params['contact_id'] = $this->ent['contact'][1]['id'];
-    $params['total_amount'] = $this->totalContribution;
+    $params['total_amount'] = round($this->totalContribution, 2);
 
     // Some processors use this for matching and updating the contribution status
     if (!$this->contributionIsPayLater) {
