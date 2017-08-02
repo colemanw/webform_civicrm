@@ -352,7 +352,7 @@ function webform_civicrm_civicrm_postSave_civicrm_custom_field($dao) {
   if (empty($dao->custom_group_id)) {
     $dao->find(TRUE);
   }
-  if($dao->is_active) {
+  if ($dao->is_active) {
     wf_crm_admin_form::handleDynamicCustomField('create', $dao->id, $dao->custom_group_id);
   }
 }
