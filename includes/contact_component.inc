@@ -688,6 +688,10 @@ function wf_crm_contact_access($component, $filters, $cid) {
       elseif (!empty($_GET["cs$c"]) && CRM_Contact_BAO_Contact_Utils::validChecksum($cid, $_GET["cs$c"])) {
         $filters['check_permissions'] = FALSE;
       }
+      // If the checksum is present but invalid, add a message.
+      if ($filters['check_permissions'] != FALSE) {
+        drupal_set_message(t('The personalized link you used to access this form is invalid or expired. You may need to check with the person who sent you the link before filling out this form.'));
+      }
     }
   }
   // Fetch contact name with filters applied
