@@ -1976,14 +1976,8 @@ class wf_crm_admin_form {
     foreach ($webforms as $webform) {
       $field_name = "cg{$gid}_custom_$fid";
       $field_info = wf_crm_get_field($field_name);
-      //$field_info contains old data, below line fetches the fresh data
-      $queryParams = array(
-        'sequential' => 1,
-        'id' => $fid,
-        'options' => array('limit' => 1),
-      );
-      $result = civicrm_api3('CustomField', 'get', $queryParams);
-      $fieldConfigs = $result['values'][0];
+      // $field_info contains old data, so re-fetch
+      $fieldConfigs = wf_civicrm_api('CustomField', 'getsingle', array('id' => $fid));
       // Reset node cache to avoid stale data, so as not to insert the same component twice
       $node = node_load($webform->nid, NULL, TRUE);
       $enabled = wf_crm_enabled_fields($node, NULL, TRUE);
