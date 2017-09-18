@@ -1976,6 +1976,8 @@ class wf_crm_admin_form {
     foreach ($webforms as $webform) {
       $field_name = "cg{$gid}_custom_$fid";
       $field_info = wf_crm_get_field($field_name);
+      // $field_info contains old data, so re-fetch
+      $fieldConfigs = wf_civicrm_api('CustomField', 'getsingle', array('id' => $fid));
       // Reset node cache to avoid stale data, so as not to insert the same component twice
       $node = node_load($webform->nid, NULL, TRUE);
       $enabled = wf_crm_enabled_fields($node, NULL, TRUE);
@@ -1990,11 +1992,11 @@ class wf_crm_admin_form {
                 webform_component_delete($node, $component);
               }
               elseif (isset($field_info)) {
-                $component['name'] = $field_info['name'];
-                $component['required'] = $field_info['required'];
-                $component['value'] = $field_info['value'];
-                $component['extra']['description'] = $field_info['extra']['description'];
-                $component['extra']['description_above'] = $field_info['extra']['description_above'];
+                $component['name'] = $fieldConfigs['label'];
+                $component['required'] = $fieldConfigs['is_required'];
+                $component['value'] = $fieldConfigs['default_value'] ? $fieldConfigs['default_value'] : "";
+                $component['extra']['description'] = $fieldConfigs['help_pre'] ?  $fieldConfigs['help_pre'] : "";
+                $component['extra']['description_above'] = $field_info['extra']['description_above'];;
                 webform_component_update($component);
               }
               $updated[$ent][$c] = 1;
@@ -2018,20 +2020,13 @@ class wf_crm_admin_form {
               }
             }
             if ($op == 'enable') {
-              $queryParams = array(
-                'sequential' => 1,
-                'id' => $fid,
-                'options' => array('limit' => 1),
-              );
-              $result = civicrm_api3('CustomField', 'get', $queryParams);
-              $val = $result['values'][0];
-              $new['name'] = $val['label'];
-              $new['required'] = $val['is_required'];
-              $new['value'] = implode(',', wf_crm_explode_multivalue_str($val['default_value']));
-              $new['data_type'] = $val['data_type'];
+              $new['name'] = $fieldConfigs['label'];
+              $new['required'] = $fieldConfigs['is_required'];
+              $new['value'] = implode(',', wf_crm_explode_multivalue_str($fieldConfigs['default_value']));
+              $new['data_type'] = $fieldConfigs['data_type'];
 
               $custom_types = wf_crm_custom_types_map_array();
-              $new['type'] = $custom_types[$val['html_type']]['type'];
+              $new['type'] = $custom_types[$fieldConfigs['html_type']]['type'];
             }
             wf_crm_admin_form::insertComponent($new, $enabled, $node->webform_civicrm);
           }
