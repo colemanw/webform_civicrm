@@ -1854,7 +1854,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $paymentProcessor->doTransferCheckout($params, 'contribute');
     }
     else {
-      $paymentProcessor->doPayment($param);
+      $paymentProcessor->doPayment($params);
     }    
     
   }
