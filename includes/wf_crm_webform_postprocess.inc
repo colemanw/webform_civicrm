@@ -1846,8 +1846,17 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // @see webform_civicrm_civicrm_alterPaymentProcessorParams
     $params['webform_redirect_cancel'] = $this->getIpnRedirectUrl('cancel');
     $params['webform_redirect_success'] = $this->getIpnRedirectUrl('success');
-
-    $paymentProcessor->doTransferCheckout($params, 'contribute');
+    
+    if (method_exists($paymentProcessor, 'doTransferCheckout')) {
+      // doTransferCheckout is deprecated but some processors might still implement it.
+      // Somewhere around 4.6 it was replaced by doPayment as the method of choice, 
+      // but to be safe still call it if it exists for now.
+      $paymentProcessor->doTransferCheckout($params, 'contribute');
+    }
+    else {
+      $paymentProcessor->doPayment($param);
+    }    
+    
   }
 
   /**
