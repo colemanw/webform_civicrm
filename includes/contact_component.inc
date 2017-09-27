@@ -955,7 +955,7 @@ function wf_crm_tokeninput_path() {
   static $ret;
   if (!$ret) {
     // First see if the library is installed in Drupal
-    $path = libraries_get_path('tokeninput');
+    $path = function_exists('libraries_get_path') ? libraries_get_path('tokeninput') : NULL;
     if ($path && is_file(DRUPAL_ROOT . '/' . $path . '/src/jquery.tokeninput.js')) {
       $ret = $path . '/src/jquery.tokeninput.js';
     }
