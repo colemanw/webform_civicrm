@@ -1111,6 +1111,9 @@ class wf_crm_admin_form {
     );
   }
 
+  /**
+   * Ajax-loaded mini-forms for the contributions tab.
+   */
   private function checkSubmissionLimit() {
     $webform = &$this->node->webform;
     // If anonymous users don't have access to the form, no need for a warning.
