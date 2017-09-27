@@ -1146,7 +1146,7 @@ class wf_crm_admin_form {
           ' &nbsp; <button id="configure-submit-limit" type="button">' . t('Configure') . '</button>' .
           '<div id="submit-limit-wrapper" style="display:none">' .
             t('Limit each user to') .
-            ' <input class="form-text" type="number" maxlength="2" size="2" name="submit_limit"> ' .
+            ' <input class="form-text" type="number" min="1" max="99" size="2" name="submit_limit"> ' .
             t('submission(s)') . ' <select class="form-select" name="submit_interval">' .
               '<option value="-1">' .t('ever') . '</option>' .
               '<option value="3600" selected="selected">' .t('every hour') . '</option>' .
