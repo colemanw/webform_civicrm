@@ -670,7 +670,6 @@ function _webform_civicrm_status() {
 }
 
 /**
-<<<<<<< HEAD
  * Implements hook_token_info().
  */
 function webform_civicrm_token_info() {
