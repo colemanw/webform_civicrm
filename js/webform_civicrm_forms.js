@@ -31,6 +31,9 @@ var wfCivi = (function ($, D) {
           $(':input[name$="civicrm_'+num+'_contact_1_contact_'+i+'_name]"]', '.webform-client-form-'+nid).val(names[i]);
         }
       }
+
+      D.behaviors.webform_civicrmForm.attach();
+
       return;
     }
     resetFields(num, nid, true, 'hide', toHide, hideOrDisable, showEmpty, 500);
