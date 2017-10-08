@@ -2181,8 +2181,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $sum = 0;
           foreach ((array) $val as $k => $v) {
             //Strip any thousand separator for further calculation.
+            $separator = wf_civicrm_api('Setting', 'getvalue', array(
+              'name' => "monetaryThousandSeparator",
+            ));
             if ($field['data_type'] === 'Money') {
-              $v = preg_replace('/(?<=\d),(?=\d{3}\b)/', '', $v);
+              $v = preg_replace("/(?<=\d){$separator}(?=\d{3}\b)/", '', $v);
             }
             // Perform multiplication across grid elements
             if ($component['type'] == 'grid' && is_numeric($k)) {
