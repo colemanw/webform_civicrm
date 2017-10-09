@@ -31,9 +31,6 @@ var wfCivi = (function ($, D) {
           $(':input[name$="civicrm_'+num+'_contact_1_contact_'+i+'_name]"]', '.webform-client-form-'+nid).val(names[i]);
         }
       }
-
-      D.behaviors.webform_civicrmForm.attach();
-
       return;
     }
     resetFields(num, nid, true, 'hide', toHide, hideOrDisable, showEmpty, 500);
@@ -149,6 +146,10 @@ var wfCivi = (function ($, D) {
           var fn = (op === 'hide' && (!showEmpty || !isFormItemBlank($el))) ? 'hide' : 'show';
           $(':input', $el).webformProp('disabled', fn === 'hide');
           $(':input', $el).webformProp('readonly', fn === 'hide');
+          $('select.civicrm-enabled[name*="_address_state_province_id"]').each(function() {
+            $(this).webformProp('disabled', fn === 'hide');
+            $(this).webformProp('readonly', fn === 'hide');
+          });
           if (hideOrDisable === 'hide') {
             $el[fn](speed, function() {$el[fn];});
           }
@@ -357,23 +358,29 @@ var wfCivi = (function ($, D) {
         var key = parseName($el.attr('name'));
         var countrySelect = $el.parents('form').find('.civicrm-enabled[name*="['+(key.replace('state_province', 'country'))+']"]');
         var $county = $el.parents('form').find('.civicrm-enabled[name*="['+(key.replace('state_province', 'county'))+']"]');
-        if (!$el.attr('readonly')) {
-          $el = makeSelect($el);
-          if ($county.length && !$county.attr('readonly')) {
-            $county = makeSelect($county);
-            $el.change(populateCounty);
-          }
 
-          var countryVal = 'default';
-          if (countrySelect.length === 1) {
-            countryVal = $(countrySelect).val();
-          }
-          else if (countrySelect.length > 1) {
-            countryVal = $(countrySelect).filter(':checked').val();
-          }
-          countryVal || (countryVal = '');
+        var readOnly = $el.attr('readonly');
 
-          populateStates($el, countryVal);
+        $el = makeSelect($el);
+        if ($county.length && !$county.attr('readonly')) {
+          $county = makeSelect($county);
+          $el.change(populateCounty);
+        }
+
+        var countryVal = 'default';
+        if (countrySelect.length === 1) {
+          countryVal = $(countrySelect).val();
+        }
+        else if (countrySelect.length > 1) {
+          countryVal = $(countrySelect).filter(':checked').val();
+        }
+        countryVal || (countryVal = '');
+
+        populateStates($el, countryVal);
+
+        if (readOnly) {
+          $el.webformProp('readonly', true);
+          $el.webformProp('disabled', true);
         }
       });
 
