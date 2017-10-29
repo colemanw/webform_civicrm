@@ -2364,7 +2364,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // address field contain many sub fields and should be handled differently
       if ($entity != 'address')  {
         $submittedLocationValues = self::unsetEmptyValueIndexes($submittedLocationValues, $entity);
-        $reorderedArray[$index][$entity] = $eValue[$entity];
+        if (isset($eValue[$entity])) {
+          $reorderedArray[$index][$entity] = $eValue[$entity];
+        }
+        else {
+          $reorderedArray[$index][$entity] = NULL;
+        }
       }
       else {
         foreach (wf_crm_address_fields() as $field)  {

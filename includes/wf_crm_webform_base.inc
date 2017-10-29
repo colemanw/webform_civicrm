@@ -60,7 +60,7 @@ abstract class wf_crm_webform_base {
           if ($this->contribution_page) {
             // tax integration
             $taxRates = CRM_Core_PseudoConstant::getTaxRates();
-            $this->_tax_rate = $taxRates[$this->_contribution_page['financial_type_id']];
+            $this->_tax_rate = isset($taxRates[$this->_contribution_page['financial_type_id']]) ? $taxRates[$this->_contribution_page['financial_type_id']] : NULL;
           }
           return $this->_tax_rate;
         }
