@@ -171,7 +171,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
       $this->saveCurrentEmployer($contact, $cid);
 
-      $this->saveCustomData($contact, $cid, 'Contact', !empty($this->existing_contacts[$c]));
+      $this->saveCustomData($contact, $cid, 'Contact', !empty($this->existing_contacts[$c]), $c);
 
       $this->fillHiddenContactFields($cid, $c);
 

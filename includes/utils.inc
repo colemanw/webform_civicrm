@@ -456,6 +456,11 @@ function wf_crm_enabled_fields($node, $submission = NULL, $show_all = FALSE) {
         $explodedId = explode('_', $id);
         if ($explodedId[1] == 'fieldset' && $explodedId[0] != 'fieldset') {
           $customGroupFieldsetKey = $explodedId[0];
+
+          // Automatically enable 'Create mode' field for Contact's custom group.
+          if ($ent === 'contact') {
+            $enabled[$lobo . '_' . $i . '_' . $ent . '_' . $n . '_' . $customGroupFieldsetKey . '_createmode'] = 1;
+          }
         }
         if ((isset($fields[$id]) || $id == 'fieldset_fieldset' || $id == $customGroupFieldsetKey . '_fieldset') && $lobo == 'civicrm' && is_numeric($i) && is_numeric($n)) {
           if (!$show_all && ($ent == 'contact' || $ent == 'participant') && empty($node->webform_civicrm['data']['contact'][$i])) {

@@ -32,6 +32,10 @@ abstract class wf_crm_webform_base {
   // tax integration
   private $_tax_rate;
 
+  const
+    MULTIVALUE_FIELDSET_MODE_CREATE_OR_EDIT = 0,
+    MULTIVALUE_FIELDSET_MODE_CREATE_ONLY = 1;
+
   /**
    * Magic method to retrieve otherwise inaccessible properties
    * @param $name
@@ -691,10 +695,14 @@ abstract class wf_crm_webform_base {
    * @param $known
    *   Is this a known record (as opposed to a contact matched via dedupe rules)?
    *   We only allow saving blank fields for known contacts.
+   * @param $contact_index
+   *   Contact's index
    */
-  protected function saveCustomData($entity, $entity_id, $entity_type, $known = TRUE) {
+  protected function saveCustomData($entity, $entity_id, $entity_type, $known = TRUE, $contact_index = 1) {
     $existing = FALSE;
     $params = array('entityID' => $entity_id);
+    $createMultiValues = array();
+
     foreach ($entity as $table => $values) {
       if (substr($table, 0, 2) == 'cg' && is_array($values)) {
         if ($existing === FALSE) {
@@ -702,7 +710,8 @@ abstract class wf_crm_webform_base {
         }
         $existing += array($table => array());
         $insert = 0;
-        foreach ($values as $custom) {
+
+        foreach ($values as $valuesIndex => $custom) {
           // Match to id of existing record (id will be 0 for non-multi-value custom sets, which is fine)
           if ($id = each($existing[$table])) {
             $suf = $id['key'];
@@ -711,28 +720,73 @@ abstract class wf_crm_webform_base {
           else {
             $suf = --$insert;
           }
+
+          $multivaluesCreateMode = NULL;
+
+          // Handle 'Create mode' for multivalues custom fields of Contact entity.
+          if ($entity_type === 'Contact') {
+            $createModeKey = 'civicrm_' . $contact_index . '_contact_' . $valuesIndex . '_' . $table . '_createmode';
+            $multivaluesCreateMode = isset($this->data['config']['create_mode'][$createModeKey]) ? (int) $this->data['config']['create_mode'][$createModeKey] : NULL;
+          }
+          $multiValueSuffix = '_' . $suf;
+
+          if ($multivaluesCreateMode === self::MULTIVALUE_FIELDSET_MODE_CREATE_ONLY) {
+            // Using 'Create only' mode we don't need custom value's suffix
+            // so the value can be added as new instead of updated.
+            $multiValueSuffix = '';
+          }
+
+          $customGroupParams = array();
+
           foreach ($custom as $k => $v) {
             // Only save if this is not blank or data already exists and record is known
             if ($v !== '' || ($suf >= 0 && $known)) {
-              $params[$k . '_' . $suf] = $v;
+              $customGroupParams[$k . $multiValueSuffix] = $v;
             }
+          }
+
+          if ($multivaluesCreateMode === self::MULTIVALUE_FIELDSET_MODE_CREATE_ONLY) {
+            $createMultiValues[] = $customGroupParams;
+          }
+          else {
+            $params = array_merge($params, $customGroupParams);
           }
         }
       }
     }
+
     if (count($params) > 1) {
-      $result = CRM_Core_BAO_CustomValueTable::setValues($params);
-      // Prevent wholesale failure by saving each param individually if there was an error while trying to save them all at once
-      if (!empty($result['is_error'])) {
-        $bt = debug_backtrace();
-        array_shift($params);
-        foreach ($params as $k => $v) {
-          $single_param = array('entityID' => $entity_id, $k => $v);
-          $result = CRM_Core_BAO_CustomValueTable::setValues($single_param);
-          if (!empty($result['is_error'])) {
-            $file = explode('/', $bt[0]['file']);
-            watchdog('webform_civicrm', 'The CiviCRM "CustomValueTable::setValues" function returned the error: "%msg" when called by line !line of !file with the following parameters: "!params"', array('%msg' => $result['error_message'], '!line' => $bt[0]['line'], '!file' => array_pop($file), '!params' => print_r($single_param, TRUE)), WATCHDOG_ERROR);
-          }
+      // Update existing values.
+      $this->saveCustomValues($entity_id, $params);
+    }
+
+    if (!empty($createMultiValues)) {
+      // Add new values.
+      foreach ($createMultiValues as $multiValuesSet) {
+        $this->saveCustomValues($entity_id, array_merge($multiValuesSet, array('entityID' => $entity_id)));
+      }
+    }
+  }
+
+  /**
+   * Saves a set of custom values for specific entity Id.
+   *
+   * @param int $entity_id
+   * @param array $params
+   */
+  protected function saveCustomValues($entity_id, array $params) {
+    $result = CRM_Core_BAO_CustomValueTable::setValues($params);
+
+    // Prevent wholesale failure by saving each param individually if there was an error while trying to save them all at once
+    if (!empty($result['is_error'])) {
+      $bt = debug_backtrace();
+      array_shift($params);
+      foreach ($params as $k => $v) {
+        $single_param = array('entityID' => $entity_id, $k => $v);
+        $result = CRM_Core_BAO_CustomValueTable::setValues($single_param);
+        if (!empty($result['is_error'])) {
+          $file = explode('/', $bt[0]['file']);
+          watchdog('webform_civicrm', 'The CiviCRM "CustomValueTable::setValues" function returned the error: "%msg" when called by line !line of !file with the following parameters: "!params"', array('%msg' => $result['error_message'], '!line' => $bt[0]['line'], '!file' => array_pop($file), '!params' => print_r($single_param, TRUE)), WATCHDOG_ERROR);
         }
       }
     }
