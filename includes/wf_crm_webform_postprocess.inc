@@ -75,6 +75,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->crmValues = wf_crm_enabled_fields($this->node, $this->rawValues);
     // Even though this object is destroyed between page submissions, this trick allows us to persist some data - see below
     $this->ent = wf_crm_aval($form_state, 'civicrm:ent', array());
+    $this->line_items = wf_crm_aval($form_state, 'civicrm:line_items', $this->line_items);
 
     $this->hiddenFieldValidation();
     $this->validateThisPage($this->form['submitted']);
@@ -252,7 +253,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * Send receipt
    */
   private function sendReceipt(){
-    // tax integration
+    // Sales Tax integration
     if (!is_null($this->tax_rate)) {
       $template = CRM_Core_Smarty::singleton();
       $template->assign('dataArray', array( "{$this->tax_rate}" => $this->tax_rate/100 ));
@@ -1464,43 +1465,45 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function tallyLineItems() {
     // Contribution
-    $fid = 'civicrm_1_contribution_1_contribution_total_amount';
-    if (isset($this->enabled[$fid]) || $this->getData($fid) > 0) {
-      $this->line_items[] = array(
-        'qty' => 1,
-        'unit_price' => $this->getData($fid),
-        'financial_type_id' => $this->contribution_page['financial_type_id'],
-        'label' => wf_crm_aval($this->node->webform['components'], $this->enabled[$fid] . ':name', t('Contribution')),
-        'element' => 'civicrm_1_contribution_1',
-        'entity_table' => 'civicrm_contribution',
-      );
-    }
-    // Membership
-    foreach (wf_crm_aval($this->data, 'membership', array()) as $c => $memberships) {
-      if (isset($this->existing_contacts[$c]) && !empty($memberships['number_of_membership'])) {
-        foreach ($memberships['membership'] as $n => $item) {
-          if (!empty($item['membership_type_id'])) {
-            $type = $item['membership_type_id'];
-            $price = $this->getMembershipTypeField($type, 'minimum_fee');
+    if (!count($this->line_items)) {
+      $fid = 'civicrm_1_contribution_1_contribution_total_amount';
+      if (isset($this->enabled[$fid]) || $this->getData($fid) > 0) {
+        $this->line_items[] = array(
+          'qty' => 1,
+          'unit_price' => $this->getData($fid),
+          'financial_type_id' => $this->contribution_page['financial_type_id'],
+          'label' => wf_crm_aval($this->node->webform['components'], $this->enabled[$fid] . ':name', t('Contribution')),
+          'element' => 'civicrm_1_contribution_1',
+          'entity_table' => 'civicrm_contribution',
+        );
+      }
+      // Membership
+      foreach (wf_crm_aval($this->data, 'membership', array()) as $c => $memberships) {
+        if (isset($this->existing_contacts[$c]) && !empty($memberships['number_of_membership'])) {
+          foreach ($memberships['membership'] as $n => $item) {
+            if (!empty($item['membership_type_id'])) {
+              $type = $item['membership_type_id'];
+              $price = $this->getMembershipTypeField($type, 'minimum_fee');
 
-            //if number of terms is set, regard membership fee field as price per term
-            //if you choose to set dates manually while membership fee field is enabled, take the membership fee as total cost of this membership
-            if (isset($item['fee_amount'])) {
-              $price = $item['fee_amount'];
-              if (empty($item['num_terms'])) {
-                $item['num_terms'] = 1;
+              //if number of terms is set, regard membership fee field as price per term
+              //if you choose to set dates manually while membership fee field is enabled, take the membership fee as total cost of this membership
+              if (isset($item['fee_amount'])) {
+                $price = $item['fee_amount'];
+                if (empty($item['num_terms'])) {
+                  $item['num_terms'] = 1;
+                }
               }
-            }
 
-            if ($price) {
-              $this->line_items[] = array(
-                'qty' => $item['num_terms'],
-                'unit_price' => $price,
-                'financial_type_id' => $this->getMembershipTypeField($type, 'financial_type_id'),
-                'label' => $this->getMembershipTypeField($type, 'name'),
-                'element' => "civicrm_{$c}_membership_{$n}",
-                'entity_table' => 'civicrm_membership',
-              );
+              if ($price) {
+                $this->line_items[] = array(
+                  'qty' => $item['num_terms'],
+                  'unit_price' => $price,
+                  'financial_type_id' => $this->getMembershipTypeField($type, 'financial_type_id'),
+                  'label' => $this->getMembershipTypeField($type, 'name'),
+                  'element' => "civicrm_{$c}_membership_{$n}",
+                  'entity_table' => 'civicrm_membership',
+                );
+              }
             }
           }
         }
@@ -1508,15 +1511,24 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     // Calculate totals
     $this->totalContribution = 0;
+    $taxRates = CRM_Core_PseudoConstant::getTaxRates();
     foreach ($this->line_items as &$item) {
-      // tax integration
-      if (!is_null($this->tax_rate)) {
-        $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
-        $item['tax_amount'] = ($this->tax_rate / 100) * $item['line_total'];
-        $this->totalContribution += (1 + $this->tax_rate / 100) * $item['unit_price'] * (int) $item['qty'];
+      // Sales Tax integration
+      if (!empty($item['financial_type_id'])) {
+        $itemTaxRate = isset($taxRates[$item['financial_type_id']]) ? $taxRates[$item['financial_type_id']] : NULL;
       }
       else {
-        $this->totalContribution += $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
+        $itemTaxRate = $this->tax_rate;
+      }
+
+      if (!is_null($itemTaxRate)) {
+        $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
+        $item['tax_amount'] = ($itemTaxRate / 100) * $item['line_total'];
+        $this->totalContribution += ($item['unit_price'] * (int) $item['qty']) + $item['tax_amount'];
+      }
+      else {
+        $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
+        $this->totalContribution += $item['line_total'];
       }
     }
     return round($this->totalContribution, 2);
@@ -1902,8 +1914,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     // Sales tax integration
-    if (!is_null($this->tax_rate)) {
-      $params['tax_amount'] = round(($params['total_amount'] / ($this->tax_rate + 100)) * $this->tax_rate, 2);
+    $params['tax_amount'] = 0;
+    if (isset($this->form_state['civicrm']['line_items'])) {
+      foreach ($this->form_state['civicrm']['line_items'] as $lineItem) {
+        if (!empty($lineItem['tax_amount'])) {
+          $params['tax_amount'] += $lineItem['tax_amount'];
+        }
+      }
+      $params['tax_amount'] = round($params['tax_amount'], 2);
     }
     $params['description'] = t('Webform Payment: @title', array('@title' => $this->node->title));
     if (!isset($params['source'])) {
@@ -1991,6 +2009,33 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $contributionResult = CRM_Contribute_BAO_Contribution::getValues(array('id' => $id), CRM_Core_DAO::$_nullArray, CRM_Core_DAO::$_nullArray);
 
     // Save line-items
+    // Get all available price field values that we might be able to match line items with.
+    $price_set_id = CRM_Price_BAO_PriceSet::getFor('civicrm_contribution_page',$this->contribution_page['id']);
+    $price_field_values = array();
+    if ($price_set_id) {
+      $price_fields_result = wf_civicrm_api('PriceField', 'get',
+        array(
+          'return' => array('id'),
+          'price_set_id' => $price_set_id,
+          'is_active' => 1,
+        )
+      );
+      if ($price_fields_result['count'] != 0) {
+        foreach($price_fields_result['values'] as $price_field) {
+          $price_field_values_result = wf_civicrm_api('PriceFieldValue', 'get',
+            array(
+              'price_field_id' => $price_field['id'],
+              'is_active' => 1,
+            )
+          );
+          if ($price_field_values_result['count'] != 0) {
+            foreach($price_field_values_result['values'] as $price_field_value) {
+              $price_field_values[] = $price_field_value;
+            }
+          }
+        }
+      }
+    }
     foreach ($this->line_items as &$item) {
       if (empty($item['line_total'])) {
         continue;
@@ -2022,15 +2067,44 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
       }
 
+      isset($item['unit_price']) ? $item['unit_price'] = round($item['unit_price'], 2) : NULL;
+      isset($item['line_total']) ? $item['line_total'] = round($item['line_total'], 2) : NULL;
+      isset($item['tax_amount']) ? $item['tax_amount'] = round($item['tax_amount'], 2) : NULL;
+
+      if (count($price_field_values)) {
+        $not_membership = empty($item['membership_id']);
+        // Try to find a match so we can assign a price field id from the
+        // corresponding contribution page.
+        foreach($price_field_values as $price_field_value) {
+          $is_membership_match = ($not_membership == empty($price_field_value['membership_type_id']));
+          if (($price_field_value['amount'] == $item['line_total'])
+            && $is_membership_match) {
+            empty($item['price_field_id']) ? $item['price_field_id'] = $price_field_value['price_field_id']: NULL;
+            empty($item['financial_type_id']) ? $item['financial_type_id'] = $price_field_value['financial_type_id'] : NULL;
+            break;
+          }
+        }
+        if (empty($item['price_field_id']) && $not_membership) {
+          // get super-hackish and look for an other amount type field
+          foreach($price_field_values as $price_field_value) {
+            if (($price_field_value['amount'] == '1.00')
+              && ($price_field_value['count'] == '0')
+              && empty($price_field_value['membership_type_id'])) {
+              empty($item['price_field_id']) ? $item['price_field_id'] = $price_field_value['price_field_id']: NULL;
+              empty($item['financial_type_id']) ? $item['financial_type_id'] = $price_field_value['financial_type_id'] : NULL;
+              break;
+            }
+          }
+        }
+      }
+
       $line_result = wf_civicrm_api('line_item', 'create', $item);
       $item['id'] = $line_result['id'];
 
       $lineItemRecord = json_decode(json_encode($item), FALSE);
       // Add financial_item and entity_financial_trxn
-      $result = CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult);
-      if (!is_null($this->tax_rate)) {
-        $result = CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult, TRUE);
-      }
+      $taxTrxnID = !empty($lineItemRecord->tax_amount);
+      $result = CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult, $taxTrxnID);
       // Create participant/membership payment records
       if (isset($item['membership_id']) || isset($item['participant_id'])) {
         $type = isset($item['participant_id']) ? 'participant' : 'membership';
