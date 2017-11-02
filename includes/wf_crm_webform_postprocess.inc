@@ -252,7 +252,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * Send receipt
    */
   private function sendReceipt(){
-    // tax integration
+    // Sales Tax integration
     if (!is_null($this->tax_rate)) {
       $template = CRM_Core_Smarty::singleton();
       $template->assign('dataArray', array( "{$this->tax_rate}" => $this->tax_rate/100 ));
@@ -1521,15 +1521,24 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     // Calculate totals
     $this->totalContribution = 0;
+    $taxRates = CRM_Core_PseudoConstant::getTaxRates();
     foreach ($this->line_items as &$item) {
-      // tax integration
-      if (!is_null($this->tax_rate)) {
-        $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
-        $item['tax_amount'] = ($this->tax_rate / 100) * $item['line_total'];
-        $this->totalContribution += (1 + $this->tax_rate / 100) * $item['unit_price'] * (int) $item['qty'];
+      // Sales Tax integration
+      if (!empty($item['financial_type_id'])) {
+        $itemTaxRate = isset($taxRates[$item['financial_type_id']]) ? $taxRates[$item['financial_type_id']] : NULL;
       }
       else {
-        $this->totalContribution += $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
+        $itemTaxRate = $this->tax_rate;
+      }
+
+      if (!is_null($itemTaxRate)) {
+        $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
+        $item['tax_amount'] = ($itemTaxRate / 100) * $item['line_total'];
+        $this->totalContribution += ($item['unit_price'] * (int) $item['qty']) + $item['tax_amount'];
+      }
+      else {
+        $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
+        $this->totalContribution += $item['line_total'];
       }
     }
     return round($this->totalContribution, 2);
@@ -1915,8 +1924,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     // Sales tax integration
-    if (!is_null($this->tax_rate)) {
-      $params['tax_amount'] = round(($params['total_amount'] / ($this->tax_rate + 100)) * $this->tax_rate, 2);
+    $params['tax_amount'] = 0;
+    if (isset($this->form_state['civicrm']['line_items'])) {
+      foreach ($this->form_state['civicrm']['line_items'] as $lineItem) {
+        if (!empty($lineItem['tax_amount'])) {
+          $params['tax_amount'] += $lineItem['tax_amount'];
+        }
+      }
+      $params['tax_amount'] = round($params['tax_amount'], 2);
     }
     $params['description'] = t('Webform Payment: @title', array('@title' => $this->node->title));
     if (!isset($params['source'])) {
@@ -2046,15 +2061,19 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
       }
 
+      // Format (and round) monetary values before saving the line items
+      isset($item['unit_price']) ? $item['unit_price'] = CRM_Utils_Money::format($item['unit_price'], NULL, NULL, TRUE) : NULL;
+      isset($item['line_total']) ? $item['line_total'] = CRM_Utils_Money::format($item['line_total'], NULL, NULL, TRUE) : NULL;
+      isset($item['tax_amount']) ? $item['tax_amount'] = CRM_Utils_Money::format($item['tax_amount'], NULL, NULL, TRUE) : NULL;
+
+      // Save the lineitem
       $line_result = wf_civicrm_api('line_item', 'create', $item);
       $item['id'] = $line_result['id'];
 
       $lineItemRecord = json_decode(json_encode($item), FALSE);
       // Add financial_item and entity_financial_trxn
-      $result = CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult);
-      if (!is_null($this->tax_rate)) {
-        $result = CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult, TRUE);
-      }
+      $taxTrxnID = !empty($lineItemRecord->tax_amount);
+      CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult, $taxTrxnID);
       // Create participant/membership payment records
       if (isset($item['membership_id']) || isset($item['participant_id'])) {
         $type = isset($item['participant_id']) ? 'participant' : 'membership';
