@@ -830,33 +830,29 @@ abstract class wf_crm_webform_base {
   /**
    * Retrieve info needed for pre-filling a webform file field
    * @param string $fieldName
-   * @param string|int $val: url or civi file id
-   * @param string|null $entity: entity name
-   * @param int|null $n: entity id
+   * @param string|int $fileId: url or civi file id
+   * @param string|null $entityId: entity Id
    * @return array|null
    */
-  function getFileInfo($fieldName, $val, $entity, $n) {
-    if (!$val) {
+  function getFileInfo($fieldName, $fileId, $entityId) {
+    if (!$fileId) {
       return NULL;
     }
     if ($fieldName === 'image_URL') {
       return array(
         'data_type' => 'File',
         'name' => NULL,
-        'icon' => $val,
+        'icon' => $fileId,
       );
     }
-    $file = wf_crm_apivalues('file', 'get', $val);
-    $entity_id = '';
-    if ($entity && $n && (strpos($fieldName, 'custom_') === 0 || strpos($fieldName, 'file_') === 0)) {
-      $entity_id = $this->ent[$entity][$n]['id'];
-    }
-    if (!empty($file[$val])) {
+    $file = wf_crm_apivalues('file', 'get', $fileId);
+
+    if (!empty($file[$fileId])) {
       return array(
         'data_type' => 'File',
-        'name' => CRM_Utils_File::cleanFileName($file[$val]['uri']),
-        'file_url'=> CRM_Utils_System::url('civicrm/file', "reset=1&id={$val}&eid={$entity_id}", TRUE),
-        'icon' => file_icon_url((object) array('filemime' => $file[$val]['mime_type'])),
+        'name' => CRM_Utils_File::cleanFileName($file[$fileId]['uri']),
+        'file_url'=> CRM_Utils_System::url('civicrm/file', "reset=1&id={$fileId}&eid={$entityId}", TRUE),
+        'icon' => file_icon_url((object) array('filemime' => $file[$fileId]['mime_type'])),
       );
     }
     return NULL;
