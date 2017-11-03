@@ -82,6 +82,21 @@ th div.form-type-radio {
   right: 15em;
 }
 
+#wf-crm-configure-form .multivalue-fieldset-create-mode > div {
+  float: none;
+  width: auto;
+  padding: .5em;
+  position: absolute;
+  right: 0;
+  top: 0;
+  border-left: 1px solid #CCC;
+  border-bottom: 1px solid #CCC;
+}
+
+.multivalue-fieldset-create-mode + .web-civi-js-select {
+  right: 15em;
+}
+
 .js fieldset:hover > div > .web-civi-js-select,
 .js fieldset:hover > .web-civi-js-select {
   display:block;

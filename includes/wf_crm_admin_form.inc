@@ -350,6 +350,7 @@ class wf_crm_admin_form {
               wf_crm_webform_base::MULTIVALUE_FIELDSET_MODE_CREATE_ONLY => t('Create Only')
             ),
             '#title' => t('Create mode'),
+            '#weight' => -1,
           );
           $this->help($multivalueFieldsetCreateMode, 'multivalue_fieldset_create_mode', t('Multivalue fieldset create mode'));
           $fieldset[$createModeKey] = $multivalueFieldsetCreateMode;
