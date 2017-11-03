@@ -324,8 +324,18 @@ class wf_crm_admin_form {
           }
         }
 
-        // Add 'Create mode' select field to custom group fieldset.
+        $isMultipleCustomGroup = FALSE;
+
         if (substr($sid, 0, 2) == 'cg') {
+          $customGroupId = (int) substr($sid, 2);
+          $customGroup = $this->getCustomGroup($customGroupId);
+          if (!empty($customGroup['is_multiple']) && (int) $customGroup['is_multiple']) {
+            $isMultipleCustomGroup = TRUE;
+          }
+        }
+
+        // Add 'Create mode' select field to multiple custom group fieldset.
+        if ($isMultipleCustomGroup) {
           $createModeKey = 'civicrm_' . $n . '_contact_' . $i . '_' . $sid . '_createmode';
 
           $createModeValue = isset($this->settings['data']['config']['create_mode'][$createModeKey]) ? $this->settings['data']['config']['create_mode'][$createModeKey] : NULL;
@@ -374,6 +384,17 @@ class wf_crm_admin_form {
         $this->help($rule_field, 'matching_rule');
       }
     }
+  }
+
+  /**
+   * Returns an array containing Custom Group properties.
+   *
+   * @param int $id
+   *
+   * @return array
+   */
+  private function getCustomGroup($id) {
+    return civicrm_api3('CustomGroup', 'getsingle', array('id' => $id));
   }
 
   /**
