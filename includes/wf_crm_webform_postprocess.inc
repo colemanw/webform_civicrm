@@ -2131,7 +2131,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           continue;
         }
         // Ignore values from fields hidden by existing contact component
-        if ($this->isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name)) {
+        if ($this->isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name, TRUE)) {
           // Also remove the value from the webform submission
           $this->submissionValue($fid, array(NULL));
           continue;
@@ -2225,9 +2225,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @param $table
    * @param $n
    * @param $name
+   * @param $checkSubmitDisabledSetting
+   *   Checks if 'Submit Disabled' setting should be considered
    * @return bool
    */
-  private function isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name) {
+  private function isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name, $checkSubmitDisabledSetting = FALSE) {
     if ($ent == 'contact' && isset($this->enabled["civicrm_{$c}_contact_1_contact_existing"])) {
       $component = $this->getComponent("civicrm_{$c}_contact_1_contact_existing");
       $existing_contact_val = $this->submissionValue($component['cid']);
@@ -2235,6 +2237,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (!$existing_contact_val[0] || is_numeric($existing_contact_val[0])) {
         $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
         if (in_array($type, $component['extra']['hide_fields'])) {
+          // Check if 'Submit Disabled' setting is switched on and do it for contact_2 only as the data for contact 2 doesn't get to the webform submissions
+          if ($c == 2 && $checkSubmitDisabledSetting && $component['extra']['submit_disabled']) {
+            return FALSE;
+          }
           // With the no_hide_blank setting we must load the contact to determine if the field was hidden
           if (wf_crm_aval($component['extra'], 'no_hide_blank')) {
             $value = wf_crm_aval($this->loadContact($c), "$table:$n:$name");
