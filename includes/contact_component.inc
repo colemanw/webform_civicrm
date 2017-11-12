@@ -181,7 +181,7 @@ function _webform_edit_civicrm_contact($component) {
   $form['field_handling']['submit_disabled'] = array(
     '#type' => 'checkbox',
     '#title' => t("Submit disabled field value(s)"),
-    '#description' => t('Store disabled field values in webform submissions.'),
+    '#description' => t('Store disabled field value(s) in webform submissions.'),
     '#default_value' => $component['extra']['submit_disabled'],
     '#parents' => array('extra', 'submit_disabled'),
   );

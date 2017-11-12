@@ -2130,7 +2130,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         if ($name === 'existing' || $name === 'fieldset') {
           continue;
         }
-        // Ignore values from fields hidden by existing contact component
+        // Check to see if configured to ignore hidden field value(s)
         if ($this->isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name, TRUE)) {
           // Also remove the value from the webform submission
           $this->submissionValue($fid, array(NULL));
@@ -2237,7 +2237,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (!$existing_contact_val[0] || is_numeric($existing_contact_val[0])) {
         $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
         if (in_array($type, $component['extra']['hide_fields'])) {
-          // Check if 'Submit Disabled' setting is switched on and do it for contact_2 only as the data for contact 2 doesn't get to the webform submissions
+          // Check to see if configured to Submit disabled field value(s)
           if ($checkSubmitDisabledSetting && $component['extra']['submit_disabled']) {
             return FALSE;
           }
