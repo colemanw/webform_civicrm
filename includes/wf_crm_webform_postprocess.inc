@@ -2238,7 +2238,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
         if (in_array($type, $component['extra']['hide_fields'])) {
           // Check if 'Submit Disabled' setting is switched on and do it for contact_2 only as the data for contact 2 doesn't get to the webform submissions
-          if ($c == 2 && $checkSubmitDisabledSetting && $component['extra']['submit_disabled']) {
+          if ($checkSubmitDisabledSetting && $component['extra']['submit_disabled']) {
             return FALSE;
           }
           // With the no_hide_blank setting we must load the contact to determine if the field was hidden
