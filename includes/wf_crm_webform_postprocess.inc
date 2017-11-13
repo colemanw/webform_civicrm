@@ -2197,7 +2197,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
               $sum += $v;
             }
           }
-          // Do not constrain to only allow positive amounts [note this will only work if the admin specifically removes the 0 minimum value for the contribution_amount field; which is essentially a setting]
+          // Do not constrain to only allow positive amounts [note fields like contribution_amount come with a minimum 0 value - so admin must be specific/ok this]
           $val = $sum;
         }
         else {
