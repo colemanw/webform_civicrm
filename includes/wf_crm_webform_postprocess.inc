@@ -1846,17 +1846,17 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // @see webform_civicrm_civicrm_alterPaymentProcessorParams
     $params['webform_redirect_cancel'] = $this->getIpnRedirectUrl('cancel');
     $params['webform_redirect_success'] = $this->getIpnRedirectUrl('success');
-    
+
     if (method_exists($paymentProcessor, 'doTransferCheckout')) {
       // doTransferCheckout is deprecated but some processors might still implement it.
-      // Somewhere around 4.6 it was replaced by doPayment as the method of choice, 
+      // Somewhere around 4.6 it was replaced by doPayment as the method of choice,
       // but to be safe still call it if it exists for now.
       $paymentProcessor->doTransferCheckout($params, 'contribute');
     }
     else {
       $paymentProcessor->doPayment($params);
-    }    
-    
+    }
+
   }
 
   /**
@@ -1970,7 +1970,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     if (!empty($contribution['soft'])) {
       // Get total amount from total amount after line item calculation
       $amount = $this->totalContribution;
-      
+
       // Get Default softcredit type
       $default_soft_credit_type = wf_civicrm_api('OptionValue', 'getsingle', array(
         'return' => "value",
@@ -2197,8 +2197,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
               $sum += $v;
             }
           }
-          // We don't allow negative payments
-          $val = $sum < 0 ? 0 : $sum;
+          // Do not constrain to only allow positive amounts [note this will only work if the admin specifically removes the 0 minimum value for the contribution_amount field; which is essentially a setting]
+          $val = $sum;
         }
         else {
           $val = isset($val[0]) ? $val[0] : '';
