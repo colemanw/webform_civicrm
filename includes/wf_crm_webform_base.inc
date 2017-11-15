@@ -763,7 +763,7 @@ abstract class wf_crm_webform_base {
     if (!empty($createMultiValues)) {
       // Add new values.
       foreach ($createMultiValues as $multiValuesSet) {
-        $this->saveCustomValues($entity_id, array_merge($multiValuesSet, array('entityID' => $entity_id)));
+        $this->saveCustomValues($entity_id, array_merge($multiValuesSet, array('entityID' => $entity_id)), TRUE);
       }
     }
   }
@@ -773,8 +773,15 @@ abstract class wf_crm_webform_base {
    *
    * @param int $entity_id
    * @param array $params
+   * @param bool $skipEmpty
    */
-  protected function saveCustomValues($entity_id, array $params) {
+  protected function saveCustomValues($entity_id, array $params, $skipEmpty = FALSE) {
+    if ($skipEmpty) {
+      // Remove empty values from $params array. Useful to not save empty values
+      // with 'Create only' mode.
+      $params = array_filter($params);
+    }
+
     $result = CRM_Core_BAO_CustomValueTable::setValues($params);
 
     // Prevent wholesale failure by saving each param individually if there was an error while trying to save them all at once
