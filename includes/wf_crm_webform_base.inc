@@ -779,7 +779,12 @@ abstract class wf_crm_webform_base {
     if ($skipEmpty) {
       // Remove empty values from $params array. Useful to not save empty values
       // with 'Create only' mode.
-      $params = array_filter($params);
+      foreach ($params as $key => $value) {
+        $checkValue = str_replace(CRM_Core_DAO::VALUE_SEPARATOR, '', $value);
+        if (empty($checkValue)) {
+          unset($params[$key]);
+        }
+      }
     }
 
     $result = CRM_Core_BAO_CustomValueTable::setValues($params);
