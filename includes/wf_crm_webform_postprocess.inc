@@ -386,9 +386,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $firstName = CRM_Utils_Array::value('first_name', $participants);
       $lastName = CRM_Utils_Array::value('last_name', $participants);
 
-      $pName = "{$firstName} {$lastName}";
-      if (empty(trim($pName))) {
-        $pName = CRM_Utils_Array::value('webform_label', $participants);
+      $participantName = "{$firstName} {$lastName}";
+      if (empty(trim($participantName))) {
+        $participantName = CRM_Utils_Array::value('webform_label', $participants);
+        if (!empty($this->existing_contacts[$c])) {
+          $participantName = CRM_Contact_BAO_Contact::displayName($this->existing_contacts[$c]);
+        }
       }
       foreach (wf_crm_aval($par, 'participant', array()) as $n => $p) {
         foreach (array_filter(wf_crm_aval($p, 'event_id', array())) as $id_and_type) {
@@ -405,7 +408,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                 'contact_ids' => $contacts,
                 'unit_price' => $p['fee_amount'],
                 'element' => "civicrm_{$c}_participant_{$n}_participant_{$id_and_type}",
-                'contact_label' => $pName,
+                'contact_label' => $participantName,
               );
             }
           }
