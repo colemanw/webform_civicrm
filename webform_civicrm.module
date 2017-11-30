@@ -98,34 +98,37 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
 }
 
 /**
- * Implements hook_webform_autocomplete_options() invoked in webform_autocomplete
- * module. This appends options to civicrm custom fields rendered as autocomplete.
+ * Implements hook_webform_autocomplete_options()
+ *
+ * Invoked in webform_autocomplete module.
+ * This appends options to civicrm custom fields rendered as autocomplete.
  *
  * @param array $results
  * @param object $node
- * @param int $cid
+ * @param int $cid component id
  * @param string $str
  */
 function webform_civicrm_webform_autocomplete_options_alter(&$results, $node, $cid, $str) {
-  civicrm_initialize();
-  $options = array();
-  list($dontCare, $customFldId) = explode('custom_', $node->webform['components'][$cid]['form_key'], 2);
-  if (!empty($customFldId) && is_numeric($customFldId)) {
-    $optionGroupId = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_CustomField', $customFldId, 'option_group_id');
-    if (!empty($optionGroupId)) {
-      $optionValues = civicrm_api3('OptionValue', 'get', array(
-        'sequential' => 1,
+  module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_ajax');
+  if (wf_crm_webform_ajax::autocompleteAccess($node, $cid)) {
+    $key = wf_crm_explode_key($node->webform['components'][$cid]['form_key']);
+  }
+  if (isset($key) && substr($key[5], 0, 7) == 'custom_') {
+    civicrm_initialize();
+    $customField = wf_civicrm_api('CustomField', 'getsingle', array(
+      'id' => substr($key[5], 7),
+      'return' => 'option_group_id',
+    ));
+    if (!empty($customField['option_group_id'])) {
+      $options = wf_crm_apivalues('OptionValue', 'get', array(
         'label' => array('LIKE' => "%{$str}%"),
-        'option_group_id' => $optionGroupId,
-      ));
-
-      if (!empty($optionValues['values'])) {
-        $options = CRM_Utils_Array::collect('label', $optionValues['values']);
-        $options = array_combine($options, $options);
-      }
+        'return' => 'label',
+        'option_group_id' => $customField['option_group_id'],
+        'limit' => $node->webform['components'][$cid]['extra']['autocomplete_result_count'],
+      ), 'label');
+      $results = array_combine($options, $options);
     }
   }
-  $results = array_merge($results, $options);
 }
 
 /**
