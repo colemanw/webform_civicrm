@@ -98,6 +98,37 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
 }
 
 /**
+ * Implements hook_webform_autocomplete_options() invoked in webform_autocomplete
+ * module. This appends options to civicrm custom fields rendered as autocomplete.
+ *
+ * @param array $results
+ * @param object $node
+ * @param int $cid
+ * @param string $str
+ */
+function webform_civicrm_webform_autocomplete_options_alter(&$results, $node, $cid, $str) {
+  civicrm_initialize();
+  $options = array();
+  list($dontCare, $customFldId) = explode('custom_', $node->webform['components'][$cid]['form_key'], 2);
+  if (!empty($customFldId) && is_numeric($customFldId)) {
+    $optionGroupId = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_CustomField', $customFldId, 'option_group_id');
+    if (!empty($optionGroupId)) {
+      $optionValues = civicrm_api3('OptionValue', 'get', array(
+        'sequential' => 1,
+        'label' => array('LIKE' => "%{$str}%"),
+        'option_group_id' => $optionGroupId,
+      ));
+
+      if (!empty($optionValues['values'])) {
+        $options = CRM_Utils_Array::collect('label', $optionValues['values']);
+        $options = array_combine($options, $options);
+      }
+    }
+  }
+  $results = array_merge($results, $options);
+}
+
+/**
  * Implements hook_node_load().
  *
  * @param array $nodes
