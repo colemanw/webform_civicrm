@@ -34,6 +34,7 @@ function _webform_defaults_civicrm_contact() {
       'hide_fields' => array(),
       'hide_method' => 'hide',
       'no_hide_blank' => FALSE,
+      'submit_disabled' => FALSE,
       'attributes' => array(),
       'private' => FALSE,
       'default' => '',
