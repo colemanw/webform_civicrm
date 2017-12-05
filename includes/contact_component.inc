@@ -34,6 +34,7 @@ function _webform_defaults_civicrm_contact() {
       'hide_fields' => array(),
       'hide_method' => 'hide',
       'no_hide_blank' => FALSE,
+      'submit_disabled' => FALSE,
       'attributes' => array(),
       'private' => FALSE,
       'default' => '',
@@ -177,6 +178,13 @@ function _webform_edit_civicrm_contact($component) {
     '#title' => t("Don't lock fields that are empty"),
     '#default_value' => $component['extra']['no_hide_blank'],
     '#parents' => array('extra', 'no_hide_blank'),
+  );
+  $form['field_handling']['submit_disabled'] = array(
+    '#type' => 'checkbox',
+    '#title' => t("Submit disabled field value(s)"),
+    '#description' => t('Store disabled field value(s) in webform submissions.'),
+    '#default_value' => $component['extra']['submit_disabled'],
+    '#parents' => array('extra', 'submit_disabled'),
   );
   $form['validation']['unique'] = array(
     '#type' => 'checkbox',
