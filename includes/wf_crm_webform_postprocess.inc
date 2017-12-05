@@ -2203,6 +2203,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         else {
           $val = isset($val[0]) ? $val[0] : '';
         }
+        if ($component['type'] == 'autocomplete' && is_string($val) && strlen($val)) {
+          $options = wf_crm_field_options($component, '', $this->data);
+          $val = array_search($val, $options);
+        }
         // Fudge together date and time fields
         if ($field['type'] === 'time' && substr($name, -8) === 'timepart') {
           $name = str_replace('_timepart', '', $name);

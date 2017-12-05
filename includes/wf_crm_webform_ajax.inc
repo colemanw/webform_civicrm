@@ -54,7 +54,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
     list($nid, $fid) = explode('-', $key, 2);
     $this->node = node_load($nid);
     $this->settings = $this->node->webform_civicrm;
-    if (!$this->autocompleteAccess($fid)) {
+    if (!self::autocompleteAccess($this->node, $fid)) {
       drupal_access_denied();
     }
     $this->data = $this->node->webform_civicrm['data'];
@@ -163,28 +163,28 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
   /**
    * Access callback. Check if user has permission to view autocomplete results.
    *
+   * @param stdClass $node
    * @param int $fid
    *   Webform component id
-   *
    * @return bool
    */
-  private function autocompleteAccess($fid) {
+  public static function autocompleteAccess($node, $fid) {
     global $user;
-    if (!$fid || empty($this->node->webform_civicrm)) {
+    if (!$fid || empty($node->webform_civicrm)) {
       return FALSE;
     }
-    if (empty($this->node->webform['components'][$fid]) || !node_access('view', $this->node)) {
+    if (empty($node->webform['components'][$fid]) || !node_access('view', $node)) {
       return FALSE;
     }
-    if ($user->uid === 1 || webform_results_access($this->node)) {
+    if ($user->uid === 1 || webform_results_access($node)) {
       return TRUE;
     }
-    if (!empty($this->node->webform['components'][$fid]['private'])) {
+    if (!empty($node->webform['components'][$fid]['private'])) {
       return FALSE;
     }
     if (variable_get('webform_submission_access_control', 1)) {
       $allowed_roles = array();
-      foreach ($this->node->webform['roles'] as $rid) {
+      foreach ($node->webform['roles'] as $rid) {
         $allowed_roles[$rid] = isset($user->roles[$rid]) ? TRUE : FALSE;
       }
       if (array_search(TRUE, $allowed_roles) === FALSE) {

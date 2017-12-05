@@ -1746,7 +1746,7 @@ function wf_crm_custom_types_map_array() {
     'Multi-Select Country' => array('type' => 'select', 'extra' => array('multiple' => 1)),
     'Select State/Province' => array('type' => 'select'),
     'Multi-Select State/Province' => array('type' => 'select', 'extra' => array('multiple' => 1)),
-    'Autocomplete-Select' => array('type' => 'select'),
+    'Autocomplete-Select' => array('type' => module_exists('webform_autocomplete') ? 'autocomplete' : 'select'),
     'File' => array('type' => 'file'),
   );
 

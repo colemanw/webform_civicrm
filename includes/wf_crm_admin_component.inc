@@ -108,6 +108,11 @@ class wf_crm_admin_component {
       $this->moneyOptions();
     }
 
+    // Fields from webform_autocomplete module
+    elseif ($this->component['type'] === 'autocomplete') {
+      $this->form['options']['#access'] = FALSE;
+    }
+
     // Simplify form for hidden fields
     elseif (($name === 'contact_id' || $name === 'external_identifier') && $this->component['type'] === 'hidden') {
       $this->form['value']['#value'] = '';

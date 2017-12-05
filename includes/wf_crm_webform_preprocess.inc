@@ -489,6 +489,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
                 $val = array_pop($val);
               }
             }
+            if ($component['type'] == 'autocomplete' && is_string($val) && strlen($val)) {
+              $options = wf_crm_field_options($component, '', $this->data);
+              $val = wf_crm_aval($options, $val);
+            }
             // Contact image & custom file fields
             if ($dt == 'File') {
               $fileInfo = $this->getFileInfo($name, $val, $ent, $n);
