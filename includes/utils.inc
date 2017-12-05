@@ -453,11 +453,14 @@ function wf_crm_enabled_fields($node, $submission = NULL, $show_all = FALSE) {
       $customGroupFieldsetKey = "";
       if (count($exp) == 5) {
         list($lobo, $i, $ent, $n, $id) = $exp;
+        if ($lobo != 'civicrm') {
+          continue;
+        }
         $explodedId = explode('_', $id);
-        if ($explodedId[1] == 'fieldset' && $explodedId[0] != 'fieldset') {
+        if (wf_crm_aval($explodedId, 1) == 'fieldset' && $explodedId[0] != 'fieldset') {
           $customGroupFieldsetKey = $explodedId[0];
         }
-        if ((isset($fields[$id]) || $id == 'fieldset_fieldset' || $id == $customGroupFieldsetKey . '_fieldset') && $lobo == 'civicrm' && is_numeric($i) && is_numeric($n)) {
+        if ((isset($fields[$id]) || $id == 'fieldset_fieldset' || $id == $customGroupFieldsetKey . '_fieldset') && is_numeric($i) && is_numeric($n)) {
           if (!$show_all && ($ent == 'contact' || $ent == 'participant') && empty($node->webform_civicrm['data']['contact'][$i])) {
             continue;
           }
