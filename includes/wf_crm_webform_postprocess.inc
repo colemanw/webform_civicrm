@@ -264,6 +264,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     $params = array_merge($this->contribution_page, array('id' => $this->ent['contribution'][1]['id']));
     $params['payment_processor_id'] = $this->data['contribution'][1]['contribution'][1]['payment_processor_id'];
+    unset($params['payment_processor']);
     wf_civicrm_api('contribution', 'sendconfirmation', $params);
   }
 
@@ -1983,6 +1984,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['contact_id'] = $this->ent['contact'][1]['id'];
     $params['total_amount'] = round($this->totalContribution, 2);
 
+    // Most payment processors expect this (normally be set by contribution page processConfirm)
+    $params['contactID'] = $params['contact_id'];
+
     // Some processors use this for matching and updating the contribution status
     if (!$this->contributionIsPayLater) {
       $params['invoice_id'] = $this->data['contribution'][1]['contribution'][1]['invoiceID'] = md5(uniqid(rand(), TRUE));
@@ -2003,10 +2007,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $params['source'] = $this->settings['new_contact_source'];
     }
 
-    // Calculate non-deductible amount for income tax purposes
     $financialTypeId = $params['financial_type_id'];
-    $resultDeduct = wf_civicrm_api('FinancialType', 'get', array('return' => "is_deductible",'id' => $financialTypeId));
-    if ($resultDeduct['values'][$financialTypeId]['is_deductible'] == 1) {
+    $financialTypeDetails = wf_civicrm_api('FinancialType', 'get', array('return' => "is_deductible,name",'id' => $financialTypeId));
+    // Some payment processors expect this to be set (eg. smartdebit)
+    $params['financialType_name'] = $financialTypeDetails['values'][$financialTypeId]['name'];
+    $params['financialTypeID'] = $financialTypeId;
+    // Calculate non-deductible amount for income tax purposes
+    if ($financialTypeDetails['values'][$financialTypeId]['is_deductible'] == 1) {
       // deductible
       $params['non_deductible_amount'] = 0;
     } else {
