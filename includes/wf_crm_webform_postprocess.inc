@@ -1595,42 +1595,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function validateBillingFields() {
     $valid = TRUE;
     $params = $card_errors = array();
-    // These are hard-coded in CiviCRM so we may as well hard-code them here
-    // Value = translated label to be shown during validation or FALSE if not required
-    $billing_fields = array(
-      'credit_card_number' => ts('Card Number'),
-      'cvv2' => ts('Security Code'),
-      'credit_card_type' => ts('Card Type'),
-      'billing_first_name' => ts('Billing First Name'),
-      'billing_middle_name' => FALSE,
-      'billing_last_name' => ts('Billing Last Name'),
-      'billing_street_address-5' => ts('Street Address'),
-      'billing_city-5' => ts('City'),
-      'billing_country_id-5' => ts('Country'),
-      'billing_state_province_id-5' => FALSE,
-      'billing_postal_code-5' => ts('Postal Code'),
+
+    $processor = Civi\Payment\System::singleton()->getById(wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id'));
+    $fields = CRM_Utils_Array::crmArrayMerge($processor->getPaymentFormFieldsMetadata(),
+                                              $processor->getBillingAddressFieldsMetadata()
     );
-    if (!empty($_POST['stripe_token'])) {
-      // Using Stripe payment processor - cc fields not posted
-      $billing_fields['credit_card_number'] = FALSE;
-      $billing_fields['cvv2'] = FALSE;
-    }
-    if (!empty($_POST['stripe_source'])) {
-      // Using Stripe payment processor - cc fields not posted using sources
-      $billing_fields['credit_card_number'] = FALSE;
-      $billing_fields['cvv2'] = FALSE;
-    }
-    if (!empty($_POST['bank_account_type'])) {
-      // unset/bypass the CC validation if we're doing Direct Debit (ACHEFT) - in that case we have a Bank Account Type
-      $billing_fields['credit_card_number'] = FALSE;
-      $billing_fields['cvv2'] = FALSE;
-      $billing_fields['credit_card_type'] = FALSE;
-      $_POST['credit_card_exp_date']['M'] = '12';
-      $_POST['credit_card_exp_date']['Y'] = '2099';
-    }
-    foreach ($billing_fields as $field => $label) {
-      if (empty($_POST[$field]) && $label !== FALSE) {
-        form_set_error($field, t('!name field is required.', array('!name' => check_plain($label))));
+
+    foreach ($_POST as $field => $value) {
+      if (empty($_POST[$field]) && $fields[$field]['is_required'] !== FALSE) {
+        form_set_error($field, t('!name field is required.', array('!name' => check_plain($fields[$field]['title']))));
         $valid = FALSE;
       }
       if (!empty($_POST[$field])) {
@@ -1638,34 +1611,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $submitted[$name] = $params[$name] = $params[$field] = $_POST[$field];
       }
     }
-    // Validate country
-    if (!empty($params['country_id'])) {
-      if (!array_key_exists($params['country_id'], wf_crm_apivalues('address', 'getoptions', array('field' => 'country_id')))) {
-        form_set_error('billing_country_id-5', t('Illegal value entered for Country'));
-        $valid = $params['country_id'] = FALSE;
-      }
-    }
-    // Validate state/province
-    if (!empty($params['country_id'])) {
-      $states = wf_crm_apivalues('address', 'getoptions', array('field' => 'state_province_id', 'country_id' => $params['country_id']));
-      if ($states && array_key_exists('state_province_id', $params) && (empty($params['state_province_id']) || !isset($states[$params['state_province_id']]))) {
-        form_set_error('billing_state_province_id-5', t('!name field is required.', array('!name' => check_plain(ts('State/Province')))));
-        $valid = FALSE;
-      }
-    }
-    // Validate credit card number & cvv2
-    CRM_Core_Payment_Form::validateCreditCard($params, $card_errors, wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id'));
+
+    // Validate billing details
+    CRM_Core_Payment_Form::validatePaymentInstrument(wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id'), $params, $card_errors, NULL);
     foreach ($card_errors as $field => $msg) {
       form_set_error($field, $msg);
-      $valid = FALSE;
-    }
-    // Check expiration date
-    $submitted['credit_card_exp_date[Y]'] = $params['year'] = wf_crm_aval($_POST, 'credit_card_exp_date:Y', 0);
-    // There seems to be some inconsistency with capitalization here
-    $params['month'] = (int) wf_crm_aval($_POST, 'credit_card_exp_date:M', wf_crm_aval($_POST, 'credit_card_exp_date:m', 0));
-    $submitted['credit_card_exp_date[M]'] = $submitted['credit_card_exp_date[m]'] = $params['month'];
-    if ($params['year'] < date('Y') || ($params['year'] == date('Y') && $params['month'] < date('n'))) {
-      form_set_error('billing', ts('Credit card expiration date cannot be a past date.'));
       $valid = FALSE;
     }
     // Email
