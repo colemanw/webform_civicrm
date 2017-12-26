@@ -10,7 +10,7 @@ var wfCivi = (function ($, D) {
    */
   var pub = {};
 
-  pub.existingSelect = function (num, nid, path, toHide, hideOrDisable, showEmpty, cid, fetch) {
+  pub.existingSelect = function (num, nid, path, toHide, hideOrDisable, showEmpty, cid, fetch, defaults) {
     if (cid.charAt(0) === '-') {
       resetFields(num, nid, true, 'show', toHide, hideOrDisable, showEmpty, 500);
       // Fill name fields with name typed
@@ -33,7 +33,7 @@ var wfCivi = (function ($, D) {
       }
       return;
     }
-    resetFields(num, nid, true, 'hide', toHide, hideOrDisable, showEmpty, 500);
+    resetFields(num, nid, true, 'hide', toHide, hideOrDisable, showEmpty, 500, defaults);
     if (cid && fetch) {
       $('.webform-client-form-'+nid).addClass('contact-loading');
       var params = getCids(nid);
@@ -115,11 +115,12 @@ var wfCivi = (function ($, D) {
 
   var stateProvinceCache = {};
 
-  function resetFields(num, nid, clear, op, toHide, hideOrDisable, showEmpty, speed) {
+  function resetFields(num, nid, clear, op, toHide, hideOrDisable, showEmpty, speed, defaults) {
     $('div.form-item.webform-component[class*="--civicrm-'+num+'-contact-"]', '.webform-client-form-'+nid).each(function() {
       var $el = $(this);
       var name = getFieldNameFromClass($el);
-      if (!name) {
+      //Do not reset value if default is set in component setting.
+      if (!name || (typeof defaults != "undefined" && defaults.hasOwnProperty(name))) {
         return;
       }
       var n = name.split('-');

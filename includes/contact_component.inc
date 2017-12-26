@@ -360,10 +360,11 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
       unset($other_fields[$h]);
     }
   }
+  $defaults = json_encode(wf_crm_get_defaults($node));
   $ajax = $other_fields ? 'true' : 'false';
   $callback_path = '"' . url('webform-civicrm/js/' . $node->nid . '-' . $component['cid'], array('alias' => TRUE)) . '"';
   $onChange = "field.change(function() {
-                  wfCivi.existingSelect($c, {$node->nid}, $callback_path, toHide, '$hide_method', $no_hide_blank, \$(this).val(), $ajax);
+                  wfCivi.existingSelect($c, {$node->nid}, $callback_path, toHide, '$hide_method', $no_hide_blank, \$(this).val(), $ajax, $defaults);
                 });";
 
   // Render component based on type
@@ -977,4 +978,21 @@ function wf_crm_contact_component_required($element, &$form_state) {
   if (empty($element['#value'])) {
     form_error($element, t('!name field is required.', array('!name' => $element['#title'])));
   }
+}
+
+/**
+ * Returns a default value for a component.
+ *
+ * @param object $node
+ *
+ * @return array
+ */
+function wf_crm_get_defaults($node) {
+  $defaults = array();
+  foreach ($node->webform['components'] as $comp) {
+    if (!empty($comp['value'])) {
+      $defaults[str_replace('_', '-', $comp['form_key'])] = $comp['value'];
+    }
+  }
+  return $defaults;
 }
