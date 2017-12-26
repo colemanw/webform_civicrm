@@ -794,7 +794,7 @@ class wf_crm_admin_form {
     );
     $this->help($field, 'reg_options_show_remaining');
     foreach (array(5, 10, 20, 50, 100, 200, 500, 1000) as $num) {
-      $field['#options'][$num]['wrap'] = t('When under !num spaces left', array('!num' => $num));
+      $field['#options'][$num] = t('When under !num spaces left', array('!num' => $num));
     }
     $this->form['participant']['reg_options']['show_remaining'] = $field;
     $this->form['participant']['reg_options']['validate'] = array(
