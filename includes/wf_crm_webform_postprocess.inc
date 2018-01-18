@@ -261,8 +261,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $template = CRM_Core_Smarty::singleton();
       $template->assign('is_pay_later', 1);
     }
-    $contribute_id = $this->ent['contribution'][1]['id'];
-    wf_civicrm_api('contribution', 'sendconfirmation', array('id' => $contribute_id) + $this->contribution_page);
+
+    // Execute 'sendconfirmation' action on Contribution API for each Contribution.
+    foreach ($this->ent['contribution'] as $contributionRow) {
+      $contribute_id = $contributionRow['id'];
+      wf_civicrm_api('contribution', 'sendconfirmation', array('id' => $contribute_id) + $this->contribution_page);
+    }
   }
 
   /**
@@ -1176,7 +1180,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         foreach ($this->line_items as &$item) {
           if ($item['element'] == "civicrm_{$c}_membership_{$n}") {
             $item['membership_id'] = $result['id'];
-            break;
+            // We removed 'break' statement to set membership_id value
+            // on each line item.
           }
         }
       }
@@ -1465,6 +1470,16 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function tallyLineItems() {
     // Contribution
     $fid = 'civicrm_1_contribution_1_contribution_total_amount';
+    $contributionIsPayLater = empty($this->data['contribution'][1]['contribution'][1]['payment_processor_id']);
+    $numInstallments = $this->getData('civicrm_1_contribution_1_contribution_installments');
+    $numContributions = 1;
+
+    // Basing on variables above we can determine a number of Contributions
+    // which is equal to a number of Line Items needed.
+    if ($numInstallments > 1 && $contributionIsPayLater) {
+      $numContributions = $numInstallments;
+    }
+
     if (isset($this->enabled[$fid]) || $this->getData($fid) > 0) {
       $this->line_items[] = array(
         'qty' => 1,
@@ -1475,6 +1490,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         'entity_table' => 'civicrm_contribution',
       );
     }
+
     // Membership
     foreach (wf_crm_aval($this->data, 'membership', array()) as $c => $memberships) {
       if (isset($this->existing_contacts[$c]) && !empty($memberships['number_of_membership'])) {
@@ -1493,14 +1509,16 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             }
 
             if ($price) {
-              $this->line_items[] = array(
-                'qty' => $item['num_terms'],
-                'unit_price' => $price,
-                'financial_type_id' => $this->getMembershipTypeField($type, 'financial_type_id'),
-                'label' => $this->getMembershipTypeField($type, 'name'),
-                'element' => "civicrm_{$c}_membership_{$n}",
-                'entity_table' => 'civicrm_membership',
-              );
+              for ($i = 1; $i < $numContributions + 1; $i++) {
+                $this->line_items[] = array(
+                  'qty' => $item['num_terms'],
+                  'unit_price' => $this->calculateAmount($price, $numContributions, $i),
+                  'financial_type_id' => $this->getMembershipTypeField($type, 'financial_type_id'),
+                  'label' => $this->getMembershipTypeField($type, 'name'),
+                  'element' => "civicrm_{$c}_membership_{$n}",
+                  'entity_table' => 'civicrm_membership',
+                );
+              }
             }
           }
         }
@@ -1519,6 +1537,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $this->totalContribution += $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
       }
     }
+
     return round($this->totalContribution, 2);
   }
 
@@ -1732,36 +1751,44 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
-   * Generate recurring contribution and transact the first one
+   * Generates a Recurring Contribution with specified Contribution params
+   * and does a Transaction if using online payment.
+   *
+   * @param array $contributionParams
+   *
+   * @return array
    */
   private function contributionRecur($contributionParams) {
-    $installments = $contributionParams['installments'];
-    if ($installments != 0) {
-      // DRU-2862396 - we must ensure to only present 2 decimals to CiviCRM:
-      $contributionRecurAmount = floor(($contributionParams['total_amount'] / $installments) * 100) / 100;
-      $contributionFirstAmount = $contributionParams['total_amount'] - $contributionRecurAmount * ($installments - 1);
+    $recurringContributionResult = $this->createRecurringContribution($contributionParams);
+    $contributionTransactResult = NULL;
+
+    // Do a Transaction only if there is Payment Processor defined (online mode).
+    if ($contributionParams['payment_processor_id']) {
+      $contributionTransactResult = $this->doContributionTransact($recurringContributionResult['id'], $contributionParams);
     }
 
-    // Create Params for Creating the Recurring Contribution Series and Create it
-    $contributionRecurParams = array(
-      'sequential' => 1,
-      'contact_id' => $contributionParams['contact_id'],
-      'frequency_interval' => wf_crm_aval($contributionParams, 'frequency_interval', 1),
-      'frequency_unit' => wf_crm_aval($contributionParams, 'frequency_unit', 'month'),
-      'installments' => $installments,
-      'amount' => $contributionRecurAmount,
-      'contribution_status_id' => 5,
-      'currency' => $contributionParams['currency'],
-      'payment_processor_id' =>  $contributionParams['payment_processor_id'],
-      'financial_type_id' =>  $contributionParams['financial_type_id'],
-    );
-    $resultRecur = wf_civicrm_api('ContributionRecur', 'create', $contributionRecurParams);
+    return $contributionTransactResult;
+  }
+
+  /**
+   * Makes a Contribution transact for specified Recurring Contribution Id
+   * and Contribution params.
+   *
+   * @param int $recurringContributionId
+   * @param array $contributionParams
+   *
+   * @return array
+   */
+  private function doContributionTransact($recurringContributionId, $contributionParams) {
+    if ($contributionParams['installments'] != 0) {
+      $contributionFirstAmount = $this->calculateAmount($contributionParams['total_amount'], $contributionParams['installments'], 1);
+    }
 
     // Run the Transaction - and Create the Contribution Record - relay Recurring Series information in addition to the already existing Params [and re-key where needed]; at times two keys are required
     $contributionParams['total_amount'] = $contributionFirstAmount;
     $additionalParams = array(
-      'contribution_recur_id' => $resultRecur['id'],
-      'contributionRecurID' => $resultRecur['id'],
+      'contribution_recur_id' => $recurringContributionId,
+      'contributionRecurID' => $recurringContributionId,
       'is_recur' => 1,
       'contactID' => $contributionParams['contact_id'],
       'frequency_interval' => wf_crm_aval($contributionParams, 'frequency_interval', 1),
@@ -1771,14 +1798,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     // If transaction was successful - Update the Recurring Series - currency must be resubmitted or else it will re-default to USD; invoice_id is that of the initiating Contribution
     if (empty($result['error_message'])) {
-      $resultUpdateRecur = wf_civicrm_api('ContributionRecur', 'create', array(
-        'id' => $resultRecur['id'],
+      wf_civicrm_api('ContributionRecur', 'create', array(
+        'id' => $recurringContributionId,
         'currency' => $contributionParams['currency'],
-        'next_sched_contribution_date' => date("Y-m-d H:i:s", strtotime('+' . $contributionRecurParams['frequency_interval'] . ' ' . $contributionRecurParams['frequency_unit'])),
+        'next_sched_contribution_date' => date("Y-m-d H:i:s", strtotime('+' . $additionalParams['frequency_interval'] . ' ' . $additionalParams['frequency_unit'])),
         'invoice_id' => $result['values'][$result['id']]['invoice_id'],
         'payment_instrument_id' => $result['values'][$result['id']]['payment_instrument_id'],
       ));
     }
+
     return $result;
   }
 
@@ -1798,8 +1826,98 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $params['payment_instrument_id'] = key($defaultPaymentInstrument);
       }
     }
-    $result = wf_civicrm_api('contribution', 'create', $params);
-    $this->ent['contribution'][1]['id'] = $result['id'];
+
+    $createRecurringContribution = FALSE;
+    $numContributions = 1;
+    $numInstallments = wf_crm_aval($params, 'installments', 1, TRUE);
+    if ($numInstallments > 1 && $this->contributionIsPayLater) {
+      $createRecurringContribution = TRUE;
+      $numContributions = $numInstallments;
+    }
+
+    // Creating Recurring Contribution if needed.
+    $recurringContributionId = NULL;
+    if ($createRecurringContribution) {
+      $recurringContribution = $this->createRecurringContribution($params);
+
+      if (!empty($recurringContribution['id'])) {
+        $recurringContributionId = $recurringContribution['id'];
+      }
+    }
+
+    if ($recurringContributionId) {
+      $params['contribution_recur_id'] = $recurringContributionId;
+    }
+
+    $totalAmount = $params['total_amount'];
+
+    // Creating a set of Contributions.
+    for ($i = 1; $i < $numContributions + 1; $i++) {
+      $params['non_deductible_amount'] = $params['total_amount'] = $this->calculateAmount($totalAmount, $params['installments'], $i);
+      $params['invoice_id'] = md5(uniqid(rand(), TRUE));
+      $contribution = $this->createContribution($params);
+      $this->ent['contribution'][$i]['id'] = $contribution['id'];
+    }
+  }
+
+  /**
+   * Creates Recurring Contribution entry.
+   *
+   * @param array $contributionParams
+   *
+   * @return array
+   */
+  private function createRecurringContribution(array $contributionParams) {
+    $amount = $this->calculateAmount($contributionParams['total_amount'], $contributionParams['installments']); // @TODO: What amount should go into Recurring Contribution record if sequent amounts can be different?
+    $paymentProcessorId = !empty($contributionParams['payment_processor_id']) ? $contributionParams['payment_processor_id'] : NULL;
+
+    $contributionRecurParams = array(
+      'sequential' => 1,
+      'contact_id' => $contributionParams['contact_id'],
+      'frequency_interval' => wf_crm_aval($contributionParams, 'frequency_interval', 1),
+      'frequency_unit' => wf_crm_aval($contributionParams, 'frequency_unit', 'month'),
+      'installments' => $contributionParams['installments'],
+      'amount' => $amount,
+      'contribution_status_id' => 5,
+      'currency' => $contributionParams['currency'],
+      'payment_processor_id' => $paymentProcessorId,
+      'financial_type_id' =>  $contributionParams['financial_type_id'],
+    );
+
+    return wf_civicrm_api('ContributionRecur', 'create', $contributionRecurParams);
+  }
+
+  /**
+   * Creates a Contribution entry using CiviCRM API.
+   *
+   * @param array $params
+   *
+   * @return array
+   */
+  private function createContribution(array $params) {
+    return wf_civicrm_api('contribution', 'create', $params);
+  }
+
+  /**
+   * Returns an Amount value calculated by given Total Amount and Installments
+   * and optional Contribution number.
+   *
+   * @param float $totalAmount
+   * @param int $installments
+   * @param int $contributionNumber
+   *
+   * @return float
+   */
+  private function calculateAmount($totalAmount, $installments, $contributionNumber = NULL) {
+    $result = $amountPart = floor(($totalAmount / $installments) * 100) / 100;
+
+    // For the first Contribution we calculate the amount by getting total amount
+    // and subtracting all others Contributions amount from it.
+    if ($contributionNumber === 1) {
+      $result = $totalAmount - $amountPart * ($installments - 1);
+    }
+
+    return $result;
   }
 
   /**
@@ -1928,7 +2046,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     // Fix bug for testing.
-    if ($params['is_test'] == 1) {
+    if ($params['is_test'] == 1 && (int) $params['payment_processor_id']) {
       $liveProcessorName = wf_civicrm_api('payment_processor', 'getvalue', array(
         'id' => $params['payment_processor_id'],
         'return' => 'name',
@@ -1963,82 +2081,126 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function processContribution() {
     $contribution = $this->data['contribution'][1]['contribution'][1];
-    $id = $this->ent['contribution'][1]['id'];
-    // Save custom data
-    $this->saveCustomData($this->data['contribution'][1], $id, 'Contribution', FALSE);
-    // Save soft credits
-    if (!empty($contribution['soft'])) {
-      foreach (array_filter($contribution['soft']) as $cid) {
-        wf_civicrm_api('contribution_soft', 'create', array(
-          'contact_id' => $cid,
-          'contribution_id' => $id,
-          'amount' => $contribution['total_amount'],
-          'currency' => $this->contribution_page['currency'],
+
+    foreach ($this->ent['contribution'] as $contributionRow) {
+      $id = $contributionRow['id'];
+      // Save custom data
+      $this->saveCustomData($this->data['contribution'][1], $id, 'Contribution', FALSE);
+      // Save soft credits
+      if (!empty($contribution['soft'])) {
+        foreach (array_filter($contribution['soft']) as $cid) {
+          wf_civicrm_api('contribution_soft', 'create', array(
+            'contact_id' => $cid,
+            'contribution_id' => $id,
+            'amount' => $contribution['total_amount'],
+            'currency' => $this->contribution_page['currency'],
+          ));
+        }
+      }
+      // Save honoree
+      // FIXME: these api params were deprecated in 4.5, should be switched to use soft-credits when we drop support for 4.4
+      if (!empty($contribution['honor_contact_id']) && !empty($contribution['honor_type_id'])) {
+        wf_civicrm_api('contribution', 'create', array(
+          'id' => $id,
+          'total_amount' => $contribution['total_amount'],
+          'honor_contact_id' => $contribution['honor_contact_id'],
+          'honor_type_id' => $contribution['honor_type_id'],
         ));
       }
-    }
-    // Save honoree
-    // FIXME: these api params were deprecated in 4.5, should be switched to use soft-credits when we drop support for 4.4
-    if (!empty($contribution['honor_contact_id']) && !empty($contribution['honor_type_id'])) {
-      wf_civicrm_api('contribution', 'create', array(
-        'id' => $id,
-        'total_amount' => $contribution['total_amount'],
-        'honor_contact_id' => $contribution['honor_contact_id'],
-        'honor_type_id' => $contribution['honor_type_id'],
-      ));
-    }
 
-    $contributionResult = CRM_Contribute_BAO_Contribution::getValues(array('id' => $id), CRM_Core_DAO::$_nullArray, CRM_Core_DAO::$_nullArray);
+      $lineItemIndex = $this->getAvailableLineItemIndex();
+      if ($lineItemIndex === NULL) {
+        continue;
+      }
 
-    // Save line-items
-    foreach ($this->line_items as &$item) {
+      $contributionResult = CRM_Contribute_BAO_Contribution::getValues(array('id' => $id), CRM_Core_DAO::$_nullArray, CRM_Core_DAO::$_nullArray);
+      $updatedLineItem = $this->updateContributionLineItem($this->line_items[$lineItemIndex], $contributionResult);
+      $this->createPaymentRecord($id, $updatedLineItem);
+    }
+  }
+
+  /**
+   * Returns first available line item index.
+   *
+   * @return int|NULL
+   */
+  private function getAvailableLineItemIndex() {
+    foreach ($this->line_items as $index => $item) {
       if (empty($item['line_total'])) {
         continue;
       }
       if (empty($item['entity_id'])) {
-        $item['entity_id'] = $id;
+        return $index;
       }
-      // tax integration
-      if (empty($item['contribution_id'])) {
-        $item['contribution_id'] = $id;
-      }
-      // Membership
-      if (!empty($item['membership_id'])) {
-        $item['entity_id'] = $item['membership_id'];
-        $lineItemArray = wf_civicrm_api('LineItem', 'get', array(
-          'entity_table' => "civicrm_membership",
-          'entity_id' => $item['entity_id'],
-        ));
-        if ($lineItemArray['count'] != 0) {
-          // We only require first membership (signup) entry to make this work.
-          $firstLineItem = array_shift($lineItemArray['values']);
+    }
 
-          // Membership signup line item entry.
-          // Line Item record is already present for membership by this stage.
-          // Just need to upgrade contribution_id column in the record.
-          if (!isset($firstLineItem['contribution_id'])) {
-            $item['id'] = $firstLineItem['id'];
-          }
+    return NULL;
+  }
+
+  /**
+   * Updates Line Item with Membership and financial data.
+   *
+   * @param array $lineItem
+   * @param object $contribution
+   *
+   * @return array
+   */
+  private function updateContributionLineItem(&$lineItem, $contribution) {
+    // tax integration
+    if (empty($lineItem['contribution_id'])) {
+      $lineItem['contribution_id'] = $contribution->id;
+    }
+    // Membership
+    if (!empty($lineItem['membership_id'])) {
+      $lineItem['entity_id'] = $lineItem['membership_id'];
+      $lineItemArray = wf_civicrm_api('LineItem', 'get', array(
+        'entity_table' => 'civicrm_membership',
+        'entity_id' => $lineItem['entity_id'],
+        'options' => array(
+          'sort' => 'id DESC',
+          'limit' => 1,
+        ),
+      ));
+
+      if ($lineItemArray['count'] != 0) {
+        $firstLineItem = array_shift($lineItemArray['values']);
+
+        // Membership signup line item entry.
+        // Line Item record is already present for membership by this stage.
+        // Just need to upgrade contribution_id column in the record.
+        if (!isset($firstLineItem['contribution_id'])) {
+          $lineItem['id'] = $firstLineItem['id'];
         }
       }
+    }
 
-      $line_result = wf_civicrm_api('line_item', 'create', $item);
-      $item['id'] = $line_result['id'];
+    $line_result = wf_civicrm_api('line_item', 'create', $lineItem);
 
-      $lineItemRecord = json_decode(json_encode($item), FALSE);
-      // Add financial_item and entity_financial_trxn
-      $result = CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult);
-      if (!is_null($this->tax_rate)) {
-        $result = CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult, TRUE);
-      }
-      // Create participant/membership payment records
-      if (isset($item['membership_id']) || isset($item['participant_id'])) {
-        $type = isset($item['participant_id']) ? 'participant' : 'membership';
-        wf_civicrm_api("{$type}_payment", 'create', array(
-          "{$type}_id" => $item["{$type}_id"],
-          'contribution_id' => $id,
-        ));
-      }
+    $lineItem['id'] = $line_result['id'];
+
+    $lineItemRecord = json_decode(json_encode($lineItem), FALSE);
+    // Add financial_item and entity_financial_trxn
+    CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contribution);
+    if (!is_null($this->tax_rate)) {
+      CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contribution, TRUE);
+    }
+
+    return $lineItem;
+  }
+
+  /**
+   * Creates participant/membership payment record.
+   *
+   * @param int $contributionId
+   * @param array $lineItem
+   */
+  private function createPaymentRecord($contributionId, $lineItem) {
+    if (isset($lineItem['membership_id']) || isset($lineItem['participant_id'])) {
+      $type = isset($lineItem['participant_id']) ? 'participant' : 'membership';
+      wf_civicrm_api("{$type}_payment", 'create', array(
+        "{$type}_id" => $lineItem["{$type}_id"],
+        'contribution_id' => $contributionId,
+      ));
     }
   }
 
