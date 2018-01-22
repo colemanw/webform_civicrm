@@ -1180,8 +1180,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         foreach ($this->line_items as &$item) {
           if ($item['element'] == "civicrm_{$c}_membership_{$n}") {
             $item['membership_id'] = $result['id'];
-            // We removed 'break' statement to set membership_id value
-            // on each line item.
           }
         }
       }
@@ -1475,7 +1473,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $numContributions = 1;
 
     // Basing on variables above we can determine a number of Contributions
-    // which is equal to a number of Line Items needed.
+    // which is equal to a number of installments needed.
     if ($numInstallments > 1 && $contributionIsPayLater) {
       $numContributions = $numInstallments;
     }
