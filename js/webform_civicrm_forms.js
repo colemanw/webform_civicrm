@@ -128,24 +128,18 @@ var wfCivi = (function ($, D) {
           // Reset country to default
           if (n[5] === 'country') {
             $('select.civicrm-processed', this).val(setting.defaultCountry).trigger('change', 'webform_civicrm:reset');
-          } else {
+          }
+          //Set default value if it is specified in component settings.
+          else if ($el.hasClass('webform-component-date') && typeof defaults != "undefined" && defaults.hasOwnProperty(name)) {
+            var date = defaults[name].split('-');
+            $el.find('select.year, input.year').val(+date[0]);
+            $el.find('select.month').val(+date[1]);
+            $el.find('select.day').val(+date[2]);
+          }
+          else {
             $(':input', this).not(':radio, :checkbox, :button, :submit, :file, .form-file').each(function() {
               if (this.id && $(this).val() != '') {
-                //Set default value if it is specified in component settings.
-                if (typeof defaults != "undefined" && defaults.hasOwnProperty(name)) {
-                  if ($el.hasClass('webform-component-date')) {
-                    var date = defaults[name].split('-');
-                    $el.find('select.year, input.year').val(+date[0]);
-                    $el.find('select.month').val(+date[1]);
-                    $el.find('select.day').val(+date[2]);
-                  }
-                  else {
-                    $(this).val(defaults[name]);
-                  }
-                }
-                else {
-                  $(this).val('');
-                }
+                (typeof defaults != "undefined" && defaults.hasOwnProperty(name)) ? $(this).val(defaults[name]) : $(this).val('');
                 $(this).trigger('change', 'webform_civicrm:reset');
               }
             });
