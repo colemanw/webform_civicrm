@@ -1508,11 +1508,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
             if ($price) {
               for ($i = 1; $i < $numContributions + 1; $i++) {
+                $percentageAmount = $this->calculatePercentage($price, $numContributions, $i);
+
                 $this->line_items[] = array(
                   'qty' => $item['num_terms'],
                   'unit_price' => $this->calculateAmount($price, $numContributions, $i),
                   'financial_type_id' => $this->getMembershipTypeField($type, 'financial_type_id'),
-                  'label' => $this->getMembershipTypeField($type, 'name'),
+                  'label' => $this->getMembershipTypeField($type, 'name') . ' (' . $percentageAmount . '%)',
                   'element' => "civicrm_{$c}_membership_{$n}",
                   'entity_table' => 'civicrm_membership',
                 );
@@ -1916,6 +1918,22 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     return $result;
+  }
+
+  /**
+   * Returns a percentage value of Amount value calculated by given Total Amount
+   * and Installments and optional Contribution number.
+   *
+   * @param float $totalAmount
+   * @param int $installments
+   * @param int $contributionNumber
+   *
+   * @return float
+   */
+  private function calculatePercentage($totalAmount, $installments, $contributionNumber = NULL) {
+    $partialAmount = $this->calculateAmount($totalAmount, $installments, $contributionNumber);
+
+    return round(($partialAmount / $totalAmount) * 100, 2, PHP_ROUND_HALF_DOWN);
   }
 
   /**
