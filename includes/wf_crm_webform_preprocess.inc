@@ -543,6 +543,12 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     }
     foreach ($this->line_items as $item) {
       $total += $item['line_total'];
+
+      // Update label with label_suffix value if available.
+      if (!empty($item['label_suffix'])) {
+        $item['label'] .= ' - ' . $item['label_suffix'];
+      }
+
       // tax integration
       if (!is_null($this->tax_rate)) {
         // Change the line item label to display the tax rate it contains
