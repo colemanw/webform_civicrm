@@ -1636,7 +1636,8 @@ class wf_crm_admin_form {
             $component['value'] = $val;
             webform_component_update($component);
           }
-          elseif (substr($key, -11) === '_createmode') {
+
+          if (substr($key, -11) === '_createmode') {
             // Update webform's settings with 'Create mode' value for custom group.
             $this->settings['data']['config']['create_mode'][$key] = $val;
           }
