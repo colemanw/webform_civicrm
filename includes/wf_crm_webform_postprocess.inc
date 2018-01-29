@@ -1468,9 +1468,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function tallyLineItems() {
     // Contribution
     $fid = 'civicrm_1_contribution_1_contribution_total_amount';
+    $contributionParams = $this->contributionParams();
+    $frequencyUnit = wf_crm_aval($contributionParams, 'frequency_unit');
     $contributionIsPayLater = empty($this->data['contribution'][1]['contribution'][1]['payment_processor_id']);
     $numInstallments = $this->getData('civicrm_1_contribution_1_contribution_installments');
     $numContributions = 1;
+    $date = (new DateTime())->format('Y-m-d');
 
     // Basing on variables above we can determine a number of Contributions
     // which is equal to a number of installments needed.
@@ -1517,6 +1520,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                   'label' => $this->getMembershipTypeField($type, 'name') . ' (' . $percentageAmount . '%)',
                   'element' => "civicrm_{$c}_membership_{$n}",
                   'entity_table' => 'civicrm_membership',
+                  'label_suffix' => CRM_Utils_Date::customFormat(
+                    $this->calculateReceiveDate($date, $i, $frequencyUnit)
+                  ),
                 );
               }
             }
@@ -1539,6 +1545,62 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     return round($this->totalContribution, 2);
+  }
+
+  /**
+   * Returns date calculated according to given contribution number
+   * and frequency unit relatively to specified $fromDate date.
+   *
+   * @param string $fromDate
+   * @param int $contributionNumber
+   * @param string $frequencyUnit
+   *
+   * @return string
+   */
+  private function calculateReceiveDate($fromDate, $contributionNumber, $frequencyUnit) {
+    $date = DateTime::createFromFormat('Y-m-d', $fromDate);
+    $contributionNumber--;
+
+    switch ($frequencyUnit) {
+      case 'month':
+        $date = $this->shiftMonth($date, $contributionNumber);
+      break;
+      default:
+        $date->modify('+' . $contributionNumber . ' ' . $frequencyUnit);
+      break;
+    }
+
+    return $date->format('Y-m-d');
+  }
+
+  /**
+   * Returns end of months when we shift to a shorter or longer month
+   * workaround for http://php.net/manual/en/datetime.add.php#example-2489.
+   *
+   * Makes the assumption that shifting from the 28th Feb +1 month is 31st March
+   * Makes the assumption that shifting from the 28th Feb -1 month is 31st Jan
+   * Makes the assumption that shifting from the 29,30,31 Jan +1 month is 28th (or 29th) Feb
+   *
+   * @param DateTime $aDate
+   * @param int $months positive or negative
+   *
+   * @return DateTime new instance - original parameter is unchanged
+   */
+  private function shiftMonth(DateTime $aDate, $months) {
+    $dateA = clone($aDate);
+    $dateB = clone($aDate);
+    $plusMonths = clone($dateA->modify($months . ' Month'));
+
+    // Check whether reversing the month addition gives us the original day back.
+    if ($dateB != $dateA->modify($months * -1 . ' Month')) {
+      $result = $plusMonths->modify('last day of last month');
+    } elseif ($aDate == $dateB->modify('last day of this month')) {
+      $result =  $plusMonths->modify('last day of this month');
+    } else {
+      $result = $plusMonths;
+    }
+
+    return $result;
   }
 
   /**
@@ -1819,6 +1881,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params = $this->contributionParams();
     $params['contribution_status_id'] = 'Pending';
     $params['is_pay_later'] = $this->contributionIsPayLater;
+    $date = date('Y-m-d');
+
     //Fix IPN payments marked as paid by cheque
     if (empty($params['payment_instrument_id'])) {
       if (!empty($params['payment_processor_id']) && $this->contribution_page['is_monetary']) {
@@ -1855,6 +1919,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     for ($i = 1; $i < $numContributions + 1; $i++) {
       $params['non_deductible_amount'] = $params['total_amount'] = $this->calculateAmount($totalAmount, $params['installments'], $i);
       $params['invoice_id'] = md5(uniqid(rand(), TRUE));
+
+      if (!empty($recurringContribution['values'][0]['frequency_unit'])) {
+        $params['receive_date'] = $this->calculateReceiveDate($date, $i, $recurringContribution['values'][0]['frequency_unit']);
+      }
+
       $contribution = $this->createContribution($params);
       $this->ent['contribution'][$i]['id'] = $contribution['id'];
     }
