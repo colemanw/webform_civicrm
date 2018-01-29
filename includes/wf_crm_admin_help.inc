@@ -427,9 +427,9 @@ class wf_crm_admin_help {
 
   public static function multivalue_fieldset_create_mode() {
       print '<p>' .
-        t('Create/ Edit Mode (Default): Pre-populate the existing entry (if any) in order to allow user modifying it. If there isn\'t any existing entry, any value entered into the fieldset will be created as a new entry.') .
+        t("Create/ Edit Mode (Default): Pre-populate the existing entry (if any) in order to allow user modifying it. If there isn't any existing entry, any value entered into the fieldset will be created as a new entry.") .
         '<br><br>' .
-        t('Create Only Mode: Any value entered into the fieldset will be created as a new entry without overwriting any existing record.') .
+        t("Create Only Mode: Any value entered into the fieldset will be created as a new entry without overwriting any existing record.") .
         '</p>';
   }
 
