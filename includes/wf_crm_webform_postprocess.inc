@@ -1574,6 +1574,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       'credit_card_number' => ts('Card Number'),
       'cvv2' => ts('Security Code'),
       'credit_card_type' => ts('Card Type'),
+      'credit_card_exp_date' => ts('Expiry Date'),
       'billing_first_name' => ts('Billing First Name'),
       'billing_middle_name' => FALSE,
       'billing_last_name' => ts('Billing Last Name'),
@@ -1587,11 +1588,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // Using Stripe payment processor - cc fields not posted
       $billing_fields['credit_card_number'] = FALSE;
       $billing_fields['cvv2'] = FALSE;
+      $billing_fields['credit_card_exp_date'] = FALSE;
     }
     if (!empty($_POST['stripe_source'])) {
       // Using Stripe payment processor - cc fields not posted using sources
       $billing_fields['credit_card_number'] = FALSE;
       $billing_fields['cvv2'] = FALSE;
+      $billing_fields['credit_card_exp_date'] = FALSE;
     }
     if (!empty($_POST['bank_account_type'])) {
       // unset/bypass the CC validation if we're doing Direct Debit (ACHEFT) - in that case we have a Bank Account Type
