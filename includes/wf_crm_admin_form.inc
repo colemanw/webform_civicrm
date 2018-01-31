@@ -21,6 +21,7 @@ class wf_crm_admin_form {
   function __construct($form, &$form_state, $node) {
     module_load_include('inc', 'webform_civicrm', 'includes/utils');
     module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_help');
+    module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_base');
     civicrm_initialize();
     $this->form = $form;
     $this->form_state = &$form_state;
@@ -321,6 +322,29 @@ class wf_crm_admin_form {
             $fieldset[$fid] = $this->addItem($fid, $field);
           }
         }
+
+        // Add 'Create mode' select field to multiple custom group fieldset.
+        if (substr($sid, 0, 2) == 'cg' && wf_crm_aval($set, 'max_instances') > 1) {
+          $createModeKey = 'civicrm_' . $n . '_contact_' . $i . '_' . $sid . '_createmode';
+
+          $createModeValue = isset($this->settings['data']['config']['create_mode'][$createModeKey]) ? $this->settings['data']['config']['create_mode'][$createModeKey] : NULL;
+
+          $multivalueFieldsetCreateMode = array(
+            '#type' => 'select',
+            '#default_value' => $createModeValue,
+            '#prefix' => '<div class="multivalue-fieldset-create-mode">',
+            '#suffix' => '</div>',
+            '#options' => array(
+              wf_crm_webform_base::MULTIVALUE_FIELDSET_MODE_CREATE_OR_EDIT => t('Create/ Edit'),
+              wf_crm_webform_base::MULTIVALUE_FIELDSET_MODE_CREATE_ONLY => t('Create Only')
+            ),
+            '#title' => t('Create mode'),
+            '#weight' => -1,
+          );
+          $this->help($multivalueFieldsetCreateMode, 'multivalue_fieldset_create_mode', t('Multivalue fieldset create mode'));
+          $fieldset[$createModeKey] = $multivalueFieldsetCreateMode;
+        }
+
         if (isset($set['max_instances'])) {
           $pos[$n . $sid . '_wrapper'][$n . $sid . $i . '_fieldset'] = $fieldset;
         }
@@ -1612,6 +1636,11 @@ class wf_crm_admin_form {
             $component['value'] = $val;
             webform_component_update($component);
           }
+
+          if (substr($key, -11) === '_createmode') {
+            // Update webform's settings with 'Create mode' value for custom group.
+            $this->settings['data']['config']['create_mode'][$key] = $val;
+          }
         }
         // add empty fieldsets for custom civicrm sets with no fields, if "add dynamically" is checked
         elseif (strpos($key, 'settings_dynamic_custom') && $val == 1) {
@@ -1631,6 +1660,7 @@ class wf_crm_admin_form {
           }
         }
       }
+
       if (count($created) == 1) {
         drupal_set_message(t('Added field: %name', array('%name' => $created[0])));
       }
@@ -1655,6 +1685,7 @@ class wf_crm_admin_form {
         }
       }
     }
+
     // Make sure the updates are visible to anonymous users.
     cache_clear_all();
 
@@ -1726,6 +1757,9 @@ class wf_crm_admin_form {
       $val = (array) wf_crm_aval($this->settings, $key);
       if (((in_array('create_civicrm_webform_element', $val, TRUE)) && $this->settings['nid'])
         || strpos($key, 'fieldset') !== FALSE) {
+        unset($fields[$key]);
+      }
+      elseif (substr($key, -11) === '_createmode') {
         unset($fields[$key]);
       }
       else {

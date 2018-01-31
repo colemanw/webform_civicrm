@@ -471,6 +471,16 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           if (isset($this->info[$ent][$c][$table][$n][$name])
             && !(isset($component['cid']) && isset($submitted[$component['cid']]))) {
             $val = $this->info[$ent][$c][$table][$n][$name];
+
+            if ($ent === 'contact') {
+              $createModeKey = 'civicrm_' . $c . '_contact_' . $n . '_' . $table . '_createmode';
+              $multivaluesCreateMode = isset($this->data['config']['create_mode'][$createModeKey]) ? (int) $this->data['config']['create_mode'][$createModeKey] : NULL;
+
+              // Set empty value for field with 'Create only' mode.
+              if ($multivaluesCreateMode === self::MULTIVALUE_FIELDSET_MODE_CREATE_ONLY) {
+                $val = '';
+              }
+            }
             if (($element['#type'] == 'checkboxes' || !empty($element['#multiple'])) && !is_array($val)) {
               $val = wf_crm_explode_multivalue_str($val);
             }
