@@ -478,7 +478,8 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
 
               // Set empty value for field with 'Create only' mode.
               if ($multivaluesCreateMode === self::MULTIVALUE_FIELDSET_MODE_CREATE_ONLY) {
-                $val = '';
+                $defaultVal = CRM_Utils_Array::value('#default_value', $element);
+                $val = $defaultVal ? $defaultVal : '';
               }
             }
             if (($element['#type'] == 'checkboxes' || !empty($element['#multiple'])) && !is_array($val)) {
