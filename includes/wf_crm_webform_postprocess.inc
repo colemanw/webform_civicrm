@@ -1597,12 +1597,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params = $card_errors = array();
 
     $processor = Civi\Payment\System::singleton()->getById(wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id'));
-    $fields = CRM_Utils_Array::crmArrayMerge($processor->getPaymentFormFieldsMetadata(),
-                                              $processor->getBillingAddressFieldsMetadata()
-    );
+    $billingAddressFieldsMetadata = array();
+    if (method_exists($processor, 'getBillingAddressFieldsMetadata')) {
+      // getBillingAddressFieldsMetadata did not exist before 4.7
+      $billingAddressFieldsMetadata = $processor->getBillingAddressFieldsMetadata();
+    }
+    $fields = CRM_Utils_Array::crmArrayMerge($processor->getPaymentFormFieldsMetadata(), $billingAddressFieldsMetadata);
 
     foreach ($_POST as $field => $value) {
-      if (empty($_POST[$field]) && $fields[$field]['is_required'] !== FALSE) {
+      if (empty($_POST[$field]) && isset($fields[$field]) && $fields[$field]['is_required'] !== FALSE) {
         form_set_error($field, t('!name field is required.', array('!name' => check_plain($fields[$field]['title']))));
         $valid = FALSE;
       }
