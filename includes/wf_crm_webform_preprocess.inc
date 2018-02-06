@@ -484,7 +484,17 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             if (($element['#type'] == 'checkboxes' || !empty($element['#multiple'])) && !is_array($val)) {
               $val = wf_crm_explode_multivalue_str($val);
             }
-            if ($element['#type'] != 'checkboxes' && $element['#type'] != 'date'
+            if (($element['#type'] == 'managed_file')) {
+              // Get parameters
+              $ent = $this->info[$ent][$c][$table][$n]['id'];
+              if (isset($val['fid'])) {
+                $val = $val['fid'];
+              }
+              else {
+                $val = NULL;
+              }
+            }
+            elseif ($element['#type'] != 'checkboxes' && $element['#type'] != 'date'
               && empty($element['#multiple']) && is_array($val)) {
               // If there's more than one value for a non-multi field, pick the most appropriate
               if (!empty($element['#options'])) {
@@ -505,7 +515,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             }
             // Contact image & custom file fields
             if ($dt == 'File') {
-              $fileInfo = $this->getFileInfo($name, $val, $ent, $n);
+              $fileInfo = $this->getFileInfo($name, $val, $ent);
               if ($fileInfo && in_array($element['#type'], array('file', 'managed_file'))) {
                 $fileInfo = json_encode($fileInfo);
                 $js = "jQuery(function() {wfCivi.initFileField('$eid', $fileInfo)});";
