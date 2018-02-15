@@ -898,4 +898,32 @@ abstract class wf_crm_webform_base {
     return CRM_Core_Key::get('CRM_Contribute_Controller_Contribution', TRUE);
   }
 
+  /**
+   * Determines if the target payment processor
+   * is pay later payment processor or not.
+   *
+   * @param int $paymentProcessorsID
+   *   The target payment processor ID
+   *
+   * @return bool
+   *   TRUE if the target payment processor is
+   *   pay later or if no payment processor is
+   *   selected, Return FALSE otherwise.
+   */
+  protected function isPayLaterPaymentProcessor($paymentProcessorsID) {
+    $payLaterPaymentProcessors = array();
+    drupal_alter('webform_civicrm_paylater_payment_processors', $payLaterPaymentProcessors);
+
+    $isPayLaterPaymentProcessor = FALSE;
+
+    if (
+      in_array($paymentProcessorsID, $payLaterPaymentProcessors) ||
+      empty($paymentProcessorsID)
+    ) {
+      $isPayLaterPaymentProcessor = TRUE;
+    }
+
+    return $isPayLaterPaymentProcessor;
+  }
+
 }

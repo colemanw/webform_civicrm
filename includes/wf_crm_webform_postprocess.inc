@@ -1470,7 +1470,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $fid = 'civicrm_1_contribution_1_contribution_total_amount';
     $contributionParams = $this->contributionParams();
     $frequencyUnit = wf_crm_aval($contributionParams, 'frequency_unit');
-    $contributionIsPayLater = empty($this->data['contribution'][1]['contribution'][1]['payment_processor_id']);
+
+    $contributionIsPayLater = $this->isPayLaterPaymentProcessorSubmitted();
+
     $numInstallments = $this->getData('civicrm_1_contribution_1_contribution_installments');
     $numContributions = 1;
     $date = (new DateTime())->format('Y-m-d');
@@ -1548,6 +1550,24 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
+   * Determines if the submitted payment processor
+   * is pay later payment processor or not.
+   *
+   * @return bool
+   *   TRUE if the submitted payment processor is
+   *   pay later or if no payment processor is
+   *   selected, Return FALSE otherwise.
+   */
+  private function isPayLaterPaymentProcessorSubmitted() {
+    $paymentProcessorID = NULL;
+    if (!empty($this->data['contribution'][1]['contribution'][1]['payment_processor_id'])) {
+      $paymentProcessorID = $this->data['contribution'][1]['contribution'][1]['payment_processor_id'];
+    }
+
+    return $this->isPayLaterPaymentProcessor($paymentProcessorID);
+  }
+
+  /**
    * Returns date calculated according to given contribution number
    * and frequency unit relatively to specified $fromDate date.
    *
@@ -1617,7 +1637,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @return bool
    */
   private function isLivePaymentProcessor() {
-    if ($this->payment_processor) {
+    $payLaterPaymentProcessors = array();
+    drupal_alter('webform_civicrm_paylater_payment_processors', $payLaterPaymentProcessors);
+
+    if ($this->payment_processor && !in_array($this->payment_processor['id'], $payLaterPaymentProcessors)) {
       if ($this->payment_processor['billing_mode'] == self::BILLING_MODE_LIVE) {
         return TRUE;
       }
@@ -1877,7 +1900,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function createDeferredPayment() {
     $this->contributionIsIncomplete = TRUE;
-    $this->contributionIsPayLater = empty($this->data['contribution'][1]['contribution'][1]['payment_processor_id']);
+    $this->contributionIsPayLater = $this->isPayLaterPaymentProcessorSubmitted();
     $params = $this->contributionParams();
     $params['contribution_status_id'] = 'Pending';
     $params['is_pay_later'] = $this->contributionIsPayLater;
@@ -1885,7 +1908,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     //Fix IPN payments marked as paid by cheque
     if (empty($params['payment_instrument_id'])) {
-      if (!empty($params['payment_processor_id']) && $this->contribution_page['is_monetary']) {
+      if (!$this->contributionIsPayLater && $this->contribution_page['is_monetary']) {
         $defaultPaymentInstrument = CRM_Core_OptionGroup::values('payment_instrument', FALSE, FALSE, FALSE, 'AND is_default = 1');
         $params['payment_instrument_id'] = key($defaultPaymentInstrument);
       }
