@@ -16,7 +16,7 @@ Documentation
 -------------
 
 Further instructions can be found at:
-http://wiki.civicrm.org/confluence/display/CRMDOC/Webform+CiviCRM+Integration
+https://docs.civicrm.org/sysadmin/en/latest/integration/drupal/webform
 
 Issues
 ------
