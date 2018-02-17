@@ -1609,9 +1609,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         form_set_error($field, t('!name field is required.', array('!name' => check_plain($fields[$field]['title']))));
         $valid = FALSE;
       }
-      if (!empty($_POST[$field])) {
+      if (!empty($_POST[$field]) && array_key_exists($field, $fields)) {
         $name = str_replace('billing_', '', str_replace('-5', '', $field));
-        $submitted[$name] = $params[$name] = $params[$field] = $_POST[$field];
+        $params[$name] = $params[$field] = $_POST[$field];
       }
     }
 
@@ -1637,7 +1637,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     // Since billing fields are not "real" form fields they get cleared if the page reloads.
     // We add a bit of js to fix this annoyance.
-    drupal_add_js(array('webform_civicrm' => array('billingSubmission' => $submitted)), 'setting');
+    drupal_add_js(array('webform_civicrm' => array('billingSubmission' => $params)), 'setting');
     return $valid;
   }
 
