@@ -1498,6 +1498,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $contributionsCount = $installmentsCount;
     }
 
+    $contributionParams = $this->contributionParams();
+    $frequencyUnit = wf_crm_aval($contributionParams, 'frequency_unit');
+
+    $currentDate = (new DateTime())->format('Y-m-d');
+
     foreach (wf_crm_aval($this->data, 'membership', array()) as $c => $memberships) {
       if (isset($this->existing_contacts[$c]) && !empty($memberships['number_of_membership'])) {
         foreach ($memberships['membership'] as $n => $lineItem) {
@@ -1515,16 +1520,24 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             }
 
             if ($price) {
+              $singleInstallmentAmount= $this->calculateSingleInstallmentAmount($price, $contributionsCount);
+
+              $label = $this->getMembershipTypeField($type, 'name');
+              if ($contributionsCount > 1) {
+                $singleInstallmentPercentage = $this->calculateSingleInstallmentPercentage($singleInstallmentAmount, $price);
+                $label .= ' (' . $singleInstallmentPercentage . '%)';
+              }
+
               $lineItemData = array(
                 'qty' => $lineItem['num_terms'],
                 'financial_type_id' => $this->getMembershipTypeField($type, 'financial_type_id'),
-                'label' => $this->getMembershipTypeField($type, 'name'),
                 'element' => "civicrm_{$c}_membership_{$n}",
                 'entity_table' => 'civicrm_membership',
+                'unit_price' => $singleInstallmentAmount,
               );
 
               for ($i = 1; $i <= $contributionsCount; $i++) {
-                $lineItemData['unit_price'] = $this->calculateSingleInstallmentAmount($price, $contributionsCount);
+                $lineItemData['label'] = $label . CRM_Utils_Date::customFormat($this->calculateInstallmentReceiveDate($i, $frequencyUnit));
                 $this->line_items[] = $lineItemData;
               }
             }
@@ -1547,6 +1560,76 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
     }
     return round($this->totalContribution, 2);
+  }
+
+
+  /**
+   * Calculate and returns the receive date for
+   * a single installment.
+   *
+   * @param int $contributionNumber
+   * @param string $frequencyUnit
+   *
+   * @return string
+   */
+  private function calculateInstallmentReceiveDate($contributionNumber, $frequencyUnit) {
+    $currentDate = new DateTime();
+    $contributionNumber--;
+    switch ($frequencyUnit) {
+      case 'month':
+        $currentDate = $this->shiftMonth($currentDate, $contributionNumber);
+        break;
+      default:
+        $currentDate->modify('+' . $contributionNumber . ' ' . $frequencyUnit);
+        break;
+    }
+
+    return $currentDate->format('Y-m-d');
+  }
+  /**
+   * Copied from http://php.net/manual/en/datetime.modify.php#120513
+   *
+   * Returns end of months when we shift to a shorter or longer month
+   * workaround for http://php.net/manual/en/datetime.add.php#example-2489.
+   *
+   * Makes the assumption that shifting from the 28th Feb +1 month is 31st March
+   * Makes the assumption that shifting from the 28th Feb -1 month is 31st Jan
+   * Makes the assumption that shifting from the 29,30,31 Jan +1 month is 28th (or 29th) Feb
+   *
+   * @param DateTime $aDate
+   * @param int $months positive or negative
+   *
+   * @return DateTime new instance - original parameter is unchanged
+   */
+  private function shiftMonth(DateTime $aDate, $months) {
+    $dateA = clone($aDate);
+    $dateB = clone($aDate);
+    $plusMonths = clone($dateA->modify($months . ' Month'));
+    // Check whether reversing the month addition gives us the original day back.
+    if ($dateB != $dateA->modify($months * -1 . ' Month')) {
+      $result = $plusMonths->modify('last day of last month');
+    }
+    elseif ($aDate == $dateB->modify('last day of this month')) {
+      $result =  $plusMonths->modify('last day of this month');
+    }
+    else {
+      $result = $plusMonths;
+    }
+    return $result;
+  }
+
+  /**
+   * Calculates and returns the percentage value
+   * of the single installment compared
+   * to the total amount.
+   *
+   * @param float $installmentAmount
+   * @param float $totalAmount
+   *
+   * @return float
+   */
+  private function calculateSingleInstallmentPercentage($installmentAmount, $totalAmount) {
+    return round(($installmentAmount / $totalAmount) * 100, 2, PHP_ROUND_HALF_DOWN);
   }
 
   /**
@@ -1862,9 +1945,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     $totalAmount = $params['total_amount'];
+    $singleInstallmentAmount = $this->calculateSingleInstallmentAmount($totalAmount, $params['installments']);
+    $params['non_deductible_amount'] = $params['total_amount'] = $singleInstallmentAmount;
     for ($i = 1; $i <= $contributionsCount; $i++) {
-      $params['non_deductible_amount'] = $params['total_amount'] = $this->calculateSingleInstallmentAmount($totalAmount, $params['installments']);
       $params['invoice_id'] = md5(uniqid(rand(), TRUE));
+
+      if (!empty($recurringContribution['values'][0]['frequency_unit'])) {
+        $params['receive_date'] = $this->calculateInstallmentReceiveDate($i, $recurringContribution['values'][0]['frequency_unit']);
+      }
+
       $contribution = wf_civicrm_api('contribution', 'create', $params);
       $this->ent['contribution'][$i]['id'] = $contribution['id'];
     }
