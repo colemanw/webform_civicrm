@@ -264,8 +264,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     // Send confirmation for each generated Contribution.
     foreach ($this->ent['contribution'] as $contributionRow) {
-      $contributionID = $contributionRow['id'];
-      wf_civicrm_api('contribution', 'sendconfirmation', array('id' => $contributionID) + $this->contribution_page);
+      $params = array_merge($this->contribution_page, array('id' => $contributionRow['id']));
+      $params['payment_processor_id'] = $this->data['contribution'][1]['contribution'][1]['payment_processor_id'];
+      wf_civicrm_api('contribution', 'sendconfirmation', $params);
     }
   }
 
