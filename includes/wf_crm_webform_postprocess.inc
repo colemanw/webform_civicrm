@@ -400,17 +400,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             $this->events[$eid]['ended'] = TRUE;
             $this->events[$eid]['title'] = t('this event');
             $this->events[$eid]['count'] = wf_crm_aval($this->events, "$eid:count", 0) + $count;
-            if (!empty($p['fee_amount'])) {
-              $this->line_items[] = array(
-                'qty' => $count,
-                'entity_table' => 'civicrm_participant',
-                'event_id' => $eid,
-                'contact_ids' => $contacts,
-                'unit_price' => $p['fee_amount'],
-                'element' => "civicrm_{$c}_participant_{$n}_participant_{$id_and_type}",
-                'contact_label' => $participantName,
-              );
-            }
+            $this->line_items[] = array(
+              'qty' => $count,
+              'entity_table' => 'civicrm_participant',
+              'event_id' => $eid,
+              'contact_ids' => $contacts,
+              'unit_price' => $p['fee_amount'],
+              'element' => "civicrm_{$c}_participant_{$n}_participant_{$id_and_type}",
+              'contact_label' => $participantName,
+            );
           }
         }
       }
