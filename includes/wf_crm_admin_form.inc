@@ -1123,7 +1123,7 @@ class wf_crm_admin_form {
       '#type' => 'checkbox',
       '#title' => t('Create New Relationship'),
       '#default_value' => !empty($this->settings['create_new_relationship']),
-      '#description' => t('Create new relationship if duplicate record exists and is expired or inactive.'),
+      '#description' => t('If enabled, only Active relationships will load on the form, and will be updated on Submit. If there are no Active relationships then a new one will be created.'),
     );
     $this->form['options']['new_contact_source'] = array(
       '#type' => 'textfield',
