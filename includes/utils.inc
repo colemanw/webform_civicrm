@@ -1330,7 +1330,9 @@ function wf_crm_get_fields($var = 'fields') {
             'andor' => 'or',
             'action' => 'show',
             'rules' => array(
-              'contact_contact_sub_type' => $sets[$set]['sub_types'],
+              'contact_contact_sub_type' => array(
+                'values' => $sets[$set]['sub_types'],
+              ),
             ),
           );
         }

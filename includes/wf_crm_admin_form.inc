@@ -1714,22 +1714,27 @@ class wf_crm_admin_form {
       'nid' => $this->node->nid,
       'rgid' => $rgid,
       'weight' => $weight,
-      'target' => $enabled[$field['form_key']],
-      'target_type' => 'component',
+      'actions' => array(
+        array(
+          'target' => $enabled[$field['form_key']],
+          'target_type' => 'component',
+          'action' => $field['civicrm_condition']['action'],
+        ),
+      ),
     );
     $rule_group['rules'] = array();
-    foreach ($field['civicrm_condition']['rules'] as $source => $conditions) {
+    foreach ($field['civicrm_condition']['rules'] as $source => $condition) {
       $source_key = "civicrm_{$c}_{$ent}_{$n}_{$source}";
       $source_id = wf_crm_aval($enabled, $source_key);
       if ($source_id) {
         $options = wf_crm_field_options(array('form_key' => $source_key), '', $this->settings['data']);
-        foreach ($conditions as $condition) {
-          if (isset($options[$condition])) {
+        foreach ((array) $condition['values'] as $value) {
+          if (isset($options[$value])) {
             $rule_group['rules'][] = array(
               'source_type' => 'component',
               'source' => $source_id,
-              'operator' => 'equal',
-              'value' => $condition,
+              'operator' => wf_crm_aval($condition, 'operator', 'equal'),
+              'value' => $value,
             );
           }
         }
