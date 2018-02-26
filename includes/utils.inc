@@ -1108,11 +1108,25 @@ function wf_crm_get_fields($var = 'fields') {
         'extra' => array('civicrm_live_options' => 1),
       );
       $fields['membership_status_id'] = array(
-        'name' => t('Membership Status'),
+        'name' => t('Override Status'),
         'type' => 'select',
         'expose_list' => TRUE,
         'value' => 0,
-        'exposed_empty_option' => '- ' . t('Automatic') . ' -',
+        'exposed_empty_option' => '- ' . t('No') . ' -',
+      );
+      $fields['membership_status_override_end_date'] = array(
+        'name' => t('Status Override Until Date'),
+        'type' => 'date',
+        'civicrm_condition' => array(
+          'andor' => 'or',
+          'action' => 'show',
+          'rules' => array(
+            'membership_status_id' => array(
+              'values' => '0',
+              'operator' => 'not_equal',
+            ),
+          ),
+        ),
       );
       $fields['membership_num_terms'] = array(
         'name' => t('Number of Terms'),
@@ -1326,7 +1340,9 @@ function wf_crm_get_fields($var = 'fields') {
             'andor' => 'or',
             'action' => 'show',
             'rules' => array(
-              'contact_contact_sub_type' => $sets[$set]['sub_types'],
+              'contact_contact_sub_type' => array(
+                'values' => $sets[$set]['sub_types'],
+              ),
             ),
           );
         }

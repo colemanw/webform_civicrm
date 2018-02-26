@@ -493,7 +493,7 @@ var wfCiviAdmin = (function ($, D) {
 
       // Membership constraints
       $('select[name$=_membership_num_terms]', context).once('crm-mem-date').change(function(e, type) {
-        var $dateWrappers = $(this).parent().siblings('[class$="-date"]');
+        var $dateWrappers = $(this).parent().siblings('[class$="-date"]').not('[class$="-status-override-end-date"]');
         if ($(this).val() == '0') {
           $dateWrappers.show();
           if (type !== 'init') {
@@ -504,6 +504,14 @@ var wfCiviAdmin = (function ($, D) {
           $dateWrappers.hide().find('input').prop('checked', false);
         }
       }).trigger('change', 'init');
+      $('select[name$=_membership_status_id]', context).once('crm-mem-date').change(function(e) {
+        $target = $(this).parent().siblings('[class$="membership-status-override-end-date"]');
+        if ($(this).val() == '0') {
+          $target.hide().find('input').prop('checked', false);
+        } else {
+          $target.show();
+        }
+      }).change();
 
       function billingMessages() {
         var $pageSelect = $('[name=civicrm_1_contribution_1_contribution_contribution_page_id]');
