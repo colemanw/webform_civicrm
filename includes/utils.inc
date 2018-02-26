@@ -1114,6 +1114,10 @@ function wf_crm_get_fields($var = 'fields') {
         'value' => 0,
         'exposed_empty_option' => '- ' . t('No') . ' -',
       );
+      $fields['membership_status_override_end_date'] = array(
+        'name' => t('Status Override Until Date'),
+        'type' => 'date',
+      );
       $fields['membership_num_terms'] = array(
         'name' => t('Number of Terms'),
         'type' => 'select',

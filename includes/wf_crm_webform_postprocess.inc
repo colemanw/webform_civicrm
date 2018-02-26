@@ -1122,6 +1122,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (empty($params['membership_type_id'])) {
         continue;
       }
+
+      if (empty($params['status_id'])) {
+        $params['status_override_end_date'] = '';
+      }
+
       // Search for existing membership to renew - must belong to same domain and organization
       // But not necessarily the same membership type to allow for upsell
       if (!empty($params['num_terms'])) {
