@@ -10,7 +10,7 @@ var wfCivi = (function ($, D) {
    */
   var pub = {};
 
-  pub.existingSelect = function (num, nid, path, toHide, hideOrDisable, showEmpty, cid, fetch) {
+  pub.existingSelect = function (num, nid, path, toHide, hideOrDisable, showEmpty, cid, fetch, defaults) {
     if (cid.charAt(0) === '-') {
       resetFields(num, nid, true, 'show', toHide, hideOrDisable, showEmpty, 500);
       // Fill name fields with name typed
@@ -33,7 +33,7 @@ var wfCivi = (function ($, D) {
       }
       return;
     }
-    resetFields(num, nid, true, 'hide', toHide, hideOrDisable, showEmpty, 500);
+    resetFields(num, nid, true, 'hide', toHide, hideOrDisable, showEmpty, 500, defaults);
     if (cid && fetch) {
       $('.webform-client-form-'+nid).addClass('contact-loading');
       var params = getCids(nid);
@@ -115,7 +115,7 @@ var wfCivi = (function ($, D) {
 
   var stateProvinceCache = {};
 
-  function resetFields(num, nid, clear, op, toHide, hideOrDisable, showEmpty, speed) {
+  function resetFields(num, nid, clear, op, toHide, hideOrDisable, showEmpty, speed, defaults) {
     $('div.form-item.webform-component[class*="--civicrm-'+num+'-contact-"]', '.webform-client-form-'+nid).each(function() {
       var $el = $(this);
       var name = getFieldNameFromClass($el);
@@ -128,10 +128,18 @@ var wfCivi = (function ($, D) {
           // Reset country to default
           if (n[5] === 'country') {
             $('select.civicrm-processed', this).val(setting.defaultCountry).trigger('change', 'webform_civicrm:reset');
-          } else {
+          }
+          //Set default value if it is specified in component settings.
+          else if ($el.hasClass('webform-component-date') && typeof defaults != "undefined" && defaults.hasOwnProperty(name)) {
+            var date = defaults[name].split('-');
+            $el.find('select.year, input.year').val(+date[0]);
+            $el.find('select.month').val(+date[1]);
+            $el.find('select.day').val(+date[2]);
+          }
+          else {
             $(':input', this).not(':radio, :checkbox, :button, :submit, :file, .form-file').each(function() {
               if (this.id && $(this).val() != '') {
-                $(this).val('');
+                (typeof defaults != "undefined" && defaults.hasOwnProperty(name)) ? $(this).val(defaults[name]) : $(this).val('');
                 $(this).trigger('change', 'webform_civicrm:reset');
               }
             });
