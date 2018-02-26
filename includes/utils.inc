@@ -1117,6 +1117,16 @@ function wf_crm_get_fields($var = 'fields') {
       $fields['membership_status_override_end_date'] = array(
         'name' => t('Status Override Until Date'),
         'type' => 'date',
+        'civicrm_condition' => array(
+          'andor' => 'or',
+          'action' => 'show',
+          'rules' => array(
+            'membership_status_id' => array(
+              'values' => '0',
+              'operator' => 'not_equal',
+            ),
+          ),
+        ),
       );
       $fields['membership_num_terms'] = array(
         'name' => t('Number of Terms'),
