@@ -804,10 +804,8 @@ function _webform_civicrm_replaceContactLinkTokens($tokens, $webformSubmissionDa
       $contactID = $webformSubmissionData->civicrm['contact'][$entityID]['id'];
       $tokenNewValue = url("/civicrm/contact/view?reset=1&cid={$contactID}", array('absolute' => TRUE));
     }
-
     $replacedTokens[$tokenName] = $tokenNewValue;
   }
-
 
   return $replacedTokens;
 }
@@ -835,13 +833,10 @@ function _webform_civicrm_replaceActivityIdTokens($tokens, $webformSubmissionDat
     $tokenNewValue = '';
     if (!empty($webformSubmissionData->civicrm['activity'][$entityID]['id'])) {
       $activityId = $webformSubmissionData->civicrm['activity'][$entityID]['id'];
-
       $tokenNewValue = $activityId;
     }
-
     $replacedTokens[$tokenName] = $tokenNewValue;
   }
-
 
   return $replacedTokens;
 }
@@ -869,13 +864,10 @@ function _webform_civicrm_replaceActivityLinkTokens($tokens, $webformSubmissionD
     $tokenNewValue = '';
     if (!empty($webformSubmissionData->civicrm['activity'][$entityID]['id'])) {
       $activityId = $webformSubmissionData->civicrm['activity'][$entityID]['id'];
-
       $tokenNewValue = url("/civicrm/activity?action=view&reset=1&id={$activityId}", array('absolute' => TRUE));
     }
-
     $replacedTokens[$tokenName] = $tokenNewValue;
   }
-
 
   return $replacedTokens;
 }
@@ -904,13 +896,10 @@ function _webform_civicrm_replaceCaseLinkTokens($tokens, $webformSubmissionData)
     if (!empty($webformSubmissionData->civicrm['case'][$entityID]['id'])) {
       $caseID = $webformSubmissionData->civicrm['case'][$entityID]['id'];
       $caseContactID = _webform_civicrm_getCaseContactID($caseID);
-
       $tokenNewValue = url("/civicrm/contact/view/case?reset=1&id={$caseID}&cid={$caseContactID}&action=view", array('absolute' => TRUE));
     }
-
     $replacedTokens[$tokenName] = $tokenNewValue;
   }
-
 
   return $replacedTokens;
 }
