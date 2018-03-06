@@ -714,6 +714,12 @@ function webform_civicrm_token_info() {
     'dynamic' => TRUE,
   );
 
+  $info['tokens']['submission']['activity-id'] = array(
+    'name' => t('Webform CiviCRM Activity IDs'),
+    'description' => t('The IDs of activities that got created after submitting the webform. Replace the "?" with the activity number starting from 1'),
+    'dynamic' => TRUE,
+  );
+
   $info['tokens']['submission']['activity-link'] = array(
     'name' => t('Webform CiviCRM Activity Links'),
     'description' => t('The links to activities that got created after submitting the webform. Replace the "?" with the activity number starting from 1'),
@@ -743,6 +749,9 @@ function webform_civicrm_tokens($type, $tokens = '', array $data = array(), arra
 
   $contactLinksReplacedTokens = _webform_civicrm_replaceContactLinkTokens($tokens, $webformSubmissionData);
   $replacedTokens = array_merge($replacedTokens, $contactLinksReplacedTokens);
+
+  $activityIdsReplacedTokens = _webform_civicrm_replaceActivityIdTokens($tokens, $webformSubmissionData);
+  $replacedTokens = array_merge($replacedTokens, $activityIdsReplacedTokens);
 
   $activityLinksReplacedTokens = _webform_civicrm_replaceActivityLinkTokens($tokens, $webformSubmissionData);
   $replacedTokens = array_merge($replacedTokens, $activityLinksReplacedTokens);
@@ -794,6 +803,40 @@ function _webform_civicrm_replaceContactLinkTokens($tokens, $webformSubmissionDa
     if (!empty($webformSubmissionData->civicrm['contact'][$entityID]['id'])) {
       $contactID = $webformSubmissionData->civicrm['contact'][$entityID]['id'];
       $tokenNewValue = url("/civicrm/contact/view?reset=1&cid={$contactID}", array('absolute' => TRUE));
+    }
+
+    $replacedTokens[$tokenName] = $tokenNewValue;
+  }
+
+
+  return $replacedTokens;
+}
+
+/**
+ * Replaces activity-id tokens with civicrm activity IDs
+ *
+ * @param array $tokens
+ *   Tokens to process
+ * @param array $webformSubmissionData
+ *   Data submitted by the webform
+ *
+ * @return array
+ *   List of replaced activity-id tokens replaced with actual activity IDs
+ */
+function _webform_civicrm_replaceActivityIdTokens($tokens, $webformSubmissionData) {
+  $replacedTokens = array();
+
+  $tokenValues = token_find_with_prefix($tokens, 'activity-id');
+  if (!$tokenValues) {
+    return $replacedTokens;
+  }
+
+  foreach ($tokenValues as $entityID => $tokenName) {
+    $tokenNewValue = '';
+    if (!empty($webformSubmissionData->civicrm['activity'][$entityID]['id'])) {
+      $activityId = $webformSubmissionData->civicrm['activity'][$entityID]['id'];
+
+      $tokenNewValue = $activityId;
     }
 
     $replacedTokens[$tokenName] = $tokenNewValue;
