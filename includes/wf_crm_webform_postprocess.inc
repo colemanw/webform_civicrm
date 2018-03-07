@@ -1946,8 +1946,17 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     $totalAmount = $params['total_amount'];
+    $nonDeductibleAmount = $params['non_deductible_amount'];
+
     $singleInstallmentAmount = $this->calculateSingleInstallmentAmount($totalAmount, $contributionsCount);
-    $params['non_deductible_amount'] = $params['total_amount'] = $singleInstallmentAmount;
+
+    $params['total_amount'] = $singleInstallmentAmount;
+
+    $params['non_deductible_amount'] = 0;
+    if ($nonDeductibleAmount) {
+      $params['non_deductible_amount'] =  $singleInstallmentAmount;
+    }
+
     for ($i = 1; $i <= $contributionsCount; $i++) {
       $params['invoice_id'] = md5(uniqid(rand(), TRUE));
 
