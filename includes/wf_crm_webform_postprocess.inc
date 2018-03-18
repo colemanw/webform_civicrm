@@ -1329,7 +1329,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $params['id'] = $this->ent['activity'][$n]['id'];
 
           // Update details when user has selected he wants to update the details
-          if (!empty($this->data['activity'][$n]['details']['update_existing'])) {
+          if (!empty($data['details']['update_existing'])) {
             // Format details as html
             $this->formatSubmissionDetails($params, $n);
           }
@@ -1340,33 +1340,34 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             unset($params[$field]);
           }
         }
+
         // Handle survey data
-        if (!empty($this->data['activity'][$n]['activity'][1]['survey_id'])) {
-          $params['source_record_id'] = $this->data['activity'][$n]['activity'][1]['survey_id'];
+        if (!empty($params['survey_id'])) {
+          $params['source_record_id'] = $params['survey_id'];
           // Set default subject
           if (empty($params['id']) && empty($params['subject'])) {
-            $survey = wf_civicrm_api('survey', 'getsingle', array('id' => $this->data['activity'][$n]['activity'][1]['survey_id'], 'return' => 'title'));
+            $survey = wf_civicrm_api('survey', 'getsingle', array('id' => $params['survey_id'], 'return' => 'title'));
             $params['subject'] = wf_crm_aval($survey, 'title', '');
           }
         }
         // File on case
-        if (!empty($this->data['activity'][$n]['case_type_id'])) {
+        if (!empty($data['case_type_id'])) {
           // Webform case
-          if ($this->data['activity'][$n]['case_type_id'][0] === '#') {
-            $case_num = substr($this->data['activity'][$n]['case_type_id'], 1);
+          if ($data['case_type_id'][0] === '#') {
+            $case_num = substr($data['case_type_id'], 1);
             if (!empty($this->ent['case'][$case_num]['id'])) {
               $params['case_id'] = $this->ent['case'][$case_num]['id'];
             }
           }
           // Search for case by criteria
           else {
-            $case_contact = $this->ent['contact'][$this->data['activity'][$n]['case_contact_id']]['id'];
+            $case_contact = $this->ent['contact'][$data['case_contact_id']]['id'];
             if ($case_contact) {
               // Proceed only if this activity is not already filed on a case
               if (empty($params['id']) || !wf_crm_apivalues('case', 'get', array('activity_id' => $params['id']))) {
                 $case = $this->findCaseForContact($case_contact, array(
-                  'status_id' => $this->data['activity'][$n]['case_status_id'],
-                  'case_type_id' => $this->data['activity'][$n]['case_type_id'],
+                  'status_id' => $data['case_status_id'],
+                  'case_type_id' => $data['case_type_id'],
                 ));
                 if ($case) {
                   $params['case_id'] = $case['id'];
