@@ -916,14 +916,13 @@ function _webform_civicrm_getCaseContactID($caseID) {
   civicrm_initialize();
 
   $caseEntity = civicrm_api3('Case', 'get', array(
-    'sequential' => 1,
     'return' => array('contact_id'),
     'id' => $caseID,
   ));
 
   $caseContactID = WEBFORM_CIVICRM_DEFAULT_CONTACT_ID;
-  if (!empty($caseEntity['values'][0]['contact_id'][1])) {
-    $caseContactID = $caseEntity['values'][0]['contact_id'][1];
+  if ((count($caseEntity['values'][$caseID]['contact_id']) > 0) && !empty(reset($caseEntity['values'][$caseID]['contact_id']))) {
+    $caseContactID = reset($caseEntity['values'][$caseID]['contact_id']);
   }
 
   return $caseContactID;
