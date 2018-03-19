@@ -708,6 +708,12 @@ function _webform_civicrm_status() {
  */
 function webform_civicrm_token_info() {
   $info = array();
+  $info['tokens']['submission']['contact-id'] = array(
+    'name' => t('Webform CiviCRM Contacts IDs'),
+    'description' => t('The IDs of Contacts that got created after submitting the webform. Replace the "?" with the contact number starting from 1'),
+    'dynamic' => TRUE,
+  );
+
   $info['tokens']['submission']['contact-link'] = array(
     'name' => t('Webform CiviCRM Contacts Links'),
     'description' => t('The links to Contacts that got created after submitting the webform. Replace the "?" with the contact number starting from 1'),
@@ -723,6 +729,12 @@ function webform_civicrm_token_info() {
   $info['tokens']['submission']['activity-link'] = array(
     'name' => t('Webform CiviCRM Activity Links'),
     'description' => t('The links to activities that got created after submitting the webform. Replace the "?" with the activity number starting from 1'),
+    'dynamic' => TRUE,
+  );
+
+  $info['tokens']['submission']['case-id'] = array(
+    'name' => t('Webform CiviCRM Case IDs'),
+    'description' => t('The IDs of cases that got created after submitting the webform. Replace the "?" with the case number starting from 1'),
     'dynamic' => TRUE,
   );
 
@@ -747,6 +759,9 @@ function webform_civicrm_tokens($type, $tokens = '', array $data = array(), arra
   $replacedTokens = array();
   $webformSubmissionData = $data['webform-submission'];
 
+  $contactIdsReplacedTokens = _webform_civicrm_replaceContactIdTokens($tokens, $webformSubmissionData);
+  $replacedTokens = array_merge($replacedTokens, $contactIdsReplacedTokens);
+
   $contactLinksReplacedTokens = _webform_civicrm_replaceContactLinkTokens($tokens, $webformSubmissionData);
   $replacedTokens = array_merge($replacedTokens, $contactLinksReplacedTokens);
 
@@ -755,6 +770,9 @@ function webform_civicrm_tokens($type, $tokens = '', array $data = array(), arra
 
   $activityLinksReplacedTokens = _webform_civicrm_replaceActivityLinkTokens($tokens, $webformSubmissionData);
   $replacedTokens = array_merge($replacedTokens, $activityLinksReplacedTokens);
+
+  $caseIdsReplacedTokens  = _webform_civicrm_replaceCaseIdTokens($tokens, $webformSubmissionData);
+  $replacedTokens = array_merge($replacedTokens, $caseIdsReplacedTokens);
 
   $caseLinksReplacedTokens  = _webform_civicrm_replaceCaseLinkTokens($tokens, $webformSubmissionData);
   $replacedTokens = array_merge($replacedTokens, $caseLinksReplacedTokens);
@@ -777,6 +795,37 @@ function _webform_civicrm_isWebformSubmission($tokenType, $webformData) {
     !empty($webformData['webform-submission']) &&
     webform_variable_get('webform_token_access')
   );
+}
+
+/**
+ * Replaces contact-id tokens with civicrm contact IDs
+ *
+ * @param array $tokens
+ *   Tokens to process
+ * @param array $webformSubmissionData
+ *   Data submitted by the webform
+ *
+ * @return array
+ *   List of replaced contact-id tokens replaced with actual contacts IDs
+ */
+function _webform_civicrm_replaceContactIdTokens($tokens, $webformSubmissionData) {
+  $replacedTokens = array();
+
+  $tokenValues = token_find_with_prefix($tokens, 'contact-id');
+  if (!$tokenValues) {
+    return $replacedTokens;
+  }
+
+  foreach ($tokenValues as $entityID => $tokenName) {
+    $tokenNewValue = '';
+    if (!empty($webformSubmissionData->civicrm['contact'][$entityID]['id'])) {
+      $contactID = $webformSubmissionData->civicrm['contact'][$entityID]['id'];
+      $tokenNewValue = $contactID;
+    }
+    $replacedTokens[$tokenName] = $tokenNewValue;
+  }
+
+  return $replacedTokens;
 }
 
 /**
@@ -865,6 +914,37 @@ function _webform_civicrm_replaceActivityLinkTokens($tokens, $webformSubmissionD
     if (!empty($webformSubmissionData->civicrm['activity'][$entityID]['id'])) {
       $activityId = $webformSubmissionData->civicrm['activity'][$entityID]['id'];
       $tokenNewValue = url("/civicrm/activity?action=view&reset=1&id={$activityId}", array('absolute' => TRUE));
+    }
+    $replacedTokens[$tokenName] = $tokenNewValue;
+  }
+
+  return $replacedTokens;
+}
+
+/**
+ * Replaces case-id tokens with civicrm case IDs
+ *
+ * @param array $tokens
+ *   Tokens to process
+ * @param array $webformSubmissionData
+ *   Data submitted by the webform
+ *
+ * @return array
+ *   List of replaced case-id tokens replaced with actual case IDs
+ */
+function _webform_civicrm_replaceCaseIdTokens($tokens, $webformSubmissionData) {
+  $replacedTokens = array();
+
+  $tokenValues = token_find_with_prefix($tokens, 'case-id');
+  if (!$tokenValues) {
+    return $replacedTokens;
+  }
+
+  foreach ($tokenValues as $entityID => $tokenName) {
+    $tokenNewValue = '';
+    if (!empty($webformSubmissionData->civicrm['case'][$entityID]['id'])) {
+      $caseId = $webformSubmissionData->civicrm['case'][$entityID]['id'];
+      $tokenNewValue = $caseID;
     }
     $replacedTokens[$tokenName] = $tokenNewValue;
   }
