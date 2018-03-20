@@ -683,7 +683,7 @@ function wf_crm_get_fields($var = 'fields') {
       'name' => t('Email'),
       'type' => 'email',
     );
-    foreach (array('street_address' => t('Street Address'), 'supplemental_address_1' => t('Street Address # Line 2'), 'supplemental_address_2' => t('Street Address # Line 3'), 'city' => t('City')) as $key => $value) {
+    foreach (array('street_address' => t('Street Address'), 'street_name' => t('Street Name'), 'street_number' => t('Street Number'), 'street_unit' => t('Street Number Suffix'), 'supplemental_address_1' => t('Street Address # Line 2'), 'supplemental_address_2' => t('Street Address # Line 3'), 'city' => t('City')) as $key => $value) {
       $fields['address_' . $key] = array(
         'name' => $value,
         'type' => 'textfield',
@@ -1667,6 +1667,9 @@ function wf_crm_location_fields() {
 function wf_crm_address_fields() {
   return array(
     'street_address',
+    'street_name',
+    'street_number',
+    'street_unit',
     'city',
     'state_province_id',
     'country_id',

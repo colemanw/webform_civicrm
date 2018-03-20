@@ -88,6 +88,30 @@ class wf_crm_admin_help {
       '</p>';
   }
 
+  public static function address_street_address() {
+    print '<p>' .
+      t('Single field for whole address line: Street Name, Number and Number Suffix. Don\'t use together with the separate fields.') .
+      '</p>';
+  }
+
+  public static function address_street_name() {
+    print '<p>' .
+      t('Use together with Street Number and Street Number Suffix as an alternative for Street Address.') .
+      '</p>';
+  }
+
+  public static function address_street_number() {
+    print '<p>' .
+      t('Use together with Street Name and Street Number Suffix as an alternative for Street Address.') .
+      '</p>';
+  }
+
+  public static function address_street_unit() {
+    print '<p>' .
+      t('Use together with Street Name and Street Number as an alternative for Street Address.') .
+      '</p>';
+  }
+
   public static function address_master_id() {
     print '<p>' .
       t('When selected, will hide fields for this address and use those of the other contact.') .
