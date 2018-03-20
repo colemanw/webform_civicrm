@@ -1667,6 +1667,9 @@ function wf_crm_location_fields() {
 function wf_crm_address_fields() {
   return array(
     'street_address',
+    'street_name',
+    'street_number',
+    'street_unit',
     'city',
     'state_province_id',
     'country_id',
