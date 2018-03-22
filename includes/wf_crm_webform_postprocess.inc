@@ -239,11 +239,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       webform_submission_send_mail($this->node, $this->submission);
       $this->submitIPNPayment();
     }
-      // Send receipt
+    // Send receipt
     if (empty($this->submission->is_draft)
-        && !empty($this->ent['contribution'][1]['id'])
-        && !empty($this->contribution_page['is_email_receipt'])
-        && (!$this->contributionIsIncomplete || $this->contributionIsPayLater) ) {
+      && !empty($this->ent['contribution'][1]['id'])
+      && !empty($this->contribution_page['is_email_receipt'])
+      && (!$this->contributionIsIncomplete || $this->contributionIsPayLater)
+    ) {
       $this->sendReceipt();
     }
   }
@@ -251,18 +252,19 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   /**
    * Send receipt
    */
-  private function sendReceipt(){
+  private function sendReceipt() {
     // tax integration
     if (!is_null($this->tax_rate)) {
       $template = CRM_Core_Smarty::singleton();
-      $template->assign('dataArray', array( "{$this->tax_rate}" => $this->tax_rate/100 ));
+      $template->assign('dataArray', array("{$this->tax_rate}" => $this->tax_rate / 100));
     }
     if ($this->contributionIsIncomplete) {
       $template = CRM_Core_Smarty::singleton();
       $template->assign('is_pay_later', 1);
     }
-    $contribute_id = $this->ent['contribution'][1]['id'];
-    wf_civicrm_api('contribution', 'sendconfirmation', array('id' => $contribute_id) + $this->contribution_page);
+    $params = array_merge($this->contribution_page, array('id' => $this->ent['contribution'][1]['id']));
+    $params['payment_processor_id'] = $this->data['contribution'][1]['contribution'][1]['payment_processor_id'];
+    wf_civicrm_api('contribution', 'sendconfirmation', $params);
   }
 
   /**
