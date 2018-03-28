@@ -2407,12 +2407,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $reorderedArray[$index]['location_type_id'] = $existingLocationTypeId;
       }
 
-      if (!empty($eValue[$entity])) {
+      if (isset($eValue[$entity])) {
         $reorderedArray[$index][$entity] = $eValue[$entity];
       }
 
       // address field contain many sub fields and should be handled differently
-      if ($entity != 'address')  {
+      if ($entity != 'address' )  {
         $submittedLocationValues = self::unsetEmptyValueIndexes($submittedLocationValues, $entity);
         $reorderedArray[$index][$entity] = wf_crm_aval($eValue, $entity);
       }
@@ -2441,20 +2441,21 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
           // address field contain many sub fields and should be handled differently
           if ($entity != 'address')  {
-            $reorderedArray[$index][$entity] = $sValue[$entity];
+            foreach($sValue as $sValueKey => $sValueValue ) {
+              $reorderedArray[$index][$entity] = $sValue[$entity];
+              if ( !array_key_exists($sValueKey, $reorderedArray[$index]) ) {
+                $reorderedArray[$index][$sValueKey] = $sValueValue;
+              }
+            }
           }
           else {
             foreach (wf_crm_address_fields() as $field)  {
               if (isset($sValue[$field]))  {
                 $reorderedArray[$index][$field] = $sValue[$field];
+              } else {
+                // the value has not been submitted so we do not want to include it.
+                unset($reorderedArray[$index][$field]);
               }
-            }
-            // handle supplemental addresses
-            $subAddressIndex = 1;
-            $subAddField = 'supplemental_address_' . $subAddressIndex;
-            while(isset($sValue[$subAddField]))  {
-              $reorderedArray[$index][$subAddField] = $sValue[$subAddField];
-              $subAddField = 'supplemental_address_' . ++$subAddressIndex;
             }
           }
            unset($submittedLocationValues[$key]);
