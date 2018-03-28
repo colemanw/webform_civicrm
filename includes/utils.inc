@@ -1665,16 +1665,34 @@ function wf_crm_location_fields() {
  * @return array
  */
 function wf_crm_address_fields() {
-  return array(
-    'street_address',
-    'street_name',
-    'street_number',
-    'street_unit',
-    'city',
-    'state_province_id',
-    'country_id',
-    'postal_code'
-  );
+  if ( ! $addrfields = &drupal_static('wf_crm_address_fields') ) {
+    try{
+      $result = civicrm_api3('Address', 'getfields', array(
+        'api_action' => "",
+      ));
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      // Handle error here.
+      $addrfields = array(
+        'street_address',
+        'street_name',
+        'street_number',
+        'street_unit',
+        'city',
+        'state_province_id',
+        'country_id',
+        'postal_code'
+      );
+    }
+    if ( empty($result['is_error']) && ! empty($result['count'] ) ) {
+      foreach ($result['values'] as $param => $value ) {
+        $addrfields[] = $param;
+      }
+    }
+    unset($addrfields['location_type_id']);
+    unset($addrfields['id']);
+  }
+  return $addrfields;
 }
 
 /**
