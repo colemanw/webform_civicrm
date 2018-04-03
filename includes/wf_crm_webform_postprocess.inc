@@ -1826,7 +1826,23 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function createDeferredPayment() {
     $this->contributionIsIncomplete = TRUE;
-    $this->contributionIsPayLater = empty($this->data['contribution'][1]['contribution'][1]['payment_processor_id']);
+
+    $this->contributionIsPayLater = FALSE;
+    if(empty($this->data['contribution'][1]['contribution'][1]['payment_processor_id'])) {
+      $this->contributionIsPayLater = TRUE;
+    }
+    else {
+      $paymentProcessorID = $this->data['contribution'][1]['contribution'][1]['payment_processor_id'];
+      $paymentProcessorClassName = civicrm_api3('PaymentProcessor', 'getvalue', array(
+        'return' => 'class_name',
+        'id' => $paymentProcessorID,
+      ));
+
+      if ($paymentProcessorClassName === 'Payment_Manual') {
+        $this->contributionIsPayLater = TRUE;
+      }
+    }
+
     $params = $this->contributionParams();
     $params['contribution_status_id'] = 'Pending';
     $params['is_pay_later'] = $this->contributionIsPayLater;
