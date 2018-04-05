@@ -24,6 +24,11 @@ Issues
 Bugs and Feature requests should be reported in the Issue Queue:
 https://www.drupal.org/project/issues/webform_civicrm
 
+Contributing
+------------
+
+Pull-requests should be submitted with a clear description of the problem and steps to reproduce.
+
 Credits
 -------
 
