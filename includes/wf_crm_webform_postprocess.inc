@@ -2155,8 +2155,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // If value is null then it was hidden by a webform conditional rule - skip it
       if ($val !== NULL && $val !== array(NULL)) {
         list( , $c, $ent, $n, $table, $name) = explode('_', $field_key, 6);
-        // Fieldsets and existing contact fields are not strictly CiviCRM fields, so ignore
-        if ($name === 'existing' || $name === 'fieldset') {
+        // The following are not strictly CiviCRM fields, so ignore
+        if (in_array($name, array('existing', 'fieldset', 'createmode'))) {
           continue;
         }
         // Check to see if configured to ignore hidden field value(s)
