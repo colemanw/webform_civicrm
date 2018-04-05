@@ -2383,7 +2383,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
-   * reorder submitted location values according to existing location values
+   * Reorder submitted location values according to existing location values
    *
    * @param array $submittedLocationValues
    * @param array $existingLocationValues
@@ -2418,14 +2418,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
       else {
         foreach (wf_crm_address_fields() as $field)  {
-          $reorderedArray[$index][$field] = isset($eValue[$field]) ? $eValue[$field] : '';
-        }
-        // handle supplemental addresses
-        $subAddressIndex = 1;
-        $subAddField = 'supplemental_address_' . $subAddressIndex;
-        while(isset($eValue[$subAddField]))  {
-          $reorderedArray[$index][$subAddField] = $eValue[$subAddField];
-          $subAddField = 'supplemental_address_' . ++$subAddressIndex;
+          if ($field != 'location_type_id') {
+            $reorderedArray[$index][$field] = isset($eValue[$field]) ? $eValue[$field] : '';
+          }
         }
       }
 
@@ -2445,19 +2440,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
           else {
             foreach (wf_crm_address_fields() as $field)  {
-              if (isset($sValue[$field]))  {
+              if (isset($sValue[$field]) && $field != 'location_type_id')  {
                 $reorderedArray[$index][$field] = $sValue[$field];
               }
             }
-            // handle supplemental addresses
-            $subAddressIndex = 1;
-            $subAddField = 'supplemental_address_' . $subAddressIndex;
-            while(isset($sValue[$subAddField]))  {
-              $reorderedArray[$index][$subAddField] = $sValue[$subAddField];
-              $subAddField = 'supplemental_address_' . ++$subAddressIndex;
-            }
           }
-           unset($submittedLocationValues[$key]);
+          unset($submittedLocationValues[$key]);
         }
       }
       $index++;

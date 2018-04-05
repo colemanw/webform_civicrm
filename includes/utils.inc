@@ -1292,6 +1292,7 @@ function wf_crm_get_fields($var = 'fields') {
     while ($dao->fetch()) {
       if (isset($custom_types[$dao->html_type])) {
         $set = 'cg' . $dao->custom_group_id;
+        // Place these custom fields directly into their entity
         if ($dao->entity_type == 'address' || $dao->entity_type == 'relationship' || $dao->entity_type == 'membership') {
           $set = $dao->entity_type;
         }
@@ -1665,16 +1666,13 @@ function wf_crm_location_fields() {
  * @return array
  */
 function wf_crm_address_fields() {
-  return array(
-    'street_address',
-    'street_name',
-    'street_number',
-    'street_unit',
-    'city',
-    'state_province_id',
-    'country_id',
-    'postal_code'
-  );
+  $fields = array();
+  foreach (array_keys(wf_crm_get_fields()) as $key) {
+    if (strpos($key, 'address') === 0) {
+      $fields[] = substr($key, 8);
+    }
+  }
+  return $fields;
 }
 
 /**
