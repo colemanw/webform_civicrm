@@ -555,30 +555,38 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         );
       }
     }
+
+    $taxRates = CRM_Core_PseudoConstant::getTaxRates();
     foreach ($this->line_items as $item) {
       $total += $item['line_total'];
-      // tax integration
-      if (!is_null($this->tax_rate)) {
+      // Sales Tax integration
+      if (!empty($item['financial_type_id'])) {
+        $itemTaxRate = isset($taxRates[$item['financial_type_id']]) ? $taxRates[$item['financial_type_id']] : NULL;
+      }
+      else {
+        $itemTaxRate = $this->tax_rate;
+      }
+
+      if (!is_null($itemTaxRate)) {
         // Change the line item label to display the tax rate it contains
         $taxSettings = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::CONTRIBUTE_PREFERENCES_NAME, 'contribution_invoice_settings');
 
-        if ($taxSettings['tax_display_settings'] != 'Do_not_show') {
-          $item['label'] .= ' (' . t('includes !rate @tax', array('!rate' => (float)$this->tax_rate . '%', '@tax' => $taxSettings['tax_term'])) . ')';
+        if (($taxSettings['tax_display_settings'] != 'Do_not_show') && ($itemTaxRate !== 0)) {
+          $item['label'] .= ' (' . t('includes !rate @tax', array('!rate' => (float)$itemTaxRate . '%', '@tax' => $taxSettings['tax_term'])) . ')';
         }
 
         // Add calculation for financial type that contains tax
-        $item['tax_amount'] = ($this->tax_rate / 100) * $item['line_total'];
-        $total += $item['line_total'] * (($this->tax_rate / 100) + 1);
+        $item['tax_amount'] = ($itemTaxRate / 100) * $item['line_total'];
+        $total += $item['tax_amount'];
         $label = $item['label'] . ($item['qty'] > 1 ? " ({$item['qty']})" : '');
         $rows[] = array(
-          'data' => array($label, CRM_Utils_Money::format($item['line_total'] * (($this->tax_rate / 100) + 1))),
+          'data' => array($label, CRM_Utils_Money::format($item['line_total'] + $item['tax_amount'])),
           'class' => array($item['element'], 'line-item'),
-          'data-amount' => $item['line_total'] * (($this->tax_rate / 100) + 1),
-          'data-tax' => (int)$this->tax_rate,
+          'data-amount' => $item['line_total'] + $item['tax_amount'],
+          'data-tax' => (float)$itemTaxRate,
         );
-      }else{
-        $total += $item['line_total'];
-
+      }
+      else {
         $label = $item['label'] . ($item['qty'] > 1 ? " ({$item['qty']})" : '');
         $rows[] = array(
           'data' => array($label, CRM_Utils_Money::format($item['line_total'])),
