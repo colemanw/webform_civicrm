@@ -1856,7 +1856,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     $numInstallments = wf_crm_aval($params, 'installments', 1, TRUE);
     $frequencyInterval = wf_crm_aval($params, 'frequency_unit');
-    if ($numInstallments != 1 && !empty($frequencyInterval)) {
+    if ($numInstallments > 1 && !empty($frequencyInterval) && $this->contributionIsPayLater) {
       $result = $this->contributionRecur($params, 'deferred');
     }
     else {
