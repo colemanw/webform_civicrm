@@ -214,6 +214,14 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       else {
         $js_vars['paymentProcessor'] = $this->getData($fid);
       }
+
+      $installmentsFieldID = 'civicrm_1_contribution_1_contribution_installments';
+      if (!empty($this->enabled[$installmentsFieldID])) {
+        $js_vars['installmentsCount'] = wf_crm_aval($this->form_state, 'storage:submitted:' . $this->enabled[$installmentsFieldID]);
+      }
+      else {
+        $js_vars['installmentsCount'] = $this->getData($installmentsFieldID);
+      }
     }
     if ($js_vars) {
       $this->form['#attached']['js'][] = array(
@@ -600,6 +608,9 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       'id' => 'wf-crm-billing-total',
       'data-amount' => $total,
     );
+
+    $this->generateInstallmentsSummaryRow($rows);
+
     return theme('table', array(
       'sticky' => FALSE,
       'caption' => $this->contribution_page['title'],
@@ -607,6 +618,40 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       'rows' => $rows,
       'attributes' => array('id' => "wf-crm-billing-items"),
     ));
+  }
+
+  private function generateInstallmentsSummaryRow(&$rows) {
+    $installmentsFieldID = 'civicrm_1_contribution_1_contribution_installments';
+    if (!empty($this->enabled[$installmentsFieldID])) {
+      $installmentsCount = wf_crm_aval($this->form_state, 'storage:submitted:' . $this->enabled[$installmentsFieldID]);
+    }
+    else {
+      $installmentsCount = $this->getData($installmentsFieldID);
+    }
+
+    if ($installmentsCount > 1) {
+      $installmentsIntervalFieldID = 'civicrm_1_contribution_1_contribution_frequency_interval';
+      if (!empty($this->enabled[$installmentsIntervalFieldID])) {
+        $installmentsInterval = wf_crm_aval($this->form_state, 'storage:submitted:' . $this->enabled[$installmentsIntervalFieldID]);
+      }
+      else {
+        $installmentsInterval = $this->getData($installmentsIntervalFieldID);
+      }
+
+      $installmentsUnitFieldID = 'civicrm_1_contribution_1_contribution_frequency_unit';
+      if (!empty($this->enabled[$installmentsUnitFieldID])) {
+        $installmentsUnit = wf_crm_aval($this->form_state, 'storage:submitted:' . $this->enabled[$installmentsUnitFieldID]);
+      }
+      else {
+        $installmentsUnit = $this->getData($installmentsUnitFieldID);
+      }
+
+      $rows[] = array(
+        'data' => array(t("The above amount will be collected every {$installmentsInterval} {$installmentsUnit}(s) for {$installmentsCount} {$installmentsUnit}(s)"), ''),
+        'id' => 'wf-crm-billing-installments-message',
+        'data-amount' => '',
+      );
+    }
   }
 
   /**
