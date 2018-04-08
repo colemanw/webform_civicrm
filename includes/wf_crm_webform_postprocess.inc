@@ -252,7 +252,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * Send receipt
    */
   private function sendReceipt(){
-    // Sales Tax integration
+    // tax integration
     if (!is_null($this->tax_rate)) {
       $template = CRM_Core_Smarty::singleton();
       $template->assign('dataArray', array( "{$this->tax_rate}" => $this->tax_rate/100 ));
