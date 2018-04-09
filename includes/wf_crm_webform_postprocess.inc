@@ -1822,7 +1822,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
-   * Create Incomplete (Pay-Later or IPN) Contribution
+   * Create Pending (Pay Later) Contribution
    */
   private function createDeferredPayment() {
     $this->contributionIsIncomplete = TRUE;
