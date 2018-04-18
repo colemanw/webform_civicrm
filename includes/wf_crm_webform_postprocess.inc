@@ -1496,11 +1496,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $fid = 'civicrm_1_contribution_1_contribution_total_amount';
     if (isset($this->enabled[$fid]) || $this->getData($fid) > 0) {
       $totalAmount = $this->getData($fid);
-
       $unitPrice = $this->calculateSingleInstallmentAmount($totalAmount);
 
-      $installmentPercentage = $this->calculateSingleInstallmentPercentage($unitPrice, $totalAmount);
-      $label = wf_crm_aval($this->node->webform['components'], $this->enabled[$fid] . ':name', t('Contribution')) . ' ' . $installmentPercentage;
+      $label = wf_crm_aval($this->node->webform['components'], $this->enabled[$fid] . ':name', t('Contribution'));
 
       $this->line_items[] = array(
         'qty' => 1,
@@ -1531,8 +1529,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             if ($price) {
               $unitPrice = $this->calculateSingleInstallmentAmount($price);
 
-              $installmentPercentage = $this->calculateSingleInstallmentPercentage($unitPrice, $price);
-              $label = $this->getMembershipTypeField($type, 'name') . ": " . wf_crm_display_name($this->existing_contacts[$c]) . ' ' . $installmentPercentage;
+              $label = $this->getMembershipTypeField($type, 'name') . ': ' . wf_crm_display_name($this->existing_contacts[$c]);
 
               $this->line_items[] = array(
                 'qty' => $item['num_terms'],
@@ -1583,15 +1580,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     return $installmentAmount;
-  }
-
-  private function calculateSingleInstallmentPercentage($installmentAmount, $totalAmount) {
-    if ($installmentAmount == $totalAmount) {
-      return '';
-    }
-
-    $percentage = '(' . round(($installmentAmount / $totalAmount) * 100, 1, PHP_ROUND_HALF_DOWN) . '%)';
-    return $percentage;
   }
 
   /**

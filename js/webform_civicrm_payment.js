@@ -77,7 +77,6 @@ cj(function($) {
         taxPara = 1 + (tax / 100);
       }
 
-      $('td', $lineItem).html(label);
       $('td+td', $lineItem).html(CRM.formatMoney(amount * taxPara));
       $lineItem.data('amount', amount * taxPara);
     }
@@ -102,9 +101,8 @@ cj(function($) {
   function calculateContributionAmount() {
     var totalAmount = getFieldAmount('civicrm_1_contribution_1_contribution_total_amount');
     var listedAmount = calculateSingleInstallmentAmount(totalAmount);
-    var amountPercentage = calculateSingleInstallmentPercentage(listedAmount, totalAmount);
 
-    var label = $contributionAmount.closest('div.webform-component').find('label').html() + ' ' + amountPercentage || Drupal.t('Contribution') + ' ' + amountPercentage;
+    var label = $contributionAmount.closest('div.webform-component').find('label').html() || Drupal.t('Contribution');
     updateLineItem('civicrm_1_contribution_1', listedAmount, label);
   }
 
@@ -116,14 +114,6 @@ cj(function($) {
     }
 
     return amount;
-  }
-
-  function calculateSingleInstallmentPercentage(installmentAmount, totalAmount) {
-    if (installmentAmount == totalAmount) {
-      return '';
-    }
-
-    return '(' + ((installmentAmount / totalAmount) * 100).toFixed(1) + '%)';
   }
 
   if ($contributionAmount.length) {
