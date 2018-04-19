@@ -1615,6 +1615,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
     }
 
+    // 4.6 compatibility - some processors (eg. authorizeNet / Paypal require that "year" and "month" are set in params.
+    if (isset($params['credit_card_exp_date'])) {
+      $params['year'] = CRM_Core_Payment_Form::getCreditCardExpirationYear($params);
+      $params['month'] = CRM_Core_Payment_Form::getCreditCardExpirationMonth($params);
+    }
+
     // Validate billing details
     CRM_Core_Payment_Form::validatePaymentInstrument(wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id'), $params, $card_errors, NULL);
     foreach ($card_errors as $field => $msg) {
