@@ -1006,7 +1006,12 @@ function _webform_civicrm_getCaseContactID($caseID) {
   ));
 
   $caseContactID = WEBFORM_CIVICRM_DEFAULT_CONTACT_ID;
-  if ((count($caseEntity['values'][$caseID]['contact_id']) > 0) && !empty(reset($caseEntity['values'][$caseID]['contact_id']))) {
+  // Check that contact_id: Is an array, Has at least one value, The first value is not falsey
+  if (
+    !empty($caseEntity['values'][$caseID]['contact_id'])
+    && is_array($caseEntity['values'][$caseID]['contact_id'])
+    && reset($caseEntity['values'][$caseID]['contact_id'])
+  ) {
     $caseContactID = reset($caseEntity['values'][$caseID]['contact_id']);
   }
 
