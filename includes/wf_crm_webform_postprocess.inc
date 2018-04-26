@@ -1184,6 +1184,21 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // The api won't let us manually set status without this weird param
       $params['skipStatusCal'] = !empty($params['status_id']);
 
+      // if the membership is to be auto-renewed, we set its related recurring contribution ID
+      if ($params['auto_renew']) {
+        $contributionID = $this->ent['contribution'][1]['id'];
+        $contribution = wf_civicrm_api('Contribution', 'get', array(
+            'sequential' => 1,
+            'id' => $contributionID,
+            'return' => array('contribution_recur_id'),
+          )
+        );
+        if (!empty($contribution['values'][0]['contribution_recur_id'])) {
+          $params['contribution_recur_id'] = $contribution['values'][0]['contribution_recur_id'];
+        }
+      }
+      unset($params['auto_renew']);
+
       $result = wf_civicrm_api('membership', 'create', $params);
 
       if (!empty($result['id'])) {
@@ -1774,6 +1789,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function contributionRecur($contributionParams, $paymentType = 'live') {
     $installments = $contributionParams['installments'];
+    $contributionRecurAmount = $contributionParams['total_amount'];
+    $contributionFirstAmount = $contributionParams['total_amount'];
     if ($installments != 0) {
       // DRU-2862396 - we must ensure to only present 2 decimals to CiviCRM:
       $contributionRecurAmount = floor(($contributionParams['total_amount'] / $installments) * 100) / 100;
@@ -1792,6 +1809,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       'currency' => $contributionParams['currency'],
       'payment_processor_id' =>  $contributionParams['payment_processor_id'],
       'financial_type_id' =>  $contributionParams['financial_type_id'],
+      'auto_renew' =>  !empty($contributionParams['auto_renew']) ? 1 : 0,
     );
 
     if(empty($contributionParams['payment_processor_id'])) {
@@ -1863,9 +1881,31 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
     }
 
-    $numInstallments = wf_crm_aval($params, 'installments', 1, TRUE);
-    $frequencyInterval = wf_crm_aval($params, 'frequency_unit');
-    if ($numInstallments > 1 && !empty($frequencyInterval) && $this->contributionIsPayLater) {
+    $autoRenewMembership = FALSE;
+    foreach ($this->data['membership'] as $contactMemberships) {
+      foreach($contactMemberships['membership'] as $membership) {
+        if ($membership['auto_renew']) {
+          $autoRenewMembership = TRUE;
+        }
+      }
+    }
+
+    $installmentsCount = wf_crm_aval($params, 'installments', 1, TRUE);
+    $createRecurringContribution = FALSE;
+    if ($this->contributionIsPayLater) {
+      if ($autoRenewMembership) {
+        $params['installments'] = 'null';
+        $params['auto_renew'] = 1;
+        $createRecurringContribution = TRUE;
+      }
+
+      if ($installmentsCount > 1) {
+        $params['installments'] = $installmentsCount;
+        $createRecurringContribution = TRUE;
+      }
+    }
+
+    if ($createRecurringContribution) {
       $result = $this->contributionRecur($params, 'deferred');
     }
     else {

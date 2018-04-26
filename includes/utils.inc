@@ -77,6 +77,9 @@ function wf_crm_field_options($field, $context, $data) {
     elseif ($table == 'membership' && $name == 'num_terms') {
       $ret = drupal_map_assoc(range(1, 9));
     }
+    elseif ($table == 'membership' && $name == 'auto_renew') {
+      $ret = array(1 => t('Yes'), 0 => t('No'));
+    }
     // Aside from the above special cases, most lists can be fetched from api.getoptions
     else {
       $params = array('field' => $name, 'context' => 'create');
@@ -1151,6 +1154,12 @@ function wf_crm_get_fields($var = 'fields') {
       $fields['membership_end_date'] = array(
         'name' => t('End Date'),
         'type' => 'date',
+      );
+      $fields['membership_auto_renew'] = array(
+        'name' => t('Auto-renew Membership?'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'value' => 0,
       );
     }
     // Add campaign fields
