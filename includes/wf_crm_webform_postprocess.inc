@@ -1858,8 +1858,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     //Fix IPN payments marked as paid by cheque
     if (empty($params['payment_instrument_id'])) {
       if (!empty($params['payment_processor_id']) && $this->contribution_page['is_monetary']) {
-        $defaultPaymentInstrument = CRM_Core_OptionGroup::values('payment_instrument', FALSE, FALSE, FALSE, 'AND is_default = 1');
-        $params['payment_instrument_id'] = key($defaultPaymentInstrument);
+        $paymentInstrumentValue = civicrm_api3('PaymentProcessor', 'getvalue', array(
+          'return' => 'payment_instrument_id',
+          'id' => $params['payment_processor_id'],
+        ));
+        $paymentInstrumentName = CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'payment_instrument_id', $paymentInstrumentValue);
+        $params['payment_instrument_id'] = $paymentInstrumentName;
       }
     }
 
