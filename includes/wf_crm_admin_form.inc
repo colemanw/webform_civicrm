@@ -1901,7 +1901,8 @@ class wf_crm_admin_form {
    */
   public static function addFieldset($c, &$field, &$enabled, $settings, $ent = 'contact', $allow_create = FALSE) {
     $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
-    if (strpos($field['form_key'], '_custom_')) {
+    // Custom fields are placed in fieldsets by group (for contact fields only)
+    if (strpos($field['form_key'], '_custom_') && $type == 'contact') {
       $sid = explode('_custom', $field['form_key']);
       $sid = $sid[0] . '_fieldset';
       $customGroupKey = explode('_', $field['form_key'])[4];
