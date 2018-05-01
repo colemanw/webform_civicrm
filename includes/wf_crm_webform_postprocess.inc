@@ -2123,8 +2123,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
       $lineItemRecord = json_decode(json_encode($item), FALSE);
       // Add financial_item and entity_financial_trxn
-      $taxTrxnID = !empty($lineItemRecord->tax_amount);
-      CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult, $taxTrxnID);
+      // hence that we call CRM_Financial_BAO_FinancialItem::add() twice,
+      // once to create the line item 'total amount' financial_item record and the 2nd
+      // one to create the line item 'tax amount' financial_item  record.
+      CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult);
+      if (!empty($lineItemRecord->tax_amount)) {
+        CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult, TRUE);
+      }
+      
       // Create participant/membership payment records
       if (isset($item['membership_id']) || isset($item['participant_id'])) {
         $type = isset($item['participant_id']) ? 'participant' : 'membership';
