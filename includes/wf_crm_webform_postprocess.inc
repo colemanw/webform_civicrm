@@ -1896,6 +1896,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if ($autoRenewMembership) {
         $params['installments'] = 'null';
         $params['auto_renew'] = 1;
+
+        if (empty($params['frequency_unit']) || empty($params['frequency_interval'])) {
+          $minimumFrequencyData =  $this->calculateMinimumFrequencyUnitAndInterval();
+          $params['frequency_unit'] = $minimumFrequencyData['unit'];
+          $params['frequency_interval'] = $minimumFrequencyData['interval'];
+        }
+
         $createRecurringContribution = TRUE;
       }
 
@@ -1913,6 +1920,52 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     $this->ent['contribution'][1]['id'] = $result['id'];
+  }
+
+  /**
+   * If the membership is paid using PriceSet
+   * that allows the creation of more than
+   * one membership to be associated with
+   * the same recurring contribution, Then
+   * we use this method to determine the membership
+   * with the type that has the minimum frequency
+   * unit and interval so we can use it to set
+   * the recurring contribution unit and interval.
+   *
+   * @return array
+   *   With two keys, 'unit' and 'interval'
+   */
+  private function calculateMinimumFrequencyUnitAndInterval() {
+    $frequencyUnitOrderMap = [
+      'day'   => 1,
+      'week'  => 2,
+      'month' => 3,
+      'year'  => 4,
+    ];
+    $frequencyUnitsList= [];
+    $frequencyIntervalsList= [];
+
+    $allMembershipTypeDetails = civicrm_api3('MembershipType', 'get', array(
+      'return' => array('duration_unit', 'duration_interval'),
+      'options' => array('limit' => 0),
+    ))['values'];
+
+    $membershipsToBeCreatedTypes = [];
+    foreach ($this->data['membership'] as $contactMemberships) {
+      foreach($contactMemberships['membership'] as $membership) {
+        if ($membership['auto_renew']) {
+          $membershipsToBeCreatedTypes[] = $membership['membership_type_id'];
+        }
+      }
+    }
+
+    foreach($membershipsToBeCreatedTypes as $membershipTypeID) {
+      $unitName = $allMembershipTypeDetails[$membershipTypeID]['duration_unit'];
+      $frequencyUnitsList[] = $frequencyUnitOrderMap[$unitName];
+      $frequencyIntervalsList[] = $allMembershipTypeDetails[$membershipTypeID]['duration_interval'];
+    }
+    array_multisort($frequencyUnitsList, $frequencyIntervalsList);
+    return ['unit' => array_search($frequencyUnitsList[0], $frequencyUnitOrderMap), 'interval' => $frequencyIntervalsList[0]];
   }
 
   /**
