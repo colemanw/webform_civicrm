@@ -813,7 +813,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
               continue;
             }
             // Reset calculated values when updating an address
-            $params['master_id'] = $params['geo_code_1'] = $params['geo_code_2'] = 'null';
+            $params['geo_code_1'] = $params['geo_code_2'] = 'null';
+            unset($params['master_id']); // we have to unset the master_id as 'null' does not always work (in a couple of civicrm versions).
           }
           $params['contact_id'] = $cid;
           if (!empty($existing[$i])) {
