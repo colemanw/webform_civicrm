@@ -433,7 +433,7 @@ function webform_civicrm_civicrm_postSave_civicrm_custom_group($dao) {
   }
 
   // run only if the title of the custom group has changed in civicrm
-  if ($fieldsets[0]['name'] != $dao->title) {
+  if (!empty($fieldsets[0]) && $fieldsets[0]['name'] != $dao->title) {
     foreach ($fieldsets as $field_info) {
       $component = array();
       $component['name'] = $dao->title;
