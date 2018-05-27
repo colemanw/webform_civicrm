@@ -748,8 +748,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function saveContactLocation($contact, $cid, $c) {
     // Check which location_type_id is to be set as is_primary=1;
-    $is_primary_address_location_type = $contact['address'][1]['location_type_id'];
-    $is_primary_email_location_type = $contact['email'][1]['location_type_id'];
+    if (isset($contact['address'][1]['location_type_id'])) {
+      $is_primary_address_location_type = $contact['address'][1]['location_type_id'];
+    }
+    if (isset($contact['email'][1]['location_type_id'])) {
+      $is_primary_email_location_type = $contact['email'][1]['location_type_id'];
+    }
     foreach (wf_crm_location_fields() as $location) {
       if (!empty($contact[$location])) {
         $existing = array();
@@ -2130,7 +2134,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (!empty($lineItemRecord->tax_amount)) {
         CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult, TRUE);
       }
-      
+
       // Create participant/membership payment records
       if (isset($item['membership_id']) || isset($item['participant_id'])) {
         $type = isset($item['participant_id']) ? 'participant' : 'membership';
