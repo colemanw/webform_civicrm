@@ -748,12 +748,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function saveContactLocation($contact, $cid, $c) {
     // Check which location_type_id is to be set as is_primary=1;
-    if (isset($contact['address'][1]['location_type_id'])) {
-      $is_primary_address_location_type = $contact['address'][1]['location_type_id'];
-    }
-    if (isset($contact['email'][1]['location_type_id'])) {
-      $is_primary_email_location_type = $contact['email'][1]['location_type_id'];
-    }
+    $is_primary_address_location_type = wf_crm_aval($contact, 'address:1:location_type_id');
+    $is_primary_email_location_type = wf_crm_aval($contact, 'email:1:location_type_id');
+
     foreach (wf_crm_location_fields() as $location) {
       if (!empty($contact[$location])) {
         $existing = array();
