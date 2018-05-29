@@ -214,6 +214,14 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       else {
         $js_vars['paymentProcessor'] = $this->getData($fid);
       }
+
+      $installmentsFieldID = 'civicrm_1_contribution_1_contribution_installments';
+      if (!empty($this->enabled[$installmentsFieldID])) {
+        $js_vars['installmentsCount'] = wf_crm_aval($this->form_state, 'storage:submitted:' . $this->enabled[$installmentsFieldID]);
+      }
+      else {
+        $js_vars['installmentsCount'] = $this->getData($installmentsFieldID);
+      }
     }
     if ($js_vars) {
       $this->form['#attached']['js'][] = array(
@@ -600,6 +608,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       'id' => 'wf-crm-billing-total',
       'data-amount' => $total,
     );
+
     return theme('table', array(
       'sticky' => FALSE,
       'caption' => $this->contribution_page['title'],

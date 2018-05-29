@@ -1496,11 +1496,16 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Contribution
     $fid = 'civicrm_1_contribution_1_contribution_total_amount';
     if (isset($this->enabled[$fid]) || $this->getData($fid) > 0) {
+      $totalAmount = $this->getData($fid);
+      $unitPrice = $this->calculateSingleInstallmentAmount($totalAmount);
+
+      $label = wf_crm_aval($this->node->webform['components'], $this->enabled[$fid] . ':name', t('Contribution'));
+
       $this->line_items[] = array(
         'qty' => 1,
-        'unit_price' => $this->getData($fid),
+        'unit_price' => $unitPrice,
         'financial_type_id' => $this->contribution_page['financial_type_id'],
-        'label' => wf_crm_aval($this->node->webform['components'], $this->enabled[$fid] . ':name', t('Contribution')),
+        'label' => $label,
         'element' => 'civicrm_1_contribution_1',
         'entity_table' => 'civicrm_contribution',
       );
@@ -1523,11 +1528,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             }
 
             if ($price) {
+              $unitPrice = $this->calculateSingleInstallmentAmount($price);
+
+              $label = $this->getMembershipTypeField($type, 'name') . ': ' . wf_crm_display_name($this->existing_contacts[$c]);
+
               $this->line_items[] = array(
                 'qty' => $item['num_terms'],
-                'unit_price' => $price,
+                'unit_price' => $unitPrice,
                 'financial_type_id' => $this->getMembershipTypeField($type, 'financial_type_id'),
-                'label' => $this->getMembershipTypeField($type, 'name') . ": " . wf_crm_display_name($this->existing_contacts[$c]),
+                'label' => $label,
                 'element' => "civicrm_{$c}_membership_{$n}",
                 'entity_table' => 'civicrm_membership',
               );
@@ -1559,6 +1568,19 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
     }
     return round($this->totalContribution, 2);
+  }
+
+
+  private function calculateSingleInstallmentAmount($totalAmount) {
+    $installmentAmount = $totalAmount;
+
+    $installmentsFieldID = 'civicrm_1_contribution_1_contribution_installments';
+    if (isset($this->enabled[$installmentsFieldID]) && $this->getData($installmentsFieldID) > 1) {
+      $installmentsCount = $this->getData($installmentsFieldID);
+      $installmentAmount = floor(($totalAmount / $installmentsCount) * 100) / 100;
+    }
+
+    return $installmentAmount;
   }
 
   /**
@@ -1774,21 +1796,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * Generate recurring contribution and transact the first one
    */
   private function contributionRecur($contributionParams, $paymentType = 'live') {
-    $installments = $contributionParams['installments'];
-    if ($installments != 0) {
-      // DRU-2862396 - we must ensure to only present 2 decimals to CiviCRM:
-      $contributionRecurAmount = floor(($contributionParams['total_amount'] / $installments) * 100) / 100;
-      $contributionFirstAmount = $contributionParams['total_amount'] - $contributionRecurAmount * ($installments - 1);
-    }
-
     // Create Params for Creating the Recurring Contribution Series and Create it
     $contributionRecurParams = array(
       'sequential' => 1,
       'contact_id' => $contributionParams['contact_id'],
       'frequency_interval' => wf_crm_aval($contributionParams, 'frequency_interval', 1),
       'frequency_unit' => wf_crm_aval($contributionParams, 'frequency_unit', 'month'),
-      'installments' => $installments,
-      'amount' => $contributionRecurAmount,
+      'installments' => $contributionParams['installments'],
+      'amount' => $contributionParams['total_amount'],
       'contribution_status_id' => 5,
       'currency' => $contributionParams['currency'],
       'payment_processor_id' =>  $contributionParams['payment_processor_id'],
@@ -1802,7 +1817,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $resultRecur = wf_civicrm_api('ContributionRecur', 'create', $contributionRecurParams);
 
     // Run the Transaction - and Create the Contribution Record - relay Recurring Series information in addition to the already existing Params [and re-key where needed]; at times two keys are required
-    $contributionParams['total_amount'] = $contributionFirstAmount;
     $additionalParams = array(
       'contribution_recur_id' => $resultRecur['id'],
       'contributionRecurID' => $resultRecur['id'],
