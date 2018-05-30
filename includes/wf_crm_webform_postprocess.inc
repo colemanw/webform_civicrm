@@ -1780,12 +1780,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $contributionRecurAmount = floor(($contributionParams['total_amount'] / $installments) * 100) / 100;
       $contributionFirstAmount = $contributionParams['total_amount'] - $contributionRecurAmount * ($installments - 1);
       $salesTaxFirstAmount = $contributionParams['tax_amount'] - floor(($contributionParams['tax_amount'] / $installments) * 100) / 100 * ($installments - 1);
-    }
-    // Calculate the line_items for the contributionFirst:
-    foreach ($this->line_items as $key => $k) {
-      $this->line_items[$key]['unit_price'] = $k['unit_price'] / $installments;
-      $this->line_items[$key]['line_total'] = $k['line_total'] / $installments;
-      $this->line_items[$key]['tax_amount'] = $k['tax_amount'] / $installments;
+
+      // Calculate the line_items for the contributionFirst:
+      foreach ($this->line_items as $key => $k) {
+        $this->line_items[$key]['unit_price'] = $k['unit_price'] / $installments;
+        $this->line_items[$key]['line_total'] = $k['line_total'] / $installments;
+        $this->line_items[$key]['tax_amount'] = $k['tax_amount'] / $installments;
+      }
     }
 
     // Create Params for Creating the Recurring Contribution Series and Create it
