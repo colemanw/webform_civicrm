@@ -1779,6 +1779,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // DRU-2862396 - we must ensure to only present 2 decimals to CiviCRM:
       $contributionRecurAmount = floor(($contributionParams['total_amount'] / $installments) * 100) / 100;
       $contributionFirstAmount = $contributionParams['total_amount'] - $contributionRecurAmount * ($installments - 1);
+      $salesTaxFirstAmount = $contributionParams['tax_amount'] - floor(($contributionParams['tax_amount'] / $installments) * 100) / 100 * ($installments - 1);
+
+      // Calculate the line_items for the contributionFirst:
+      foreach ($this->line_items as $key => $k) {
+        $this->line_items[$key]['unit_price'] = $k['unit_price'] / $installments;
+        $this->line_items[$key]['line_total'] = $k['line_total'] / $installments;
+        $this->line_items[$key]['tax_amount'] = $k['tax_amount'] / $installments;
+      }
     }
 
     // Create Params for Creating the Recurring Contribution Series and Create it
@@ -1803,6 +1811,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     // Run the Transaction - and Create the Contribution Record - relay Recurring Series information in addition to the already existing Params [and re-key where needed]; at times two keys are required
     $contributionParams['total_amount'] = $contributionFirstAmount;
+    $contributionParams['tax_amount'] = $salesTaxFirstAmount;
     $additionalParams = array(
       'contribution_recur_id' => $resultRecur['id'],
       'contributionRecurID' => $resultRecur['id'],
