@@ -786,6 +786,20 @@ class wf_crm_admin_form {
       ),
     );
     $this->help($this->form['participant']['show_future_events'], 'reg_options_show_future_events');
+    $this->form['participant']['show_public_events'] = array(
+      '#type' => 'select',
+      '#title' => t('Show Public Events'),
+      '#default_value' => wf_crm_aval($this->data, 'reg_options:show_public_events', 'title'),
+      '#suffix' => '</div>',
+      '#parents' => array('reg_options', 'show_public_events'),
+      '#tree' => TRUE,
+      '#options' => array(
+        'all' => t('Public and Private'),
+        '1' => t('Public'),
+        '0' => t('Private'),
+      ),
+    );
+    $this->help($this->form['participant']['show_public_events'], 'reg_options_show_public_events');
     $this->form['participant']['title_display'] = array(
       '#type' => 'select',
       '#title' => t('Title Display'),
@@ -859,6 +873,7 @@ class wf_crm_admin_form {
     $this->addAjaxItem('participant', 'event_type', 'participants');
     $this->addAjaxItem('participant', 'show_past_events', 'participants');
     $this->addAjaxItem('participant', 'show_future_events', 'participants');
+    $this->addAjaxItem('participant', 'show_public_events', 'participants');
     $this->addAjaxItem('participant', 'title_display', 'participants');
 
     for ($n = 1; $reg_type && (($n <= count($this->data['contact']) && $reg_type != 'all') || $n == 1); ++$n) {
