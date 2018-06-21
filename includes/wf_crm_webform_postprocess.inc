@@ -1748,8 +1748,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function submitLivePayment() {
     $contributionParams = $this->contributionParams();
 
-    // Only if #installments = 1, do we process a single transaction/contribution. #installments = 0 in CiviCRM Core means open ended commitment;
-    $numInstallments = wf_crm_aval($contributionParams, 'installments', 1, TRUE);
+    // Only if #installments = 1, do we process a single transaction/contribution. #installments = 0 (or not set) in CiviCRM Core means open ended commitment;
+    $numInstallments = wf_crm_aval($contributionParams, 'installments', NULL, TRUE);
     $frequencyInterval = wf_crm_aval($contributionParams, 'frequency_unit');
     if ($numInstallments != 1 && !empty($frequencyInterval)) {
       $result = $this->contributionRecur($contributionParams);
@@ -1771,33 +1771,37 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
+   *
    * Generate recurring contribution and transact the first one
    */
   private function contributionRecur($contributionParams, $paymentType = 'live') {
-    $installments = $contributionParams['installments'];
-    if ($installments != 0) {
+    $numInstallments = wf_crm_aval($contributionParams, 'installments', NULL, TRUE);
+    // if ($installments === 0) or $installments is not defined we treat as an open-ended recur
+    $contributionFirstAmount = $contributionRecurAmount = $contributionParams['total_amount'];
+    $salesTaxFirstAmount = wf_crm_aval($contributionParams, 'tax_amount', NULL, TRUE);;
+    if ($numInstallments > 0) {
       // DRU-2862396 - we must ensure to only present 2 decimals to CiviCRM:
-      $contributionRecurAmount = floor(($contributionParams['total_amount'] / $installments) * 100) / 100;
-      $contributionFirstAmount = $contributionParams['total_amount'] - $contributionRecurAmount * ($installments - 1);
-      $salesTaxFirstAmount = $contributionParams['tax_amount'] - floor(($contributionParams['tax_amount'] / $installments) * 100) / 100 * ($installments - 1);
+      $contributionRecurAmount = floor(($contributionParams['total_amount'] / $numInstallments) * 100) / 100;
+      $contributionFirstAmount = $contributionParams['total_amount'] - $contributionRecurAmount * ($numInstallments - 1);
+      $salesTaxFirstAmount = $salesTaxFirstAmount - floor(($salesTaxFirstAmount / $numInstallments) * 100) / 100 * ($numInstallments - 1);
 
-      // Calculate the line_items for the contributionFirst:
+      // Calculate the line_items for the first contribution:
+      // At this point line_items are set to the full (non-installment) amounts.
       foreach ($this->line_items as $key => $k) {
-        $this->line_items[$key]['unit_price'] = $k['unit_price'] / $installments;
-        $this->line_items[$key]['line_total'] = $k['line_total'] / $installments;
-        $this->line_items[$key]['tax_amount'] = $k['tax_amount'] / $installments;
+        $this->line_items[$key]['unit_price'] = $k['unit_price'] / $numInstallments;
+        $this->line_items[$key]['line_total'] = $k['line_total'] / $numInstallments;
+        $this->line_items[$key]['tax_amount'] = $k['tax_amount'] / $numInstallments;
       }
     }
 
     // Create Params for Creating the Recurring Contribution Series and Create it
     $contributionRecurParams = array(
-      'sequential' => 1,
       'contact_id' => $contributionParams['contact_id'],
       'frequency_interval' => wf_crm_aval($contributionParams, 'frequency_interval', 1),
       'frequency_unit' => wf_crm_aval($contributionParams, 'frequency_unit', 'month'),
-      'installments' => $installments,
+      'installments' => $numInstallments,
       'amount' => $contributionRecurAmount,
-      'contribution_status_id' => 5,
+      'contribution_status_id' => 'In Progress',
       'currency' => $contributionParams['currency'],
       'payment_processor_id' =>  $contributionParams['payment_processor_id'],
       'financial_type_id' =>  $contributionParams['financial_type_id'],
@@ -1873,9 +1877,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
     }
 
-    $numInstallments = wf_crm_aval($params, 'installments', 1, TRUE);
+    $numInstallments = wf_crm_aval($params, 'installments', NULL, TRUE);
     $frequencyInterval = wf_crm_aval($params, 'frequency_unit');
-    if ($numInstallments > 1 && !empty($frequencyInterval) && $this->contributionIsPayLater) {
+    if ($numInstallments != 1 && !empty($frequencyInterval) && $this->contributionIsPayLater) {
       $result = $this->contributionRecur($params, 'deferred');
     }
     else {

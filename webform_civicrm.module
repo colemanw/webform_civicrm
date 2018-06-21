@@ -607,7 +607,7 @@ function webform_civicrm_civicrm_alterPaymentProcessorParams($paymentObj, $rawPa
  * @param mixed $default
  *   Value to return if given array key does not exist
  * @param bool $strict
- *   Should we use empty or isset to determine if array key exists?
+ *   Should we use empty or isset to determine if array key exists? If TRUE, use isset
  *
  * @return mixed
  *   found value or default
