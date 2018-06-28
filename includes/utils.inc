@@ -683,7 +683,18 @@ function wf_crm_get_fields($var = 'fields') {
       'name' => t('Email'),
       'type' => 'email',
     );
-    foreach (array('street_address' => t('Street Address'), 'street_name' => t('Street Name'), 'street_number' => t('Street Number'), 'street_unit' => t('Street Number Suffix'), 'supplemental_address_1' => t('Street Address # Line 2'), 'supplemental_address_2' => t('Street Address # Line 3'), 'city' => t('City')) as $key => $value) {
+    $addressOptions = array(
+      'street_address' => t('Street Address'),
+      'street_name' => t('Street Name'),
+      'street_number' => t('Street Number'),
+      'street_unit' => t('Street Number Suffix'),
+      'name' => t('Address Name'),
+      'supplemental_address_1' => t('Street Address # Line 2'),
+      'supplemental_address_2' => t('Street Address # Line 3'),
+      'supplemental_address_3' => t('Street Address # Line 4'),
+      'city' => t('City'),
+    );
+    foreach ($addressOptions as $key => $value) {
       $fields['address_' . $key] = array(
         'name' => $value,
         'type' => 'textfield',
