@@ -738,12 +738,13 @@ class wf_crm_admin_form {
     $this->help($this->form['participant']['participant_reg_type'], 'participant_reg_type');
     $this->form['participant']['event_type'] = array(
       '#type' => 'select',
-      '#title' => t('Show Events of Type'),
+      '#title' => t('Show Events of Type(s)'),
       '#options' => array('any' => t('- Any Type -')) + wf_crm_apivalues('event', 'getoptions', array('field' => 'event_type_id')),
       '#default_value' => wf_crm_aval($this->data, 'reg_options:event_type', 'any'),
       '#prefix' => '<div id="event-reg-options-wrapper"><div class="web-civi-checkbox-set">',
       '#parents' => array('reg_options', 'event_type'),
       '#tree' => TRUE,
+      '#multiple' => TRUE,
     );
     $this->form['participant']['show_past_events'] = array(
       '#type' => 'select',
