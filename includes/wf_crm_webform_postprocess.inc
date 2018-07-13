@@ -747,10 +747,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @param int $c
    */
   private function saveContactLocation($contact, $cid, $c) {
-    // Check which location_type_id is to be set as is_primary=1;
-    $is_primary_address_location_type = wf_crm_aval($contact, 'address:1:location_type_id');
-    $is_primary_email_location_type = wf_crm_aval($contact, 'email:1:location_type_id');
-
     foreach (wf_crm_location_fields() as $location) {
       if (!empty($contact[$location])) {
         $existing = array();
@@ -764,6 +760,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           // start array index at 1
           $existing = array_merge(array(array()), $result['values']);
         }
+        // Check which location_type_id is to be set as is_primary=1;
+        $is_primary_location_type = isset($contact[$location]) ? $contact[$location][1]['location_type_id'] : null;
+
         foreach ($contact[$location] as $i => $params) {
           // Translate state/prov abbr to id
           if (!empty($params['state_province_id'])) {
@@ -828,17 +827,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             continue;
           }
           if ($location != 'website') {
-            if (empty($params['location_type_id'])) {
-              $params['location_type_id'] = wf_crm_aval($existing, "$i:location_type_id", 1);
-            }
-            $params['is_primary'] = $i == 1 ? 1 : 0;
-            // Override that just in cases we know
-            if ($location == 'address' && $params['location_type_id'] == $is_primary_address_location_type) {
-              $params['is_primary'] = 1;
-            }
-            if ($location == 'email' && $params['location_type_id'] == $is_primary_email_location_type) {
-              $params['is_primary'] = 1;
-            }
+            $params['location_type_id'] = empty($params['location_type_id']) ? wf_crm_aval($existing, "$i:location_type_id", 1) : $params['location_type_id'];
+            // Modify is_primary parameter if location type of the current field is the same
+            // type of the first field, assuring only first field to be set as primary
+            $params['is_primary'] = (int) ($params['location_type_id'] == $is_primary_location_type && $i == 1);
           }
           wf_civicrm_api($location, 'create', $params);
         }
