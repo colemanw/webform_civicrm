@@ -1405,9 +1405,16 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           if (!empty($params['assignee_contact_id'])) {
             if (CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'activity_assignee_notification')) {
               // Send email to assignees. TODO: Move to CiviCRM API?
-              $assignee = wf_civicrm_api('contact', 'getsingle', array('id' => $params['assignee_contact_id']));
-              if (!empty($assignee['email'])) {
-                $mail = array($assignee['email'] => $assignee);
+              $assignees = wf_crm_apivalues('contact', 'get', array(
+                'id' => array('IN' => (array) $params['assignee_contact_id']),
+              ));
+              $mail = array();
+              foreach ($assignees as $assignee) {
+                if (!empty($assignee['email'])) {
+                  $mail[$assignee['email']] = $assignee;
+                }
+              }
+              if ($mail) {
                 // Include attachments while sending a copy of activity.
                 $attachments = CRM_Core_BAO_File::getEntityFile('civicrm_activity', $this->ent['act'][1]);
                 CRM_Case_BAO_Case::sendActivityCopy(NULL, $result['id'], $mail, $attachments, NULL);

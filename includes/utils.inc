@@ -813,9 +813,7 @@ function wf_crm_get_fields($var = 'fields') {
       'name' => t('Activity # Participant(s)'),
       'type' => 'select',
       'expose_list' => TRUE,
-      'extra' => array(
-        'multiple' => 1,
-      ),
+      'extra' => array('multiple' => 1),
       'data_type' => 'ContactReference',
     );
     $fields['activity_source_contact_id'] = array(
@@ -850,6 +848,7 @@ function wf_crm_get_fields($var = 'fields') {
       'type' => 'select',
       'expose_list' => TRUE,
       'empty_option' => t('No One'),
+      'extra' => array('multiple' => 1),
       'data_type' => 'ContactReference',
     );
     $fields['activity_location'] = array(
