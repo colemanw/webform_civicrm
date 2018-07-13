@@ -506,19 +506,19 @@ function wf_crm_get_fields($var = 'fields') {
     $sets = array(
       'contact' => array('entity_type' => 'contact', 'label' => t('Contact Fields')),
       'other' => array('entity_type' => 'contact', 'label' => t('Tags and Groups'), 'max_instances' => 1),
-      'address' => array('entity_type' => 'contact', 'label' => t('Address'), 'max_instances' => 9),
-      'phone' => array('entity_type' => 'contact', 'label' => t('Phone'), 'max_instances' => 9),
-      'email' => array('entity_type' => 'contact', 'label' => t('Email'), 'max_instances' => 9),
-      'website' => array('entity_type' => 'contact', 'label' => t('Website'), 'max_instances' => 9),
-      'im' => array('entity_type' => 'contact', 'label' => t('Instant Message'), 'max_instances' => 9),
+      'address' => array('entity_type' => 'contact', 'label' => t('Address'), 'max_instances' => 9, 'custom_fields' => 'combined'),
+      'phone' => array('entity_type' => 'contact', 'label' => t('Phone'), 'max_instances' => 9, 'custom_fields' => 'combined'),
+      'email' => array('entity_type' => 'contact', 'label' => t('Email'), 'max_instances' => 9, 'custom_fields' => 'combined'),
+      'website' => array('entity_type' => 'contact', 'label' => t('Website'), 'max_instances' => 9, 'custom_fields' => 'combined'),
+      'im' => array('entity_type' => 'contact', 'label' => t('Instant Message'), 'max_instances' => 9, 'custom_fields' => 'combined'),
       'activity' => array('entity_type' => 'activity', 'label' => t('Activity'), 'max_instances' => 30,  'attachments' => TRUE),
-      'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship'), 'help_text' => TRUE),
+      'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship'), 'help_text' => TRUE, 'custom_fields' => 'combined'),
     );
     $conditional_sets = array(
       'CiviCase' => array('entity_type' => 'case', 'label' => t('Case'), 'max_instances' => 30),
       'CiviEvent' => array('entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9),
       'CiviContribute' => array('entity_type' => 'contribution', 'label' => t('Contribution')),
-      'CiviMember' => array('entity_type' => 'membership', 'label' => t('Membership')),
+      'CiviMember' => array('entity_type' => 'membership', 'label' => t('Membership'), 'custom_fields' => 'combined'),
       'CiviGrant' => array('entity_type' => 'grant', 'label' => t('Grant'), 'max_instances' => 30, 'attachments' => TRUE),
     );
     foreach ($conditional_sets as $component => $set) {
@@ -1304,7 +1304,8 @@ function wf_crm_get_fields($var = 'fields') {
       if (isset($custom_types[$dao->html_type])) {
         $set = 'cg' . $dao->custom_group_id;
         // Place these custom fields directly into their entity
-        if ($dao->entity_type == 'address' || $dao->entity_type == 'relationship' || $dao->entity_type == 'membership') {
+        if (wf_crm_aval($sets, "$dao->entity_type:custom_fields") == 'combined') {
+        //if ($dao->entity_type == 'address' || $dao->entity_type == 'relationship' || $dao->entity_type == 'membership' || $dao->entity_type == 'phone') {
           $set = $dao->entity_type;
         }
         elseif (!isset($sets[$set])) {
