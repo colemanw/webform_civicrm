@@ -780,12 +780,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             $uid = wf_crm_user_cid($cid, 'contact');
             if ($uid) {
               $user = user_load($uid);
-              if ($params['email'] != $user->mail) {
-                // Verify this email is unique before saving it to user
-                $args = array(':mail' => $params['email']);
-                if (!(db_query("SELECT count(uid) FROM {users} WHERE mail = :mail", $args)->fetchField())) {
-                  user_save($user, array('mail' => $params['email']));
-                }
+              // Verify this email is different from current user email
+              // and unique between Drupal users before updating it
+              if ($params['email'] != $user->mail && !user_load_by_mail($params['email']) ) {
+                user_save($user, array('mail' => $params['email']));
               }
             }
           }
