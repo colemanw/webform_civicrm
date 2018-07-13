@@ -795,6 +795,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             foreach ($params as $param => $val) {
               if ($val != (string) wf_crm_aval($existing[$i], $param, '')) {
                 $same = FALSE;
+                break;
               }
             }
             if ($same) {
