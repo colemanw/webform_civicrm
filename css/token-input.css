@@ -3,7 +3,7 @@ form ul.token-input-list {
     overflow: hidden;
     height: auto !important;
     height: 1%;
-    width: 100%
+    width: 100%;
     max-width: 400px;
     border: 1px solid #999;
     cursor: text;
