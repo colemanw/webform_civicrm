@@ -542,7 +542,7 @@ class wf_crm_admin_component {
               $row['data'][3]['data'] = t('Auto - From Filters');
             }
             elseif ($component['extra']['default'] == 'relationship' && $component['extra']['default_relationship']) {
-              $row['data'][3]['data'] = t('Relationship to !contact', array('!contact' => wf_crm_contact_label(1, $data)));
+              $row['data'][3]['data'] = t('Relationship to !contact', array('!contact' => wf_crm_contact_label($component['extra']['default_relationship_to'], $data)));
             }
           }
           elseif (isset($component['value']) && strlen($component['value']) && ($field['type'] == 'select' || !empty($field['expose_list']))) {
