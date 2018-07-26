@@ -691,11 +691,15 @@ function wf_crm_contact_access($component, $filters, $cid) {
     // For legacy reasons we support "cid" param as an alias of "cid1"
     if (wf_crm_aval($_GET, "cid$c") == $cid || $c == 1 && wf_crm_aval($_GET, "cid") == $cid) {
       // For legacy reasons we support "cs" param as an alias of "cs1"
-      if (!empty($_GET['cs']) && $c == 1 && CRM_Contact_BAO_Contact_Utils::validChecksum($cid, $_GET['cs'])) {
+      if (
+        (!empty($_GET['cs']) && $c == 1 && CRM_Contact_BAO_Contact_Utils::validChecksum($cid, $_GET['cs']))
+        || (!empty($_GET["cs$c"]) && CRM_Contact_BAO_Contact_Utils::validChecksum($cid, $_GET["cs$c"]))
+      ) {
         $filters['check_permissions'] = FALSE;
-      }
-      elseif (!empty($_GET["cs$c"]) && CRM_Contact_BAO_Contact_Utils::validChecksum($cid, $_GET["cs$c"])) {
-        $filters['check_permissions'] = FALSE;
+        // Grant CiviCRM permissions to the verified checksum contact.
+        if ($c == 1) {
+          CRM_Core_Session::singleton()->set('userID', $cid);
+        }
       }
     }
   }
