@@ -12,7 +12,7 @@ var wfCivi = (function ($, D) {
 
   pub.existingSelect = function (num, nid, path, toHide, hideOrDisable, showEmpty, cid, fetch, defaults) {
     if (cid.charAt(0) === '-') {
-      resetFields(num, nid, true, 'show', toHide, hideOrDisable, showEmpty, 500);
+      resetFields(num, nid, true, 'show', toHide, hideOrDisable, showEmpty, 500, defaults);
       // Fill name fields with name typed
       if (cid.length > 1) {
         var names = {first: '', last: ''};
