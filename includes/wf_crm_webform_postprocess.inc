@@ -264,6 +264,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     $params = array_merge($this->contribution_page, array('id' => $this->ent['contribution'][1]['id']));
     $params['payment_processor_id'] = $this->data['contribution'][1]['contribution'][1]['payment_processor_id'];
+    unset($params['payment_processor']);
     wf_civicrm_api('contribution', 'sendconfirmation', $params);
   }
 
@@ -1601,77 +1602,36 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function validateBillingFields() {
     $valid = TRUE;
     $params = $card_errors = array();
-    // These are hard-coded in CiviCRM so we may as well hard-code them here
-    // Value = translated label to be shown during validation or FALSE if not required
-    $billing_fields = array(
-      'credit_card_number' => ts('Card Number'),
-      'cvv2' => ts('Security Code'),
-      'credit_card_type' => ts('Card Type'),
-      'billing_first_name' => ts('Billing First Name'),
-      'billing_middle_name' => FALSE,
-      'billing_last_name' => ts('Billing Last Name'),
-      'billing_street_address-5' => ts('Street Address'),
-      'billing_city-5' => ts('City'),
-      'billing_country_id-5' => ts('Country'),
-      'billing_state_province_id-5' => FALSE,
-      'billing_postal_code-5' => ts('Postal Code'),
-    );
-    if (!empty($_POST['stripe_token'])) {
-      // Using Stripe payment processor - cc fields not posted
-      $billing_fields['credit_card_number'] = FALSE;
-      $billing_fields['cvv2'] = FALSE;
+
+    $processor = Civi\Payment\System::singleton()->getById(wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id'));
+    $billingAddressFieldsMetadata = array();
+    if (method_exists($processor, 'getBillingAddressFieldsMetadata')) {
+      // getBillingAddressFieldsMetadata did not exist before 4.7
+      $billingAddressFieldsMetadata = $processor->getBillingAddressFieldsMetadata();
     }
-    if (!empty($_POST['stripe_source'])) {
-      // Using Stripe payment processor - cc fields not posted using sources
-      $billing_fields['credit_card_number'] = FALSE;
-      $billing_fields['cvv2'] = FALSE;
-    }
-    if (!empty($_POST['bank_account_type'])) {
-      // unset/bypass the CC validation if we're doing Direct Debit (ACHEFT) - in that case we have a Bank Account Type
-      $billing_fields['credit_card_number'] = FALSE;
-      $billing_fields['cvv2'] = FALSE;
-      $billing_fields['credit_card_type'] = FALSE;
-      $_POST['credit_card_exp_date']['M'] = '12';
-      $_POST['credit_card_exp_date']['Y'] = '2099';
-    }
-    foreach ($billing_fields as $field => $label) {
-      if (empty($_POST[$field]) && $label !== FALSE) {
-        form_set_error($field, t('!name field is required.', array('!name' => check_plain($label))));
+    $fields = CRM_Utils_Array::crmArrayMerge($processor->getPaymentFormFieldsMetadata(), $billingAddressFieldsMetadata);
+
+    foreach ($_POST as $field => $value) {
+      if (empty($_POST[$field]) && isset($fields[$field]) && $fields[$field]['is_required'] !== FALSE) {
+        form_set_error($field, t('!name field is required.', array('!name' => check_plain($fields[$field]['title']))));
         $valid = FALSE;
       }
-      if (!empty($_POST[$field])) {
+      if (!empty($_POST[$field]) && array_key_exists($field, $fields)) {
         $name = str_replace('billing_', '', str_replace('-5', '', $field));
-        $submitted[$name] = $params[$name] = $params[$field] = $_POST[$field];
+        $params[$name] = $params[$field] = $_POST[$field];
       }
     }
-    // Validate country
-    if (!empty($params['country_id'])) {
-      if (!array_key_exists($params['country_id'], wf_crm_apivalues('address', 'getoptions', array('field' => 'country_id')))) {
-        form_set_error('billing_country_id-5', t('Illegal value entered for Country'));
-        $valid = $params['country_id'] = FALSE;
-      }
+
+    // 4.6 compatibility - some processors (eg. authorizeNet / Paypal require that "year" and "month" are set in params.
+    if (isset($params['credit_card_exp_date'])) {
+      $params['year'] = CRM_Core_Payment_Form::getCreditCardExpirationYear($params);
+      $params['month'] = CRM_Core_Payment_Form::getCreditCardExpirationMonth($params);
     }
-    // Validate state/province
-    if (!empty($params['country_id'])) {
-      $states = wf_crm_apivalues('address', 'getoptions', array('field' => 'state_province_id', 'country_id' => $params['country_id']));
-      if ($states && array_key_exists('state_province_id', $params) && (empty($params['state_province_id']) || !isset($states[$params['state_province_id']]))) {
-        form_set_error('billing_state_province_id-5', t('!name field is required.', array('!name' => check_plain(ts('State/Province')))));
-        $valid = FALSE;
-      }
-    }
-    // Validate credit card number & cvv2
-    CRM_Core_Payment_Form::validateCreditCard($params, $card_errors, wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id'));
+
+    // Validate billing details
+    CRM_Core_Payment_Form::validatePaymentInstrument(wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id'), $params, $card_errors, NULL);
     foreach ($card_errors as $field => $msg) {
       form_set_error($field, $msg);
-      $valid = FALSE;
-    }
-    // Check expiration date
-    $submitted['credit_card_exp_date[Y]'] = $params['year'] = wf_crm_aval($_POST, 'credit_card_exp_date:Y', 0);
-    // There seems to be some inconsistency with capitalization here
-    $params['month'] = (int) wf_crm_aval($_POST, 'credit_card_exp_date:M', wf_crm_aval($_POST, 'credit_card_exp_date:m', 0));
-    $submitted['credit_card_exp_date[M]'] = $submitted['credit_card_exp_date[m]'] = $params['month'];
-    if ($params['year'] < date('Y') || ($params['year'] == date('Y') && $params['month'] < date('n'))) {
-      form_set_error('billing', ts('Credit card expiration date cannot be a past date.'));
       $valid = FALSE;
     }
     // Email
@@ -1690,7 +1650,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     // Since billing fields are not "real" form fields they get cleared if the page reloads.
     // We add a bit of js to fix this annoyance.
-    drupal_add_js(array('webform_civicrm' => array('billingSubmission' => $submitted)), 'setting');
+    drupal_add_js(array('webform_civicrm' => array('billingSubmission' => $params)), 'setting');
     return $valid;
   }
 
@@ -1990,6 +1950,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['contact_id'] = $this->ent['contact'][1]['id'];
     $params['total_amount'] = round($this->totalContribution, 2);
 
+    // Most payment processors expect this (normally be set by contribution page processConfirm)
+    $params['contactID'] = $params['contact_id'];
+
     // Some processors use this for matching and updating the contribution status
     if (!$this->contributionIsPayLater) {
       $params['invoice_id'] = $this->data['contribution'][1]['contribution'][1]['invoiceID'] = md5(uniqid(rand(), TRUE));
@@ -2010,10 +1973,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $params['source'] = $this->settings['new_contact_source'];
     }
 
-    // Calculate non-deductible amount for income tax purposes
     $financialTypeId = $params['financial_type_id'];
-    $resultDeduct = wf_civicrm_api('FinancialType', 'get', array('return' => "is_deductible",'id' => $financialTypeId));
-    if ($resultDeduct['values'][$financialTypeId]['is_deductible'] == 1) {
+    $financialTypeDetails = wf_civicrm_api('FinancialType', 'get', array('return' => "is_deductible,name",'id' => $financialTypeId));
+    // Some payment processors expect this to be set (eg. smartdebit)
+    $params['financialType_name'] = $financialTypeDetails['values'][$financialTypeId]['name'];
+    $params['financialTypeID'] = $financialTypeId;
+    // Calculate non-deductible amount for income tax purposes
+    if ($financialTypeDetails['values'][$financialTypeId]['is_deductible'] == 1) {
       // deductible
       $params['non_deductible_amount'] = 0;
     } else {
