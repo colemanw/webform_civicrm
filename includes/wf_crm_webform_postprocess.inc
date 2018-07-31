@@ -1890,7 +1890,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['financial_type_id'] = $this->contribution_page['financial_type_id'];
 
     $params['source'] = $this->settings['new_contact_source'];
-    $params['item_name'] = t('Webform Payment: @title', array('@title' => $this->node->title));
+    $params['item_name'] = $params['description'] = t('Webform Payment: @title', array('@title' => $this->node->title));
 
     if (method_exists($paymentProcessor, 'setSuccessUrl')) {
       $paymentProcessor->setSuccessUrl($this->getIpnRedirectUrl('success'));
