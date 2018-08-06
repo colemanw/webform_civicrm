@@ -2098,6 +2098,19 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
         }
       }
+      // API does not accept wrong format for money field,
+      // we need correct it before passing
+      // @TODO : fix in core file
+      $decimalSeparator = civicrm_api3('Setting', 'getvalue', array(
+        'sequential' => 1,
+        'name' => "monetaryDecimalPoint",
+      ));
+      if ($decimalSeparator == ',') {
+        $moneyField = array('line_total', 'unit_price');
+        foreach ($moneyField as $key) {
+          $item[$key] = CRM_Utils_Money::format($item[$key], NULL, '%a');
+        }
+      }
 
       // Format (and round) monetary values before saving the line items
       isset($item['unit_price']) ? $item['unit_price'] = CRM_Utils_Money::format($item['unit_price'], NULL, NULL, TRUE) : NULL;
