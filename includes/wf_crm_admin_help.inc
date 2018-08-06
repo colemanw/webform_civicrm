@@ -270,6 +270,12 @@ class wf_crm_admin_help {
       '</p>';
   }
 
+  public static function reg_options_show_public_events() {
+    print '<p>' .
+      t('Choose whether to display events marked as Public, Private or all.') .
+      '</p>';
+  }
+
   public static function reg_options_title_display() {
     print '<p>' .
       t('Controls how events are displayed. Date formats can be further configured in <a !link>CiviCRM Date Settings</a>',

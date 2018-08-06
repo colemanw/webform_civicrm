@@ -206,6 +206,9 @@ function wf_crm_get_events($reg_options, $context) {
   if ($event_types) {
     $sql .= ' AND event_type_id IN ( ' . implode(", ", $event_types) . ' ) ';
   }
+  if (is_numeric(wf_crm_aval($reg_options, 'show_public_events'))) {
+    $sql .= ' AND is_public = ' . $reg_options['show_public_events'];
+  }
   $sql .= ' ORDER BY start_date ' . ($context == 'config_form' ? 'DESC' : '');
   $dao = CRM_Core_DAO::executeQuery($sql);
   while ($dao->fetch()) {
