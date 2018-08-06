@@ -390,7 +390,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $lastName = CRM_Utils_Array::value('last_name', $participants);
 
       $participantName = "{$firstName} {$lastName}";
-      if (empty(trim($participantName))) {
+      if (!trim($participantName)) {
         $participantName = CRM_Utils_Array::value('webform_label', $participants);
         if (!empty($this->existing_contacts[$c])) {
           $participantName = CRM_Contact_BAO_Contact::displayName($this->existing_contacts[$c]);
