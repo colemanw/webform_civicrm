@@ -761,7 +761,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $existing = array_merge(array(array()), $result['values']);
         }
         // Check which location_type_id is to be set as is_primary=1;
-        $is_primary_location_type = isset($contact[$location]) ? $contact[$location][1]['location_type_id'] : null;
+        $is_primary_location_type = isset($contact[$location][1]['location_type_id']) ? $contact[$location][1]['location_type_id'] : null;
 
         foreach ($contact[$location] as $i => $params) {
           // Translate state/prov abbr to id
