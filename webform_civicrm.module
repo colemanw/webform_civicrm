@@ -948,8 +948,7 @@ function _webform_civicrm_replaceCaseIdTokens($tokens, $webformSubmissionData) {
   foreach ($tokenValues as $entityID => $tokenName) {
     $tokenNewValue = '';
     if (!empty($webformSubmissionData->civicrm['case'][$entityID]['id'])) {
-      $caseId = $webformSubmissionData->civicrm['case'][$entityID]['id'];
-      $tokenNewValue = $caseID;
+      $tokenNewValue = $webformSubmissionData->civicrm['case'][$entityID]['id'];
     }
     $replacedTokens[$tokenName] = $tokenNewValue;
   }
