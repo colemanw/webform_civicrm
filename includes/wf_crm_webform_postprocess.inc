@@ -2018,6 +2018,23 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $params['payment_processor'] = wf_crm_aval($params, 'payment_processor_id');
     }
 
+    // Record additional parameters if we're processing a credit card after version 4.7.17 (CRM-20158)
+    if (version_compare($this->civicrm_version, '4.7.17', '>=')) {
+      if (!empty($params['credit_card_number'])) {
+        if (!empty($params['credit_card_type'])) {
+          $result = wf_civicrm_api('OptionValue', 'get', array(
+            'return' => ['value'],
+            'option_group_id.name' => 'accept_creditcard',
+            'name' => ucfirst($params['credit_card_type']),
+          ));
+          if (!empty($result['id'])) {
+            $params['card_type_id'] = $result['values'][$result['id']]['value'];
+          }
+        }
+        $params['pan_truncation'] = substr($params['credit_card_number'],-4);
+      }
+    }
+
     // Save this stuff for later
     unset($params['soft'], $params['honor_contact_id'], $params['honor_type_id']);
     return $params;
