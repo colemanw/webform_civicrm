@@ -1283,6 +1283,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           // These params aren't allowed in update mode
           unset($params['creator_id'], $params['case_type_id']);
         }
+        // Add orig_contact_id if it's missing and there are multiple
+        // Contacts on the Case. Use client_id as orig_contact_id if possible.
+        if (empty($params['orig_contact_id']) and !empty($params['id'])) {
+          $caseContactIds = CRM_Case_BAO_Case::retrieveContactIdsByCaseId($params['id']);
+          if (count($caseContactIds) > 1 and !empty($params['client_id'])) {
+            $params['orig_contact_id'] = $params['client_id'];
+          }
+        }
         // Allow "automatic" status to pass-thru
         if (empty($params['status_id'])) {
           unset($params['status_id']);
