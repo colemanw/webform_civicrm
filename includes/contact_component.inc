@@ -40,6 +40,7 @@ function _webform_defaults_civicrm_contact() {
       'default' => '',
       'default_contact_id' => '',
       'default_relationship' => '',
+      'default_relationship_to' => '1',
       'allow_url_autofill' => TRUE,
       'dupes_allowed' => FALSE,
       'filters' => array(
@@ -92,6 +93,7 @@ function _webform_edit_civicrm_contact($component) {
   });';
   $form['#attached']['js'][$js] = array('type' => 'inline');
   $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/token-input.css';
+  $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_admin.css';
   $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/js/contact_component.js';
 
   $form['display']['widget'] = array(
@@ -217,22 +219,36 @@ function _webform_edit_civicrm_contact($component) {
     $form['defaults']['default']['#options']['user'] = t('Current User');
   }
   elseif ($c > 1) {
-    $form['defaults']['default']['#options']['relationship'] = t('Relationship to !contact', array('!contact' => wf_crm_contact_label(1, $data)));
+    $form['defaults']['default']['#options']['relationship'] = t('Relationship to...');
+    $to = $component['extra']['default_relationship_to'];
+    $form['defaults']['default_relationship_to'] = array(
+      '#type' => 'select',
+      '#title' => t('Relationship to Contact'),
+      '#default_value' => $to,
+      '#parents' => array('extra', 'default_relationship_to'),
+    );
     $form['defaults']['default_relationship'] = array(
       '#type' => 'select',
       '#multiple' => TRUE,
       '#title' => t('Specify Relationship(s)'),
-      '#options' => array('' => '- ' . t('No relationship types defined for @a to @b', array('@a' => $contact_types[$contact_type], '@b' => $contact_types[$data['contact'][1]['contact'][1]['contact_type']])) . ' -'),
+      '#options' => array('-' => '-'),
+      '#required' => TRUE,
       '#default_value' => $component['extra']['default_relationship'],
       '#parents' => array('extra', 'default_relationship'),
     );
-    $rtypes = wf_crm_get_contact_relationship_types($contact_type, $data['contact'][1]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][1]['contact'][1]['contact_sub_type']);
-    foreach ($rtypes as $k => $v) {
-      $form['defaults']['default_relationship']['#options'][$k] = $v . ' ' . wf_crm_contact_label(1, $data, 'plain');
-      // We do this in the loop so the field is only required if it has some options
-      $form['defaults']['default_relationship']['#required'] = TRUE;
-      unset($form['defaults']['default_relationship']['#options']['']);
+    $all_relationship_types = array_fill(1, $c - 1, array());
+    for ($i = 1; $i < $c; ++$i) {
+      $form['defaults']['default_relationship_to']['#options'][$i] = wf_crm_contact_label($i, $data, 'plain');
+      $rtypes = wf_crm_get_contact_relationship_types($contact_type, $data['contact'][$i]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$i]['contact'][1]['contact_sub_type']);
+      foreach ($rtypes as $k => $v) {
+        $all_relationship_types[$i][] = array('key' => $k, 'value' => $v . ' ' . wf_crm_contact_label($i, $data, 'plain'));
+        $form['defaults']['default_relationship']['#options'][$k] = $v . ' ' . wf_crm_contact_label($i, $data, 'plain');
+      }
+      if (!$rtypes) {
+        $all_relationship_types[$i][] = array('key' => '', 'value' => '- ' . t('No relationship types defined for @a to @b', array('@a' => $contact_types[$contact_type], '@b' => $contact_types[$data['contact'][$i]['contact'][1]['contact_type']])) . ' -');
+      }
     }
+    $form['defaults']['default_relationship_to']['#attributes']['data-types'] = json_encode($all_relationship_types);
   }
   $form['defaults']['default']['#options']['auto'] = t('Auto - From Filters');
   $form['defaults']['default_contact_id'] = array(
