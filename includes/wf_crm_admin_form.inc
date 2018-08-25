@@ -790,7 +790,6 @@ class wf_crm_admin_form {
       '#type' => 'select',
       '#title' => t('Show Public Events'),
       '#default_value' => wf_crm_aval($this->data, 'reg_options:show_public_events', 'title'),
-      '#suffix' => '</div>',
       '#parents' => array('reg_options', 'show_public_events'),
       '#tree' => TRUE,
       '#options' => array(
