@@ -51,19 +51,30 @@ var wfCiviContact = (function ($, D) {
             .find(':checkbox')
             .prop('disabled', false);
         }
-        changeRelationTo();
+        $('#edit-extra-default-relationship-to', context).each(changeDefaultRelationTo);
       }
-      function changeRelationTo() {
-        var c = $('#edit-extra-default-relationship-to').val(),
-          types = $('#edit-extra-default-relationship-to').data('types')[c];
-        CRM.utils.setOptions('#edit-extra-default-relationship', types);
+      function changeDefaultRelationTo() {
+        var c = $(this).val(),
+          types = $(this).closest('form').data('reltypes')[c],
+          placeholder = types.length ? false : '- ' + Drupal.ts('No relationship types available for these contact types') + ' -';
+        CRM.utils.setOptions('#edit-extra-default-relationship', types, placeholder);
         // Provide default to circumvent "required" validation error
-        if ($('#edit-extra-default').val() !== 'relationship' && types.length === 1 && types[0].key === '') {
+        if ($('#edit-extra-default').val() !== 'relationship' && !types.length && types[0].key === '') {
           CRM.utils.setOptions('#edit-extra-default-relationship', {key: '-', value: '-'});
+          $('#edit-extra-default-relationship').val('-');
+        }
+      }
+      function changeFiltersRelationTo() {
+        var c = $(this).val(),
+          types = $(this).closest('form').data('reltypes')[c];
+        $('.form-item-extra-filters-relationship-type', context).toggle(!!c);
+        if (c) {
+          CRM.utils.setOptions('#edit-extra-filters-relationship-type', types);
         }
       }
       $('#edit-extra-default', context).once('wf-civi').change(changeDefault).each(changeDefault);
-      $('#edit-extra-default-relationship-to', context).once('wf-civi').change(changeRelationTo);
+      $('#edit-extra-default-relationship-to', context).once('wf-civi').change(changeDefaultRelationTo);
+      $('#edit-extra-filters-relationship-contact', context).once('wf-civi').change(changeFiltersRelationTo).each(changeFiltersRelationTo);
       $('#edit-extra-widget', context).once('wf-civi').change(function() {
         if ($(this).val() == 'hidden') {
           $('.form-item-extra-search-prompt', context).css('display', 'none');

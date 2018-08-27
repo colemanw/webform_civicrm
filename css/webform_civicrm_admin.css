@@ -193,10 +193,13 @@ form .civi-icon.case {
 
 /* Contact component form */
 #webform-component-edit-form div.form-item-extra-default,
-#webform-component-edit-form div.form-item-extra-default-relationship-to {
+#webform-component-edit-form div.form-item-extra-default-relationship-to,
+#webform-component-edit-form div.form-item-extra-filters-relationship-contact,
+#webform-component-edit-form div.form-item-extra-filters-relationship-type {
   display: inline-block;
 }
 
+#webform-component-edit-form div.form-item-extra-filters-relationship-type label,
 #webform-component-edit-form div.form-item-extra-default-relationship-to label {
   display:none;
 }

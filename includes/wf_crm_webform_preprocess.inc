@@ -522,7 +522,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             }
           }
           if ($name == 'existing') {
-            wf_crm_fill_contact_value($this->node, $component, $element);
+            wf_crm_fill_contact_value($this->node, $component, $element, $this->ent);
           }
           if ($name == 'contribution_page_id') {
             $element['#prefix'] = $this->displayLineItems();

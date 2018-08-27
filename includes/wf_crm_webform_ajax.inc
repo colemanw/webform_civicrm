@@ -60,6 +60,13 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
     $this->data = $this->node->webform_civicrm['data'];
     $component = $this->node->webform['components'][$fid];
     $filters = wf_crm_search_filters($this->node, $component);
+    // Populate other contact ids for related data
+    $this->ent += array('contact' => array());
+    foreach ($_GET as $k => $v) {
+      if (substr($k, 0, 3) == 'cid' && $v && is_numeric($v)) {
+        $this->ent['contact'][substr($k, 3)]['id'] = (int) $v;
+      }
+    }
     // Bypass filters when choosing contact on component edit form
     if (!empty($_GET['admin']) && wf_crm_admin_access($this->node)) {
       $filters = array('check_permissions' => 1, 'is_deleted' => 0, 'contact_type' => $filters['contact_type']);
@@ -68,7 +75,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
     // Autocomplete contact names
     if (!empty($_GET['str'])) {
       if ($str = trim($_GET['str'])) {
-        drupal_json_output(wf_crm_contact_search($this->node, $component, $filters, $str));
+        drupal_json_output(wf_crm_contact_search($this->node, $component, $filters, $this->ent['contact'], $str));
       }
       exit();
     }
@@ -89,13 +96,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
         $sp = CRM_Core_DAO::VALUE_SEPARATOR;
         $this->enabled = wf_crm_enabled_fields($this->node);
         list(, $c, ) = explode('_', $component['form_key'], 3);
-        // Populate other contact ids for related data
-        foreach ($_GET as $k => $v) {
-          if (substr($k, 0, 3) == 'cid' && $v && is_numeric($v)) {
-            $this->ent['contact'][substr($k, 3)]['id'] = (int) $v;
-          }
-          $this->ent['contact'][$c]['id'] = (int) $_GET['cid'];
-        }
+        $this->ent['contact'][$c]['id'] = (int) $_GET['cid'];
         // Redact fields if they are to be hidden unconditionally, otherwise they are needed on the client side
         $to_hide = (wf_crm_aval($component['extra'], 'hide_method', 'hide') == 'hide' && !wf_crm_aval($component['extra'], 'no_hide_blank')) ? $component['extra']['hide_fields'] : array();
         $contact = $this->loadContact($c, $to_hide);
