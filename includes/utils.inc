@@ -1057,6 +1057,23 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Contribution Source'),
         'type' => 'textfield',
       );
+      // KG - start
+      // LineItems
+      $sets['lineItems'] = array('entity_type' => 'line_item', 'label' => t('Line Items'));
+      $fields['contribution_financial_type_id'] = array(
+        'name' => t('Financial Type'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'extra' => array('civicrm_live_options' => 1),
+        'value' => 1,
+        'default' => 1,
+        'set' => 'lineItems',
+      );
+      $fields['contribution_line_total'] = array(
+          'name' => t('Line item Amount'),
+          'set' => 'lineItems',
+        ) + $moneyDefaults;
+      // KG - end
       $sets['contributionRecur'] = array('entity_type' => 'contribution', 'label' => t('Recurring Contribution'));
       $fields['contribution_frequency_unit'] = array(
         'name' => t('Frequency of Installments'),

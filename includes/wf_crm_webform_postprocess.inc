@@ -1513,6 +1513,25 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         'entity_table' => 'civicrm_contribution',
       );
     }
+    // KG - start
+    // LineItems
+    $fid = "civicrm_1_lineitem_1_contribution_line_total";
+    if (isset($this->enabled[$fid])) {
+      foreach ($this->data['lineitem'][1]['contribution'] as $l => $lineitem) {
+        $fid = "civicrm_1_lineitem_{$l}_contribution_line_total";
+        if ($this->getData($fid) > 0) {
+          $this->line_items[] = array(
+            'qty' => 1,
+            'unit_price' => $lineitem['line_total'],
+            'financial_type_id' => $lineitem['financial_type_id'],
+            'label' => wf_crm_aval($this->node->webform['components'], $this->enabled[$fid] . ':name', t('Line item')),
+            'element' => "civicrm_1_lineitem_{$l}",
+            'entity_table' => 'civicrm_contribution',
+          );
+        }
+      }
+    }
+    // KG - end
     // Membership
     foreach (wf_crm_aval($this->data, 'membership', array()) as $c => $memberships) {
       if (isset($this->existing_contacts[$c]) && !empty($memberships['number_of_membership'])) {
@@ -2121,7 +2140,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       isset($item['line_total']) ? $item['line_total'] = CRM_Utils_Money::format($item['line_total'], NULL, NULL, TRUE) : NULL;
       isset($item['tax_amount']) ? $item['tax_amount'] = CRM_Utils_Money::format($item['tax_amount'], NULL, NULL, TRUE) : NULL;
 
-      // Save the lineitem
+      // Save the line_item
       $line_result = wf_civicrm_api('line_item', 'create', $item);
       $item['id'] = $line_result['id'];
 
