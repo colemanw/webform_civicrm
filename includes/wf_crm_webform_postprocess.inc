@@ -1517,15 +1517,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // LineItems
     $fid = "civicrm_1_lineitem_1_contribution_line_total";
     if (isset($this->enabled[$fid])) {
-      foreach ($this->data['lineitem'][1]['contribution'] as $l => $lineitem) {
-        $fid = "civicrm_1_lineitem_{$l}_contribution_line_total";
+      foreach ($this->data['lineitem'][1]['contribution'] as $n => $lineitem) {
+        $fid = "civicrm_1_lineitem_{$n}_contribution_line_total";
         if ($this->getData($fid) > 0) {
           $this->line_items[] = array(
             'qty' => 1,
             'unit_price' => $lineitem['line_total'],
             'financial_type_id' => $lineitem['financial_type_id'],
             'label' => wf_crm_aval($this->node->webform['components'], $this->enabled[$fid] . ':name', t('Line item')),
-            'element' => "civicrm_1_lineitem_{$l}",
+            'element' => "civicrm_1_lineitem_{$n}",
             'entity_table' => 'civicrm_contribution',
           );
         }
