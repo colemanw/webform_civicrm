@@ -1032,30 +1032,29 @@ class wf_crm_admin_form {
     }
     // KG - start
     // LineItem
-    $c = 1;
     $num = wf_crm_aval($this->data, "lineitem:number_number_of_lineitem", 0);
-    $this->form['contribution'][$c]["lineitem_{$c}_number_of_lineitem"] = array(
+    $this->form['contribution'][1]["lineitem_1_number_of_lineitem"] = array(
       '#type' => 'select',
-      '#title' => t('Number of Line items for Contribution 1'),
+      '#title' => t('Number of additional Line items for Contribution 1'),
       '#default_value' => $num,
       '#options' => range(0, 5),
       '#prefix' => '<div class="number-of">',
       '#suffix' => '</div>',
     );
-    $this->addAjaxItem("contribution:$c", "lineitem_{$c}_number_of_lineitem", "lineitem");
+    $this->addAjaxItem("contribution:1", "lineitem_1_number_of_lineitem", "lineitem");
     for ($n = 1; $n <= $num; ++$n) {
-      $fs = "contribution_{$c}_lineitem_{$n}_fieldset";
-      $this->form['contribution'][$c]['lineitem'][$fs] = array(
+      $fs = "contribution_1_lineitem_{$n}_fieldset";
+      $this->form['contribution'][1]['lineitem'][$fs] = array(
         '#type' => 'fieldset',
-        '#title' => t('Line item !num for Contribution 1', array('!num' => $n)),
+        '#title' => t('Line item !num', array('!num' => $n)),
         '#attributes' => array('id' => $fs, 'class' => array('web-civi-checkbox-set')),
         'js_select' => $this->addToggle($fs),
       );
       foreach ($this->sets as $sid => $set) {
         if ($set['entity_type'] == 'line_item') {
           foreach ($set['fields'] as $fid => $field) {
-            $fid = "civicrm_{$c}_lineitem_{$n}_$fid";
-            $this->form['contribution'][$c]['lineitem'][$fs][$fid] = $this->addItem($fid, $field);
+            $fid = "civicrm_1_lineitem_{$n}_$fid";
+            $this->form['contribution'][1]['lineitem'][$fs][$fid] = $this->addItem($fid, $field);
           }
         }
       }

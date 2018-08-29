@@ -1060,6 +1060,10 @@ function wf_crm_get_fields($var = 'fields') {
       // KG - start
       // LineItems
       $sets['lineItems'] = array('entity_type' => 'line_item', 'label' => t('Line Items'));
+      $fields['contribution_line_total'] = array(
+          'name' => t('Line Item Amount'),
+          'set' => 'lineItems',
+        ) + $moneyDefaults;
       $fields['contribution_financial_type_id'] = array(
         'name' => t('Financial Type'),
         'type' => 'select',
@@ -1069,10 +1073,6 @@ function wf_crm_get_fields($var = 'fields') {
         'default' => 1,
         'set' => 'lineItems',
       );
-      $fields['contribution_line_total'] = array(
-          'name' => t('Line item Amount'),
-          'set' => 'lineItems',
-        ) + $moneyDefaults;
       // KG - end
       $sets['contributionRecur'] = array('entity_type' => 'contribution', 'label' => t('Recurring Contribution'));
       $fields['contribution_frequency_unit'] = array(
