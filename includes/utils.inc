@@ -18,6 +18,7 @@
  * @return array
  */
 function wf_crm_field_options($field, $context, $data) {
+  // KG
   $ret = array();
   $fields = wf_crm_get_fields();
   if ($pieces = wf_crm_explode_key($field['form_key'])) {
@@ -40,7 +41,7 @@ function wf_crm_field_options($field, $context, $data) {
         3 => t('Both contacts may view and edit each other'),
       );
     }
-    // If this is a contract reference or shared address field, list webform contacts
+    // If this is a contact reference or shared address field, list webform contacts
     elseif ($name === 'master_id' || wf_crm_aval($field, 'data_type') === 'ContactReference') {
       $contact_type = wf_crm_aval($field, 'reference_contact_type', 'contact');
       foreach ($data['contact'] as $num => $contact) {
@@ -516,6 +517,8 @@ function wf_crm_get_fields($var = 'fields') {
       'im' => array('entity_type' => 'contact', 'label' => t('Instant Message'), 'max_instances' => 9, 'custom_fields' => 'combined'),
       'activity' => array('entity_type' => 'activity', 'label' => t('Activity'), 'max_instances' => 30,  'attachments' => TRUE),
       'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship'), 'help_text' => TRUE, 'custom_fields' => 'combined'),
+      // KG
+      'lineItems' => array('entity_type' => 'line_item', 'label' => t('Line Items')),
     );
     $conditional_sets = array(
       'CiviCase' => array('entity_type' => 'case', 'label' => t('Case'), 'max_instances' => 30),
@@ -1059,7 +1062,7 @@ function wf_crm_get_fields($var = 'fields') {
       );
       // KG - start
       // LineItems
-      $sets['lineItems'] = array('entity_type' => 'line_item', 'label' => t('Line Items'));
+      //$sets['lineItems'] = array('entity_type' => 'line_item', 'label' => t('Line Items'));
       $fields['contribution_line_total'] = array(
           'name' => t('Line Item Amount'),
           'set' => 'lineItems',
