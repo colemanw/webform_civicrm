@@ -516,7 +516,6 @@ function wf_crm_get_fields($var = 'fields') {
       'im' => array('entity_type' => 'contact', 'label' => t('Instant Message'), 'max_instances' => 9, 'custom_fields' => 'combined'),
       'activity' => array('entity_type' => 'activity', 'label' => t('Activity'), 'max_instances' => 30,  'attachments' => TRUE),
       'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship'), 'help_text' => TRUE, 'custom_fields' => 'combined'),
-      'lineItems' => array('entity_type' => 'line_item', 'label' => t('Line Items')),
     );
     $conditional_sets = array(
       'CiviCase' => array('entity_type' => 'case', 'label' => t('Case'), 'max_instances' => 30),
@@ -529,6 +528,10 @@ function wf_crm_get_fields($var = 'fields') {
       if (in_array($component, $components)) {
         $sets[$set['entity_type']] = $set;
       }
+    }
+    // Contribution line items
+    if (in_array('CiviContribute', $components)) {
+      $sets['line_items'] = array('entity_type' => 'line_item', 'label' => t('Line Items'));
     }
 
     $moneyDefaults = array(
@@ -1058,10 +1061,10 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Contribution Source'),
         'type' => 'textfield',
       );
-      // LineItems
+      // Line items
       $fields['contribution_line_total'] = array(
           'name' => t('Line Item Amount'),
-          'set' => 'lineItems',
+          'set' => 'line_items',
         ) + $moneyDefaults;
       $fields['contribution_financial_type_id'] = array(
         'name' => t('Financial Type'),
@@ -1070,7 +1073,7 @@ function wf_crm_get_fields($var = 'fields') {
         'extra' => array('civicrm_live_options' => 1),
         'value' => 1,
         'default' => 1,
-        'set' => 'lineItems',
+        'set' => 'line_items',
       );
       $sets['contributionRecur'] = array('entity_type' => 'contribution', 'label' => t('Recurring Contribution'));
       $fields['contribution_frequency_unit'] = array(
