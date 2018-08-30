@@ -40,7 +40,7 @@ function wf_crm_field_options($field, $context, $data) {
         3 => t('Both contacts may view and edit each other'),
       );
     }
-    // If this is a contract reference or shared address field, list webform contacts
+    // If this is a contact reference or shared address field, list webform contacts
     elseif ($name === 'master_id' || wf_crm_aval($field, 'data_type') === 'ContactReference') {
       $contact_type = wf_crm_aval($field, 'reference_contact_type', 'contact');
       foreach ($data['contact'] as $num => $contact) {
@@ -528,6 +528,10 @@ function wf_crm_get_fields($var = 'fields') {
       if (in_array($component, $components)) {
         $sets[$set['entity_type']] = $set;
       }
+    }
+    // Contribution line items
+    if (in_array('CiviContribute', $components)) {
+      $sets['line_items'] = array('entity_type' => 'line_item', 'label' => t('Line Items'));
     }
 
     $moneyDefaults = array(
@@ -1056,6 +1060,20 @@ function wf_crm_get_fields($var = 'fields') {
       $fields['contribution_source'] = array(
         'name' => t('Contribution Source'),
         'type' => 'textfield',
+      );
+      // Line items
+      $fields['contribution_line_total'] = array(
+          'name' => t('Line Item Amount'),
+          'set' => 'line_items',
+        ) + $moneyDefaults;
+      $fields['contribution_financial_type_id'] = array(
+        'name' => t('Financial Type'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'extra' => array('civicrm_live_options' => 1),
+        'value' => 1,
+        'default' => 1,
+        'set' => 'line_items',
       );
       $sets['contributionRecur'] = array('entity_type' => 'contribution', 'label' => t('Recurring Contribution'));
       $fields['contribution_frequency_unit'] = array(
