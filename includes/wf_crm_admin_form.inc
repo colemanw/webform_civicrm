@@ -1030,7 +1030,6 @@ class wf_crm_admin_form {
         }
       }
     }
-    // KG - start
     // LineItem
     $num = wf_crm_aval($this->data, "lineitem:number_number_of_lineitem", 0);
     $this->form['contribution'][1]["lineitem_1_number_of_lineitem"] = array(
@@ -1059,7 +1058,6 @@ class wf_crm_admin_form {
         }
       }
     }
-    // KG - end
   }
 
   /**
@@ -1492,10 +1490,8 @@ class wf_crm_admin_form {
           $this->data[$ent][$c][$key] = $val;
         }
         // Standalone entities keep their own count independent of contacts
-        // KG - start
         // LineItems
         elseif ($ent == 'grant' || $ent == 'activity' || $ent == 'case' || $ent == 'lineitem') {
-        // KG - end
           $this->data[$ent]["number_$key"] = $val;
         }
       }

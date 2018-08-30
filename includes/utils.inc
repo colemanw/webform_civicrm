@@ -18,7 +18,6 @@
  * @return array
  */
 function wf_crm_field_options($field, $context, $data) {
-  // KG
   $ret = array();
   $fields = wf_crm_get_fields();
   if ($pieces = wf_crm_explode_key($field['form_key'])) {
@@ -517,7 +516,6 @@ function wf_crm_get_fields($var = 'fields') {
       'im' => array('entity_type' => 'contact', 'label' => t('Instant Message'), 'max_instances' => 9, 'custom_fields' => 'combined'),
       'activity' => array('entity_type' => 'activity', 'label' => t('Activity'), 'max_instances' => 30,  'attachments' => TRUE),
       'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship'), 'help_text' => TRUE, 'custom_fields' => 'combined'),
-      // KG
       'lineItems' => array('entity_type' => 'line_item', 'label' => t('Line Items')),
     );
     $conditional_sets = array(
@@ -1060,9 +1058,7 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Contribution Source'),
         'type' => 'textfield',
       );
-      // KG - start
       // LineItems
-      //$sets['lineItems'] = array('entity_type' => 'line_item', 'label' => t('Line Items'));
       $fields['contribution_line_total'] = array(
           'name' => t('Line Item Amount'),
           'set' => 'lineItems',
@@ -1076,7 +1072,6 @@ function wf_crm_get_fields($var = 'fields') {
         'default' => 1,
         'set' => 'lineItems',
       );
-      // KG - end
       $sets['contributionRecur'] = array('entity_type' => 'contribution', 'label' => t('Recurring Contribution'));
       $fields['contribution_frequency_unit'] = array(
         'name' => t('Frequency of Installments'),

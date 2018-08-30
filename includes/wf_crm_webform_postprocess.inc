@@ -1513,7 +1513,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         'entity_table' => 'civicrm_contribution',
       );
     }
-    // KG - start
     // LineItems
     $fid = "civicrm_1_lineitem_1_contribution_line_total";
     if (isset($this->enabled[$fid])) {
@@ -1531,7 +1530,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
       }
     }
-    // KG - end
     // Membership
     foreach (wf_crm_aval($this->data, 'membership', array()) as $c => $memberships) {
       if (isset($this->existing_contacts[$c]) && !empty($memberships['number_of_membership'])) {
