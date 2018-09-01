@@ -214,6 +214,7 @@ function webform_civicrm_node_view($node, $view_mode, $langcode) {
  * @return array
  */
 function webform_civicrm_theme() {
+  return [];
   /*
   $theme = array(
     'webform_civicrm_options_table' => array(
@@ -288,10 +289,12 @@ function webform_civicrm_webform_submission_update($node, $submission) {
 /**
  * Implements hook_webform_submission_delete().
  */
-function webform_civicrm_webform_submission_delete($node, $submission) {
+function webform_civicrm_webform_submission_delete($submission) {
+  /*
   db_delete('webform_civicrm_submissions')
     ->condition('sid', $submission->sid)
     ->execute();
+  */
 }
 
 /**
@@ -299,6 +302,7 @@ function webform_civicrm_webform_submission_delete($node, $submission) {
  * Add CiviCRM contact info to submission objects.
  */
 function webform_civicrm_webform_submission_load(&$submissions) {
+  /*
   if (empty($submissions)) {
     return;
   }
@@ -332,6 +336,7 @@ function webform_civicrm_webform_submission_load(&$submissions) {
       }
     }
   }
+  */
 }
 
 /**

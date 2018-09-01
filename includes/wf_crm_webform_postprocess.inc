@@ -5,6 +5,10 @@
  * Front-end form validation and post-processing.
  */
 
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\webform\WebformInterface;
+use Drupal\webform\WebformSubmissionInterface;
+
 module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_base');
 
 class wf_crm_webform_postprocess extends wf_crm_webform_base {
@@ -38,12 +42,17 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     BILLING_MODE_LIVE = 1,
     BILLING_MODE_MIXED = 3;
 
-  function __construct($node) {
-    civicrm_initialize();
-    $this->node = $node;
-    $this->settings = $node->webform_civicrm;
+  function __construct(WebformInterface $webform) {
+    \Drupal::getContainer()->get('civicrm')->initialize();
+    $this->node = $webform;
+
+    $handler_collection = $webform->getHandlers('webform_civicrm');
+    $instance_ids = $handler_collection->getInstanceIds();
+    $handler = $handler_collection->get(reset($instance_ids));
+
+    $this->settings = $handler->getConfiguration()['settings'];
     $this->data = $this->settings['data'];
-    $this->enabled = wf_crm_enabled_fields($node);
+    $this->enabled = wf_crm_enabled_fields($webform);
     $this->all_fields = wf_crm_get_fields();
     $this->all_sets = wf_crm_get_fields('sets');
   }
@@ -52,12 +61,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * This is first called during form validation. We create an instance of this object and stash it in a static variable.
    * It is destroyed and rebuilt between each page submission, but after (successful) validation of the final page,
    * this cache allows the object instance to persist throughout (final) validate, preSave and postSave operations.
-   * @param stdClass $node
+   *
+   * @param \Drupal\webform\WebformInterface $webform
+   *
    * @return wf_crm_webform_postprocess
    */
-  public static function singleton($node) {
+  public static function singleton(WebformInterface $webform) {
     if (!self::$singleton) {
-      self::$singleton = new wf_crm_webform_postprocess($node);
+      self::$singleton = new wf_crm_webform_postprocess($webform);
     }
     return self::$singleton;
   }
@@ -68,11 +79,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @param array $form
    * @param array $form_state (reference)
    */
-  public function validate($form, FormStateInterface $form_state) {
+  public function validate($form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
     $this->form = $form;
-    $this->form_state = &$form_state;
-    $this->rawValues = _webform_client_form_submit_flatten($this->node, wf_crm_aval($this->form_state, 'values:submitted'));
-    $this->crmValues = wf_crm_enabled_fields($this->node, $this->rawValues);
+    $this->form_state = $form_state;
+    $this->rawValues = $form_state->getValues();
+    $this->crmValues = wf_crm_enabled_fields($webform_submission->getWebform(), $this->rawValues);
     // Even though this object is destroyed between page submissions, this trick allows us to persist some data - see below
     $this->ent = wf_crm_aval($form_state, 'civicrm:ent', array());
 
@@ -90,7 +101,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $this->addPaymentJs();
       $this->loadMultiPageData();
       if ($this->tallyLineItems()) {
-        if ($this->isLivePaymentProcessor() && $this->isPaymentPage() && !form_get_errors()) {
+        if ($this->isLivePaymentProcessor() && $this->isPaymentPage() && !$form_state->getErrors()) {
           if ($this->validateBillingFields()) {
             if ($this->createBillingContact()) {
               $this->submitLivePayment();
@@ -100,8 +111,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
     }
     // Even though this object is destroyed between page submissions, this trick allows us to persist some data - see above
-    $form_state['civicrm']['ent'] = $this->ent;
-    $form_state['civicrm']['line_items'] = $this->line_items;
+    $form_state->set(['civicrm', 'ent'], $this->ent);
+    $form_state->set(['civicrm', 'line_items'], $this->line_items);
   }
 
   /**
@@ -109,8 +120,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @see webform_civicrm_webform_submission_presave
    * @param stdClass $submission
    */
-  public function preSave(&$submission) {
-    $this->submission = &$submission;
+  public function preSave(WebformSubmissionInterface $webform_submission) {
+    $this->submission = $webform_submission;
     $this->data = $this->settings['data'];
     // Check for existing submission
     $this->setUpdateParam();
@@ -210,8 +221,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @see webform_civicrm_webform_submission_update
    * @param stdClass $submission
    */
-  public function postSave($submission) {
-    $this->submission = $submission;
+  public function postSave(WebformSubmissionInterface $webform_submission) {
+    $this->submission = $webform_submission;
     if (empty($this->submission->is_draft)) {
       // Save cases
       if (!empty($this->data['case']['number_of_case'])) {
