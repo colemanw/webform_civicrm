@@ -6,6 +6,7 @@
  */
 
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Element;
 use Drupal\webform\WebformInterface;
 use Drupal\webform\WebformSubmissionInterface;
 
@@ -13,7 +14,15 @@ module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_base');
 
 class wf_crm_webform_postprocess extends wf_crm_webform_base {
   // Variables used during validation
+
+  /**
+   * @var array
+   */
   private $form;
+
+  /**
+   * @var \Drupal\Core\Form\FormStateInterface
+   */
   private $form_state;
   private $crmValues;
   private $rawValues;
@@ -88,7 +97,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->ent = wf_crm_aval($form_state, 'civicrm:ent', array());
 
     $this->hiddenFieldValidation();
-    $this->validateThisPage($this->form['submitted']);
+    $this->validateThisPage($this->form);
 
     if (!empty($this->data['participant']) && !empty($this->data['participant_reg_type'])) {
       $this->loadMultiPageData();
@@ -117,14 +126,16 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
   /**
    * Process webform submission when it is about to be saved. Called by the following hook:
+   *
    * @see webform_civicrm_webform_submission_presave
-   * @param stdClass $submission
+   *
+   * @param \Drupal\webform\WebformSubmissionInterface $webform_submission
    */
   public function preSave(WebformSubmissionInterface $webform_submission) {
     $this->submission = $webform_submission;
     $this->data = $this->settings['data'];
     // Check for existing submission
-    $this->setUpdateParam();
+    // $this->setUpdateParam();
     // Fill $this->id from existing contacts
     $this->getExistingContactIds();
 
@@ -243,11 +254,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     // Write record; we do this when creating, updating, or saving a draft of a webform submission.
     $record = $this->formatSubmission();
-    drupal_write_record('webform_civicrm_submissions', $record, $this->update);
+    // drupal_write_record('webform_civicrm_submissions', $record, $this->update);
 
     // Calling an IPN payment processor will result in a redirect so this happens after everything else
     if (empty($this->submission->is_draft) && !empty($this->ent['contribution'][1]['id']) && $this->contributionIsIncomplete && !$this->contributionIsPayLater) {
-      webform_submission_send_mail($this->node, $this->submission);
+//      webform_submission_send_mail($this->node, $this->submission);
       $this->submitIPNPayment();
     }
     // Send receipt
@@ -300,8 +311,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * Force Drupal to ignore errors for fields hidden by this module
    */
   private function hiddenFieldValidation() {
-    $errors = form_get_errors();
-    foreach ((array) $errors as $key => $error) {
+    $errors = $this->form_state->getErrors();
+    foreach ($errors as $key => $error) {
       $pieces = wf_crm_explode_key(substr($key, strrpos($key, '][') + 2));
       if ($pieces) {
         list( , $c, $ent, $n, $table, $name) = $pieces;
@@ -327,7 +338,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function validateThisPage($elements) {
     // Recurse through form elements.
-    foreach (element_children($elements) as $key) {
+    foreach (Element::children($elements) as $key) {
       if (is_array($elements[$key]) && ($element = $elements[$key])) {
         $this->validateThisPage($elements[$key]);
         if (!empty($element['#civicrm_data_type'])

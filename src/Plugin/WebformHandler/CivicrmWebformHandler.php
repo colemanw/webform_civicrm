@@ -103,7 +103,7 @@ class CivicrmWebformHandler extends WebformHandlerBase {
   }
 
   public function validateForm(array &$form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
-    $processor = \wf_crm_webform_postprocess::singleton($form['#node']);
+    $processor = \wf_crm_webform_postprocess::singleton($webform_submission->getWebform());
     $processor->validate($form, $form_state, $webform_submission);
   }
 
@@ -111,8 +111,7 @@ class CivicrmWebformHandler extends WebformHandlerBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
-    $this->getLogger('webform_civicrm')->info("Hi!");
-    $webform = $this->getWebform();
+    $this->getLogger('webform_civicrm')->info("Hi!");;
   }
 
   public function preSave(WebformSubmissionInterface $webform_submission) {

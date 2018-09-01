@@ -44,7 +44,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     // Add css & js
     $this->addResources();
     // Add validation handler
-    $this->form['#validate'][] = 'wf_crm_validate';
+    // $this->form['#validate'][] = 'wf_crm_validate';
     // If this form is already in-process, IDs will be stored
     if (!empty($this->form_state->get('civicrm'))) {
       $this->ent = $this->form_state->get(['civicrm', 'ent']);

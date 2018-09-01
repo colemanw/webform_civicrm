@@ -253,40 +253,6 @@ function webform_civicrm_webform_component_info() {
 }
 
 /**
- * Implements hook_webform_submission_presave().
- * Uses cached instance of wf_crm_webform_postprocess that was created during validation.
- */
-function webform_civicrm_webform_submission_presave($node, &$submission) {
-  if (!empty($node->webform_civicrm)) {
-    module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_postprocess');
-    $processor = wf_crm_webform_postprocess::singleton($node);
-    $processor->preSave($submission);
-  }
-}
-
-/**
- * Implements hook_webform_submission_insert().
- * Uses cached instance of wf_crm_webform_postprocess that was created during validation.
- */
-function webform_civicrm_webform_submission_insert($node, $submission) {
-  if (!empty($node->webform_civicrm)) {
-    $processor = wf_crm_webform_postprocess::singleton($node);
-    $processor->postSave($submission);
-  }
-}
-
-/**
- * Implements hook_webform_submission_update().
- * Uses cached instance of wf_crm_webform_postprocess that was created during validation.
- */
-function webform_civicrm_webform_submission_update($node, $submission) {
-  if (!empty($node->webform_civicrm)) {
-    $processor = wf_crm_webform_postprocess::singleton($node);
-    $processor->postSave($submission);
-  }
-}
-
-/**
  * Implements hook_webform_submission_delete().
  */
 function webform_civicrm_webform_submission_delete($submission) {
@@ -680,16 +646,6 @@ function wf_crm_contact_clone($form, $form_state) {
   drupal_write_record('webform_civicrm_forms', $settings, 'nid');
   // Store data to rewrite form keys
   wf_crm_contact_clone_storage($storage);
-}
-
-/**
- * Validation callback for webform submissions.
- */
-function wf_crm_validate($form, FormStateInterface $form_state) {
-  include_once __DIR__ . '/includes/wf_crm_webform_base.inc';
-  include_once __DIR__ . '/includes/wf_crm_webform_postprocess.inc';
-  $processor = \wf_crm_webform_postprocess::singleton($form['#node']);
-  // $processor->validate($form, $form_state);
 }
 
 /**
