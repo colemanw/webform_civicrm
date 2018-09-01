@@ -1,0 +1,14 @@
+{
+  "name": "drupal/webform_civicrm",
+  "type": "drupal-module",
+  "description": "CiviCRM and Webform integration",
+  "keywords": ["Drupal"],
+  "license": "GPL-2.0+",
+  "homepage": "https://www.drupal.org/project/webform_civicrm",
+  "minimum-stability": "dev",
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/webform_civicrm",
+    "source": "http://cgit.drupalcode.org/webform_civicrm"
+  },
+  "require": { }
+}

@@ -1,0 +1,25 @@
+admin:
+  css:
+    component:
+      css/webform_civicrm_admin.css: {}
+  js:
+    js/webform_civicrm_admin.js: {}
+    # TODO should only be loaded if there is a select list?
+    # @link https://github.com/colemanw/webform_civicrm/blob/8f285b94c4ba444fc894b24f2d23a7c52c92731b/includes/wf_crm_admin_component.inc#L97
+    js/webform_civicrm_options.js: {}
+forms:
+  css:
+    component:
+      css/webform_civicrm_forms.css: {}
+  js:
+    js/webform_civicrm_forms.js: {}
+    # TODO should only be loaded if a contribution form.
+    js/webform_civicrm_payment.js: {}
+
+# TODO decide if required?
+# _webform_render_civicrm_contact
+# only used for autocomplete https://github.com/colemanw/webform_civicrm/blob/8f285b94c4ba444fc894b24f2d23a7c52c92731b/includes/contact_component.inc#L384
+token-input:
+  css:
+    component:
+      css/token-input.css: {}

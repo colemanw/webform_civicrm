@@ -1,5 +1,10 @@
 <?php
 
+use Drupal\Component\Render\FormattableMarkup;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
+use Drupal\webform\WebformInterface;
+
 /**
  * @file
  * Webform CiviCRM module's admin form.
@@ -7,27 +12,36 @@
 
 class wf_crm_admin_form {
   private $form;
+  /**
+   * @var \Drupal\Core\Form\FormStateInterface
+   */
   private $form_state;
   private $node;
   private $fields;
   private $sets;
   private $settings;
   private $data;
+
+  /**
+   * The shim allowing us to slowly port this code.
+   *
+   * @var \Drupal\webform\WebformInterface
+   */
+  private $webform;
   /**
    * @var array
    */
   public static $fieldset_entities = array('contact', 'activity', 'case', 'grant');
 
-  function __construct($form, &$form_state, $node) {
-    module_load_include('inc', 'webform_civicrm', 'includes/utils');
-    module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_help');
-    module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_base');
-    civicrm_initialize();
+  function __construct($form, FormStateInterface $form_state, $node, WebformInterface $webform) {
+    \Drupal::getContainer()->get('civicrm')->initialize();
     $this->form = $form;
-    $this->form_state = &$form_state;
+    $this->form_state = $form_state;
     $this->node = &$node;
     $this->fields = wf_crm_get_fields();
     $this->sets = wf_crm_get_fields('sets');
+
+    $this->webform = $webform;
   }
 
   /**
@@ -35,24 +49,24 @@ class wf_crm_admin_form {
    * @return array
    */
   public function buildForm() {
-    $this->form_state['storage']['nid'] = $this->node->nid;
+    $this->form_state->set('nid', $this->node->nid);
 
     // Display confirmation message before deleting fields
-    if (!empty($this->form_state['storage']['msg'])) {
+    if (!empty($this->form_state->get('msg'))) {
       return $this->buildConfirmationForm();
     }
 
     // Add css & js
     $this->addResources();
 
-    if (empty($this->form_state['values'])) {
+    if (empty($this->form_state->getValues())) {
       $this->initializeForm();
     }
     else {
       $this->rebuildForm();
     }
     // Merge in existing fields
-    $existing = array_keys(wf_crm_enabled_fields($this->node, NULL, TRUE));
+    $existing = array_keys(wf_crm_enabled_fields($this->webform, NULL, TRUE));
     $this->settings += array_fill_keys($existing, 'create_civicrm_webform_element');
 
     // Sort fields by set
@@ -103,7 +117,18 @@ class wf_crm_admin_form {
    * Initialize form on first view
    */
   private function initializeForm() {
-    $this->settings = isset($this->node->webform_civicrm) ? $this->node->webform_civicrm : $this->defaultSettings();
+    $handler_collection = $this->webform->getHandlers('webform_civicrm');
+    if ($handler_collection->count()) {
+      /** @var \Drupal\webform\Plugin\WebformHandlerInterface $handler */
+      $handler = $handler_collection->get('webform_civicrm');
+    }
+    else {
+      $handler_mananger = \Drupal::getContainer()->get('plugin.manager.webform.handler');
+      $handler = $handler_mananger->createInstance('webform_civicrm');
+      $handler->setWebform($this->webform);
+    }
+    $handler_configuration = $handler->getConfiguration();
+    $this->settings = $handler_configuration['settings'];
     $this->data = &$this->settings['data'];
   }
 
@@ -111,7 +136,10 @@ class wf_crm_admin_form {
    * On rebuilding the form
    */
   private function rebuildForm() {
-    $this->settings = wf_crm_aval($this->form_state['storage'], 'vals', $this->form_state['values']);
+    // The following should mimic this line.
+    // $this->settings = wf_crm_aval($this->form_state->getStorage(), 'vals', $this->form_state->getValues());
+    $this->settings = $this->form_state->get('vals') ?: $this->form_state->getValues();
+
     $this->rebuildData();
     // Hack for nicer UX: pre-check phone, email, etc when user increments them
     if (!empty($_POST['_triggering_element_name'])) {
@@ -133,7 +161,8 @@ class wf_crm_admin_form {
         }
       }
     }
-    unset($this->form_state['storage']['vals']);
+    // This replaces: unset($this->form_state['storage']['vals']);
+    $this->form_state->set('vals', NULL);
   }
 
   /**
@@ -153,12 +182,8 @@ class wf_crm_admin_form {
    * Add necessary css & js
    */
   private function addResources() {
-    $this->form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_admin.css';
-    $this->form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_admin.js';
-    $this->form['#attached']['js'][] = array(
-      'data' => array('webform_civicrm' => array('rTypes' => wf_crm_get_relationship_types())),
-      'type' => 'setting',
-    );
+    $this->form['#attached']['library'][] = 'webform_civicrm/admin';
+    $this->form['#attached']['drupalSettings']['webform_civicrm'] = array('rTypes' => wf_crm_get_relationship_types());
     // Add CiviCRM core css & js, which includes jQuery, jQuery UI + other plugins
     CRM_Core_Resources::singleton()->addCoreResources();
     // Markup needed by CRM popup notifications
@@ -169,18 +194,18 @@ class wf_crm_admin_form {
    * Build fields for form intro
    */
   private function buildFormIntro() {
+    $has_handler = $this->webform->getHandlers('webform_civicrm');
     $this->form['nid'] = array(
       '#type' => 'checkbox',
       '#title' => t('Enable CiviCRM Processing'),
-      '#default_value' => !empty($this->settings['nid']),
-      '#return_value' => $this->node->nid,
+      '#default_value' => $has_handler->count(),
     );
     $this->help($this->form['nid'], 'intro', t('Webform-CiviCRM Integration'));
     $this->form['number_of_contacts'] = array(
       '#type' => 'select',
       '#title' => t('Number of Contacts'),
       '#default_value' => count($this->data['contact']),
-      '#options' => drupal_map_assoc(range(1, 30)),
+      '#options' => array_combine(range(1, 30), range(1, 30)),
     );
     $this->form['change_form_settings'] = array(
       '#type' => 'button',
@@ -190,10 +215,13 @@ class wf_crm_admin_form {
     );
     $this->form['webform_civicrm'] = array('#type' => 'vertical_tabs');
     // Display intro help to virgins
+    /*
+     * @todo evaluate this; use \Drupal::state(). also inline JS is not allowed in D8.
     if (!variable_get('webform_civicrm_help_seen')) {
       variable_set('webform_civicrm_help_seen', TRUE);
       drupal_add_js('cj(function() {CRM.help("' . t('Welcome to Webform-CiviCRM') . '", {}, "' . url('webform-civicrm/help/intro') . '");});', array('type' => 'inline', 'scope' => 'footer'));
     }
+    */
   }
 
   /**
@@ -204,7 +232,7 @@ class wf_crm_admin_form {
   private function buildContactTab($n, $c) {
     list($contact_types, $sub_types) = wf_crm_get_contact_types();
     $this->form['contact_' . $n] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => $n . '. ' . wf_crm_contact_label($n, $this->data),
       '#description' => $n > 1 ? NULL : t('Primary contact. Usually assumed to be the person filling out the form.') . '<br />' . t('Enable the "Existing Contact" field to autofill with the current user (or another contact).'),
       '#group' => 'webform_civicrm',
@@ -308,7 +336,7 @@ class wf_crm_admin_form {
           'js_select' => $this->addToggle($fsid),
         );
         if ($sid == 'relationship') {
-          $fieldset['#title'] = t('Relationship to !contact', array('!contact' => wf_crm_contact_label($i, $this->data, 'wrap')));
+          $fieldset['#title'] = t('Relationship to :contact', array(':contact' => wf_crm_contact_label($i, $this->data, 'wrap')));
         }
         elseif ((isset($set['max_instances']) && $set['max_instances'] > 1)) {
           $fieldset['#title'] .= ' ' . $i;
@@ -343,8 +371,8 @@ class wf_crm_admin_form {
             '#prefix' => '<div class="multivalue-fieldset-create-mode">',
             '#suffix' => '</div>',
             '#options' => array(
-              wf_crm_webform_base::MULTIVALUE_FIELDSET_MODE_CREATE_OR_EDIT => t('Create/ Edit'),
-              wf_crm_webform_base::MULTIVALUE_FIELDSET_MODE_CREATE_ONLY => t('Create Only')
+              \wf_crm_webform_base::MULTIVALUE_FIELDSET_MODE_CREATE_OR_EDIT => t('Create/ Edit'),
+              \wf_crm_webform_base::MULTIVALUE_FIELDSET_MODE_CREATE_ONLY => t('Create Only')
             ),
             '#title' => t('Create mode'),
             '#weight' => -1,
@@ -388,10 +416,10 @@ class wf_crm_admin_form {
    * Configure messages
    */
   private function buildMessageTabs() {
-    $tokens = '<strong>' . t('Tokens for !contact', array('!contact' => wf_crm_contact_label(1, $this->data, TRUE))) . ':</strong> [' . implode('], [', wf_crm_get_fields('tokens')) . '].';
+    $tokens = '<strong>' . t('Tokens for :contact', array(':contact' => wf_crm_contact_label(1, $this->data, TRUE))) . ':</strong> [' . implode('], [', wf_crm_get_fields('tokens')) . '].';
 
     $this->form['prefix'] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => t('Introduction Text'),
       '#description' => t('This text will appear at the top of the form. You may configure separate messages for known contacts (logged in users, or users following a hashed link from civimail) and unknown (anonymous) users.'),
       '#group' => 'webform_civicrm',
@@ -410,7 +438,7 @@ class wf_crm_admin_form {
       '#description' => t('No tokens available for unknown contacts.'),
     );
     $this->form['st_message'] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => t('"Not You?" Message'),
       '#description' => t('Prompt for users who are logged in as, or following a hashed link for, someone else.'),
       '#group' => 'webform_civicrm',
@@ -437,7 +465,7 @@ class wf_crm_admin_form {
    */
   private function buildActivityTab() {
     $this->form['activityTab'] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => t('Activities'),
       '#group' => 'webform_civicrm',
       '#attributes' => array('class' => array('civi-icon-activity')),
@@ -457,7 +485,7 @@ class wf_crm_admin_form {
       $this->form['activityTab']['activity'][$num] = array(
         '#type' => 'fieldset',
         '#attributes' => array('class' => array('activity-wrapper')),
-        '#title' => t('Activity !num', array('!num' => $n)),
+        '#title' => t('Activity :num', array(':num' => $n)),
       );
       $this->form['activityTab']['activity'][$num]["activity_{$n}_settings_existing_activity_status"] = array(
         '#type' => 'select',
@@ -495,7 +523,7 @@ class wf_crm_admin_form {
           if ($num_case) {
             $webform_cases = array();
             for ($i=1; $i<=$num_case; ++$i) {
-              $webform_cases["#$i"] = t('Case !num', array('!num' => $i));
+              $webform_cases["#$i"] = t('Case :num', array(':num' => $i));
             }
             $wrap['case']["activity_{$n}_settings_case_type_id"]['#options'] = array(
               t('- None -'),
@@ -533,7 +561,7 @@ class wf_crm_admin_form {
       }
       $wrap[$num . '_fields'] = array(
         '#type' => 'fieldset',
-        '#title' => ts('Activity'),
+        '#title' => t('Activity'),
         '#attributes' => array('id' => $num . '_fields', 'class' => array('web-civi-checkbox-set')),
         'js_select' => $this->addToggle($num . '_fields'),
       );
@@ -593,7 +621,7 @@ class wf_crm_admin_form {
     if (strpos($set, 'cg') === 0) {
       $fieldset["{$ent}_{$n}_settings_dynamic_custom_$set"] = array(
         '#type' => 'checkbox',
-        '#title' => ts('Add dynamically'),
+        '#title' => t('Add dynamically'),
         '#default_value' => wf_crm_aval($this->data, "$ent:$n:dynamic_custom_$set"),
         '#weight' => -1,
         '#prefix' => '<div class="dynamic-custom-checkbox">',
@@ -613,7 +641,7 @@ class wf_crm_admin_form {
       return;
     }
     $this->form['caseTab'] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => t('Cases'),
       '#group' => 'webform_civicrm',
       '#attributes' => array('class' => array('civi-icon-case')),
@@ -631,7 +659,7 @@ class wf_crm_admin_form {
       $fs = "case_case_{$n}_fieldset";
       $this->form['caseTab']['case'][$fs] = array(
         '#type' => 'fieldset',
-        '#title' => t('Case !num', array('!num' => $n)),
+        '#title' => t('Case :num', array(':num' => $n)),
         'wrap' => array('#weight' => 9),
       );
       $this->form['caseTab']['case'][$fs]["case_{$n}_settings_existing_case_status"] = array(
@@ -718,7 +746,7 @@ class wf_crm_admin_form {
    */
   private function buildParticipantTab() {
     $this->form['participant'] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => t('Event Registration'),
       '#group' => 'webform_civicrm',
       '#attributes' => array('class' => array('civi-icon-participant')),
@@ -789,6 +817,8 @@ class wf_crm_admin_form {
       '#type' => 'select',
       '#title' => t('Show Public Events'),
       '#default_value' => wf_crm_aval($this->data, 'reg_options:show_public_events', 'title'),
+      // This is breaking HTML in D8.
+      // '#suffix' => '</div>',
       '#parents' => array('reg_options', 'show_public_events'),
       '#tree' => TRUE,
       '#options' => array(
@@ -840,7 +870,7 @@ class wf_crm_admin_form {
     );
     $this->help($field, 'reg_options_show_remaining');
     foreach (array(5, 10, 20, 50, 100, 200, 500, 1000) as $num) {
-      $field['#options'][$num] = t('When under !num spaces left', array('!num' => $num));
+      $field['#options'][$num] = t('When under :num spaces left', array(':num' => $num));
     }
     $this->form['participant']['reg_options']['show_remaining'] = $field;
     $this->form['participant']['reg_options']['validate'] = array(
@@ -885,7 +915,7 @@ class wf_crm_admin_form {
       }
       $this->form['participant']['participants'][$n]['participant_' . $n . '_number_of_participant'] = array(
         '#type' => 'select',
-        '#title' => $reg_type == 'all' ? t('Number of Event Sets') : t('Number of Event Sets for !contact', array('!contact' => wf_crm_contact_label($n, $this->data, 'wrap'))),
+        '#title' => $reg_type == 'all' ? t('Number of Event Sets') : t('Number of Event Sets for :contact', array(':contact' => wf_crm_contact_label($n, $this->data, 'wrap'))),
         '#default_value' => $num,
         '#options' => range(0, $this->sets['participant']['max_instances']),
         '#prefix' => '<div class="number-of">',
@@ -901,7 +931,7 @@ class wf_crm_admin_form {
         $fs = "participant_{$n}_event_{$e}_fieldset";
         $this->form['participant']['participants'][$n]['div'][$fs] = array(
           '#type' => 'fieldset',
-          '#title' => t('Event !num', array('!num' => $e)),
+          '#title' => t('Event :num', array(':num' => $e)),
           '#attributes' => array('id' => $fs),
         );
         foreach ($this->sets as $sid => $set) {
@@ -952,7 +982,7 @@ class wf_crm_admin_form {
    */
   private function buildMembershipTab() {
     $this->form['membership'] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => t('Memberships'),
       '#group' => 'webform_civicrm',
       '#attributes' => array('class' => array('civi-icon-membership')),
@@ -961,7 +991,7 @@ class wf_crm_admin_form {
       $num = wf_crm_aval($this->data, "membership:{$c}:number_of_membership", 0);
       $this->form['membership'][$c]["membership_{$c}_number_of_membership"] = array(
         '#type' => 'select',
-        '#title' => t('Number of Memberships for !contact', array('!contact' => wf_crm_contact_label($c, $this->data, 'wrap'))),
+        '#title' => t('Number of Memberships for @contact', array('@contact' => wf_crm_contact_label($c, $this->data, 'wrap'))),
         '#default_value' => $num,
         '#options' => range(0, 9),
         '#prefix' => '<div class="number-of">',
@@ -972,7 +1002,7 @@ class wf_crm_admin_form {
         $fs = "membership_{$c}_membership_{$n}_fieldset";
         $this->form['membership'][$c]['membership'][$fs] = array(
           '#type' => 'fieldset',
-          '#title' => t('Membership !num for !contact', array('!num' => $n, '!contact' => wf_crm_contact_label($c, $this->data, 'wrap'))),
+          '#title' => t('Membership :num for :contact', array(':num' => $n, ':contact' => wf_crm_contact_label($c, $this->data, 'wrap'))),
           '#attributes' => array('id' => $fs, 'class' => array('web-civi-checkbox-set')),
           'js_select' => $this->addToggle($fs),
         );
@@ -993,7 +1023,7 @@ class wf_crm_admin_form {
    */
   private function buildContributionTab() {
     $this->form['contribution'] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => t('Contribution'),
       '#group' => 'webform_civicrm',
       '#description' => t('In order to process live transactions for events, memberships, or contributions, select a contribution page and its billing fields will be included on the webform.'),
@@ -1066,7 +1096,7 @@ class wf_crm_admin_form {
       return;
     }
     $this->form['grantTab'] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => t('Grants'),
       '#group' => 'webform_civicrm',
       '#attributes' => array('class' => array('civi-icon-grant')),
@@ -1084,7 +1114,7 @@ class wf_crm_admin_form {
       $fs = "grant_grant_{$n}_fieldset";
       $this->form['grantTab']['grant'][$fs] = array(
         '#type' => 'fieldset',
-        '#title' => t('Grant !num', array('!num' => $n)),
+        '#title' => t('Grant :num', array(':num' => $n)),
         'wrap' => array('#weight' => 9),
       );
       $this->form['grantTab']['grant'][$fs]["grant_{$n}_settings_existing_grant_status"] = array(
@@ -1129,13 +1159,13 @@ class wf_crm_admin_form {
    */
   private function buildOptionsTab() {
     $this->form['options'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Additional Options'),
+      '#type' => 'details',
       '#group' => 'webform_civicrm',
+      '#title' => t('Additional Options'),
       '#attributes' => array('class' => array('civi-icon-prefs')),
       '#description' => '<p>' .
-        t('To have this form auto-filled for anonymous users, enable the "Existing Contact" field for !contact and send the following link from CiviMail:', array('!contact' => wf_crm_contact_label(1, $this->data, TRUE))) .
-        '<br /><code>' . url("node/{$this->node->nid}", array('absolute' => TRUE, 'query' => array('cid1' => ''))) . '{contact.contact_id}&amp;{contact.checksum}</code></p>',
+        t('To have this form auto-filled for anonymous users, enable the "Existing Contact" field for :contact and send the following link from CiviMail:', array(':contact' => wf_crm_contact_label(1, $this->data, TRUE))) .
+        '<br /><code>' . Url::fromRoute('entity.webform.canonical', ['webform' => $this->node->nid], ['query' => ['cid1' => '']])->toString() . '{contact.contact_id}&amp;{contact.checksum}</code></p>',
     );
     $this->form['options']['create_fieldsets'] = array(
       '#type' => 'checkbox',
@@ -1177,7 +1207,7 @@ class wf_crm_admin_form {
       '#title' => t('Source Label'),
       '#maxlength' => 255,
       '#size' => 30,
-      '#default_value' => $this->settings['new_contact_source'],
+      '#default_value' => empty($this->settings['new_contact_source']) ? $this->webform->label() : $this->settings['new_contact_source'],
       '#description' => t('Optional "source" label for any new contact/participant/membership created by this webform.'),
     );
   }
@@ -1208,8 +1238,8 @@ class wf_crm_admin_form {
     // Handle ajax submission from "webform_tracking_mode" mini-form below
     if (!empty($_POST['webform_tracking_mode']) && $_POST['webform_tracking_mode'] == 'strict') {
       variable_set('webform_tracking_mode', 'strict');
-      drupal_set_message(t('Webform anonymous user tracking has been updated to use the strict method. You may revisit this option any time on the global <a !link>Webform Settings</a> page.',
-        array('!link' => 'href="/admin/config/content/webform" target="_blank"')
+      drupal_set_message(t('Webform anonymous user tracking has been updated to use the strict method. You may revisit this option any time on the global <a :link>Webform Settings</a> page.',
+        array(':link' => 'href="/admin/config/content/webform" target="_blank"')
       ));
     }
     // Mini-form to configure submit limit without leaving the page
@@ -1267,7 +1297,7 @@ class wf_crm_admin_form {
       ),
       'confirm_subscription' => 1,
       'create_fieldsets' => 1,
-      'new_contact_source' => check_plain($this->node->title),
+      'new_contact_source' => '',
       'civicrm_1_contact_1_contact_first_name' => 'create_civicrm_webform_element',
       'civicrm_1_contact_1_contact_last_name' => 'create_civicrm_webform_element',
       'civicrm_1_contact_1_contact_existing' => 'create_civicrm_webform_element',
@@ -1409,7 +1439,7 @@ class wf_crm_admin_form {
     eval('$target_container = &$this->form[\'' . str_replace(':', "']['", substr($path, 0, strrpos($path, ':'))) . "'];");
     $id = 'civicrm-ajax-' . str_replace(array(':', '_'), '-', $path);
     $control_container[$control_element]['#ajax'] = array(
-      'callback' => 'wf_crm_configure_form_ajax',
+      'callback' => '\Drupal\webform_civicrm\Form\WebformCiviCRMSettingsForm::pathstrAjaxRefresh',
       'pathstr' => $path,
       'wrapper' => $id,
       'effect' => 'fade',
@@ -1423,6 +1453,9 @@ class wf_crm_admin_form {
 
   /**
    * Build select all/none js links for a fieldset
+   *
+   * @return array
+   *   The build information.
    */
   private function addToggle($name) {
     return array('#markup' =>
@@ -1436,8 +1469,10 @@ class wf_crm_admin_form {
 
   /**
    * Build $this->data array for webform settings; called while rebuilding or post-processing the admin form.
+   *
+   * Made public so we can invoke from D8 form, for now.
    */
-  private function rebuildData() {
+  public function rebuildData() {
     $this->settings['data'] = array('contact' => array());
     $this->data = &$this->settings['data'];
     list($contact_types, $sub_types) = wf_crm_get_contact_types();
@@ -1474,8 +1509,8 @@ class wf_crm_admin_form {
           'civicrm_' . $c . '_contact_1_contact_first_name' => 'create_civicrm_webform_element',
           'civicrm_' . $c . '_contact_1_contact_last_name' => 'create_civicrm_webform_element',
         );
-        $link = array('!link' => 'href="https://docs.civicrm.org/sysadmin/en/latest/integration/drupal/webform/#cloning-a-contact" target="_blank"');
-        drupal_set_message(t('Tip: Consider using the clone feature to add multiple similar contacts. (<a !link>more info</a>)', $link), 'status', FALSE);
+        $link = array(':link' => 'href="https://docs.civicrm.org/sysadmin/en/latest/integration/drupal/webform/#cloning-a-contact" target="_blank"');
+        drupal_set_message(t('Tip: Consider using the clone feature to add multiple similar contacts. (<a :link>more info</a>)', $link), 'status', FALSE);
       }
     }
     // Store meta settings, i.e. number of email for contact 1
@@ -1543,20 +1578,23 @@ class wf_crm_admin_form {
 
   /**
    * Submission handler, saves CiviCRM options for a Webform node
+   *
+   * Review this section and translate it to D8
+   * @todo this is what sets the elements on the webform.
+   *
+   * This needs to be reworked to support the checking of D8 elements and their removal.
    */
   public function postProcess() {
-    $button = $this->form_state['clicked_button']['#id'];
+    $button = $this->form_state->getTriggeringElement()['#id'];
     $nid = $this->node->nid;
-    $this->settings = wf_crm_aval($this->form_state, 'storage:vals', $this->form_state['values']);
+    $this->settings = $this->form_state->getValues();
 
-    if ((empty($this->node->webform_civicrm) && !$this->settings['nid']) || $button == 'edit-cancel') {
-      $this->form_state['rebuild'] = TRUE;
-      unset($this->form_state['storage']['msg']);
-      return;
-    }
-    unset($this->form_state['storage']);
+    $handler_collection = $this->webform->getHandlers('webform_civicrm');
+    $instance_ids = $handler_collection->getInstanceIds();
+    $handler = $handler_collection->get(reset($instance_ids));
+    $handler_configuration = $handler->getConfiguration();
 
-    $enabled = $existing = wf_crm_enabled_fields($this->node, NULL, TRUE);
+    $enabled = $existing = wf_crm_enabled_fields($this->webform, NULL, TRUE);
     $delete_me = $this->getFieldsToDelete($enabled);
 
     // Display a confirmation before deleting fields
@@ -1583,7 +1621,6 @@ class wf_crm_admin_form {
 
     module_load_include('inc', 'webform', 'includes/webform.components');
     module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
-    $this->form_state['redirect'] = 'node/' . $nid . '/webform';
 
     // Delete/disable fields
     $deleted = 0;
@@ -1605,8 +1642,8 @@ class wf_crm_admin_form {
         drupal_set_message($button === 'edit-delete' ? t('Deleted field: %name', $p) : t('Disabled field: %name', $p));
       }
       else {
-        $p = array('!num' => $deleted);
-        drupal_set_message($button === 'edit-delete' ? t('Deleted !num fields.', $p) : t('Disabled !num fields.', $p));
+        $p = array(':num' => $deleted);
+        drupal_set_message($button === 'edit-delete' ? t('Deleted :num fields.', $p) : t('Disabled :num fields.', $p));
       }
       if ($button === 'edit-disable') {
         drupal_set_message(t('Disabled fields will still be processed as normal Webform fields, but they will not be autofilled from or saved to the CiviCRM database.'));
@@ -1626,27 +1663,22 @@ class wf_crm_admin_form {
       }
     }
 
-    // Disable CiviCRM for this form
-    if (!$this->settings['nid']) {
-      $this->disable();
-      drupal_set_message(t('CiviCRM processing for this form is now disabled.'));
-    }
-
     // CiviCRM enabled
     else {
-      webform_ensure_record($this->node);
       $this->rebuildData();
       if (!$this->settings['toggle_message']) {
         $this->settings['message'] = '';
       }
       // Index disabled components
       $disabled = array();
+      // @todo there is no disabled?
+      /*
       foreach (wf_crm_aval($this->node->webform, 'components', array()) as $field) {
         if (substr($field['form_key'], 0, 9) === 'disabled_') {
           $field['form_key'] = 'civicrm' . substr($field['form_key'], 8);
           $disabled[$field['form_key']] = $field;
         }
-      }
+      }*/
 
       $i = 0;
       $created = array();
@@ -1670,7 +1702,17 @@ class wf_crm_admin_form {
                   'form_key' => $key,
                   'weight' => $i,
                 );
-                self::insertComponent($field, $enabled, $this->settings, $this->isNewFieldset($key));
+                // Cannot use isNewFieldset effectively.
+                $previous_data = $handler_configuration['settings'];
+                list(, $c, $ent) =  wf_crm_explode_key($key);
+                $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
+                $create = !isset($previous_data['data'][$type][$c]);
+                /*
+    list(, $c, $ent) =  wf_crm_explode_key($field_key);
+    $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
+    return !isset($this->node->webform_civicrm['data'][$type][$c]);
+                 */
+                self::insertComponent($field, $enabled, $this->settings, !isset($previous_data['data'][$type][$c]));
                 $created[] = $field['name'];
                 if (isset($field['civicrm_condition'])) {
                   $this->addConditionalRule($field, $enabled);
@@ -1712,19 +1754,26 @@ class wf_crm_admin_form {
         drupal_set_message(t('Added field: %name', array('%name' => $created[0])));
       }
       elseif ($created) {
-        drupal_set_message(t('Added !num fields to the form.', array('!num' => count($created))));
+        drupal_set_message(t('Added :num fields to the form.', array(':num' => count($created))));
       }
 
       // Create record
-      if (empty($this->node->webform_civicrm)) {
-        drupal_write_record('webform_civicrm_forms', $this->settings);
-        drupal_set_message(t('CiviCRM processing for this form is now enabled.'));
+      $handler_configuration['settings'] = $this->settings;
+      $handler->setConfiguration($handler_configuration);
+
+      $webform_elements = $this->webform->getElementsDecoded();
+      foreach ($enabled as $enabled_key => $enabled_element) {
+        $webform_elements[$enabled_key] = [
+          '#title' => (string) $enabled_element['name'],
+          '#type' => $enabled_element['type'],
+          '#webform_civicrm' => $enabled_element['form_key'],
+          // Webform uses YAML dump, which dies on FormattableMarkup.
+          '#extra' => array_map([get_called_class(), 'stringifyFormattableMarkup'], $enabled_element['extra']),
+          '#weight' => $enabled_element['weight']
+        ];
+        $stop = null;
       }
-      // Update record
-      else {
-        drupal_write_record('webform_civicrm_forms', $this->settings, 'nid');
-        drupal_set_message(t('Your CiviCRM form settings have been updated.'));
-      }
+      $this->webform->setElements($webform_elements);
       // Update existing contact fields
       foreach ($existing as $fid => $id) {
         if (substr($fid, -8) === 'existing') {
@@ -1732,13 +1781,18 @@ class wf_crm_admin_form {
         }
       }
     }
+    $stop = null;
+  }
 
-    // Make sure the updates are visible to anonymous users.
-    cache_clear_all();
-
-    // Clear the entity cache.
-    if (module_exists('entitycache')) {
-      cache_clear_all($nid, 'cache_entity_node');
+  public static function stringifyFormattableMarkup($data) {
+    if (is_array($data)) {
+      return array_map([get_called_class(), 'stringifyFormattableMarkup'], $data);
+    }
+    elseif ($data instanceof FormattableMarkup) {
+      return (string) $data;
+    }
+    else {
+      return $data;
     }
   }
 
@@ -1849,7 +1903,7 @@ class wf_crm_admin_form {
       }
     }
     elseif ($table == 'relationship') {
-      $field['name'] = t('Relationship to !contact', array('!contact' => wf_crm_contact_label($n, $settings['data']))) . ' ' . $field['name'];
+      $field['name'] = t('Relationship to :contact', array(':contact' => wf_crm_contact_label($n, $settings['data']))) . ' ' . $field['name'];
     }
     else {
       $field['name'] = str_replace(' #', '', $field['name']);
@@ -1895,6 +1949,10 @@ class wf_crm_admin_form {
         }
       }
     }
+    if ($field['type'] == 'civicrm_contact') {
+      $field['extra']['contact_type'] = $contact_type;
+      $stop = null;
+    }
     if (isset($field['value_callback'])) {
       $method = 'get_default_' . $table . '_' . $name;
       $field['value'] = self::$method($field['form_key'], $options);
@@ -1904,7 +1962,7 @@ class wf_crm_admin_form {
       $field['value'] = $settings[$field['form_key']];
     }
     // Create fieldsets for multivalued entities
-    if ($ent != 'contribution' && $ent != 'lineitem' &&
+    if ($ent != 'contribution' &&
       ($ent != 'participant' || wf_crm_aval($settings['data'], 'participant_reg_type') == 'separate')
     ) {
       self::addFieldset($c, $field, $enabled, $settings, $ent, $create_fieldsets);
@@ -1914,17 +1972,14 @@ class wf_crm_admin_form {
       self::addPageBreak($field);
     }
     // Merge defaults and create webform component
-    $field += array('extra' => array());
-    if ($defaults = webform_component_invoke($field['type'], 'defaults')) {
-      $field += $defaults;
-    }
-    if (isset($enabled[$field['form_key']])) {
-      $field['cid'] = $enabled[$field['form_key']];
-      webform_component_update($field);
-    }
-    else {
-      $enabled[$field['form_key']] = webform_component_insert($field);
-    }
+    $field += ['extra' => []];
+
+    // @todo invoke \Drupal\webform\Plugin\WebformElementInterface::getDefaultProperties
+    // if ($defaults = webform_component_invoke($field['type'], 'defaults')) {
+    //   $field += $defaults;
+    // }
+
+    $enabled[$field['form_key']] = $field;
   }
 
   /**
@@ -2052,6 +2107,40 @@ class wf_crm_admin_form {
   }
 
   /**
+   * Returns the data.
+   *
+   * @note This was added just to expose the property data during port.
+   *
+   * @return array
+   */
+  public function getData() {
+    return $this->data;
+  }
+
+  /**
+   * Returns the settings.
+   *
+   * @note This was added just to expose the property data during port.
+   *
+   * @return array
+   */
+  public function getSettings() {
+    return $this->settings;
+  }
+
+  /**
+   * A shim to set the settings manually.
+   *
+   * Replicates code in \wf_crm_admin_form::postProcess where the settings
+   * property is set before rebuilding data.
+   *
+   * @param array $settings
+   */
+  public function setSettings(array $settings) {
+    $this->settings = $settings;
+  }
+
+  /**
    * When a custom field is saved/deleted in CiviCRM, sync webforms with dynamic fieldsets.
    *
    * @param string $op
@@ -2141,11 +2230,4 @@ function wf_crm_configure_form_submit($form, &$form_state) {
   $node = node_load($form_state['storage']['nid']);
   $admin_form = new wf_crm_admin_form($form, $form_state, $node);
   $admin_form->postProcess();
-}
-
-/**
- * FAPI AJAX callback
- */
-function wf_crm_configure_form_ajax($form, $form_state) {
-  return wf_crm_aval($form, $form_state['triggering_element']['#ajax']['pathstr']);
 }

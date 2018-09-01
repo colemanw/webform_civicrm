@@ -1,0 +1,12 @@
+entity.webform.civicrm:
+  path: '/admin/structure/webform/manage/{webform}/civicrm'
+  defaults:
+    _form: '\Drupal\webform_civicrm\Form\WebformCiviCRMSettingsForm'
+    _title_callback: '\Drupal\webform\Controller\WebformEntityController::title'
+  options:
+    parameters:
+      webform:
+        type: 'entity:webform'
+  requirements:
+    _entity_access: 'webform.update'
+    _permission: 'access CiviCRM'

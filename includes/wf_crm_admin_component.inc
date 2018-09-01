@@ -4,6 +4,9 @@
  * @file
  * Webform CiviCRM module's alterations to webform component form.
  */
+
+use Drupal\Component\Utility\Html;
+
 module_load_include('inc', 'webform_civicrm', 'includes/utils');
 
 // FIXME: Temporary workaround for https://www.drupal.org/node/2389537
@@ -69,7 +72,7 @@ class wf_crm_admin_component {
         if (empty($this->form_state['input'])) {
           $types = wf_crm_get_contact_types();
           $type = $types[0][$this->data['contact'][$i]['contact'][1]['contact_type']];
-          drupal_set_message(t('Press the "Clone Contact" button below and a new @type will be added to the form with all the settings for !contact. All fields within this fieldset will be cloned (be careful, that may include non-contact fields).', array('@type' => $type, '!contact' => wf_crm_contact_label($i, $this->data))), 'status', FALSE);
+          drupal_set_message(t('Press the "Clone Contact" button below and a new @type will be added to the form with all the settings for :contact. All fields within this fieldset will be cloned (be careful, that may include non-contact fields).', array('@type' => $type, ':contact' => wf_crm_contact_label($i, $this->data))), 'status', FALSE);
         }
       }
     }
@@ -135,7 +138,7 @@ class wf_crm_admin_component {
       $this->form['#validate'][] = 'wf_crm_cs_validate';
       $enabled = wf_crm_enabled_fields($this->node);
       $this->form['#prefix'] = '<p>'
-        . t('This field will generate a checksum for !contact after the form is submitted. You could use its webform token to create a personalized link for anonymous users.', array('!contact' => wf_crm_contact_label($i, $this->data)))
+        . t('This field will generate a checksum for :contact after the form is submitted. You could use its webform token to create a personalized link for anonymous users.', array(':contact' => wf_crm_contact_label($i, $this->data)))
         . '</p><p>';
       if ($cid_field = wf_crm_aval($enabled, 'civicrm_' . $i . '_contact_1_contact_contact_id')) {
         $this->form['#prefix'] .= t('Example: to link users back to this form, place this line in a webform-generated email:')
@@ -503,7 +506,7 @@ class wf_crm_admin_component {
           $row['data'][7]['data'] = '';
           if ($component['type'] == 'fieldset' && $ent == 'contact') {
             $title = t('Contact !num', array('!num' => $c));
-            $type = t('Fieldset for !contact', array('!contact' => wf_crm_contact_label($c, $data)));
+            $type = t('Fieldset for :contact', array(':contact' => wf_crm_contact_label($c, $data)));
             $row['data'][7]['data'] = l(t('Clone Contact'), "node/{$node->nid}/webform/components/$cid/clone", array(
               'attributes' => array('title' => t('Add a new contact to the form with the same fields and settings')
               )));
@@ -511,7 +514,7 @@ class wf_crm_admin_component {
           }
           elseif ($ent == 'contact') {
             $field_type = ($table == 'contact' || $table == 'other') ? $field['name'] : $sets[$table]['label'];
-            $title = t('!type Field for !contact', array('!contact' => wf_crm_contact_label($c, $data), '!type' => $field_type));
+            $title = t('!type Field for :contact', array(':contact' => wf_crm_contact_label($c, $data), '!type' => $field_type));
           }
           elseif ($component['type'] != 'fieldset') {
             $title = t('Field for !type', array('!type' => $sets[$table]['label']));
@@ -533,7 +536,7 @@ class wf_crm_admin_component {
           // Show defaults with labels instead of keys
           if ($component['type'] == 'civicrm_contact') {
             if ($component['extra']['default'] == 'contact_id') {
-              $row['data'][3]['data'] = check_plain(wf_crm_display_name($component['extra']['default_contact_id']));
+              $row['data'][3]['data'] = Html::escape(wf_crm_display_name($component['extra']['default_contact_id']));
             }
             elseif ($component['extra']['default'] == 'user') {
               $row['data'][3]['data'] = t('Current User');
@@ -549,7 +552,7 @@ class wf_crm_admin_component {
                 $label_type = $rtype == 'b' ? 'b_a' : 'a_b';
                 $relationship_labels[] = $relationship_types[$rid]["label_$label_type"] . ' ' . wf_crm_contact_label($component['extra']['default_relationship_to'], $data);
               }
-              $row['data'][3]['data'] = implode(' ' . ts('or') . ' ', $relationship_labels);
+              $row['data'][3]['data'] = implode(' ' . t('or') . ' ', $relationship_labels);
             }
           }
           elseif (isset($component['value']) && strlen($component['value']) && ($field['type'] == 'select' || !empty($field['expose_list']))) {

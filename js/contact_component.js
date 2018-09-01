@@ -34,10 +34,10 @@ var wfCiviContact = (function ($, D) {
 
   D.behaviors.webform_civicrmContact = {
     attach: function (context) {
-      function changeDefault() {
+      $('#edit-extra-default', context).once('wf-civi').change(function() {
         var val = $(this).val().replace(/_/g, '-');
         $('#edit-defaults > div > .form-item', context).not('.form-item-extra-default, .form-item-extra-allow-url-autofill').each(function() {
-          if (val.length && $(this).is('[class*=form-item-extra-default-'+val+']')) {
+          if ($(this).hasClass('form-item-extra-default-'+val)) {
             $(this).removeAttr('style');
           }
           else {
@@ -49,21 +49,9 @@ var wfCiviContact = (function ($, D) {
           $('.form-item-extra-randomize, .form-item-extra-dupes-allowed')
             .removeAttr('style')
             .find(':checkbox')
-            .prop('disabled', false);
+            .removeAttr('disabled');
         }
-        changeRelationTo();
-      }
-      function changeRelationTo() {
-        var c = $('#edit-extra-default-relationship-to').val(),
-          types = $('#edit-extra-default-relationship-to').data('types')[c];
-        CRM.utils.setOptions('#edit-extra-default-relationship', types);
-        // Provide default to circumvent "required" validation error
-        if ($('#edit-extra-default').val() !== 'relationship' && types.length === 1 && types[0].key === '') {
-          CRM.utils.setOptions('#edit-extra-default-relationship', {key: '-', value: '-'});
-        }
-      }
-      $('#edit-extra-default', context).once('wf-civi').change(changeDefault).each(changeDefault);
-      $('#edit-extra-default-relationship-to', context).once('wf-civi').change(changeRelationTo);
+      }).change();
       $('#edit-extra-widget', context).once('wf-civi').change(function() {
         if ($(this).val() == 'hidden') {
           $('.form-item-extra-search-prompt', context).css('display', 'none');

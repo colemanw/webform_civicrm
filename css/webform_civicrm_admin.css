@@ -190,13 +190,3 @@ form .civi-icon.grant {
 form .civi-icon.case {
   background-position:-203px 0;
 }
-
-/* Contact component form */
-#webform-component-edit-form div.form-item-extra-default,
-#webform-component-edit-form div.form-item-extra-default-relationship-to {
-  display: inline-block;
-}
-
-#webform-component-edit-form div.form-item-extra-default-relationship-to label {
-  display:none;
-}

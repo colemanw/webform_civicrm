@@ -5,6 +5,9 @@
  * Webform CiviCRM module's common utility functions.
  */
 
+use Drupal\Component\Utility\Html;
+use Drupal\webform\WebformInterface;
+
 /**
  * Get options for a specific field
  *
@@ -75,7 +78,7 @@ function wf_crm_field_options($field, $context, $data) {
     }
     // Not a real field so can't call getoptions for this one
     elseif ($table == 'membership' && $name == 'num_terms') {
-      $ret = drupal_map_assoc(range(1, 9));
+      $ret = array_combine(range(1, 9), range(1, 9));
     }
     // Aside from the above special cases, most lists can be fetched from api.getoptions
     else {
@@ -439,8 +442,8 @@ function wf_crm_get_matching_rules($contact_type) {
 /**
  * Get ids or values of enabled CiviCRM fields for a webform.
  *
- * @param stdClass $node
- *   Node object
+ * @param \Drupal\webform\WebformInterface $webform
+ *   The webform.
  * @param array|null $submission
  *   (optional) if supplied, will match field keys with submitted values
  * @param boolean $show_all
@@ -448,13 +451,23 @@ function wf_crm_get_matching_rules($contact_type) {
  *
  * @return array of enabled fields
  */
-function wf_crm_enabled_fields($node, $submission = NULL, $show_all = FALSE) {
+function wf_crm_enabled_fields(WebformInterface $webform, $submission = NULL, $show_all = FALSE) {
   $enabled = array();
-  if (!empty($node->webform['components']) && (!empty($node->webform_civicrm) || $show_all)) {
+  $elements = $webform->getElementsDecoded();
+  if (!empty($elements) && ($show_all)) {
+    $handler_collection = $webform->getHandlers('webform_civicrm');
+    $instance_ids = $handler_collection->getInstanceIds();
+    // No handler added yet, which means CiviCRM is not configured.
+    if (empty($instance_ids)) {
+      return $enabled;
+    }
+    $handler = $handler_collection->get(reset($instance_ids));
+    $handler_configuration = $handler->getConfiguration();
+
     $fields = wf_crm_get_fields();
-    foreach ($node->webform['components'] as $c) {
-      $exp = explode('_', $c['form_key'], 5);
-      $customGroupFieldsetKey = "";
+    foreach ($elements as $key => $c) {
+      $exp = explode('_', $key, 5);
+      $customGroupFieldsetKey = '';
       if (count($exp) == 5) {
         list($lobo, $i, $ent, $n, $id) = $exp;
         if ($lobo != 'civicrm') {
@@ -470,14 +483,14 @@ function wf_crm_enabled_fields($node, $submission = NULL, $show_all = FALSE) {
           }
         }
         if ((isset($fields[$id]) || $id == 'fieldset_fieldset' || $id == $customGroupFieldsetKey . '_fieldset') && is_numeric($i) && is_numeric($n)) {
-          if (!$show_all && ($ent == 'contact' || $ent == 'participant') && empty($node->webform_civicrm['data']['contact'][$i])) {
+          if (!$show_all && ($ent == 'contact' || $ent == 'participant') && empty($handler_configuration['settings']['data']['contact'][$i])) {
             continue;
           }
           if ($submission) {
-            $enabled[$c['form_key']] = wf_crm_aval($submission, $c['cid'], NULL, TRUE);
+            $enabled[$key] = wf_crm_aval($submission, $c['cid'], NULL, TRUE);
           }
           else {
-            $enabled[$c['form_key']] = $c['cid'];
+            $enabled[$key] = $key;
           }
         }
       }
@@ -634,6 +647,8 @@ function wf_crm_get_fields($var = 'fields') {
       'type' => 'select',
       'value' => $config->lcMessages,
     );
+    /*
+     * @todo is this fine w/ the core file element?
     if (array_key_exists('file', webform_components())) {
       $fields['contact_image_URL'] = array(
         'name' => t('Upload Image'),
@@ -642,6 +657,7 @@ function wf_crm_get_fields($var = 'fields') {
         'data_type' => 'File',
       );
     }
+    */
     $fields['contact_contact_id'] = array(
       'name' => t('Contact ID'),
       'type' => 'hidden',
@@ -836,7 +852,7 @@ function wf_crm_get_fields($var = 'fields') {
     );
     $fields['activity_details'] = array(
       'name' => t('Activity # Details'),
-      'type' => module_exists('webform_html_textarea') ? 'html_textarea' : 'textarea',
+      'type' => \Drupal::moduleHandler()->moduleExists('webform_html_textarea') ? 'html_textarea' : 'textarea',
     );
     $fields['activity_status_id'] = array(
       'name' => t('Activity # Status'),
@@ -1278,7 +1294,7 @@ function wf_crm_get_fields($var = 'fields') {
         );
         for ($i = 1; $i <= $numAttachments; $i++) {
           $fields["{$ent}upload_file_$i"] = array(
-            'name' => t('Attachment !num', array('!num' => $i)),
+            'name' => t('Attachment :num', array(':num' => $i)),
             'type' => 'file',
             'data_type' => 'File',
           );
@@ -1488,9 +1504,9 @@ function wf_crm_display_name($cid) {
   if (!$cid || !is_numeric($cid)) {
     return '';
   }
-  civicrm_initialize();
+  \Drupal::getContainer()->get('civicrm')->initialize();
   $result = wf_civicrm_api('contact', 'get', array('id' => $cid, 'return.display_name' => 1, 'is_deleted' => 0));
-  return check_plain(wf_crm_aval($result, "values:$cid:display_name", ''));
+  return Html::escape(wf_crm_aval($result, "values:$cid:display_name", ''));
 }
 
 /**
@@ -1505,13 +1521,13 @@ function wf_crm_display_name($cid) {
 function wf_crm_contact_label($n, $data = array(), $html = 'escape') {
   $label = trim(wf_crm_aval($data, "contact:$n:contact:1:webform_label", ''));
   if (!$label) {
-    $label = t('Contact !num', array('!num' => $n));
+    $label = t('Contact :num', array(':num' => $n));
   }
   if ($html != 'plain') {
-    $label = check_plain($label);
+    $label = Html::escape($label);
   }
   if ($html == 'wrap') {
-    $label = '<span class="contact-label number-' . $n . '">' . $label . '</span>';
+    $label = \Drupal\Core\Render\Markup::create('<span class="contact-label number-' . $n . '">' . $label . '</span>');
   }
   return $label;
 }
@@ -1527,7 +1543,7 @@ function wf_crm_contact_label($n, $data = array(), $html = 'escape') {
 function wf_crm_explode_key($key) {
   $pieces = explode('_', $key, 6);
   if (count($pieces) != 6 || $pieces[0] !== 'civicrm') {
-    return FALSE;
+    return NULL;
   }
   return $pieces;
 }
@@ -1598,7 +1614,7 @@ function wf_civicrm_api($entity, $operation, $params) {
     if (isset($params['credit_card_number'])) {
       $params['credit_card_number'] = "xxxxxxxxxxxx".substr($params['credit_card_number'], -4);
     }
-    watchdog('webform_civicrm',
+    \Drupal::logger('webform_civicrm')->error(
       'The CiviCRM "%function" API returned the error: "%msg" when called by function "!fn" on line !line of !file with parameters: "!params"',
       array(
         '%function' => $entity . ' ' . $operation,
@@ -1607,8 +1623,8 @@ function wf_civicrm_api($entity, $operation, $params) {
         '!line' => $bt[$n]['line'],
         '!file' => array_pop($file),
         '!params' => print_r($params, TRUE),
-      ),
-      WATCHDOG_ERROR);
+      )
+    );
   }
   return $result;
 }
@@ -1711,6 +1727,8 @@ function wf_crm_address_fields() {
 /**
  * Returns a count of children of a webform component
  *
+ * @deprecated components do not exist like this.
+ *
  * @param int $nid
  * @param int $id
  * @return int
@@ -1794,14 +1812,14 @@ function wf_crm_custom_types_map_array() {
     'CheckBox' => array('type' => 'select', 'extra' => array('multiple' => 1)),
     'Text'  => array('type' => 'textfield'),
     'TextArea' => array('type' => 'textarea'),
-    'RichTextEditor' => array('type' => module_exists('webform_html_textarea') ? 'html_textarea' : 'textarea'),
+    'RichTextEditor' => array('type' => \Drupal::moduleHandler()->moduleExists('webform_html_textarea') ? 'html_textarea' : 'textarea'),
     'Select Date' => array('type' => 'date'),
     'Link'  => array('type' => 'textfield'),
     'Select Country' => array('type' => 'select'),
     'Multi-Select Country' => array('type' => 'select', 'extra' => array('multiple' => 1)),
     'Select State/Province' => array('type' => 'select'),
     'Multi-Select State/Province' => array('type' => 'select', 'extra' => array('multiple' => 1)),
-    'Autocomplete-Select' => array('type' => module_exists('webform_autocomplete') ? 'autocomplete' : 'select'),
+    'Autocomplete-Select' => array('type' => \Drupal::moduleHandler()->moduleExists('webform_autocomplete') ? 'autocomplete' : 'select'),
     'File' => array('type' => 'file'),
   );
 

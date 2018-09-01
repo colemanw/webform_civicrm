@@ -68,7 +68,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @param array $form
    * @param array $form_state (reference)
    */
-  public function validate($form, &$form_state) {
+  public function validate($form, FormStateInterface $form_state) {
     $this->form = $form;
     $this->form_state = &$form_state;
     $this->rawValues = _webform_client_form_submit_flatten($this->node, wf_crm_aval($this->form_state, 'values:submitted'));

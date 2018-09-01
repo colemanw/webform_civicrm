@@ -1,0 +1,5 @@
+entity.webform.settings_civicrm:
+  title: 'CiviCRM'
+  route_name: entity.webform.civicrm
+  parent_id: entity.webform.settings
+  weight: 50
