@@ -1547,11 +1547,16 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
               }
             }
 
+            $membership_financialtype = $this->getMembershipTypeField($type, 'financial_type_id');
+            if (isset($item['financial_type_id']) && $item['financial_type_id'] !=0 ) {
+              $membership_financialtype = $item['financial_type_id'];
+            };
+
             if ($price) {
               $this->line_items[] = array(
                 'qty' => $item['num_terms'],
                 'unit_price' => $price,
-                'financial_type_id' => $this->getMembershipTypeField($type, 'financial_type_id'),
+                'financial_type_id' => $membership_financialtype,
                 'label' => $this->getMembershipTypeField($type, 'name') . ": " . wf_crm_display_name($this->existing_contacts[$c]),
                 'element' => "civicrm_{$c}_membership_{$n}",
                 'entity_table' => 'civicrm_membership',
