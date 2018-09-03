@@ -454,7 +454,7 @@ function wf_crm_get_matching_rules($contact_type) {
 function wf_crm_enabled_fields(WebformInterface $webform, $submission = NULL, $show_all = FALSE) {
   $enabled = array();
   $elements = $webform->getElementsDecoded();
-  if (!empty($elements) && ($show_all)) {
+  if (!empty($elements) || ($show_all)) {
     $handler_collection = $webform->getHandlers('webform_civicrm');
     $instance_ids = $handler_collection->getInstanceIds();
     // No handler added yet, which means CiviCRM is not configured.
@@ -487,7 +487,7 @@ function wf_crm_enabled_fields(WebformInterface $webform, $submission = NULL, $s
             continue;
           }
           if ($submission) {
-            $enabled[$key] = wf_crm_aval($submission, $c['cid'], NULL, TRUE);
+            $enabled[$key] = wf_crm_aval($submission, $c['#webform_civicrm'], NULL, TRUE);
           }
           else {
             $enabled[$key] = $key;
@@ -1467,8 +1467,7 @@ function wf_crm_user_cid($id = NULL, $type = 'uf') {
     if ($current_user !== NULL) {
       return $current_user;
     }
-    global $user;
-    $id = $user_lookup = $user->uid;
+    $id = $user_lookup = \Drupal::currentUser()->id();
   }
   if (!$id || !is_numeric($id)) {
     return NULL;

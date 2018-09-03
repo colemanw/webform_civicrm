@@ -5,6 +5,8 @@
  * CiviCRM contact webform component.
  */
 
+use Drupal\Component\Utility\Html;
+
 module_load_include('inc', 'webform_civicrm', 'includes/utils');
 module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_help');
 
@@ -673,9 +675,9 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
 function wf_crm_contact_access($component, $filters, $cid) {
   // Create new contact doesn't require lookup
   $cid = "$cid";
-  list(, $c, ) = explode('_', $component['form_key'], 3);
+  list(, $c, ) = explode('_', $component['#webform_civicrm'], 3);
   if ($cid && $cid[0] === '-' && !empty($component['extra']['allow_create']) && !empty($component['extra']['none_prompt'])) {
-    return filter_xss($component['extra']['none_prompt']);
+    return Html::escape($component['extra']['none_prompt']);
   }
   if (!is_numeric($cid)) {
     return FALSE;
@@ -701,7 +703,7 @@ function wf_crm_contact_access($component, $filters, $cid) {
   }
   // Fetch contact name with filters applied
   $result = wf_civicrm_api('contact', 'get', $filters);
-  return wf_crm_format_contact(wf_crm_aval($result, "values:$cid"), $component['extra']['results_display']);
+  return wf_crm_format_contact(wf_crm_aval($result, "values:$cid"), /*$component['#extra']['results_display']*/ ['display_name']);
 }
 
 /**
@@ -719,7 +721,7 @@ function wf_crm_format_contact($contact, $display_fields, $escape = TRUE) {
   $display = array();
   foreach ($display_fields as $field) {
     if ($field && !empty($contact[$field])) {
-      $display[] = $escape ? check_plain($contact[$field]) : $contact[$field];
+      $display[] = $escape ? Html::escape($contact[$field]) : $contact[$field];
     }
   }
   return implode(' :: ', $display);
@@ -855,9 +857,10 @@ function wf_crm_find_relations($cid, $types, $current = TRUE) {
  */
 function wf_crm_search_filters($node, $component) {
   $params = array('is_deleted' => 0);
-  list(, $c, ) = explode('_', $component['form_key'], 3);
-  $params['contact_type'] = ucfirst($node->webform_civicrm['data']['contact'][$c]['contact'][1]['contact_type']);
-  foreach ($component['extra']['filters'] as $key => $val) {
+  list(, $c, ) = explode('_', $component['#webform_civicrm'], 3);
+  $params['contact_type'] = ucfirst($component['#extra']['contact_type']);
+  /*
+  foreach ($component['#extra']['filters'] as $key => $val) {
     if (is_array($val)) {
       $val = array_filter($val);
     }
@@ -868,6 +871,7 @@ function wf_crm_search_filters($node, $component) {
       $params[$key] = $val;
     }
   }
+  */
   return $params;
 }
 

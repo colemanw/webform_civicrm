@@ -37,6 +37,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private $existing_contacts = array();
 
   // Variables used during submission processing
+
+  /**
+   * @var \Drupal\webform\WebformSubmissionInterface
+   */
   private $submission;
   private $update = array();
   private $all_fields;
@@ -140,7 +144,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->getExistingContactIds();
 
     // While saving a draft, just skip to postSave and write the record
-    if (!empty($this->submission->is_draft)) {
+    if ($this->submission->isDraft()) {
       return;
     }
 
@@ -2269,7 +2273,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           continue;
         }
         $field = $this->all_fields[$table . '_' . $name];
-        $component = $this->node->webform['components'][$this->enabled[$field_key]];
+        // $component = $this->node->webform['components'][$this->enabled[$field_key]];
         // Ignore values from hidden fields
         if ($field['type'] == 'hidden') {
           continue;
@@ -2333,9 +2337,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $val = $sum;
         }
         else {
-          $val = isset($val[0]) ? $val[0] : '';
+          $val = is_array($val) ? reset($val) : $val;
         }
-        if ($component['type'] == 'autocomplete' && is_string($val) && strlen($val)) {
+        if ($field['type'] == 'autocomplete' && is_string($val) && strlen($val)) {
           $options = wf_crm_field_options($component, '', $this->data);
           $val = array_search($val, $options);
         }
@@ -2368,17 +2372,19 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name, $checkSubmitDisabledSetting = FALSE) {
     if ($ent == 'contact' && isset($this->enabled["civicrm_{$c}_contact_1_contact_existing"])) {
       $component = $this->getComponent("civicrm_{$c}_contact_1_contact_existing");
-      $existing_contact_val = $this->submissionValue($component['cid']);
+      $existing_contact_val = $this->submissionValue($component['#webform_civicrm']);
       // Fields are hidden if value is empty (no selection) or a numeric contact id
       if (!$existing_contact_val[0] || is_numeric($existing_contact_val[0])) {
         $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
-        if (in_array($type, $component['extra']['hide_fields'])) {
+        // @todo see why this valud is missing.
+        $component['#extra'] += ['hide_fields' => []];
+        if (in_array($type, $component['#extra']['hide_fields'])) {
           // Check to see if configured to Submit disabled field value(s)
-          if ($checkSubmitDisabledSetting && $component['extra']['submit_disabled']) {
+          if ($checkSubmitDisabledSetting && $component['#extra']['submit_disabled']) {
             return FALSE;
           }
           // With the no_hide_blank setting we must load the contact to determine if the field was hidden
-          if (wf_crm_aval($component['extra'], 'no_hide_blank')) {
+          if (wf_crm_aval($component['#extra'], 'no_hide_blank')) {
             $value = wf_crm_aval($this->loadContact($c), "$table:$n:$name");
             return !(!$value && !is_numeric($value));
           }
@@ -2450,10 +2456,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   protected function submissionValue($fid, $value = NULL) {
     // In submission processing context
     if ($this->submission) {
-      if (!isset($this->submission->data[$fid])) {
+      $field = $this->submission->getElementData($fid);
+      if (!$field) {
         return NULL;
       }
-      $field =& $this->submission->data[$fid];
       // During submission preprocessing this is used to alter the submission
       if ($value !== NULL) {
         $field = (array) $value;
@@ -2480,7 +2486,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * Identifies contact 1 as acting user for CiviCRM's advanced logging
    */
   public function setLoggingContact() {
-    if (!empty($this->ent['contact'][1]['id']) && user_is_anonymous()) {
+    if (!empty($this->ent['contact'][1]['id']) && \Drupal::currentUser()->isAnonymous()) {
       CRM_Core_DAO::executeQuery('SET @civicrm_user_id = %1', array(1 => array($this->ent['contact'][1]['id'], 'Integer')));
     }
   }

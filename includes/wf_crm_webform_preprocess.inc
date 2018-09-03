@@ -6,6 +6,7 @@
  */
 
 use Drupal\Component\Serialization\Json;
+use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\webform\Plugin\WebformHandlerInterface;
@@ -23,7 +24,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     $this->handler = $handler;
     $this->form = &$form;
     $this->form_state = $form_state;
-    $this->node = (object) [];
+    $this->node = $handler->getWebform();
     $this->settings = $handler->getConfiguration()['settings'];
     $this->data = $this->settings['data'];
     $this->ent['contact'] = [];
@@ -88,9 +89,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     }
     */
     // Search for existing contacts
+    $elements = $this->handler->getWebform()->getElementsDecoded();
     for ($c = 1; $c <= count($this->data['contact']); ++$c) {
       $this->ent['contact'][$c] = wf_crm_aval($this->ent, "contact:$c", array());
-      $existing_component = $this->getComponent("civicrm_{$c}_contact_1_contact_existing");
+      $existing_component = $elements["civicrm_{$c}_contact_1_contact_existing"];
       // Search for contact if the user hasn't already chosen one
       if ($existing_component && empty($submitted_contacts[$c])) {
         $this->findContact($existing_component);
