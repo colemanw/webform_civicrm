@@ -84,6 +84,10 @@ function wf_crm_field_options($field, $context, $data) {
       if ($table == 'contribution' && strpos($name, 'frequency_') === 0) {
         $table = 'contribution_recur';
       }
+      // Use the Contribution table to pull up financial type id-s
+      if ($table == 'membership' && $name == 'financial_type_id') {
+        $table = 'contribution';
+      }
       // Custom fields - use main entity
       if (substr($table, 0, 2) == 'cg') {
         $table = $ent;
@@ -1138,6 +1142,13 @@ function wf_crm_get_fields($var = 'fields') {
         'type' => 'select',
         'expose_list' => TRUE,
         'extra' => array('civicrm_live_options' => 1),
+      );
+      $fields['membership_financial_type_id'] = array(
+        'name' => t('Membership Financial Type'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'value' => 0,
+        'exposed_empty_option' => '- ' . t('Automatic') . ' -',
       );
       $fields['membership_status_id'] = array(
         'name' => t('Override Status'),
