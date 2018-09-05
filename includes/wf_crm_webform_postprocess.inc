@@ -2258,7 +2258,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function fillDataFromSubmission() {
     foreach ($this->enabled as $field_key => $fid) {
-      $val = $this->submissionValue($fid);
+      $val = (array) $this->submissionValue($fid);
       // If value is null then it was hidden by a webform conditional rule - skip it
       if ($val !== NULL && $val !== array(NULL)) {
         list( , $c, $ent, $n, $table, $name) = explode('_', $field_key, 6);
