@@ -49,7 +49,7 @@ class wf_crm_admin_form {
    * @return array
    */
   public function buildForm() {
-    $this->form_state->set('nid', $this->node->nid);
+    $this->form_state->set('nid', $this->webform->id());
 
     // Display confirmation message before deleting fields
     if (!empty($this->form_state->get('msg'))) {
@@ -1165,7 +1165,7 @@ class wf_crm_admin_form {
       '#attributes' => array('class' => array('civi-icon-prefs')),
       '#description' => '<p>' .
         t('To have this form auto-filled for anonymous users, enable the "Existing Contact" field for :contact and send the following link from CiviMail:', array(':contact' => wf_crm_contact_label(1, $this->data, TRUE))) .
-        '<br /><code>' . Url::fromRoute('entity.webform.canonical', ['webform' => $this->node->nid], ['query' => ['cid1' => '']])->toString() . '{contact.contact_id}&amp;{contact.checksum}</code></p>',
+        '<br /><code>' . Url::fromRoute('entity.webform.canonical', ['webform' => $this->webform->id()], ['query' => ['cid1' => '']])->toString() . '{contact.contact_id}&amp;{contact.checksum}</code></p>',
     );
     $this->form['options']['create_fieldsets'] = array(
       '#type' => 'checkbox',
@@ -1586,12 +1586,11 @@ class wf_crm_admin_form {
    */
   public function postProcess() {
     $button = $this->form_state->getTriggeringElement()['#id'];
-    $nid = $this->node->nid;
     $this->settings = $this->form_state->getValues();
 
     $handler_collection = $this->webform->getHandlers('webform_civicrm');
-    $instance_ids = $handler_collection->getInstanceIds();
-    $handler = $handler_collection->get(reset($instance_ids));
+    /** @var \Drupal\webform\Plugin\WebformHandlerInterface $handler */
+    $handler = $handler_collection->get('webform_civicrm');
     $handler_configuration = $handler->getConfiguration();
 
     $enabled = $existing = wf_crm_enabled_fields($this->webform, NULL, TRUE);
@@ -1698,7 +1697,7 @@ class wf_crm_admin_form {
               // Create new component
               else {
                 $field += array(
-                  'nid' => $nid,
+                  // 'nid' => $nid,
                   'form_key' => $key,
                   'weight' => $i,
                 );
@@ -1738,7 +1737,7 @@ class wf_crm_admin_form {
           $fieldsetKey = "civicrm_{$n}_{$ent}_1_{$cgId}_fieldset";
           if (array_key_exists($cgId, $emptySets) && !isset($existing[$fieldsetKey])) {
             $fieldset = array (
-              'nid' => $nid,
+              // 'nid' => $nid,
               'pid' => 0,
               'form_key' => $fieldsetKey,
               'name' => $emptySets[$cgId]['label'],
@@ -1763,21 +1762,25 @@ class wf_crm_admin_form {
 
       $webform_elements = $this->webform->getElementsDecoded();
       foreach ($enabled as $enabled_key => $enabled_element) {
+        // Add new items to the webform.
+        if (isset($webform_elements[$enabled_key])) {
+          continue;
+        }
         $webform_elements[$enabled_key] = [
           '#title' => (string) $enabled_element['name'],
           '#type' => $enabled_element['type'],
-          '#webform_civicrm' => $enabled_element['form_key'],
+          '#webform_civicrm' => $enabled_key,
           // Webform uses YAML dump, which dies on FormattableMarkup.
-          '#extra' => array_map([get_called_class(), 'stringifyFormattableMarkup'], $enabled_element['extra']),
-          '#weight' => $enabled_element['weight']
+          '#extra' => array_map([get_called_class(), 'stringifyFormattableMarkup'], empty($enabled_element['extra']) ? [] : $enabled_element['extra']),
+          '#weight' => empty($enabled_element['weight']) ? 0 : $enabled_element['weight'],
         ];
-        $stop = null;
       }
       $this->webform->setElements($webform_elements);
       // Update existing contact fields
       foreach ($existing as $fid => $id) {
         if (substr($fid, -8) === 'existing') {
-          wf_crm_update_existing_component($this->node->webform['components'][$id], $enabled, $this->data);
+          $stop = null;
+          //wf_crm_update_existing_component($this->node->webform['components'][$id], $enabled, $this->data);
         }
       }
     }

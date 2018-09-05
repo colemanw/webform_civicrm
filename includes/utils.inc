@@ -456,12 +456,11 @@ function wf_crm_enabled_fields(WebformInterface $webform, $submission = NULL, $s
   $elements = $webform->getElementsDecoded();
   if (!empty($elements) || ($show_all)) {
     $handler_collection = $webform->getHandlers('webform_civicrm');
-    $instance_ids = $handler_collection->getInstanceIds();
-    // No handler added yet, which means CiviCRM is not configured.
-    if (empty($instance_ids)) {
+    if (!$handler_collection->has('webform_civicrm')) {
       return $enabled;
     }
-    $handler = $handler_collection->get(reset($instance_ids));
+    /** @var \Drupal\webform\Plugin\WebformHandlerInterface $handler */
+    $handler = $handler_collection->get('webform_civicrm');
     $handler_configuration = $handler->getConfiguration();
 
     $fields = wf_crm_get_fields();
