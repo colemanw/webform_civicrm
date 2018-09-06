@@ -3,7 +3,6 @@ cj(function($) {
   'use strict';
   var
     setting = Drupal.settings.webform_civicrm,
-    $contributionAmount = $('.civicrm-enabled[name*="[civicrm_1_contribution_1_contribution_total_amount]"]'),
     $processorFields = $('.civicrm-enabled[name$="civicrm_1_contribution_1_contribution_payment_processor_id]"]');
 
   function getPaymentProcessor() {
@@ -97,19 +96,21 @@ cj(function($) {
     return total < 0 ? 0 : total;
   }
 
-  function calculateContributionAmount() {
-    var amount = getFieldAmount('civicrm_1_contribution_1_contribution_total_amount');
-    var label = $contributionAmount.closest('div.webform-component').find('label').html() || Drupal.t('Contribution');
-    updateLineItem('civicrm_1_contribution_1', amount, label);
+  function calculateLineItemAmount() {
+    var fieldKey = $(this).data('civicrmFieldKey'),
+      amount = getFieldAmount(fieldKey),
+      label = $(this).closest('div.webform-component').find('label').text() || Drupal.t('Contribution'),
+      lineKey = fieldKey.split('_').slice(0, 4).join('_');
+    updateLineItem(lineKey, amount, label);
   }
 
-  if ($contributionAmount.length) {
-    calculateContributionAmount();
-    $contributionAmount.on('change keyup', calculateContributionAmount);
-    // Also use Drupal's jQuery to listen to this event, for compatibility with other modules
-    jQuery($contributionAmount[0]).change(calculateContributionAmount);
-  }
-  else {
-    tally();
-  }
+  $('.civicrm-enabled.contribution-line-item')
+    .each(calculateLineItemAmount)
+    .on('change keyup', calculateLineItemAmount)
+    .each(function() {
+      // Also use Drupal's jQuery to listen to this event, for compatibility with other modules
+      jQuery(this).change(calculateLineItemAmount);
+    });
+
+  tally();
 });
