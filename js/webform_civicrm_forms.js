@@ -47,11 +47,16 @@ var wfCivi = (function ($, D) {
     }
   };
 
-  pub.existingInit = function ($field, num, nid, path, toHide) {
+  pub.existingInit = function ($field, num, nid, path, toHide, tokenInputSettings) {
     var cid = $field.val(),
-      ret = null,
+      prep = null,
       hideOrDisable = $field.attr('data-hide-method'),
       showEmpty = $field.attr('data-no-hide-blank') == '1';
+
+    function getCallbackPath() {
+      return path + (path.indexOf('?') < 0 ? '?' : '&') + $.param(getCids(nid));
+    }
+
     if ($field.length) {
       if ($field.is('[type=hidden]') && !cid) {
         return;
@@ -61,9 +66,9 @@ var wfCivi = (function ($, D) {
       }
       if (cid) {
         if (cid == $field.attr('data-civicrm-id')) {
-          ret = [{id: cid, name: $field.attr('data-civicrm-name')}];
+          prep = [{id: cid, name: $field.attr('data-civicrm-name')}];
         }
-        else if ($field.is(':text')) {
+        else if (tokenInputSettings) {
           // If for some reason the data is not embedded, fetch it from the server
           $.ajax({
             url: path,
@@ -72,14 +77,19 @@ var wfCivi = (function ($, D) {
             async: false,
             success: function(data) {
               if (data) {
-                ret = [{id: cid, name: data}];
+                prep = [{id: cid, name: data}];
               }
             }
           });
         }
       }
+      if (tokenInputSettings) {
+        tokenInputSettings.queryParam = 'str';
+        tokenInputSettings.tokenLimit = 1;
+        tokenInputSettings.prePopulate = prep;
+        $field.tokenInput(getCallbackPath, tokenInputSettings);
+      }
     }
-    return ret;
   };
 
   pub.initFileField = function(field, info) {

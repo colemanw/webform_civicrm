@@ -270,13 +270,13 @@ abstract class wf_crm_webform_base {
           break;
         case 'relationship':
           $to = $component['extra']['default_relationship_to'];
-          if (!empty($this->ent['contact'][$to]['id'])) {
+          if (!empty($this->ent['contact'][$to]['id']) && !empty($component['extra']['default_relationship'])) {
             $found = wf_crm_find_relations($this->ent['contact'][$to]['id'], $component['extra']['default_relationship']);
           }
           break;
         case 'auto':
           $component['extra']['allow_create'] = FALSE;
-          $found = array_keys(wf_crm_contact_search($this->node, $component, $filters));
+          $found = array_keys(wf_crm_contact_search($this->node, $component, $filters, wf_crm_aval($this->ent, 'contact', array())));
           break;
       }
       if ($component['extra']['randomize']) {
