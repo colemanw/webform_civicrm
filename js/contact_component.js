@@ -44,8 +44,11 @@ var wfCiviContact = (function ($, D) {
             $(this).css('display', 'none');
             $(':checkbox', this).prop('disabled', true);
           }
+          if (val == 'custom-ref' && $(this).is('[class*=form-item-extra-default-relationship-to]')) {
+            $(this).removeAttr('style');
+          }
         });
-        if (val === 'auto' || val === 'relationship') {
+        if (val === 'auto' || val === 'relationship' || val == 'custom-ref') {
           $('.form-item-extra-randomize, .form-item-extra-dupes-allowed')
             .removeAttr('style')
             .find(':checkbox')

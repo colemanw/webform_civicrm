@@ -41,6 +41,7 @@ function _webform_defaults_civicrm_contact() {
       'default_contact_id' => '',
       'default_relationship' => '',
       'default_relationship_to' => '1',
+      'default_custom_ref' => '',
       'allow_url_autofill' => TRUE,
       'dupes_allowed' => FALSE,
       'filters' => array(
@@ -238,6 +239,15 @@ function _webform_edit_civicrm_contact($component) {
       '#parents' => array('extra', 'default_relationship'),
     );
   }
+  $form['defaults']['default']['#options']['custom_ref'] = t('Custom reference field');
+  $form['defaults']['default_custom_ref'] = array(
+    '#type' => 'select',
+    '#title' => t('Specify Custom Field'),
+    '#options' => wf_crm_get_custom_ref_options(),
+    '#required' => TRUE,
+    '#default_value' => $component['extra']['default_custom_ref'],
+    '#parents' => array('extra', 'default_custom_ref'),
+  );
   $form['defaults']['default']['#options']['auto'] = t('Auto - From Filters');
   $form['defaults']['default_contact_id'] = array(
     '#type' => 'textfield',
@@ -898,6 +908,44 @@ function wf_crm_find_relations($cid, $types = array(), $current = TRUE) {
     $dao->free();
   }
   return $found;
+}
+
+/**
+ * Returns a list of all custom CiviCRM fields of type "ContactReference"
+ *
+ * @return array
+ */
+function wf_crm_get_custom_ref_options() {
+  $filters = array(
+    'sequential' => 1,
+    'return' => ["id", "label"],
+    'data_type' => "ContactReference",
+  );
+  $result = wf_civicrm_api('CustomField', 'get', $filters);
+  $options = array();
+  foreach ($result['values'] as $val) {
+    $options[$val['id']] = $val['label'];
+  }
+  return $options;
+}
+
+/**
+ * Returns ids of all contacts who have reference to given contact via given custom field id
+ *
+ * @param $cid
+ * @param $customFieldID
+ * @return array
+ */
+function wf_crm_find_custom_refs($cid, $customFieldID) {
+  $filters = array(
+    'return' => ['custom_'.$customFieldID],
+    'id' => $cid,
+  );
+  $result = wf_civicrm_api('Contact', 'get', $filters);
+  if (isset($result['values'][$cid]['custom_'.$customFieldID])) {
+    return array($result['values'][$cid]['custom_'.$customFieldID] => $result['values'][$cid]['custom_'.$customFieldID]);
+  }
+  return array();
 }
 
 /**

@@ -274,6 +274,12 @@ abstract class wf_crm_webform_base {
             $found = wf_crm_find_relations($this->ent['contact'][$to]['id'], $component['extra']['default_relationship']);
           }
           break;
+        case 'custom_ref':
+          $to = $component['extra']['default_relationship_to'];
+          if (!empty($this->ent['contact'][$to]['id'])) {
+            $found = wf_crm_find_custom_refs($this->ent['contact'][$to]['id'], $component['extra']['default_custom_ref']);
+          }
+          break;
         case 'auto':
           $component['extra']['allow_create'] = FALSE;
           $found = array_keys(wf_crm_contact_search($this->node, $component, $filters, wf_crm_aval($this->ent, 'contact', array())));
