@@ -699,9 +699,54 @@ function wf_crm_contact_access($component, $filters, $cid) {
       }
     }
   }
+
+  // Check if the logged in contact has permission via a relationship
+  $filters = wf_crm_contact_access_relationship($filters);
+
   // Fetch contact name with filters applied
   $result = wf_civicrm_api('contact', 'get', $filters);
   return wf_crm_format_contact(wf_crm_aval($result, "values:$cid"), $component['extra']['results_display']);
+}
+
+/**
+ * Check if the logged in contact has permission via a relationship to view another contact
+ *
+ * @param $filters
+ *
+ * @return array
+ * @throws \CiviCRM_API3_Exception
+ */
+function wf_crm_contact_access_relationship($filters) {
+  if (empty($filters['check_permissions'])) {
+    // Don't do anything if we are not checking permissions
+    return $filters;
+  }
+
+  $loggedInContactId = wf_crm_user_cid();
+  if (empty($loggedInContactId)) {
+    // Not logged in
+    return $filters;
+  }
+
+  $contactRelationships = civicrm_api3('Relationship', 'get', [
+    'contact_id' => $loggedInContactId,
+    'return' => ['rtype', 'is_permission_a_b', 'is_permission_b_a']
+  ]);
+  if (empty($contactRelationships['count'])) {
+    // Logged in contact has no relationships
+    return $filters;
+  }
+
+  // Logged in contact has relationships, see if any match the requested contact ID,
+  //  and if they have permission to view(2), view/edit(1) them.
+  foreach ($contactRelationships['values'] as $relationship) {
+    if (($relationship['cid'] == $filters['id'])
+      && ($relationship['is_permission_' . $relationship['rtype']] > 0))
+    {
+      $filters['check_permissions'] = FALSE;
+    }
+  }
+  return $filters;
 }
 
 /**
