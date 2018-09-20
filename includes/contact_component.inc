@@ -492,8 +492,8 @@ function wf_crm_fill_contact_value($node, $component, &$element) {
   if ($cid) {
     // Don't lookup same contact again
     if (wf_crm_aval($element, '#attributes:data-civicrm-id') != $cid) {
-      $filters = wf_crm_search_filters($node, $component);
-      $name = wf_crm_contact_access($component, $filters, $cid);
+      $filters = wf_crm_search_filters($node, $element);
+      $name = wf_crm_contact_access($element, $filters, $cid);
       if ($name !== FALSE) {
         $element['#attributes']['data-civicrm-name'] = $name;
         $element['#attributes']['data-civicrm-id'] = $cid;
@@ -503,8 +503,8 @@ function wf_crm_fill_contact_value($node, $component, &$element) {
       }
     }
   }
-  if (empty($cid) && $element['#type'] == 'hidden' && $component['extra']['none_prompt']) {
-    $element['#attributes']['data-civicrm-name'] = filter_xss($component['extra']['none_prompt']);
+  if (empty($cid) && $element['#type'] == 'hidden' && $element['#extra']['none_prompt']) {
+    $element['#attributes']['data-civicrm-name'] = Html::escape($element['#extra']['none_prompt']);
   }
 }
 

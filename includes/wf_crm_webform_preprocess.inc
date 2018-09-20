@@ -436,22 +436,24 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       if (empty($element['#type']) || $element['#type'] == 'fieldset') {
         continue;
       }
-      if (!empty($element['#webform_component']) && $pieces = wf_crm_explode_key($eid)) {
+      if (!empty($element['#webform']) && $pieces = wf_crm_explode_key($eid)) {
         list( , $c, $ent, $n, $table, $name) = $pieces;
         // Separate out time fields
         if (substr($name, -8) === 'timepart') {
           $name = str_replace('_timepart', '', $name);
         }
         if ($field = wf_crm_aval($this->all_fields, $table . '_' . $name)) {
-          $component = $element['#webform_component'];
+          $component = [
+            'cid' => '@todo what is the CID?'
+          ];
           $element['#attributes']['class'][] = 'civicrm-enabled';
           $dt = NULL;
           if (!empty($field['data_type'])) {
             $dt = $element['#civicrm_data_type'] = $field['data_type'];
           }
           // Provide live options from the Civi DB
-          if (!empty($component['extra']['civicrm_live_options']) && isset($element['#options'])) {
-            $params = array('extra' => wf_crm_aval($field, 'extra', array())) + $component;
+          if (!empty($element['#extra']['civicrm_live_options']) && isset($element['#options'])) {
+            $params = array('extra' => wf_crm_aval($field, 'extra', array())) + $element['#extra'];
             $new = wf_crm_field_options($params, 'live_options', $this->data);
             $old = $element['#options'];
             $resave = FALSE;
@@ -465,8 +467,8 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
               }
             }
             if ($resave) {
-              $component['extra']['items'] = wf_crm_array2str($old);
-              webform_component_update($component);
+              $element['#extra']['extra']['items'] = wf_crm_array2str($old);
+              //webform_component_update($component);
             }
             $element['#options'] = $new;
           }
@@ -502,7 +504,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
                 $val = array_pop($val);
               }
             }
-            if ($component['type'] == 'autocomplete' && is_string($val) && strlen($val)) {
+            if ($element['#type'] == 'autocomplete' && is_string($val) && strlen($val)) {
               $options = wf_crm_field_options($component, '', $this->data);
               $val = wf_crm_aval($options, $val);
             }
