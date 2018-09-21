@@ -1915,6 +1915,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['source'] = $this->settings['new_contact_source'];
     $params['item_name'] = $params['description'] = t('Webform Payment: @title', array('@title' => $this->node->title));
 
+    // We need the submitted billing params from the request (Eg. billing_country_id-5)
+    //  because that's how payment processors expect to find them.
+    foreach ($this->form_state['input'] as $formKey => $formValue) {
+      if (substr($formKey, 0, 8) === 'billing_') {
+        $params[$formKey] = $formValue;
+      }
+    }
+
     if (method_exists($paymentProcessor, 'setSuccessUrl')) {
       $paymentProcessor->setSuccessUrl($this->getIpnRedirectUrl('success'));
       $paymentProcessor->setCancelUrl($this->getIpnRedirectUrl('cancel'));
