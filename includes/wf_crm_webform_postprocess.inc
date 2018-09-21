@@ -709,7 +709,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $existing = wf_civicrm_api('contact', 'get', array('id' => $this->ent['contact'][$c]['id']) + $fetch);
       $existing = wf_crm_aval($existing, 'values:' . $this->ent['contact'][$c]['id'], array());
       foreach ($multi as $name) {
-        $exist = array_filter(drupal_map_assoc((array) wf_crm_aval($existing, $name, array())));
+        $exist_to_merge = (array) wf_crm_aval($existing, $name, array());
+        $exist = array_filter(array_combine($exist_to_merge, $exist_to_merge));
         // Only known contacts are allowed to empty a field
         if (!empty($this->existing_contacts[$c])) {
           foreach ($this->getExposedOptions("civicrm_{$c}_contact_1_contact_$name") as $k => $v) {
@@ -2456,10 +2457,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   protected function submissionValue($fid, $value = NULL) {
     // In submission processing context
     if ($this->submission) {
-      $field = $this->submission->getElementData($fid);
-      if (!$field) {
+      $data = $this->submission->getData();
+      if (!isset($data[$fid])) {
         return NULL;
       }
+      // Expects an array.
+      $field = (array) $data[$fid];
       // During submission preprocessing this is used to alter the submission
       if ($value !== NULL) {
         $field = (array) $value;
