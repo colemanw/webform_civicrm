@@ -170,7 +170,7 @@ class wf_crm_admin_form {
    * @return array
    */
   private function buildConfirmationForm() {
-    $this->form['#prefix'] = $this->form_state['storage']['msg'];
+    $this->form['#prefix'] = $this->form_state->get('msg');
     $this->form['cancel'] = $this->form['disable'] = $this->form['delete'] = array('#type' => 'submit');
     $this->form['delete']['#value'] = t('Remove Fields and Save Settings');
     $this->form['disable']['#value'] = t('Leave Fields and Save Settings');
@@ -1612,9 +1612,9 @@ class wf_crm_admin_form {
         $msg .= '<li>' . $info . $this->node->webform['components'][$id]['name'] . '</li>';
       }
       $msg .= '</ul><p>' . t('Would you like them to be automatically removed from the webform? This is recommended unless you need to keep webform-results information from these fields. (They can still be deleted manually later if you choose not to remove them now.)') . '</p><p><em>' . t('Note: Deleting webform components cannot be undone, and will result in the loss of webform-results info for those elements. Data in the CiviCRM database will not be affected.') . '</em></p>';
-      $this->form_state['storage']['msg'] = $msg;
-      $this->form_state['storage']['vals'] = $this->settings;
-      $this->form_state['rebuild'] = TRUE;
+      $this->form_state->set('msg', $msg);
+      $this->form_state->set('vals', $this->settings);
+      $this->form_state->setRebuild(TRUE);
       return;
     }
 

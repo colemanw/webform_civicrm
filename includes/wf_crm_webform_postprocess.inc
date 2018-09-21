@@ -7,6 +7,7 @@
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
+use Drupal\user\Entity\User;
 use Drupal\webform\WebformInterface;
 use Drupal\webform\WebformSubmissionInterface;
 
@@ -808,12 +809,17 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           if ($location == 'email' && !empty($params['email']) && $i == 1) {
             $uid = wf_crm_user_cid($cid, 'contact');
             if ($uid) {
-              $user = user_load($uid);
-              if ($params['email'] != $user->mail) {
+              $user = User::load($uid);
+              if ($params['email'] != $user->getEmail()) {
                 // Verify this email is unique before saving it to user
-                $args = array(':mail' => $params['email']);
-                if (!(db_query("SELECT count(uid) FROM {users} WHERE mail = :mail", $args)->fetchField())) {
-                  user_save($user, array('mail' => $params['email']));
+                $value_taken = (bool) \Drupal::entityQuery($user->getEntityTypeId())
+                  ->condition('mail', $params['email'])
+                  ->range(0, 1)
+                  ->count()
+                  ->execute();
+                if (!$value_taken) {
+                  $user->setEmail($params['email']);
+                  $user->save();
                 }
               }
             }
