@@ -8,6 +8,7 @@
 /**
  * Implements hook_requirements().
  */
+/*
 function webform_civicrm_requirements($phase) {
   $requirements = array();
 
@@ -34,6 +35,7 @@ function webform_civicrm_requirements($phase) {
 
   return $requirements;
 }
+*/
 
 /**
  * Implements hook_schema().
