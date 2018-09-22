@@ -132,8 +132,8 @@ function webform_civicrm_webform_autocomplete_options_alter(&$results, $node, $c
  *
  * @param array $nodes
  */
+/*
 function webform_civicrm_node_load($nodes, $types) {
-  /*
   $db = db_query('SELECT * FROM {webform_civicrm_forms} WHERE nid IN(:nids)', array(':nids' => array_keys($nodes)));
   foreach ($db as $settings) {
     $node = &$nodes[$settings->nid];
@@ -152,8 +152,8 @@ function webform_civicrm_node_load($nodes, $types) {
       }
     }
   }
-  */
 }
+*/
 
 /**
  * Implements hook_node_insert().
