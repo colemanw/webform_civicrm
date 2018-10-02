@@ -451,6 +451,11 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           if (!empty($field['data_type'])) {
             $dt = $element['#civicrm_data_type'] = $field['data_type'];
           }
+          $element['#attributes']['data-civicrm-field-key'] = $eid;
+          // For contribution line-items
+          if ($table == 'contribution' && in_array($name, array('line_total', 'total_amount'))) {
+            $element['#attributes']['class'][] = 'contribution-line-item';
+          }
           // Provide live options from the Civi DB
           if (!empty($element['#extra']['civicrm_live_options']) && isset($element['#options'])) {
             $params = array('extra' => wf_crm_aval($field, 'extra', array())) + $element['#extra'];
@@ -527,7 +532,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             }
           }
           if ($name == 'existing') {
-            wf_crm_fill_contact_value($this->node, $component, $element);
+            wf_crm_fill_contact_value($this->node, $component, $element, $this->ent);
           }
           if ($name == 'contribution_page_id') {
             $element['#prefix'] = $this->displayLineItems();

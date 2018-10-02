@@ -48,6 +48,7 @@ function _webform_defaults_civicrm_contact() {
         'contact_sub_type' => 0,
         'group' => array(),
         'tag' => array(),
+        'relationship' => array(),
         'check_permissions' => 1,
       ),
     ),
@@ -228,13 +229,6 @@ function _webform_edit_civicrm_contact($component) {
       '#default_value' => $component['extra']['default_relationship'],
       '#parents' => array('extra', 'default_relationship'),
     );
-    $rtypes = wf_crm_get_contact_relationship_types($contact_type, $data['contact'][1]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][1]['contact'][1]['contact_sub_type']);
-    foreach ($rtypes as $k => $v) {
-      $form['defaults']['default_relationship']['#options'][$k] = $v . ' ' . wf_crm_contact_label(1, $data, 'plain');
-      // We do this in the loop so the field is only required if it has some options
-      $form['defaults']['default_relationship']['#required'] = TRUE;
-      unset($form['defaults']['default_relationship']['#options']['']);
-    }
   }
   $form['defaults']['default']['#options']['auto'] = t('Auto - From Filters');
   $form['defaults']['default_contact_id'] = array(
@@ -309,6 +303,35 @@ function _webform_edit_civicrm_contact($component) {
     '#default_value' => $component['extra']['filters']['tag'],
     '#description' => t('Listed contacts must be have at least one of the selected tags (leave blank to not filter by tag).'),
   );
+  if ($c > 1) {
+    $form['filters']['relationship']['contact'] = array(
+      '#type' => 'select',
+      '#title' => t('Relationships to'),
+      '#options' => array('' => '- ' . t('None') . ' -'),
+      '#default_value' => wf_crm_aval($component['extra']['filters'], 'relationship:contact'),
+    );
+    $form['filters']['relationship']['type'] = array(
+      '#type' => 'select',
+      '#multiple' => TRUE,
+      '#title' => t('Specify Relationship(s)'),
+      '#options' => array('' => '- ' . t('Any relation') . ' -'),
+      '#default_value' => wf_crm_aval($component['extra']['filters'], 'relationship:type'),
+    );
+    // Fill relationship data for defaults and filters
+    $all_relationship_types = array_fill(1, $c - 1, array());
+    for ($i = 1; $i < $c; ++$i) {
+      $form['defaults']['default_relationship_to']['#options'][$i] = $form['filters']['relationship']['contact']['#options'][$i] = wf_crm_contact_label($i, $data, 'plain');
+      $rtypes = wf_crm_get_contact_relationship_types($contact_type, $data['contact'][$i]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$i]['contact'][1]['contact_sub_type']);
+      foreach ($rtypes as $k => $v) {
+        $all_relationship_types[$i][] = array('key' => $k, 'value' => $v . ' ' . wf_crm_contact_label($i, $data, 'plain'));
+        $form['defaults']['default_relationship']['#options'][$k] = $form['filters']['relationship']['type']['#options'][$k] = $v . ' ' . wf_crm_contact_label($i, $data, 'plain');
+      }
+      if (!$rtypes) {
+        $all_relationship_types[$i][] = array('key' => '', 'value' => '- ' . t('No relationship types defined for @a to @b', array('@a' => $contact_types[$contact_type], '@b' => $contact_types[$data['contact'][$i]['contact'][1]['contact_type']])) . ' -');
+      }
+    }
+    $form['#attributes']['data-reltypes'] = json_encode($all_relationship_types);
+  }
   $form['filters']['check_permissions'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enforce Permissions'),
@@ -385,29 +408,19 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
         $element['#attached']['js'][] = wf_crm_tokeninput_path();
         $element['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/token-input.css';
         $settings = '{
-          queryParam: "str",
           hintText: ' . json_encode(filter_xss($component['extra']['search_prompt'])) . ',
           noResultsText: ' . json_encode(filter_xss($component['extra']['none_prompt'])) . ',
-          searchingText: ' . json_encode(t('Searching...')) . ',
-          tokenLimit: 1,
-          prePopulate: prep
+          searchingText: ' . json_encode(t('Searching...')) . '
         }';
-        $js = "var prep = wfCivi.existingInit(field, $c, {$node->nid}, $callback_path, toHide);
-                field.tokenInput($callback_path, $settings);
-                $onChange";
+        $js = "wfCivi.existingInit(field, $c, {$node->nid}, $callback_path, toHide, $settings);$onChange";
       }
       break;
 
     case 'select':
+      // Options will be set by wf_crm_fill_contact_value.
       $element['#options'] = array();
       if ($node && isset($node->webform_civicrm)) {
-        $filters = wf_crm_search_filters($node, $component);
-        $element['#options'] = wf_crm_contact_search($node, $component, $filters);
         $js = "$onChange wfCivi.existingInit(field, $c, {$node->nid}, $callback_path, toHide);";
-      }
-      // Display empty option unless there are no results
-      if (!$component['extra']['allow_create'] || count($element['#options']) > 1) {
-        $element['#empty_option'] = filter_xss($component['extra'][$element['#options'] ? 'search_prompt' : 'none_prompt']);
       }
       break;
 
@@ -471,16 +484,21 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
 
 /**
  * Lookup contact name from ID, verify permissions, and attach as html data.
- * Used when rendering or altering a CiviCRM contact field
  *
- * @param $node
+ * Used when rendering or altering a CiviCRM contact field.
+ *
+ * Also sets options for select lists.
+ *
+ * @param stdClass $node
  *   Node object
- * @param $component
+ * @param array $component
  *   Webform component
- * @param $element
+ * @param array $element
  *   FAPI form element (reference)
+ * @param array $ids
+ *   Known entity ids
  */
-function wf_crm_fill_contact_value($node, $component, &$element) {
+function wf_crm_fill_contact_value($node, $component, &$element, $ids = NULL) {
   $cid = wf_crm_aval($element, '#default_value', '');
   if ($element['#type'] == 'hidden') {
     // User may not change this value for hidden fields
@@ -505,6 +523,15 @@ function wf_crm_fill_contact_value($node, $component, &$element) {
   }
   if (empty($cid) && $element['#type'] == 'hidden' && $element['#extra']['none_prompt']) {
     $element['#attributes']['data-civicrm-name'] = Html::escape($element['#extra']['none_prompt']);
+  }
+  // Set options list for select elements. We do this here so we have access to entity ids.
+  if (is_array($ids) && $element['#type'] == 'select') {
+    $filters = wf_crm_search_filters($node, $component);
+    $element['#options'] = wf_crm_contact_search($node, $component, $filters, wf_crm_aval($ids, 'contact', array()));
+    // Display empty option unless there are no results
+    if (!$component['extra']['allow_create'] || count($element['#options']) > 1) {
+      $element['#empty_option'] = filter_xss($component['extra'][$element['#options'] ? 'search_prompt' : 'none_prompt']);
+    }
   }
 }
 
@@ -574,18 +601,20 @@ function _webform_csv_data_civicrm_contact($component, $export_options, $value) 
 /**
  * Returns a list of contacts based on component settings.
  *
- * @param $node
+ * @param stdClass $node
  *   Node object
- * @param $component
+ * @param array $component
  *   Webform component
- * @param $params
+ * @param array $params
  *   Contact get params (filters)
- * @param $str
+ * @param array $contacts
+ *   Existing contact data
+ * @param string $str
  *   Search string (used during autocomplete)
  *
  * @return array
  */
-function wf_crm_contact_search($node, $component, $params, $str = NULL) {
+function wf_crm_contact_search($node, $component, $params, $contacts, $str = NULL) {
   if (empty($node->webform_civicrm)) {
     return array();
   }
@@ -603,6 +632,18 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
     'sort' => $sort_field,
     'return' => $display_fields,
   );
+  if (!empty($params['relationship']['contact'])) {
+    $c = $params['relationship']['contact'];
+    $relations = NULL;
+    if (!empty($contacts[$c]['id'])) {
+      $relations = wf_crm_find_relations($contacts[$c]['id'], wf_crm_aval($params['relationship'], 'type'));
+      $params['id'] = array('IN' => $relations);
+    }
+    if (!$relations) {
+      return $ret;
+    }
+  }
+  unset($params['relationship']);
   if ($str) {
     $str = str_replace(' ', '%', CRM_Utils_Type::escape($str, 'String'));
     // The contact api takes a quirky format for display_name and sort_name
@@ -784,16 +825,16 @@ function wf_crm_update_existing_component(&$component, $enabled, $data) {
 /**
  * Get a contact's relations of certain types
  *
- * @param cid
+ * @param int cid
  *   Contact id
- * @param types
+ * @param array types
  *   Array of relationship_type_ids
- * @param $current
+ * @param bool $current
  *   Limit to current & enabled relations?
  *
  * @return array
  */
-function wf_crm_find_relations($cid, $types, $current = TRUE) {
+function wf_crm_find_relations($cid, $types = array(), $current = TRUE) {
   $found = $allowed = array();
   $cid = (int) $cid;
   static $employer_type = 0;
@@ -810,8 +851,9 @@ function wf_crm_find_relations($cid, $types, $current = TRUE) {
         FROM civicrm_contact
         WHERE id = $cid OR employer_id = $cid";
         $dao = CRM_Core_DAO::executeQuery($sql);
+        $employer = $dao->id == $cid ? $dao->employer_id : $dao->id;
         while ($dao->fetch()) {
-          $found[] = $dao->id == $cid ? $dao->employer_id : $dao->id;
+          $found[$employer] = $employer;
         }
         $dao->free();
       }
@@ -823,23 +865,25 @@ function wf_crm_find_relations($cid, $types, $current = TRUE) {
         $allowed[] = $type . '_b';
       }
     }
+    $typeClause = '';
     if ($type_ids) {
-      $sql = "SELECT relationship_type_id, contact_id_a, contact_id_b
-        FROM civicrm_relationship
-        WHERE relationship_type_id IN ($type_ids) AND (contact_id_a = $cid OR contact_id_b = $cid)";
-      if ($current) {
-        $sql .= " AND is_active = 1 AND (end_date > CURDATE() OR end_date IS NULL)";
-      }
-      $dao = CRM_Core_DAO::executeQuery($sql);
-      while ($dao->fetch()) {
-        $a_b = $dao->contact_id_a == $cid ? 'b' : 'a';
-        if (in_array($dao->relationship_type_id . '_' . $a_b, $allowed)) {
-          $c = $dao->{"contact_id_$a_b"};
-          $found[$c] = $c;
-        }
-      }
-      $dao->free();
+      $typeClause = "AND relationship_type_id IN ($type_ids)";
     }
+    $sql = "SELECT relationship_type_id, contact_id_a, contact_id_b
+      FROM civicrm_relationship
+      WHERE (contact_id_a = $cid OR contact_id_b = $cid) $typeClause";
+    if ($current) {
+      $sql .= " AND is_active = 1 AND (end_date > CURDATE() OR end_date IS NULL)";
+    }
+    $dao = CRM_Core_DAO::executeQuery($sql);
+    while ($dao->fetch()) {
+      $a_b = $dao->contact_id_a == $cid ? 'b' : 'a';
+      if (!$allowed || in_array($dao->relationship_type_id . '_' . $a_b, $allowed)) {
+        $c = $dao->{"contact_id_$a_b"};
+        $found[$c] = $c;
+      }
+    }
+    $dao->free();
   }
   return $found;
 }
