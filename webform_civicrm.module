@@ -7,6 +7,8 @@
  * @author Coleman Watts
  */
 
+use Drupal\Core\Form\FormStateInterface;
+
 /**
  * The versions of CiviCRM and WebForm. Min is >=.  Max is <. FALSE = no MAX
  */
@@ -23,6 +25,7 @@ define('WEBFORM_CIVICRM_DEFAULT_CONTACT_ID', 1);
  * @return array
  */
 function webform_civicrm_menu() {
+  /*
   $items = array();
   $items['node/%webform_menu/civicrm'] = array(
     'title' => 'CiviCRM',
@@ -49,22 +52,14 @@ function webform_civicrm_menu() {
     'type' => MENU_CALLBACK,
   );
   return $items;
-}
-
-/**
- * Access callback to determine if user can see the CiviCRM tab of a webform.
- *
- * @param object $node
- * @return bool
- */
-function wf_crm_admin_access($node) {
-  return (node_access('update', $node) && user_access('access CiviCRM'));
+  */
 }
 
 /**
  * Implements hook_form_alter().
  */
 function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
+  /*
   // Alter back-end webform component edit forms
   if ($form_id == 'webform_component_edit_form') {
     if (substr($form['form_key']['#default_value'], 0, 7) == 'civicrm') {
@@ -95,6 +90,7 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
       wf_crm_admin_component::checkBillingPagination($form['#node']);
     }
   }
+  */
 }
 
 /**
@@ -136,6 +132,7 @@ function webform_civicrm_webform_autocomplete_options_alter(&$results, $node, $c
  *
  * @param array $nodes
  */
+/*
 function webform_civicrm_node_load($nodes, $types) {
   $db = db_query('SELECT * FROM {webform_civicrm_forms} WHERE nid IN(:nids)', array(':nids' => array_keys($nodes)));
   foreach ($db as $settings) {
@@ -156,6 +153,7 @@ function webform_civicrm_node_load($nodes, $types) {
     }
   }
 }
+*/
 
 /**
  * Implements hook_node_insert().
@@ -164,10 +162,12 @@ function webform_civicrm_node_load($nodes, $types) {
  * @param object $node
  */
 function webform_civicrm_node_insert($node) {
+  /*
   if (isset($node->webform_civicrm)) {
     $node->webform_civicrm['nid'] = $node->nid;
     drupal_write_record('webform_civicrm_forms', $node->webform_civicrm);
   }
+  */
 }
 
 /**
@@ -176,6 +176,7 @@ function webform_civicrm_node_insert($node) {
  * @param object $node
  */
 function webform_civicrm_node_delete($node) {
+  /*
   if (!empty($node->webform)) {
     db_delete('webform_civicrm_forms')
       ->condition('nid', $node->nid)
@@ -186,6 +187,7 @@ function webform_civicrm_node_delete($node) {
       ->where('sid NOT IN (SELECT sid FROM {webform_submissions})')
       ->execute();
   }
+  */
 }
 
 /**
@@ -194,6 +196,7 @@ function webform_civicrm_node_delete($node) {
  * Handles localization.
  */
 function webform_civicrm_node_view($node, $view_mode, $langcode) {
+  /*
   if (module_exists('webform_localization') && in_array($node->type, webform_node_types()) && !isset($node->webform_civicrm)) {
     if ($nid = webform_localization_single_webform_nid($node)) {
       $source_node = node_load($nid);
@@ -202,6 +205,7 @@ function webform_civicrm_node_view($node, $view_mode, $langcode) {
       }
     }
   }
+  */
 }
 
 /**
@@ -210,6 +214,8 @@ function webform_civicrm_node_view($node, $view_mode, $langcode) {
  * @return array
  */
 function webform_civicrm_theme() {
+  return [];
+  /*
   $theme = array(
     'webform_civicrm_options_table' => array(
       'render element' => 'element',
@@ -225,6 +231,7 @@ function webform_civicrm_theme() {
     ),
   );
   return $theme;
+  */
 }
 
 /**
@@ -246,46 +253,14 @@ function webform_civicrm_webform_component_info() {
 }
 
 /**
- * Implements hook_webform_submission_presave().
- * Uses cached instance of wf_crm_webform_postprocess that was created during validation.
- */
-function webform_civicrm_webform_submission_presave($node, &$submission) {
-  if (!empty($node->webform_civicrm)) {
-    module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_postprocess');
-    $processor = wf_crm_webform_postprocess::singleton($node);
-    $processor->preSave($submission);
-  }
-}
-
-/**
- * Implements hook_webform_submission_insert().
- * Uses cached instance of wf_crm_webform_postprocess that was created during validation.
- */
-function webform_civicrm_webform_submission_insert($node, $submission) {
-  if (!empty($node->webform_civicrm)) {
-    $processor = wf_crm_webform_postprocess::singleton($node);
-    $processor->postSave($submission);
-  }
-}
-
-/**
- * Implements hook_webform_submission_update().
- * Uses cached instance of wf_crm_webform_postprocess that was created during validation.
- */
-function webform_civicrm_webform_submission_update($node, $submission) {
-  if (!empty($node->webform_civicrm)) {
-    $processor = wf_crm_webform_postprocess::singleton($node);
-    $processor->postSave($submission);
-  }
-}
-
-/**
  * Implements hook_webform_submission_delete().
  */
-function webform_civicrm_webform_submission_delete($node, $submission) {
+function webform_civicrm_webform_submission_delete($submission) {
+  /*
   db_delete('webform_civicrm_submissions')
     ->condition('sid', $submission->sid)
     ->execute();
+  */
 }
 
 /**
@@ -293,6 +268,7 @@ function webform_civicrm_webform_submission_delete($node, $submission) {
  * Add CiviCRM contact info to submission objects.
  */
 function webform_civicrm_webform_submission_load(&$submissions) {
+  /*
   if (empty($submissions)) {
     return;
   }
@@ -326,6 +302,7 @@ function webform_civicrm_webform_submission_load(&$submissions) {
       }
     }
   }
+  */
 }
 
 /**
@@ -669,15 +646,6 @@ function wf_crm_contact_clone($form, $form_state) {
   drupal_write_record('webform_civicrm_forms', $settings, 'nid');
   // Store data to rewrite form keys
   wf_crm_contact_clone_storage($storage);
-}
-
-/**
- * Validation callback for webform submissions.
- */
-function wf_crm_validate($form, &$form_state) {
-  form_load_include($form_state, 'inc', 'webform_civicrm', 'includes/wf_crm_webform_postprocess');
-  $processor = wf_crm_webform_postprocess::singleton($form['#node']);
-  $processor->validate($form, $form_state);
 }
 
 /**

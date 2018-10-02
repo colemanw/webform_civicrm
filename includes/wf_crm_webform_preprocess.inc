@@ -5,7 +5,11 @@
  * Front-end form pre-processor.
  */
 
-module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_base');
+use Drupal\Component\Serialization\Json;
+use Drupal\Component\Utility\NestedArray;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
+use Drupal\webform\Plugin\WebformHandlerInterface;
 
 class wf_crm_webform_preprocess extends wf_crm_webform_base {
   private $form;
@@ -13,19 +17,21 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
   private $info = array();
   private $all_fields;
   private $all_sets;
+  private $handler;
 
-  function __construct(&$form, &$form_state) {
-    civicrm_initialize();
+  function __construct(&$form, FormStateInterface $form_state, WebformHandlerInterface $handler) {
+    \Drupal::getContainer()->get('civicrm')->initialize();
+    $this->handler = $handler;
     $this->form = &$form;
-    $this->form_state = &$form_state;
-    $this->node = $form['#node'];
-    $this->settings = $this->node->webform_civicrm;
+    $this->form_state = $form_state;
+    $this->node = $handler->getWebform();
+    $this->settings = $handler->getConfiguration()['settings'];
     $this->data = $this->settings['data'];
-    $this->ent['contact'] = array();
+    $this->ent['contact'] = [];
     $this->all_fields = wf_crm_get_fields();
     $this->all_sets = wf_crm_get_fields('sets');
-    $this->enabled = wf_crm_enabled_fields($this->node);
-    $this->line_items = wf_crm_aval($form_state, 'civicrm:line_items', array());
+    $this->enabled = wf_crm_enabled_fields($handler->getWebform());
+    $this->line_items = $form_state->get(['civicrm', 'line_items']) ?: [];
   }
 
   /**
@@ -39,31 +45,33 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     // Add css & js
     $this->addResources();
     // Add validation handler
-    $this->form['#validate'][] = 'wf_crm_validate';
+    // $this->form['#validate'][] = 'wf_crm_validate';
     // If this form is already in-process, IDs will be stored
-    if (!empty($this->form_state['civicrm'])) {
-      $this->ent = $this->form_state['civicrm']['ent'];
+    if (!empty($this->form_state->get('civicrm'))) {
+      $this->ent = $this->form_state->get(['civicrm', 'ent']);
     }
     $submitted_contacts = array();
     // Keep track of cids across multipage forms
-    if (!empty($this->form_state['values']['submitted']) && wf_crm_aval($this->form_state, 'webform:page_count') > 1) {
+    if (!empty($this->form_state->getValue('submitted')) && $this->form_state->get(['webform','page_count']) > 1) {
       foreach ($this->enabled as $k => $v) {
-        if (substr($k, -8) == 'existing' && isset($this->form_state['values']['submitted'][$v])) {
+        if (substr($k, -8) == 'existing' && $this->form_state->getValue(['submitted', $v])) {
           list(, $c) = explode('_', $k);
-          $val = $this->form_state['values']['submitted'][$v];
+          $val = $this->form_state->getValue(['submitted', $v]);
           $cid_data["cid$c"] = $this->ent['contact'][$c]['id'] = (int) (is_array($val) ? $val[0] : $val);
           $submitted_contacts[$c] = TRUE;
         }
       }
       if (!empty($cid_data)) {
-        $this->form['#attributes']['data-civicrm-ids'] = json_encode($cid_data);
+        $this->form['#attributes']['data-civicrm-ids'] = Json::encode($cid_data);
       }
     }
     // Early return if the form (or page) was already submitted
-    if (wf_crm_aval($this->form_state, 'triggering_element:#id') == 'edit-previous'
-      || (empty($this->form_state['rebuild']) && !empty($this->form_state['storage']) && empty($this->form['#submission']->is_draft))
+    /*
+    $triggering_element = $this->form_state->getTriggeringElement();
+    if ($triggering_element && $triggering_element['#id'] == 'edit-previous'
+      || (empty($this->form_state->isRebuilding()) && empty($this->form['#submission']->is_draft))
       // When resuming from a draft
-      || (!empty($this->form['#submission']->is_draft) && empty($this->form_state['input']))
+      || (!empty($this->form['#submission']->is_draft) && empty($this->form_state->getUserInput()))
     ) {
       $this->fillForm($this->form['submitted']);
       return;
@@ -79,10 +87,12 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       $this->fillForm($this->form['submitted']);
       return;
     }
+    */
     // Search for existing contacts
+    $elements = $this->handler->getWebform()->getElementsDecoded();
     for ($c = 1; $c <= count($this->data['contact']); ++$c) {
       $this->ent['contact'][$c] = wf_crm_aval($this->ent, "contact:$c", array());
-      $existing_component = $this->getComponent("civicrm_{$c}_contact_1_contact_existing");
+      $existing_component = $elements["civicrm_{$c}_contact_1_contact_existing"];
       // Search for contact if the user hasn't already chosen one
       if ($existing_component && empty($submitted_contacts[$c])) {
         $this->findContact($existing_component);
@@ -91,7 +101,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       $this->ent['contact'][$c] += array('id' => 0);
     }
     // Search for other existing entities
-    if (empty($this->form_state['civicrm'])) {
+    if (empty($this->form_state->get('civicrm'))) {
       if (!empty($this->data['case']['number_of_case'])) {
         $this->findExistingCases();
       }
@@ -151,34 +161,31 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       }
     }
     // Store ids
-    $this->form_state['civicrm']['ent'] = $this->ent;
+    $this->form_state->set(['civicrm', 'ent'], $this->ent);
     // Set default values and other attributes for CiviCRM form elements
     // Passing $submitted helps avoid overwriting values that have been entered on a multi-step form
-    $submitted = wf_crm_aval($this->form_state, 'values:submitted', array());
-    $this->fillForm($this->form['submitted'], $submitted);
+    $submitted = $this->form_state->getValue('submitted', []);
+    $this->fillForm($this->form, $submitted);
   }
 
   /**
    * Add necessary js & css to the form
    */
   private function addResources() {
-    $this->form['#attached']['js'][] = array(
-      'data' => drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_forms.js',
-      'scope' => 'footer',
-    );
-    $this->form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_forms.css';
+    $this->form['#attached']['library'][] = 'webform_civicrm/forms';
+
     $config = CRM_Core_Config::singleton();
     // Variables to push to the client-side
     $js_vars = array();
     // JS Cache eliminates the need for most ajax state/province callbacks
     foreach ($this->data['contact'] as $c) {
       if (!empty($c['number_of_address'])) {
-        $js_vars += array(
+        $js_vars += [
           'defaultCountry' => $config->defaultContactCountry,
           'defaultStates' => wf_crm_get_states($config->defaultContactCountry),
           'noCountry' => t('- First Choose a Country -'),
-          'callbackPath' => url('webform-civicrm/js', array('alias' => TRUE)),
-        );
+          'callbackPath' => Url::fromUserInput('/webform-civicrm/js', ['alias' => TRUE]),
+        ];
         break;
       }
     }
@@ -198,14 +205,14 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       }
       else {
         $contributionCallbackQuery = array('reset' => 1, 'id' => $page_id, 'qfKey' => $this->getQfKey(), 'snippet' => 4);
-        $contributionCallbackUrl = 'civicrm/contribute/transact';
+        $contributionCallbackUrl = '/civicrm/contribute/transact';
         $js_vars['processor_id_key'] = 'type';
       }
       if (!empty($this->data['contribution'][1]['contribution'][1]['is_test'])) {
         // RM: This is needed in order for CiviCRM to know that this is a 'test' (i.e. 'preview' action in CiviCRM) transaction - otherwise, CiviCRM defaults to 'live' and returns the payment form with public key for the live payment processor!
         $contributionCallbackQuery['action'] = CRM_Core_Action::description(CRM_Core_Action::PREVIEW);
       }
-      $js_vars['contributionCallback'] = url($contributionCallbackUrl, array('query' => $contributionCallbackQuery, 'alias' => TRUE));
+      $js_vars['contributionCallback'] = Url::fromUserInput($contributionCallbackUrl, ['query' => $contributionCallbackQuery, 'alias' => TRUE]);
       // Add payment processor - note we have to search in 2 places because $this->loadMultipageData hasn't been run. Maybe it should be?
       $fid = 'civicrm_1_contribution_1_contribution_payment_processor_id';
       if (!empty($this->enabled[$fid])) {
@@ -215,12 +222,8 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         $js_vars['paymentProcessor'] = $this->getData($fid);
       }
     }
-    if ($js_vars) {
-      $this->form['#attached']['js'][] = array(
-        'data' => array('webform_civicrm' => $js_vars),
-        'type' => 'setting',
-      );
-    }
+
+    $this->form['#attached']['drupalSettings']['webform_civicrm'] = $js_vars;
   }
 
   /**
@@ -433,14 +436,16 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       if (empty($element['#type']) || $element['#type'] == 'fieldset') {
         continue;
       }
-      if (!empty($element['#webform_component']) && $pieces = wf_crm_explode_key($eid)) {
+      if (!empty($element['#webform']) && $pieces = wf_crm_explode_key($eid)) {
         list( , $c, $ent, $n, $table, $name) = $pieces;
         // Separate out time fields
         if (substr($name, -8) === 'timepart') {
           $name = str_replace('_timepart', '', $name);
         }
         if ($field = wf_crm_aval($this->all_fields, $table . '_' . $name)) {
-          $component = $element['#webform_component'];
+          $component = [
+            'cid' => '@todo what is the CID?'
+          ];
           $element['#attributes']['class'][] = 'civicrm-enabled';
           $dt = NULL;
           if (!empty($field['data_type'])) {
@@ -452,8 +457,8 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             $element['#attributes']['class'][] = 'contribution-line-item';
           }
           // Provide live options from the Civi DB
-          if (!empty($component['extra']['civicrm_live_options']) && isset($element['#options'])) {
-            $params = array('extra' => wf_crm_aval($field, 'extra', array())) + $component;
+          if (!empty($element['#extra']['civicrm_live_options']) && isset($element['#options'])) {
+            $params = array('extra' => wf_crm_aval($field, 'extra', array())) + $element['#extra'];
             $new = wf_crm_field_options($params, 'live_options', $this->data);
             $old = $element['#options'];
             $resave = FALSE;
@@ -467,8 +472,8 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
               }
             }
             if ($resave) {
-              $component['extra']['items'] = wf_crm_array2str($old);
-              webform_component_update($component);
+              $element['#extra']['extra']['items'] = wf_crm_array2str($old);
+              //webform_component_update($component);
             }
             $element['#options'] = $new;
           }
@@ -504,7 +509,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
                 $val = array_pop($val);
               }
             }
-            if ($component['type'] == 'autocomplete' && is_string($val) && strlen($val)) {
+            if ($element['#type'] == 'autocomplete' && is_string($val) && strlen($val)) {
               $options = wf_crm_field_options($component, '', $this->data);
               $val = wf_crm_aval($options, $val);
             }

@@ -5,6 +5,8 @@
  * CiviCRM contact webform component.
  */
 
+use Drupal\Component\Utility\Html;
+
 module_load_include('inc', 'webform_civicrm', 'includes/utils');
 module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_help');
 
@@ -40,7 +42,6 @@ function _webform_defaults_civicrm_contact() {
       'default' => '',
       'default_contact_id' => '',
       'default_relationship' => '',
-      'default_relationship_to' => '1',
       'allow_url_autofill' => TRUE,
       'dupes_allowed' => FALSE,
       'filters' => array(
@@ -94,7 +95,6 @@ function _webform_edit_civicrm_contact($component) {
   });';
   $form['#attached']['js'][$js] = array('type' => 'inline');
   $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/token-input.css';
-  $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_admin.css';
   $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/js/contact_component.js';
 
   $form['display']['widget'] = array(
@@ -220,20 +220,12 @@ function _webform_edit_civicrm_contact($component) {
     $form['defaults']['default']['#options']['user'] = t('Current User');
   }
   elseif ($c > 1) {
-    $form['defaults']['default']['#options']['relationship'] = t('Relationship to...');
-    $to = $component['extra']['default_relationship_to'];
-    $form['defaults']['default_relationship_to'] = array(
-      '#type' => 'select',
-      '#title' => t('Relationship to Contact'),
-      '#default_value' => $to,
-      '#parents' => array('extra', 'default_relationship_to'),
-    );
+    $form['defaults']['default']['#options']['relationship'] = t('Relationship to :contact', array(':contact' => wf_crm_contact_label(1, $data)));
     $form['defaults']['default_relationship'] = array(
       '#type' => 'select',
       '#multiple' => TRUE,
       '#title' => t('Specify Relationship(s)'),
-      '#options' => array('-' => '-'),
-      '#required' => TRUE,
+      '#options' => array('' => '- ' . t('No relationship types defined for @a to @b', array('@a' => $contact_types[$contact_type], '@b' => $contact_types[$data['contact'][1]['contact'][1]['contact_type']])) . ' -'),
       '#default_value' => $component['extra']['default_relationship'],
       '#parents' => array('extra', 'default_relationship'),
     );
@@ -518,8 +510,8 @@ function wf_crm_fill_contact_value($node, $component, &$element, $ids = NULL) {
   if ($cid) {
     // Don't lookup same contact again
     if (wf_crm_aval($element, '#attributes:data-civicrm-id') != $cid) {
-      $filters = wf_crm_search_filters($node, $component);
-      $name = wf_crm_contact_access($component, $filters, $cid);
+      $filters = wf_crm_search_filters($node, $element);
+      $name = wf_crm_contact_access($element, $filters, $cid);
       if ($name !== FALSE) {
         $element['#attributes']['data-civicrm-name'] = $name;
         $element['#attributes']['data-civicrm-id'] = $cid;
@@ -529,8 +521,8 @@ function wf_crm_fill_contact_value($node, $component, &$element, $ids = NULL) {
       }
     }
   }
-  if (empty($cid) && $element['#type'] == 'hidden' && $component['extra']['none_prompt']) {
-    $element['#attributes']['data-civicrm-name'] = filter_xss($component['extra']['none_prompt']);
+  if (empty($cid) && $element['#type'] == 'hidden' && $element['#extra']['none_prompt']) {
+    $element['#attributes']['data-civicrm-name'] = Html::escape($element['#extra']['none_prompt']);
   }
   // Set options list for select elements. We do this here so we have access to entity ids.
   if (is_array($ids) && $element['#type'] == 'select') {
@@ -724,9 +716,9 @@ function wf_crm_contact_search($node, $component, $params, $contacts, $str = NUL
 function wf_crm_contact_access($component, $filters, $cid) {
   // Create new contact doesn't require lookup
   $cid = "$cid";
-  list(, $c, ) = explode('_', $component['form_key'], 3);
+  list(, $c, ) = explode('_', $component['#webform_civicrm'], 3);
   if ($cid && $cid[0] === '-' && !empty($component['extra']['allow_create']) && !empty($component['extra']['none_prompt'])) {
-    return filter_xss($component['extra']['none_prompt']);
+    return Html::escape($component['extra']['none_prompt']);
   }
   if (!is_numeric($cid)) {
     return FALSE;
@@ -742,21 +734,17 @@ function wf_crm_contact_access($component, $filters, $cid) {
     // For legacy reasons we support "cid" param as an alias of "cid1"
     if (wf_crm_aval($_GET, "cid$c") == $cid || $c == 1 && wf_crm_aval($_GET, "cid") == $cid) {
       // For legacy reasons we support "cs" param as an alias of "cs1"
-      if (
-        (!empty($_GET['cs']) && $c == 1 && CRM_Contact_BAO_Contact_Utils::validChecksum($cid, $_GET['cs']))
-        || (!empty($_GET["cs$c"]) && CRM_Contact_BAO_Contact_Utils::validChecksum($cid, $_GET["cs$c"]))
-      ) {
+      if (!empty($_GET['cs']) && $c == 1 && CRM_Contact_BAO_Contact_Utils::validChecksum($cid, $_GET['cs'])) {
         $filters['check_permissions'] = FALSE;
-        // Grant CiviCRM permissions to the verified checksum contact.
-        if ($c == 1) {
-          CRM_Core_Session::singleton()->set('userID', $cid);
-        }
+      }
+      elseif (!empty($_GET["cs$c"]) && CRM_Contact_BAO_Contact_Utils::validChecksum($cid, $_GET["cs$c"])) {
+        $filters['check_permissions'] = FALSE;
       }
     }
   }
   // Fetch contact name with filters applied
   $result = wf_civicrm_api('contact', 'get', $filters);
-  return wf_crm_format_contact(wf_crm_aval($result, "values:$cid"), $component['extra']['results_display']);
+  return wf_crm_format_contact(wf_crm_aval($result, "values:$cid"), /*$component['#extra']['results_display']*/ ['display_name']);
 }
 
 /**
@@ -774,7 +762,7 @@ function wf_crm_format_contact($contact, $display_fields, $escape = TRUE) {
   $display = array();
   foreach ($display_fields as $field) {
     if ($field && !empty($contact[$field])) {
-      $display[] = $escape ? check_plain($contact[$field]) : $contact[$field];
+      $display[] = $escape ? Html::escape($contact[$field]) : $contact[$field];
     }
   }
   return implode(' :: ', $display);
@@ -913,9 +901,10 @@ function wf_crm_find_relations($cid, $types = array(), $current = TRUE) {
  */
 function wf_crm_search_filters($node, $component) {
   $params = array('is_deleted' => 0);
-  list(, $c, ) = explode('_', $component['form_key'], 3);
-  $params['contact_type'] = ucfirst($node->webform_civicrm['data']['contact'][$c]['contact'][1]['contact_type']);
-  foreach ($component['extra']['filters'] as $key => $val) {
+  list(, $c, ) = explode('_', $component['#webform_civicrm'], 3);
+  $params['contact_type'] = ucfirst($component['#extra']['contact_type']);
+  /*
+  foreach ($component['#extra']['filters'] as $key => $val) {
     if (is_array($val)) {
       $val = array_filter($val);
     }
@@ -926,6 +915,7 @@ function wf_crm_search_filters($node, $component) {
       $params[$key] = $val;
     }
   }
+  */
   return $params;
 }
 

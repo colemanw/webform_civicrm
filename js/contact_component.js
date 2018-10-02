@@ -34,10 +34,10 @@ var wfCiviContact = (function ($, D) {
 
   D.behaviors.webform_civicrmContact = {
     attach: function (context) {
-      function changeDefault() {
+      $('#edit-extra-default', context).once('wf-civi').change(function() {
         var val = $(this).val().replace(/_/g, '-');
         $('#edit-defaults > div > .form-item', context).not('.form-item-extra-default, .form-item-extra-allow-url-autofill').each(function() {
-          if (val.length && $(this).is('[class*=form-item-extra-default-'+val+']')) {
+          if ($(this).hasClass('form-item-extra-default-'+val)) {
             $(this).removeAttr('style');
           }
           else {
@@ -49,10 +49,10 @@ var wfCiviContact = (function ($, D) {
           $('.form-item-extra-randomize, .form-item-extra-dupes-allowed')
             .removeAttr('style')
             .find(':checkbox')
-            .prop('disabled', false);
+            .removeAttr('disabled');
         }
         $('#edit-extra-default-relationship-to', context).each(changeDefaultRelationTo);
-      }
+      });
       function changeDefaultRelationTo() {
         var c = $(this).val(),
           types = $(this).closest('form').data('reltypes')[c],

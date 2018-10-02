@@ -63,13 +63,13 @@ var wfCiviAdmin = (function ($, D) {
     for (i in events) {
       var splitstr = events[i].split('-');
       if (events.length === 1) {
-        info.eventid = splitstr[0];
+        info['eventid'] = splitstr[0];
       }
       if (i == 0) {
-        info.eventtype = splitstr[1];
+        info['eventtype'] = splitstr[1];
       }
-      else if (info.eventtype !== splitstr[1]) {
-        info.eventtype = '0';
+      else if (info['eventtype'] !== splitstr[1]) {
+        info['eventtype'] = '0';
       }
     }
 
@@ -107,21 +107,21 @@ var wfCiviAdmin = (function ($, D) {
       $('option', this).not('[value="0"],[value="create_civicrm_webform_element"]').remove();
       for (var i in D.settings.webform_civicrm.rTypes) {
         var t = D.settings.webform_civicrm.rTypes[i];
-        var reciprocal = (t.label_a_b != t.label_b_a && t.label_b_a || t.type_a != t.type_b);
-        if ( (t.type_a == contact_a.type || !t.type_a) &&
-          (t.type_b == contact_b.type || !t.type_b) &&
-          ($.inArray(t.sub_type_a, contact_a.sub_type) > -1 || !t.sub_type_a) &&
-          ($.inArray(t.sub_type_b, contact_b.sub_type) > -1 || !t.sub_type_b)
+        var reciprocal = (t['label_a_b'] != t['label_b_a'] && t['label_b_a'] || t['type_a'] != t['type_b']);
+        if ( (t['type_a'] == contact_a['type'] || !t['type_a'])
+          && (t['type_b'] == contact_b['type'] || !t['type_b'])
+          && ($.inArray(t['sub_type_a'], contact_a['sub_type']) > -1 || !t['sub_type_a'])
+          && ($.inArray(t['sub_type_b'], contact_b['sub_type']) > -1 || !t['sub_type_b'])
         ) {
-          $(this).append('<option value="' + t.id + (reciprocal ? '_a">' : '_r">') + t.label_a_b + '</option>');
+          $(this).append('<option value="'+t['id']+(reciprocal ? '_a">' : '_r">')+t['label_a_b']+'</option>');
         }
-        if (reciprocal &&
-          (t.type_a == contact_b.type || !t.type_a) &&
-          (t.type_b == contact_a.type || !t.type_b) &&
-          ($.inArray(t.sub_type_a, contact_b.sub_type) > -1 || !t.sub_type_a) &&
-          ($.inArray(t.sub_type_b, contact_a.sub_type) > -1 || !t.sub_type_b)
+        if (reciprocal
+          && (t['type_a'] == contact_b['type'] || !t['type_a'])
+          && (t['type_b'] == contact_a['type'] || !t['type_b'])
+          && ($.inArray(t['sub_type_a'], contact_b['sub_type']) > -1 || !t['sub_type_a'])
+          && ($.inArray(t['sub_type_b'], contact_a['sub_type']) > -1 || !t['sub_type_b'])
         ) {
-          $(this).append('<option value="' + t.id + '_b">' + t.label_b_a + '</option>');
+          $(this).append('<option value="'+t['id']+'_b">'+t['label_b_a']+'</option>');
         }
       }
       $(this).val(selected_option).change();
@@ -165,15 +165,15 @@ var wfCiviAdmin = (function ($, D) {
         }
       });
       types[c] = {
-        type: $('#edit-' + c + '-contact-type').val(),
+            type: $('#edit-'+c+'-contact-type').val(),
         sub_type: sub_type
       };
     }
-    return types;
+    return types
   }
 
   // Trim a string and strip html
-  function checkLength(str) {
+  function CheckLength(str) {
     str = D.checkPlain(str);
     if (str.length > 40) {
       str = str.substr(0, 38) + '...';
@@ -192,7 +192,7 @@ var wfCiviAdmin = (function ($, D) {
 
   // Return the label of contact #c
   function getContactLabel(c) {
-    return checkLength($('input[name=' + c + '_webform_label]', '#wf-crm-configure-form').val());
+    return CheckLength($('input[name=' + c + '_webform_label]', '#wf-crm-configure-form').val());
   }
 
   function showHideParticipantOptions(speed) {
@@ -272,7 +272,7 @@ var wfCiviAdmin = (function ($, D) {
       });
       $('fieldset#edit-st-message', context).once('wf-civi').drupalSetSummary(function (context) {
         if ($('[name="toggle_message"]', context).is(':checked')) {
-          return checkLength($('#edit-message', context).val());
+          return CheckLength($('#edit-message', context).val());
         }
         else {
           return Drupal.t('- None -');
@@ -280,7 +280,7 @@ var wfCiviAdmin = (function ($, D) {
       });
       $('fieldset#edit-prefix', context).once('wf-civi').drupalSetSummary(function (context) {
         var label = $('[name="prefix_known"]', context).val() || $('[name="prefix_unknown"]', context).val();
-        return checkLength(label) || Drupal.t('- None -');
+        return CheckLength(label) || Drupal.t('- None -');
       });
       $('#edit-participant, #edit-contribution', context).once('wf-civi').drupalSetSummary(function (context) {
         return $('select:first option:selected', context).text();
@@ -337,13 +337,13 @@ var wfCiviAdmin = (function ($, D) {
 
       $('#edit-nid', context).once('wf-civi').change(function() {
         if ($(this).is(':checked')) {
-          $('#wf-crm-configure-form .vertical-tabs, .form-item-number-of-contacts').removeAttr('style');
-          $('#wf-crm-configure-form .vertical-tabs-panes').removeClass('hidden');
+          $('.form-type-vertical-tabs, .form-item-number-of-contacts').removeAttr('style');
+          $('.vertical-tabs__panes').removeClass('hidden');
           $('[name="number_of_contacts"]').prop('disabled', false);
         }
         else {
-          $('#wf-crm-configure-form .vertical-tabs, .form-item-number-of-contacts').css('opacity', '0.4');
-          $('#wf-crm-configure-form .vertical-tabs-panes').addClass('hidden');
+          $('.form-type-vertical-tabs, .form-item-number-of-contacts').css('opacity', '0.4');
+          $('.vertical-tabs__panes').addClass('hidden');
           $('[name="number_of_contacts"]').prop('disabled', true);
         }
       }).change();
@@ -351,7 +351,7 @@ var wfCiviAdmin = (function ($, D) {
       // Show/hide 'Not you?' message settings
       if ($('#edit-toggle-message').not(':checked')) {
         $('#edit-st-message .form-item-message').hide();
-      }
+      };
       $('#edit-toggle-message', context).once('wf-civi').change(function() {
         if ($(this).is(':checked')) {
           $('#edit-message').prop('disabled', false);
@@ -391,7 +391,7 @@ var wfCiviAdmin = (function ($, D) {
       });
 
       $('#edit-number-of-contacts', context).once('wf-civi').change(function() {
-        $('#wf-crm-configure-form')[0].submit();
+        $('.webform-civicrm-settings-form')[0].submit();
       });
 
       // Show/hide custom relationship fields
@@ -444,7 +444,7 @@ var wfCiviAdmin = (function ($, D) {
             var cl = clas[c].split('-');
             if (cl[1] == 'icon') {
               if (cl[0] == 'contact') {
-                name = 'name="' + (i + 1) + '_contact_type"';
+                name = 'name="' + (i + 1) + '_contact_type"'
               }
               $('#wf-crm-configure-form .vertical-tab-button a').eq(i).prepend('<span class="civi-icon '+cl[2]+'" '+name+'> </span>');
             }
@@ -517,7 +517,7 @@ var wfCiviAdmin = (function ($, D) {
         var $pageSelect = $('[name=civicrm_1_contribution_1_contribution_contribution_page_id]');
         // Warning about contribution page with no email
         if ($pageSelect.val() !== '0' && ($('[name=civicrm_1_contact_1_email_email]:checked').length < 1 || $('[name=contact_1_number_of_email]').val() == '0')) {
-          var msg = Drupal.t('You must enable an email field for !contact in order to process transactions.', {'!contact': getContactLabel(1)});
+          var msg = Drupal.t('You must enable an email field for :contact in order to process transactions.', {':contact': getContactLabel(1)});
           if (!$('.wf-crm-billing-email-alert').length) {
             $pageSelect.after('<div class="messages error wf-crm-billing-email-alert">' + msg + ' <button>' + Drupal.t('Enable It') + '</button></div>');
             $('.wf-crm-billing-email-alert button').click(function() {
@@ -532,7 +532,7 @@ var wfCiviAdmin = (function ($, D) {
         }
         else {
           $('.wf-crm-billing-email-alert').remove();
-          if (billingEmailMsg && billingEmailMsg.close) billingEmailMsg.close();
+          billingEmailMsg && billingEmailMsg.close && billingEmailMsg.close();
         }
         // Info about paid events/memberships
         $('.wf-crm-paid-entities-info').remove();

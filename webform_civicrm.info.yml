@@ -1,0 +1,8 @@
+name: 'CiviCRM Webform'
+type: module
+description: 'CiviCRM and Webform integration'
+core: 8.x
+package: 'Custom'
+dependencies:
+  - webform
+  - civicrm

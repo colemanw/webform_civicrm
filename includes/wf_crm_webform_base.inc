@@ -16,6 +16,10 @@ module_load_include('inc', 'webform_civicrm', 'includes/utils');
  * @property number $civicrm_version
  */
 abstract class wf_crm_webform_base {
+
+  /**
+   * @var \Drupal\webform\WebformInterface
+   */
   protected $node;
   protected $settings = array();
   protected $enabled = array();
@@ -102,7 +106,7 @@ abstract class wf_crm_webform_base {
     $contact = $this->data['contact'][$c];
     $prefix = 'civicrm_' . $c . '_contact_1_';
     $existing_contact_field = $this->getComponent($prefix . 'contact_existing');
-    $exclude = array_merge($exclude, wf_crm_aval($existing_contact_field['extra'], 'no_autofill', array()));
+    $exclude = array_merge($exclude, wf_crm_aval($existing_contact_field['#extra'], 'no_autofill', array()));
     foreach (array_merge(array('contact'), wf_crm_location_fields()) as $ent) {
       if ((!empty($contact['number_of_' . $ent]) && !in_array($ent, $exclude)) || $ent == 'contact') {
         $params = array('contact_id' => $cid);
@@ -237,7 +241,7 @@ abstract class wf_crm_webform_base {
    */
   protected function findContact($component) {
     module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
-    list(, $c,) = explode('_', $component['form_key'], 3);
+    list(, $c,) = explode('_', $component['#webform_civicrm'], 3);
     $filters = wf_crm_search_filters($this->node, $component);
     // Start with the url - that trumps everything.
     if (isset($_GET["cid$c"]) || ($c == 1 && isset($_GET['cid']))) {
@@ -258,7 +262,7 @@ abstract class wf_crm_webform_base {
     }
     if (empty($this->ent['contact'][$c]['id'])) {
       $found = array();
-      switch ($component['extra']['default']) {
+      switch ($component['#extra']['default']) {
         case 'user':
           $cid = wf_crm_user_cid();
           $found = ($c == 1 && $cid) ? array($cid) : array();
@@ -279,10 +283,10 @@ abstract class wf_crm_webform_base {
           $found = array_keys(wf_crm_contact_search($this->node, $component, $filters, wf_crm_aval($this->ent, 'contact', array())));
           break;
       }
-      if ($component['extra']['randomize']) {
+      if (isset($component['#extra']['randomize']) && $component['#extra']['randomize']) {
         shuffle($found);
       }
-      if (in_array($component['extra']['default'], array('user', 'contact_id'))) {
+      if (in_array($component['#extra']['default'], array('user', 'contact_id'))) {
         $dupes_allowed = TRUE;
       }
       else {
@@ -298,7 +302,7 @@ abstract class wf_crm_webform_base {
           }
         }
         // Check filters except for 'auto' which already applied them
-        if ($component['extra']['default'] == 'auto' || wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
+        if ($component['#extra']['default'] == 'auto' || wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
           $this->ent['contact'][$c]['id'] = $cid;
           break;
         }
@@ -556,7 +560,8 @@ abstract class wf_crm_webform_base {
    */
   protected function getComponent($field_key) {
     if ($field_key && isset($this->enabled[$field_key])) {
-      return wf_crm_aval($this->node->webform, 'components:' . $this->enabled[$field_key]);
+      $elements = $this->node->getElementsDecoded();
+      return $elements[$this->enabled[$field_key]];
     }
     return NULL;
   }
