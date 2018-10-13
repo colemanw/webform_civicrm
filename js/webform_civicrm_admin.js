@@ -187,12 +187,12 @@ var wfCiviAdmin = (function ($, D) {
     var label = getContactLabel(c);
     $('.vertical-tabs-list li', '#wf-crm-configure-form').eq(c - 1).find('strong').html(c + '. ' + label);
     $('select[data-type=ContactReference] option[value=' + c + '], select[name$=address_master_id] option[value=' + c + '], .contact-label.number-' + c, '#wf-crm-configure-form').html(label);
-    $('fieldset#edit-membership').trigger('summaryUpdated');
+    $('details#edit-membership').trigger('summaryUpdated');
   }
 
   // Return the label of contact #c
   function getContactLabel(c) {
-    return CheckLength($('input[name=' + c + '_webform_label]', '#wf-crm-configure-form').val());
+    return CheckLength($('input[name=' + c + '_webform_label]', '#webform-civicrm-settings-form').val());
   }
 
   function showHideParticipantOptions(speed) {
@@ -255,10 +255,10 @@ var wfCiviAdmin = (function ($, D) {
       employerOptions();
       showHideParticipantOptions();
 
-      $('select[multiple]', '#wf-crm-configure-form, #webform-component-edit-form').once('wf-crm-multiselect').each(initMultiSelect);
+      $('select[multiple]', '#webform-civicrm-settings-form, #webform-component-edit-form').once('wf-crm-multiselect').each(initMultiSelect);
 
       // Summaries for vertical tabs
-      $('fieldset[id^="edit-contact-"]', context).once('wf-civi').drupalSetSummary(function (context) {
+      $('details[id^="edit-contact-"]', context).once('wf-civi').drupalSetSummary(function (context) {
         var label = $('select[name$="_contact_type"] option:selected', context).text();
         if ($('select[name$="_contact_sub_type[]"]', context).val()) {
           var first = true;
@@ -270,7 +270,7 @@ var wfCiviAdmin = (function ($, D) {
         }
         return label;
       });
-      $('fieldset#edit-st-message', context).once('wf-civi').drupalSetSummary(function (context) {
+      $('details#edit-st-message', context).once('wf-civi').drupalSetSummary(function (context) {
         if ($('[name="toggle_message"]', context).is(':checked')) {
           return CheckLength($('#edit-message', context).val());
         }
@@ -278,14 +278,14 @@ var wfCiviAdmin = (function ($, D) {
           return Drupal.t('- None -');
         }
       });
-      $('fieldset#edit-prefix', context).once('wf-civi').drupalSetSummary(function (context) {
+      $('details#edit-prefix', context).once('wf-civi').drupalSetSummary(function (context) {
         var label = $('[name="prefix_known"]', context).val() || $('[name="prefix_unknown"]', context).val();
         return CheckLength(label) || Drupal.t('- None -');
       });
       $('#edit-participant, #edit-contribution', context).once('wf-civi').drupalSetSummary(function (context) {
         return $('select:first option:selected', context).text();
       });
-      $('fieldset#edit-activitytab', context).once('wf-civi').drupalSetSummary(function (context) {
+      $('details#edit-activitytab', context).once('wf-civi').drupalSetSummary(function (context) {
         var label = [];
         $('fieldset.activity-wrapper', context).each(function() {
           var caseType = $('select[name$=case_type_id]', this).val();
@@ -294,14 +294,14 @@ var wfCiviAdmin = (function ($, D) {
         });
         return label.join('<br />') || Drupal.t('- None -');
       });
-      $('fieldset#edit-casetab', context).once('wf-civi').drupalSetSummary(function (context) {
+      $('details#edit-casetab', context).once('wf-civi').drupalSetSummary(function (context) {
         var label = [];
         $('select[name$=case_type_id]', context).each(function() {
           label.push($(this).find('option:selected').text());
         });
         return label.join('<br />') || Drupal.t('- None -');
       });
-      $('fieldset#edit-membership', context).once('wf-civi').drupalSetSummary(function (context) {
+      $('details#edit-membership', context).once('wf-civi').drupalSetSummary(function (context) {
         var memberships = [];
         $('select[name$=membership_type_id]', context).each(function() {
           var label = getContactLabel($(this).attr('name').split('_')[1]);
@@ -316,13 +316,16 @@ var wfCiviAdmin = (function ($, D) {
         });
         return label.join('<br />') || Drupal.t('- None -');
       });
-      $('fieldset#edit-options', context).once('wf-civi').drupalSetSummary(function (context) {
+      $('details#edit-options', context).once('wf-civi').drupalSetSummary(function (context) {
         var label = '';
         $(':checked', context).each(function() {
           label = (label ? label + ', ' : '') + $.trim($(this).siblings('label').text());
         });
         return label || Drupal.t('- None -');
       });
+
+      // For some reason this tab doesn't jive.
+      document.getElementById('edit-membership').open = true;
 
       $('select[name=participant_reg_type]', context).once('wf-civi').change(function() {
         showHideParticipantOptions('fast');
@@ -436,7 +439,7 @@ var wfCiviAdmin = (function ($, D) {
 
       // Loop through fieldsets and set icon in the tab.
       // We don't use the once() method because we need the i from the loop
-      $('#wf-crm-configure-form fieldset.vertical-tabs-pane').each(function(i) {
+      $('#webform-civicrm-settings-form fieldset.vertical-tabs-pane').each(function(i) {
         if (!$(this).hasClass('wf-civi-icon-processed')) {
           var clas = $(this).attr('class').split(' ');
           var name = '';
@@ -446,7 +449,7 @@ var wfCiviAdmin = (function ($, D) {
               if (cl[0] == 'contact') {
                 name = 'name="' + (i + 1) + '_contact_type"'
               }
-              $('#wf-crm-configure-form .vertical-tab-button a').eq(i).prepend('<span class="civi-icon '+cl[2]+'" '+name+'> </span>');
+              $('#webform-civicrm-settings-form .vertical-tab-button a').eq(i).prepend('<span class="civi-icon '+cl[2]+'" '+name+'> </span>');
             }
           }
           $(this).addClass('wf-civi-icon-processed');
@@ -455,7 +458,7 @@ var wfCiviAdmin = (function ($, D) {
 
       // Respond to contact type changing
       $('select[name$="_contact_type"]').once('contact-type').change(function() {
-        $('#wf-crm-configure-form .vertical-tab-button span[name="'+$(this).attr('name')+'"]').removeClass().addClass('civi-icon '+$(this).val());
+        $('#webform-civicrm-settings-form .vertical-tab-button span[name="'+$(this).attr('name')+'"]').removeClass().addClass('civi-icon '+$(this).val());
         employerOptions();
       });
 
@@ -570,7 +573,7 @@ var wfCiviAdmin = (function ($, D) {
    */
   cj(function($) {
     // Inline help
-    $('#wf-crm-configure-form, #webform-component-edit-form').on('click', 'a.helpicon', function () {
+    $('#webform-civicrm-settings-form, #webform-component-edit-form').on('click', 'a.helpicon', function () {
       var topic = $(this).attr('href').substr(1);
       CRM.help($(this).attr('title'), {q: 'webform-civicrm/help/' + topic}, D.settings.basePath);
       return false;
