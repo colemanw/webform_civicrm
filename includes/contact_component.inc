@@ -881,7 +881,7 @@ function wf_crm_find_relations($cid, $types = array(), $current = TRUE) {
     if ($type_ids) {
       $typeClause = "AND relationship_type_id IN ($type_ids)";
     }
-    $sql = "SELECT relationship_type_id, contact_id_a, contact_id_b
+    $sql = "SELECT relationship_type_id, contact_id_a, contact_id_b, case_id
       FROM civicrm_relationship
       WHERE (contact_id_a = $cid OR contact_id_b = $cid) $typeClause";
     if ($current) {
@@ -893,6 +893,10 @@ function wf_crm_find_relations($cid, $types = array(), $current = TRUE) {
       if (!$allowed || in_array($dao->relationship_type_id . '_' . $a_b, $allowed)) {
         $c = $dao->{"contact_id_$a_b"};
         $found[$c] = $c;
+        if ($type_ids && !empty($dao->case_id) && !empty($_GET["case1"]) && $_GET["case1"] == $dao->case_id) {
+          //Make this contact as a first value in the array.
+          $found = array_merge([$c => $c], $found);
+        }
       }
     }
     $dao->free();
