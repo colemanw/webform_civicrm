@@ -6,8 +6,11 @@
  */
 
 use Drupal\Component\Serialization\Json;
+use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Link;
+use Drupal\Core\Render\Markup;
 use Drupal\Core\Url;
 use Drupal\webform\Plugin\WebformHandlerInterface;
 
@@ -793,7 +796,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    * @param string $type
    */
   function setMessage($message, $type='status') {
-    if (node_is_page($this->node) && empty($_POST)) {
+    if (empty($_POST)) {
       drupal_set_message($message, $type, FALSE);
     }
   }
@@ -807,20 +810,23 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    *   CiviCRM contact array
    */
   private function showNotYouMessage($message, $contact) {
+    $request = \Drupal::request();
     $message = $this->replaceTokens($message, $contact);
     preg_match_all('#\{([^}]+)\}#', $message, $matches);
     if (!empty($matches[0])) {
-      $q = $_GET;
-      unset($q['q'], $q['cs'], $q['cid'], $q['cid1']);
-      if (empty($_GET['cid']) && empty($_GET['cid1'])) {
+      $q = $request->query->all();
+      unset($q['cs'], $q['cid'], $q['cid1']);
+      if (empty($request->query->get('cid')) && empty($request->query->get('cid1'))) {
         $q['cid1'] = 0;
       }
       foreach ($matches[0] as $pos => $match) {
-        $link = l($matches[1][$pos], $_GET['q'], array('query' => $q, 'alias' => TRUE));
+        $link = Link::createFromRoute($matches[1][$pos], '<current>', [], [
+          'query' => $q
+        ])->toString();
         $message = str_replace($match, $link, $message);
       }
     }
-    $this->setMessage($message);
+    $this->setMessage(Markup::create($message));
   }
 
   /**
@@ -843,7 +849,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       if (is_array($value)) {
         $value = implode(', ', $value);
       }
-      $values[] = implode(' &amp; ', wf_crm_explode_multivalue_str(check_plain($value)));
+      $values[] = implode(' &amp; ', wf_crm_explode_multivalue_str($value));
       $t = "[$t]";
     }
     return str_ireplace($tokens, $values, $str);
