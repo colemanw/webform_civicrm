@@ -29,11 +29,6 @@ form .web-civi-checkbox-set .auto-width .form-item {
   padding-top: 0;
 }
 
-.web-civi-checkbox-set + div,
-.civicrm-ajax-wrapper {
-  clear:both;
-}
-
 form .hidden,
 .js #no-js-button-wrapper {
   display:none;
