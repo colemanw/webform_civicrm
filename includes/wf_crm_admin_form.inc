@@ -272,9 +272,6 @@ class wf_crm_admin_form {
       );
     }
 
-    $this->form['contact_' . $n]['contact_subtype_wrapper']['clear'] = array(
-      '#markup' => '<div class="clearfix"> </div>',
-    );
     foreach ($this->sets as $sid => $set) {
       if ($set['entity_type'] != 'contact') {
         continue;
