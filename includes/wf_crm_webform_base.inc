@@ -527,7 +527,7 @@ abstract class wf_crm_webform_base {
   protected function getExposedOptions($field_key, $exclude = array()) {
     $field = $this->getComponent($field_key);
 
-    if ($field && $field['type'] == 'hidden') {
+    if ($field && $field['#type'] == 'hidden') {
       // Fetch live options
       $exposed = wf_crm_field_options($field, 'live_options', $this->data);
       foreach ($exclude as $i) {
@@ -536,14 +536,14 @@ abstract class wf_crm_webform_base {
       return $exposed;
     }
 
-    if ($field && $field['type'] == 'select') {
+    if ($field && $field['#type'] == 'select') {
       // Fetch static options
-      if (empty($field['extra']['civicrm_live_options'])) {
-        $exposed = wf_crm_str2array($field['extra']['items']);
+      if (empty($field['#extra']['civicrm_live_options'])) {
+        $exposed = wf_crm_str2array($field['#extra']['items']);
       }
       // Fetch live options
       else {
-        $exposed = wf_crm_field_options($field, 'live_options', $this->data);
+        $exposed = wf_crm_field_options(['form_key' => $field['#webform_civicrm']], 'live_options', $this->data);
       }
       foreach ($exclude as $i) {
         unset($exposed[$i]);
