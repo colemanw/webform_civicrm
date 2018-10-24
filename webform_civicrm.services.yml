@@ -1,0 +1,3 @@
+services:
+  webform_civicrm.field_options:
+    class: Drupal\webform_civicrm\FieldOptions
