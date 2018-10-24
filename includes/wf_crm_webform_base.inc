@@ -241,7 +241,7 @@ abstract class wf_crm_webform_base {
    */
   protected function findContact($component) {
     module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
-    list(, $c,) = explode('_', $component['#webform_civicrm'], 3);
+    list(, $c,) = explode('_', $component['#form_key'], 3);
     $filters = wf_crm_search_filters($this->node, $component);
     // Start with the url - that trumps everything.
     $query = \Drupal::request()->query;
@@ -544,7 +544,7 @@ abstract class wf_crm_webform_base {
       }
       // Fetch live options
       else {
-        $exposed = wf_crm_field_options(['form_key' => $field['#webform_civicrm']], 'live_options', $this->data);
+        $exposed = wf_crm_field_options(['form_key' => $field['#form_key']], 'live_options', $this->data);
       }
       foreach ($exclude as $i) {
         unset($exposed[$i]);
