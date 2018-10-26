@@ -2385,7 +2385,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name, $checkSubmitDisabledSetting = FALSE) {
     if ($ent == 'contact' && isset($this->enabled["civicrm_{$c}_contact_1_contact_existing"])) {
       $component = $this->getComponent("civicrm_{$c}_contact_1_contact_existing");
-      $existing_contact_val = $this->submissionValue($component['#webform_civicrm']);
+      $existing_contact_val = $this->submissionValue($component['#form_key']);
       // Fields are hidden if value is empty (no selection) or a numeric contact id
       if (!$existing_contact_val[0] || is_numeric($existing_contact_val[0])) {
         $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;

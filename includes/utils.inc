@@ -391,7 +391,7 @@ function wf_crm_enabled_fields(WebformInterface $webform, $submission = NULL, $s
             continue;
           }
           if ($submission) {
-            $enabled[$key] = wf_crm_aval($submission, $c['#webform_civicrm'], NULL, TRUE);
+            $enabled[$key] = wf_crm_aval($submission, $c['#form_key'], NULL, TRUE);
           }
           else {
             $enabled[$key] = $key;
@@ -1055,7 +1055,7 @@ function wf_crm_get_fields($var = 'fields') {
     if (isset($sets['membership'])) {
       $fields['membership_membership_type_id'] = array(
         'name' => t('Membership Type'),
-        'type' => 'select',
+        'type' => 'civicrm_select',
         'expose_list' => TRUE,
         'extra' => array('civicrm_live_options' => 1),
       );
