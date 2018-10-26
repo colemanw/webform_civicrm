@@ -244,8 +244,9 @@ abstract class wf_crm_webform_base {
     list(, $c,) = explode('_', $component['#webform_civicrm'], 3);
     $filters = wf_crm_search_filters($this->node, $component);
     // Start with the url - that trumps everything.
-    if (isset($_GET["cid$c"]) || ($c == 1 && isset($_GET['cid']))) {
-      $cid = isset($_GET["cid$c"]) ? $_GET["cid$c"] : $_GET['cid'];
+    $query = \Drupal::request()->query;
+    if ($query->has("cid$c") || ($c == 1 && $query->has('cid'))) {
+      $cid = $query->has("cid$c") ? $query->get("cid$c") : $query->get('cid');
       if (wf_crm_is_positive($cid) || $cid === '0' || $cid === 0) {
         $cid = (int) $cid;
         if ($cid === 0) {
