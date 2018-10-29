@@ -89,12 +89,6 @@ class WebformCiviCRMSettingsForm extends FormBase {
 
     if ($remove_handler) {
       $webform->deleteWebformHandler($handler);
-      $elements = array_filter($webform->getElementsDecoded(), function (array $element) {
-        return empty($element['#webform_civicrm']);
-      });
-      $webform->setElements($elements);
-      $webform->save();
-
       $this->messenger()->addMessage('Removed CiviCRM');
       return;
     }

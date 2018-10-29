@@ -130,4 +130,14 @@ class CivicrmWebformHandler extends WebformHandlerBase {
     $processor->postSave($webform_submission);
   }
 
+  public function deleteHandler() {
+    $webform = $this->webform;
+    $elements = array_filter($webform->getElementsDecoded(), function (array $element) {
+      return strpos($element['#form_key'], 'civicrm_') !== 0;
+    });
+    $webform->setElements($elements);
+    parent::deleteHandler();
+  }
+
+
 }
