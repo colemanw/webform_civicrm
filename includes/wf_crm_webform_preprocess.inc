@@ -460,7 +460,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             $element['#attributes']['class'][] = 'contribution-line-item';
           }
           // Provide live options from the Civi DB
-          if (!empty($element['#extra']['civicrm_live_options']) && isset($element['#options'])) {
+          if (!empty($element['#civicrm_live_options']) && isset($element['#options'])) {
             $params = [
               'extra' => wf_crm_aval($field, 'extra', []) + $element['#extra'],
               'form_key' => $element['#webform_key'],

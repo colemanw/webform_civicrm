@@ -1057,6 +1057,7 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Membership Type'),
         'type' => 'civicrm_select',
         'expose_list' => TRUE,
+        'civicrm_live_options' => 1,
         'extra' => array('civicrm_live_options' => 1),
       );
       $fields['membership_financial_type_id'] = array(
