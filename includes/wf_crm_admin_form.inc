@@ -1696,7 +1696,8 @@ class wf_crm_admin_form {
                 $field += array(
                   // 'nid' => $nid,
                   'form_key' => $key,
-                  'weight' => $i,
+                  // @note: specifying the weight gets it rejected by the Webform UI.
+                  // 'weight' => $i,
                 );
                 // Cannot use isNewFieldset effectively.
                 $previous_data = $handler_configuration['settings'];
