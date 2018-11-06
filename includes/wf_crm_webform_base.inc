@@ -867,11 +867,18 @@ abstract class wf_crm_webform_base {
    * @return int|null
    */
   function addPaymentJs() {
-    $credit_card_types = CRM_Core_Payment_Form::getCreditCardCSSNames();
-    CRM_Core_Resources::singleton()
-      ->addCoreResources()
-      ->addSetting(array('config' => array('creditCardTypes' => $credit_card_types)))
-      ->addScriptFile('civicrm', 'templates/CRM/Core/BillingBlock.js', -10, 'html-header');
+    $currentVer = CRM_Core_BAO_Domain::version();
+    if (version_compare($currentVer, '5.8') <= 0 && method_exists('CRM_Core_Payment_Form', 'getCreditCardCSSNames')) {
+      $credit_card_types = CRM_Core_Payment_Form::getCreditCardCSSNames();
+      CRM_Core_Resources::singleton()
+        ->addCoreResources()
+        ->addSetting(array('config' => array('creditCardTypes' => $credit_card_types)))
+        ->addScriptFile('civicrm', 'templates/CRM/Core/BillingBlock.js', -10, 'html-header');
+    }
+    else {
+      CRM_Core_Resources::singleton()->addCoreResources();
+      CRM_Financial_Form_Payment::addCreditCardJs(NULL, 'html-header');
+    }
   }
 
   /**
