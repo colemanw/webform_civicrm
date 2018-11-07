@@ -40,10 +40,6 @@ class CivicrmSelect extends WebformElementBase {
         'expose_list' => TRUE,
         'exposed_empty_option' => '- ' . t('Automatic') . ' -',
         'civicrm_live_options' => 1,
-        'extra' => [
-          'civicrm_live_options' => 1,
-          'items' => [],
-        ],
       ];
   }
 
@@ -74,7 +70,6 @@ class CivicrmSelect extends WebformElementBase {
 
     // Get element properties.
     $element_properties = $form_state->getValues() ?: $form_state->get('element_properties');
-    $wtf_values = $form_state->getValues();
 
     // @todo Add the static configuration form stuff here.
     // Options.

@@ -7,6 +7,8 @@ use Drupal\webform\Plugin\WebformElement\TextField;
 use Drupal\webform\Plugin\WebformElementBase;
 use Drupal\webform\WebformSubmissionInterface;
 
+// Include legacy files for their procedural functions.
+// @todo convert required functions into injectable services.
 include_once __DIR__ . '/../../../includes/wf_crm_admin_help.inc';
 
 /**

@@ -2,6 +2,8 @@
 
 namespace Drupal\webform_civicrm;
 
+// Include legacy files for their procedural functions.
+// @todo convert required functions into injectable services.
 include_once __DIR__ . '/../includes/utils.inc';
 
 class FieldOptions implements FieldOptionsInterface {

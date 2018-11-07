@@ -23,7 +23,6 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
   private $handler;
 
   function __construct(&$form, FormStateInterface $form_state, WebformHandlerInterface $handler) {
-    \Drupal::getContainer()->get('civicrm')->initialize();
     $this->handler = $handler;
     $this->form = &$form;
     $this->form_state = $form_state;

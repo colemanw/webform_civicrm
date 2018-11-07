@@ -57,7 +57,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     BILLING_MODE_MIXED = 3;
 
   function __construct(WebformInterface $webform) {
-    \Drupal::getContainer()->get('civicrm')->initialize();
     $this->node = $webform;
 
     $handler_collection = $webform->getHandlers('webform_civicrm');
