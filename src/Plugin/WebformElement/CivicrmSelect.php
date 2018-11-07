@@ -40,6 +40,7 @@ class CivicrmSelect extends WebformElementBase {
         'expose_list' => TRUE,
         'exposed_empty_option' => '- ' . t('Automatic') . ' -',
         'civicrm_live_options' => 1,
+        'default_option' => NULL,
       ];
   }
 
@@ -53,6 +54,7 @@ class CivicrmSelect extends WebformElementBase {
       $exposed = $this->getFieldOptions($element);
       $element['#options'] = $exposed;
     }
+    $element['#default_value'] = $element['#default_option'];
   }
 
   protected function getFieldOptions($element) {
@@ -104,14 +106,25 @@ class CivicrmSelect extends WebformElementBase {
       ],
     ];
 
-
     $form['options']['options'] = [
       '#type' => 'civicrm_select_options',
       '#live_options' => $element_properties['civicrm_live_options'],
+      '#default_option' => $element_properties['default_option'],
       '#form_key' => $this->configuration['#form_key']
     ];
 
     return $form;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getConfigurationFormProperties(array &$form, FormStateInterface $form_state) {
+    $properties = parent::getConfigurationFormProperties($form, $form_state);
+    // Get additional properties off of the options element.
+    $select_options = $form['properties']['options']['options'];
+    $properties['#default_option'] = $select_options['#default_option'];
+    return $properties;
   }
 
   /**

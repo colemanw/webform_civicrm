@@ -21,6 +21,7 @@ class CivicrmSelectOptions extends FormElement {
       '#label' => t('option'),
       '#labels' => t('options'),
       '#live_options' => TRUE,
+      '#default_option' => NULL,
       '#form_key' => NULL,
       '#process' => [
         [$class, 'processSelectOptions'],
@@ -108,14 +109,36 @@ class CivicrmSelectOptions extends FormElement {
       $element['options']['#tabledrag'] = [];
     }
 
-    // @todo merge in configured #default_value with live options
-    //  - we need to respect configured weights
     $current_options = $element['#default_value'];
     $weight = 0;
-    foreach (static::getFieldOptions($element['#form_key']) as $key => $option) {
+    $field_options = static::getFieldOptions($element['#form_key']);
+
+    // Sort the field options by the current options.
+    if (!$element['#live_options']) {
+      uasort($field_options, function ($a, $b) use ($current_options) {
+        $current_options = array_flip($current_options);
+        $weight_values = array_flip(array_values(array_flip($current_options)));
+
+        if (!isset($current_options[$b]) && isset($current_options[$a])) {
+          return -1;
+        }
+        if (!isset($current_options[$a]) && isset($current_options[$b])) {
+          return 1;
+        }
+
+        $a_weight = $weight_values[$a];
+        $b_weight = $weight_values[$b];
+        if ($a_weight == $b_weight) {
+          return 0;
+        }
+        return ($a_weight < $b_weight) ? -1 : 1;
+      });
+    }
+
+    foreach ($field_options as $key => $option) {
       $row_key = 'civicrm_option_' . $key;
       $element['options'][$row_key]['#attributes']['class'][] = 'draggable';
-      $element['options'][$row_key]['#weight'] = $key;
+      $element['options'][$row_key]['#weight'] = $weight;
 
       $element['options'][$row_key]['item'] = [
         '#plain_text' => $option,
@@ -134,10 +157,13 @@ class CivicrmSelectOptions extends FormElement {
         '#default_value' => !empty($current_options[$key]) ?  $current_options[$key] : $option,
         '#access' => !$element['#live_options'],
       ];
-      $element['options'][$row_key]['default'] = [
+      $element['options'][$row_key]['default_option'] = [
         '#type' => 'radio',
         '#title' => t('Mark @item as the default value', ['@item' => $option]),
         '#title_display' => 'invisible',
+        '#default_value' => $element['#default_option'] == $key,
+        '#parents' => array_merge($element['#parents'], ['default']),
+        '#return_value' => $key,
       ];
       $element['options'][$row_key]['weight'] = [
         '#type' => 'weight',
@@ -174,6 +200,7 @@ class CivicrmSelectOptions extends FormElement {
       }
     }
 
+    $element['#default_option'] = $form_state->getValue(['properties', 'options', 'default']);
     $element['#value'] = $options_value;
     $form_state->setValueForElement($element, $options_value);
   }
