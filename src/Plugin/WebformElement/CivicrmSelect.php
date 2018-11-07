@@ -81,19 +81,22 @@ class CivicrmSelect extends WebformElementBase {
       '#suffix' => '</div>',
     ];
 
+    if ($element_properties['civicrm_live_options']) {
+      $live_options_description = t('You cannot control the presentation of live options. They will be loaded from the CiviCRM database every time the form is displayed.');
+    }
+    else {
+      $live_options_description = t('Drag the arrows to re-order these options. Click the "enabled" checkbox to show/remove an item from the form. Set the label as you want it to appear on the form.');
+    }
+
     $form['options']['civicrm_live_options'] = [
       '#type' => 'radios',
       '#options' => [
         t('<strong>Static Options</strong> (fully configurable)'),
         t('<strong>Live Options</strong> (update automatically)'),
       ],
-      '#description' => Markup::create('<p><div class="live-options-hide">' .
-        t('Drag the arrows to re-order these options. Click the "enabled" checkbox to show/remove an item from the form. Set the label as you want it to appear on the form.') .
-        '</div><div class="live-options-show">' .
-        t('You cannot control the presentation of live options. They will be loaded from the CiviCRM database every time the form is displayed.') .
-        '</div><div>' .
-        t('Check the "default" box for an option to be selected by default when a user views the form.') .
-        '</div></p>'),
+      '#description' => Markup::create(
+        '<p>' . $live_options_description . '</p>' .
+        '<p>' . t('Check the "default" box for an option to be selected by default when a user views the form.') . '</p>'),
       '#ajax' => [
         'callback' => [get_called_class(), 'ajaxCallback'],
         'wrapper' => 'webform-civicrm-options-wrapper',
