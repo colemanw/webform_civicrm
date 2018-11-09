@@ -1198,6 +1198,22 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $params['contribution_recur_id'] = $this->ent['contribution_recur'][1]['id'];
       }
 
+      // if the membership is to be auto-renewed, we set its related recurring contribution ID
+      if (!empty($params['auto_renew'])) {
+        $contributionID = $this->ent['contribution'][1]['id'];
+        $contribution = wf_civicrm_api('Contribution', 'get', array(
+            'sequential' => 1,
+            'id' => $contributionID,
+            'return' => array('contribution_recur_id'),
+          )
+        );
+
+        if (!empty($contribution['values'][0]['contribution_recur_id'])) {
+          $params['contribution_recur_id'] = $contribution['values'][0]['contribution_recur_id'];
+        }
+      }
+      unset($params['auto_renew']);
+
       $result = wf_civicrm_api('membership', 'create', $params);
 
       if (!empty($result['id'])) {
@@ -1758,11 +1774,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function submitLivePayment() {
     $contributionParams = $this->contributionParams();
+    $recurContributionExtraParams = $this->generateRecurringContributionParams($contributionParams);
+    $contributionParams = array_merge($contributionParams, $recurContributionExtraParams);
 
-    // Only if #installments = 1, do we process a single transaction/contribution. #installments = 0 (or not set) in CiviCRM Core means open ended commitment;
-    $numInstallments = wf_crm_aval($contributionParams, 'installments', NULL, TRUE);
-    $frequencyInterval = wf_crm_aval($contributionParams, 'frequency_unit');
-    if ($numInstallments != 1 && !empty($frequencyInterval)) {
+    if (!empty($recurContributionExtraParams)) {
       $result = $this->contributionRecur($contributionParams);
     }
     else {
@@ -1778,6 +1793,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
       return;
     }
+
     $this->ent['contribution'][1]['id'] = $result['id'];
   }
 
@@ -1816,6 +1832,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       'currency' => $contributionParams['currency'],
       'payment_processor_id' =>  $contributionParams['payment_processor_id'],
       'financial_type_id' =>  $contributionParams['financial_type_id'],
+      'auto_renew' =>  !empty($contributionParams['auto_renew']) ? 1 : 0,
     );
 
     if(empty($contributionParams['payment_processor_id'])) {
@@ -1889,9 +1906,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
     }
 
-    $numInstallments = wf_crm_aval($params, 'installments', NULL, TRUE);
-    $frequencyInterval = wf_crm_aval($params, 'frequency_unit');
-    if ($numInstallments != 1 && !empty($frequencyInterval) && $this->contributionIsPayLater) {
+    $recurContributionExtraParams = $this->generateRecurringContributionParams($params);
+    $params = array_merge($params, $recurContributionExtraParams);
+
+    if ($this->contributionIsPayLater && !empty($recurContributionExtraParams)) {
       $result = $this->contributionRecur($params, 'deferred');
     }
     else {
@@ -2596,4 +2614,83 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     return $values;
   }
+
+  /**
+   * This generates a list of recurring contribution parameters
+   * to be appended to the original ones if there is a need to
+   * generated a recurring contribution. If there is no need then
+   * and empty array will be returned.
+   *
+   * Cases in which a recurring contribution need to be created is if there
+   * are memberships (or one membership) to be auto renewed or when there
+   * is a recurring contribution configured by the user on the webform.
+   */
+  private function generateRecurringContributionParams($contributionParams) {
+    $generatedParams = array();
+    $installmentsCount = wf_crm_aval($contributionParams, 'installments', 1, TRUE);
+
+    if ($this->isThereMembershipToBeAutoRenewed()) {
+      $generatedParams['installments'] = 'null';
+      $generatedParams['auto_renew'] = 1;
+      if (empty($contributionParams['frequency_unit']) || empty($contributionParams['frequency_interval'])) {
+        $minimumFrequencyData =  $this->calculateFrequencyUnitAndInterval();
+        $generatedParams['frequency_unit'] = $minimumFrequencyData['unit'];
+        $generatedParams['frequency_interval'] = $minimumFrequencyData['interval'];
+      }
+    }
+
+    if ($installmentsCount > 1) {
+      $generatedParams['installments'] = $installmentsCount;
+    }
+
+    return $generatedParams;
+  }
+
+  /**
+   * Determines if the webform is configured to have
+   * any membership to be autorenwed or not.
+   */
+  private function isThereMembershipToBeAutoRenewed() {
+    $autoRenewMembership = FALSE;
+    foreach ($this->data['membership'] as $contactMemberships) {
+      foreach($contactMemberships['membership'] as $membership) {
+        if (!empty($membership['auto_renew'])) {
+          $autoRenewMembership = TRUE;
+        }
+      }
+    }
+
+    return $autoRenewMembership;
+  }
+
+  /**
+   * If the user did not configure a recurring contribution
+   * or did not configure the frequency unit or Interval for it,
+   * this method will take care of that and generate both
+   * based on the frequency unit and duration of the membership.
+   */
+  private function calculateFrequencyUnitAndInterval() {
+    $membershipsTypeId = NULL;
+    foreach ($this->data['membership'] as $contactMemberships) {
+      if (!empty($membershipsTypeId)) {
+        break;
+      }
+
+      foreach($contactMemberships['membership'] as $membership) {
+        if ($membership['auto_renew']) {
+          $membershipsTypeId = $membership['membership_type_id'];
+          break;
+        }
+      }
+    }
+
+    $membershipTypeDetails = civicrm_api3('MembershipType', 'get', array(
+      'id' => $membershipsTypeId,
+      'sequential' => 1,
+      'return' => array('duration_unit', 'duration_interval'),
+    ))['values'][0];
+
+    return ['unit' => $membershipTypeDetails['duration_unit'], 'interval' => $membershipTypeDetails['duration_interval']];
+  }
+
 }
