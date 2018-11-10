@@ -30,7 +30,7 @@ class CivicrmSelect extends WebformElementBase {
    */
   public function getDefaultProperties() {
     return parent::getDefaultProperties() + [
-        'form_key' => NULL,
+        'form_key' => '',
         'pid' => 0,
         'value' => '',
         'empty_option' => '',
@@ -40,7 +40,7 @@ class CivicrmSelect extends WebformElementBase {
         'expose_list' => TRUE,
         'exposed_empty_option' => '- ' . t('Automatic') . ' -',
         'civicrm_live_options' => 1,
-        'default_option' => NULL,
+        'default_option' => '',
       ];
   }
 
@@ -49,10 +49,32 @@ class CivicrmSelect extends WebformElementBase {
    */
   public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
     parent::prepare($element, $webform_submission);
-    // @todo see how to remove this check, so it has default values.
     if (empty($element['#options'])) {
-      $exposed = $this->getFieldOptions($element);
-      $element['#options'] = $exposed;
+      $element['#options'] = $this->getFieldOptions($element);
+    }
+    // Webform unsets values which match the default value, it seems? The code
+    // in the ::getConfigurationFormProperties method unsets anything equal to
+    // its original value.
+    // @see \Drupal\webform\Plugin\WebformElementBase::getConfigurationFormProperties
+    elseif (!isset($element['#civicrm_live_options'])) {
+      $new = $this->getFieldOptions($element);
+      $old = $element['#options'];
+
+      // If an item doesn't exist, we add it. If it's changed, we update it.
+      // But we don't subtract items that have been removed in civi - this prevents
+      // breaking the display of old submissions.
+      foreach ($new as $k => $v) {
+        if (!isset($old[$k]) || $old[$k] != $v) {
+          $old[$k] = $v;
+          $resave = TRUE;
+        }
+      }
+      if ($resave) {
+        // @todo Try to update valid values if they have changed.
+        // @todo Determine if that is even relevant.
+        // @see \wf_crm_webform_preprocess::fillForm
+      }
+      $element['#options'] = $new;
     }
     $element['#default_value'] = $element['#default_option'];
   }
