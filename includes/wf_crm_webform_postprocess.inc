@@ -75,6 +75,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->crmValues = wf_crm_enabled_fields($this->node, $this->rawValues);
     // Even though this object is destroyed between page submissions, this trick allows us to persist some data - see below
     $this->ent = wf_crm_aval($form_state, 'civicrm:ent', array());
+    $this->line_items = wf_crm_aval($form_state, 'civicrm:line_items', array());
 
     $this->hiddenFieldValidation();
     $this->validateThisPage($this->form['submitted']);
@@ -403,15 +404,20 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             $this->events[$eid]['ended'] = TRUE;
             $this->events[$eid]['title'] = t('this event');
             $this->events[$eid]['count'] = wf_crm_aval($this->events, "$eid:count", 0) + $count;
-            $this->line_items[] = array(
-              'qty' => $count,
-              'entity_table' => 'civicrm_participant',
-              'event_id' => $eid,
-              'contact_ids' => $contacts,
-              'unit_price' => $p['fee_amount'],
-              'element' => "civicrm_{$c}_participant_{$n}_participant_{$id_and_type}",
-              'contact_label' => $participantName,
-            );
+            // Only if the element does not already exist
+            $elementfound = $this->searchForLineItem('civicrm_'.$c.'_participant_'.$n.'_participant_'.$id_and_type, $this->line_items);
+            if (is_null($elementfound)) {
+              $test = 1;
+              $this->line_items[] = array(
+                'qty' => $count,
+                'entity_table' => 'civicrm_participant',
+                'event_id' => $eid,
+                'contact_ids' => $contacts,
+                'unit_price' => $p['fee_amount'],
+                'element' => "civicrm_{$c}_participant_{$n}_participant_{$id_and_type}",
+                'contact_label' => $participantName,
+              );
+            }
           }
         }
       }
@@ -446,9 +452,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Add event info to line items
     $format = wf_crm_aval($this->data['reg_options'], 'title_display', 'title');
     foreach ($this->line_items as &$item) {
-      $label = empty($item['contact_label']) ? '' : "{$item['contact_label']} - ";
-      $item['label'] = $label . wf_crm_format_event($this->events[$item['event_id']], $format);
-      $item['financial_type_id'] = wf_crm_aval($this->events[$item['event_id']], 'financial_type_id', 'Event Fee');
+      if ($item['entity_table'] == 'civicrm_participant') {
+        $label = empty($item['contact_label']) ? '' : "{$item['contact_label']} - ";
+        $item['label'] = $label . wf_crm_format_event($this->events[$item['event_id']], $format);
+        $item['financial_type_id'] = wf_crm_aval($this->events[$item['event_id']], 'financial_type_id', 'Event Fee');
+      }
     }
     // Form Validation
     if (!empty($this->data['reg_options']['validate'])) {
@@ -1504,15 +1512,19 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function tallyLineItems() {
     // Contribution
     $fid = 'civicrm_1_contribution_1_contribution_total_amount';
-    if (isset($this->enabled[$fid]) || $this->getData($fid) > 0) {
-      $this->line_items[] = array(
-        'qty' => 1,
-        'unit_price' => $this->getData($fid),
-        'financial_type_id' => $this->contribution_page['financial_type_id'],
-        'label' => wf_crm_aval($this->node->webform['components'], $this->enabled[$fid] . ':name', t('Contribution')),
-        'element' => 'civicrm_1_contribution_1',
-        'entity_table' => 'civicrm_contribution',
-      );
+    if (isset($this->enabled[$fid]) && !is_null($this->getData($fid))) {
+       // Only if the element does not already exist
+       $elementfound = $this->searchForLineItem('civicrm_1_contribution_1', $this->line_items);
+       if (is_null($elementfound)) {
+         $this->line_items[] = array(
+           'qty' => 1,
+           'unit_price' => $this->getData($fid),
+           'financial_type_id' => $this->contribution_page['financial_type_id'],
+           'label' => wf_crm_aval($this->node->webform['components'], $this->enabled[$fid] . ':name', t('Contribution')),
+           'element' => 'civicrm_1_contribution_1',
+           'entity_table' => 'civicrm_contribution',
+         );
+       }
     }
     // LineItems
     $fid = "civicrm_1_lineitem_1_contribution_line_total";
@@ -1520,14 +1532,18 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       foreach ($this->data['lineitem'][1]['contribution'] as $n => $lineitem) {
         $fid = "civicrm_1_lineitem_{$n}_contribution_line_total";
         if ($this->getData($fid) > 0) {
-          $this->line_items[] = array(
-            'qty' => 1,
-            'unit_price' => $lineitem['line_total'],
-            'financial_type_id' => $lineitem['financial_type_id'],
-            'label' => wf_crm_aval($this->node->webform['components'], $this->enabled[$fid] . ':name', t('Line item')),
-            'element' => "civicrm_1_lineitem_{$n}",
-            'entity_table' => 'civicrm_contribution',
-          );
+          // Only if the element does not already exist
+          $elementfound = $this->searchForLineItem('civicrm_1_lineitem_'.$n, $this->line_items);
+          if (is_null($elementfound)) {
+             $this->line_items[] = array(
+              'qty' => 1,
+              'unit_price' => $lineitem['line_total'],
+              'financial_type_id' => $lineitem['financial_type_id'],
+              'label' => wf_crm_aval($this->node->webform['components'], $this->enabled[$fid] . ':name', t('Line item')),
+              'element' => "civicrm_1_lineitem_{$n}",
+              'entity_table' => 'civicrm_contribution',
+            );
+          }
         }
       }
     }
@@ -1554,14 +1570,18 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             };
 
             if ($price) {
-              $this->line_items[] = array(
-                'qty' => $item['num_terms'],
-                'unit_price' => $price,
-                'financial_type_id' => $membership_financialtype,
-                'label' => $this->getMembershipTypeField($type, 'name') . ": " . wf_crm_display_name($this->existing_contacts[$c]),
-                'element' => "civicrm_{$c}_membership_{$n}",
-                'entity_table' => 'civicrm_membership',
-              );
+              // Only if the element does not already exist
+              $elementfound = $this->searchForLineItem('civicrm_'.$c.'_membership_'.$n, $this->line_items);
+              if (is_null($elementfound)) {
+                $this->line_items[] = array(
+                  'qty' => $item['num_terms'],
+                  'unit_price' => $price,
+                  'financial_type_id' => $membership_financialtype,
+                  'label' => $this->getMembershipTypeField($type, 'name') . ": " . wf_crm_display_name($this->existing_contacts[$c]),
+                  'element' => "civicrm_{$c}_membership_{$n}",
+                  'entity_table' => 'civicrm_membership',
+                );
+              }
             }
           }
         }
@@ -1590,6 +1610,21 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
     }
     return round($this->totalContribution, 2);
+  }
+
+  /**
+   * Find element in array
+   * @param $element_name
+   * @param $array
+   * @return int|null|string $key if found
+   */
+  function searchForLineItem($element_name, $array) {
+    foreach ($array as $key => $val) {
+      if ($val['element'] === $element_name) {
+        return $key;
+      }
+    }
+    return null;
   }
 
   /**
