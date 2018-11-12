@@ -716,7 +716,7 @@ function wf_crm_contact_search($node, $component, $params, $contacts, $str = NUL
 function wf_crm_contact_access($component, $filters, $cid) {
   // Create new contact doesn't require lookup
   $cid = "$cid";
-  list(, $c, ) = explode('_', $component['#webform_civicrm'], 3);
+  list(, $c, ) = explode('_', $component['#form_key'], 3);
   if ($cid && $cid[0] === '-' && !empty($component['extra']['allow_create']) && !empty($component['extra']['none_prompt'])) {
     return Html::escape($component['extra']['none_prompt']);
   }
@@ -901,7 +901,7 @@ function wf_crm_find_relations($cid, $types = array(), $current = TRUE) {
  */
 function wf_crm_search_filters($node, $component) {
   $params = array('is_deleted' => 0);
-  list(, $c, ) = explode('_', $component['#webform_civicrm'], 3);
+  list(, $c, ) = explode('_', $component['#form_key'], 3);
   $params['contact_type'] = ucfirst($component['#extra']['contact_type']);
   /*
   foreach ($component['#extra']['filters'] as $key => $val) {

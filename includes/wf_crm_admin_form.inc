@@ -1,6 +1,7 @@
 <?php
 
 use Drupal\Component\Render\FormattableMarkup;
+use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\webform\WebformInterface;
@@ -1758,36 +1759,45 @@ class wf_crm_admin_form {
       $handler_configuration['settings'] = $this->settings;
       $handler->setConfiguration($handler_configuration);
 
-      $webform_elements = $this->webform->getElementsDecoded();
+      $webform_element_manager = \Drupal::getContainer()->get('plugin.manager.webform.element');
       foreach ($enabled as $enabled_key => $enabled_element) {
-        // Add new items to the webform.
-        if (isset($webform_elements[$enabled_key])) {
+        if (!is_array($enabled_element)) {
+          // If this is a string, it is not a new element. However, this
+          // probably needs to be revisited.
           continue;
         }
-        $webform_elements[$enabled_key] = [
-          '#title' => (string) $enabled_element['name'],
+        // Webform uses YAML dump, which dies on FormattableMarkup.
+        $enabled_element['extra'] = array_map(
+          [$this, 'stringifyFormattableMarkup'],
+          empty($enabled_element['extra']) ? [] : $enabled_element['extra']
+        );
+        $element_plugin = $webform_element_manager->getElementInstance([
           '#type' => $enabled_element['type'],
-          '#webform_civicrm' => $enabled_key,
-          // Webform uses YAML dump, which dies on FormattableMarkup.
-          '#extra' => array_map([get_called_class(), 'stringifyFormattableMarkup'], empty($enabled_element['extra']) ? [] : $enabled_element['extra']),
-          '#weight' => empty($enabled_element['weight']) ? 0 : $enabled_element['weight'],
-        ];
+        ]);
+
+        $stub_form = [];
+        $stub_form_state = new FormState();
+        $stub_form_state->set('default_properties', $element_plugin->getDefaultProperties());
+        $enabled_element['title'] = $enabled_element['name'];
+        unset($enabled_element['name']);
+        $stub_form_state->setValues($enabled_element);
+        $properties = $element_plugin->getConfigurationFormProperties($stub_form, $stub_form_state);
+
+        // @todo support parent key, for fieldsets and such.
+        $this->webform->setElementProperties($enabled_key, $properties, '');
       }
-      $this->webform->setElements($webform_elements);
       // Update existing contact fields
       foreach ($existing as $fid => $id) {
         if (substr($fid, -8) === 'existing') {
-          $stop = null;
           //wf_crm_update_existing_component($this->node->webform['components'][$id], $enabled, $this->data);
         }
       }
     }
-    $stop = null;
   }
 
-  public static function stringifyFormattableMarkup($data) {
+  protected function stringifyFormattableMarkup($data) {
     if (is_array($data)) {
-      return array_map([get_called_class(), 'stringifyFormattableMarkup'], $data);
+      return array_map([$this, 'stringifyFormattableMarkup'], $data);
     }
     elseif ($data instanceof FormattableMarkup) {
       return (string) $data;
@@ -1974,11 +1984,6 @@ class wf_crm_admin_form {
     }
     // Merge defaults and create webform component
     $field += ['extra' => []];
-
-    // @todo invoke \Drupal\webform\Plugin\WebformElementInterface::getDefaultProperties
-    // if ($defaults = webform_component_invoke($field['type'], 'defaults')) {
-    //   $field += $defaults;
-    // }
 
     $enabled[$field['form_key']] = $field;
   }

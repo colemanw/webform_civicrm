@@ -23,7 +23,6 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
   private $handler;
 
   function __construct(&$form, FormStateInterface $form_state, WebformHandlerInterface $handler) {
-    \Drupal::getContainer()->get('civicrm')->initialize();
     $this->handler = $handler;
     $this->form = &$form;
     $this->form_state = $form_state;
@@ -460,8 +459,11 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             $element['#attributes']['class'][] = 'contribution-line-item';
           }
           // Provide live options from the Civi DB
-          if (!empty($element['#extra']['civicrm_live_options']) && isset($element['#options'])) {
-            $params = array('extra' => wf_crm_aval($field, 'extra', array())) + $element['#extra'];
+          if (!empty($element['#civicrm_live_options']) && isset($element['#options'])) {
+            $params = [
+              'extra' => wf_crm_aval($field, 'extra', []) + $element['#extra'],
+              'form_key' => $element['#webform_key'],
+            ];
             $new = wf_crm_field_options($params, 'live_options', $this->data);
             $old = $element['#options'];
             $resave = FALSE;

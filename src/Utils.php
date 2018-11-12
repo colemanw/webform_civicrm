@@ -3,6 +3,7 @@
 namespace Drupal\webform_civicrm;
 
 class Utils {
+
   /**
    * Explodes form key into an array and verifies that it is in the right format
    *

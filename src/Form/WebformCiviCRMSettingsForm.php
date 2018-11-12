@@ -10,6 +10,8 @@ use Drupal\webform\Plugin\WebformHandlerInterface;
 use Drupal\webform\Plugin\WebformHandlerManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
+// Include legacy files for their procedural functions.
+// @todo convert required functions into injectable services.
 include_once __DIR__ . '/../../includes/utils.inc';
 include_once __DIR__ . '/../../includes/wf_crm_admin_help.inc';
 include_once __DIR__ . '/../../includes/wf_crm_admin_form.inc';
@@ -89,12 +91,6 @@ class WebformCiviCRMSettingsForm extends FormBase {
 
     if ($remove_handler) {
       $webform->deleteWebformHandler($handler);
-      $elements = array_filter($webform->getElementsDecoded(), function (array $element) {
-        return empty($element['#webform_civicrm']);
-      });
-      $webform->setElements($elements);
-      $webform->save();
-
       $this->messenger()->addMessage('Removed CiviCRM');
       return;
     }
