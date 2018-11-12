@@ -407,7 +407,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             // Only if the element does not already exist
             $elementfound = $this->searchForLineItem('civicrm_'.$c.'_participant_'.$n.'_participant_'.$id_and_type, $this->line_items);
             if (is_null($elementfound)) {
-              $test = 1;
               $this->line_items[] = array(
                 'qty' => $count,
                 'entity_table' => 'civicrm_participant',
