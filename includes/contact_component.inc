@@ -41,6 +41,8 @@ function _webform_defaults_civicrm_contact() {
       'default_contact_id' => '',
       'default_relationship' => '',
       'default_relationship_to' => '1',
+      'default_for_case' => '1',
+      'default_case_roles' => '',
       'allow_url_autofill' => TRUE,
       'dupes_allowed' => FALSE,
       'filters' => array(
@@ -216,10 +218,10 @@ function _webform_edit_civicrm_contact($component) {
     '#default_value' => $component['extra']['default'],
     '#parents' => array('extra', 'default'),
   );
-  if ($c == 1 && $contact_type == 'individual') {
+  if ($contact_type == 'individual') {
     $form['defaults']['default']['#options']['user'] = t('Current User');
   }
-  elseif ($c > 1) {
+  if ($c > 1) {
     $form['defaults']['default']['#options']['relationship'] = t('Relationship to...');
     $to = $component['extra']['default_relationship_to'];
     $form['defaults']['default_relationship_to'] = array(
@@ -238,6 +240,31 @@ function _webform_edit_civicrm_contact($component) {
       '#parents' => array('extra', 'default_relationship'),
     );
   }
+  
+  $case_count = $data['case']['number_of_case'];
+  if ($case_count > 0) {
+    $form['defaults']['default']['#options']['case_roles'] = t('Case roles');
+    $dc = $component['extra']['default_relationship_to'];
+    $form['defaults']['default_for_case'] = array(
+      '#type' => 'select',
+      '#title' => t('For Case'),
+      '#default_value' => $dc,
+      '#parents' => array('extra', 'default_for_case'),
+    );
+    $form['defaults']['default_case_roles'] = array(
+      '#type' => 'select',
+      '#title' => t('Specify Case Role(s)'),
+      '#options' => wf_crm_get_case_roles_options(),
+      '#required' => TRUE,
+      '#default_value' => $component['extra']['default_case_roles'],
+      '#parents' => array('extra', 'default_case_roles'),
+    );
+    $case_type = array();
+    for ($i = 1; $i <= $case_count; $i++) {
+      $form['defaults']['default_for_case']['#options'][$i] = 'Case ' . $i;
+    }
+  }
+
   $form['defaults']['default']['#options']['auto'] = t('Auto - From Filters');
   $form['defaults']['default_contact_id'] = array(
     '#type' => 'textfield',
@@ -899,6 +926,73 @@ function wf_crm_find_relations($cid, $types = array(), $current = TRUE) {
   }
   return $found;
 }
+
+/**
+ * Returns a list of all case roles
+ *
+ * @return array
+ */
+function wf_crm_get_case_roles_options() {
+  $filters = array(
+    'return' => ["definition"],
+    'options' => ['limit' => 0],
+  );
+  $result = wf_civicrm_api('CaseType', 'get', $filters);
+  $options = array();
+  $options['case_client'] = t('Case Client');
+  foreach ($result['values'] as $k => $val) {
+    if (isset($val['definition']['caseRoles'])) {
+      foreach ($val['definition']['caseRoles'] as $caseRole) {
+        $caseRoleID = wf_civicrm_api('RelationshipType', 'get', array(
+          'sequential' => 1,
+          'return' => ["id", "label_b_a", "label_a_b"],
+          'name_b_a' => $caseRole['name'],
+          'label_b_a' => $caseRole['name'],
+          'options' => ['or' => [["name_b_a", "label_b_a"]]]
+        ))['values'][0];
+        $options[$caseRoleID['id']] = $caseRoleID['label_b_a'];
+      }
+    }
+  }
+  return $options;
+}
+
+/**
+ * Returns ids of all contacts who are related to given contact for given case
+ *
+ * @param $contact_a
+ * @param $case
+ * @param $case_role
+ * @return array
+ */
+function wf_crm_find_case_roles($contact_a, $case, $case_role) {
+  if ($case_role == 'case_client') {
+    // spl handling; this is not a relationship
+    $result = civicrm_api3('Case', 'get', [
+      'sequential' => 1,
+      'id' => $case,
+      'return' => ["contact_id"],
+    ]);
+    if (isset($result['values'][0]['client_id'])) {
+      $firstCaseClient = reset($result['values'][0]['client_id']);
+      return array($firstCaseClient => $firstCaseClient);
+    }
+    return array();
+  }
+  $params = array(
+    'sequential' => 1,
+    'return' => ["contact_id_b"],
+    'relationship_type_id' => $case_role,
+    'contact_id_a' => $contact_a,
+    'case_id' => $case,
+  );
+  $result = wf_civicrm_api('Relationship', 'get', $params);
+  if (isset($result['values'][0]['contact_id_b'])) {
+    return array($result['values'][0]['contact_id_b'] => $result['values'][0]['contact_id_b']);
+  }
+  return array();
+}
+
 
 /**
  * Format filters for the contact get api
