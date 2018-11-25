@@ -2,7 +2,7 @@
 cj(function($) {
   'use strict';
   var
-    setting = Drupal.settings.webform_civicrm,
+    setting = drupalSettings.webform_civicrm,
     $processorFields = $('.civicrm-enabled[name$="civicrm_1_contribution_1_contribution_payment_processor_id]"]');
 
   function getPaymentProcessor() {
