@@ -560,8 +560,9 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     // Support hidden contribution field
     $fid = 'civicrm_1_contribution_1_contribution_total_amount';
     if (!$this->line_items && isset($this->enabled[$fid])) {
-      $field = $this->node->webform['components'][$this->enabled[$fid]];
-      if ($field['type'] == 'hidden') {
+      $elements = $this->node->getElementsDecoded();
+      $field = $elements[$this->enabled[$fid]];
+      if ($field['#type'] == 'hidden') {
         $this->line_items[] = array(
           'line_total' => $field['value'],
           'qty' => 1,
