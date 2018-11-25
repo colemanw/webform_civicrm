@@ -1981,9 +1981,11 @@ class wf_crm_admin_form {
     // Create page break for contribution page
     if ($name == 'contribution_page_id') {
       // @todo properly inject a page break.
+      // there needs to be a root page and nested elements.
       $enabled['contribution_pagebreak'] = [
         'type' => 'webform_wizard_page',
         'form_key' => 'contribution_pagebreak',
+        'title' => (string) t('Payment'),
       ];
       // self::addPageBreak($field);
     }
