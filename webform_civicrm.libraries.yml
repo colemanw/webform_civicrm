@@ -13,7 +13,8 @@ forms:
       css/webform_civicrm_forms.css: {}
   js:
     js/webform_civicrm_forms.js: {}
-    # TODO should only be loaded if a contribution form.
+payment:
+  js:
     js/webform_civicrm_payment.js: {}
 
 # TODO decide if required?

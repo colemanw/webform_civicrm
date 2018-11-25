@@ -194,10 +194,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     // Preprocess contribution page
     if (!empty($this->data['contribution'])) {
       $this->addPaymentJs();
-      $this->form['#attached']['js'][] = array(
-        'data' => drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_payment.js',
-        'scope' => 'footer',
-      );
+      $this->form['#attached']['library'][] = 'webform_civicrm/payment';
       $page_id = $this->data['contribution'][1]['contribution'][1]['contribution_page_id'];
       if (version_compare($this->civicrm_version, '4.7', '>=')) {
         $currency = $this->contribution_page['currency'];
