@@ -214,6 +214,9 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         // RM: This is needed in order for CiviCRM to know that this is a 'test' (i.e. 'preview' action in CiviCRM) transaction - otherwise, CiviCRM defaults to 'live' and returns the payment form with public key for the live payment processor!
         $contributionCallbackQuery['action'] = CRM_Core_Action::description(CRM_Core_Action::PREVIEW);
       }
+      if ((strpos($contributionCallbackUrl, '/') !== 0)) {
+        $contributionCallbackUrl = '/' . $contributionCallbackUrl;
+      }
       $js_vars['contributionCallback'] = Url::fromUserInput($contributionCallbackUrl, ['query' => $contributionCallbackQuery, 'alias' => TRUE]);
       // Add payment processor - note we have to search in 2 places because $this->loadMultipageData hasn't been run. Maybe it should be?
       $fid = 'civicrm_1_contribution_1_contribution_payment_processor_id';
@@ -615,13 +618,16 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       'id' => 'wf-crm-billing-total',
       'data-amount' => $total,
     );
-    return theme('table', array(
-      'sticky' => FALSE,
-      'caption' => $this->contribution_page['title'],
-      'header' => array(),
-      'rows' => $rows,
-      'attributes' => array('id' => "wf-crm-billing-items"),
-    ));
+
+    $build = [
+      '#type' => 'table',
+      '#sticky' => FALSE,
+      '#caption' => $this->contribution_page['title'],
+      '#header' => array(),
+      '#rows' => $rows,
+      '#attributes' => array('id' => "wf-crm-billing-items"),
+    ];
+    return \Drupal::getContainer()->get('renderer')->render($build);
   }
 
   /**

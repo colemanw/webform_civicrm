@@ -1980,7 +1980,12 @@ class wf_crm_admin_form {
     }
     // Create page break for contribution page
     if ($name == 'contribution_page_id') {
-      self::addPageBreak($field);
+      // @todo properly inject a page break.
+      $enabled['contribution_pagebreak'] = [
+        'type' => 'webform_wizard_page',
+        'form_key' => 'contribution_pagebreak',
+      ];
+      // self::addPageBreak($field);
     }
     // Merge defaults and create webform component
     $field += ['extra' => []];
@@ -2040,6 +2045,9 @@ class wf_crm_admin_form {
    * @param $field
    */
   public static function addPageBreak($field) {
+    // @todo properly inject a page break.
+    $stop = null;
+    /*
     $node = node_load($field['nid']);
     // Check if it already exists
     foreach (wf_crm_aval($node->webform, 'components', array()) as $component) {
@@ -2056,6 +2064,7 @@ class wf_crm_admin_form {
     );
     $pagebreak += webform_component_invoke('pagebreak', 'defaults');
     webform_component_insert($pagebreak);
+    */
   }
 
   /**

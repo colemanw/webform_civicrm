@@ -926,22 +926,22 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => ts('Contribution Page'),
         'type' => 'hidden',
         'expose_list' => TRUE,
-        'empty_option' => t('None'),
+        'empty_option' => (string) t('None'),
         'extra' => array(
           'hidden_type' => 'hidden',
         ),
         'weight' => 9999,
       );
       $fields['contribution_total_amount'] = array(
-        'name' => t('Contribution Amount'),
+        'name' => (string) t('Contribution Amount'),
         'weight' => 9991,
       ) + $moneyDefaults;
       $fields['contribution_payment_processor_id'] = array(
-        'name' => t('Payment Processor'),
+        'name' => (string) t('Payment Processor'),
         'type' => 'select',
         'expose_list' => TRUE,
         'extra' => array('aslist' => 0),
-        'exposed_empty_option' => t('Pay Later'),
+        'exposed_empty_option' => (string) t('Pay Later'),
         'value_callback' => TRUE,
         'weight' => 9995,
       );
