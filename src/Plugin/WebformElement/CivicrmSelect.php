@@ -69,7 +69,7 @@ class CivicrmSelect extends WebformElementBase {
           $resave = TRUE;
         }
       }
-      if ($resave) {
+      if (!empty($resave)) {
         // @todo Try to update valid values if they have changed.
         // @todo Determine if that is even relevant.
         // @see \wf_crm_webform_preprocess::fillForm
