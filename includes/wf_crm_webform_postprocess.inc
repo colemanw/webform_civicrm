@@ -504,12 +504,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function loadMultiPageData() {
     if (!$this->multiPageDataLoaded) {
       $this->multiPageDataLoaded = TRUE;
-      if (!empty($this->form_state['storage']['submitted'])
-        && wf_crm_aval($this->form_state, 'storage:page_num', 1) > 1)
-      {
+      /*
+       * This feels like an old/weird hack to bypass form API/webform funk in D7.
+      if (!empty($this->form_state['storage']['submitted']) && wf_crm_aval($this->form_state, 'storage:page_num', 1) > 1) {
         $this->rawValues += $this->form_state['storage']['submitted'];
         $this->crmValues = wf_crm_enabled_fields($this->node, $this->rawValues);
       }
+      */
 
       // Check how many valid contacts we have
       foreach ($this->data['contact'] as $c => $contact) {
@@ -1945,7 +1946,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['financial_type_id'] = $this->contribution_page['financial_type_id'];
 
     $params['source'] = $this->settings['new_contact_source'];
-    $params['item_name'] = $params['description'] = t('Webform Payment: @title', array('@title' => $this->node->title));
+    $params['item_name'] = $params['description'] = t('Webform Payment: @title', array('@title' => $this->node->label()));
 
     if (method_exists($paymentProcessor, 'setSuccessUrl')) {
       $paymentProcessor->setSuccessUrl($this->getIpnRedirectUrl('success'));
@@ -2015,15 +2016,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     // Sales tax integration
     $params['tax_amount'] = 0;
-    if (isset($this->form_state['civicrm']['line_items'])) {
-      foreach ($this->form_state['civicrm']['line_items'] as $lineItem) {
+    if (isset($this->form_state->getStorage()['civicrm']['line_items'])) {
+      foreach ($this->form_state->getStorage()['civicrm']['line_items'] as $lineItem) {
         if (!empty($lineItem['tax_amount'])) {
           $params['tax_amount'] += $lineItem['tax_amount'];
         }
       }
       $params['tax_amount'] = round($params['tax_amount'], 2);
     }
-    $params['description'] = t('Webform Payment: @title', array('@title' => $this->node->title));
+    $params['description'] = t('Webform Payment: @title', array('@title' => $this->node->label()));
     if (!isset($params['source'])) {
       $params['source'] = $this->settings['new_contact_source'];
     }
