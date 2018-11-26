@@ -218,10 +218,10 @@ function _webform_edit_civicrm_contact($component) {
     '#default_value' => $component['extra']['default'],
     '#parents' => array('extra', 'default'),
   );
-  if ($contact_type == 'individual') {
+  if ($c == 1 && $contact_type == 'individual') {
     $form['defaults']['default']['#options']['user'] = t('Current User');
   }
-  if ($c > 1) {
+  elseif ($c > 1) {
     $form['defaults']['default']['#options']['relationship'] = t('Relationship to...');
     $to = $component['extra']['default_relationship_to'];
     $form['defaults']['default_relationship_to'] = array(
