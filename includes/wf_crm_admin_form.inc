@@ -1731,6 +1731,12 @@ class wf_crm_admin_form {
             $component['value'] = $val;
             $enabled[$key] = $component;
           }
+          else {
+            // Try to "update" options for existing fields via ::insertComponent
+            $field += ['form_key' => $key];
+            self::insertComponent($field, $enabled, $this->settings);
+            $stop = null;
+          }
 
           if (substr($key, -11) === '_createmode') {
             // Update webform's settings with 'Create mode' value for custom group.
