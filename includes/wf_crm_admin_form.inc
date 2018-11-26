@@ -4,6 +4,7 @@ use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Drupal\webform\Utility\WebformArrayHelper;
 use Drupal\webform\WebformInterface;
 
 /**
@@ -1724,9 +1725,11 @@ class wf_crm_admin_form {
             }
           }
           elseif ($field['type'] == 'hidden' && !empty($field['expose_list'])) {
-            $component = $this->node->webform['components'][$enabled[$key]];
+            $elements = $this->webform->getElementsDecoded();
+            $component = $elements[$enabled[$key]];
+            $component = WebformArrayHelper::removePrefix($component);
             $component['value'] = $val;
-            webform_component_update($component);
+            $enabled[$key] = $component;
           }
 
           if (substr($key, -11) === '_createmode') {
@@ -1964,6 +1967,16 @@ class wf_crm_admin_form {
         if (count($options) == 1 && empty($field['extra']['aslist']) && empty($field['civicrm_live_options'])) {
           $field['multiple'] = 1;
         }
+
+        /*
+         * the field type should be changed ased on "aslist" from select.
+          if ($component['extra']['aslist']) {
+            $type = $component['extra']['multiple'] ? t('Multi-select') : t('Select');
+          }
+          else {
+            $type = $component['extra']['multiple'] ? t('Checkboxes') : t('Radio buttons');
+          }
+         */
       }
     }
     if ($field['type'] == 'civicrm_contact') {
