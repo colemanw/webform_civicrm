@@ -1214,11 +1214,16 @@ class wf_crm_admin_form {
    * Ajax-loaded mini-forms for the contributions tab.
    */
   private function checkSubmissionLimit() {
-    $webform = &$this->node->webform;
+    $webform = $this->webform;
+
+    $anonymoous_access = $webform->checkAccessRules('create', new \Drupal\Core\Session\AnonymousUserSession());
     // If anonymous users don't have access to the form, no need for a warning.
-    if (!in_array('1', $webform['roles'])) {
+    if (!$anonymoous_access->isAllowed()) {
       return;
     }
+
+    // @todo reevaluate these options in D8.
+    return;
     // Handle ajax submission from "submit_limit" mini-form below
     if (!empty($_POST['submit_limit']) && !empty($_POST['submit_interval'])) {
       $submit_limit = (int) $_POST['submit_limit'];
@@ -1949,14 +1954,15 @@ class wf_crm_admin_form {
     // Retrieve option list
     if ($field['type'] == 'select') {
       if ($options = wf_crm_field_options($field, 'component_insert', $settings['data'])) {
+        $field['options'] = $options;
         $field['extra']['items'] = wf_crm_array2str($options);
         // Default to select widget
         if (!isset($field['extra']['aslist']) && empty($field['extra']['multiple'])) {
           $field['extra']['aslist'] = 1;
         }
         // A single static radio should be shown as a checkbox
-        if (count($options) == 1 && empty($field['extra']['aslist']) && empty($field['extra']['civicrm_live_options'])) {
-          $field['extra']['multiple'] = 1;
+        if (count($options) == 1 && empty($field['extra']['aslist']) && empty($field['civicrm_live_options'])) {
+          $field['multiple'] = 1;
         }
       }
     }
@@ -1986,6 +1992,8 @@ class wf_crm_admin_form {
         'type' => 'webform_wizard_page',
         'form_key' => 'contribution_pagebreak',
         'title' => (string) t('Payment'),
+        // @todo required due to check  wf_crm_admin_form->postProcess() (line 1786) hack
+        'name' => (string) t('Payment'),
       ];
       // self::addPageBreak($field);
     }
