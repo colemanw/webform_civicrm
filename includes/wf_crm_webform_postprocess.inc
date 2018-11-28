@@ -1542,13 +1542,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         'qty' => 1,
         'unit_price' => $this->getData($fid),
         'financial_type_id' => $this->contribution_page['financial_type_id'],
-        'label' => wf_crm_aval($this->node->webform['components'], $this->enabled[$fid] . ':name', t('Contribution')),
+        'label' => wf_crm_aval($this->node->getElementsDecoded(), $this->enabled[$fid] . ':title', t('Contribution')),
         'element' => 'civicrm_1_contribution_1',
         'entity_table' => 'civicrm_contribution',
       );
     }
     // LineItems
-    $fid = "civicrm_1_lineitem_1_contribution_line_total";
+    $fid = 'civicrm_1_lineitem_1_contribution_line_total';
     if (isset($this->enabled[$fid])) {
       foreach ($this->data['lineitem'][1]['contribution'] as $n => $lineitem) {
         $fid = "civicrm_1_lineitem_{$n}_contribution_line_total";
@@ -1557,7 +1557,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             'qty' => 1,
             'unit_price' => $lineitem['line_total'],
             'financial_type_id' => $lineitem['financial_type_id'],
-            'label' => wf_crm_aval($this->node->webform['components'], $this->enabled[$fid] . ':name', t('Line item')),
+            'label' => wf_crm_aval($this->node->getElementsDecoded(), $this->enabled[$fid] . ':title', t('Line item')),
             'element' => "civicrm_1_lineitem_{$n}",
             'entity_table' => 'civicrm_contribution',
           );
@@ -1567,28 +1567,28 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Membership
     foreach (wf_crm_aval($this->data, 'membership', array()) as $c => $memberships) {
       if (isset($this->existing_contacts[$c]) && !empty($memberships['number_of_membership'])) {
-        foreach ($memberships['membership'] as $n => $item) {
-          if (!empty($item['membership_type_id'])) {
-            $type = $item['membership_type_id'];
+        foreach ($memberships['membership'] as $n => $membership_item) {
+          if (!empty($membership_item['membership_type_id'])) {
+            $type = $membership_item['membership_type_id'];
             $price = $this->getMembershipTypeField($type, 'minimum_fee');
 
             //if number of terms is set, regard membership fee field as price per term
             //if you choose to set dates manually while membership fee field is enabled, take the membership fee as total cost of this membership
-            if (isset($item['fee_amount'])) {
-              $price = $item['fee_amount'];
-              if (empty($item['num_terms'])) {
-                $item['num_terms'] = 1;
+            if (isset($membership_item['fee_amount'])) {
+              $price = $membership_item['fee_amount'];
+              if (empty($membership_item['num_terms'])) {
+                $membership_item['num_terms'] = 1;
               }
             }
 
             $membership_financialtype = $this->getMembershipTypeField($type, 'financial_type_id');
-            if (isset($item['financial_type_id']) && $item['financial_type_id'] !=0 ) {
-              $membership_financialtype = $item['financial_type_id'];
+            if (isset($membership_item['financial_type_id']) && $membership_item['financial_type_id'] !== 0 ) {
+              $membership_financialtype = $membership_item['financial_type_id'];
             };
 
             if ($price) {
               $this->line_items[] = array(
-                'qty' => $item['num_terms'],
+                'qty' => $membership_item['num_terms'],
                 'unit_price' => $price,
                 'financial_type_id' => $membership_financialtype,
                 'label' => $this->getMembershipTypeField($type, 'name') . ": " . wf_crm_display_name($this->existing_contacts[$c]),
@@ -1603,23 +1603,23 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Calculate totals
     $this->totalContribution = 0;
     $taxRates = CRM_Core_PseudoConstant::getTaxRates();
-    foreach ($this->line_items as &$item) {
+    foreach ($this->line_items as &$line_item) {
       // Sales Tax integration
-      if (!empty($item['financial_type_id'])) {
-        $itemTaxRate = isset($taxRates[$item['financial_type_id']]) ? $taxRates[$item['financial_type_id']] : NULL;
+      if (!empty($line_item['financial_type_id'])) {
+        $itemTaxRate = isset($taxRates[$line_item['financial_type_id']]) ? $taxRates[$line_item['financial_type_id']] : NULL;
       }
       else {
         $itemTaxRate = $this->tax_rate;
       }
 
-      if (!is_null($itemTaxRate)) {
-        $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
-        $item['tax_amount'] = ($itemTaxRate / 100) * $item['line_total'];
-        $this->totalContribution += ($item['unit_price'] * (int) $item['qty']) + $item['tax_amount'];
+      if ($itemTaxRate !== NULL) {
+        $line_item['line_total'] = $line_item['unit_price'] * (int) $line_item['qty'];
+        $line_item['tax_amount'] = ($itemTaxRate / 100) * $line_item['line_total'];
+        $this->totalContribution += ($line_item['unit_price'] * (int) $line_item['qty']) + $line_item['tax_amount'];
       }
       else {
-        $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
-        $this->totalContribution += $item['line_total'];
+        $line_item['line_total'] = $line_item['unit_price'] * (int) $line_item['qty'];
+        $this->totalContribution += $line_item['line_total'];
       }
     }
     return round($this->totalContribution, 2);
@@ -1917,7 +1917,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function submitIPNPayment() {
     $params = $this->data['contribution'][1]['contribution'][1];
-    $processor_type = wf_civicrm_api('payment_processor', 'getsingle', array('id' => $params['payment_processor_id']));
+    $processor_type = wf_civicrm_api('payment_processor', 'getsingle', ['id' => $params['payment_processor_id']]);
     if (version_compare($this->civicrm_version, 4.7, '<')) {
       $mode = empty($params['is_test']) ? 'live' : 'test';
       $paymentProcessor = CRM_Core_Payment::singleton($mode, $processor_type);
@@ -1974,10 +1974,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @return string
    */
   public function getIpnRedirectUrl($type) {
-    $default_settings = \Drupal::config('webform.settings')->get('settings');
-    $confirmation_type = $this->node->getSetting('confirmation_type', $default_settings['default_confirmation_type']);
-    $url = trim($this->node->getSetting('confirmation_url', $default_settings['default_confirmation_url']));
-    if ($url === '' || $type === 'cancel') {
+    $confirmation_type = $this->node->getSetting('confirmation_type');
+    $url = trim($this->node->getSetting('confirmation_url'));
+    if ($type === 'cancel') {
       $url = $this->node->toUrl('canonical', ['absolute' => TRUE])->toString();
     }
     elseif ($confirmation_type === WebformInterface::CONFIRMATION_PAGE) {
@@ -1988,7 +1987,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         // @todo look up how this works in D8.
         // $query['token'] = webform_get_submission_access_token($this->submission);
       }
-      $url = $request_handler->getUrl($this->node, $this->node, 'webform.confirmation', ['query' => $query, 'absolute' => TRUE]);
+      $url = $request_handler->getUrl($this->node, $this->node, 'webform.confirmation', ['query' => $query, 'absolute' => TRUE])->toString();
     }
     else {
       // $parsed = webform_replace_url_tokens($url, $this->node, $this->submission);
