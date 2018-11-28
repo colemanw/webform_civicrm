@@ -1792,7 +1792,9 @@ class wf_crm_admin_form {
         $stub_form = [];
         $stub_form_state = new FormState();
         $stub_form_state->set('default_properties', $element_plugin->getDefaultProperties());
-        $enabled_element['title'] = $enabled_element['name'];
+        if (!isset($enabled_element['title']) && isset($enabled_element['name'])) {
+          $enabled_element['title'] = $enabled_element['name'];
+        }
         unset($enabled_element['name']);
         $stub_form_state->setValues($enabled_element);
         $properties = $element_plugin->getConfigurationFormProperties($stub_form, $stub_form_state);
@@ -1961,28 +1963,26 @@ class wf_crm_admin_form {
       $field['value']['value'] = '';
     }
     // Retrieve option list
-    if ($field['type'] == 'select') {
+    if ($field['type'] === 'select') {
       if ($options = wf_crm_field_options($field, 'component_insert', $settings['data'])) {
         $field['options'] = $options;
         $field['extra']['items'] = wf_crm_array2str($options);
-        // Default to select widget
-        if (!isset($field['extra']['aslist']) && empty($field['extra']['multiple'])) {
-          $field['extra']['aslist'] = 1;
+
+        $as_list = !empty($field['extra']['aslist']);
+        $is_multiple = !empty($field['extra']['multiple']);
+        $use_live_options = !empty($field['civicrm_live_options']);
+
+        if (!$as_list) {
+          $field['type'] = $is_multiple ? 'checkboxes' : 'radios';
         }
-        // A single static radio should be shown as a checkbox
-        if (count($options) == 1 && empty($field['extra']['aslist']) && empty($field['civicrm_live_options'])) {
-          $field['multiple'] = 1;
+        else if ($is_multiple) {
+          $field['multiple'] = TRUE;
         }
 
-        /*
-         * the field type should be changed ased on "aslist" from select.
-          if ($component['extra']['aslist']) {
-            $type = $component['extra']['multiple'] ? t('Multi-select') : t('Select');
-          }
-          else {
-            $type = $component['extra']['multiple'] ? t('Checkboxes') : t('Radio buttons');
-          }
-         */
+        // A single static radio should be shown as a checkbox
+        if (!$use_live_options && !$as_list && count($options) === 1) {
+          $field['type'] = 'checkbox';
+        }
       }
     }
     if ($field['type'] == 'civicrm_contact') {
@@ -2004,15 +2004,13 @@ class wf_crm_admin_form {
       self::addFieldset($c, $field, $enabled, $settings, $ent, $create_fieldsets);
     }
     // Create page break for contribution page
-    if ($name == 'contribution_page_id') {
+    if ($name === 'contribution_page_id') {
       // @todo properly inject a page break.
       // there needs to be a root page and nested elements.
       $enabled['contribution_pagebreak'] = [
         'type' => 'webform_wizard_page',
         'form_key' => 'contribution_pagebreak',
         'title' => (string) t('Payment'),
-        // @todo required due to check  wf_crm_admin_form->postProcess() (line 1786) hack
-        'name' => (string) t('Payment'),
       ];
       // self::addPageBreak($field);
     }

@@ -198,27 +198,27 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       $page_id = $this->data['contribution'][1]['contribution'][1]['contribution_page_id'];
       if (version_compare($this->civicrm_version, '4.7', '>=')) {
         $currency = $this->contribution_page['currency'];
-        $contributionCallbackQuery = array('currency' => $currency, 'snippet' => 4);
-        $contributionCallbackUrl = 'civicrm/payment/form';
+        $contributionCallbackQuery = ['currency' => $currency, 'snippet' => 4];
+        $contributionCallbackUrl = 'base://civicrm/payment/form';
         $js_vars['processor_id_key'] = 'processor_id';
       }
       else {
         $contributionCallbackQuery = array('reset' => 1, 'id' => $page_id, 'qfKey' => $this->getQfKey(), 'snippet' => 4);
-        $contributionCallbackUrl = '/civicrm/contribute/transact';
+        $contributionCallbackUrl = 'base://civicrm/contribute/transact';
         $js_vars['processor_id_key'] = 'type';
       }
       if (!empty($this->data['contribution'][1]['contribution'][1]['is_test'])) {
         // RM: This is needed in order for CiviCRM to know that this is a 'test' (i.e. 'preview' action in CiviCRM) transaction - otherwise, CiviCRM defaults to 'live' and returns the payment form with public key for the live payment processor!
         $contributionCallbackQuery['action'] = CRM_Core_Action::description(CRM_Core_Action::PREVIEW);
       }
-      if ((strpos($contributionCallbackUrl, '/') !== 0)) {
-        $contributionCallbackUrl = '/' . $contributionCallbackUrl;
-      }
-      $js_vars['contributionCallback'] = Url::fromUserInput($contributionCallbackUrl, ['query' => $contributionCallbackQuery, 'alias' => TRUE]);
+
+      $js_vars['contributionCallback'] = Url::fromUri($contributionCallbackUrl, ['query' => $contributionCallbackQuery, 'alias' => TRUE])->toString();
       // Add payment processor - note we have to search in 2 places because $this->loadMultipageData hasn't been run. Maybe it should be?
       $fid = 'civicrm_1_contribution_1_contribution_payment_processor_id';
       if (!empty($this->enabled[$fid])) {
-        $js_vars['paymentProcessor'] = wf_crm_aval($this->form_state, 'storage:submitted:' . $this->enabled[$fid]);
+        $js_vars['paymentProcessor'] = $this->getData($fid);
+        // @todo Why does it matter if its enabled or not? Nothing is submitted.
+        // $js_vars['paymentProcessor'] = wf_crm_aval($this->form_state, 'storage:submitted:' . $this->enabled[$fid]);
       }
       else {
         $js_vars['paymentProcessor'] = $this->getData($fid);

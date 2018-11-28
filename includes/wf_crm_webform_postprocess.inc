@@ -2014,7 +2014,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     // Some processors use this for matching and updating the contribution status
     if (!$this->contributionIsPayLater) {
-      $params['invoice_id'] = $this->data['contribution'][1]['contribution'][1]['invoiceID'] = md5(uniqid(rand(), TRUE));
+      $params['invoice_id'] = $this->data['contribution'][1]['contribution'][1]['invoiceID'] = md5(uniqid(mt_rand(), TRUE));
     }
 
     // Sales tax integration

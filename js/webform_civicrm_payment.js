@@ -3,7 +3,7 @@ cj(function($) {
   'use strict';
   var
     setting = drupalSettings.webform_civicrm,
-    $processorFields = $('.civicrm-enabled[name$="civicrm_1_contribution_1_contribution_payment_processor_id]"]');
+    $processorFields = $('[name$="civicrm_1_contribution_1_contribution_payment_processor_id"]');
 
   function getPaymentProcessor() {
     if (!$processorFields.length) {
@@ -15,6 +15,7 @@ cj(function($) {
   function loadBillingBlock() {
     var type = getPaymentProcessor();
     if (type && type != '0') {
+      // @todo this loads, but inside of the element.
       $('#billing-payment-block').load(setting.contributionCallback + '&' + setting.processor_id_key + '=' + type, function() {
         $('#billing-payment-block').trigger('crmLoad').trigger('crmFormLoad');
         if (setting.billingSubmission) {
