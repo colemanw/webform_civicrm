@@ -1974,22 +1974,26 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @return string
    */
   public function getIpnRedirectUrl($type) {
-    $url = trim($this->node->webform['redirect_url']);
-    if ($url == '<none>' || $type == 'cancel') {
-      $url = url('node/' . $this->node->nid, array('absolute' => TRUE));
+    $default_settings = \Drupal::config('webform.settings')->get('settings');
+    $confirmation_type = $this->node->getSetting('confirmation_type', $default_settings['default_confirmation_type']);
+    $url = trim($this->node->getSetting('confirmation_url', $default_settings['default_confirmation_url']));
+    if ($url === '' || $type === 'cancel') {
+      $url = $this->node->toUrl('canonical', ['absolute' => TRUE])->toString();
     }
-    elseif ($url == '<confirmation>') {
-      $query = array('sid' => $this->submission->sid);
+    elseif ($confirmation_type === WebformInterface::CONFIRMATION_PAGE) {
+      $request_handler = \Drupal::getContainer()->get('webform.request');
+      $query = ['sid' => $this->submission->id()];
       // Add token if user is not authenticated, inline with 'webform_client_form_submit()'
-      if (user_is_anonymous()) {
-        $query['token'] = webform_get_submission_access_token($this->submission);
+      if (\Drupal::currentUser()->isAnonymous()) {
+        // @todo look up how this works in D8.
+        // $query['token'] = webform_get_submission_access_token($this->submission);
       }
-      $url = url("node/{$this->node->nid}/done", array('query' => $query, 'absolute' => TRUE));
+      $url = $request_handler->getUrl($this->node, $this->node, 'webform.confirmation', ['query' => $query, 'absolute' => TRUE]);
     }
     else {
-      $parsed = webform_replace_url_tokens($url, $this->node, $this->submission);
-      $parsed[1]['absolute'] = TRUE;
-      $url = url($parsed[0], $parsed[1]);
+      // $parsed = webform_replace_url_tokens($url, $this->node, $this->submission);
+      // $parsed[1]['absolute'] = TRUE;
+      // $url = url($parsed[0], $parsed[1]);
     }
     return $url;
   }
@@ -2286,9 +2290,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           continue;
         }
         $field = $this->all_fields[$table . '_' . $name];
-        // $component = $this->node->webform['components'][$this->enabled[$field_key]];
+        $component = $this->node->getElementDecoded($field_key);
         // Ignore values from hidden fields
-        if ($field['type'] == 'hidden') {
+        if ($field['type'] === 'hidden') {
           continue;
         }
         // Translate privacy options into separate values
@@ -2339,8 +2343,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $sum = 0;
           foreach ((array) $val as $k => $v) {
             // Perform multiplication across grid elements
-            if ($component['type'] == 'grid' && is_numeric($k)) {
-              $v = $v * $k;
+            if (is_numeric($k) && $component['#type'] === 'grid') {
+              $v *= $k;
             }
             if (is_numeric($v)) {
               $sum += $v;
@@ -2352,7 +2356,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         else {
           $val = is_array($val) ? reset($val) : $val;
         }
-        if ($field['type'] == 'autocomplete' && is_string($val) && strlen($val)) {
+        if (is_string($val) && '' !== $val && $field['type'] === 'autocomplete') {
           $options = wf_crm_field_options($component, '', $this->data);
           $val = array_search($val, $options);
         }
