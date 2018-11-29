@@ -261,7 +261,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // drupal_write_record('webform_civicrm_submissions', $record, $this->update);
 
     // Calling an IPN payment processor will result in a redirect so this happens after everything else
-    if (empty($this->submission->is_draft) && !empty($this->ent['contribution'][1]['id']) && $this->contributionIsIncomplete && !$this->contributionIsPayLater) {
+    if ($this->contributionIsIncomplete && !$this->contributionIsPayLater && !empty($this->ent['contribution'][1]['id']) && !$this->submission->isDraft()) {
 //      webform_submission_send_mail($this->node, $this->submission);
       $this->submitIPNPayment();
     }
@@ -301,7 +301,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $data = $this->ent;
     unset($data['contact']);
     $record = array(
-      'sid' => $this->submission->sid,
+      'sid' => $this->submission->id(),
       'contact_id' => '-',
       'civicrm_data' => $data,
     );
@@ -1630,9 +1630,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @return bool
    */
   private function isPaymentPage() {
-    $page = wf_crm_aval($this->form_state, 'storage:page_num', 1);
-    $field = $this->getComponent('civicrm_1_contribution_1_contribution_contribution_page_id');
-    return $page == $field['page_num'];
+    // @todo see if this needs to be more dynamic.
+    return $this->form_state->get('current_page') === 'contribution_pagebreak';
   }
 
   /**
@@ -1706,7 +1705,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     // Since billing fields are not "real" form fields they get cleared if the page reloads.
     // We add a bit of js to fix this annoyance.
-    drupal_add_js(array('webform_civicrm' => array('billingSubmission' => $params)), 'setting');
+    $this->form['#attached']['drupalSettings']['webform_civicrm']['billingSubmission'] = $params;
     return $valid;
   }
 
