@@ -2,9 +2,9 @@
  * JS for CiviCRM-enabled webforms
  */
 
-var wfCivi = (function ($, D) {
+var wfCivi = (function ($, D, drupalSettings) {
   'use strict';
-  var setting = D.settings.webform_civicrm;
+  var setting = drupalSettings.webform_civicrm;
   /**
    * Public methods.
    */
@@ -431,4 +431,4 @@ var wfCivi = (function ($, D) {
     }
   };
   return pub;
-})(jQuery, Drupal);
+  })(jQuery, Drupal, drupalSettings);
