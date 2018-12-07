@@ -241,7 +241,7 @@ function _webform_edit_civicrm_contact($component) {
     );
   }
   
-  $case_count = $data['case']['number_of_case'];
+  $case_count = isset($data['case']['number_of_case']) ? $data['case']['number_of_case'] : 0;
   if ($case_count > 0) {
     $form['defaults']['default']['#options']['case_roles'] = t('Case roles');
     $dc = $component['extra']['default_relationship_to'];
