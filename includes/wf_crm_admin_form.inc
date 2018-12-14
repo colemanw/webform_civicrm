@@ -1217,7 +1217,9 @@ class wf_crm_admin_form {
   private function checkSubmissionLimit() {
     $webform = $this->webform;
 
-    $anonymoous_access = $webform->checkAccessRules('create', new \Drupal\Core\Session\AnonymousUserSession());
+    /** @var \Drupal\webform\WebformAccessRulesManagerInterface $access_rules_manager */
+    $access_rules_manager = \Drupal::service('webform.access_rules_manager');
+    $anonymoous_access = $access_rules_manager->checkWebformAccess('create', new \Drupal\Core\Session\AnonymousUserSession(), $webform);
     // If anonymous users don't have access to the form, no need for a warning.
     if (!$anonymoous_access->isAllowed()) {
       return;
