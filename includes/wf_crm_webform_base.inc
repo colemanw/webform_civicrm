@@ -870,7 +870,7 @@ abstract class wf_crm_webform_base {
   /**
    * CiviCRM JS can't be attached to a drupal form so have to manually re-add this during validation
    *
-   * @return int|null
+   * @return void
    */
   function addPaymentJs() {
     $credit_card_types = CRM_Core_Payment_Form::getCreditCardCSSNames();

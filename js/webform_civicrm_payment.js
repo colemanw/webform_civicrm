@@ -19,7 +19,7 @@ cj(function($) {
         url: setting.contributionCallback + '&' + setting.processor_id_key + '=' + type,
         success: function(data) {
           var $billingPaymentBlock = $('#billing-payment-block');
-          $billingPaymentBlock.replaceWith(data);
+          $billingPaymentBlock.html(data);
           $billingPaymentBlock.trigger('crmLoad').trigger('crmFormLoad');
           if (setting.billingSubmission) {
             $.each(setting.billingSubmission, function(key, val) {

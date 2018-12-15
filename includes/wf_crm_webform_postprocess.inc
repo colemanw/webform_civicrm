@@ -1686,7 +1686,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Validate billing details
     CRM_Core_Payment_Form::validatePaymentInstrument(wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id'), $params, $card_errors, NULL);
     foreach ($card_errors as $field => $msg) {
-      form_set_error($field, $msg);
+      $this->form_state->setErrorByName($field, $msg);
       $valid = FALSE;
     }
     // Email
@@ -1697,7 +1697,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
     }
     if (empty($params['email'])) {
-      form_set_error('billing_email', ts('An email address is required to complete this transaction.'));
+      $this->form_state->setErrorByName('billing_email', ts('An email address is required to complete this transaction.'));
       $valid = FALSE;
     }
     if ($valid) {
