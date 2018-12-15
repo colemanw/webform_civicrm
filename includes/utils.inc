@@ -922,28 +922,30 @@ function wf_crm_get_fields($var = 'fields') {
       'type' => 'textarea',
     );
     if (isset($sets['contribution'])) {
+      // @todo moved in order since we can't pass `weight`.
+      $fields['contribution_total_amount'] = array(
+          'name' => 'Contribution Amount',
+          'weight' => 9991,
+        ) + $moneyDefaults;
+      // @todo moved in order since we can't pass `weight`.
+      $fields['contribution_payment_processor_id'] = array(
+        'name' => 'Payment Processor',
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'extra' => array('aslist' => 0),
+        'exposed_empty_option' => 'Pay Later',
+        'value_callback' => TRUE,
+        'weight' => 9995,
+      );
       $fields['contribution_contribution_page_id'] = array(
         'name' => ts('Contribution Page'),
         'type' => 'hidden',
         'expose_list' => TRUE,
-        'empty_option' => (string) t('None'),
+        'empty_option' => 'None',
         'extra' => array(
           'hidden_type' => 'hidden',
         ),
         'weight' => 9999,
-      );
-      $fields['contribution_total_amount'] = array(
-        'name' => (string) t('Contribution Amount'),
-        'weight' => 9991,
-      ) + $moneyDefaults;
-      $fields['contribution_payment_processor_id'] = array(
-        'name' => (string) t('Payment Processor'),
-        'type' => 'select',
-        'expose_list' => TRUE,
-        'extra' => array('aslist' => 0),
-        'exposed_empty_option' => (string) t('Pay Later'),
-        'value_callback' => TRUE,
-        'weight' => 9995,
       );
       $fields['contribution_note'] = array(
         'name' => t('Contribution Note'),

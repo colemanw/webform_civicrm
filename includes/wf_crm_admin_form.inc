@@ -1215,6 +1215,8 @@ class wf_crm_admin_form {
    * Ajax-loaded mini-forms for the contributions tab.
    */
   private function checkSubmissionLimit() {
+    // Bypass this until it is fully rescoped.
+    return;
     $webform = $this->webform;
 
     /** @var \Drupal\webform\WebformAccessRulesManagerInterface $access_rules_manager */
@@ -1726,7 +1728,7 @@ class wf_crm_admin_form {
               }
             }
           }
-          elseif ($field['type'] == 'hidden' && !empty($field['expose_list'])) {
+          elseif ($field['type'] === 'hidden' && !empty($field['expose_list'])) {
             $elements = $this->webform->getElementsDecoded();
             $component = $elements[$enabled[$key]];
             $component = WebformArrayHelper::removePrefix($component);

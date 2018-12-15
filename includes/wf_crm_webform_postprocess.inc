@@ -1782,10 +1782,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     if (empty($result['id'])) {
       if (!empty($result['error_message'])) {
-        form_set_error('contribution', $result['error_message']);
+        $this->form_state->setErrorByName('contribution', $result['error_message']);
       }
       else {
-        form_set_error('contribution', t('Transaction failed. Please verify all billing fields are correct.'));
+        $this->form_state->setErrorByName('contribution', t('Transaction failed. Please verify all billing fields are correct.'));
       }
       return;
     }
