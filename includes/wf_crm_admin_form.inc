@@ -1221,9 +1221,9 @@ class wf_crm_admin_form {
 
     /** @var \Drupal\webform\WebformAccessRulesManagerInterface $access_rules_manager */
     $access_rules_manager = \Drupal::service('webform.access_rules_manager');
-    $anonymoous_access = $access_rules_manager->checkWebformAccess('create', new \Drupal\Core\Session\AnonymousUserSession(), $webform);
+    $anonymous_access = $access_rules_manager->checkWebformAccess('create', new \Drupal\Core\Session\AnonymousUserSession(), $webform);
     // If anonymous users don't have access to the form, no need for a warning.
-    if (!$anonymoous_access->isAllowed()) {
+    if (!$anonymous_access->isAllowed()) {
       return;
     }
 
