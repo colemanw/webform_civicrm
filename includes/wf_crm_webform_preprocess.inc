@@ -539,11 +539,19 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           if ($name == 'existing') {
             wf_crm_fill_contact_value($this->node, $component, $element, $this->ent);
           }
-          if ($name == 'contribution_page_id') {
-            $element['#prefix'] = $this->displayLineItems();
-            $element['#suffix'] = '<div class="crm-container crm-public" id="billing-payment-block"></div>';
-            $element['#value'] = wf_crm_aval($this->data, 'contribution:1:contribution:1:contribution_page_id');
-            unset($element['#default_value']);
+          if ($name === 'contribution_page_id') {
+            // Work around to remove manual rendering of display line items.
+            // This prevents us from needing to setup a composite element
+            // immediately and remove rendering hacks.
+            $contribution_element = [];
+            $contribution_element['contribution_page_id'] = $element;
+            $contribution_element['contribution_page_id']['#value'] = wf_crm_aval($this->data, 'contribution:1:contribution:1:contribution_page_id');
+            unset($contribution_element['contribution_page_id']['#default_value']);
+            $contribution_element['line_items'] = $this->displayLineItems();
+            $contribution_element['billing_payment_block'] = [
+              '#markup' => Markup::create('<div class="crm-container crm-public" id="billing-payment-block"></div>'),
+            ];
+            $element = $contribution_element;
           }
         }
       }
@@ -552,23 +560,25 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
 
   /**
    * Format line-items to appear on front-end of webform
-   * @return string
+   *
+   * @return array
+   *   The render array for line items table.
    */
   private function displayLineItems() {
-    $rows = array();
+    $rows = [];
     $total = 0;
     // Support hidden contribution field
     $fid = 'civicrm_1_contribution_1_contribution_total_amount';
     if (!$this->line_items && isset($this->enabled[$fid])) {
       $elements = $this->node->getElementsDecoded();
       $field = $elements[$this->enabled[$fid]];
-      if ($field['#type'] == 'hidden') {
-        $this->line_items[] = array(
+      if ($field['#type'] === 'hidden') {
+        $this->line_items[] = [
           'line_total' => $field['value'],
           'qty' => 1,
           'element' => 'civicrm_1_contribution_1',
           'label' => !empty($field['name']) ? $field['name'] : t('Contribution Amount'),
-        );
+        ];
       }
     }
 
@@ -583,49 +593,48 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         $itemTaxRate = $this->tax_rate;
       }
 
-      if (!is_null($itemTaxRate)) {
+      if ($itemTaxRate !== NULL) {
         // Change the line item label to display the tax rate it contains
         $taxSettings = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::CONTRIBUTE_PREFERENCES_NAME, 'contribution_invoice_settings');
 
-        if (($taxSettings['tax_display_settings'] != 'Do_not_show') && ($itemTaxRate !== 0)) {
-          $item['label'] .= ' (' . t('includes !rate @tax', array('!rate' => (float)$itemTaxRate . '%', '@tax' => $taxSettings['tax_term'])) . ')';
+        if (($itemTaxRate !== 0) && ($taxSettings['tax_display_settings'] !== 'Do_not_show')) {
+          $item['label'] .= ' (' . t('includes !rate @tax', ['!rate' => (float) $itemTaxRate . '%', '@tax' => $taxSettings['tax_term']]) . ')';
         }
 
         // Add calculation for financial type that contains tax
         $item['tax_amount'] = ($itemTaxRate / 100) * $item['line_total'];
         $total += $item['tax_amount'];
         $label = $item['label'] . ($item['qty'] > 1 ? " ({$item['qty']})" : '');
-        $rows[] = array(
-          'data' => array($label, CRM_Utils_Money::format($item['line_total'] + $item['tax_amount'])),
-          'class' => array($item['element'], 'line-item'),
+        $rows[] = [
+          'data' => [$label, CRM_Utils_Money::format($item['line_total'] + $item['tax_amount'])],
+          'class' => [$item['element'], 'line-item'],
           'data-amount' => $item['line_total'] + $item['tax_amount'],
-          'data-tax' => (float)$itemTaxRate,
-        );
+          'data-tax' => (float) $itemTaxRate,
+        ];
       }
       else {
         $label = $item['label'] . ($item['qty'] > 1 ? " ({$item['qty']})" : '');
-        $rows[] = array(
-          'data' => array($label, CRM_Utils_Money::format($item['line_total'])),
-          'class' => array($item['element'], 'line-item'),
+        $rows[] = [
+          'data' => [$label, CRM_Utils_Money::format($item['line_total'])],
+          'class' => [$item['element'], 'line-item'],
           'data-amount' => $item['line_total'],
-        );
+        ];
       }
     }
-    $rows[] = array(
-      'data' => array(t('Total'), CRM_Utils_Money::format($total)),
+    $rows[] = [
+      'data' => [t('Total'), CRM_Utils_Money::format($total)],
       'id' => 'wf-crm-billing-total',
       'data-amount' => $total,
-    );
+    ];
 
-    $build = [
+    return [
       '#type' => 'table',
       '#sticky' => FALSE,
       '#caption' => $this->contribution_page['title'],
-      '#header' => array(),
+      '#header' => [],
       '#rows' => $rows,
-      '#attributes' => array('id' => "wf-crm-billing-items"),
+      '#attributes' => ['id' => 'wf-crm-billing-items'],
     ];
-    return \Drupal::getContainer()->get('renderer')->render($build);
   }
 
   /**
