@@ -956,6 +956,9 @@ function wf_crm_get_fields($var = 'fields') {
                   'data_type' => 'ContactReference',
                   'set' => 'caseRoles',
                   'empty_option' => t('None'),
+                  'extra' => array(
+                    'multiple' => 1,
+                  ),
                 );
               }
               $fields['case_role_' . $rel_type['id']]['case_types'][] = $case_type['id'];

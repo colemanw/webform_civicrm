@@ -1299,12 +1299,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           foreach ($params as $param => $val) {
             if ($val && strpos($param, 'role_') === 0) {
               foreach ((array) $params['client_id'] as $client) {
-                wf_civicrm_api('relationship', 'create', array(
-                  'relationship_type_id' => substr($param, 5),
-                  'contact_id_a' => $client,
-                  'contact_id_b' => $val,
-                  'case_id' => $result['id'],
-                ));
+                foreach ((array) $val as $contactB) {
+                  wf_civicrm_api('relationship', 'create', array(
+                    'relationship_type_id' => substr($param, 5),
+                    'contact_id_a' => $client,
+                    'contact_id_b' => $contactB,
+                    'case_id' => $result['id'],
+                  ));
+                }
               }
             }
           }
