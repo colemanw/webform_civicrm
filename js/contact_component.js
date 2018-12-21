@@ -44,8 +44,11 @@ var wfCiviContact = (function ($, D) {
             $(this).css('display', 'none');
             $(':checkbox', this).prop('disabled', true);
           }
+          if (val == 'case-roles' && ($(this).is('[class*=form-item-extra-default-relationship-to]') || $(this).is('[class*=form-item-extra-default-for-case]'))) {
+            $(this).removeAttr('style');
+          }
         });
-        if (val === 'auto' || val === 'relationship') {
+        if (val === 'auto' || val === 'relationship' || val == 'case-roles') {
           $('.form-item-extra-randomize, .form-item-extra-dupes-allowed')
             .removeAttr('style')
             .find(':checkbox')

@@ -274,6 +274,22 @@ abstract class wf_crm_webform_base {
             $found = wf_crm_find_relations($this->ent['contact'][$to]['id'], $component['extra']['default_relationship']);
           }
           break;
+        case 'case_roles':
+          $to = $component['extra']['default_relationship_to'];
+          $case = $component['extra']['default_for_case'];
+
+          if (empty($this->ent['contact'][$c]['id'])) {
+            // load case client of case (if passed in URL) as default contact
+            $this->findCaseClientForDefaultContact($c);
+          }
+          if (!empty($this->ent['contact'][$to]['id']) && !empty($this->ent['case'][$case]['id'])) {
+            $found = wf_crm_find_case_roles($this->ent['contact'][$to]['id'], $this->ent['case'][$case]['id'], $component['extra']['default_case_roles']);
+            unset($this->ent['contact'][$c]['reload']);
+          }
+          else {
+            $this->ent['contact'][$c]['reload'] = TRUE;
+          }
+          break;
         case 'auto':
           $component['extra']['allow_create'] = FALSE;
           $found = array_keys(wf_crm_contact_search($this->node, $component, $filters, wf_crm_aval($this->ent, 'contact', array())));
