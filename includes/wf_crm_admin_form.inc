@@ -1346,6 +1346,9 @@ class wf_crm_admin_form {
         $options = array_keys($options);
         $item['#default_value'] = $options[1];
       }
+      elseif (!empty($this->data[$ent][$c][$table][$n]) && empty($this->data[$ent][$c][$table][$n][$name]) && $item['#default_value'] == 0) {
+        $item['#default_value'] = NULL;
+      }
       if (!empty($field['extra']['multiple'])) {
         $item['#default_value'] = (array) $item['#default_value'];
         if (isset($this->settings[$fid]) && !is_array($this->settings[$fid])

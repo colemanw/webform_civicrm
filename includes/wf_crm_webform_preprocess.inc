@@ -102,6 +102,14 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         $this->findExistingGrants();
       }
     }
+    // Check if contact reload required: for case roles
+    for ($c = 1; $c <= count($this->data['contact']); ++$c) {
+      if (isset($this->ent['contact'][$c]['reload'])) {
+        $existing_component = $this->getComponent("civicrm_{$c}_contact_1_contact_existing");
+        $this->ent['contact'][$c]['id'] = 0;
+        $this->findContact($existing_component);
+      }
+    }
     // Form alterations for unknown contacts
     if (empty($this->ent['contact'][1]['id'])) {
       if ($this->settings['prefix_unknown']) {
@@ -613,6 +621,29 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       'attributes' => array('id' => "wf-crm-billing-items"),
     ));
   }
+
+ /**
+   * Function to load default contact (cid1) if default loading is set to case_roles
+   */
+  function findCaseClientForDefaultContact($c) {
+    // Support legacy url param
+    if (empty($_GET["case1"]) && !empty($_GET["caseid"])) {
+      $_GET["case1"] = $_GET["caseid"];
+    }
+    for ($n = 1; $n <= $this->data['case']['number_of_case']; ++$n) {
+      if (isset($_GET["case$n"]) && wf_crm_is_positive($_GET["case$n"])) {
+        $id = $_GET["case$n"];
+        $item = wf_civicrm_api('case', 'getsingle', array('id' => $id));
+        $clients = (array)wf_crm_aval($item, 'client_id');
+        if (count($clients) > 0) {
+          $caseClient = reset($clients);
+          $this->ent['contact'][$c]['id'] = $caseClient;
+          return;
+        }
+      }
+    }
+  }
+
 
   /**
    * Find case ids based on url input or "existing case" settings

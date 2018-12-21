@@ -280,6 +280,21 @@ abstract class wf_crm_webform_base {
             $found = wf_crm_find_custom_refs($this->ent['contact'][$to]['id'], $component['extra']['default_custom_ref']);
           }
           break;
+        case 'case_roles':
+          $to = $component['extra']['default_relationship_to'];
+          $case = $component['extra']['default_for_case'];
+          if (empty($this->ent['contact'][$c]['id'])) {
+            // load case client of case (if passed in URL) as default contact
+            $this->findCaseClientForDefaultContact($c);
+          }
+          if (!empty($this->ent['contact'][$to]['id']) && !empty($this->ent['case'][$case]['id'])) {
+            $found = wf_crm_find_case_roles($this->ent['contact'][$to]['id'], $this->ent['case'][$case]['id'], $component['extra']['default_case_roles']);
+            unset($this->ent['contact'][$c]['reload']);
+          }
+          else {
+            $this->ent['contact'][$c]['reload'] = TRUE;
+          }
+          break;
         case 'auto':
           $component['extra']['allow_create'] = FALSE;
           $found = array_keys(wf_crm_contact_search($this->node, $component, $filters, wf_crm_aval($this->ent, 'contact', array())));
@@ -873,11 +888,18 @@ abstract class wf_crm_webform_base {
    * @return int|null
    */
   function addPaymentJs() {
-    $credit_card_types = CRM_Core_Payment_Form::getCreditCardCSSNames();
-    CRM_Core_Resources::singleton()
-      ->addCoreResources()
-      ->addSetting(array('config' => array('creditCardTypes' => $credit_card_types)))
-      ->addScriptFile('civicrm', 'templates/CRM/Core/BillingBlock.js', -10, 'html-header');
+    $currentVer = CRM_Core_BAO_Domain::version();
+    if (version_compare($currentVer, '5.8') <= 0 && method_exists('CRM_Core_Payment_Form', 'getCreditCardCSSNames')) {
+      $credit_card_types = CRM_Core_Payment_Form::getCreditCardCSSNames();
+      CRM_Core_Resources::singleton()
+        ->addCoreResources()
+        ->addSetting(array('config' => array('creditCardTypes' => $credit_card_types)))
+        ->addScriptFile('civicrm', 'templates/CRM/Core/BillingBlock.js', -10, 'html-header');
+    }
+    else {
+      CRM_Core_Resources::singleton()->addCoreResources();
+      CRM_Financial_Form_Payment::addCreditCardJs(NULL, 'html-header');
+    }
   }
 
   /**

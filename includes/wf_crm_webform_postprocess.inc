@@ -891,6 +891,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     switch ($data_type) {
       case 'group':
         $api = 'group_contact';
+        $params['method'] = 'Webform';
         break;
       case 'tag':
         $api = 'entity_tag';
@@ -1518,7 +1519,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     if (isset($this->enabled[$fid])) {
       foreach ($this->data['lineitem'][1]['contribution'] as $n => $lineitem) {
         $fid = "civicrm_1_lineitem_{$n}_contribution_line_total";
-        if ($this->getData($fid) > 0) {
+        if ($this->getData($fid) != 0) {
           $this->line_items[] = array(
             'qty' => 1,
             'unit_price' => $lineitem['line_total'],
@@ -1913,6 +1914,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     $params['source'] = $this->settings['new_contact_source'];
     $params['item_name'] = $params['description'] = t('Webform Payment: @title', array('@title' => $this->node->title));
+
+    // We need the submitted billing params from the request (Eg. billing_country_id-5)
+    //  because that's how payment processors expect to find them.
+    foreach ($this->form_state['input'] as $formKey => $formValue) {
+      if (substr($formKey, 0, 8) === 'billing_') {
+        $params[$formKey] = $formValue;
+      }
+    }
 
     if (method_exists($paymentProcessor, 'setSuccessUrl')) {
       $paymentProcessor->setSuccessUrl($this->getIpnRedirectUrl('success'));

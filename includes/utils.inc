@@ -778,13 +778,14 @@ function wf_crm_get_fields($var = 'fields') {
       'type' => 'select',
       'expose_list' => TRUE,
     );
+    $defaultLocType = CRM_Core_BAO_LocationType::getDefault();
     foreach (array('address' => t('Address # Location'), 'phone' => t('Phone # Location'), 'email' => t('Email # Location'), 'im' => t('IM # Location')) as $key => $label) {
       if (isset($sets[$key])) {
         $fields[$key . '_location_type_id'] = array(
           'name' => $label,
           'type' => 'select',
           'expose_list' => TRUE,
-          'value' => '1',
+          'value' => $defaultLocType->id,
         );
       }
     }
