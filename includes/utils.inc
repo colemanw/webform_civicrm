@@ -410,6 +410,7 @@ function wf_crm_enabled_fields(WebformInterface $webform, $submission = NULL, $s
  *   Name of variable to return: fields, tokens, or sets
  *
  * @return array
+ * @return array
  *   fields: The CiviCRM contact fields this module supports
  *   tokens: Available tokens keyed to field ids
  *   sets: Info on fieldsets (entities)
@@ -925,7 +926,6 @@ function wf_crm_get_fields($var = 'fields') {
       // @todo moved in order since we can't pass `weight`.
       $fields['contribution_total_amount'] = array(
           'name' => 'Contribution Amount',
-          'weight' => 9991,
         ) + $moneyDefaults;
       // @todo moved in order since we can't pass `weight`.
       $fields['contribution_payment_processor_id'] = array(
@@ -934,8 +934,8 @@ function wf_crm_get_fields($var = 'fields') {
         'expose_list' => TRUE,
         'extra' => array('aslist' => 0),
         'exposed_empty_option' => 'Pay Later',
-        'value_callback' => TRUE,
-        'weight' => 9995,
+        // Removed due to error, when a custom element is made, revisit.
+        // 'value_callback' => TRUE,
       );
       $fields['contribution_contribution_page_id'] = array(
         'name' => ts('Contribution Page'),
@@ -945,12 +945,10 @@ function wf_crm_get_fields($var = 'fields') {
         'extra' => array(
           'hidden_type' => 'hidden',
         ),
-        'weight' => 9999,
       );
       $fields['contribution_note'] = array(
         'name' => t('Contribution Note'),
         'type' => 'textarea',
-        'weight' => 9993,
       );
       $fields['contribution_soft'] = array(
         'name' => t('Soft Credit To'),
