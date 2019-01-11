@@ -1187,6 +1187,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // The api won't let us manually set status without this weird param
       $params['skipStatusCal'] = !empty($params['status_id']);
 
+      if (isset($this->ent['contribution_recur'][1]['id'])) {
+        $params['contribution_recur_id'] = $this->ent['contribution_recur'][1]['id'];
+      }
+
       $result = wf_civicrm_api('membership', 'create', $params);
 
       if (!empty($result['id'])) {
@@ -1804,6 +1808,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     $resultRecur = wf_civicrm_api('ContributionRecur', 'create', $contributionRecurParams);
+    $this->ent['contribution_recur'][1]['id'] = $resultRecur['id'];
 
     // Run the Transaction - and Create the Contribution Record - relay Recurring Series information in addition to the already existing Params [and re-key where needed]; at times two keys are required
     $contributionParams['total_amount'] = $contributionFirstAmount;
