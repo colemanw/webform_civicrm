@@ -5,6 +5,13 @@ cj(function($) {
     setting = Drupal.settings.webform_civicrm,
     $processorFields = $('.civicrm-enabled[name$="civicrm_1_contribution_1_contribution_payment_processor_id]"]');
 
+  $(document).ajaxStart(function() {
+    $('#billing-payment-block').closest('form').block();
+  })
+  .ajaxStop(function() {
+    $('#billing-payment-block').closest('form').unblock();
+  });
+
   function getPaymentProcessor() {
     if (!$processorFields.length) {
       return setting.paymentProcessor;
