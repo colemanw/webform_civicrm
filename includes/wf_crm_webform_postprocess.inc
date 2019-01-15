@@ -1423,9 +1423,17 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                 }
               }
               if ($mail) {
+                $caseId = (isset($params['case_id'])) ? $params['case_id'] : NULL;
                 // Include attachments while sending a copy of activity.
                 $attachments = CRM_Core_BAO_File::getEntityFile('civicrm_activity', $this->ent['act'][1]);
-                CRM_Case_BAO_Case::sendActivityCopy(NULL, $result['id'], $mail, $attachments, NULL);
+                $caseClientId = NULL;
+                if ($caseId) {
+                  $caseClients = CRM_Case_BAO_Case::getCaseClients($caseId);
+                  if (count($caseClients) > 0) {
+                    $caseClientId = $caseClients[0];
+                  }
+                }
+                CRM_Case_BAO_Case::sendActivityCopy($caseClientId, $result['id'], $mail, $attachments, $caseId);
               }
             }
           }
