@@ -1400,15 +1400,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             }
           }
         }
-        $result = wf_civicrm_api('activity', 'create', $params);
+        $activity = wf_civicrm_api('activity', 'create', $params);
         // Final processing if save was successful
-        if (!empty($result['id'])) {
+        if (!empty($activity['id'])) {
           // Store id
-          $this->ent['activity'][$n]['id'] = $result['id'];
+          $this->ent['activity'][$n]['id'] = $activity['id'];
           // Save custom data & attachments
-          $this->saveCustomData($data, $result['id'], 'Activity', FALSE);
+          $this->saveCustomData($data, $activity['id'], 'Activity', FALSE);
           if (isset($data['activityupload'])) {
-            $this->processAttachments('activity', $n, $result['id'], empty($params['id']));
+            $this->processAttachments('activity', $n, $activity['id'], empty($params['id']));
           }
           if (!empty($params['assignee_contact_id'])) {
             if (CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'activity_assignee_notification')) {
@@ -1425,7 +1425,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
               if ($mail) {
                 $caseId = (isset($params['case_id'])) ? $params['case_id'] : NULL;
                 // Include attachments while sending a copy of activity.
-                $attachments = CRM_Core_BAO_File::getEntityFile('civicrm_activity', $this->ent['act'][1]);
+                $attachments = CRM_Core_BAO_File::getEntityFile('civicrm_activity', $activity['id']);
                 $caseClientId = NULL;
                 if ($caseId) {
                   $caseClients = CRM_Case_BAO_Case::getCaseClients($caseId);
@@ -1433,7 +1433,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                     $caseClientId = $caseClients[0];
                   }
                 }
-                CRM_Case_BAO_Case::sendActivityCopy($caseClientId, $result['id'], $mail, $attachments, $caseId);
+                CRM_Case_BAO_Case::sendActivityCopy($caseClientId, $activity['id'], $mail, $attachments, $caseId);
               }
             }
           }
