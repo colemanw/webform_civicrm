@@ -884,8 +884,6 @@ abstract class wf_crm_webform_base {
 
   /**
    * CiviCRM JS can't be attached to a drupal form so have to manually re-add this during validation
-   *
-   * @return int|null
    */
   function addPaymentJs() {
     $currentVer = CRM_Core_BAO_Domain::version();
@@ -926,6 +924,7 @@ abstract class wf_crm_webform_base {
 
   /**
    * Retrieve info needed for pre-filling a webform file field
+   *
    * @param string $fieldName
    * @param string|int $val: url or civi file id
    * @param string|null $entity: entity name
