@@ -3,7 +3,7 @@ cj(function($) {
   'use strict';
   var
     setting = drupalSettings.webform_civicrm,
-    $processorFields = $('.civicrm-enabled[name$="civicrm_1_contribution_1_contribution_payment_processor_id]"]');
+    $processorFields = $('[name$="civicrm_1_contribution_1_contribution_payment_processor_id"]');
 
   function getPaymentProcessor() {
     if (!$processorFields.length) {
@@ -14,22 +14,27 @@ cj(function($) {
 
   function loadBillingBlock() {
     var type = getPaymentProcessor();
-    if (type && type != '0') {
-      $('#billing-payment-block').load(setting.contributionCallback + '&' + setting.processor_id_key + '=' + type, function() {
-        $('#billing-payment-block').trigger('crmLoad').trigger('crmFormLoad');
-        if (setting.billingSubmission) {
-          $.each(setting.billingSubmission, function(key, val) {
-            $('[name="' + key + '"]').val(val);
-          });
-        }
-        // When an express payment button is clicked, skip the billing fields and submit the form with a placeholder
-        var $expressButton = $('input[name$=_upload_express]', '#billing-payment-block');
-        if ($expressButton.length) {
-          $expressButton.removeClass('crm-form-submit').click(function(e) {
-            e.preventDefault();
-            $('input[name=credit_card_number]', '#billing-payment-block').val('express');
-            $(this).closest('form').find('input.webform-submit.button-primary').click();
-          })
+    if (type && type !== '0') {
+      $.ajax({
+        url: setting.contributionCallback + '&' + setting.processor_id_key + '=' + type,
+        success: function(data) {
+          var $billingPaymentBlock = $('#billing-payment-block');
+          $billingPaymentBlock.html(data);
+          $billingPaymentBlock.trigger('crmLoad').trigger('crmFormLoad');
+          if (setting.billingSubmission) {
+            $.each(setting.billingSubmission, function(key, val) {
+              $('[name="' + key + '"]').val(val);
+            });
+          }
+          // When an express payment button is clicked, skip the billing fields and submit the form with a placeholder
+          var $expressButton = $billingPaymentBlock.find('input[name$=_upload_express]');
+          if ($expressButton.length) {
+            $expressButton.removeClass('crm-form-submit').click(function(e) {
+              e.preventDefault();
+              $billingPaymentBlock.find('input[name=credit_card_number]').val('express');
+              $(this).closest('form').find('input.webform-submit.button-primary').click();
+            })
+          }
         }
       });
     }
@@ -39,7 +44,7 @@ cj(function($) {
   }
   $processorFields.on('change', function() {
     setting.billingSubmission || (setting.billingSubmission = {});
-    $('input:visible, select', '#billing-payment-block').each(function() {
+    $('#billing-payment-block').find('input:visible, select').each(function() {
       var name = $(this).attr('name');
       name && (setting.billingSubmission[name] = $(this).val());
     });
@@ -49,15 +54,11 @@ cj(function($) {
 
   function tally() {
     var total = 0;
-    $('.line-item:visible', '#wf-crm-billing-items').each(function() {
+    $('#wf-crm-billing-items').find('.line-item:visible').each(function() {
       total += parseFloat($(this).data('amount'));
     });
-    $('td+td', '#wf-crm-billing-total').html(CRM.formatMoney(total));
-    if (total > 0) {
-      $('#billing-payment-block').show();
-    } else {
-      $('#billing-payment-block').hide();
-    }
+    $('#wf-crm-billing-total').find('td+td').html(CRM.formatMoney(total));
+    $('#billing-payment-block').toggle(total > 0);
   }
 
   function updateLineItem(item, amount, label) {

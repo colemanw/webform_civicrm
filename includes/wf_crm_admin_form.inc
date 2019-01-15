@@ -4,6 +4,7 @@ use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Drupal\webform\Utility\WebformArrayHelper;
 use Drupal\webform\WebformInterface;
 
 /**
@@ -1214,11 +1215,20 @@ class wf_crm_admin_form {
    * Ajax-loaded mini-forms for the contributions tab.
    */
   private function checkSubmissionLimit() {
-    $webform = &$this->node->webform;
+    // Bypass this until it is fully rescoped.
+    return;
+    $webform = $this->webform;
+
+    /** @var \Drupal\webform\WebformAccessRulesManagerInterface $access_rules_manager */
+    $access_rules_manager = \Drupal::service('webform.access_rules_manager');
+    $anonymous_access = $access_rules_manager->checkWebformAccess('create', new \Drupal\Core\Session\AnonymousUserSession(), $webform);
     // If anonymous users don't have access to the form, no need for a warning.
-    if (!in_array('1', $webform['roles'])) {
+    if (!$anonymous_access->isAllowed()) {
       return;
     }
+
+    // @todo reevaluate these options in D8.
+    return;
     // Handle ajax submission from "submit_limit" mini-form below
     if (!empty($_POST['submit_limit']) && !empty($_POST['submit_interval'])) {
       $submit_limit = (int) $_POST['submit_limit'];
@@ -1718,10 +1728,18 @@ class wf_crm_admin_form {
               }
             }
           }
-          elseif ($field['type'] == 'hidden' && !empty($field['expose_list'])) {
-            $component = $this->node->webform['components'][$enabled[$key]];
+          elseif ($field['type'] === 'hidden' && !empty($field['expose_list'])) {
+            $elements = $this->webform->getElementsDecoded();
+            $component = $elements[$enabled[$key]];
+            $component = WebformArrayHelper::removePrefix($component);
             $component['value'] = $val;
-            webform_component_update($component);
+            $enabled[$key] = $component;
+          }
+          else {
+            // Try to "update" options for existing fields via ::insertComponent
+            $field += ['form_key' => $key];
+            self::insertComponent($field, $enabled, $this->settings);
+            $stop = null;
           }
 
           if (substr($key, -11) === '_createmode') {
@@ -1778,7 +1796,9 @@ class wf_crm_admin_form {
         $stub_form = [];
         $stub_form_state = new FormState();
         $stub_form_state->set('default_properties', $element_plugin->getDefaultProperties());
-        $enabled_element['title'] = $enabled_element['name'];
+        if (!isset($enabled_element['title']) && isset($enabled_element['name'])) {
+          $enabled_element['title'] = $enabled_element['name'];
+        }
         unset($enabled_element['name']);
         $stub_form_state->setValues($enabled_element);
         $properties = $element_plugin->getConfigurationFormProperties($stub_form, $stub_form_state);
@@ -1947,16 +1967,25 @@ class wf_crm_admin_form {
       $field['value']['value'] = '';
     }
     // Retrieve option list
-    if ($field['type'] == 'select') {
+    if ($field['type'] === 'select') {
       if ($options = wf_crm_field_options($field, 'component_insert', $settings['data'])) {
+        $field['options'] = $options;
         $field['extra']['items'] = wf_crm_array2str($options);
-        // Default to select widget
-        if (!isset($field['extra']['aslist']) && empty($field['extra']['multiple'])) {
-          $field['extra']['aslist'] = 1;
+
+        $as_list = !empty($field['extra']['aslist']);
+        $is_multiple = !empty($field['extra']['multiple']);
+        $use_live_options = !empty($field['civicrm_live_options']);
+
+        if (!$as_list) {
+          $field['type'] = $is_multiple ? 'checkboxes' : 'radios';
         }
+        else if ($is_multiple) {
+          $field['multiple'] = TRUE;
+        }
+
         // A single static radio should be shown as a checkbox
-        if (count($options) == 1 && empty($field['extra']['aslist']) && empty($field['extra']['civicrm_live_options'])) {
-          $field['extra']['multiple'] = 1;
+        if (!$use_live_options && !$as_list && count($options) === 1) {
+          $field['type'] = 'checkbox';
         }
       }
     }
@@ -1979,8 +2008,15 @@ class wf_crm_admin_form {
       self::addFieldset($c, $field, $enabled, $settings, $ent, $create_fieldsets);
     }
     // Create page break for contribution page
-    if ($name == 'contribution_page_id') {
-      self::addPageBreak($field);
+    if ($name === 'contribution_page_id') {
+      // @todo properly inject a page break.
+      // there needs to be a root page and nested elements.
+      $enabled['contribution_pagebreak'] = [
+        'type' => 'webform_wizard_page',
+        'form_key' => 'contribution_pagebreak',
+        'title' => (string) t('Payment'),
+      ];
+      // self::addPageBreak($field);
     }
     // Merge defaults and create webform component
     $field += ['extra' => []];
@@ -2040,6 +2076,9 @@ class wf_crm_admin_form {
    * @param $field
    */
   public static function addPageBreak($field) {
+    // @todo properly inject a page break.
+    $stop = null;
+    /*
     $node = node_load($field['nid']);
     // Check if it already exists
     foreach (wf_crm_aval($node->webform, 'components', array()) as $component) {
@@ -2056,6 +2095,7 @@ class wf_crm_admin_form {
     );
     $pagebreak += webform_component_invoke('pagebreak', 'defaults');
     webform_component_insert($pagebreak);
+    */
   }
 
   /**
