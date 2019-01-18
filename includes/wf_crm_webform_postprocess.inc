@@ -766,13 +766,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $existing = array_merge(array(array()), $result['values']);
         }
         foreach ($contact[$location] as $i => $params) {
-          // Translate state/prov abbr to id
-          if (!empty($params['state_province_id'])) {
-            $config = CRM_Core_Config::singleton();
-            if (!($params['state_province_id'] = wf_crm_state_abbr($params['state_province_id'], 'id', wf_crm_aval($params, 'country_id', $config->defaultContactCountry)))) {
-              $params['state_province_id'] = '';
-            }
-          }
           // Substitute county stub ('-' is a hack to get around required field when there are no available counties)
           if (isset($params['county_id']) && $params['county_id'] === '-') {
             $params['county_id'] = '';
