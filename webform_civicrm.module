@@ -396,6 +396,9 @@ function webform_civicrm_civicrm_post($op, $name, $id, $dao) {
  * @param CRM_Core_DAO_CustomGroup $dao
  */
 function webform_civicrm_civicrm_postSave_civicrm_custom_group($dao) {
+  // @todo Webform elements are not stored in the table and this does not work.
+  // @todo evaluate how to update webform when custom groups change.
+  /*
   module_load_include('inc', 'webform', 'includes/webform.components');
 
   // get all fieldsets with custom group ID
@@ -423,6 +426,7 @@ function webform_civicrm_civicrm_postSave_civicrm_custom_group($dao) {
       webform_component_update($component);
     }
   }
+  */
 }
 
 /**

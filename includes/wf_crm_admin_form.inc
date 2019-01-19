@@ -1737,9 +1737,10 @@ class wf_crm_admin_form {
           }
           else {
             // Try to "update" options for existing fields via ::insertComponent
+            // Always insert fieldsets, as there are checks to see if the
+            // fieldset already exists.
             $field += ['form_key' => $key];
-            self::insertComponent($field, $enabled, $this->settings);
-            $stop = null;
+            self::insertComponent($field, $enabled, $this->settings, TRUE);
           }
 
           if (substr($key, -11) === '_createmode') {
@@ -2002,8 +2003,8 @@ class wf_crm_admin_form {
       $field['value'] = $settings[$field['form_key']];
     }
     // Create fieldsets for multivalued entities
-    if ($ent != 'contribution' &&
-      ($ent != 'participant' || wf_crm_aval($settings['data'], 'participant_reg_type') == 'separate')
+    if ($ent !== 'contribution' &&
+      ($ent !== 'participant' || wf_crm_aval($settings['data'], 'participant_reg_type') === 'separate')
     ) {
       self::addFieldset($c, $field, $enabled, $settings, $ent, $create_fieldsets);
     }
@@ -2035,9 +2036,9 @@ class wf_crm_admin_form {
    * @param bool $allow_create
    */
   public static function addFieldset($c, &$field, &$enabled, $settings, $ent = 'contact', $allow_create = FALSE) {
-    $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
+    $type = in_array($ent, self::$fieldset_entities, TRUE) ? $ent : 'contact';
     // Custom fields are placed in fieldsets by group (for contact fields only)
-    if (strpos($field['form_key'], '_custom_') && $type == 'contact') {
+    if ($type === 'contact' && strpos($field['form_key'], '_custom_') !== FALSE) {
       $sid = explode('_custom', $field['form_key']);
       $sid = $sid[0] . '_fieldset';
       $customGroupKey = explode('_', $field['form_key'])[4];
@@ -2046,29 +2047,34 @@ class wf_crm_admin_form {
     else {
       $sid = "civicrm_{$c}_{$type}_1_fieldset_fieldset";
     }
-    if (!empty($settings['create_fieldsets']) && !isset($enabled[$sid]) && $allow_create) {
-      $new_set = array(
-        'nid' => $field['nid'],
+    if ($allow_create && !empty($settings['create_fieldsets']) && !isset($enabled[$sid])) {
+      $new_set = [
+        // There is no nid.
+        // 'nid' => $field['nid'],
         'form_key' => $sid,
         'type' => 'fieldset',
-        'weight' => $c,
-      );
+        // @todo We cannot define a default weight.
+        // 'weight' => $c,
+      ];
       $sets = wf_crm_get_fields('sets');
-      if (isset($isCustom)) {
-        $new_set['name'] = $sets[$customGroupKey]['label'];
-        $new_set['weight'] = 200 + (array_search($type, self::$fieldset_entities) * 10 + $c);
+      if (isset($isCustom, $customGroupKey)) {
+        $new_set['title'] = $sets[$customGroupKey]['label'];
+        // @todo We cannot define a default weight.
+        // $new_set['weight'] = 200 + (array_search($type, self::$fieldset_entities, TRUE) * 10 + $c);
       }
-      elseif ($type == 'contact') {
-        $new_set['name'] = wf_crm_contact_label($c, $settings['data']);
+      elseif ($type === 'contact') {
+        $new_set['title'] = wf_crm_contact_label($c, $settings['data']);
       }
       else {
-        $new_set['name'] = $sets[$type]['label'] . ($c > 1 ? " $c" : '');
-        $new_set['weight'] = 200 + (array_search($type, self::$fieldset_entities) * 10 + $c);
+        $new_set['title'] = $sets[$type]['label'] . ($c > 1 ? " $c" : '');
+        // @todo We cannot define a default weight.
+        // $new_set['weight'] = 200 + (array_search($type, self::$fieldset_entities, TRUE) * 10 + $c);
       }
-      $new_set += webform_component_invoke('fieldset', 'defaults');
-      $enabled[$sid] = webform_component_insert($new_set);
+      // @todo use WebformElementManager and get defaults
+      // @see \Drupal\webform\Plugin\WebformElement\Fieldset::getDefaultProperties
+      // $new_set += webform_component_invoke('fieldset', 'defaults');
+      $enabled[$sid] = $new_set;
     }
-    $field += array('pid' => wf_crm_aval($enabled, $sid, 0));
   }
 
   /**
