@@ -752,6 +752,23 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $is_primary_address_location_type = wf_crm_aval($contact, 'address:1:location_type_id');
     $is_primary_email_location_type = wf_crm_aval($contact, 'email:1:location_type_id');
 
+    // Fix address fields.
+    if (!empty($contact['address'])) {
+      foreach ($contact['address'] as &$address) {
+        // Translate state/prov abbr to id
+        if (!empty($address['state_province_id'])) {
+          $config = CRM_Core_Config::singleton();
+          if (!($address['state_province_id'] = wf_crm_state_abbr($address['state_province_id'], 'id', wf_crm_aval($address, 'country_id', $config->defaultContactCountry)))) {
+            $address['state_province_id'] = '';
+          }
+        }
+        // Substitute county stub ('-' is a hack to get around required field when there are no available counties)
+        if (isset($address['county_id']) && $address['county_id'] === '-') {
+          $address['county_id'] = '';
+        }
+      }
+    }
+    
     foreach (wf_crm_location_fields() as $location) {
       if (!empty($contact[$location])) {
         $existing = array();
@@ -766,17 +783,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $existing = array_merge(array(array()), $result['values']);
         }
         foreach ($contact[$location] as $i => $params) {
-          // Translate state/prov abbr to id
-          if (!empty($params['state_province_id'])) {
-            $config = CRM_Core_Config::singleton();
-            if (!($params['state_province_id'] = wf_crm_state_abbr($params['state_province_id'], 'id', wf_crm_aval($params, 'country_id', $config->defaultContactCountry)))) {
-              $params['state_province_id'] = '';
-            }
-          }
-          // Substitute county stub ('-' is a hack to get around required field when there are no available counties)
-          if (isset($params['county_id']) && $params['county_id'] === '-') {
-            $params['county_id'] = '';
-          }
           // Update drupal email address
           if ($location == 'email' && !empty($params['email']) && $i == 1) {
             $uid = wf_crm_user_cid($cid, 'contact');
