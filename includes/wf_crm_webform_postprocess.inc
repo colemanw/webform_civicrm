@@ -5,6 +5,7 @@
  * Front-end form validation and post-processing.
  */
 
+use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
 use Drupal\user\Entity\User;
@@ -1656,22 +1657,24 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function validateBillingFields() {
     $valid = TRUE;
-    $params = $card_errors = array();
+    $params = $card_errors = [];
+    $payment_processor_id = NestedArray::getValue($this->data, ['contribution', '1', 'contribution', '1', 'payment_processor_id']);
 
-    $processor = Civi\Payment\System::singleton()->getById(wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id'));
-    $billingAddressFieldsMetadata = array();
+    $processor = Civi\Payment\System::singleton()->getById($payment_processor_id);
+    $billingAddressFieldsMetadata = [];
     if (method_exists($processor, 'getBillingAddressFieldsMetadata')) {
       // getBillingAddressFieldsMetadata did not exist before 4.7
       $billingAddressFieldsMetadata = $processor->getBillingAddressFieldsMetadata();
     }
     $fields = CRM_Utils_Array::crmArrayMerge($processor->getPaymentFormFieldsMetadata(), $billingAddressFieldsMetadata);
 
-    foreach ($_POST as $field => $value) {
-      if (empty($_POST[$field]) && isset($fields[$field]) && $fields[$field]['is_required'] !== FALSE) {
-        form_set_error($field, t('!name field is required.', array('!name' => check_plain($fields[$field]['title']))));
+    $request = \Drupal::request();
+    foreach ($request->request->all() as $field => $value) {
+      if (empty($value) && isset($fields[$field]) && $fields[$field]['is_required'] !== FALSE) {
+        $this->form_state->setErrorByName($field, t(':name field is required.', [':name' => $fields[$field]['title']]));
         $valid = FALSE;
       }
-      if (!empty($_POST[$field]) && array_key_exists($field, $fields)) {
+      if (!empty($value) && array_key_exists($field, $fields)) {
         $name = str_replace('billing_', '', str_replace('-5', '', $field));
         $params[$name] = $params[$field] = $_POST[$field];
       }
@@ -1684,7 +1687,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     // Validate billing details
-    CRM_Core_Payment_Form::validatePaymentInstrument(wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id'), $params, $card_errors, NULL);
+    CRM_Core_Payment_Form::validatePaymentInstrument($payment_processor_id, $params, $card_errors, NULL);
     foreach ($card_errors as $field => $msg) {
       $this->form_state->setErrorByName($field, $msg);
       $valid = FALSE;
@@ -1873,11 +1876,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->contributionIsIncomplete = TRUE;
 
     $this->contributionIsPayLater = FALSE;
-    if(empty($this->data['contribution'][1]['contribution'][1]['payment_processor_id'])) {
+    $paymentProcessorID = NestedArray::getValue($this->data, ['contribution', '1', 'contribution', '1', 'payment_processor_id']);
+    if(empty($paymentProcessorID)) {
       $this->contributionIsPayLater = TRUE;
     }
     else {
-      $paymentProcessorID = $this->data['contribution'][1]['contribution'][1]['payment_processor_id'];
       $paymentProcessorClassName = civicrm_api3('PaymentProcessor', 'getvalue', array(
         'return' => 'class_name',
         'id' => $paymentProcessorID,
@@ -2044,15 +2047,17 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $params['non_deductible_amount']  = $params['total_amount'];
     }
 
-    // pass all submitted values to payment processor
-    foreach ($_POST as $key => $value) {
+    // Pass all submitted values to payment processor.
+    $request = \Drupal::request();
+    foreach ($request->request->all() as $key => $value) {
       if (empty($params[$key])) {
         $params[$key] = $value;
       }
     }
 
     // Fix bug for testing.
-    if ($params['is_test'] == 1) {
+    // @todo Pay Later causes issues as it returns `0`.
+    if ($params['is_test'] == 1 && $params['payment_processor_id'] !== '0') {
       $liveProcessorName = wf_civicrm_api('payment_processor', 'getvalue', array(
         'id' => $params['payment_processor_id'],
         'return' => 'name',
@@ -2060,7 +2065,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // Lookup current domain for multisite support
       static $domain = 0;
       if (!$domain) {
-        $domain = wf_civicrm_api('domain', 'get', array('current_domain' => 1, 'return' => 'id'));
+        $domain = wf_civicrm_api('domain', 'get', ['current_domain' => 1, 'return' => 'id']);
         $domain = wf_crm_aval($domain, 'id', 1);
       }
       $params['payment_processor_id'] = wf_civicrm_api('payment_processor', 'getvalue', array(
@@ -2073,7 +2078,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     // doPayment requries payment_processor and payment_processor_mode fields.
     if (version_compare($this->civicrm_version, '4.7', '>=')) {
-      $params['payment_processor'] = wf_crm_aval($params, 'payment_processor_id');
+      $params['payment_processor'] = isset($params['payment_processor_id']) ? $params['payment_processor_id'] : NULL;
     }
 
     // Record additional parameters if we're processing a credit card after version 4.7.17 (CRM-20158)
