@@ -2201,34 +2201,44 @@ class wf_crm_admin_form {
    */
   public static function handleDynamicCustomField($op, $fid, $gid) {
     module_load_include('inc', 'webform_civicrm', 'includes/utils');
-    module_load_include('inc', 'webform', 'includes/webform.components');
     $sets = wf_crm_get_fields('sets');
-    $webforms = db_query("SELECT nid FROM {webform_civicrm_forms} WHERE data LIKE '%\"dynamic_custom_cg$gid\";i:1;%'");
+    // @todo Start using webform_civicrm_forms to track enabled webforms.
+    /** @var \Drupal\webform\WebformInterface[] $webforms */
+    $webforms = \Drupal\webform\Entity\Webform::loadMultiple();
     foreach ($webforms as $webform) {
+      $handler_collection = $webform->getHandlers('webform_civicrm');
+
+      if (!$handler_collection->has('webform_civicrm')) {
+        continue;
+      }
+      $handler = $handler_collection->get('webform_civicrm');
+      $settings = $handler->getConfiguration()['settings'];
+      $data = $settings['data'];
+
       $field_name = "cg{$gid}_custom_$fid";
       $field_info = wf_crm_get_field($field_name);
       // $field_info contains old data, so re-fetch
       $fieldConfigs = wf_civicrm_api('CustomField', 'getsingle', array('id' => $fid));
-      // Reset node cache to avoid stale data, so as not to insert the same component twice
-      $node = node_load($webform->nid, NULL, TRUE);
-      $enabled = wf_crm_enabled_fields($node, NULL, TRUE);
+      $enabled = wf_crm_enabled_fields($webform, NULL, TRUE);
       $updated = array();
       // Handle update & delete of existing components
-      foreach ($node->webform['components'] as $component) {
-        if (substr($component['form_key'], 0 - strlen($field_name)) === $field_name) {
-          if ($pieces = wf_crm_explode_key($component['form_key'])) {
+      $elements = $webform->getElementsDecoded();
+      foreach ($elements as $component_key => $component) {
+        if (substr($component['#form_key'], 0 - strlen($field_name)) === $field_name) {
+          if ($pieces = wf_crm_explode_key($component['#form_key'])) {
             list(, $c, $ent, $n, $table, $name) = $pieces;
-            if (!empty($node->webform_civicrm['data'][$ent][$c]["dynamic_custom_cg$gid"])) {
-              if ($op == 'delete' || $op == 'disable') {
-                webform_component_delete($node, $component);
+            if (!empty($data[$ent][$c]["dynamic_custom_cg$gid"])) {
+              if ($op === 'delete' || $op === 'disable') {
+                unset($elements[$component_key]);
+                $webform->deleteElement($component_key);
               }
               elseif (isset($field_info)) {
-                $component['name'] = $fieldConfigs['label'];
-                $component['required'] = $fieldConfigs['is_required'];
-                $component['value'] = $fieldConfigs['default_value'] ? $fieldConfigs['default_value'] : "";
-                $component['extra']['description'] = $fieldConfigs['help_pre'] ?  $fieldConfigs['help_pre'] : "";
-                $component['extra']['description_above'] = $field_info['extra']['description_above'];;
-                webform_component_update($component);
+                $component['#title'] = $fieldConfigs['label'];
+                $component['#required'] = $fieldConfigs['is_required'];
+                $component['#value'] = $fieldConfigs['default_value'] ?: '';
+                $component['#extra']['description'] = $fieldConfigs['help_pre'] ?: '';
+                $component['#extra']['description_above'] = $field_info['extra']['description_above'];
+                $webform->setElementProperties($component_key, $component);
               }
               $updated[$ent][$c] = 1;
             }
@@ -2236,22 +2246,24 @@ class wf_crm_admin_form {
         }
       }
       // Handle create new components
-      if ($op == 'create' || $op == 'enable') {
+      if ($op === 'create' || $op === 'enable') {
+        $webform_element_manager = \Drupal::getContainer()->get('plugin.manager.webform.element');
+
         $ent = $sets["cg$gid"]['entity_type'];
-        foreach ($node->webform_civicrm['data'][$ent] as $c => $item) {
+        foreach ($data[$ent] as $c => $item) {
           if (!empty($item["dynamic_custom_cg$gid"]) && empty($updated[$ent][$c])) {
             $new = $field_info;
-            $new['nid'] = $node->nid;
+            $new['nid'] = $webform->id();
             $new['form_key'] = "civicrm_{$c}_{$ent}_1_$field_name";
             $new['weight'] = 0;
-            foreach ($node->webform['components'] as $component) {
+            foreach ($elements as $component) {
               if (strpos($component['form_key'], "civicrm_{$c}_{$ent}_1_cg{$gid}_custom_") === 0 && $component['weight'] >= $new['weight']) {
-                $new['weight'] = $component['weight'] + 1;
-                $new['pid'] = $component['pid'];
+                // @todo cannot set weight.
+                // $new['weight'] = $component['weight'] + 1;
               }
             }
-            if ($op == 'enable') {
-              $new['name'] = $fieldConfigs['label'];
+            if ($op === 'enable') {
+              $new['title'] = $fieldConfigs['label'];
               $new['required'] = $fieldConfigs['is_required'];
               $new['value'] = implode(',', wf_crm_explode_multivalue_str($fieldConfigs['default_value']));
               $new['data_type'] = $fieldConfigs['data_type'];
@@ -2259,10 +2271,29 @@ class wf_crm_admin_form {
               $custom_types = wf_crm_custom_types_map_array();
               $new['type'] = $custom_types[$fieldConfigs['html_type']]['type'];
             }
-            wf_crm_admin_form::insertComponent($new, $enabled, $node->webform_civicrm);
+            self::insertComponent($new, $enabled, $settings);
+
+            $element_plugin = $webform_element_manager->getElementInstance([
+              '#type' => $new['type'],
+            ]);
+
+            $stub_form = [];
+            $stub_form_state = new FormState();
+            $stub_form_state->set('default_properties', $element_plugin->getDefaultProperties());
+            if (!isset($new['title']) && isset($new['name'])) {
+              $new['title'] = $new['name'];
+            }
+            unset($new['name']);
+            $stub_form_state->setValues($new);
+            $properties = $element_plugin->getConfigurationFormProperties($stub_form, $stub_form_state);
+
+            // @todo support parent key, for fieldsets and such.
+            $webform->setElementProperties($new['form_key'], $properties);
           }
         }
       }
+
+      $webform->save();
     }
   }
 }
