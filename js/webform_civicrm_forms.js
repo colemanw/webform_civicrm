@@ -4,7 +4,6 @@
 
 var wfCivi = (function ($, D) {
   'use strict';
-  var setting = D.settings.webform_civicrm;
   /**
    * Public methods.
    */
@@ -137,7 +136,7 @@ var wfCivi = (function ($, D) {
         if (clear) {
           // Reset country to default
           if (n[5] === 'country') {
-            $('select.civicrm-processed', this).val(setting.defaultCountry).trigger('change', 'webform_civicrm:reset');
+            $('select.civicrm-processed', this).val(D.settings.webform_civicrm.defaultCountry).trigger('change', 'webform_civicrm:reset');
           }
           //Set default value if it is specified in component settings.
           else if ($el.hasClass('webform-component-date') && typeof defaults != "undefined" && defaults.hasOwnProperty(name)) {
@@ -268,7 +267,7 @@ var wfCivi = (function ($, D) {
       fillOptions(stateSelect, stateProvinceCache[countryId]);
     }
     else {
-      $.getJSON(setting.callbackPath+'/stateProvince/'+countryId, function(data) {
+      $.getJSON(D.settings.webform_civicrm.callbackPath + '/stateProvince/' + countryId, function(data) {
         fillOptions(stateSelect, data);
         stateProvinceCache[countryId] = data;
       });
@@ -290,7 +289,7 @@ var wfCivi = (function ($, D) {
         fillOptions(countySelect, null);
       }
       else {
-        $.getJSON(setting.callbackPath+'/county/'+stateVal+'-'+countryId, function(data) {
+        $.getJSON(D.settings.webform_civicrm.callbackPath + '/county/' + stateVal + '-' + countryId, function(data) {
           fillOptions(countySelect, data);
         });
       }
@@ -364,10 +363,10 @@ var wfCivi = (function ($, D) {
 
   D.behaviors.webform_civicrmForm = {
     attach: function (context) {
-      if (!stateProvinceCache['default'] && setting) {
-        stateProvinceCache['default'] = setting.defaultStates;
-        stateProvinceCache[setting.defaultCountry] = setting.defaultStates;
-        stateProvinceCache[''] = {'': setting.noCountry};
+      if (!stateProvinceCache['default'] && D.settings.webform_civicrm) {
+        stateProvinceCache['default'] = D.settings.webform_civicrm.defaultStates;
+        stateProvinceCache[D.settings.webform_civicrm.defaultCountry] = D.settings.webform_civicrm.defaultStates;
+        stateProvinceCache[''] = {'': D.settings.webform_civicrm.noCountry};
       }
 
       // Replace state/prov & county textboxes with dynamic select lists
