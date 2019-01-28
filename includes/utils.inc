@@ -1134,6 +1134,10 @@ function wf_crm_get_fields($var = 'fields') {
         'value' => 0,
         'exposed_empty_option' => '- ' . t('Automatic') . ' -',
       );
+      $fields['participant_note'] = array(
+        'name' => t('Participant Notes'),
+        'type' => 'textarea',
+      );
       if (isset($sets['contribution'])) {
         $fields['participant_fee_amount'] = array(
           'name' => t('Participant Fee'),
