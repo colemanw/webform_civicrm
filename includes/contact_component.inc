@@ -1148,6 +1148,7 @@ function wf_crm_results_display_options($contact_type) {
     'city' => t("City"),
     'county' => t("District/County"),
     'state_province' => t("State/Province"),
+    'street_address' => t("Street Address"),
     'country' => t("Country"),
     'postal_code' => t("Postal Code"),
     'phone' => t("Phone"),
