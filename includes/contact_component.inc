@@ -241,15 +241,18 @@ function _webform_edit_civicrm_contact($component) {
       '#parents' => array('extra', 'default_relationship'),
     );
   }
-  $form['defaults']['default']['#options']['custom_ref'] = t('Custom reference field');
-  $form['defaults']['default_custom_ref'] = array(
-    '#type' => 'select',
-    '#title' => t('Specify Custom Field'),
-    '#options' => wf_crm_get_custom_ref_options(),
-    '#required' => TRUE,
-    '#default_value' => $component['extra']['default_custom_ref'],
-    '#parents' => array('extra', 'default_custom_ref'),
-  );
+  $custom_ref_options = wf_crm_get_custom_ref_options();
+  if ($custom_ref_options) {
+    $form['defaults']['default']['#options']['custom_ref'] = t('Custom reference field');
+    $form['defaults']['default_custom_ref'] = array(
+      '#type' => 'select',
+      '#title' => t('Specify Custom Field'),
+      '#options' => $custom_ref_options,
+      '#required' => TRUE,
+      '#default_value' => $component['extra']['default_custom_ref'],
+      '#parents' => array('extra', 'default_custom_ref'),
+    );
+  }
   
   $case_count = isset($data['case']['number_of_case']) ? $data['case']['number_of_case'] : 0;
   if ($case_count > 0) {
