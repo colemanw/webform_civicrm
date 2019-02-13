@@ -1926,6 +1926,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['amount'] = $params['total_amount'];
 
     $params['financial_type_id'] = $this->contribution_page['financial_type_id'];
+    
+    // Some payment processors expect this to be set (eg. redsys)
+    $financialTypeDetails = wf_civicrm_api('FinancialType', 'get', array('return' => "is_deductible,name",'id' => $this->contribution_page['financial_type_id']));
+    $params['contributionType_name'] = $params['financialType_name'] = $financialTypeDetails['values'][$this->contribution_page['financial_type_id']]['name'];
 
     $params['source'] = $this->settings['new_contact_source'];
     $params['item_name'] = $params['description'] = t('Webform Payment: @title', array('@title' => $this->node->title));
