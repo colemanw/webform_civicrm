@@ -986,7 +986,7 @@ class wf_crm_admin_form {
       '#group' => 'webform_civicrm',
       '#attributes' => array('class' => array('civi-icon-membership')),
     );
-    for ($c = 1; $c <= count($this->data['contact']); ++$c) {
+    for ($c = 1, $cMax = count($this->data['contact']); $c <= $cMax; ++$c) {
       $num = wf_crm_aval($this->data, "membership:{$c}:number_of_membership", 0);
       $this->form['membership'][$c]["membership_{$c}_number_of_membership"] = array(
         '#type' => 'select',
@@ -1549,7 +1549,7 @@ class wf_crm_admin_form {
       }
     }
     // Defaults when adding a case
-    for ($i=1; $i <= wf_crm_aval($this->settings, 'case_number_of_case'); ++$i) {
+    for ($i=1, $iMax = wf_crm_aval($this->settings, 'case_number_of_case'); $i <= $iMax; ++$i) {
       if (!isset($this->settings["civicrm_{$i}_case_1_case_case_type_id"])) {
         $case_types = array_keys(wf_crm_apivalues('Case', 'getoptions', array('field' => 'case_type_id')));
         $this->data['case'][$i]['case'][1]['case_type_id'] = $case_types[0];
@@ -1804,8 +1804,18 @@ class wf_crm_admin_form {
         $stub_form_state->setValues($enabled_element);
         $properties = $element_plugin->getConfigurationFormProperties($stub_form, $stub_form_state);
 
-        // @todo support parent key, for fieldsets and such.
-        $this->webform->setElementProperties($enabled_key, $properties, '');
+        $fieldset_name = '';
+        if (strpos($enabled_key, 'fieldset') === FALSE) {
+          if (strpos($enabled_key, '_custom_') !== FALSE) {
+            // @todo this does not work.
+            $fieldset_name = explode('_custom_', $enabled_key);
+            $fieldset_name = $fieldset_name[0] . '_fieldset';
+          } else {
+            $form_key_parts = explode('_', $enabled_key);
+            $fieldset_name = "civicrm_{$form_key_parts[1]}_{$form_key_parts[2]}_1_fieldset_fieldset";
+          }
+        }
+        $this->webform->setElementProperties($enabled_key, $properties, $fieldset_name);
       }
       // Update existing contact fields
       foreach ($existing as $fid => $id) {

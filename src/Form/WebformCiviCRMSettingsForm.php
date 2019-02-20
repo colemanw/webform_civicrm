@@ -95,6 +95,8 @@ class WebformCiviCRMSettingsForm extends FormBase {
       return;
     }
 
+    $elements = $webform->getElementsDecoded();
+
     $admin_form = new \wf_crm_admin_form($form, $form_state, (object) [], $webform);
     $form_state->cleanValues();
     $admin_form->setSettings($form_state->getValues());

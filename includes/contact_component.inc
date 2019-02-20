@@ -489,7 +489,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
  *
  * Also sets options for select lists.
  *
- * @param stdClass $node
+ * @param \Drupal\webform\WebformInterface $node
  *   Node object
  * @param array $component
  *   Webform component
@@ -498,7 +498,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
  * @param array $ids
  *   Known entity ids
  */
-function wf_crm_fill_contact_value($node, $component, &$element, $ids = NULL) {
+function wf_crm_fill_contact_value(\Drupal\webform\WebformInterface $node, $component, &$element, $ids = NULL) {
   $cid = wf_crm_aval($element, '#default_value', '');
   if ($element['#type'] == 'hidden') {
     // User may not change this value for hidden fields
