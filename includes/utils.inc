@@ -54,7 +54,7 @@ function wf_crm_field_options($field, $context, $data) {
     elseif ($name == 'privacy') {
       $ret = wf_crm_get_privacy_options();
     }
-    elseif ($table === 'other') {
+    elseif ($table === 'other' || $table === 'case') {
       if ($field['table'] === 'tag') {
         $split = explode('_', $name);
         $ret = CRM_Core_BAO_Tag::getTags("civicrm_{$ent}", $ret, wf_crm_aval($split, 1), '- ');
@@ -940,6 +940,17 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Case # Details'),
         'type' => 'textarea',
       );
+      $tagsets = array('' => t('Tag(s)')) + CRM_Core_BAO_Tag::getTagSet('civicrm_case');
+      foreach ($tagsets as $pid => $name) {
+        if (!$pid) continue;
+        $fields['case_tag' . ($pid ? "_$pid" : '')] = array(
+          'name' => $name,
+          'type' => 'select',
+          'extra' => array('multiple' => 1, 'civicrm_live_options' => 1),
+          'table' => 'tag',
+          'expose_list' => TRUE,
+        );
+      }
       // Fetch case roles
       $sets['caseRoles'] = array('entity_type' => 'case', 'label' => t('Case Roles'));
       // Use the vanilla civicrm_api for this because it will throw an error in CiviCRM 4.4 (api doesn't exist)

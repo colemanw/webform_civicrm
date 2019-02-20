@@ -443,6 +443,9 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       }
       if (!empty($element['#webform_component']) && $pieces = wf_crm_explode_key($eid)) {
         list( , $c, $ent, $n, $table, $name) = $pieces;
+        if ($table == 'case' && substr($name, 0, 4) === 'tag_' && isset($this->info[$ent][$c][$table][$n]['tags'])) {
+          $element['#default_value'] = $this->info[$ent][$c][$table][$n]['tags'];
+        }
         // Separate out time fields
         if (substr($name, -8) === 'timepart') {
           $name = str_replace('_timepart', '', $name);
@@ -796,6 +799,17 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       }
       else {
         $values = wf_crm_apivalues($type, 'get', array('id' => array('IN' => array_values($items))));
+        if ($type == 'case') {
+          foreach ($values as $id => $val) {
+            // load tags for case
+            $tags = wf_crm_apivalues('EntityTag', 'get', array('entity_id' => $id, 'entity_table' => "civicrm_case", 'return' => array("tag_id")));
+            $tagIDs = array();
+            foreach ($tags as $item) {
+              $tagIDs[] = $item['tag_id'];
+            }
+            $values[$id]['tags'] = $tagIDs;
+          }
+        }
       }
       foreach ($items as $n => $id) {
         if (isset($values[$id])) {
