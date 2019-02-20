@@ -359,6 +359,7 @@ function webform_civicrm_webform_submission_actions($node, $submission) {
  * @param CRM_Core_DAO_CustomField $dao
  */
 function webform_civicrm_civicrm_postSave_civicrm_custom_field($dao) {
+  // @TODO: Review for custom fields.
   module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_form');
   if (empty($dao->custom_group_id)) {
     $dao->find(TRUE);
@@ -382,6 +383,7 @@ function webform_civicrm_civicrm_postSave_civicrm_custom_field($dao) {
  * @param CRM_Core_DAO $dao
  */
 function webform_civicrm_civicrm_post($op, $name, $id, $dao) {
+  // @TODO: Review for custom fields.
   if ($name == 'CustomField' && $op == 'delete') {
     module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_form');
     wf_crm_admin_form::handleDynamicCustomField($op, $id, $dao->custom_group_id);
@@ -440,10 +442,21 @@ function webform_civicrm_civicrm_buildForm($formName, $form) {
     $nodes = array();
     $fid = $form->getVar('_id');
     if ($fid) {
-      $webforms = db_query("SELECT nid FROM {webform_component} WHERE form_key LIKE 'civicrm_%_custom_{$fid}' GROUP BY nid");
+      // @todo Start using webform_civicrm_forms to track enabled webforms.
+      /** @var \Drupal\webform\WebformInterface[] $webforms */
+      $webforms = \Drupal\webform\Entity\Webform::loadMultiple();
       foreach ($webforms as $webform) {
-        $node = node_load($webform->nid);
-        $nodes[] = l($node->title, 'node/' . $webform->nid);
+        $handler_collection = $webform->getHandlers('webform_civicrm');
+
+        if (!$handler_collection->has('webform_civicrm')) {
+          continue;
+        }
+        $elements = $webform->getElementsDecoded();
+        foreach (array_keys($elements) as $element_form_key) {
+          if (strpos($element_form_key, "custom_$fid") !== FALSE) {
+            $nodes[] = $webform->toLink()->toString();
+          }
+        }
       }
     }
     if ($nodes) {
