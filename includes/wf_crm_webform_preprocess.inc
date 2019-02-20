@@ -786,6 +786,14 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
               $this->info[$type][$n]["{$type}upload"][1]["file_$f"] = $file['file_id'];
             }
           }
+          // Load tags
+          $tags = NULL;
+          foreach (array_keys($this->enabled) as $fid) {
+            if (strpos($fid, "civicrm_{$n}_{$type}_1_{$type}_tag") === 0) {
+              $tags = $tags ?? wf_crm_apivalues('EntityTag', 'get', ['entity_id' => $id, 'entity_table' => "civicrm_" . $type, 'sequential' => 1], 'tag_id');
+              $this->info[$type][$n][$type][1][str_replace("civicrm_{$n}_{$type}_1_{$type}_", '', $fid)] = $tags;
+            }
+          }
         }
       }
     }

@@ -366,16 +366,6 @@ class Fields implements FieldsInterface {
         'table' => 'group',
         'expose_list' => TRUE,
       );
-      $tagsets = array('' => t('Tag(s)')) + CRM_Core_BAO_Tag::getTagSet('civicrm_contact');
-      foreach ($tagsets as $pid => $name) {
-        $fields['other_tag' . ($pid ? "_$pid" : '')] = array(
-          'name' => $name,
-          'type' => 'select',
-          'extra' => array('multiple' => 1, 'civicrm_live_options' => 1),
-          'table' => 'tag',
-          'expose_list' => TRUE,
-        );
-      }
       $fields['activity_activity_type_id'] = array(
         'name' => t('Activity # Type'),
         'type' => 'select',
@@ -447,7 +437,9 @@ class Fields implements FieldsInterface {
           'integer' => 1,
         ),
       );
+      $tag_entities = array('other', 'activity');
       if (isset($sets['case'])) {
+        $tag_entities[] = 'case';
         $case_info = new CRM_Case_XMLProcessor_Process();
         $fields['case_case_type_id'] = array(
           'name' => t('Case # Type'),
@@ -522,6 +514,29 @@ class Fields implements FieldsInterface {
               }
             }
           }
+        }
+      }
+      $all_tagsets = wf_crm_apivalues('tag', 'get', [
+        'return' => ['id', 'name', 'used_for'],
+        'is_tagset' => 1,
+        'parent_id' => ['IS NULL' => 1],
+      ]);
+      foreach ($tag_entities as $entity) {
+        $table_name = $entity == 'other' ? 'civicrm_contact' : "civicrm_$entity";
+        $tagsets = ['' => t('Tag(s)')];
+        foreach ($all_tagsets as $set) {
+          if (strpos($set['used_for'], $table_name) !== FALSE) {
+            $tagsets[$set['id']] = $set['name'];
+          }
+        }
+        foreach ($tagsets as $pid => $name) {
+          $fields[$entity . '_tag' . ($pid ? "_$pid" : '')] = [
+            'name' => $name,
+            'type' => 'select',
+            'extra' => ['multiple' => 1, 'civicrm_live_options' => 1],
+            'table' => 'tag',
+            'expose_list' => TRUE,
+          ];
         }
       }
       $fields['relationship_relationship_type_id'] = array(
