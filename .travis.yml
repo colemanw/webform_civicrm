@@ -1,0 +1,24 @@
+language: php
+php:
+  - 7.2
+sudo: false
+cache:
+  directories:
+    - $HOME/.composer/cache/files
+    - $HOME/.composer/cache/repo
+env:
+  global:
+    - SIMPLETEST_DB=sqlite://localhost/sites/default/files/.ht.sqlite
+before_install:
+  - composer global require "hirak/prestissimo:^0.3"
+install:
+  - composer create-project roundearth/drupal-civicrm-project:8.x-dev $TRAVIS_BUILD_DIR/../drupal --no-interaction
+  - cd $TRAVIS_BUILD_DIR/../drupal
+  - composer config repositories.0 path $TRAVIS_BUILD_DIR
+  - cat composer.json
+  - composer require drupal/webform_civicrm *@dev
+
+script:
+  - ./vendor/bin/phpunit -c core modules/contrib/webform_civicrm
+notifications:
+  email: false

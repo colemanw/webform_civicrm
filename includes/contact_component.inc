@@ -6,6 +6,7 @@
  */
 
 use Drupal\Component\Utility\Html;
+use Drupal\webform_civicrm\Utils;
 
 module_load_include('inc', 'webform_civicrm', 'includes/utils');
 module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_help');
@@ -780,7 +781,7 @@ function wf_crm_format_contact($contact, $display_fields, $escape = TRUE) {
  */
 function wf_crm_contact_fields($node, $con) {
   $ret = array();
-  $sets = wf_crm_get_fields('sets');
+  $sets = Utils::wf_crm_get_fields('sets');
   $sets['name'] = array('label' => t('Name'));
   foreach ($node->webform['components'] as $f) {
     if ($pieces = wf_crm_explode_key($f['form_key'])) {

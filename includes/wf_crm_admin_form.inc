@@ -6,6 +6,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\webform\Utility\WebformArrayHelper;
 use Drupal\webform\WebformInterface;
+use Drupal\webform_civicrm\Utils;
 
 /**
  * @file
@@ -40,8 +41,8 @@ class wf_crm_admin_form {
     $this->form = $form;
     $this->form_state = $form_state;
     $this->node = &$node;
-    $this->fields = wf_crm_get_fields();
-    $this->sets = wf_crm_get_fields('sets');
+    $this->fields = Utils::wf_crm_get_fields();
+    $this->sets = Utils::wf_crm_get_fields('sets');
 
     $this->webform = $webform;
   }
@@ -415,7 +416,7 @@ class wf_crm_admin_form {
    * Configure messages
    */
   private function buildMessageTabs() {
-    $tokens = '<strong>' . t('Tokens for :contact', array(':contact' => wf_crm_contact_label(1, $this->data, TRUE))) . ':</strong> [' . implode('], [', wf_crm_get_fields('tokens')) . '].';
+    $tokens = '<strong>' . t('Tokens for :contact', array(':contact' => wf_crm_contact_label(1, $this->data, TRUE))) . ':</strong> [' . implode('], [', Utils::wf_crm_get_fields('tokens')) . '].';
 
     $this->form['prefix'] = array(
       '#type' => 'details',
@@ -1347,7 +1348,7 @@ class wf_crm_admin_form {
       if ($field['type'] != 'hidden') {
         $options += array('create_civicrm_webform_element' => t('- User Select -'));
       }
-      $options += wf_crm_field_options($field, 'config_form', $this->data);
+      $options += Utils::wf_crm_field_options($field, 'config_form', $this->data);
       $item += array(
         '#type' => 'select',
         '#options' => $options,
@@ -1870,7 +1871,7 @@ class wf_crm_admin_form {
       $source_key = "civicrm_{$c}_{$ent}_{$n}_{$source}";
       $source_id = wf_crm_aval($enabled, $source_key);
       if ($source_id) {
-        $options = wf_crm_field_options(array('form_key' => $source_key), '', $this->settings['data']);
+        $options = Utils::wf_crm_field_options(array('form_key' => $source_key), '', $this->settings['data']);
         foreach ((array) $condition['values'] as $value) {
           if (isset($options[$value])) {
             $rule_group['rules'][] = array(
@@ -1979,7 +1980,7 @@ class wf_crm_admin_form {
     }
     // Retrieve option list
     if ($field['type'] === 'select') {
-      if ($options = wf_crm_field_options($field, 'component_insert', $settings['data'])) {
+      if ($options = Utils::wf_crm_field_options($field, 'component_insert', $settings['data'])) {
         $field['options'] = $options;
         $field['extra']['items'] = wf_crm_array2str($options);
 
@@ -2066,7 +2067,7 @@ class wf_crm_admin_form {
         // @todo We cannot define a default weight.
         // 'weight' => $c,
       ];
-      $sets = wf_crm_get_fields('sets');
+      $sets = Utils::wf_crm_get_fields('sets');
       if (isset($isCustom, $customGroupKey)) {
         $new_set['title'] = $sets[$customGroupKey]['label'];
         // @todo We cannot define a default weight.
@@ -2211,7 +2212,7 @@ class wf_crm_admin_form {
    */
   public static function handleDynamicCustomField($op, $fid, $gid) {
     module_load_include('inc', 'webform_civicrm', 'includes/utils');
-    $sets = wf_crm_get_fields('sets');
+    $sets = Utils::wf_crm_get_fields('sets');
     // @todo Start using webform_civicrm_forms to track enabled webforms.
     /** @var \Drupal\webform\WebformInterface[] $webforms */
     $webforms = \Drupal\webform\Entity\Webform::loadMultiple();

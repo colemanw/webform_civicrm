@@ -5,6 +5,8 @@
  * Front-end form handler base class.
  */
 
+use Drupal\webform_civicrm\Utils;
+
 module_load_include('inc', 'webform_civicrm', 'includes/utils');
 
 /**
@@ -530,7 +532,7 @@ abstract class wf_crm_webform_base {
 
     if ($field && $field['#type'] == 'hidden') {
       // Fetch live options
-      $exposed = wf_crm_field_options($field, 'live_options', $this->data);
+      $exposed = Utils::wf_crm_field_options($field, 'live_options', $this->data);
       foreach ($exclude as $i) {
         unset($exposed[$i]);
       }
@@ -544,7 +546,7 @@ abstract class wf_crm_webform_base {
       }
       // Fetch live options
       else {
-        $exposed = wf_crm_field_options(['form_key' => $field['#form_key']], 'live_options', $this->data);
+        $exposed = Utils::wf_crm_field_options(['form_key' => $field['#form_key']], 'live_options', $this->data);
       }
       foreach ($exclude as $i) {
         unset($exposed[$i]);
@@ -652,9 +654,9 @@ abstract class wf_crm_webform_base {
     static $parents = array();
     if (empty($parents)) {
       // Create matching table to sort fields by group
-      foreach (wf_crm_get_fields() as $key => $value) {
+      foreach (Utils::wf_crm_get_fields() as $key => $value) {
         list($group, $field) = explode('_', $key, 2);
-        if (substr($field, 0, 7) == 'custom_') {
+        if (strpos($field, 'custom_') === 0) {
           $parents[$field] = $group;
         }
       }

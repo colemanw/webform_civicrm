@@ -11,6 +11,7 @@ use Drupal\Core\Render\Element;
 use Drupal\user\Entity\User;
 use Drupal\webform\WebformInterface;
 use Drupal\webform\WebformSubmissionInterface;
+use Drupal\webform_civicrm\Utils;
 
 module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_base');
 
@@ -67,8 +68,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->settings = $handler->getConfiguration()['settings'];
     $this->data = $this->settings['data'];
     $this->enabled = wf_crm_enabled_fields($webform);
-    $this->all_fields = wf_crm_get_fields();
-    $this->all_sets = wf_crm_get_fields('sets');
+    $this->all_fields = Utils::wf_crm_get_fields();
+    $this->all_sets = Utils::wf_crm_get_fields('sets');
   }
 
   /**
@@ -2360,7 +2361,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $val = is_array($val) ? reset($val) : $val;
         }
         if (is_string($val) && '' !== $val && $field['type'] === 'autocomplete') {
-          $options = wf_crm_field_options($component, '', $this->data);
+          $options = Utils::wf_crm_field_options($component, '', $this->data);
           $val = array_search($val, $options);
         }
         // Fudge together date and time fields

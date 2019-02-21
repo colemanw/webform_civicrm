@@ -11,6 +11,7 @@ use Drupal\Core\Link;
 use Drupal\Core\Render\Markup;
 use Drupal\Core\Url;
 use Drupal\webform\Plugin\WebformHandlerInterface;
+use Drupal\webform_civicrm\Utils;
 
 class wf_crm_webform_preprocess extends wf_crm_webform_base {
   private $form;
@@ -28,8 +29,8 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     $this->settings = $handler->getConfiguration()['settings'];
     $this->data = $this->settings['data'];
     $this->ent['contact'] = [];
-    $this->all_fields = wf_crm_get_fields();
-    $this->all_sets = wf_crm_get_fields('sets');
+    $this->all_fields = Utils::wf_crm_get_fields();
+    $this->all_sets = Utils::wf_crm_get_fields('sets');
     $this->enabled = wf_crm_enabled_fields($handler->getWebform());
     $this->line_items = $form_state->get(['civicrm', 'line_items']) ?: [];
   }
@@ -462,7 +463,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
               'extra' => wf_crm_aval($field, 'extra', []) + $element['#extra'],
               'form_key' => $element['#webform_key'],
             ];
-            $new = wf_crm_field_options($params, 'live_options', $this->data);
+            $new = Utils::wf_crm_field_options($params, 'live_options', $this->data);
             $old = $element['#options'];
             $resave = FALSE;
             // If an item doesn't exist, we add it. If it's changed, we update it.
@@ -513,7 +514,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
               }
             }
             if ($element['#type'] == 'autocomplete' && is_string($val) && strlen($val)) {
-              $options = wf_crm_field_options($component, '', $this->data);
+              $options = Utils::wf_crm_field_options($component, '', $this->data);
               $val = wf_crm_aval($options, $val);
             }
             // Contact image & custom file fields
@@ -853,7 +854,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    * @return mixed
    */
   private function replaceTokens($str, $contact) {
-    $tokens = wf_crm_get_fields('tokens');
+    $tokens = Utils::wf_crm_get_fields('tokens');
     $values = array();
     foreach ($tokens as $k => &$t) {
       if (empty($contact[$k])) {

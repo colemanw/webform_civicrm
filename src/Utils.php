@@ -14,7 +14,7 @@ class Utils {
    */
   public static function wf_crm_explode_key($key) {
     $pieces = explode('_', $key, 6);
-    if (count($pieces) != 6 || $pieces[0] !== 'civicrm') {
+    if (count($pieces) !== 6 || $pieces[0] !== 'civicrm') {
       return NULL;
     }
     return $pieces;
@@ -33,7 +33,22 @@ class Utils {
    * @return array
    */
   public static function wf_crm_field_options($field, $context, $data) {
-    return \Drupal::getContainer()->get('webform_civicrm.field_options')->get($field, $context, $data);
+    return \Drupal::service('webform_civicrm.field_options')->get($field, $context, $data);
   }
 
+  /**
+   * Fetches CiviCRM field data.
+   *
+   * @param string $var
+   *   Name of variable to return: fields, tokens, or sets
+   *
+   * @return array
+   * @return array
+   *   fields: The CiviCRM contact fields this module supports
+   *   tokens: Available tokens keyed to field ids
+   *   sets: Info on fieldsets (entities)
+   */
+  public static function wf_crm_get_fields($var = 'fields') {
+    return \Drupal::service('webform_civicrm.fields')->get($var);
+  }
 }

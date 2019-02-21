@@ -88,7 +88,6 @@ class CivicrmWebformHandler extends WebformHandlerBase {
    * {@inheritdoc}
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
-    $form = [];
     $form['link'] = [
       '#type' => 'link',
       '#title' => $this->t('Manage the CiviCRM settings from the CiviCRM tab'),

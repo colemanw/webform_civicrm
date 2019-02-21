@@ -5,6 +5,8 @@
  * Webform CiviCRM module's install, uninstall and upgrade code.
  */
 
+use Drupal\webform_civicrm\Utils;
+
 /**
  * Implements hook_requirements().
  */
@@ -517,7 +519,7 @@ function webform_civicrm_update_7300() {
       if (!empty($contact['relationship'])) {
         foreach ($contact['relationship'] as $n => $rel) {
           if (!empty($rel['relationship_type_id'])) {
-            $r_types = wf_crm_field_options(array('form_key' => "civicrm_{$c}_contact_{$n}_relationship_relationship_type_id"), 'config_form', $data);
+            $r_types = Utils::wf_crm_field_options(array('form_key' => "civicrm_{$c}_contact_{$n}_relationship_relationship_type_id"), 'config_form', $data);
             $type = $rel['relationship_type_id'];
             list($r, $a_b) = explode('_', $type);
             if (!isset($r_types[$type]) && isset($r_types[$r . '_r'])) {
@@ -641,7 +643,7 @@ function webform_civicrm_update_7300() {
       }
       // Update relationship type ids
       elseif ($name == 'relationship_type_id') {
-        $r_types = wf_crm_field_options($field, '', $data);
+        $r_types = Utils::wf_crm_field_options($field, '', $data);
         if (!empty($field['extra']['items'])) {
           $old = wf_crm_str2array($field['extra']['items']);
           $new = array();
