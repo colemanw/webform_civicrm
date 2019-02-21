@@ -8,6 +8,7 @@
  */
 
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\webform_civicrm\Utils;
 
 /**
  * The versions of CiviCRM and WebForm. Min is >=.  Max is <. FALSE = no MAX
@@ -107,7 +108,7 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
 function webform_civicrm_webform_autocomplete_options_alter(&$results, $node, $cid, $str) {
   module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_ajax');
   if (wf_crm_webform_ajax::autocompleteAccess($node, $cid)) {
-    $key = wf_crm_explode_key($node->webform['components'][$cid]['form_key']);
+    $key = Utils::wf_crm_explode_key($node->webform['components'][$cid]['form_key']);
   }
   if (isset($key) && substr($key[5], 0, 7) == 'custom_') {
     civicrm_initialize();
@@ -640,7 +641,7 @@ function wf_crm_contact_clone_storage($input = NULL) {
 function wf_crm_contact_clone($form, $form_state) {
   form_load_include($form_state, 'inc', 'webform_civicrm', 'includes/utils');
   $fid = $form['form_key']['#default_value'];
-  list(, $old) = wf_crm_explode_key($fid);
+  list(, $old) = Utils::wf_crm_explode_key($fid);
   $node = node_load($form['nid']['#value']);
   $settings = $node->webform_civicrm;
   $new = count($settings['data']['contact']) + 1;

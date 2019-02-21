@@ -10,40 +10,6 @@ use Drupal\webform\WebformInterface;
 use Drupal\webform_civicrm\Utils;
 
 /**
- * Get list of states, keyed by abbreviation rather than ID.
- * FIXME use the api for this.
- * @param null|int|string $param
- */
-function wf_crm_get_states($param = NULL) {
-  $ret = array();
-  if (!$param || $param == 'default') {
-    $config = CRM_Core_Config::singleton();
-    if (!$param && !empty($config->provinceLimit)) {
-      $param = implode(',', $config->provinceLimit);
-    }
-    else {
-      $param = (int) $config->defaultContactCountry;
-    }
-  }
-  else {
-    $param = (int) $param;
-  }
-  $sql = "SELECT name AS label, UPPER(abbreviation) AS value FROM civicrm_state_province WHERE country_id IN ($param) ORDER BY name";
-  $dao = CRM_Core_DAO::executeQuery($sql);
-  while ($dao->fetch()) {
-    $ret[$dao->value] = $dao->label;
-  }
-  // Localize the state/province names if in an non-en_US locale
-  $tsLocale = CRM_Utils_System::getUFLocale();
-  if ($tsLocale != '' and $tsLocale != 'en_US') {
-    $i18n = CRM_Core_I18n::singleton();
-    $i18n->localizeArray($ret, array('context' => 'province'));
-    CRM_Utils_Array::asort($ret);
-  }
-  return $ret;
-}
-
-/**
  * Match a state/province id to its abbr. and vice-versa
  *
  * @param $input
@@ -398,7 +364,7 @@ function wf_crm_get_field($key) {
   if (isset($fields[$key])) {
     return $fields[$key];
   }
-  if ($pieces = wf_crm_explode_key($key)) {
+  if ($pieces = Utils::wf_crm_explode_key($key)) {
     list( , , , , $table, $name) = $pieces;
     if (isset($fields[$table . '_' . $name])) {
       return $fields[$table . '_' . $name];
@@ -484,22 +450,6 @@ function wf_crm_contact_label($n, $data = array(), $html = 'escape') {
     $label = \Drupal\Core\Render\Markup::create('<span class="contact-label number-' . $n . '">' . $label . '</span>');
   }
   return $label;
-}
-
-/**
- * Explodes form key into an array and verifies that it is in the right format
- *
- * @param $key
- *   Webform component field key (string)
- *
- * @return array or NULL
- */
-function wf_crm_explode_key($key) {
-  $pieces = explode('_', $key, 6);
-  if (count($pieces) != 6 || $pieces[0] !== 'civicrm') {
-    return NULL;
-  }
-  return $pieces;
 }
 
 /**
@@ -677,25 +627,6 @@ function wf_crm_address_fields() {
     }
   }
   return $fields;
-}
-
-/**
- * Returns a count of children of a webform component
- *
- * @deprecated components do not exist like this.
- *
- * @param int $nid
- * @param int $id
- * @return int
- */
-function _wf_crm_child_components($nid, $id) {
-  return db_select('webform_component', 'c')
-    ->fields('c')
-    ->condition('nid', $nid)
-    ->condition('pid', $id)
-    ->countQuery()
-    ->execute()
-    ->fetchField();
 }
 
 /**

@@ -37,7 +37,7 @@ class wf_crm_admin_component {
    */
   public function alterForm() {
     $fid = $this->form['form_key']['#default_value'];
-    $pieces = wf_crm_explode_key($fid);
+    $pieces = Utils::wf_crm_explode_key($fid);
     // Is this a crm component of a CiviCRM-enabled webform?
     if (!$this->data || !$pieces) {
       return;
@@ -88,7 +88,7 @@ class wf_crm_admin_component {
       $this->form['validation']['maxlength']['#value'] = 5;
       $this->form['value']['#type'] = 'select';
       unset($this->form['value']['#size'], $this->form['value']['#maxlength'], $this->form['value']['#description']);
-      $this->form['value']['#options'] = wf_crm_get_states();
+      $this->form['value']['#options'] = Utils::wf_crm_get_states();
       $this->form['value']['#empty_value'] = '';
     }
 
@@ -774,7 +774,7 @@ function wf_crm_components_form_validate($form, &$form_state) {
 }
 
 function isCustomGroupFieldset($fid) {
-  $pieces = wf_crm_explode_key($fid);
+  $pieces = Utils::wf_crm_explode_key($fid);
   if ($pieces[0] == 'civicrm' && strpos($pieces[4], 'cg') !== FALSE && $pieces[5] == 'fieldset') {
     return true;
   }

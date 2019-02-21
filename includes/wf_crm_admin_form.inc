@@ -1713,7 +1713,7 @@ class wf_crm_admin_form {
                 );
                 // Cannot use isNewFieldset effectively.
                 $previous_data = $handler_configuration['settings'];
-                list(, $c, $ent) =  wf_crm_explode_key($key);
+                list(, $c, $ent) =  Utils::wf_crm_explode_key($key);
                 $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
                 $create = !isset($previous_data['data'][$type][$c]);
                 /*
@@ -2164,7 +2164,7 @@ class wf_crm_admin_form {
    * @return bool
    */
   private function isNewFieldset($field_key) {
-    list(, $c, $ent) =  wf_crm_explode_key($field_key);
+    list(, $c, $ent) =  Utils::wf_crm_explode_key($field_key);
     $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
     return !isset($this->node->webform_civicrm['data'][$type][$c]);
   }
@@ -2236,7 +2236,7 @@ class wf_crm_admin_form {
       $elements = $webform->getElementsDecoded();
       foreach ($elements as $component_key => $component) {
         if (substr($component['#form_key'], 0 - strlen($field_name)) === $field_name) {
-          if ($pieces = wf_crm_explode_key($component['#form_key'])) {
+          if ($pieces = Utils::wf_crm_explode_key($component['#form_key'])) {
             list(, $c, $ent, $n, $table, $name) = $pieces;
             if (!empty($data[$ent][$c]["dynamic_custom_cg$gid"])) {
               if ($op === 'delete' || $op === 'disable') {

@@ -319,7 +319,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function hiddenFieldValidation() {
     $errors = $this->form_state->getErrors();
     foreach ($errors as $key => $error) {
-      $pieces = wf_crm_explode_key(substr($key, strrpos($key, '][') + 2));
+      $pieces = Utils::wf_crm_explode_key(substr($key, strrpos($key, '][') + 2));
       if ($pieces) {
         list( , $c, $ent, $n, $table, $name) = $pieces;
         if ($this->isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name)) {
@@ -362,7 +362,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
               $config = CRM_Core_Config::singleton();
               $country_id = $config->defaultContactCountry;
             }
-            $states = wf_crm_get_states($country_id);
+            $states = Utils::wf_crm_get_states($country_id);
             if ($states && !array_key_exists(strtoupper($element['#value']), $states)) {
               $countries = wf_crm_apivalues('address', 'getoptions', array('field' => 'country_id'));
               form_error($element, t('Mismatch: "@state" is not a state/province of %country. Please enter a valid state/province abbreviation for %field.', array('@state' => $element['#value'], '%country' => $countries[$country_id], '%field' => $element['#title'])));

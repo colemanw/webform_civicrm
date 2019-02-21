@@ -413,7 +413,7 @@ function webform_civicrm_update_6205() {
   $db = db_query("SELECT * FROM {webform_component} WHERE form_key LIKE 'civicrm_%%_other_tags' OR form_key LIKE 'civicrm_%%_other_group%%'");
   $tag = $group = array();
   foreach ($db as $row) {
-    if ($pieces = wf_crm_explode_key($row->form_key)) {
+    if ($pieces = Utils::wf_crm_explode_key($row->form_key)) {
       list( , $c, $ent, $n, $table, $name) = $pieces;
       if ($name == 'groups') {
         if (empty($group[$row->nid][$c])) {

@@ -822,7 +822,7 @@ abstract class wf_crm_webform_base {
    * @return mixed
    */
   protected function getData($fid, $default = NULL, $strict = FALSE) {
-    if ($pieces = wf_crm_explode_key($fid)) {
+    if ($pieces = Utils::wf_crm_explode_key($fid)) {
       list( , $c, $ent, $n, $table, $name) = $pieces;
       return wf_crm_aval($this->data, "{$ent}:{$c}:{$table}:{$n}:{$name}", $default, $strict);
     }
