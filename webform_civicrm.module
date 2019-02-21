@@ -28,16 +28,6 @@ define('WEBFORM_CIVICRM_DEFAULT_CONTACT_ID', 1);
 function webform_civicrm_menu() {
   /*
   $items = array();
-  $items['node/%webform_menu/civicrm'] = array(
-    'title' => 'CiviCRM',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('wf_crm_configure_form', 1),
-    'access callback' => 'wf_crm_admin_access',
-    'access arguments' => array(1),
-    'file' => 'includes/wf_crm_admin_form.inc',
-    'weight' => 3,
-    'type' => MENU_LOCAL_TASK,
-  );
   $items['webform-civicrm/js/%'] = array(
     'page callback' => 'wf_crm_ajax',
     'file' => 'includes/wf_crm_webform_ajax.inc',

@@ -4,12 +4,16 @@ namespace Drupal\webform_civicrm;
 
 use CRM_Case_XMLProcessor_Process;
 use CRM_Core_BAO_Setting;
+use CRM_Core_BAO_Tag;
 use CRM_Core_Config;
 use CRM_Core_DAO;
 use CRM_Core_OptionGroup;
 use CRM_Utils_System;
 
 class Fields implements FieldsInterface {
+
+  protected $components = [];
+  protected $sets = [];
 
   /**
    * {@inheritdoc}
@@ -18,54 +22,75 @@ class Fields implements FieldsInterface {
     return $this->wf_crm_get_fields($var);
   }
 
-  protected function wf_crm_get_fields($var = 'fields') {
-    static $fields = array();
-    static $tokens;
-    static $sets;
-
-    if (!$fields) {
+  protected function getComponents(): array {
+    if (empty($this->components)) {
       $config = CRM_Core_Config::singleton();
-      $components = $config->enableComponents;
+      $this->components = $config->enableComponents;
+    }
 
-      $sets = array(
-        'contact' => array('entity_type' => 'contact', 'label' => t('Contact Fields')),
-        'other' => array('entity_type' => 'contact', 'label' => t('Tags and Groups'), 'max_instances' => 1),
-        'address' => array('entity_type' => 'contact', 'label' => t('Address'), 'max_instances' => 9, 'custom_fields' => 'combined'),
-        'phone' => array('entity_type' => 'contact', 'label' => t('Phone'), 'max_instances' => 9, 'custom_fields' => 'combined'),
-        'email' => array('entity_type' => 'contact', 'label' => t('Email'), 'max_instances' => 9, 'custom_fields' => 'combined'),
-        'website' => array('entity_type' => 'contact', 'label' => t('Website'), 'max_instances' => 9, 'custom_fields' => 'combined'),
-        'im' => array('entity_type' => 'contact', 'label' => t('Instant Message'), 'max_instances' => 9, 'custom_fields' => 'combined'),
-        'activity' => array('entity_type' => 'activity', 'label' => t('Activity'), 'max_instances' => 30,  'attachments' => TRUE),
-        'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship'), 'help_text' => TRUE, 'custom_fields' => 'combined'),
-      );
-      $conditional_sets = array(
-        'CiviCase' => array('entity_type' => 'case', 'label' => t('Case'), 'max_instances' => 30),
-        'CiviEvent' => array('entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9),
-        'CiviContribute' => array('entity_type' => 'contribution', 'label' => t('Contribution')),
-        'CiviMember' => array('entity_type' => 'membership', 'label' => t('Membership'), 'custom_fields' => 'combined'),
-        'CiviGrant' => array('entity_type' => 'grant', 'label' => t('Grant'), 'max_instances' => 30, 'attachments' => TRUE),
-      );
+    return $this->components;
+  }
+
+  protected function getSets(array $components): array {
+    if (empty($this->sets)) {
+      $sets = [
+        'contact' => ['entity_type' => 'contact', 'label' => t('Contact Fields')],
+        'other' => ['entity_type' => 'contact', 'label' => t('Tags and Groups'), 'max_instances' => 1],
+        'address' => ['entity_type' => 'contact', 'label' => t('Address'), 'max_instances' => 9, 'custom_fields' => 'combined'],
+        'phone' => ['entity_type' => 'contact', 'label' => t('Phone'), 'max_instances' => 9, 'custom_fields' => 'combined'],
+        'email' => ['entity_type' => 'contact', 'label' => t('Email'), 'max_instances' => 9, 'custom_fields' => 'combined'],
+        'website' => ['entity_type' => 'contact', 'label' => t('Website'), 'max_instances' => 9, 'custom_fields' => 'combined'],
+        'im' => ['entity_type' => 'contact', 'label' => t('Instant Message'), 'max_instances' => 9, 'custom_fields' => 'combined'],
+        'activity' => ['entity_type' => 'activity', 'label' => t('Activity'), 'max_instances' => 30,  'attachments' => TRUE],
+        'relationship' => ['entity_type' => 'contact', 'label' => t('Relationship'), 'help_text' => TRUE, 'custom_fields' => 'combined'],
+      ];
+      $conditional_sets = [
+        'CiviCase' => ['entity_type' => 'case', 'label' => t('Case'), 'max_instances' => 30],
+        'CiviEvent' => ['entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9],
+        'CiviContribute' => ['entity_type' => 'contribution', 'label' => t('Contribution')],
+        'CiviMember' => ['entity_type' => 'membership', 'label' => t('Membership'), 'custom_fields' => 'combined'],
+        'CiviGrant' => ['entity_type' => 'grant', 'label' => t('Grant'), 'max_instances' => 30, 'attachments' => TRUE],
+      ];
       foreach ($conditional_sets as $component => $set) {
-        if (in_array($component, $components)) {
+        if (in_array($component, $components, TRUE)) {
           $sets[$set['entity_type']] = $set;
         }
       }
       // Contribution line items
-      if (in_array('CiviContribute', $components)) {
-        $sets['line_items'] = array('entity_type' => 'line_item', 'label' => t('Line Items'));
+      if (in_array('CiviContribute', $components, TRUE)) {
+        $sets['line_items'] = ['entity_type' => 'line_item', 'label' => t('Line Items')];
       }
+      $sets += wf_crm_get_empty_sets();
+      $this->sets = $sets;
+    }
 
-      $moneyDefaults = array(
-        'type' => 'number',
-        'data_type' => 'Money',
-        'extra' => array(
-          'field_prefix' => wf_crm_aval($config, 'defaultCurrencySymbol', '$'),
-          'point' => wf_crm_aval($config, 'monetaryDecimalPoint', '.'),
-          'separator' => wf_crm_aval($config, 'monetaryThousandSeparator', ','),
-          'decimals' => 2,
-          'min' => 0,
-        ),
-      );
+    return $this->sets;
+  }
+
+  protected function getMoneyDefaults(): array {
+    $config = (array) CRM_Core_Config::singleton();
+    return [
+      'type' => 'number',
+      'data_type' => 'Money',
+      'extra' => [
+        'field_prefix' => $config['defaultCurrencySymbol'] ?? '$',
+        'point' => $config['monetaryDecimalPoint'] ?? '.',
+        'separator' => $config['monetaryThousandSeparator'] ?? ',',
+        'decimals' => 2,
+        'min' => 0,
+      ],
+    ];
+  }
+
+  protected function wf_crm_get_fields($var = 'fields') {
+    $config = CRM_Core_Config::singleton();
+    $components = $this->getComponents();
+    $sets = $this->getSets($components);
+
+    static $fields = [];
+
+    if (!$fields) {
+      $moneyDefaults = $this->getMoneyDefaults();
 
       // Field keys are in the format table_column
       // Use a # sign as a placeholder for field number in the title (or by default it will be appended to the end)
@@ -108,7 +133,8 @@ class Fields implements FieldsInterface {
         $enabled_names = array_intersect_key($name_options, array_flip($enabled_names));
       }
       foreach (array('prefix_id' => t('Name Prefix'), 'formal_title' => t('Formal Title'), 'first_name' => t('First Name'), 'middle_name' => t('Middle Name'), 'last_name' => t('Last Name'), 'suffix_id' => t('Name Suffix')) as $key => $label) {
-        if (in_array(ucwords(str_replace(array('_id', '_'), array('', ' '), $key)), $enabled_names)) {
+        if (in_array(ucwords(str_replace(['_id', '_'], ['', ' '], $key)),
+          $enabled_names, TRUE)) {
           $fields['contact_' . $key] = array(
             'name' => $label,
             'type' => strpos($key, '_id') ? 'select' : 'textfield',
@@ -230,7 +256,7 @@ class Fields implements FieldsInterface {
         $fields['address_' . $key] = array(
           'name' => $value,
           'type' => 'textfield',
-          'extra' => array('width' => $key == 'city' ? 20 : 60),
+          'extra' => array('width' => $key === 'city' ? 20 : 60),
         );
       }
       $fields['address_postal_code'] = array(
@@ -466,9 +492,10 @@ class Fields implements FieldsInterface {
         foreach (wf_crm_aval($case_types, 'values', array()) as $case_type) {
           foreach ($case_type['definition']['caseRoles'] as $role) {
             foreach (wf_crm_get_relationship_types() as $rel_type) {
-              if ($rel_type['name_b_a'] == $role['name']) {
-                if (!isset($fields['case_role_' . $rel_type['id']])) {
-                  $fields['case_role_' . $rel_type['id']] = array(
+              if ($rel_type['name_b_a'] === $role['name']) {
+                $case_role_fields_key = 'case_role_' . $rel_type['id'];
+                if (!isset($fields[$case_role_fields_key])) {
+                  $fields[$case_role_fields_key] = array(
                     'name' => $rel_type['label_b_a'],
                     'type' => 'select',
                     'expose_list' => TRUE,
@@ -816,30 +843,6 @@ class Fields implements FieldsInterface {
         }
       }
 
-      $tokens = array(
-        'display_name' => t('display name'),
-        'first_name' => t('first name'),
-        'nick_name' => t('nickname'),
-        'middle_name' => t('middle name'),
-        'last_name' => t('last name'),
-        'individual_prefix' => t('name prefix'),
-        'individual_suffix' => t('name suffix'),
-        'gender' => t('gender'),
-        'birth_date' => t('birth date'),
-        'job_title' => t('job title'),
-        'current_employer' => t('current employer'),
-        'contact_id' => t('contact id'),
-        'street_address' => t('street address'),
-        'city' => t('city'),
-        'state_province' => t('state/province abbr'),
-        'state_province_name' => t('state/province full'),
-        'postal_code' => t('postal code'),
-        'country' => t('country'),
-        'world_region' => t('world region'),
-        'phone' => t('phone number'),
-        'email' => t('email'),
-      );
-
       // Pull custom fields and match to Webform element types
       $custom_types = wf_crm_custom_types_map_array();
       list($contact_types) = wf_crm_get_contact_types();
@@ -941,7 +944,6 @@ class Fields implements FieldsInterface {
           }
         }
       }
-      $sets += wf_crm_get_empty_sets();
       $dao->free();
     }
     return $$var;

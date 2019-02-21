@@ -36,14 +36,13 @@ class wf_crm_admin_form {
    */
   public static $fieldset_entities = array('contact', 'activity', 'case', 'grant');
 
-  function __construct($form, FormStateInterface $form_state, $node, WebformInterface $webform) {
+  function __construct(array $form, FormStateInterface $form_state, WebformInterface $webform) {
     \Drupal::getContainer()->get('civicrm')->initialize();
     $this->form = $form;
     $this->form_state = $form_state;
-    $this->node = &$node;
     $this->fields = Utils::wf_crm_get_fields();
     $this->sets = Utils::wf_crm_get_fields('sets');
-
+    $this->settings = $form_state->getValues();
     $this->webform = $webform;
   }
 
@@ -1487,16 +1486,21 @@ class wf_crm_admin_form {
     list($contact_types, $sub_types) = wf_crm_get_contact_types();
     for ($c = 1; $c <= $this->settings['number_of_contacts']; ++$c) {
       // Contact settings
-      if (isset($this->settings[$c . '_contact_type'])) {
-        $this->data['contact'][$c] = array(
-          'contact' => array(1 => array(
-            'contact_type' => $this->settings[$c . '_contact_type'],
-            'contact_sub_type' => array(),
+      $contact_type_key = $c . '_contact_type';
+      if (isset($this->settings[$contact_type_key])) {
+        $contact_type = $this->settings[$contact_type_key];
+        $this->data['contact'][$c] = [
+          'contact' => [
+            1 => [
+            'contact_type' => $contact_type,
+            'contact_sub_type' => [],
             'webform_label' => $this->settings[$c . '_webform_label'],
-          )),
-        );
-        if ($sub_type = wf_crm_aval($this->settings, 'civicrm_' . $c . '_contact_1_contact_contact_sub_type')) {
-          $allowed = wf_crm_aval($sub_types, $this->settings[$c . '_contact_type'], array());
+            ]
+          ],
+        ];
+        $sub_type = $this->settings["civicrm_{$c}_contact_1_contact_contact_sub_type"] ?? NULL;
+        if ($sub_type) {
+          $allowed = $sub_types[$contact_type] ?? [];
           foreach ($sub_type as $sub) {
             if (isset($allowed[$sub])) {
               $this->data['contact'][$c]['contact'][1]['contact_sub_type'][$sub] = $sub;
@@ -1506,27 +1510,29 @@ class wf_crm_admin_form {
       }
       // Add new contact to the form
       else {
-        $this->data['contact'][$c] = array(
-          'contact' => array(1 => array(
+        $this->data['contact'][$c] = [
+          'contact' => [
+            1 => [
             'contact_type' => 'individual',
-            'contact_sub_type' => array(),
-          )),
+            'contact_sub_type' => [],
+            ]
+          ],
           'matching_rule' => 'Unsupervised',
-        );
+        ];
         // Set defaults for new contact
-        $this->settings += array(
+        $this->settings += [
           'civicrm_' . $c . '_contact_1_contact_first_name' => 'create_civicrm_webform_element',
           'civicrm_' . $c . '_contact_1_contact_last_name' => 'create_civicrm_webform_element',
-        );
-        $link = array(':link' => 'href="https://docs.civicrm.org/sysadmin/en/latest/integration/drupal/webform/#cloning-a-contact" target="_blank"');
-        drupal_set_message(t('Tip: Consider using the clone feature to add multiple similar contacts. (<a :link>more info</a>)', $link), 'status', FALSE);
+        ];
+        $link = [':link' => 'href="https://docs.civicrm.org/sysadmin/en/latest/integration/drupal/webform/#cloning-a-contact" target="_blank"'];
+        \Drupal::messenger()->addStatus(t('Tip: Consider using the clone feature to add multiple similar contacts. (<a :link>more info</a>)', $link));
       }
     }
     // Store meta settings, i.e. number of email for contact 1
     foreach ($this->settings as $key => $val) {
       if (strpos($key, '_number_of_') !== FALSE) {
         list($ent, $c, $key) = explode('_', $key, 3);
-        if (isset($this->data[$ent][$c]) || $ent == 'participant' || $ent == 'membership') {
+        if (isset($this->data[$ent][$c]) || $ent === 'participant' || $ent === 'membership') {
           $this->data[$ent][$c][$key] = $val;
         }
         // Standalone entities keep their own count independent of contacts
@@ -1563,7 +1569,7 @@ class wf_crm_admin_form {
     }
     // Add settings exposed to the back-end to data
     foreach ($this->settings as $key => $val) {
-      if (substr($key, 0, 7) == 'civicrm') {
+      if (strpos($key, 'civicrm') === 0) {
         list(, $c, $ent, $n, $table, $name) = explode('_', $key, 6);
         if (is_array($val)) {
           // Git rid of the "User Select" and "None" options
@@ -1691,7 +1697,7 @@ class wf_crm_admin_form {
       $i = 0;
       $created = array();
       foreach ($this->settings as $key => $val) {
-        if (substr($key, 0, 7) == 'civicrm') {
+        if (strpos($key, 'civicrm') === 0) {
           ++$i;
           $field = wf_crm_get_field($key);
           if (!isset($enabled[$key])) {
@@ -1768,12 +1774,9 @@ class wf_crm_admin_form {
         }
       }
 
-      if (count($created) == 1) {
-        drupal_set_message(t('Added field: %name', array('%name' => $created[0])));
-      }
-      elseif ($created) {
-        drupal_set_message(t('Added :num fields to the form.', array(':num' => count($created))));
-      }
+      \Drupal::messenger()->addStatus(
+        \Drupal::translation()->formatPlural(count($created), 'Added one field to the form', 'Added @count fields to the form')
+      );
 
       // Create record
       $handler_configuration['settings'] = $this->settings;
@@ -1821,7 +1824,7 @@ class wf_crm_admin_form {
       // Update existing contact fields
       foreach ($existing as $fid => $id) {
         if (substr($fid, -8) === 'existing') {
-          //wf_crm_update_existing_component($this->node->webform['components'][$id], $enabled, $this->data);
+          $stop = null;
         }
       }
     }
@@ -1892,7 +1895,7 @@ class wf_crm_admin_form {
   }
 
   private function help(&$field, $topic, $title = NULL) {
-    wf_crm_admin_help::addHelp($field, $topic, $title);
+    \wf_crm_admin_help::addHelp($field, $topic, $title);
   }
 
   /**
@@ -2134,15 +2137,6 @@ class wf_crm_admin_form {
     return $options ? key($options) : 0;
   }
 
-  /**
-   * Delete civicrm settings for this webform.
-   */
-  private function disable() {
-    db_delete('webform_civicrm_forms')
-      ->condition('nid', $this->node->nid)
-      ->execute();
-  }
-
   private function contactRefOptions($exclude = NULL) {
     $ret = array();
     foreach ($this->data['contact'] as $num => $contact) {
@@ -2307,21 +2301,4 @@ class wf_crm_admin_form {
       $webform->save();
     }
   }
-}
-
-/**
- * Drupal FAPI form builder callback
- */
-function wf_crm_configure_form($form, &$form_state, $node) {
-  $admin_form = new wf_crm_admin_form(array(), $form_state, $node);
-  return $admin_form->buildForm();
-}
-
-/**
- * Drupal FAPI submit callback
- */
-function wf_crm_configure_form_submit($form, &$form_state) {
-  $node = node_load($form_state['storage']['nid']);
-  $admin_form = new wf_crm_admin_form($form, $form_state, $node);
-  $admin_form->postProcess();
 }
