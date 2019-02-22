@@ -395,7 +395,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    */
   private function loadMemberships($c, $cid) {
     $today = date('Y-m-d');
-    foreach ($this->findMemberships($cid) as $num => $membership) {
+    foreach ($this->findMemberships($c, $cid) as $num => $membership) {
       // Only show 1 expired membership, and only if there are no active ones
       if (!$membership['is_active'] && $num) {
         break;

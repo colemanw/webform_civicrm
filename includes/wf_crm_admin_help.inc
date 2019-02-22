@@ -382,6 +382,14 @@ class wf_crm_admin_help {
       '</p>';
   }
 
+  public static function existing_membership_status() {
+    print '<p>' .
+      t('If a matching membership of the chosen type already exists for the Contact 1, it will be autofilled and updated.') .
+      '</p><p>' .
+      t('Note: a membership can also be autofilled by passing "membership1_1 for the first membership of the first contact. For the second membership of the first contact user membership1_2", etc. in the url.') .
+      '</p>';
+  }
+
   public static function existing_grant_status() {
     print '<p>' .
       t('If a matching grant of the chosen type already exists for the applicant, it will be autofilled and updated.') .

@@ -1132,7 +1132,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     if (!isset($types)) {
       $types = wf_crm_apivalues('membership_type', 'get');
     }
-    $existing = $this->findMemberships($cid);
+    $existing = $this->findMemberships($c, $cid);
     foreach (wf_crm_aval($this->data, "membership:$c:membership", array()) as $n => $params) {
       $membershipStatus = "";
       $membershipEndDate = "";

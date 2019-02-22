@@ -973,14 +973,36 @@ class wf_crm_admin_form {
         $this->form['membership'][$c]['membership'][$fs] = array(
           '#type' => 'fieldset',
           '#title' => t('Membership !num for !contact', array('!num' => $n, '!contact' => wf_crm_contact_label($c, $this->data, 'wrap'))),
-          '#attributes' => array('id' => $fs, 'class' => array('web-civi-checkbox-set')),
-          'js_select' => $this->addToggle($fs),
         );
+        $this->form['membership'][$c]['membership'][$fs]["membership_{$c}_membership_{$n}_settings_existing_membership_status"] = array(
+          '#type' => 'select',
+          '#title' => t('Update Existing Membership'),
+          '#options' => array('' => '- ' . t('None') . ' -') + wf_crm_apivalues('membership', 'getoptions', array('field' => 'status_id')),
+          '#default_value' => wf_crm_aval($this->data, "membership:{$c}:{$n}_settings_existing_membership_status", array()),
+          '#multiple' => TRUE,
+        );
+        $this->help($this->form['membership'][$c]['membership'][$fs]["membership_{$c}_membership_{$n}_settings_existing_membership_status"], 'existing_membership_status');
+        $membership_type = wf_crm_aval($this->data, "membership:{$c}:membership:{$n}:membership_type_id");
         foreach ($this->sets as $sid => $set) {
-          if ($set['entity_type'] == 'membership') {
-            foreach ($set['fields'] as $fid => $field) {
-              $fid = "civicrm_{$c}_membership_{$n}_$fid";
-              $this->form['membership'][$c]['membership'][$fs][$fid] = $this->addItem($fid, $field);
+          if ($set['entity_type'] == 'membership' && (!$membership_type || empty($set['sub_types']) || in_array($membership_type, $set['sub_types']))) {
+            $fs1 = "membership_{$c}_membership_{$n}_fieldset_$sid";
+            if ($sid == 'membership') {
+              $pos = &$this->form['membership'][$c]['membership'][$fs];
+            }
+            else {
+              $pos = &$this->form['membership'][$c]['membership'][$fs]['wrap'];
+            }
+            $pos[$fs1] = array(
+              '#type' => 'fieldset',
+              '#title' => $set['label'],
+              '#attributes' => array('id' => $fs1, 'class' => array('web-civi-checkbox-set')),
+              'js_select' => $this->addToggle($fs1),
+            );
+            if (isset($set['fields'])) {
+              foreach ($set['fields'] as $fid => $field) {
+                $fid = "civicrm_{$c}_membership_{$n}_$fid";
+                $pos[$fs1][$fid] = $this->addItem($fid, $field);
+              }
             }
           }
         }

@@ -587,30 +587,52 @@ abstract class wf_crm_webform_base {
    * @param $cid
    * @return array
    */
-  protected function findMemberships($cid) {
+  protected function findMemberships($c, $cid) {
     static $status_types;
-    static $membership_types;
-    if (!isset($membership_types)) {
-      $membership_types = array_keys(wf_crm_apivalues('membershipType', 'get', array('is_active' => 1, 'return' => 'id')));
-    }
-    $existing = wf_crm_apivalues('membership', 'get', array(
-      'contact_id' => $cid,
-      // Limit to only enabled membership types
-      'membership_type_id' => array('IN' => $membership_types),
-    ));
-    if (!$existing) {
-      return array();
-    }
     if (!$status_types) {
       $status_types = wf_crm_apivalues('membership_status', 'get');
     }
-    // Attempt to order memberships by most recent and active
+
+    for ($n = 1; $n <= $this->data['membership'][$c]['number_of_membership']; ++$n) {
+      // Populate via url argument
+      if (isset($_GET["membership{$c}_{$n}"]) && wf_crm_is_positive($_GET["membership{$c}_{$n}"])) {
+        $id = $_GET["membership{$c}_{$n}"];
+        $item = wf_civicrm_api('membership', 'getsingle', array('id' => $id, 'return' => array('contact_id')));
+        if ($item['contact_id'] == $cid) {
+          $this->ent['membership'][$cid][$n] = ['id' => $id];
+        }
+
+      }
+      elseif (!empty($this->data['membership'][$c][$n.'_settings_existing_membership_status'])) {
+        if (empty($this->data['membership'][$c]['membership'][$n]['membership_type_id'])) {
+          watchdog('webform_civicrm', "Membership type to update hasn't been set, so won't try to update activity. location = %1, webform contact number : %2, membership number : %3", array('%1' => request_uri(), '%2' => $c, '%3' => $n), WATCHDOG_ERROR);
+          continue;
+        }
+
+        $params = array(
+          'sequential' => 1,
+          'contact_id' => $cid,
+          'status_id' => array('IN' => (array)$this->data['membership'][$c][$n.'_settings_existing_membership_status']),
+          'membership_type_id' => $this->data['membership'][$c]['membership'][$n]['membership_type_id'],
+          'options' => array('limit' => 1),
+        );
+        $items = wf_crm_apivalues('membership', 'get', $params);
+        if (isset($items[0]['id'])) {
+          $this->ent['membership'][$cid][$n] = array('id' => $items[0]['id']);
+          break;
+        }
+      }
+    }
+
     $active = $expired = array();
-    foreach ($existing as $membership) {
-      $membership['is_active'] = $status_types[$membership['status_id']]['is_current_member'];
-      $membership['status'] = $status_types[$membership['status_id']]['label'];
-      $list = $membership['is_active'] ? 'active' : 'expired';
-      array_unshift($$list, $membership);
+    if (isset($this->ent['membership']) && isset($this->ent['membership'][$cid])) {
+      foreach ($this->ent['membership'][$cid] as $n => $mid) {
+        $membership = wf_civicrm_api('Membership', 'getsingle', ['id' => $mid['id']]);
+        $membership['is_active'] = $status_types[$membership['status_id']]['is_current_member'];
+        $membership['status'] = $status_types[$membership['status_id']]['label'];
+        $list = $membership['is_active'] ? 'active' : 'expired';
+        array_unshift($$list, $membership);
+      }
     }
     return array_merge($active, $expired);
   }
