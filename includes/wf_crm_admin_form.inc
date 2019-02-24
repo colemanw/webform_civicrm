@@ -1727,7 +1727,9 @@ class wf_crm_admin_form {
     $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
     return !isset($this->node->webform_civicrm['data'][$type][$c]);
                  */
-                self::insertComponent($field, $enabled, $this->settings, !isset($previous_data['data'][$type][$c]));
+                // Temp disabled to prevent fieldsets.
+                // self::insertComponent($field, $enabled, $this->settings, !isset($previous_data['data'][$type][$c]));
+                self::insertComponent($field, $enabled, $this->settings);
                 $created[] = $field['name'];
                 if (isset($field['civicrm_condition'])) {
                   $this->addConditionalRule($field, $enabled);
@@ -1747,7 +1749,7 @@ class wf_crm_admin_form {
             // Always insert fieldsets, as there are checks to see if the
             // fieldset already exists.
             $field += ['form_key' => $key];
-            self::insertComponent($field, $enabled, $this->settings, TRUE);
+            self::insertComponent($field, $enabled, $this->settings);
           }
 
           if (substr($key, -11) === '_createmode') {
@@ -1808,18 +1810,7 @@ class wf_crm_admin_form {
         $stub_form_state->setValues($enabled_element);
         $properties = $element_plugin->getConfigurationFormProperties($stub_form, $stub_form_state);
 
-        $fieldset_name = '';
-        if (strpos($enabled_key, 'fieldset') === FALSE) {
-          if (strpos($enabled_key, '_custom_') !== FALSE) {
-            // @todo this does not work.
-            $fieldset_name = explode('_custom_', $enabled_key);
-            $fieldset_name = $fieldset_name[0] . '_fieldset';
-          } else {
-            $form_key_parts = explode('_', $enabled_key);
-            $fieldset_name = "civicrm_{$form_key_parts[1]}_{$form_key_parts[2]}_1_fieldset_fieldset";
-          }
-        }
-        $this->webform->setElementProperties($enabled_key, $properties, $fieldset_name);
+        $this->webform->setElementProperties($enabled_key, $properties, '');
       }
       // Update existing contact fields
       foreach ($existing as $fid => $id) {
@@ -2020,7 +2011,8 @@ class wf_crm_admin_form {
     if ($ent !== 'contribution' &&
       ($ent !== 'participant' || wf_crm_aval($settings['data'], 'participant_reg_type') === 'separate')
     ) {
-      self::addFieldset($c, $field, $enabled, $settings, $ent, $create_fieldsets);
+      // Temp disable fieldsets.
+      // self::addFieldset($c, $field, $enabled, $settings, $ent, $create_fieldsets);
     }
     // Create page break for contribution page
     if ($name === 'contribution_page_id') {

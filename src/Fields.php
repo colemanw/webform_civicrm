@@ -60,7 +60,9 @@ class Fields implements FieldsInterface {
       if (in_array('CiviContribute', $components, TRUE)) {
         $sets['line_items'] = ['entity_type' => 'line_item', 'label' => t('Line Items')];
       }
-      $sets += wf_crm_get_empty_sets();
+
+      $extra_sets = wf_crm_get_empty_sets();
+      $sets += $extra_sets;
       $this->sets = $sets;
     }
 
@@ -944,6 +946,8 @@ class Fields implements FieldsInterface {
           }
         }
       }
+      // The sets are modified in this function to include the custom sets.
+      $this->sets = $sets;
       $dao->free();
     }
     return $$var;
