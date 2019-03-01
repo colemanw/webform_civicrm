@@ -2232,7 +2232,7 @@ class wf_crm_admin_form {
               elseif (isset($field_info)) {
                 $component['#title'] = $fieldConfigs['label'];
                 $component['#required'] = $fieldConfigs['is_required'];
-                $component['#value'] = $fieldConfigs['default_value'] ?: '';
+                $component['#default_value'] = $fieldConfigs['default_value'] ?: '';
                 $component['#extra']['description'] = $fieldConfigs['help_pre'] ?: '';
                 $component['#extra']['description_above'] = $field_info['extra']['description_above'];
                 $webform->setElementProperties($component_key, $component);
