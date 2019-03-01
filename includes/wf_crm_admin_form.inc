@@ -1727,7 +1727,7 @@ class wf_crm_admin_form {
     $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
     return !isset($this->node->webform_civicrm['data'][$type][$c]);
                  */
-                // Temp disabled to prevent fieldsets.
+                // @todo Properly handle fieldset creation.
                 // self::insertComponent($field, $enabled, $this->settings, !isset($previous_data['data'][$type][$c]));
                 self::insertComponent($field, $enabled, $this->settings);
                 $created[] = $field['name'];
@@ -2011,7 +2011,7 @@ class wf_crm_admin_form {
     if ($ent !== 'contribution' &&
       ($ent !== 'participant' || wf_crm_aval($settings['data'], 'participant_reg_type') === 'separate')
     ) {
-      // Temp disable fieldsets.
+      // @todo Properly handle fieldset creation.
       // self::addFieldset($c, $field, $enabled, $settings, $ent, $create_fieldsets);
     }
     // Create page break for contribution page
