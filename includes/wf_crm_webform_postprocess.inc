@@ -900,14 +900,18 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $params['method'] = 'Webform';
         break;
       case 'tag':
-        $api = 'entity_tag';
+        $api = 'EntityTag';
         break;
       default:
         $api = $data_type;
     }
     if (!empty($add) || !empty($remove)) {
       // Retrieve current records for this entity
-      if ($entity_type == 'contact') {
+      if ($api == 'EntityTag') {
+        $params['entity_id'] = $id;
+        $params['entity_table'] = 'civicrm_' . $entity_type;
+      }
+      elseif ($api == 'group_contact' && $entity_type == 'contact') {
         $params['contact_id'] = $id;
       }
       else {
@@ -1308,60 +1312,17 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
               $val = preg_replace('/[^A-Za-z0-9\-]/', ',', $val);
               $val = array_filter(explode(',', $val), 'strlen');
               foreach ($val as $tagValue) {
-                $tagValues[] = $tagValue;
+                $tagValues[$tagValue] = $tagValue;
               }
             }
           }
-          if ($tagValues) {
-            $allTags = wf_civicrm_api('EntityTag', 'getoptions', [
-              'field' => "tag_id",
-            ])['values'];
-            $allTags = array_keys($allTags);
-            $removeTags = array_diff($allTags, $tagValues);
-            $existingTags = wf_civicrm_api('Case', 'get', [
-              'return' => ["tag_id"],
-              'id' => $result['id'],
-            ])['values'][$result['id']];
-            if ($existingTags['tag_id']) {
-              $existingTags = array_keys($existingTags['tag_id']);
-              foreach ($removeTags as $key => $rm) {
-                if (!in_array($rm, $existingTags)) {
-                  unset($removeTags[$key]);
-                }
-              }
-              foreach ($tagValues as $key => $tv) {
-                if (in_array($tv, $existingTags)) {
-                  unset($tagValues[$key]);
-                }
-              }
-            }
-            // add tags
-            if (count($tagValues) > 0) {
-              $addTagsParams = array(
-                'entity_id' => $result['id'],
-                'entity_table' => 'civicrm_case',
-              );
-              $i = 0;
-              foreach ($tagValues as $val) {
-                $addTagsParams['tag_id_'.$i] = $val;
-                $i++;
-              }
-              $result = wf_civicrm_api('EntityTag', 'create', $addTagsParams);
-            }
-            // remove tags
-            if (count($removeTags) > 0) {
-              $remTagsParams = array(
-                'entity_id' => $result['id'],
-                'entity_table' => 'civicrm_case',
-              );
-              $i = 0;
-              foreach ($removeTags as $val) {
-                $remTagsParams['tag_id_'.$i] = $val;
-                $i++;
-              }
-              $result = wf_civicrm_api('EntityTag', 'delete', $remTagsParams);
-            }
-          }
+          $allTags = civicrm_api3('EntityTag', 'getoptions', [
+            'field' => "tag_id",
+          ])['values'];
+          $allTags = array_keys($allTags);
+          $removeTags = array_diff($allTags, $tagValues);
+          $removeTags = array_combine($removeTags, $removeTags);
+          $this->addOrRemoveMultivaluedData('tag', 'case', $result['id'], $tagValues, $removeTags);
           // Store id
           $this->ent['case'][$n]['id'] = $result['id'];
           // Save custom field data

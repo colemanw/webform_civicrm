@@ -54,12 +54,12 @@ function wf_crm_field_options($field, $context, $data) {
     elseif ($name == 'privacy') {
       $ret = wf_crm_get_privacy_options();
     }
-    elseif ($table === 'other' || $table === 'case') {
-      if ($field['table'] === 'tag') {
+    elseif ($table === 'other' || ($table === 'case' && strpos($name, 'tag_') === 0)) {
+      if (isset($field['table']) && $field['table'] === 'tag') {
         $split = explode('_', $name);
         $ret = CRM_Core_BAO_Tag::getTags("civicrm_{$ent}", $ret, wf_crm_aval($split, 1), '- ');
       }
-      elseif ($field['table'] === 'group') {
+      elseif (isset($field['table']) && $field['table'] === 'group') {
         $ret = wf_crm_apivalues('group', 'get', array('is_hidden' => 0), 'title');
       }
     }
@@ -806,16 +806,6 @@ function wf_crm_get_fields($var = 'fields') {
       'table' => 'group',
       'expose_list' => TRUE,
     );
-    $tagsets = array('' => t('Tag(s)')) + CRM_Core_BAO_Tag::getTagSet('civicrm_contact');
-    foreach ($tagsets as $pid => $name) {
-      $fields['other_tag' . ($pid ? "_$pid" : '')] = array(
-        'name' => $name,
-        'type' => 'select',
-        'extra' => array('multiple' => 1, 'civicrm_live_options' => 1),
-        'table' => 'tag',
-        'expose_list' => TRUE,
-      );
-    }
     $fields['activity_activity_type_id'] = array(
       'name' => t('Activity # Type'),
       'type' => 'select',
@@ -887,7 +877,9 @@ function wf_crm_get_fields($var = 'fields') {
         'integer' => 1,
       ),
     );
+    $tag_entities = array('other', 'activity');
     if (isset($sets['case'])) {
+      $tag_entities[] = 'case';
       $case_info = new CRM_Case_XMLProcessor_Process();
       $fields['case_case_type_id'] = array(
         'name' => t('Case # Type'),
@@ -940,17 +932,6 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Case # Details'),
         'type' => 'textarea',
       );
-      $tagsets = array('' => t('Tag(s)')) + CRM_Core_BAO_Tag::getTagSet('civicrm_case');
-      foreach ($tagsets as $pid => $name) {
-        if (!$pid) continue;
-        $fields['case_tag' . ($pid ? "_$pid" : '')] = array(
-          'name' => $name,
-          'type' => 'select',
-          'extra' => array('multiple' => 1, 'civicrm_live_options' => 1),
-          'table' => 'tag',
-          'expose_list' => TRUE,
-        );
-      }
       // Fetch case roles
       $sets['caseRoles'] = array('entity_type' => 'case', 'label' => t('Case Roles'));
       // Use the vanilla civicrm_api for this because it will throw an error in CiviCRM 4.4 (api doesn't exist)
@@ -977,6 +958,18 @@ function wf_crm_get_fields($var = 'fields') {
             }
           }
         }
+      }
+    }
+    $tagsets = array('' => t('Tag(s)')) + CRM_Core_BAO_Tag::getTagSet('civicrm_contact');
+    foreach ($tagsets as $pid => $name) {
+      foreach ($tag_entities as $entity) {
+        $fields[$entity . '_tag' . ($pid ? "_$pid" : '')] = array(
+          'name' => $name,
+          'type' => 'select',
+          'extra' => array('multiple' => 1, 'civicrm_live_options' => 1),
+          'table' => 'tag',
+          'expose_list' => TRUE,
+        );
       }
     }
     $fields['relationship_relationship_type_id'] = array(
