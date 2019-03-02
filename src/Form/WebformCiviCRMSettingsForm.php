@@ -56,8 +56,8 @@ class WebformCiviCRMSettingsForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $webform = $this->getWebform();
-    $admin_form = new \wf_crm_admin_form($form, $form_state, (object) [], $webform);
-    $form = $admin_form->buildForm();;
+    $admin_form = new \wf_crm_admin_form($form, $form_state, $webform);
+    $form = $admin_form->buildForm();
     return $form;
   }
 
@@ -95,7 +95,7 @@ class WebformCiviCRMSettingsForm extends FormBase {
       return;
     }
 
-    $admin_form = new \wf_crm_admin_form($form, $form_state, (object) [], $webform);
+    $admin_form = new \wf_crm_admin_form($form, $form_state, $webform);
     $form_state->cleanValues();
     $admin_form->setSettings($form_state->getValues());
     $admin_form->rebuildData();

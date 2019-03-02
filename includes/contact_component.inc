@@ -6,6 +6,7 @@
  */
 
 use Drupal\Component\Utility\Html;
+use Drupal\webform_civicrm\Utils;
 
 module_load_include('inc', 'webform_civicrm', 'includes/utils');
 module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_help');
@@ -489,7 +490,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
  *
  * Also sets options for select lists.
  *
- * @param stdClass $node
+ * @param \Drupal\webform\WebformInterface $node
  *   Node object
  * @param array $component
  *   Webform component
@@ -498,7 +499,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
  * @param array $ids
  *   Known entity ids
  */
-function wf_crm_fill_contact_value($node, $component, &$element, $ids = NULL) {
+function wf_crm_fill_contact_value(\Drupal\webform\WebformInterface $node, $component, &$element, $ids = NULL) {
   $cid = wf_crm_aval($element, '#default_value', '');
   if ($element['#type'] == 'hidden') {
     // User may not change this value for hidden fields
@@ -780,10 +781,10 @@ function wf_crm_format_contact($contact, $display_fields, $escape = TRUE) {
  */
 function wf_crm_contact_fields($node, $con) {
   $ret = array();
-  $sets = wf_crm_get_fields('sets');
+  $sets = Utils::wf_crm_get_fields('sets');
   $sets['name'] = array('label' => t('Name'));
   foreach ($node->webform['components'] as $f) {
-    if ($pieces = wf_crm_explode_key($f['form_key'])) {
+    if ($pieces = Utils::wf_crm_explode_key($f['form_key'])) {
       list( , $c, $ent, , $table, $field) = $pieces;
       if ($ent == 'contact' && $c == $con && isset($sets[$table])) {
         // Separate name from other contact fields

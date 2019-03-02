@@ -6,6 +6,7 @@
  */
 
 use Drupal\Component\Utility\Html;
+use Drupal\webform_civicrm\Utils;
 
 module_load_include('inc', 'webform_civicrm', 'includes/utils');
 
@@ -36,13 +37,13 @@ class wf_crm_admin_component {
    */
   public function alterForm() {
     $fid = $this->form['form_key']['#default_value'];
-    $pieces = wf_crm_explode_key($fid);
+    $pieces = Utils::wf_crm_explode_key($fid);
     // Is this a crm component of a CiviCRM-enabled webform?
     if (!$this->data || !$pieces) {
       return;
     }
     list(, $i, $ent, $n, $table, $name) = $pieces;
-    $this->field = wf_crm_aval(wf_crm_get_fields(), $table . '_' . $name);
+    $this->field = wf_crm_aval(Utils::wf_crm_get_fields(), $table . '_' . $name);
     // Is this a crm custom group fieldset?
     if (isCustomGroupFieldset($fid)) {
       $this->form['form_key']['#disabled'] = TRUE;
@@ -87,7 +88,7 @@ class wf_crm_admin_component {
       $this->form['validation']['maxlength']['#value'] = 5;
       $this->form['value']['#type'] = 'select';
       unset($this->form['value']['#size'], $this->form['value']['#maxlength'], $this->form['value']['#description']);
-      $this->form['value']['#options'] = wf_crm_get_states();
+      $this->form['value']['#options'] = Utils::wf_crm_get_states();
       $this->form['value']['#empty_value'] = '';
     }
 
@@ -231,7 +232,7 @@ class wf_crm_admin_component {
    * @return bool
    */
   private function buildOptionsTable() {
-    $options = $sort = wf_crm_field_options($this->component, 'component_edit', $this->data);
+    $options = $sort = Utils::wf_crm_field_options($this->component, 'component_edit', $this->data);
     if (!$options) {
       return FALSE;
     }
@@ -423,7 +424,7 @@ class wf_crm_admin_component {
         }
       }
       else {
-        $items = wf_crm_field_options($vals, 'live_options', $this->data);
+        $items = Utils::wf_crm_field_options($vals, 'live_options', $this->data);
         $items += wf_crm_str2array($vals['extra']['items']);
         $vals['extra']['items'] = wf_crm_array2str($items);
       }
@@ -497,8 +498,8 @@ class wf_crm_admin_component {
           }
         }
         if (in_array($cid, $enabled)) {
-          $fields = wf_crm_get_fields();
-          $sets = wf_crm_get_fields('sets');
+          $fields = Utils::wf_crm_get_fields();
+          $sets = Utils::wf_crm_get_fields('sets');
           $class = 'civi-icon';
           list( , $c, $ent, $n, $table, $name) = explode('_', $component['form_key'], 6);
           $field = wf_crm_aval($fields, $table . '_' . $name, array('type' => 'fieldset'));
@@ -560,7 +561,7 @@ class wf_crm_admin_component {
               $items = wf_crm_str2array($component['extra']['items']);
             }
             else {
-              $items = wf_crm_field_options($component, 'components_form', $node->webform_civicrm['data']);
+              $items = Utils::wf_crm_field_options($component, 'components_form', $node->webform_civicrm['data']);
             }
             $val = '';
             foreach (explode(',', $component['value']) as $v) {
@@ -773,7 +774,7 @@ function wf_crm_components_form_validate($form, &$form_state) {
 }
 
 function isCustomGroupFieldset($fid) {
-  $pieces = wf_crm_explode_key($fid);
+  $pieces = Utils::wf_crm_explode_key($fid);
   if ($pieces[0] == 'civicrm' && strpos($pieces[4], 'cg') !== FALSE && $pieces[5] == 'fieldset') {
     return true;
   }

@@ -6,13 +6,12 @@
  */
 
 use Drupal\Component\Serialization\Json;
-use Drupal\Component\Utility\Html;
-use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
 use Drupal\Core\Render\Markup;
 use Drupal\Core\Url;
 use Drupal\webform\Plugin\WebformHandlerInterface;
+use Drupal\webform_civicrm\Utils;
 
 class wf_crm_webform_preprocess extends wf_crm_webform_base {
   private $form;
@@ -30,8 +29,8 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     $this->settings = $handler->getConfiguration()['settings'];
     $this->data = $this->settings['data'];
     $this->ent['contact'] = [];
-    $this->all_fields = wf_crm_get_fields();
-    $this->all_sets = wf_crm_get_fields('sets');
+    $this->all_fields = Utils::wf_crm_get_fields();
+    $this->all_sets = Utils::wf_crm_get_fields('sets');
     $this->enabled = wf_crm_enabled_fields($handler->getWebform());
     $this->line_items = $form_state->get(['civicrm', 'line_items']) ?: [];
   }
@@ -184,7 +183,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       if (!empty($c['number_of_address'])) {
         $js_vars += [
           'defaultCountry' => $config->defaultContactCountry,
-          'defaultStates' => wf_crm_get_states($config->defaultContactCountry),
+          'defaultStates' => Utils::wf_crm_get_states($config->defaultContactCountry),
           'noCountry' => t('- First Choose a Country -'),
           'callbackPath' => Url::fromUserInput('/webform-civicrm/js', ['alias' => TRUE]),
         ];
@@ -438,7 +437,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       if (empty($element['#type']) || $element['#type'] == 'fieldset') {
         continue;
       }
-      if (!empty($element['#webform']) && $pieces = wf_crm_explode_key($eid)) {
+      if (!empty($element['#webform']) && $pieces = Utils::wf_crm_explode_key($eid)) {
         list( , $c, $ent, $n, $table, $name) = $pieces;
         // Separate out time fields
         if (substr($name, -8) === 'timepart') {
@@ -464,7 +463,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
               'extra' => wf_crm_aval($field, 'extra', []) + $element['#extra'],
               'form_key' => $element['#webform_key'],
             ];
-            $new = wf_crm_field_options($params, 'live_options', $this->data);
+            $new = Utils::wf_crm_field_options($params, 'live_options', $this->data);
             $old = $element['#options'];
             $resave = FALSE;
             // If an item doesn't exist, we add it. If it's changed, we update it.
@@ -515,7 +514,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
               }
             }
             if ($element['#type'] == 'autocomplete' && is_string($val) && strlen($val)) {
-              $options = wf_crm_field_options($component, '', $this->data);
+              $options = Utils::wf_crm_field_options($component, '', $this->data);
               $val = wf_crm_aval($options, $val);
             }
             // Contact image & custom file fields
@@ -537,6 +536,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             }
           }
           if ($name == 'existing') {
+            module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
             wf_crm_fill_contact_value($this->node, $component, $element, $this->ent);
           }
           if ($name === 'contribution_page_id') {
@@ -854,7 +854,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    * @return mixed
    */
   private function replaceTokens($str, $contact) {
-    $tokens = wf_crm_get_fields('tokens');
+    $tokens = Utils::wf_crm_get_fields('tokens');
     $values = array();
     foreach ($tokens as $k => &$t) {
       if (empty($contact[$k])) {
