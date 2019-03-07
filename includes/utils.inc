@@ -54,14 +54,12 @@ function wf_crm_field_options($field, $context, $data) {
     elseif ($name == 'privacy') {
       $ret = wf_crm_get_privacy_options();
     }
-    elseif ($table === 'other' || ($table === 'case' && strpos($name, 'tag_') === 0)) {
-      if (isset($field['table']) && $field['table'] === 'tag') {
-        $split = explode('_', $name);
-        $ret = CRM_Core_BAO_Tag::getTags("civicrm_{$ent}", $ret, wf_crm_aval($split, 1), '- ');
-      }
-      elseif (isset($field['table']) && $field['table'] === 'group') {
-        $ret = wf_crm_apivalues('group', 'get', array('is_hidden' => 0), 'title');
-      }
+    elseif (isset($field['table']) && $field['table'] === 'tag') {
+      $split = explode('_', $name);
+      $ret = CRM_Core_BAO_Tag::getTags("civicrm_{$ent}", $ret, wf_crm_aval($split, 1), '- ');
+    }
+    elseif (isset($field['table']) && $field['table'] === 'group') {
+      $ret = wf_crm_apivalues('group', 'get', array('is_hidden' => 0), 'title');
     }
     elseif ($name === 'survey_id') {
       $ret = wf_crm_get_surveys(wf_crm_aval($data, "activity:$c:activity:1", array()));
@@ -960,9 +958,9 @@ function wf_crm_get_fields($var = 'fields') {
         }
       }
     }
-    $tagsets = array('' => t('Tag(s)')) + CRM_Core_BAO_Tag::getTagSet('civicrm_contact');
-    foreach ($tagsets as $pid => $name) {
-      foreach ($tag_entities as $entity) {
+    foreach ($tag_entities as $entity) {
+      $tagsets = array('' => t('Tag(s)')) + CRM_Core_BAO_Tag::getTagSet('civicrm_' . $entity);
+      foreach ($tagsets as $pid => $name) {
         $fields[$entity . '_tag' . ($pid ? "_$pid" : '')] = array(
           'name' => $name,
           'type' => 'select',

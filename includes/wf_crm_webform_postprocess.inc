@@ -1306,23 +1306,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         // Final processing if save was successful
         if (!empty($result['id'])) {
           // handle case tags
-          $tagValues = array();
-          foreach ($params as $param => $val) {
-            if ($val && strpos($param, 'tag_') === 0) {
-              $val = preg_replace('/[^A-Za-z0-9\-]/', ',', $val);
-              $val = array_filter(explode(',', $val), 'strlen');
-              foreach ($val as $tagValue) {
-                $tagValues[$tagValue] = $tagValue;
-              }
-            }
-          }
-          $allTags = civicrm_api3('EntityTag', 'getoptions', [
-            'field' => "tag_id",
-          ])['values'];
-          $allTags = array_keys($allTags);
-          $removeTags = array_diff($allTags, $tagValues);
-          $removeTags = array_combine($removeTags, $removeTags);
-          $this->addOrRemoveMultivaluedData('tag', 'case', $result['id'], $tagValues, $removeTags);
+          $this->handleEntityTags('case', $result['id'], $params);
           // Store id
           $this->ent['case'][$n]['id'] = $result['id'];
           // Save custom field data
@@ -1431,6 +1415,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $activity = wf_civicrm_api('activity', 'create', $params);
         // Final processing if save was successful
         if (!empty($activity['id'])) {
+          // handle activity tags
+          $this->handleEntityTags('activity', $result['id'], $params);
           // Store id
           $this->ent['activity'][$n]['id'] = $activity['id'];
           // Save custom data & attachments
@@ -1462,6 +1448,33 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
       }
     }
+  }
+
+  /**
+   * Handle adding/updating tags for entities (cases, activity)
+   *
+   * @param $entityType
+   * @param $entityId
+   * @param $params
+   */
+  function handleEntityTags($entityType, $entityId, $params) {
+    $tagValues = array();
+    foreach ($params as $param => $val) {
+      if ($val && strpos($param, 'tag_') === 0) {
+        $val = preg_replace('/[^A-Za-z0-9\-]/', ',', $val);
+        $val = array_filter(explode(',', $val), 'strlen');
+        foreach ($val as $tagValue) {
+          $tagValues[$tagValue] = $tagValue;
+        }
+      }
+    }
+    $allTags = civicrm_api3('EntityTag', 'getoptions', [
+      'field' => "tag_id",
+    ])['values'];
+    $allTags = array_keys($allTags);
+    $removeTags = array_diff($allTags, $tagValues);
+    $removeTags = array_combine($removeTags, $removeTags);
+    $this->addOrRemoveMultivaluedData('tag', $entityType, $entityId, $tagValues, $removeTags);
   }
 
  /**
