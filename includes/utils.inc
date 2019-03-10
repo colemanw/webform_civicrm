@@ -959,7 +959,8 @@ function wf_crm_get_fields($var = 'fields') {
       }
     }
     foreach ($tag_entities as $entity) {
-      $tagsets = array('' => t('Tag(s)')) + CRM_Core_BAO_Tag::getTagSet('civicrm_' . $entity);
+      $table_name = $entity == 'other' ? 'contact' : $entity;
+      $tagsets = array('' => t('Tag(s)')) + CRM_Core_BAO_Tag::getTagSet('civicrm_' . $table_name);
       foreach ($tagsets as $pid => $name) {
         $fields[$entity . '_tag' . ($pid ? "_$pid" : '')] = array(
           'name' => $name,
