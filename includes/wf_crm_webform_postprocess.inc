@@ -427,6 +427,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $participantName = CRM_Contact_BAO_Contact::displayName($this->existing_contacts[$c]);
         }
       }
+      // @todo this duplicates a lot in \wf_crm_webform_preprocess::populateEvents
       foreach (wf_crm_aval($par, 'participant', array()) as $n => $p) {
         foreach (array_filter(wf_crm_aval($p, 'event_id', array())) as $id_and_type) {
           list($eid) = explode('-', $id_and_type);

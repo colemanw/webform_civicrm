@@ -6,6 +6,7 @@
  */
 
 use Drupal\Component\Utility\Html;
+use Drupal\Core\Render\Markup;
 use Drupal\webform\WebformInterface;
 use Drupal\webform_civicrm\Utils;
 
@@ -447,7 +448,7 @@ function wf_crm_contact_label($n, $data = array(), $html = 'escape') {
     $label = Html::escape($label);
   }
   if ($html == 'wrap') {
-    $label = \Drupal\Core\Render\Markup::create('<span class="contact-label number-' . $n . '">' . $label . '</span>');
+    $label = Markup::create('<span class="contact-label number-' . $n . '">' . $label . '</span>');
   }
   return $label;
 }
