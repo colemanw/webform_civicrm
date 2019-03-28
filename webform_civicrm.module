@@ -122,7 +122,6 @@ function webform_civicrm_webform_autocomplete_options_alter(&$results, $node, $c
     if (!empty($customField['option_group_id'])) {
       $options = wf_crm_apivalues('OptionValue', 'get', array(
         'label' => array('LIKE' => "%{$str}%"),
-        'return' => 'label',
         'option_group_id' => $customField['option_group_id'],
         'limit' => $node->webform['components'][$cid]['extra']['autocomplete_result_count'],
       ), 'label');
@@ -314,12 +313,7 @@ function webform_civicrm_webform_submission_load(&$submissions) {
   if ($contacts) {
     // Retrieve contact names and add to submission objects
     civicrm_initialize();
-    $sql = 'SELECT id, display_name FROM civicrm_contact WHERE id IN (' . implode(',', array_keys($contacts)) . ')';
-
-    $dao = CRM_Core_DAO::executeQuery($sql);
-    while ($dao->fetch()) {
-      $contacts[$dao->id] = $dao->display_name;
-    }
+    $contacts = wf_crm_apivalues('contact', 'get', array('id' => array('IN' => array_keys($contacts))), 'display_name') + $contacts;
     foreach ($submissions as &$s) {
       if (!empty($s->civicrm['contact'][1]['id'])) {
         $s->civicrm['contact'][1]['display_name'] = $contacts[$s->civicrm['contact'][1]['id']];
