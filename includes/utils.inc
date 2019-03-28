@@ -122,27 +122,31 @@ function wf_crm_field_options($field, $context, $data) {
 
 /**
  * Get list of states, keyed by abbreviation rather than ID.
- * FIXME use the api for this.
+ *
  * @param null|int|string $param
+ * @return array
  */
 function wf_crm_get_states($param = NULL) {
   $ret = array();
   if (!$param || $param == 'default') {
     $config = CRM_Core_Config::singleton();
     if (!$param && !empty($config->provinceLimit)) {
-      $param = implode(',', $config->provinceLimit);
+      $param = (array) $config->provinceLimit;
     }
     else {
-      $param = (int) $config->defaultContactCountry;
+      $param = array((int) $config->defaultContactCountry);
     }
   }
   else {
-    $param = (int) $param;
+    $param = array((int) $param);
   }
-  $sql = "SELECT name AS label, UPPER(abbreviation) AS value FROM civicrm_state_province WHERE country_id IN ($param) ORDER BY name";
-  $dao = CRM_Core_DAO::executeQuery($sql);
-  while ($dao->fetch()) {
-    $ret[$dao->value] = $dao->label;
+  $states = wf_crm_apivalues('state_province', 'get', array(
+    'return' => 'abbreviation,name',
+    'sort' => 'name',
+    'country_id' => array('IN' => $param)
+  ));
+  foreach ($states as $state) {
+    $ret[strtoupper($state['abbreviation'])] = $state['name'];
   }
   // Localize the state/province names if in an non-en_US locale
   $tsLocale = CRM_Utils_System::getUFLocale();
