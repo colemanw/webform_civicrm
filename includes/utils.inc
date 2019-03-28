@@ -1654,6 +1654,10 @@ function wf_crm_apivalues($entity, $operation, $params = array(), $value = NULL)
   $params += array('options' => array());
   // Work around the api's default limit of 25
   $params['options'] += array('limit' => 0);
+  // If we only care about one field value
+  if ($value && $operation == 'get') {
+    $params += array('return' => $value);
+  }
   $ret = wf_crm_aval(wf_civicrm_api($entity, $operation, $params), 'values', array());
   if ($value) {
     foreach ($ret as &$values) {
