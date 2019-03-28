@@ -892,7 +892,7 @@ function wf_crm_find_relations($cid, $types = array(), $current = TRUE) {
   static $employer_type = 0;
   if ($cid) {
     if (!$employer_type && $current) {
-      $employer_type = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_relationship_type WHERE name_a_b = 'Employee of'");
+      $employer_type = wf_crm_aval(wf_civicrm_api('relationshipType', 'get', array('name_a_b' => 'Employee of', 'return' => 'id')), 'id');
     }
     $type_ids = '';
     foreach ($types as $t) {
