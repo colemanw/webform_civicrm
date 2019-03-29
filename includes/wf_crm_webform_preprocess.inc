@@ -6,6 +6,8 @@
  */
 
 use Drupal\Component\Serialization\Json;
+use Drupal\Component\Utility\Html;
+use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
 use Drupal\Core\Render\Markup;
@@ -231,28 +233,30 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    * Check if events are open to registration and take appropriate action
    */
   private function populateEvents() {
-    $reg = wf_crm_aval($this->data, 'reg_options', array());
+    $reg = NestedArray::getValue($this->data, ['reg_options']) ?: [];
     // Fetch events set in back-end
-    $this->data += array('participant' => array());
+    $this->data += ['participant' => []];
     foreach ($this->data['participant'] as $e => $par) {
-      if (!empty($par['participant'])) {
-        foreach ($par['participant'] as $n => $p) {
-          if (!empty($p['event_id'])) {
-            // Handle multi-valued event selection
-            foreach ((array) $p['event_id'] as $eid) {
-              if ($eid = (int) $eid) {
-                $this->events[$eid]['ended'] = TRUE;
-                $this->events[$eid]['title'] = t('this event');
-                $this->events[$eid]['count'] = wf_crm_aval($this->events, "$eid:count", 0) + 1;
-                $status_fid = "civicrm_{$e}_participant_{$n}_participant_status_id";
-                $this->events[$eid]['form'][] = array(
-                  'contact' => $e,
-                  'num' => $n,
-                  'eid' => NULL,
-                  'status_id' => (array) $this->getData($status_fid, array_keys($this->getExposedOptions($status_fid))),
-                );
-              }
-            }
+      if (empty($par['participant'])) {
+        continue;
+      }
+      foreach ($par['participant'] as $n => $p) {
+        if (empty($p['event_id'])) {
+          continue;
+        }
+        // Handle multi-valued event selection
+        foreach ((array) $p['event_id'] as $eid) {
+          if ($eid = (int) $eid) {
+            $this->events[$eid]['ended'] = TRUE;
+            $this->events[$eid]['title'] = t('this event');
+            $this->events[$eid]['count'] = (NestedArray::getValue($this->events, [$eid, 'count']) ?: 0) + 1;
+            $status_fid = "civicrm_{$e}_participant_{$n}_participant_status_id";
+            $this->events[$eid]['form'][] = array(
+              'contact' => $e,
+              'num' => $n,
+              'eid' => NULL,
+              'status_id' => (array) $this->getData($status_fid, array_keys($this->getExposedOptions($status_fid))),
+            );
           }
         }
       }
@@ -280,21 +284,21 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       foreach ($this->events as $eid => $event) {
         if ($event['ended']) {
           if (!empty($reg['show_remaining'])) {
-            $this->setMessage(t('Sorry, %event has ended.', array('%event' => $event['title'])), 'warning');
+            $this->setMessage(t('Sorry, %event has ended.', ['%event' => $event['title']]), 'warning');
           }
         }
         elseif ($event['full']) {
           if (!empty($reg['show_remaining'])) {
-            $this->setMessage('<em>' . check_plain($event['title']) . '</em>: ' . check_plain($event['full_message']), 'warning');
+            $this->setMessage('<em>' . Html::escape($event['title']) . '</em>: ' . Html::escape($event['full_message']), 'warning');
           }
         }
         else {
           $reg['block_form'] = FALSE;
-          if ($event['max_participants'] && ($reg['show_remaining'] == 'always' || intval($reg['show_remaining']) >= $event['remaining'])) {
-            $this->setMessage(format_plural($event['remaining'],
+          if ($event['max_participants'] && ($reg['show_remaining'] == 'always' || (int) $reg['show_remaining'] >= $event['remaining'])) {
+            $this->setMessage(\Drupal::translation()->formatPlural($event['remaining'],
               '%event has 1 remaining space.',
               '%event has @count remaining spaces.',
-              array('%event' => $event['title'])));
+              ['%event' => $event['title']]));
           }
         }
       }
@@ -317,7 +321,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     $status_types = wf_crm_apivalues('participant_status_type', 'get');
     $dao = CRM_Core_DAO::executeQuery('SELECT ' . implode(',', $select) . '
       FROM civicrm_participant
-      WHERE contact_id = ' . $this->ent['contact'][$c]['id'] . ' AND event_id IN (' . implode(',', array_keys($this->events)) . ")"
+      WHERE contact_id = ' . $this->ent['contact'][$c]['id'] . ' AND event_id IN (' . implode(',', array_keys($this->events)) . ')'
     );
     while ($dao->fetch()) {
       $par = array();
@@ -374,9 +378,9 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         else {
           $urlParam = "c{$c}event{$e}";
         }
-        foreach (explode(',', wf_crm_aval($_GET, $urlParam)) as $value) {
-          if (isset($eids[$value])){
-            $event_ids[] = $eids[$value];
+        foreach (explode(',', wf_crm_aval($_GET, $urlParam)) as $url_param_value) {
+          if (isset($eids[$url_param_value])){
+            $event_ids[] = $eids[$url_param_value];
           }
         }
         $this->info['participant'][$c]['participant'][$e]['event_id'] = $event_ids;

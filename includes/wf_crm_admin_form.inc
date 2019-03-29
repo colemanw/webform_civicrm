@@ -914,7 +914,7 @@ class wf_crm_admin_form {
       }
       $this->form['participant']['participants'][$n]['participant_' . $n . '_number_of_participant'] = array(
         '#type' => 'select',
-        '#title' => $reg_type == 'all' ? t('Number of Event Sets') : t('Number of Event Sets for :contact', array(':contact' => wf_crm_contact_label($n, $this->data, 'wrap'))),
+        '#title' => $reg_type == 'all' ? t('Number of Event Sets') : t('Number of Event Sets for @contact', ['@contact' => wf_crm_contact_label($n, $this->data, 'wrap')]),
         '#default_value' => $num,
         '#options' => range(0, $this->sets['participant']['max_instances']),
         '#prefix' => '<div class="number-of">',
