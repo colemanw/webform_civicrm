@@ -26,7 +26,7 @@ cj(function($) {
         $('#billing-payment-block').trigger('crmLoad').trigger('crmFormLoad');
         if (setting.billingSubmission) {
           $.each(setting.billingSubmission, function(key, val) {
-            $('[name="' + key + '"]').val(val);
+            $('[name="' + key + '"]', '#billing-payment-block').val(val).change();
           });
         }
         // When an express payment button is clicked, skip the billing fields and submit the form with a placeholder

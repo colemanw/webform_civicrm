@@ -98,6 +98,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
         }
       }
+      if (!$this->billing_params && !empty($this->data['contact'][1])) {
+        $this->prefillBillingFields();
+      }
     }
     // Even though this object is destroyed between page submissions, this trick allows us to persist some data - see above
     $form_state['civicrm']['ent'] = $this->ent;
@@ -1633,6 +1636,31 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
+   * Use previously entered information to populate billing fields.
+   */
+  private function prefillBillingFields() {
+    $params = array();
+    foreach (array('first_name', 'middle_name', 'last_name') as $name) {
+      if (!empty($this->data['contact'][1]['contact'][1][$name])) {
+        $params["billing_$name"] = $this->data['contact'][1]['contact'][1][$name];
+      }
+    }
+    if (!empty($this->data['contact'][1]['address'][1])) {
+      foreach ($this->data['contact'][1]['address'][1] as $field => $value) {
+        if ($value) {
+          if ($field == 'state_province_id') {
+            $value = wf_crm_state_abbr($value, 'id', wf_crm_aval($this->data['contact'][1]['address'][1], 'country_id'));
+          }
+          $params['billing_' . $field . '-5'] = $value;
+        }
+      }
+    }
+    if ($params) {
+      drupal_add_js(array('webform_civicrm' => array('billingSubmission' => $params)), 'setting');
+    }
+  }
+
+  /**
    * Normalize and validate billing input
    * @return bool
    */
@@ -1682,9 +1710,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       form_set_error('billing_email', ts('An email address is required to complete this transaction.'));
       $valid = FALSE;
     }
-    if ($valid) {
-      $this->billing_params = $params;
-    }
+    $this->billing_params = $params;
     // Since billing fields are not "real" form fields they get cleared if the page reloads.
     // We add a bit of js to fix this annoyance.
     drupal_add_js(array('webform_civicrm' => array('billingSubmission' => $params)), 'setting');
