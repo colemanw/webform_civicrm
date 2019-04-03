@@ -948,10 +948,11 @@ abstract class wf_crm_webform_base {
       $entity_id = $this->ent[$entity][$n]['id'];
     }
     if (!empty($file[$val])) {
+      $fileHash = CRM_Core_BAO_File::generateFileHash($entity_id, $val);
       return array(
         'data_type' => 'File',
         'name' => CRM_Utils_File::cleanFileName($file[$val]['uri']),
-        'file_url'=> CRM_Utils_System::url('civicrm/file', "reset=1&id={$val}&eid={$entity_id}", TRUE),
+        'file_url'=> CRM_Utils_System::url('civicrm/file', "reset=1&id={$val}&eid={$entity_id}&fcs={$fileHash}", TRUE),
         'icon' => file_icon_url((object) array('filemime' => $file[$val]['mime_type'])),
       );
     }
