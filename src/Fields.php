@@ -19,6 +19,31 @@ class Fields implements FieldsInterface {
    * {@inheritdoc}
    */
   public function get($var = 'fields') {
+    if ($var === 'tokens') {
+      return [
+        'display_name' => t('display name'),
+        'first_name' => t('first name'),
+        'nick_name' => t('nickname'),
+        'middle_name' => t('middle name'),
+        'last_name' => t('last name'),
+        'individual_prefix' => t('name prefix'),
+        'individual_suffix' => t('name suffix'),
+        'gender' => t('gender'),
+        'birth_date' => t('birth date'),
+        'job_title' => t('job title'),
+        'current_employer' => t('current employer'),
+        'contact_id' => t('contact id'),
+        'street_address' => t('street address'),
+        'city' => t('city'),
+        'state_province' => t('state/province abbr'),
+        'state_province_name' => t('state/province full'),
+        'postal_code' => t('postal code'),
+        'country' => t('country'),
+        'world_region' => t('world region'),
+        'phone' => t('phone number'),
+        'email' => t('email'),
+      ];
+    }
     return $this->wf_crm_get_fields($var);
   }
 
