@@ -1796,6 +1796,7 @@ class wf_crm_admin_form {
           [$this, 'stringifyFormattableMarkup'],
           empty($enabled_element['extra']) ? [] : $enabled_element['extra']
         );
+        $enabled_element = array_map([$this, 'stringifyFormattableMarkup'], $enabled_element);
         $element_plugin = $webform_element_manager->getElementInstance([
           '#type' => $enabled_element['type'],
         ]);

@@ -402,14 +402,14 @@ class Fields implements FieldsInterface {
         'expose_list' => TRUE,
         'exposed_empty_option' => '- ' . t('Automatic') . ' -',
       );
-      $fields['activity_assignee_contact_id'] = array(
+      $fields['activity_assignee_contact_id'] = [
         'name' => t('Assign Activity # to'),
         'type' => 'select',
         'expose_list' => TRUE,
         'empty_option' => t('No One'),
-        'extra' => array('multiple' => 1),
+        'extra' => ['multiple' => 1],
         'data_type' => 'ContactReference',
-      );
+      ];
       $fields['activity_location'] = array(
         'name' => t('Activity # Location'),
         'type' => 'textfield',
