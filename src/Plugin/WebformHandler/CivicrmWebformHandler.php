@@ -88,7 +88,6 @@ class CivicrmWebformHandler extends WebformHandlerBase {
    * {@inheritdoc}
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
-    $form = [];
     $form['link'] = [
       '#type' => 'link',
       '#title' => $this->t('Manage the CiviCRM settings from the CiviCRM tab'),
@@ -196,11 +195,10 @@ class CivicrmWebformHandler extends WebformHandlerBase {
    * {@inheritdoc}
    */
   public function deleteHandler() {
-    $webform = $this->webform;
-    $elements = array_filter($webform->getElementsDecoded(), function (array $element) {
+    $elements = array_filter($this->webform->getElementsDecoded(), function (array $element) {
       return strpos($element['#form_key'], 'civicrm_') !== 0;
     });
-    $webform->setElements($elements);
+    $this->webform->setElements($elements);
     parent::deleteHandler();
   }
 

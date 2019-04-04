@@ -13,6 +13,7 @@ use Drupal\Core\Link;
 use Drupal\Core\Render\Markup;
 use Drupal\Core\Url;
 use Drupal\webform\Plugin\WebformHandlerInterface;
+use Drupal\webform_civicrm\Utils;
 
 class wf_crm_webform_preprocess extends wf_crm_webform_base {
   private $form;
@@ -30,8 +31,8 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     $this->settings = $handler->getConfiguration()['settings'];
     $this->data = $this->settings['data'];
     $this->ent['contact'] = [];
-    $this->all_fields = wf_crm_get_fields();
-    $this->all_sets = wf_crm_get_fields('sets');
+    $this->all_fields = Utils::wf_crm_get_fields();
+    $this->all_sets = Utils::wf_crm_get_fields('sets');
     $this->enabled = wf_crm_enabled_fields($handler->getWebform());
     $this->line_items = $form_state->get(['civicrm', 'line_items']) ?: [];
   }
@@ -184,7 +185,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       if (!empty($c['number_of_address'])) {
         $js_vars += [
           'defaultCountry' => $config->defaultContactCountry,
-          'defaultStates' => wf_crm_get_states($config->defaultContactCountry),
+          'defaultStates' => Utils::wf_crm_get_states($config->defaultContactCountry),
           'noCountry' => t('- First Choose a Country -'),
           'callbackPath' => Url::fromUserInput('/webform-civicrm/js', ['alias' => TRUE]),
         ];
@@ -232,28 +233,30 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    * Check if events are open to registration and take appropriate action
    */
   private function populateEvents() {
-    $reg = wf_crm_aval($this->data, 'reg_options', array());
+    $reg = NestedArray::getValue($this->data, ['reg_options']) ?: [];
     // Fetch events set in back-end
-    $this->data += array('participant' => array());
+    $this->data += ['participant' => []];
     foreach ($this->data['participant'] as $e => $par) {
-      if (!empty($par['participant'])) {
-        foreach ($par['participant'] as $n => $p) {
-          if (!empty($p['event_id'])) {
-            // Handle multi-valued event selection
-            foreach ((array) $p['event_id'] as $eid) {
-              if ($eid = (int) $eid) {
-                $this->events[$eid]['ended'] = TRUE;
-                $this->events[$eid]['title'] = t('this event');
-                $this->events[$eid]['count'] = wf_crm_aval($this->events, "$eid:count", 0) + 1;
-                $status_fid = "civicrm_{$e}_participant_{$n}_participant_status_id";
-                $this->events[$eid]['form'][] = array(
-                  'contact' => $e,
-                  'num' => $n,
-                  'eid' => NULL,
-                  'status_id' => (array) $this->getData($status_fid, array_keys($this->getExposedOptions($status_fid))),
-                );
-              }
-            }
+      if (empty($par['participant'])) {
+        continue;
+      }
+      foreach ($par['participant'] as $n => $p) {
+        if (empty($p['event_id'])) {
+          continue;
+        }
+        // Handle multi-valued event selection
+        foreach ((array) $p['event_id'] as $eid) {
+          if ($eid = (int) $eid) {
+            $this->events[$eid]['ended'] = TRUE;
+            $this->events[$eid]['title'] = t('this event');
+            $this->events[$eid]['count'] = (NestedArray::getValue($this->events, [$eid, 'count']) ?: 0) + 1;
+            $status_fid = "civicrm_{$e}_participant_{$n}_participant_status_id";
+            $this->events[$eid]['form'][] = array(
+              'contact' => $e,
+              'num' => $n,
+              'eid' => NULL,
+              'status_id' => (array) $this->getData($status_fid, array_keys($this->getExposedOptions($status_fid))),
+            );
           }
         }
       }
@@ -281,21 +284,21 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       foreach ($this->events as $eid => $event) {
         if ($event['ended']) {
           if (!empty($reg['show_remaining'])) {
-            $this->setMessage(t('Sorry, %event has ended.', array('%event' => $event['title'])), 'warning');
+            $this->setMessage(t('Sorry, %event has ended.', ['%event' => $event['title']]), 'warning');
           }
         }
         elseif ($event['full']) {
           if (!empty($reg['show_remaining'])) {
-            $this->setMessage('<em>' . check_plain($event['title']) . '</em>: ' . check_plain($event['full_message']), 'warning');
+            $this->setMessage('<em>' . Html::escape($event['title']) . '</em>: ' . Html::escape($event['full_message']), 'warning');
           }
         }
         else {
           $reg['block_form'] = FALSE;
-          if ($event['max_participants'] && ($reg['show_remaining'] == 'always' || intval($reg['show_remaining']) >= $event['remaining'])) {
-            $this->setMessage(format_plural($event['remaining'],
+          if ($event['max_participants'] && ($reg['show_remaining'] == 'always' || (int) $reg['show_remaining'] >= $event['remaining'])) {
+            $this->setMessage(\Drupal::translation()->formatPlural($event['remaining'],
               '%event has 1 remaining space.',
               '%event has @count remaining spaces.',
-              array('%event' => $event['title'])));
+              ['%event' => $event['title']]));
           }
         }
       }
@@ -318,7 +321,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     $status_types = wf_crm_apivalues('participant_status_type', 'get');
     $dao = CRM_Core_DAO::executeQuery('SELECT ' . implode(',', $select) . '
       FROM civicrm_participant
-      WHERE contact_id = ' . $this->ent['contact'][$c]['id'] . ' AND event_id IN (' . implode(',', array_keys($this->events)) . ")"
+      WHERE contact_id = ' . $this->ent['contact'][$c]['id'] . ' AND event_id IN (' . implode(',', array_keys($this->events)) . ')'
     );
     while ($dao->fetch()) {
       $par = array();
@@ -375,9 +378,9 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         else {
           $urlParam = "c{$c}event{$e}";
         }
-        foreach (explode(',', wf_crm_aval($_GET, $urlParam)) as $value) {
-          if (isset($eids[$value])){
-            $event_ids[] = $eids[$value];
+        foreach (explode(',', wf_crm_aval($_GET, $urlParam)) as $url_param_value) {
+          if (isset($eids[$url_param_value])){
+            $event_ids[] = $eids[$url_param_value];
           }
         }
         $this->info['participant'][$c]['participant'][$e]['event_id'] = $event_ids;
@@ -438,7 +441,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       if (empty($element['#type']) || $element['#type'] == 'fieldset') {
         continue;
       }
-      if (!empty($element['#webform']) && $pieces = wf_crm_explode_key($eid)) {
+      if (!empty($element['#webform']) && $pieces = Utils::wf_crm_explode_key($eid)) {
         list( , $c, $ent, $n, $table, $name) = $pieces;
         // Separate out time fields
         if (substr($name, -8) === 'timepart') {
@@ -464,7 +467,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
               'extra' => wf_crm_aval($field, 'extra', []) + $element['#extra'],
               'form_key' => $element['#webform_key'],
             ];
-            $new = wf_crm_field_options($params, 'live_options', $this->data);
+            $new = Utils::wf_crm_field_options($params, 'live_options', $this->data);
             $old = $element['#options'];
             $resave = FALSE;
             // If an item doesn't exist, we add it. If it's changed, we update it.
@@ -515,7 +518,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
               }
             }
             if ($element['#type'] == 'autocomplete' && is_string($val) && strlen($val)) {
-              $options = wf_crm_field_options($component, '', $this->data);
+              $options = Utils::wf_crm_field_options($component, '', $this->data);
               $val = wf_crm_aval($options, $val);
             }
             // Contact image & custom file fields
@@ -537,6 +540,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             }
           }
           if ($name == 'existing') {
+            module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
             wf_crm_fill_contact_value($this->node, $component, $element, $this->ent);
           }
           if ($name === 'contribution_page_id') {
@@ -854,7 +858,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    * @return mixed
    */
   private function replaceTokens($str, $contact) {
-    $tokens = wf_crm_get_fields('tokens');
+    $tokens = Utils::wf_crm_get_fields('tokens');
     $values = array();
     foreach ($tokens as $k => &$t) {
       if (empty($contact[$k])) {

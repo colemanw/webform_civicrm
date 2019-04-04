@@ -11,6 +11,7 @@ use Drupal\Core\Render\Element;
 use Drupal\user\Entity\User;
 use Drupal\webform\WebformInterface;
 use Drupal\webform\WebformSubmissionInterface;
+use Drupal\webform_civicrm\Utils;
 
 module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_base');
 
@@ -67,8 +68,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->settings = $handler->getConfiguration()['settings'];
     $this->data = $this->settings['data'];
     $this->enabled = wf_crm_enabled_fields($webform);
-    $this->all_fields = wf_crm_get_fields();
-    $this->all_sets = wf_crm_get_fields('sets');
+    $this->all_fields = Utils::wf_crm_get_fields();
+    $this->all_sets = Utils::wf_crm_get_fields('sets');
   }
 
   /**
@@ -99,9 +100,26 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->rawValues = $form_state->getValues();
     $this->crmValues = wf_crm_enabled_fields($webform_submission->getWebform(), $this->rawValues);
     // Even though this object is destroyed between page submissions, this trick allows us to persist some data - see below
-    $this->ent = wf_crm_aval($form_state, 'civicrm:ent', array());
+    $this->ent = $form_state->get(['civicrm', 'ent']) ?: [];
 
-    $this->hiddenFieldValidation();
+    $errors = $this->form_state->getErrors();
+    foreach ($errors as $key => $error) {
+      $pieces = Utils::wf_crm_explode_key(substr($key, strrpos($key, '][') + 2));
+      if ($pieces) {
+        list( , $c, $ent, $n, $table, $name) = $pieces;
+        if ($this->isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name)) {
+          $this->unsetError($key);
+        }
+        elseif ($table === 'address' && !empty($this->crmValues["civicrm_{$c}_contact_{$n}_address_master_id"])) {
+          $master_id = $this->crmValues["civicrm_{$c}_contact_{$n}_address_master_id"];
+          // If widget is checkboxes, need to filter the array
+          if (!is_array($master_id) || array_filter($master_id)) {
+            $this->unsetError($key);
+          }
+        }
+      }
+    }
+
     $this->validateThisPage($this->form);
 
     if (!empty($this->data['participant']) && !empty($this->data['participant_reg_type'])) {
@@ -186,7 +204,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->fillContactRefs();
 
     // Save a non-live transaction
-    if (empty($this->ent['contribution'][1]['id']) && $this->totalContribution) {
+    if ($this->totalContribution && empty($this->ent['contribution'][1]['id'])) {
       $this->createDeferredPayment();
     }
 
@@ -239,7 +257,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   public function postSave(WebformSubmissionInterface $webform_submission) {
     $this->submission = $webform_submission;
-    if (empty($this->submission->is_draft)) {
+    if (empty($this->submission->isDraft())) {
       // Save cases
       if (!empty($this->data['case']['number_of_case'])) {
         $this->processCases();
@@ -267,7 +285,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $this->submitIPNPayment();
     }
     // Send receipt
-    if (empty($this->submission->is_draft)
+    if (empty($this->submission->isDraft())
       && !empty($this->ent['contribution'][1]['id'])
       && !empty($this->contribution_page['is_email_receipt'])
       && (!$this->contributionIsIncomplete || $this->contributionIsPayLater)
@@ -313,30 +331,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
-   * Force Drupal to ignore errors for fields hidden by this module
-   */
-  private function hiddenFieldValidation() {
-    $errors = $this->form_state->getErrors();
-    foreach ($errors as $key => $error) {
-      $pieces = wf_crm_explode_key(substr($key, strrpos($key, '][') + 2));
-      if ($pieces) {
-        list( , $c, $ent, $n, $table, $name) = $pieces;
-        if ($this->isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name)) {
-          $this->unsetError($key);
-        }
-        elseif ($table == 'address' && !empty($this->crmValues["civicrm_{$c}_contact_{$n}_address_master_id"])) {
-          $master_id = $this->crmValues["civicrm_{$c}_contact_{$n}_address_master_id"];
-          // If widget is checkboxes, need to filter the array
-          if (!is_array($master_id) || array_filter($master_id)) {
-            $this->unsetError($key);
-          }
-        }
-      }
-    }
-  }
-
-  /**
    * Recursive validation callback for webform page submission
+   *
+   * @todo this shouldn't be needed as each element should handle this.
    *
    * @param array $elements
    *   FAPI form array
@@ -346,47 +343,54 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     foreach (Element::children($elements) as $key) {
       if (is_array($elements[$key]) && ($element = $elements[$key])) {
         $this->validateThisPage($elements[$key]);
-        if (!empty($element['#civicrm_data_type'])
-          && substr(wf_crm_aval($element, '#type', ''), 0, 4) === 'text'
-          && isset($element['#value'])
-          && $element['#value'] !== '') {
-          $dt = $element['#civicrm_data_type'];
-          // Validate state/prov abbreviation
-          if ($dt == 'state_province_abbr') {
-            $ckey = str_replace('state_province', 'country', $key);
-            if (!empty($this->crmValues[$ckey]) && is_numeric($this->crmValues[$ckey])) {
-              $country_id = $this->crmValues[$ckey];
-            }
-            else {
-              $config = CRM_Core_Config::singleton();
-              $country_id = $config->defaultContactCountry;
-            }
-            $states = wf_crm_get_states($country_id);
-            if ($states && !array_key_exists(strtoupper($element['#value']), $states)) {
-              $countries = wf_crm_apivalues('address', 'getoptions', array('field' => 'country_id'));
-              form_error($element, t('Mismatch: "@state" is not a state/province of %country. Please enter a valid state/province abbreviation for %field.', array('@state' => $element['#value'], '%country' => $countries[$country_id], '%field' => $element['#title'])));
-            }
+
+        if (empty($element['#civicrm_data_type'])) {
+          continue;
+        }
+        if (!isset($element['#value']) || $element['#value'] === '') {
+          continue;
+        }
+        $element_type = $element['#type'] ?? '';
+        if (strpos($element_type, 'text') !== 0) {
+          continue;
+        }
+
+        $dt = $element['#civicrm_data_type'];
+        // Validate state/prov abbreviation
+        if ($dt === 'state_province_abbr') {
+          $ckey = str_replace('state_province', 'country', $key);
+          if (!empty($this->crmValues[$ckey]) && is_numeric($this->crmValues[$ckey])) {
+            $country_id = $this->crmValues[$ckey];
           }
-          // Strings and files don't need any validation
-          elseif ($dt !== 'String' && $dt !== 'Memo' && $dt !== 'File'
-            && CRM_Utils_Type::escape($element['#value'], $dt, FALSE) === NULL) {
-            // Allow data type names to be translated
-            switch ($dt) {
-              case 'Int':
-                $dt = t('an integer');
-                break;
-              case 'Float':
-                $dt = t('a number');
-                break;
-              case 'Link':
-                $dt = t('a web address starting with http://');
-                break;
-              case 'Money':
-                $dt = t('a currency value');
-                break;
-            }
-            form_error($element, t('Please enter @type for %field.', array('@type' => $dt, '%field' => $element['#title'])));
+          else {
+            $config = CRM_Core_Config::singleton();
+            $country_id = $config->defaultContactCountry;
           }
+          $states = Utils::wf_crm_get_states($country_id);
+          if ($states && !array_key_exists(strtoupper($element['#value']), $states)) {
+            $countries = wf_crm_apivalues('address', 'getoptions', array('field' => 'country_id'));
+            $this->form_state->setError($element, t('Mismatch: "@state" is not a state/province of %country. Please enter a valid state/province abbreviation for %field.', array('@state' => $element['#value'], '%country' => $countries[$country_id], '%field' => $element['#title'])));
+          }
+        }
+        // Strings and files don't need any validation
+        elseif ($dt !== 'String' && $dt !== 'Memo' && $dt !== 'File'
+          && CRM_Utils_Type::escape($element['#value'], $dt, FALSE) === NULL) {
+          // Allow data type names to be translated
+          switch ($dt) {
+            case 'Int':
+              $dt = t('an integer');
+              break;
+            case 'Float':
+              $dt = t('a number');
+              break;
+            case 'Link':
+              $dt = t('a web address starting with http://');
+              break;
+            case 'Money':
+              $dt = t('a currency value');
+              break;
+          }
+          $this->form_state->setError($element, t('Please enter @type for %field.', array('@type' => $dt, '%field' => $element['#title'])));
         }
       }
     }
@@ -423,6 +427,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $participantName = CRM_Contact_BAO_Contact::displayName($this->existing_contacts[$c]);
         }
       }
+      // @todo this duplicates a lot in \wf_crm_webform_preprocess::populateEvents
       foreach (wf_crm_aval($par, 'participant', array()) as $n => $p) {
         foreach (array_filter(wf_crm_aval($p, 'event_id', array())) as $id_and_type) {
           list($eid) = explode('-', $id_and_type);
@@ -549,7 +554,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function getExistingContactIds() {
     foreach ($this->enabled as $field_key => $fid) {
-      if (substr($field_key, -8) == 'existing') {
+      if (substr($field_key, -8) === 'existing') {
         list(, $c, ) = explode('_', $field_key, 3);
         $cid = wf_crm_aval($this->submissionValue($fid), 0);
         $this->ent['contact'][$c]['id'] = $this->verifyExistingContact($cid, $field_key);
@@ -2360,7 +2365,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $val = is_array($val) ? reset($val) : $val;
         }
         if (is_string($val) && '' !== $val && $field['type'] === 'autocomplete') {
-          $options = wf_crm_field_options($component, '', $this->data);
+          $options = Utils::wf_crm_field_options($component, '', $this->data);
           $val = array_search($val, $options);
         }
         // Fudge together date and time fields
@@ -2390,7 +2395,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @return bool
    */
   private function isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name, $checkSubmitDisabledSetting = FALSE) {
-    if ($ent == 'contact' && isset($this->enabled["civicrm_{$c}_contact_1_contact_existing"])) {
+    if ($ent === 'contact' && isset($this->enabled["civicrm_{$c}_contact_1_contact_existing"])) {
       $component = $this->getComponent("civicrm_{$c}_contact_1_contact_existing");
       $existing_contact_val = $this->submissionValue($component['#form_key']);
       // Fields are hidden if value is empty (no selection) or a numeric contact id

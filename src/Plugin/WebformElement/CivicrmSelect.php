@@ -7,6 +7,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Markup;
 use Drupal\webform\Plugin\WebformElementBase;
 use Drupal\webform\WebformSubmissionInterface;
+use Drupal\webform_civicrm\Utils;
 
 /**
  * Provides a 'civicrm_select' element.
@@ -80,8 +81,7 @@ class CivicrmSelect extends WebformElementBase {
   }
 
   protected function getFieldOptions($element) {
-    $pieces = wf_crm_explode_key($element['#form_key']);
-    list( , , , , $table, $name) = $pieces;
+    list( , , , , $table, $name) = Utils::wf_crm_explode_key($element['#form_key']);
     $params = ['field' => $name, 'context' => 'create'];
     return wf_crm_apivalues($table, 'getoptions', $params);
   }

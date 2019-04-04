@@ -5,6 +5,8 @@
  * Front-end form ajax handler.
  */
 
+use Drupal\webform_civicrm\Utils;
+
 module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_base');
 
 class wf_crm_webform_ajax extends wf_crm_webform_base {
@@ -22,7 +24,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
       drupal_json_output(array('' => t('- first choose a country -')));
       exit();
     }
-    drupal_json_output(wf_crm_get_states($input));
+    drupal_json_output(Utils::wf_crm_get_states($input));
     exit();
   }
 

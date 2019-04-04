@@ -8,9 +8,10 @@ include_once __DIR__ . '/../includes/utils.inc';
 
 class FieldOptions implements FieldOptionsInterface {
 
-  protected function getFields() {
-    // @todo move to its own service.
-    return wf_crm_get_fields();
+  protected $fields;
+
+  public function __construct(FieldsInterface $fields) {
+    $this->fields = $fields;
   }
 
   /**
@@ -18,7 +19,7 @@ class FieldOptions implements FieldOptionsInterface {
    */
   public function get($field, $context, $data) {
     $ret = [];
-    $fields = $this->getFields();
+    $fields = $this->fields->get();
     $pieces = Utils::wf_crm_explode_key($field['form_key']);
     if (!empty($pieces)) {
       list( , $c, $ent, $n, $table, $name) = $pieces;
