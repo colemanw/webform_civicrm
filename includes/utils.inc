@@ -310,7 +310,7 @@ function wf_crm_get_matching_rules($contact_type) {
  */
 function wf_crm_enabled_fields(WebformInterface $webform, $submission = NULL, $show_all = FALSE) {
   $enabled = array();
-  $elements = $webform->getElementsDecoded();
+  $elements = $webform->getElementsDecodedAndFlattened();
   if (!empty($elements) || ($show_all)) {
     $handler_collection = $webform->getHandlers('webform_civicrm');
     if (!$handler_collection->has('webform_civicrm')) {
