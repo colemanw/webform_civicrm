@@ -313,6 +313,7 @@ function webform_civicrm_webform_submission_load(&$submissions) {
   if ($contacts) {
     // Retrieve contact names and add to submission objects
     civicrm_initialize();
+    module_load_include('inc', 'webform_civicrm', 'includes/utils');
     $contacts = wf_crm_apivalues('contact', 'get', array('id' => array('IN' => array_keys($contacts))), 'display_name') + $contacts;
     foreach ($submissions as &$s) {
       if (!empty($s->civicrm['contact'][1]['id'])) {
