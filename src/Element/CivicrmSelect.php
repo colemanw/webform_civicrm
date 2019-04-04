@@ -2,7 +2,6 @@
 
 namespace Drupal\webform_civicrm\Element;
 
-use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element\Select;
 
 /**

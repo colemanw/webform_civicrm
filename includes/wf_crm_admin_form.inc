@@ -1978,22 +1978,7 @@ class wf_crm_admin_form {
       if ($options = Utils::wf_crm_field_options($field, 'component_insert', $settings['data'])) {
         $field['options'] = $options;
         $field['extra']['items'] = wf_crm_array2str($options);
-
-        $as_list = !empty($field['extra']['aslist']);
-        $is_multiple = !empty($field['extra']['multiple']);
-        $use_live_options = !empty($field['civicrm_live_options']);
-
-        if (!$as_list) {
-          $field['type'] = $is_multiple ? 'checkboxes' : 'radios';
-        }
-        else if ($is_multiple) {
-          $field['multiple'] = TRUE;
-        }
-
-        // A single static radio should be shown as a checkbox
-        if (!$use_live_options && !$as_list && count($options) === 1) {
-          $field['type'] = 'checkbox';
-        }
+        $field['type'] = 'civicrm_options';
       }
     }
     if ($field['type'] == 'civicrm_contact') {
