@@ -197,18 +197,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         'data' => drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_payment.js',
         'scope' => 'footer',
       );
-      $page_id = $this->data['contribution'][1]['contribution'][1]['contribution_page_id'];
-      if (version_compare($this->civicrm_version, '4.7', '>=')) {
-        $currency = $this->contribution_page['currency'];
-        $contributionCallbackQuery = array('currency' => $currency, 'snippet' => 4);
-        $contributionCallbackUrl = 'civicrm/payment/form';
-        $js_vars['processor_id_key'] = 'processor_id';
-      }
-      else {
-        $contributionCallbackQuery = array('reset' => 1, 'id' => $page_id, 'qfKey' => $this->getQfKey(), 'snippet' => 4);
-        $contributionCallbackUrl = 'civicrm/contribute/transact';
-        $js_vars['processor_id_key'] = 'type';
-      }
+      $currency = $this->contribution_page['currency'];
+      $contributionCallbackQuery = array('currency' => $currency, 'snippet' => 4);
+      $contributionCallbackUrl = 'civicrm/payment/form';
+      $js_vars['processor_id_key'] = 'processor_id';
       if (!empty($this->data['contribution'][1]['contribution'][1]['is_test'])) {
         // RM: This is needed in order for CiviCRM to know that this is a 'test' (i.e. 'preview' action in CiviCRM) transaction - otherwise, CiviCRM defaults to 'live' and returns the payment form with public key for the live payment processor!
         $contributionCallbackQuery['action'] = CRM_Core_Action::description(CRM_Core_Action::PREVIEW);
@@ -786,17 +778,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       }
     }
     if ($items) {
-      // Todo: Remove when we drop support for 4.4 - https://www.drupal.org/node/2832331
-      if (version_compare($this->civicrm_version, '4.6.0', '<')) {
-        $values = array();
-        foreach ($items as $id) {
-          $value = wf_crm_apivalues($type, 'get', array('id' => $id));
-          $values[$id] = $value[$id];
-        }
-      }
-      else {
-        $values = wf_crm_apivalues($type, 'get', array('id' => array('IN' => array_values($items))));
-      }
+      $values = wf_crm_apivalues($type, 'get', array('id' => array('IN' => array_values($items))));
       foreach ($items as $n => $id) {
         if (isset($values[$id])) {
           // Load core + custom data

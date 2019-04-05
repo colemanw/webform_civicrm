@@ -1900,17 +1900,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function submitIPNPayment() {
     $params = $this->data['contribution'][1]['contribution'][1];
     $processor_type = wf_civicrm_api('payment_processor', 'getsingle', array('id' => $params['payment_processor_id']));
-    if (version_compare($this->civicrm_version, 4.7, '<')) {
-      $mode = empty($params['is_test']) ? 'live' : 'test';
-      $paymentProcessor = CRM_Core_Payment::singleton($mode, $processor_type);
-    }
-    else {
-      $paymentProcessor = \Civi\Payment\System::singleton()->getById($params['payment_processor_id']);
-      // Ideally we would pass the correct id for the test processor through but that seems not to be the
-      // case so load it here.
-      if (!empty($params['is_test'])) {
-        $paymentProcessor = \Civi\Payment\System::singleton()->getByName($processor_type['name'], TRUE);
-      }
+    $paymentProcessor = \Civi\Payment\System::singleton()->getById($params['payment_processor_id']);
+    // Ideally we would pass the correct id for the test processor through but that seems not to be the
+    // case so load it here.
+    if (!empty($params['is_test'])) {
+      $paymentProcessor = \Civi\Payment\System::singleton()->getByName($processor_type['name'], TRUE);
     }
     // Add contact details to params (most processors want a first_name and last_name)
     $contact = wf_civicrm_api('contact', 'getsingle', array('id' => $this->ent['contact'][1]['id']));
@@ -1942,10 +1936,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $paymentProcessor->setSuccessUrl($this->getIpnRedirectUrl('success'));
       $paymentProcessor->setCancelUrl($this->getIpnRedirectUrl('cancel'));
     }
-    // Legacy paypal settings. Remove when dropping support for CiviCRM 4.6 and below.
-    // @see webform_civicrm_civicrm_alterPaymentProcessorParams
-    $params['webform_redirect_cancel'] = $this->getIpnRedirectUrl('cancel');
-    $params['webform_redirect_success'] = $this->getIpnRedirectUrl('success');
 
     if (method_exists($paymentProcessor, 'doTransferCheckout')) {
       //Paypal Express checkout
@@ -2081,25 +2071,20 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     // doPayment requries payment_processor and payment_processor_mode fields.
-    if (version_compare($this->civicrm_version, '4.7', '>=')) {
-      $params['payment_processor'] = wf_crm_aval($params, 'payment_processor_id');
-    }
+    $params['payment_processor'] = wf_crm_aval($params, 'payment_processor_id');
 
-    // Record additional parameters if we're processing a credit card after version 4.7.17 (CRM-20158)
-    if (version_compare($this->civicrm_version, '4.7.17', '>=')) {
-      if (!empty($params['credit_card_number'])) {
-        if (!empty($params['credit_card_type'])) {
-          $result = wf_civicrm_api('OptionValue', 'get', array(
-            'return' => ['value'],
-            'option_group_id.name' => 'accept_creditcard',
-            'name' => ucfirst($params['credit_card_type']),
-          ));
-          if (!empty($result['id'])) {
-            $params['card_type_id'] = $result['values'][$result['id']]['value'];
-          }
+    if (!empty($params['credit_card_number'])) {
+      if (!empty($params['credit_card_type'])) {
+        $result = wf_civicrm_api('OptionValue', 'get', array(
+          'return' => ['value'],
+          'option_group_id.name' => 'accept_creditcard',
+          'name' => ucfirst($params['credit_card_type']),
+        ));
+        if (!empty($result['id'])) {
+          $params['card_type_id'] = $result['values'][$result['id']]['value'];
         }
-        $params['pan_truncation'] = substr($params['credit_card_number'],-4);
       }
+      $params['pan_truncation'] = substr($params['credit_card_number'],-4);
     }
 
     // Save this stuff for later

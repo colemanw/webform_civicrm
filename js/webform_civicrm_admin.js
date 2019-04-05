@@ -566,9 +566,8 @@ var wfCiviAdmin = (function ($, D) {
   /**
    * This block uses CiviCRM's jQuery not Drupal's version
    * TODO: Move more code here! Drupal's version of jQuery is ancient.
-   * TODO: change 'cj' to 'CRM.$' when we drop support for Civi v4.4
    */
-  cj(function($) {
+  CRM.$(function($) {
     // Inline help
     $('#wf-crm-configure-form, #webform-component-edit-form').on('click', 'a.helpicon', function () {
       var topic = $(this).attr('href').substr(1);

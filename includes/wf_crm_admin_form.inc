@@ -684,9 +684,8 @@ class wf_crm_admin_form {
         if ($sid == 'caseRoles') {
           // Lookup case-role names
           $creator = $manager = NULL;
-          // Use the vanilla civicrm_api for this because it will throw an error in CiviCRM 4.4 (api doesn't exist)
-          $case_types = civicrm_api('case_type', 'get', array('version' => 3, 'id' => $case_type, 'options' => array('limit' => 0)));
-          foreach (wf_crm_aval($case_types, 'values', array()) as $type) {
+          $case_types = wf_crm_apivalues('case_type', 'get', array('id' => $case_type));
+          foreach ($case_types as $type) {
             foreach ($type['definition']['caseRoles'] as $role) {
               if (!empty($role['creator'])) {
                 $creator = ($creator == $role['name'] || $creator === NULL) ? $role['name'] : FALSE;
