@@ -331,8 +331,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
               $country_id = $this->crmValues[$ckey];
             }
             else {
-              $config = CRM_Core_Config::singleton();
-              $country_id = $config->defaultContactCountry;
+              $country_id = wf_crm_get_civi_setting('defaultContactCountry', 1228);
             }
             $states = wf_crm_get_states($country_id);
             if ($states && !array_key_exists(strtoupper($element['#value']), $states)) {
@@ -757,8 +756,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       foreach ($contact['address'] as &$address) {
         // Translate state/prov abbr to id
         if (!empty($address['state_province_id'])) {
-          $config = CRM_Core_Config::singleton();
-          if (!($address['state_province_id'] = wf_crm_state_abbr($address['state_province_id'], 'id', wf_crm_aval($address, 'country_id', $config->defaultContactCountry)))) {
+          $default_country = wf_crm_get_civi_setting('defaultContactCountry', 1228);
+          if (!($address['state_province_id'] = wf_crm_state_abbr($address['state_province_id'], 'id', wf_crm_aval($address, 'country_id', $default_country)))) {
             $address['state_province_id'] = '';
           }
         }
@@ -1417,7 +1416,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             $this->processAttachments('activity', $n, $activity['id'], empty($params['id']));
           }
           if (!empty($params['assignee_contact_id'])) {
-            if (CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'activity_assignee_notification')) {
+            if (wf_crm_get_civi_setting('activity_assignee_notification')) {
               // Send email to assignees. TODO: Move to CiviCRM API?
               $assignees = wf_crm_apivalues('contact', 'get', array(
                 'id' => array('IN' => (array) $params['assignee_contact_id']),

@@ -175,15 +175,15 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       'scope' => 'footer',
     );
     $this->form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_forms.css';
-    $config = CRM_Core_Config::singleton();
+    $default_country = wf_crm_get_civi_setting('defaultContactCountry', 1228);
     // Variables to push to the client-side
     $js_vars = array();
     // JS Cache eliminates the need for most ajax state/province callbacks
     foreach ($this->data['contact'] as $c) {
       if (!empty($c['number_of_address'])) {
         $js_vars += array(
-          'defaultCountry' => $config->defaultContactCountry,
-          'defaultStates' => wf_crm_get_states($config->defaultContactCountry),
+          'defaultCountry' => $default_country,
+          'defaultStates' => wf_crm_get_states($default_country),
           'noCountry' => t('- First Choose a Country -'),
           'callbackPath' => url('webform-civicrm/js', array('alias' => TRUE)),
         );
@@ -574,7 +574,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
 
       if (!is_null($itemTaxRate)) {
         // Change the line item label to display the tax rate it contains
-        $taxSettings = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::CONTRIBUTE_PREFERENCES_NAME, 'contribution_invoice_settings');
+        $taxSettings = wf_crm_get_civi_setting('contribution_invoice_settings');
 
         if (($taxSettings['tax_display_settings'] != 'Do_not_show') && ($itemTaxRate !== 0)) {
           $item['label'] .= ' (' . t('includes !rate @tax', array('!rate' => (float)$itemTaxRate . '%', '@tax' => $taxSettings['tax_term'])) . ')';

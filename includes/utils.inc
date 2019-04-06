@@ -129,12 +129,12 @@ function wf_crm_field_options($field, $context, $data) {
 function wf_crm_get_states($param = NULL) {
   $ret = array();
   if (!$param || $param == 'default') {
-    $config = CRM_Core_Config::singleton();
-    if (!$param && !empty($config->provinceLimit)) {
-      $param = (array) $config->provinceLimit;
+    $provinceLimit = wf_crm_get_civi_setting('provinceLimit');
+    if (!$param && $provinceLimit) {
+      $param = (array) $provinceLimit;
     }
     else {
-      $param = array((int) $config->defaultContactCountry);
+      $param = [(int) wf_crm_get_civi_setting('defaultContactCountry', 1228)];
     }
   }
   else {
@@ -176,8 +176,7 @@ function wf_crm_state_abbr($input, $ret = 'abbreviation', $country_id = NULL) {
   $vars = array(1 => array($input, $ret == 'id' ? 'String' : 'Integer'));
   if ($ret === 'id') {
     if (!$country_id || $country_id === 'default') {
-      $config = CRM_Core_Config::singleton();
-      $country_id = (int) $config->defaultContactCountry;
+      $country_id = (int) wf_crm_get_civi_setting('defaultContactCountry', 1228);
     }
     $sql .= ' AND country_id = %2';
     $vars[2] = array($country_id, 'Integer');
@@ -235,8 +234,7 @@ function wf_crm_format_event($event, $format) {
   // Date format
   foreach ($format as $value) {
     if (strpos($value, 'dateformat') === 0) {
-      $config = CRM_Core_Config::singleton();
-      $date_format = $config->$value;
+      $date_format = wf_crm_get_civi_setting($value);
     }
   }
   $event = (object) $event;
@@ -255,7 +253,7 @@ function wf_crm_format_event($event, $format) {
     // Avoid showing redundant end-date if it is the same as the start date
     $same_day = substr($event->start_date, 0, 10) == substr($event->end_date, 0, 10);
     if (!$same_day || in_array('dateformatDatetime', $format) || in_array('dateformatTime', $format)) {
-      $end_format = (in_array('dateformatDatetime', $format) && $same_day) ? $config->dateformatTime : $date_format;
+      $end_format = (in_array('dateformatDatetime', $format) && $same_day) ? wf_crm_get_civi_setting('dateformatTime') : $date_format;
       $title[] = CRM_Utils_Date::customFormat($event->end_date, $end_format);
     }
   }
@@ -512,7 +510,7 @@ function wf_crm_get_fields($var = 'fields') {
 
   if (!$fields) {
     $config = CRM_Core_Config::singleton();
-    $components = $config->enableComponents;
+    $components = wf_crm_get_civi_setting('enable_components');
 
     $sets = array(
       'contact' => array('entity_type' => 'contact', 'label' => t('Contact Fields')),
@@ -584,16 +582,10 @@ function wf_crm_get_fields($var = 'fields') {
       'type' => 'textfield',
       'contact_type' => 'organization',
     );
-    // Individual names
-    if (version_compare(CRM_Utils_System::version(), '4.5', '<')) {
-      // This setting doesn't exist prior to 4.5 so hard-code it.
-      $enabled_names = array('Prefix', 'Suffix', 'First Name', 'Middle Name', 'Last Name');
-    }
-    else {
-      $enabled_names = wf_crm_explode_multivalue_str(CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'contact_edit_options'));
-      $name_options = CRM_Core_OptionGroup::values('contact_edit_options', FALSE, FALSE, FALSE, NULL, 'name');
-      $enabled_names = array_intersect_key($name_options, array_flip($enabled_names));
-    }
+  // Individual names
+    $enabled_names = wf_crm_get_civi_setting('contact_edit_options');
+    $name_options = array_column(wf_crm_apivalues('OptionValue', 'get', ['option_group_id' => 'contact_edit_options', 'return' => ['name', 'value']]), 'name', 'value');
+    $enabled_names = array_intersect_key($name_options, array_flip($enabled_names));
     foreach (array('prefix_id' => t('Name Prefix'), 'formal_title' => t('Formal Title'), 'first_name' => t('First Name'), 'middle_name' => t('Middle Name'), 'last_name' => t('Last Name'), 'suffix_id' => t('Name Suffix')) as $key => $label) {
       if (in_array(ucwords(str_replace(array('_id', '_'), array('', ' '), $key)), $enabled_names)) {
         $fields['contact_' . $key] = array(
@@ -640,7 +632,7 @@ function wf_crm_get_fields($var = 'fields') {
     $fields['contact_preferred_language'] = array(
       'name' => t('Preferred Language'),
       'type' => 'select',
-      'value' => $config->lcMessages,
+      'value' => wf_crm_get_civi_setting('lcMessages', 'en_US'),
     );
     if (array_key_exists('file', webform_components())) {
       $fields['contact_image_URL'] = array(
@@ -734,7 +726,7 @@ function wf_crm_get_fields($var = 'fields') {
       'name' => t('Country'),
       'type' => 'select',
       'extra' => array('civicrm_live_options' => 1),
-      'value' => $config->defaultContactCountry,
+      'value' => wf_crm_get_civi_setting('defaultContactCountry', 1228),
     );
     $fields['address_state_province_id'] = array(
       'name' => t('State/Province'),
@@ -1290,7 +1282,7 @@ function wf_crm_get_fields($var = 'fields') {
     }
 
     // File attachment fields
-    $numAttachments = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'max_attachments');
+    $numAttachments = wf_crm_get_civi_setting('max_attachments', 3);
     foreach ($sets as $ent => $set) {
       if (!empty($set['attachments']) && $numAttachments) {
         $sets["{$ent}upload"] = array(
@@ -1831,4 +1823,14 @@ function wf_crm_custom_types_map_array() {
   );
 
   return $custom_types;
+}
+
+/**
+ * @param string $setting_name
+ * @param mixed $default_value
+ * @return mixed
+ */
+function wf_crm_get_civi_setting($setting_name, $default_value = NULL) {
+  $settings = wf_civicrm_api('Setting', 'get', ['sequential' => 1, 'return' => $setting_name]);
+  return wf_crm_aval($settings, "values:0:$setting_name", $default_value);
 }
