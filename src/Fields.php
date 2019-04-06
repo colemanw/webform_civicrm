@@ -3,12 +3,9 @@
 namespace Drupal\webform_civicrm;
 
 use CRM_Case_XMLProcessor_Process;
-use CRM_Core_BAO_Setting;
 use CRM_Core_BAO_Tag;
 use CRM_Core_Config;
 use CRM_Core_DAO;
-use CRM_Core_OptionGroup;
-use CRM_Utils_System;
 
 class Fields implements FieldsInterface {
 
@@ -49,8 +46,7 @@ class Fields implements FieldsInterface {
 
   protected function getComponents(): array {
     if (empty($this->components)) {
-      $config = CRM_Core_Config::singleton();
-      $this->components = $config->enableComponents;
+      $this->components = wf_crm_get_civi_setting('enable_components');
     }
 
     return $this->components;
@@ -110,7 +106,6 @@ class Fields implements FieldsInterface {
   }
 
   protected function wf_crm_get_fields($var = 'fields') {
-    $config = CRM_Core_Config::singleton();
     $components = $this->getComponents();
     $sets = $this->getSets($components);
 
@@ -150,15 +145,9 @@ class Fields implements FieldsInterface {
         'contact_type' => 'organization',
       );
       // Individual names
-      if (version_compare(CRM_Utils_System::version(), '4.5', '<')) {
-        // This setting doesn't exist prior to 4.5 so hard-code it.
-        $enabled_names = array('Prefix', 'Suffix', 'First Name', 'Middle Name', 'Last Name');
-      }
-      else {
-        $enabled_names = wf_crm_explode_multivalue_str(CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'contact_edit_options'));
-        $name_options = CRM_Core_OptionGroup::values('contact_edit_options', FALSE, FALSE, FALSE, NULL, 'name');
-        $enabled_names = array_intersect_key($name_options, array_flip($enabled_names));
-      }
+      $enabled_names = wf_crm_get_civi_setting('contact_edit_options');
+      $name_options = array_column(wf_crm_apivalues('OptionValue', 'get', ['option_group_id' => 'contact_edit_options', 'return' => ['name', 'value']]), 'name', 'value');
+      $enabled_names = array_intersect_key($name_options, array_flip($enabled_names));
       foreach (array('prefix_id' => t('Name Prefix'), 'formal_title' => t('Formal Title'), 'first_name' => t('First Name'), 'middle_name' => t('Middle Name'), 'last_name' => t('Last Name'), 'suffix_id' => t('Name Suffix')) as $key => $label) {
         if (in_array(ucwords(str_replace(['_id', '_'], ['', ' '], $key)),
           $enabled_names, TRUE)) {
@@ -206,7 +195,7 @@ class Fields implements FieldsInterface {
       $fields['contact_preferred_language'] = array(
         'name' => t('Preferred Language'),
         'type' => 'select',
-        'value' => $config->lcMessages,
+        'value' => wf_crm_get_civi_setting('lcMessages', 'en_US'),
       );
       /*
        * @todo is this fine w/ the core file element?
@@ -303,7 +292,7 @@ class Fields implements FieldsInterface {
         'name' => t('Country'),
         'type' => 'select',
         'extra' => array('civicrm_live_options' => 1),
-        'value' => $config->defaultContactCountry,
+        'value' => wf_crm_get_civi_setting('defaultContactCountry', 1228),
       );
       $fields['address_state_province_id'] = array(
         'name' => t('State/Province'),
@@ -853,7 +842,7 @@ class Fields implements FieldsInterface {
       }
 
       // File attachment fields
-      $numAttachments = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'max_attachments');
+      $numAttachments = wf_crm_get_civi_setting('max_attachments', 3);
       foreach ($sets as $ent => $set) {
         if (!empty($set['attachments']) && $numAttachments) {
           $sets["{$ent}upload"] = array(
