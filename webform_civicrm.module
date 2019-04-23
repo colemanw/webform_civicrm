@@ -469,10 +469,28 @@ function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = N
       ->condition('contact_id', '%-' . $old_id . '-%', 'LIKE')
       ->execute();
     // Update contact reference field data
-    db_query("UPDATE {webform_submitted_data} d, {webform_component} c SET d.data = :new
-      WHERE d.data = :old AND d.cid = c.cid AND d.nid = c.nid AND c.type = 'civicrm_contact'",
-      array(':new' => $new_id, ':old' => $old_id)
-    );
+    $webforms = \Drupal\webform\Entity\Webform::loadMultiple();
+    foreach ($webforms as $webform) {
+      $elements = $webform->getElementsInitializedAndFlattened();
+      foreach ($elements as $key => $value) {
+        if ($value['#type'] == 'civicrm_contact') {
+          $query = \Drupal::entityQuery('webform_submission')
+            ->condition('webform_id', $webform->id());
+          $submissions = $query->execute();
+          foreach ($submissions as $sid) {
+            //Load submission and update old contact id with the new id.
+            $submission = \Drupal\webform\Entity\WebformSubmission::load($sid);
+            $data = $submission->getData();
+            if (!empty($data[$key]) && $data[$key] == $old_id) {
+              $data[$key] = $new_id;
+              // Set submission data.
+              $submission->setData($data);
+              $submission->save();
+            }
+          }
+        }
+      }
+    }
   }
 }
 
