@@ -70,6 +70,10 @@ class WebformCiviCRMSettingsForm extends FormBase {
     $webform = $this->getWebform();
     $handler_collection = $webform->getHandlers('webform_civicrm');
     $values = $form_state->getValues();
+    if (!isset($values['nid']) && !empty($form['form_state'])) {
+      $values += $form['form_state']->getValues();
+      $form_state->setValues($values);
+    }
 
     $has_handler = $handler_collection->has('webform_civicrm');
     $remove_handler = empty($values['nid']);
