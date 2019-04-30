@@ -7,6 +7,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Markup;
 use Drupal\webform\Plugin\WebformElementBase;
 use Drupal\webform\WebformSubmissionInterface;
+use Drupal\webform_civicrm\Utils;
 
 /**
  * Provides a 'civicrm_options' element.
@@ -117,6 +118,25 @@ class CivicrmOptions extends WebformElementBase {
     $is_multiple = !empty($element['#extra']['multiple']);
     $use_live_options = !empty($element['#civicrm_live_options']);
 
+    if (empty($element['#options'])) {
+      $element['#options'] = $this->getFieldOptions($element);
+    }
+
+    if ($use_live_options) {
+      $new = $this->getFieldOptions($element);
+      $old = $element['#options'];
+
+      // If an item doesn't exist, we add it. If it's changed, we update it.
+      // But we don't subtract items that have been removed in civi - this prevents
+      // breaking the display of old submissions.
+      foreach ($new as $k => $v) {
+        if (!isset($old[$k]) || $old[$k] !== $v) {
+          $old[$k] = $v;
+        }
+      }
+      $element['#options'] = $new;
+    }
+
     $element['#type'] = 'select';
     if (!$as_list) {
       $element['#type'] = $is_multiple ? 'checkboxes' : 'radios';
@@ -136,8 +156,10 @@ class CivicrmOptions extends WebformElementBase {
     parent::prepare($element, $webform_submission);
   }
 
-  public function getPluginLabel() {
-    return 'CiviCRM Options';
+  protected function getFieldOptions($element) {
+    list( , , , , $table, $name) = Utils::wf_crm_explode_key($element['#form_key']);
+    $params = ['field' => $name, 'context' => 'create'];
+    return wf_crm_apivalues($table, 'getoptions', $params);
   }
 
   /**
