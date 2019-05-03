@@ -70,9 +70,23 @@ class WebformCiviCRMSettingsForm extends FormBase {
     $webform = $this->getWebform();
     $handler_collection = $webform->getHandlers('webform_civicrm');
     $values = $form_state->getValues();
-    if (!isset($values['nid']) && !empty($form['form_state'])) {
-      $values += $form['form_state']->getValues();
-      $form_state->setValues($values);
+    // Check if this is the confirmation form for removed fields.
+    if (!isset($values['nid']) && isset($values['delete'], $values['disable'], $values['cancel'])) {
+      $triggering_element = $form_state->getTriggeringElement();
+      if ($triggering_element['#parents'][0] === 'cancel') {
+        $this->messenger()->addMessage('Cancelled');
+        return;
+      }
+      if ($triggering_element['#parents'][0] === 'delete') {
+        // Restore the form state values.
+        $values += $form_state->get('vals') ?: [];
+        $form_state->setValues($values);
+      }
+      if ($triggering_element['#parents'][0] === 'disable') {
+        // @todo probably restore as well, but flag later on not to delete.
+        $this->messenger()->addMessage('Disable is not yet supported, canceled form save.');
+        return;
+      }
     }
 
     $has_handler = $handler_collection->has('webform_civicrm');

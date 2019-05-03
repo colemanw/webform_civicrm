@@ -173,11 +173,12 @@ class wf_crm_admin_form {
    */
   private function buildConfirmationForm() {
     $this->form['#prefix'] = $this->form_state->get('msg');
-    $this->form['cancel'] = $this->form['disable'] = $this->form['delete'] = array('#type' => 'submit');
+    $this->form['cancel'] = $this->form['disable'] = $this->form['delete'] = ['#type' => 'submit'];
     $this->form['delete']['#value'] = t('Remove Fields and Save Settings');
     $this->form['disable']['#value'] = t('Leave Fields and Save Settings');
+    // Disable `disable` until it is support.
+    $this->form['disable']['#disabled'] = TRUE;
     $this->form['cancel']['#value'] = t('Cancel (go back)');
-    $this->form['form_state'] = $this->form_state;
     return $this->form;
   }
 
