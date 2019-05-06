@@ -89,6 +89,7 @@ class Fields implements FieldsInterface {
     $components = $this->getComponents();
     $sets = $this->getSets($components);
 
+    static $tokens;
     static $fields = [];
 
     if (!$fields) {
@@ -844,6 +845,30 @@ class Fields implements FieldsInterface {
           }
         }
       }
+      $tokens = array(
+        'display_name' => t('display name'),
+        'first_name' => t('first name'),
+        'nick_name' => t('nickname'),
+        'middle_name' => t('middle name'),
+        'last_name' => t('last name'),
+        'individual_prefix' => t('name prefix'),
+        'individual_suffix' => t('name suffix'),
+        'gender' => t('gender'),
+        'birth_date' => t('birth date'),
+        'job_title' => t('job title'),
+        'current_employer' => t('current employer'),
+        'contact_id' => t('contact id'),
+        'street_address' => t('street address'),
+        'city' => t('city'),
+        'state_province' => t('state/province abbr'),
+        'state_province_name' => t('state/province full'),
+        'postal_code' => t('postal code'),
+        'country' => t('country'),
+        'world_region' => t('world region'),
+        'phone' => t('phone number'),
+        'email' => t('email'),
+      );
+
 
       // Pull custom fields and match to Webform element types
       $custom_types = wf_crm_custom_types_map_array();
