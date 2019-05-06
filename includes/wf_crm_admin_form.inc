@@ -173,9 +173,11 @@ class wf_crm_admin_form {
    */
   private function buildConfirmationForm() {
     $this->form['#prefix'] = $this->form_state->get('msg');
-    $this->form['cancel'] = $this->form['disable'] = $this->form['delete'] = array('#type' => 'submit');
+    $this->form['cancel'] = $this->form['disable'] = $this->form['delete'] = ['#type' => 'submit'];
     $this->form['delete']['#value'] = t('Remove Fields and Save Settings');
     $this->form['disable']['#value'] = t('Leave Fields and Save Settings');
+    // Disable `disable` until it is support.
+    $this->form['disable']['#disabled'] = TRUE;
     $this->form['cancel']['#value'] = t('Cancel (go back)');
     return $this->form;
   }
@@ -1617,9 +1619,8 @@ class wf_crm_admin_form {
       foreach ($delete_me as $key => $id) {
         list(, $c, $ent, $n, $table, $name) = explode('_', $key, 6);
         $info = '';
-        if ($ent == 'contact' || $ent == 'participant') {
-          $info = '<em>' . wf_crm_contact_label($c, wf_crm_aval($this->node, 'webform_civicrm:data'));
-        }
+        $element = $this->webform->getElement($id);
+        $info = '<em>' . $element['#title'];
         if ($info && isset($this->sets[$table]['max_instances'])) {
           $info .= ' ' . $this->sets[$table]['label'] . ' ' . $n;
         }
@@ -1640,19 +1641,19 @@ class wf_crm_admin_form {
     $deleted = 0;
     if ($button === 'edit-delete' || ($button === 'edit-disable' && $this->settings['nid'])) {
       foreach ($delete_me as $id) {
-        $field = $this->node->webform['components'][$id];
+        $field = $this->webform->getElementDecoded($id);
         unset($enabled[$field['form_key']]);
         ++$deleted;
         if ($button === 'edit-delete') {
-          webform_component_delete($this->node, $field);
+          $this->webform->deleteElement($field['#form_key']);
         }
         else {
           $field['form_key'] = 'disabled' . substr($field['form_key'], 7);
-          webform_component_update($field);
+          $this->webform->setElementProperties($field['#form_key'], $field);
         }
       }
       if ($deleted == 1) {
-        $p = array('%name' => $field['name']);
+        $p = array('%name' => $field['#title']);
         drupal_set_message($button === 'edit-delete' ? t('Deleted field: %name', $p) : t('Disabled field: %name', $p));
       }
       else {
@@ -2027,8 +2028,9 @@ class wf_crm_admin_form {
     }
     // Merge defaults and create webform component
     $field += ['extra' => []];
-
-    $enabled[$field['form_key']] = $field;
+    if (empty($enabled[$field['form_key']])) {
+      $enabled[$field['form_key']] = $field;
+    }
   }
 
   /**
