@@ -685,9 +685,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    * Find activity ids based on url input or "existing activity" settings
    */
   private function findExistingActivities() {
+    $request = \Drupal::request();
     // Support legacy url param
-    if (empty($_GET["activity1"]) && !empty($_GET["aid"])) {
-      $_GET["activity1"] = $_GET["aid"];
+    if (empty($request->query->get('activity1')) && !empty($request->query->get('aid'))) {
+      $request->query->set('activity1', $request->query->get('aid'));
     }
     for ($n = 1; $n <= $this->data['activity']['number_of_activity']; ++$n) {
       if (!empty($this->data['activity'][$n]['activity'][1]['target_contact_id'])) {
@@ -698,17 +699,18 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           }
         }
         if ($targets) {
-          if (isset($_GET["activity$n"]) && wf_crm_is_positive($_GET["activity$n"])) {
-            $id = $_GET["activity$n"];
-            $item = wf_civicrm_api('activity', 'getsingle', array('id' => $id, 'return' => array('target_contact_id')));
+          if (wf_crm_is_positive($request->query->get("activity$n"))) {
+            $id = $request->query->get("activity$n");
+            $item = wf_civicrm_api('activity', 'getsingle', ['id' => $id, 'return' => ['target_contact_id']]);
             if (array_intersect($targets, $item['target_contact_id'])) {
-              $this->ent['activity'][$n] = array('id' => $id);
+              $this->ent['activity'][$n] = ['id' => $id];
             }
           }
           elseif (!empty($this->data['activity'][$n]['existing_activity_status'])) {
             // If the activity type hasn't been set, bail.
             if (empty($this->data['activity'][$n]['activity'][1]['activity_type_id'])) {
-              watchdog('webform_civicrm', "Activity type to update hasn't been set, so won't try to update activity. location = %1, webform activity number : %2", array('%1' => request_uri(), '%2' => $n), WATCHDOG_ERROR);
+              $logger = \Drupal::logger('webform_civicrm');
+              $logger->error("Activity type to update hasn't been set, so won't try to update activity. location = %1, webform activity number : %2", ['%1' => $request->getRequestUri(), '%2' => $n]);
               continue;
             }
             // The api doesn't accept an array of target contacts so we'll do it as a loop

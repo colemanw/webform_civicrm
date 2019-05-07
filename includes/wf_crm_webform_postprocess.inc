@@ -1356,7 +1356,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * Save activity data
    */
   private function processActivities() {
-    foreach (wf_crm_aval($this->data, 'activity', array()) as $n => $data) {
+    $activities = wf_crm_aval($this->data, 'activity', array());
+    foreach ($activities as $n => $data) {
       if (is_array($data)) {
         $params = $data['activity'][1];
         // Create mode
@@ -1371,7 +1372,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
           // Automatic source_contact_id - default to current user or contact 1
           if (empty($data['activity'][1]['source_contact_id'])) {
-            if (user_is_logged_in()) {
+            if (\Drupal::currentUser()->isAuthenticated()) {
               $params['source_contact_id'] = wf_crm_user_cid();
             }
             elseif (!empty($this->ent['contact'][1]['id'])) {
