@@ -148,6 +148,8 @@ class CivicrmOptions extends WebformElementBase {
     // A single static radio should be shown as a checkbox
     if (!$use_live_options && !$as_list && count($element['#options']) === 1) {
       $element['#type'] = 'checkbox';
+      // Reset the element label, the checkbox label, to be the first option's value.
+      $element['#title'] = reset($element['#options']);
     }
 
     if (!empty($element['#default_option'])) {
