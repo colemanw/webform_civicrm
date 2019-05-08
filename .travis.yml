@@ -10,8 +10,11 @@ env:
   global:
     - SIMPLETEST_DB=sqlite://localhost/sites/default/files/.ht.sqlite
 before_install:
+  - git config --global github.accesstoken $GITHUB_OAUTH_TOKEN
+  - composer config -g github-oauth.github.com $GITHUB_OAUTH_TOKEN
   - composer global require "hirak/prestissimo:^0.3"
-  - npm install -g bower
+  - npm i -g npm
+  - npm i -g bower
 install:
   - composer create-project roundearth/drupal-civicrm-project:8.x-dev $TRAVIS_BUILD_DIR/../drupal --no-interaction
   - cd $TRAVIS_BUILD_DIR/../drupal
