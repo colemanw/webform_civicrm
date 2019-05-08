@@ -21,6 +21,9 @@ commands:
       - restore_cache:
           keys:
             - *composer-cache
+      - run: |
+          git config --global github.accesstoken $GITHUB_OAUTH_TOKEN
+          composer config -g github-oauth.github.com $GITHUB_OAUTH_TOKEN
       - run: composer global require "hirak/prestissimo:^0.3"
       - run: composer create-project roundearth/drupal-civicrm-project:8.x-dev /tmp/drupal --no-interaction
       - run: |
