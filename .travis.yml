@@ -19,7 +19,9 @@ install:
   - composer create-project roundearth/drupal-civicrm-project:8.x-dev $TRAVIS_BUILD_DIR/../drupal --no-interaction
   - cd $TRAVIS_BUILD_DIR/../drupal
   - |
+    composer config repositories.drupal --unset
     composer config repositories.0 '{"type": "path", "url": "'$TRAVIS_BUILD_DIR'", "options": { "symlink": false }}'
+    composer config repositories.1 composer "https://packages.drupal.org/8
     cat composer.json
   - composer require drupal/webform_civicrm *@dev
 
