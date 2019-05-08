@@ -25,6 +25,6 @@ install:
 
 script:
   - cd $TRAVIS_BUILD_DIR/../drupal/web
-  - ./vendor/bin/phpunit -c core modules/contrib/webform_civicrm
+  - ../vendor/bin/phpunit -c core modules/contrib/webform_civicrm
 notifications:
   email: false
