@@ -18,11 +18,12 @@ before_install:
 install:
   - composer create-project roundearth/drupal-civicrm-project:8.x-dev $TRAVIS_BUILD_DIR/../drupal --no-interaction
   - cd $TRAVIS_BUILD_DIR/../drupal
-  - composer config repositories.0 path $TRAVIS_BUILD_DIR
+  - composer config repositories.0 '{"type": "path", "url": "'$TRAVIS_BUILD_DIR'", "options": { "symlink": false }}'
   - cat composer.json
   - composer require drupal/webform_civicrm *@dev
 
 script:
+  - cd $TRAVIS_BUILD_DIR/../drupal/web
   - ./vendor/bin/phpunit -c core modules/contrib/webform_civicrm
 notifications:
   email: false
