@@ -1,0 +1,44 @@
+version: 2.1
+defaults: &defaults
+  docker:
+    - image: circleci/php:7.2-cli-node-browsers
+    - image: circleci/mariadb:10.2
+      environment:
+        MYSQL_ALLOW_EMPTY_PASSWORD: 1
+  working_directory: ~/repo
+aliases:
+  - &composer-cache
+      v4-composer-cache
+commands:
+  setup-job:
+    steps:
+      - checkout
+      - run: sudo apt-get update && sudo apt-get install -y libpng-dev libjpeg62-turbo-dev
+      - run: sudo docker-php-ext-install gd
+      - run: |
+          sudo npm i -g npm
+          sudo npm i -g bower
+      - restore_cache:
+          keys:
+            - *composer-cache
+      - run: composer global require "hirak/prestissimo:^0.3"
+      - run: composer create-project roundearth/drupal-civicrm-project:8.x-dev /tmp/drupal --no-interaction
+      - run: |
+          cd /tmp/drupal
+          composer config repositories.aaa '{"type": "path", "url": "~/repo", "options": { "symlink": false }}'
+          cat composer.json
+          composer require drupal/webform_civicrm *@dev
+      - save_cache:
+          key: *composer-cache
+          paths:
+            - ~/.composer/cache
+
+jobs:
+  build:
+    <<: *defaults
+    steps:
+      - setup-job
+      - run: |
+          cd /tmp/drupal
+          export SIMPLETEST_DB=mysql://root:@127.0.0.1:3306
+          ../vendor/bin/phpunit -c core modules/contrib/webform_civicrm
