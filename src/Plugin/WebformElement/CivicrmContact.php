@@ -123,6 +123,12 @@ class CivicrmContact extends WebformElementBase {
         'weight' => 0,
         'value' => '',
         'required' => 0,
+        //Also include it here since it is needed for elements to show on the form.
+        'widget' => 'autocomplete',
+        'search_prompt' => '',
+        'none_prompt' => '',
+        'results_display' => ['display_name'],
+        'show_hidden_contact' => 0,
         'extra' => [
           'search_prompt' => '',
           'none_prompt' => '',
