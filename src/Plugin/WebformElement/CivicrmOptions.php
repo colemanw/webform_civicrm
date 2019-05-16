@@ -137,6 +137,10 @@ class CivicrmOptions extends WebformElementBase {
       $element['#options'] = $new;
     }
 
+    if (!empty($element['#default_option'])) {
+      $element['#default_value'] = $element['#default_option'];
+    }
+
     $element['#type'] = 'select';
     if (!$as_list) {
       $element['#type'] = $is_multiple ? 'checkboxes' : 'radios';
@@ -150,13 +154,10 @@ class CivicrmOptions extends WebformElementBase {
       $element['#type'] = 'checkbox';
       // Reset the element label, the checkbox label, to be the first option's value.
       $element['#title'] = reset($element['#options']);
+      $element['#return_value'] = key($element['#options']);
       // Remove the options array to prevent invalid validation.
       // @see \Drupal\Core\Form\FormValidator::performRequiredValidation
       unset($element['#options']);
-    }
-
-    if (!empty($element['#default_option'])) {
-      $element['#default_value'] = $element['#default_option'];
     }
     parent::prepare($element, $webform_submission);
   }
