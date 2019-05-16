@@ -150,6 +150,9 @@ class CivicrmOptions extends WebformElementBase {
       $element['#type'] = 'checkbox';
       // Reset the element label, the checkbox label, to be the first option's value.
       $element['#title'] = reset($element['#options']);
+      // Remove the options array to prevent invalid validation.
+      // @see \Drupal\Core\Form\FormValidator::performRequiredValidation
+      unset($element['#options']);
     }
 
     if (!empty($element['#default_option'])) {

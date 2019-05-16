@@ -1472,6 +1472,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   * Process the submission into the details of the activity.
   */
  private function formatSubmissionDetails(&$params, $activity_number) {
+   /*
     // Format details as html
     $params['details'] = nl2br(wf_crm_aval($params, 'details', ''));
     // Add webform results to details
@@ -1492,6 +1493,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           'alias' => TRUE
         )) . '</p>';
     }
+    */
   }
 
   /**
