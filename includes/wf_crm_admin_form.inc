@@ -1979,6 +1979,7 @@ class wf_crm_admin_form {
       if ($options = Utils::wf_crm_field_options($field, 'component_insert', $settings['data'])) {
         $field['options'] = $options;
         $field['extra']['items'] = wf_crm_array2str($options);
+        $field['extra']['aslist'] = TRUE;
         $field['type'] = 'civicrm_options';
       }
     }

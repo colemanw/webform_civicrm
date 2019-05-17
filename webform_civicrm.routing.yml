@@ -10,3 +10,12 @@ entity.webform.civicrm:
   requirements:
     _entity_access: 'webform.update'
     _permission: 'access CiviCRM'
+
+webform_civicrm.ajax:
+  path: webform-civicrm/js/{key}/{input}
+  defaults:
+    _controller: 'Drupal\webform_civicrm\Controller\AjaxController::handle'
+    input: ''
+  requirements:
+    _access: 'TRUE'
+    _format: 'json'
