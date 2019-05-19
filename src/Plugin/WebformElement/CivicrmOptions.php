@@ -137,6 +137,10 @@ class CivicrmOptions extends WebformElementBase {
       $element['#options'] = $new;
     }
 
+    if (!empty($element['#default_option'])) {
+      $element['#default_value'] = $element['#default_option'];
+    }
+
     $element['#type'] = 'select';
     if (!$as_list) {
       $element['#type'] = $is_multiple ? 'checkboxes' : 'radios';
@@ -148,10 +152,12 @@ class CivicrmOptions extends WebformElementBase {
     // A single static radio should be shown as a checkbox
     if (!$use_live_options && !$as_list && count($element['#options']) === 1) {
       $element['#type'] = 'checkbox';
-    }
-
-    if (!empty($element['#default_option'])) {
-      $element['#default_value'] = $element['#default_option'];
+      // Reset the element label, the checkbox label, to be the first option's value.
+      $element['#title'] = reset($element['#options']);
+      $element['#return_value'] = key($element['#options']);
+      // Remove the options array to prevent invalid validation.
+      // @see \Drupal\Core\Form\FormValidator::performRequiredValidation
+      unset($element['#options']);
     }
     parent::prepare($element, $webform_submission);
   }

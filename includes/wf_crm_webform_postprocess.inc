@@ -1476,21 +1476,19 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['details'] = nl2br(wf_crm_aval($params, 'details', ''));
     // Add webform results to details
     if (!empty($this->data['activity'][$activity_number]['details']['entire_result'])) {
-      module_load_include('inc', 'webform', 'includes/webform.submissions');
-      $submission = webform_submission_render($this->node, $this->submission, NULL, 'html');
-      $params['details'] .= drupal_render($submission);
+      $view_builder = \Drupal::entitTypeManager()->getViewBuilder('webform_submission');
+      $submission = $view_builder->view($this->submission);
+      $params['details'] .=  \Drupal::service('renderer')->renderPlain($submission);
     }
     if (!empty($this->data['activity'][$activity_number]['details']['view_link'])) {
-      $params['details'] .= '<p>' . l(t('View Webform Submission'), "node/{$this->node->nid}/submission/{$this->submission->sid}", array(
-          'absolute' => TRUE,
-          'alias' => TRUE
-        )) . '</p>';
+      $params['details'] .= '<p>' . $this->submission->toLink(t('View Webform Submission'), 'canonical', [
+        'absolute' => TRUE,
+      ])->toString() . '</p>';
     }
     if (!empty($this->data['activity'][$activity_number]['details']['edit_link'])) {
-      $params['details'] .= '<p>' . l(t('Edit Submission'), "node/{$this->node->nid}/submission/{$this->submission->sid}/edit", array(
-          'absolute' => TRUE,
-          'alias' => TRUE
-        )) . '</p>';
+      $params['details'] .= '<p>' . $this->submission->toLink(t('Edit Submission'), 'edit-form', [
+        'absolute' => TRUE,
+      ])->toString() . '</p>';
     }
   }
 
