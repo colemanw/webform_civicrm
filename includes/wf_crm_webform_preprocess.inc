@@ -187,7 +187,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           'defaultCountry' => $config->defaultContactCountry,
           'defaultStates' => Utils::wf_crm_get_states($config->defaultContactCountry),
           'noCountry' => t('- First Choose a Country -'),
-          'callbackPath' => Url::fromUserInput('/webform-civicrm/js', ['alias' => TRUE]),
+          'callbackPath' => Url::fromUserInput('/webform-civicrm/js', ['alias' => TRUE])->toString(),
         ];
         break;
       }
