@@ -2,11 +2,13 @@
 
 namespace Drupal\webform_civicrm;
 
-use CRM_Core_Config;
-use CRM_Core_DAO;
 use CRM_Core_I18n;
 use CRM_Utils_Array;
 use CRM_Utils_System;
+
+// Include legacy files for their procedural functions.
+// @todo convert required functions into injectable services.
+include_once __DIR__ . '/../includes/utils.inc';
 
 class Utils {
 
@@ -60,36 +62,48 @@ class Utils {
 
   /**
    * Get list of states, keyed by abbreviation rather than ID.
-   * FIXME use the api for this.
    * @param null|int|string $param
    */
   public static function wf_crm_get_states($param = NULL) {
     $ret = array();
-    if (!$param || $param === 'default') {
-      $config = CRM_Core_Config::singleton();
-      if (!$param && !empty($config->provinceLimit)) {
-        $param = implode(',', $config->provinceLimit);
+    if (!$param || $param == 'default') {
+      $provinceLimit = Utils::wf_crm_get_civi_setting('provinceLimit');
+      if (!$param && $provinceLimit) {
+        $param = (array) $provinceLimit;
       }
       else {
-        $param = (int) $config->defaultContactCountry;
+        $param = [(int) Utils::wf_crm_get_civi_setting('defaultContactCountry', 1228)];
       }
     }
     else {
-      $param = (int) $param;
+      $param = array((int) $param);
     }
-    $sql = "SELECT name AS label, UPPER(abbreviation) AS value FROM civicrm_state_province WHERE country_id IN ($param) ORDER BY name";
-    $dao = CRM_Core_DAO::executeQuery($sql);
-    while ($dao->fetch()) {
-      $ret[$dao->value] = $dao->label;
+    $states = wf_crm_apivalues('state_province', 'get', array(
+      'return' => 'abbreviation,name',
+      'sort' => 'name',
+      'country_id' => array('IN' => $param)
+    ));
+    foreach ($states as $state) {
+      $ret[strtoupper($state['abbreviation'])] = $state['name'];
     }
     // Localize the state/province names if in an non-en_US locale
     $tsLocale = CRM_Utils_System::getUFLocale();
-    if ($tsLocale !== '' && $tsLocale !== 'en_US') {
+    if ($tsLocale != '' and $tsLocale != 'en_US') {
       $i18n = CRM_Core_I18n::singleton();
       $i18n->localizeArray($ret, array('context' => 'province'));
       CRM_Utils_Array::asort($ret);
     }
     return $ret;
+  }
+
+  /**
+   * @param string $setting_name
+   * @param mixed $default_value
+   * @return mixed
+   */
+  public static function wf_crm_get_civi_setting($setting_name, $default_value = NULL) {
+    $settings = wf_civicrm_api('Setting', 'get', ['sequential' => 1, 'return' => $setting_name]);
+    return wf_crm_aval($settings, "values:0:$setting_name", $default_value);
   }
 
 }
