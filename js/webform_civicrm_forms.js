@@ -341,7 +341,6 @@ var wfCivi = (function ($, D, drupalSettings) {
   }
 
   function countrySelect() {
-
     var name = parseName($(this).attr('name'));
     var countryId = $(this).val();
     var stateSelect = $(this).parents('form.webform-submission-form').find('select.civicrm-enabled[name*="'+name.replace('country', 'state_province')+'"]');
