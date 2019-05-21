@@ -65,45 +65,43 @@ class Utils {
    * @param null|int|string $param
    */
   public static function wf_crm_get_states($param = NULL) {
-    $ret = array();
+    $ret = [];
     if (!$param || $param == 'default') {
-      $provinceLimit = Utils::wf_crm_get_civi_setting('provinceLimit');
+      $settings = wf_civicrm_api('Setting', 'get', [
+        'sequential' => 1,
+        'return' => 'provinceLimit',
+      ]);
+      $provinceLimit = wf_crm_aval($settings, "values:0:provinceLimit");
       if (!$param && $provinceLimit) {
         $param = (array) $provinceLimit;
       }
       else {
-        $param = [(int) Utils::wf_crm_get_civi_setting('defaultContactCountry', 1228)];
+        $settings = wf_civicrm_api('Setting', 'get', [
+          'sequential' => 1,
+          'return' => 'defaultContactCountry',
+        ]);
+        $param = [(int) wf_crm_aval($settings, "values:0:defaultContactCountry", 1228)];
       }
     }
     else {
-      $param = array((int) $param);
+      $param = [(int) $param];
     }
-    $states = wf_crm_apivalues('state_province', 'get', array(
+    $states = wf_crm_apivalues('state_province', 'get', [
       'return' => 'abbreviation,name',
       'sort' => 'name',
-      'country_id' => array('IN' => $param)
-    ));
+      'country_id' => ['IN' => $param],
+    ]);
     foreach ($states as $state) {
       $ret[strtoupper($state['abbreviation'])] = $state['name'];
     }
     // Localize the state/province names if in an non-en_US locale
     $tsLocale = CRM_Utils_System::getUFLocale();
-    if ($tsLocale != '' and $tsLocale != 'en_US') {
+    if ($tsLocale !== '' && $tsLocale !== 'en_US') {
       $i18n = CRM_Core_I18n::singleton();
-      $i18n->localizeArray($ret, array('context' => 'province'));
+      $i18n->localizeArray($ret, ['context' => 'province']);
       CRM_Utils_Array::asort($ret);
     }
     return $ret;
-  }
-
-  /**
-   * @param string $setting_name
-   * @param mixed $default_value
-   * @return mixed
-   */
-  public static function wf_crm_get_civi_setting($setting_name, $default_value = NULL) {
-    $settings = wf_civicrm_api('Setting', 'get', ['sequential' => 1, 'return' => $setting_name]);
-    return wf_crm_aval($settings, "values:0:$setting_name", $default_value);
   }
 
 }
