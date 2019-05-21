@@ -43,7 +43,10 @@ class CivicrmOptions extends WebformElementBase {
         'civicrm_live_options' => 1,
         'default_option' => '',
         'data_type' => NULL,
-        'extra' => [],
+        'extra' => [
+          'multiple' => FALSE,
+          'aslist' => FALSE,
+        ],
       ] + parent::getDefaultProperties();
   }
 
@@ -55,6 +58,22 @@ class CivicrmOptions extends WebformElementBase {
 
     // Get element properties.
     $element_properties = $form_state->getValues() ?: $form_state->get('element_properties');
+
+    $form['extra'] = [
+      '#type' => 'fieldset',
+      '#title' => $this->t('Extra'),
+      '#open' => TRUE,
+      '#access' => TRUE,
+      '#parents' => ['properties', 'extra'],
+    ];
+    $form['extra']['aslist'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Listbox'),
+      '#description' => $this->t('Check this option if you want the select component to be displayed as a select list box instead of radio buttons or checkboxes.'),
+      '#access' => TRUE,
+      '#default_value' => $element_properties['extra']['aslist'],
+      '#parents' => ['properties', 'extra', 'aslist'],
+    ];
 
     // Options.
     $form['options'] = [
