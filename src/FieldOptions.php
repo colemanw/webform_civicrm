@@ -36,11 +36,17 @@ class FieldOptions implements FieldOptionsInterface {
         $ret = wf_crm_get_contact_relationship_types($data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][$n]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$n]['contact'][1]['contact_sub_type']);
       }
       elseif ($name === 'relationship_permission') {
-        $ret = array(
-          1 => t('!a may view and edit !b', array('!a' => wf_crm_contact_label($c, $data, 'plain'), '!b' => wf_crm_contact_label($n, $data, 'plain'))),
-          2 => t('!a may view and edit !b', array('!a' => wf_crm_contact_label($n, $data, 'plain'), '!b' => wf_crm_contact_label($c, $data, 'plain'))),
+        $ret = [
+          1 => t(':a may view and edit :b', [
+            ':a' => wf_crm_contact_label($c, $data, 'plain'),
+            ':b' => wf_crm_contact_label($n, $data, 'plain'),
+          ]),
+          2 => t(':a may view and edit :b', [
+            ':a' => wf_crm_contact_label($n, $data, 'plain'),
+            ':b' => wf_crm_contact_label($c, $data, 'plain'),
+          ]),
           3 => t('Both contacts may view and edit each other'),
-        );
+        ];
       }
       // If this is a contact reference or shared address field, list webform contacts
       elseif ($name === 'master_id' || wf_crm_aval($field, 'data_type') === 'ContactReference') {
