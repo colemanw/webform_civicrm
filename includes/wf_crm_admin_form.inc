@@ -337,7 +337,7 @@ class wf_crm_admin_form {
           'js_select' => $this->addToggle($fsid),
         );
         if ($sid == 'relationship') {
-          $fieldset['#title'] = t('Relationship to :contact', array(':contact' => wf_crm_contact_label($i, $this->data, 'wrap')));
+          $fieldset['#title'] = t('Relationship to @contact', array('@contact' => wf_crm_contact_label($i, $this->data, 'wrap')));
         }
         elseif ((isset($set['max_instances']) && $set['max_instances'] > 1)) {
           $fieldset['#title'] .= ' ' . $i;
