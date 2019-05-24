@@ -317,7 +317,9 @@ var wfCivi = (function ($, D, drupalSettings) {
       $.each(data, function(key, val) {
         $el.append('<option value="'+key+'">'+val+'</option>');
       });
-      $el.val(value);
+      if (value in data) {
+        $el.val(value);
+      }
     }
     else {
       $el.append('<option value="-">'+Drupal.t('- N/A -')+'</option>');
