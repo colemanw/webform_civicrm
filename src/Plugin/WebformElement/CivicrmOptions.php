@@ -9,6 +9,8 @@ use Drupal\webform\Plugin\WebformElementBase;
 use Drupal\webform\WebformSubmissionInterface;
 use Drupal\webform_civicrm\Utils;
 
+include_once __DIR__ . '/../../../includes/utils.inc';
+
 /**
  * Provides a 'civicrm_options' element.
  *
