@@ -317,7 +317,9 @@ var wfCivi = (function ($, D, drupalSettings) {
       $.each(data, function(key, val) {
         $el.append('<option value="'+key+'">'+val+'</option>');
       });
-      $el.val(value);
+      if (value in data) {
+        $el.val(value);
+      }
     }
     else {
       $el.append('<option value="-">'+Drupal.t('- N/A -')+'</option>');
@@ -343,7 +345,7 @@ var wfCivi = (function ($, D, drupalSettings) {
   function countrySelect() {
     var name = parseName($(this).attr('name'));
     var countryId = $(this).val();
-    var stateSelect = $(this).parents('form.webform-submission-form').find('select.civicrm-enabled[name*="['+(name.replace('country', 'state_province'))+']"]');
+    var stateSelect = $(this).parents('form.webform-submission-form').find('select.civicrm-enabled[name*="'+name.replace('country', 'state_province')+'"]');
     if (stateSelect.length) {
       populateStates(stateSelect, countryId);
     }
@@ -424,7 +426,7 @@ var wfCivi = (function ($, D, drupalSettings) {
       });
 
       // Add handler to country field to trigger ajax refresh of corresponding state/prov
-      $('form.webform-submission-form .civicrm-enabled[name*="_address_country_id]"]').once('civicrm').change(countrySelect);
+      $('form.webform-submission-form .civicrm-enabled[name*="_address_country_id"]').once('civicrm').change(countrySelect);
 
       // Show/hide address fields when sharing an address
       $('form.webform-submission-form .civicrm-enabled[name*="_address_master_id"]').once('civicrm').change(function(){
