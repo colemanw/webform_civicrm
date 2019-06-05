@@ -40,6 +40,7 @@ class CivicrmContact extends WebformElementBase {
         'none_prompt' => '',
         'results_display' => ['display_name'],
         'allow_create' => 0,
+        // @todo rename from widget to something else.
         'widget' => 'autocomplete',
         'show_hidden_contact' => 0,
         'unique' => 0,
@@ -53,9 +54,12 @@ class CivicrmContact extends WebformElementBase {
         'submit_disabled' => FALSE,
         'attributes' => [],
         'private' => FALSE,
-        'default' => '',
+        // @todo needs the UI exposed.
+        // @todo rename default_static_value ?
+        'default' => 'user',
         'default_contact_id' => '',
         'default_relationship' => '',
+        // @todo needs the UI exposed.
         'allow_url_autofill' => TRUE,
         'dupes_allowed' => FALSE,
         'filters' => [
@@ -104,8 +108,8 @@ class CivicrmContact extends WebformElementBase {
         }
       }
     }
-    if (empty($cid) && $element['#type'] === 'hidden' && $element['#extra']['none_prompt']) {
-      $element['#attributes']['data-civicrm-name'] = Xss::filter($element['#extra']['none_prompt']);
+    if (empty($cid) && $element['#type'] === 'hidden' && $element['none_prompt']) {
+      $element['#attributes']['data-civicrm-name'] = Xss::filter($element['none_prompt']);
     }
     parent::prepare($element, $webform_submission);
   }
@@ -114,9 +118,14 @@ class CivicrmContact extends WebformElementBase {
    * {@inheritdoc}
    *
    * @see _webform_edit_civicrm_contact()
+   * @see webform_civicrm_webform_component_presave only form_id 1 can have static user.
    */
   public function form(array $form, FormStateInterface $form_state) {
     $form = parent::form($form, $form_state);
+    $form['element']['value']['#access'] = FALSE;
+    $form['element']['multiple']['#access'] = FALSE;
+
+
     \Drupal::getContainer()->get('civicrm')->initialize();
     $element_properties = $form_state->get('element_properties');
 
@@ -124,54 +133,49 @@ class CivicrmContact extends WebformElementBase {
     $allow_create = $element_properties['allow_create'];
 
 //    $form['#suffix'] = \wf_crm_admin_help::helpTemplate();
-    $form['widget'] = [
+    $form['element']['widget'] = [
       '#type' => 'select',
-      '#title' => t('Form Widget'),
+      '#title' => $this->t('Form Widget'),
       '#default_value' => $element_properties['widget'],
       '#options' => [
-        'autocomplete' => t('Autocomplete'),
-        'select' => t('Select List'),
-        'hidden' => t('Static'),
-        'textfield' => t('Enter Contact ID')
+        'autocomplete' => $this->t('Autocomplete'),
+        'select' => $this->t('Select List'),
+        'hidden' => $this->t('Static'),
+        'textfield' => $this->t('Enter Contact ID')
       ],
-      '#weight' => -9,
     ];
-      $status = $allow_create ? t('<strong>Contact Creation: Enabled</strong> - this contact has name/email fields on the webform.') : t('<strong>Contact Creation: Disabled</strong> - no name/email fields for this contact on the webform.');
+    $allow_create ? $this->t('<strong>Contact Creation: Enabled</strong> - this contact has name/email fields on the webform.') : $this->t('<strong>Contact Creation: Disabled</strong> - no name/email fields for this contact on the webform.');
 //    $form['civicrm']['#description'] = '<div class="messages ' . ($allow_create ? 'status' : 'warning') . '">' . $status . ' ' . \wf_crm_admin_help::helpIcon('contact_creation', t('Contact Creation')) . '</div>';
-    $form['search_prompt'] = [
+    $form['element']['search_prompt'] = [
       '#type' => 'textfield',
-      '#title' => t('Search Prompt'),
+      '#title' => $this->t('Search Prompt'),
       '#default_value' => $element_properties['search_prompt'],
-      '#description' => t('Text the user will see before selecting a contact.'),
+      '#description' => $this->t('Text the user will see before selecting a contact.'),
       '#size' => 60,
       '#maxlength' => 1024,
-      '#weight' => -7,
     ];
-    $form['none_prompt'] = [
+    $form['element']['none_prompt'] = [
       '#type' => 'textfield',
-      '#title' => $allow_create ? t('Create Prompt') : t('Not Found Prompt'),
+      '#title' => $allow_create ? $this->t('Create Prompt') : $this->t('Not Found Prompt'),
       '#default_value' => $element_properties['none_prompt'],
-      '#description' => $allow_create ? t('This text should prompt the user to create a new contact.') : t('This text should tell the user that no search results were found.'),
+      '#description' => $allow_create ? $this->t('This text should prompt the user to create a new contact.') : $this->t('This text should tell the user that no search results were found.'),
       '#size' => 60,
       '#maxlength' => 1024,
-      '#weight' => -6,
-      '#parents' => ['extra', 'none_prompt'],
     ];
-    $form['results_display'] = [
+    $form['element']['results_display'] = [
       '#type' => 'select',
       '#multiple' => TRUE,
-      '#title' => t("Contact Display Field(s)"),
+      '#title' => $this->t('Contact Display Field(s)'),
       '#required' => TRUE,
-      '#default_value' => $element_properties['extra']['results_display'],
+      '#default_value' => $element_properties['results_display'],
       '#options' => $this->wf_crm_results_display_options($contact_type),
     ];
-    $form['show_hidden_contact'] = [
+    $form['element']['show_hidden_contact'] = [
       '#type' => 'radios',
-      '#title' => t('Display Contact Name'),
-      '#description' => t('If enabled, this static element will show the contact that has been pre-selected (or else the Create/Not Found Prompt if set). Otherwise the element will not be visible.'),
-      '#options' => [t('No'), t('Yes')],
+      '#title' => $this->t('Display Contact Name'),
+      '#description' => $this->t('If enabled, this static element will show the contact that has been pre-selected (or else the Create/Not Found Prompt if set). Otherwise the element will not be visible.'),
+      '#options' => [$this->t('No'), $this->t('Yes')],
       '#default_value' => $element_properties['show_hidden_contact'],
-      '#weight' => -5,
     ];
     return $form;
   }

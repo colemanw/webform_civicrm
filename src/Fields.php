@@ -128,6 +128,7 @@ class Fields implements FieldsInterface {
         'name' => t('Existing Contact'),
         'type' => 'civicrm_contact',
         'search_prompt' => t('- Choose existing -'),
+        'widget' => 'hidden',
       );
       // Organization / household names
       foreach (array('organization' => t('Organization Name'), 'legal' => t('Legal Name'), 'household' => t('Household Name')) as $key => $label) {

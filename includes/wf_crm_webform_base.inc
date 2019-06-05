@@ -247,65 +247,63 @@ abstract class wf_crm_webform_base {
     $filters = wf_crm_search_filters($this->node, $component);
     // Start with the url - that trumps everything.
     $query = \Drupal::request()->query;
-    if ($query->has("cid$c") || ($c == 1 && $query->has('cid'))) {
+    if ($query->has("cid$c") || ($c === 1 && $query->has('cid'))) {
       $cid = $query->has("cid$c") ? $query->get("cid$c") : $query->get('cid');
-      if (wf_crm_is_positive($cid) || $cid === '0' || $cid === 0) {
+      if ($cid === 0 || $cid === '0' || wf_crm_is_positive($cid)) {
         $cid = (int) $cid;
         if ($cid === 0) {
           $this->ent['contact'][$c]['id'] = $cid;
           return;
         }
-        // This property may not exist in components created before v4.12 so default to TRUE if not set
-        elseif (wf_crm_aval($component['extra'], 'allow_url_autofill', TRUE, TRUE)) {
-          if (wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
-            $this->ent['contact'][$c]['id'] = $cid;
-          }
+        if (!empty($component['#allow_url_autofill']) && wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
+          $this->ent['contact'][$c]['id'] = $cid;
         }
       }
     }
     if (empty($this->ent['contact'][$c]['id'])) {
       $found = array();
-      switch ($component['#extra']['default']) {
+      // @todo default will move out of extras
+      switch ($component['default']) {
         case 'user':
           $cid = wf_crm_user_cid();
-          $found = ($c == 1 && $cid) ? array($cid) : array();
+          $found = ($c === 1 && $cid) ? [$cid] : [];
           break;
         case 'contact_id':
-          if ($component['extra']['default_contact_id']) {
-            $found = array($component['extra']['default_contact_id']);
+          if ($component['default_contact_id']) {
+            $found = array($component['default_contact_id']);
           }
           break;
         case 'relationship':
-          $to = $component['extra']['default_relationship_to'];
-          if (!empty($this->ent['contact'][$to]['id']) && !empty($component['extra']['default_relationship'])) {
-            $found = wf_crm_find_relations($this->ent['contact'][$to]['id'], $component['extra']['default_relationship']);
+          $to = $component['default_relationship_to'];
+          if (!empty($component['default_relationship']) && !empty($this->ent['contact'][$to]['id'])) {
+            $found = wf_crm_find_relations($this->ent['contact'][$to]['id'], $component['default_relationship']);
           }
           break;
         case 'auto':
-          $component['extra']['allow_create'] = FALSE;
+          $component['allow_create'] = FALSE;
           $found = array_keys(wf_crm_contact_search($this->node, $component, $filters, wf_crm_aval($this->ent, 'contact', array())));
           break;
       }
-      if (isset($component['#extra']['randomize']) && $component['#extra']['randomize']) {
+      if (isset($component['randomize']) && $component['randomize']) {
         shuffle($found);
       }
-      if (in_array($component['#extra']['default'], array('user', 'contact_id'))) {
+      if (in_array($component['default'], ['user', 'contact_id'])) {
         $dupes_allowed = TRUE;
       }
       else {
-        $dupes_allowed = $component['extra']['dupes_allowed'];
+        $dupes_allowed = $component['dupes_allowed'];
       }
       foreach ($found as $cid) {
         // Don't pick the same contact twice unless explicitly told to do so
         if (!$dupes_allowed) {
           foreach($this->ent['contact'] as $contact) {
-            if (!empty($contact['id']) && $cid == $contact['id']) {
+            if (!empty($contact['id']) && $cid === $contact['id']) {
               continue 2;
             }
           }
         }
         // Check filters except for 'auto' which already applied them
-        if ($component['#extra']['default'] == 'auto' || wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
+        if ($component['default'] === 'auto' || wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
           $this->ent['contact'][$c]['id'] = $cid;
           break;
         }
