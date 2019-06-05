@@ -2,8 +2,8 @@
 
 namespace Drupal\webform_civicrm\Plugin\WebformElement;
 
+use Drupal\Component\Utility\Xss;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\webform\Plugin\WebformElement\TextField;
 use Drupal\webform\Plugin\WebformElementBase;
 use Drupal\webform\WebformSubmissionInterface;
 
@@ -27,10 +27,86 @@ class CivicrmContact extends WebformElementBase {
 
   /**
    * {@inheritdoc}
+   */
+  public function getDefaultProperties() {
+    return [
+        'name' => '',
+        'form_key' => NULL,
+        'pid' => 0,
+        'weight' => 0,
+        'value' => '',
+        'required' => 0,
+        'search_prompt' => '',
+        'none_prompt' => '',
+        'results_display' => ['display_name'],
+        'allow_create' => 0,
+        'widget' => 'autocomplete',
+        'show_hidden_contact' => 0,
+        'unique' => 0,
+        'title_display' => 'before',
+        'randomize' => 0,
+        'description' => '',
+        'no_autofill' => [],
+        'hide_fields' => [],
+        'hide_method' => 'hide',
+        'no_hide_blank' => FALSE,
+        'submit_disabled' => FALSE,
+        'attributes' => [],
+        'private' => FALSE,
+        'default' => '',
+        'default_contact_id' => '',
+        'default_relationship' => '',
+        'allow_url_autofill' => TRUE,
+        'dupes_allowed' => FALSE,
+        'filters' => [
+          'contact_sub_type' => 0,
+          'group' => [],
+          'tag' => [],
+          'check_permissions' => 1,
+        ],
+        // Set for custom fields.
+        'expose_list' => FALSE,
+        'empty_option' => '',
+      ] + parent::getDefaultProperties();
+  }
+
+  /**
+   * {@inheritdoc}
    *
    * @see _webform_render_civicrm_contact()
    */
   public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
+    $hide_method = wf_crm_aval($element['#extra'], 'hide_method', 'hide');
+    $no_hide_blank = (int) wf_crm_aval($element['#extra'], 'no_hide_blank', 0);
+    $element['#type'] = $element['#extra']['widget'] === 'autocomplete' ? 'textfield' : $element['#extra']['widget'];
+    $element['#attributes']['data-hide-method'] = $hide_method;
+    $element['#attributes']['data-no-hide-blank'] = $no_hide_blank;
+
+    $cid = wf_crm_aval($element, '#default_value', '');
+    if ($element['#type'] === 'hidden') {
+      // User may not change this value for hidden fields
+      $element['#value'] = $cid;
+      if (!$element['#show_hidden_contact']) {
+        return;
+      }
+    }
+    if (!empty($cid)) {
+      // Don't lookup same contact again
+      if (wf_crm_aval($element, '#attributes:data-civicrm-id') != $cid) {
+        $filters = wf_crm_search_filters($node, $component);
+        $name = wf_crm_contact_access($component, $filters, $cid);
+        if ($name !== FALSE) {
+          $element['#attributes']['data-civicrm-name'] = $name;
+          $element['#attributes']['data-civicrm-id'] = $cid;
+        }
+        else {
+          unset($cid);
+        }
+      }
+    }
+    if (empty($cid) && $element['#type'] === 'hidden' && $element['#extra']['none_prompt']) {
+      $element['#attributes']['data-civicrm-name'] = Xss::filter($element['#extra']['none_prompt']);
+    }
     parent::prepare($element, $webform_submission);
   }
 
@@ -41,29 +117,17 @@ class CivicrmContact extends WebformElementBase {
    */
   public function form(array $form, FormStateInterface $form_state) {
     $form = parent::form($form, $form_state);
-
     \Drupal::getContainer()->get('civicrm')->initialize();
-    /** @var \Drupal\webform_ui\Form\WebformUiElementFormInterface $form_object */
-    $form_object = $form_state->getFormObject();
-    $webform = $form_object->getWebform();
-
     $element_properties = $form_state->get('element_properties');
 
-    list($contact_types, $sub_types) = wf_crm_get_contact_types();
-    $contact_type = $this->configuration['#extra']['contact_type'];
-    $allow_create = $element_properties['extra']['allow_create'];
+    $contact_type = $this->configuration['contact_type'];
+    $allow_create = $element_properties['allow_create'];
 
-    $form['civicrm'] = [
-      '#type' => 'fieldset',
-      '#title' => $this->t('CiviCRM settings'),
-      '#access' => TRUE,
-      '#weight' => -50,
-    ];
 //    $form['#suffix'] = \wf_crm_admin_help::helpTemplate();
-    $form['civicrm']['widget'] = [
+    $form['widget'] = [
       '#type' => 'select',
       '#title' => t('Form Widget'),
-      '#default_value' => $element_properties['extra']['widget'],
+      '#default_value' => $element_properties['widget'],
       '#options' => [
         'autocomplete' => t('Autocomplete'),
         'select' => t('Select List'),
@@ -72,28 +136,28 @@ class CivicrmContact extends WebformElementBase {
       ],
       '#weight' => -9,
     ];
-    $status = $allow_create ? t('<strong>Contact Creation: Enabled</strong> - this contact has name/email fields on the webform.') : t('<strong>Contact Creation: Disabled</strong> - no name/email fields for this contact on the webform.');
+      $status = $allow_create ? t('<strong>Contact Creation: Enabled</strong> - this contact has name/email fields on the webform.') : t('<strong>Contact Creation: Disabled</strong> - no name/email fields for this contact on the webform.');
 //    $form['civicrm']['#description'] = '<div class="messages ' . ($allow_create ? 'status' : 'warning') . '">' . $status . ' ' . \wf_crm_admin_help::helpIcon('contact_creation', t('Contact Creation')) . '</div>';
-    $form['civicrm']['search_prompt'] = [
+    $form['search_prompt'] = [
       '#type' => 'textfield',
       '#title' => t('Search Prompt'),
-      '#default_value' => $element_properties['extra']['search_prompt'],
+      '#default_value' => $element_properties['search_prompt'],
       '#description' => t('Text the user will see before selecting a contact.'),
       '#size' => 60,
       '#maxlength' => 1024,
       '#weight' => -7,
     ];
-    $form['civicrm']['none_prompt'] = [
+    $form['none_prompt'] = [
       '#type' => 'textfield',
       '#title' => $allow_create ? t('Create Prompt') : t('Not Found Prompt'),
-      '#default_value' => $element_properties['extra']['none_prompt'],
+      '#default_value' => $element_properties['none_prompt'],
       '#description' => $allow_create ? t('This text should prompt the user to create a new contact.') : t('This text should tell the user that no search results were found.'),
       '#size' => 60,
       '#maxlength' => 1024,
       '#weight' => -6,
       '#parents' => ['extra', 'none_prompt'],
     ];
-    $form['civicrm']['results_display'] = [
+    $form['results_display'] = [
       '#type' => 'select',
       '#multiple' => TRUE,
       '#title' => t("Contact Display Field(s)"),
@@ -101,59 +165,15 @@ class CivicrmContact extends WebformElementBase {
       '#default_value' => $element_properties['extra']['results_display'],
       '#options' => $this->wf_crm_results_display_options($contact_type),
     ];
-    $form['civicrm']['show_hidden_contact'] = [
+    $form['show_hidden_contact'] = [
       '#type' => 'radios',
       '#title' => t('Display Contact Name'),
       '#description' => t('If enabled, this static element will show the contact that has been pre-selected (or else the Create/Not Found Prompt if set). Otherwise the element will not be visible.'),
       '#options' => [t('No'), t('Yes')],
-      '#default_value' => $element_properties['extra']['show_hidden_contact'],
+      '#default_value' => $element_properties['show_hidden_contact'],
       '#weight' => -5,
     ];
     return $form;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getDefaultProperties() {
-    return [
-        'name' => '',
-        'form_key' => NULL,
-        'pid' => 0,
-        'weight' => 0,
-        'value' => '',
-        'required' => 0,
-        'extra' => [
-          'search_prompt' => '',
-          'none_prompt' => '',
-          'results_display' => ['display_name'],
-          'allow_create' => 0,
-          'widget' => 'autocomplete',
-          'show_hidden_contact' => 0,
-          'unique' => 0,
-          'title_display' => 'before',
-          'randomize' => 0,
-          'description' => '',
-          'no_autofill' => [],
-          'hide_fields' => [],
-          'hide_method' => 'hide',
-          'no_hide_blank' => FALSE,
-          'submit_disabled' => FALSE,
-          'attributes' => [],
-          'private' => FALSE,
-          'default' => '',
-          'default_contact_id' => '',
-          'default_relationship' => '',
-          'allow_url_autofill' => TRUE,
-          'dupes_allowed' => FALSE,
-          'filters' => [
-            'contact_sub_type' => 0,
-            'group' => [],
-            'tag' => [],
-            'check_permissions' => 1,
-          ],
-        ],
-      ] + parent::getDefaultProperties();
   }
 
   /**
