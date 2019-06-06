@@ -389,6 +389,12 @@ var wfCiviAdmin = (function ($, D) {
       }
       $('.dynamic-custom-checkbox input', context).once('wf-civi-dynamic').each(handleDynamicCustom).change(handleDynamicCustom);
 
+      $('.web-civi-js-select a').once('wf-civi').click(function() {
+        var $fieldset = $(this).closest('fieldset');
+        pub.selectReset($(this).attr('class'), $fieldset);
+        return false;
+      });
+
       $('select[id*=contact-type], select[id*=contact-sub-type]', context).once('wf-civi-relationship').change(function() {
         relationshipOptions();
       });

@@ -1470,9 +1470,9 @@ class wf_crm_admin_form {
   private function addToggle($name) {
     return array('#markup' =>
     '<div class="web-civi-js-select">
-      <a href="javascript:wfCiviAdmin.selectReset(' . "'all', '#$name'" . ')">' . t('Select All') . '</a> |
-      <a href="javascript:wfCiviAdmin.selectReset(' . "'none', '#$name'" . ')">' . t('Select None') . '</a> |
-      <a href="javascript:wfCiviAdmin.selectReset(' . "'reset', '#$name'" . ')">' . t('Restore') . '</a>
+      <a class="all" href="#">' . t('Select All') . '</a> |
+      <a class="none" href="#">' . t('Select None') . '</a> |
+      <a class="reset" href="#">' . t('Restore') . '</a>
     </div>',
     );
   }
