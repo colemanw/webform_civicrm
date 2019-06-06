@@ -92,10 +92,9 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     }
     */
     // Search for existing contacts
-    $elements = $this->handler->getWebform()->getElementsDecoded();
     for ($c = 1; $c <= count($this->data['contact']); ++$c) {
       $this->ent['contact'][$c] = wf_crm_aval($this->ent, "contact:$c", array());
-      $existing_component = $elements["civicrm_{$c}_contact_1_contact_existing"];
+      $existing_component = $this->form['elements']["civicrm_{$c}_contact_1_contact_existing"];
       // Search for contact if the user hasn't already chosen one
       if ($existing_component && empty($submitted_contacts[$c])) {
         $this->findContact($existing_component);

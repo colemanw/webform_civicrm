@@ -5,6 +5,7 @@ namespace Drupal\webform_civicrm\Plugin\WebformElement;
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\webform\Plugin\WebformElementBase;
+use Drupal\webform\Utility\WebformArrayHelper;
 use Drupal\webform\WebformSubmissionInterface;
 
 // Include legacy files for their procedural functions.
@@ -42,6 +43,7 @@ class CivicrmContact extends WebformElementBase {
         'allow_create' => 0,
         // @todo rename from widget to something else.
         'widget' => 'autocomplete',
+        'contact_type' => '',
         'show_hidden_contact' => 0,
         'unique' => 0,
         'title_display' => 'before',
@@ -80,17 +82,30 @@ class CivicrmContact extends WebformElementBase {
    * @see _webform_render_civicrm_contact()
    */
   public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
-    $hide_method = wf_crm_aval($element['#extra'], 'hide_method', 'hide');
-    $no_hide_blank = (int) wf_crm_aval($element['#extra'], 'no_hide_blank', 0);
-    $element['#type'] = $element['#extra']['widget'] === 'autocomplete' ? 'textfield' : $element['#extra']['widget'];
-    $element['#attributes']['data-hide-method'] = $hide_method;
-    $element['#attributes']['data-no-hide-blank'] = $no_hide_blank;
+    // Webform removes values which equal their defaults but does not populate
+    // they keys.
+    $ensure_keys_have_values = [
+      'hide_method',
+      'no_hide_blank',
+      'default',
+      'default_contact_id',
+      'default_relationship',
+      'allow_url_autofill',
+    ];
+    foreach ($ensure_keys_have_values as $key) {
+      if (empty($element['#' . $key])) {
+        $element['#' . $key] = $this->getDefaultProperty($key);
+    }
+    }
+    $element['#type'] = $element['#widget'] === 'autocomplete' ? 'textfield' : $element['#widget'];
+    $element['#attributes']['data-hide-method'] = $element['#hide_method'];
+    $element['#attributes']['data-no-hide-blank'] = (int) $element['#no_hide_blank'];
 
     $cid = wf_crm_aval($element, '#default_value', '');
     if ($element['#type'] === 'hidden') {
       // User may not change this value for hidden fields
       $element['#value'] = $cid;
-      if (!$element['#show_hidden_contact']) {
+      if (empty($element['#show_hidden_contact'])) {
         return;
       }
     }
@@ -129,10 +144,9 @@ class CivicrmContact extends WebformElementBase {
     \Drupal::getContainer()->get('civicrm')->initialize();
     $element_properties = $form_state->get('element_properties');
 
-    $contact_type = $this->configuration['contact_type'];
+    $contact_type = $element_properties['contact_type'];
     $allow_create = $element_properties['allow_create'];
 
-//    $form['#suffix'] = \wf_crm_admin_help::helpTemplate();
     $form['element']['widget'] = [
       '#type' => 'select',
       '#title' => $this->t('Form Widget'),
@@ -176,6 +190,22 @@ class CivicrmContact extends WebformElementBase {
       '#description' => $this->t('If enabled, this static element will show the contact that has been pre-selected (or else the Create/Not Found Prompt if set). Otherwise the element will not be visible.'),
       '#options' => [$this->t('No'), $this->t('Yes')],
       '#default_value' => $element_properties['show_hidden_contact'],
+    ];
+
+    $form['default'] = [
+      '#type' => 'value',
+      '#value' => $element_properties['default'],
+    ];
+
+    // Need to be hidden values so that they persist from configuration on the
+    // main Webform CiviCRM settings form.
+    $form['allow_create'] = [
+      '#type' => 'value',
+      '#value' => $element_properties['allow_create'],
+    ];
+    $form['contact_type'] = [
+      '#type' => 'value',
+      '#value' => $element_properties['contact_type'],
     ];
     return $form;
   }

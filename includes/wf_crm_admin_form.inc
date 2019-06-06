@@ -1793,10 +1793,6 @@ class wf_crm_admin_form {
           continue;
         }
         // Webform uses YAML dump, which dies on FormattableMarkup.
-        $enabled_element['extra'] = array_map(
-          [$this, 'stringifyFormattableMarkup'],
-          empty($enabled_element['extra']) ? [] : $enabled_element['extra']
-        );
         $enabled_element = array_map([$this, 'stringifyFormattableMarkup'], $enabled_element);
         $element_plugin = $webform_element_manager->getElementInstance([
           '#type' => $enabled_element['type'],
@@ -1811,8 +1807,7 @@ class wf_crm_admin_form {
         unset($enabled_element['name']);
         $stub_form_state->setValues($enabled_element);
         $properties = $element_plugin->getConfigurationFormProperties($stub_form, $stub_form_state);
-
-        $this->webform->setElementProperties($enabled_key, $properties, '');
+        $this->webform->setElementProperties($enabled_key, $properties);
       }
       // Update existing contact fields
       foreach ($existing as $fid => $id) {
@@ -1827,12 +1822,11 @@ class wf_crm_admin_form {
     if (is_array($data)) {
       return array_map([$this, 'stringifyFormattableMarkup'], $data);
     }
-    elseif ($data instanceof FormattableMarkup) {
+    if ($data instanceof FormattableMarkup) {
       return (string) $data;
     }
-    else {
-      return $data;
-    }
+
+    return $data;
   }
 
   /**
@@ -1957,7 +1951,7 @@ class wf_crm_admin_form {
       // Set the allow_create flag based on presence of name or email fields
       $field['allow_create'] = $a = wf_crm_name_field_exists($vals, $c, $contact_type);
       $field['none_prompt'] = $a ? t('+ Create new +') : t('- None Found -');
-      if ($c === 1 && $contact_type === 'individual') {
+      if ($c == 1 && $contact_type === 'individual') {
         // Default to hidden field for 1st contact
         $field += [
           'widget' => 'hidden',
@@ -1983,9 +1977,8 @@ class wf_crm_admin_form {
         $field['type'] = 'civicrm_options';
       }
     }
-    if ($field['type'] == 'civicrm_contact') {
-      $field['extra']['contact_type'] = $contact_type;
-      $stop = null;
+    if ($field['type'] === 'civicrm_contact') {
+      $field['contact_type'] = $contact_type;
     }
     if ($field['type'] == 'file') {
       $field['type'] = 'managed_file';
