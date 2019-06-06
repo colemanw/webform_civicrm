@@ -1987,6 +1987,9 @@ class wf_crm_admin_form {
       $field['extra']['contact_type'] = $contact_type;
       $stop = null;
     }
+    if ($field['type'] == 'file') {
+      $field['type'] = 'managed_file';
+    }
     if (isset($field['value_callback'])) {
       $method = 'get_default_' . $table . '_' . $name;
       $field['value'] = self::$method($field['form_key'], $options);
