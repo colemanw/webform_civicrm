@@ -262,11 +262,10 @@ abstract class wf_crm_webform_base {
     }
     if (empty($this->ent['contact'][$c]['id'])) {
       $found = array();
-      // @todo default will move out of extras
       switch ($component['#default']) {
         case 'user':
           $cid = wf_crm_user_cid();
-          $found = ($c === 1 && $cid) ? [$cid] : [];
+          $found = ($c == 1 && $cid) ? [$cid] : [];
           break;
         case 'contact_id':
           if ($component['#default_contact_id']) {

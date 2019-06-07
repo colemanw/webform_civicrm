@@ -2,6 +2,7 @@
 
 namespace Drupal\webform_civicrm\Plugin\WebformElement;
 
+use CRM_Core_BAO_Tag;
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\webform\Plugin\WebformElementBase;
@@ -41,8 +42,7 @@ class CivicrmContact extends WebformElementBase {
         'none_prompt' => '',
         'results_display' => ['display_name'],
         'allow_create' => 0,
-        // @todo rename from widget to something else.
-        'widget' => 'autocomplete',
+        'widget' => '',
         'contact_type' => '',
         'show_hidden_contact' => 0,
         'unique' => 0,
@@ -56,12 +56,9 @@ class CivicrmContact extends WebformElementBase {
         'submit_disabled' => FALSE,
         'attributes' => [],
         'private' => FALSE,
-        // @todo needs the UI exposed.
-        // @todo rename default_static_value ?
-        'default' => 'user',
+        'default' => '',
         'default_contact_id' => '',
         'default_relationship' => '',
-        // @todo needs the UI exposed.
         'allow_url_autofill' => TRUE,
         'dupes_allowed' => FALSE,
         'filters' => [
@@ -143,11 +140,16 @@ class CivicrmContact extends WebformElementBase {
 
     \Drupal::getContainer()->get('civicrm')->initialize();
     $element_properties = $form_state->get('element_properties');
-
+    list($contact_types, $sub_types) = wf_crm_get_contact_types();
+    list(, $c, ) = explode('_', $element_properties['form_key'], 3);
     $contact_type = $element_properties['contact_type'];
     $allow_create = $element_properties['allow_create'];
 
-    $form['element']['widget'] = [
+    $form['form']['display_container']['#weight'] = 10;
+    $form['form']['field_container']['#weight'] = 10;
+    $form['validation']['#weight'] = 10;
+
+    $form['form']['widget'] = [
       '#type' => 'select',
       '#title' => $this->t('Form Widget'),
       '#default_value' => $element_properties['widget'],
@@ -158,17 +160,23 @@ class CivicrmContact extends WebformElementBase {
         'textfield' => $this->t('Enter Contact ID')
       ],
     ];
+
     $allow_create ? $this->t('<strong>Contact Creation: Enabled</strong> - this contact has name/email fields on the webform.') : $this->t('<strong>Contact Creation: Disabled</strong> - no name/email fields for this contact on the webform.');
 //    $form['civicrm']['#description'] = '<div class="messages ' . ($allow_create ? 'status' : 'warning') . '">' . $status . ' ' . \wf_crm_admin_help::helpIcon('contact_creation', t('Contact Creation')) . '</div>';
-    $form['element']['search_prompt'] = [
+    $form['form']['search_prompt'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Search Prompt'),
       '#default_value' => $element_properties['search_prompt'],
       '#description' => $this->t('Text the user will see before selecting a contact.'),
       '#size' => 60,
       '#maxlength' => 1024,
+      '#states' => [
+        'invisible' => [
+          'select[name="properties[widget]"]' => ['value' => 'hidden'],
+        ],
+      ],
     ];
-    $form['element']['none_prompt'] = [
+    $form['form']['none_prompt'] = [
       '#type' => 'textfield',
       '#title' => $allow_create ? $this->t('Create Prompt') : $this->t('Not Found Prompt'),
       '#default_value' => $element_properties['none_prompt'],
@@ -176,7 +184,14 @@ class CivicrmContact extends WebformElementBase {
       '#size' => 60,
       '#maxlength' => 1024,
     ];
-    $form['element']['results_display'] = [
+    $form['form']['show_hidden_contact'] = [
+      '#type' => 'radios',
+      '#title' => $this->t('Display Contact Name'),
+      '#description' => $this->t('If enabled, this static element will show the contact that has been pre-selected (or else the Create/Not Found Prompt if set). Otherwise the element will not be visible.'),
+      '#options' => [$this->t('No'), $this->t('Yes')],
+      '#default_value' => $element_properties['show_hidden_contact'],
+    ];
+    $form['form']['results_display'] = [
       '#type' => 'select',
       '#multiple' => TRUE,
       '#title' => $this->t('Contact Display Field(s)'),
@@ -184,23 +199,207 @@ class CivicrmContact extends WebformElementBase {
       '#default_value' => $element_properties['results_display'],
       '#options' => $this->wf_crm_results_display_options($contact_type),
     ];
-    $form['element']['show_hidden_contact'] = [
-      '#type' => 'radios',
-      '#title' => $this->t('Display Contact Name'),
-      '#description' => $this->t('If enabled, this static element will show the contact that has been pre-selected (or else the Create/Not Found Prompt if set). Otherwise the element will not be visible.'),
-      '#options' => [$this->t('No'), $this->t('Yes')],
-      '#default_value' => $element_properties['show_hidden_contact'],
+
+    $form['field_handling'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Contact Field Handling'),
+    ];
+    $form['field_handling']['no_autofill'] = [
+      '#type' => 'select',
+      '#multiple' => TRUE,
+      '#title' => $this->t('Skip Autofilling of'),
+      '#description' => $this->t('Which fields should <em>not</em> be autofilled for this contact?'),
+      '#default_value' => $element_properties['no_autofill'],
+      // @todo fix this to add support for wf_crm_contact_fields.
+      '#options' => ['' => '- ' . $this->t('None') . ' -'],
+    ];
+    $form['field_handling']['hide_fields'] = [
+      '#type' => 'select',
+      '#multiple' => TRUE,
+      '#title' => $this->t('Fields to Lock'),
+      '#description' => $this->t('Prevent editing by disabling or hiding fields when a contact already exists.'),
+      '#default_value' => $element_properties['hide_fields'],
+      // @todo fix this to add support for wf_crm_contact_fields.
+      '#options' => ['' => '- ' . $this->t('None') . ' -'],
+    ];
+    $form['field_handling']['hide_method'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Locked fields should be'),
+      '#default_value' => $element_properties['hide_method'],
+      '#options' => ['hide' => $this->t('Hidden'), 'disable' => $this->t('Disabled')],
+      '#states' => [
+        'visible' => [
+          'select[name="properties[hide_fields][]"]' => ['value' => ''],
+        ],
+      ],
+    ];
+    $form['field_handling']['no_hide_blank'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t("Don't lock fields that are empty"),
+      '#default_value' => $element_properties['no_hide_blank'],
+      '#states' => [
+        'visible' => [
+          'select[name="properties[hide_fields][]"]' => ['value' => ''],
+        ],
+      ],
+    ];
+    $form['field_handling']['submit_disabled'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Submit disabled field value(s)'),
+      '#description' => $this->t('Store disabled field value(s) in webform submissions.'),
+      '#default_value' => $element_properties['submit_disabled'],
+      '#states' => [
+        'visible' => [
+          'select[name="properties[hide_fields][]"]' => ['value' => ''],
+        ],
+      ],
     ];
 
-    $form['default'] = [
-      '#type' => 'value',
-      '#value' => $element_properties['default'],
+    $form['defaults'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Default value'),
+      '#description' => $this->t('Should the form be pre-populated with an existing contact?<ul><li>Any filters set below will restrict this default.</li><li>If more than one contact meets the criteria, the first match will be picked. If multiple existing contact fields exist on the webform, each will select a different contact.</li></ul>'),
     ];
+    $form['defaults']['default'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Set default contact from'),
+      '#options' => ['contact_id' => $this->t('Specified Contact')],
+      '#empty_option' => $this->t('- None -'),
+      '#default_value' => $element_properties['default'],
+    ];
+    if ($c == 1 && $contact_type == 'individual') {
+      $form['defaults']['default']['#options']['user'] = $this->t('Current User');
+    }
+    elseif ($c > 1) {
+      $form['defaults']['default']['#options']['relationship'] = $this->t('Relationship to :contact', [':contact' => wf_crm_contact_label(1, $data)]);
+      $form['defaults']['default_relationship'] = [
+        '#type' => 'select',
+        '#multiple' => TRUE,
+        '#title' => $this->t('Specify Relationship(s)'),
+        '#options' => [
+          '' => '- ' . $this->t('No relationship types defined for @a to @b', ['@a' => $contact_types[$contact_type], '@b' => $contact_types[$data['contact'][1]['contact'][1]['contact_type']]]) . ' -'],
+        '#default_value' => $element_properties['default_relationship'],
+      ];
+    }
+    $form['defaults']['default']['#options']['auto'] = $this->t('Auto - From Filters');
+    $form['defaults']['default_contact_id'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Contact'),
+      '#id' => 'default-contact-id',
+      '#states' => [
+        'visible' => [
+          'select[name="properties[default]"]' => ['value' => 'contact_id'],
+        ],
+      ],
+    ];
+    $cid = $element_properties['default_contact_id'];
+    if ($cid && $name = wf_crm_contact_access($element_properties,
+        ['check_permissions' => 1], $cid)) {
+          $form['defaults']['default_contact_id']['#default_value'] = $cid;
+          $form['defaults']['default_contact_id']['#attributes'] = [
+            'data-civicrm-name' => $name,
+            'data-civicrm-id' => $cid,
+          ];
+        }
+    $form['defaults']['allow_url_autofill'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Use contact id from URL'),
+      '#default_value' => $element_properties['allow_url_autofill'],
+      '#description' => $this->t('If the url contains e.g. %arg, it will be used to pre-populate this contact (takes precidence over other default values).', ['%arg' => "cid$c=123"]),
+    ];
+    if ($c > 1) {
+      $form['defaults']['dupes_allowed'] = array(
+        '#type' => 'checkbox',
+        '#title' => $this->t('Allow Duplicate Autofill'),
+        '#default_value' => $element_properties['dupes_allowed'],
+        '#description' => $this->t('Check this box to allow a contact to be selected even if they already autofilled a prior field on the form. (For example, if contact 1 was autofilled with Bob Smith, should this field also be allowed to select Bob Smith or should it pick a different contact?)'),
+      );
+    }
+    $form['defaults']['randomize'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Randomize'),
+      '#default_value' => $element_properties['randomize'],
+      '#description' => $this->t('Pick a contact at random if more than one meets criteria.'),
+      '#states' => [
+        'visible' => [
+          'select[name="properties[default]"]' => ['value' => 'auto'],
+        ],
+      ],
+    ];
+
+    $form['filters'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Filters'),
+      '#description' => $this->t('Only contacts meeting filter criteria will be available as select options or default value.<br />Note: Filters only apply to how a contact is chosen on the form, they do not affect how a contact is saved.'),
+    ];
+    if (!empty($sub_types[$contact_type])) {
+      $form['filters']['contact_sub_type'] = [
+        '#type' => 'select',
+        '#title' => $this->t('Type of @contact', ['@contact' => $contact_types[$contact_type]]),
+        '#options' => [$this->t('- Any -')] + $sub_types[$contact_type],
+        '#default_value' => $element_properties['filters']['contact_sub_type'],
+      ];
+    }
+    $form['filters']['group'] = [
+      '#type' => 'select',
+      '#multiple' => TRUE,
+      '#title' => $this->t('Groups'),
+      '#options' => ['' => '- ' . $this->t('None') . ' -'] + wf_crm_apivalues('group_contact', 'getoptions', ['field' => 'group_id']),
+      '#default_value' => $element_properties['filters']['group'],
+      '#description' => $this->t('Listed contacts must be members of at least one of the selected groups (leave blank to not filter by group).'),
+    ];
+    $tags = [];
+    $form['filters']['tag'] = [
+      '#type' => 'select',
+      '#multiple' => TRUE,
+      '#title' => $this->t('Tags'),
+      '#options' => ['' => '- ' . $this->t('None') . ' -'] + CRM_Core_BAO_Tag::getTags('civicrm_contact', $tags, NULL, '- '),
+      '#default_value' => $element_properties['filters']['tag'],
+      '#description' => $this->t('Listed contacts must be have at least one of the selected tags (leave blank to not filter by tag).'),
+    ];
+    if ($c > 1) {
+      $form['filters']['relationship']['contact'] = [
+        '#type' => 'select',
+        '#title' => $this->t('Relationships to'),
+        '#options' => ['' => '- ' . $this->t('None') . ' -'],
+        '#default_value' => wf_crm_aval($element_properties['filters'], 'relationship:contact'),
+      ];
+      $form['filters']['relationship']['type'] = [
+        '#type' => 'select',
+        '#multiple' => TRUE,
+        '#title' => $this->t('Specify Relationship(s)'),
+        '#options' => ['' => '- ' . $this->t('Any relation') . ' -'],
+        '#default_value' => wf_crm_aval($element_properties['filters'], 'relationship:type'),
+      ];
+      // Fill relationship data for defaults and filters
+      /*
+      $all_relationship_types = array_fill(1, $c - 1, array());
+      for ($i = 1; $i < $c; ++$i) {
+        $form['defaults']['default_relationship_to']['#options'][$i] = $form['filters']['relationship']['contact']['#options'][$i] = wf_crm_contact_label($i, $data, 'plain');
+        $rtypes = wf_crm_get_contact_relationship_types($contact_type, $data['contact'][$i]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$i]['contact'][1]['contact_sub_type']);
+        foreach ($rtypes as $k => $v) {
+          $all_relationship_types[$i][] = ['key' => $k, 'value' => $v . ' ' . wf_crm_contact_label($i, $data, 'plain')];
+          $form['defaults']['default_relationship']['#options'][$k] = $form['filters']['relationship']['type']['#options'][$k] = $v . ' ' . wf_crm_contact_label($i, $data, 'plain');
+        }
+        if (!$rtypes) {
+          $all_relationship_types[$i][] = ['key' => '', 'value' => '- ' . t('No relationship types defined for @a to @b', ['@a' => $contact_types[$contact_type], '@b' => $contact_types[$data['contact'][$i]['contact'][1]['contact_type']]]) . ' -'];
+        }
+      }
+      */
+      $form['#attributes']['data-reltypes'] = json_encode($all_relationship_types);
+    }
+    $form['filters']['check_permissions'] = array(
+      '#type' => 'checkbox',
+      '#title' => $this->t('Enforce Permissions'),
+      '#default_value' => $element_properties['filters']['check_permissions'],
+      '#description' => $this->t('Only show contacts the acting user has permission to see in CiviCRM.') . '<br />' . $this->t('WARNING: Keeping this option enabled is highly recommended unless you are effectively controlling access by another method.'),
+    );
+
 
     // Need to be hidden values so that they persist from configuration on the
     // main Webform CiviCRM settings form.
     $form['allow_create'] = [
-      '#type' => 'value',
+      '#type' => 'hidden',
       '#value' => $element_properties['allow_create'],
     ];
     $form['contact_type'] = [

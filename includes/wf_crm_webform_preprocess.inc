@@ -57,6 +57,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     // Keep track of cids across multipage forms
     if (!empty($this->form_state->getValue('submitted')) && $this->form_state->get(['webform','page_count']) > 1) {
       foreach ($this->enabled as $k => $v) {
+        // @TODO review the cusage of the existing element.
         if (substr($k, -8) == 'existing' && $this->form_state->getValue(['submitted', $v])) {
           list(, $c) = explode('_', $k);
           $val = $this->form_state->getValue(['submitted', $v]);
