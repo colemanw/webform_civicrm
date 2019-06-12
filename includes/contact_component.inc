@@ -616,12 +616,13 @@ function _webform_csv_data_civicrm_contact($component, $export_options, $value) 
  * @return array
  */
 function wf_crm_contact_search($node, $component, $params, $contacts, $str = NULL) {
-  if (empty($node->webform_civicrm)) {
-    return array();
-  }
+//  TODO in Drupal8 now node is a webform - maybe we could check here if it has  CiviCRM handler
+//  if (empty($node->webform_civicrm)) {
+//    return array();
+//  }
   $limit = $str ? 12 : 500;
   $ret = array();
-  $display_fields = array_values($component['extra']['results_display']);
+  $display_fields = array_values($component['#results_display']);
   $search_field = 'display_name';
   $sort_field = 'sort_name';
   // Search and sort based on the selected display field
@@ -681,6 +682,7 @@ function wf_crm_contact_search($node, $component, $params, $contacts, $str = NUL
       }
     }
     // If we get exactly $limit results, there are probably more - warn that the list is truncated
+    // TODO Error reporting is still Drupal7-ish
     if (wf_crm_aval($result, 'count') >= $limit) {
       watchdog(
         'webform_civicrm',
@@ -718,8 +720,8 @@ function wf_crm_contact_access($component, $filters, $cid) {
   // Create new contact doesn't require lookup
   $cid = "$cid";
   list(, $c, ) = explode('_', $component['#form_key'], 3);
-  if ($cid && $cid[0] === '-' && !empty($component['extra']['allow_create']) && !empty($component['extra']['none_prompt'])) {
-    return Html::escape($component['extra']['none_prompt']);
+  if ($cid && $cid[0] === '-' && !empty($component['#allow_create']) && !empty($component['#none_prompt'])) {
+    return Html::escape($component['#none_prompt']);
   }
   if (!is_numeric($cid)) {
     return FALSE;
@@ -782,7 +784,9 @@ function wf_crm_format_contact($contact, $display_fields, $escape = TRUE) {
 function wf_crm_contact_fields($node, $con) {
   $ret = array();
   $sets = Utils::wf_crm_get_fields('sets');
-  $sets['name'] = array('label' => t('Name'));
+  $sets['name'] = ['label' => t('Name')];
+  // @todo fix finding fields.
+  /*
   foreach ($node->webform['components'] as $f) {
     if ($pieces = Utils::wf_crm_explode_key($f['form_key'])) {
       list( , $c, $ent, , $table, $field) = $pieces;
@@ -797,6 +801,7 @@ function wf_crm_contact_fields($node, $con) {
       }
     }
   }
+  */
   return $ret;
 }
 
