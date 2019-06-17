@@ -182,7 +182,11 @@ class CivicrmOptions extends WebformElementBase {
   }
 
   protected function getFieldOptions($element) {
-    list( , , , , $table, $name) = Utils::wf_crm_explode_key($element['#form_key']);
+    list( , , $ent, , $table, $name) = Utils::wf_crm_explode_key($element['#form_key']);
+    // Custom fields - use main entity
+    if (substr($table, 0, 2) == 'cg') {
+      $table = $ent;
+    }
     $params = ['field' => $name, 'context' => 'create'];
     return wf_crm_apivalues($table, 'getoptions', $params);
   }

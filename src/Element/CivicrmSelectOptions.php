@@ -53,7 +53,11 @@ class CivicrmSelectOptions extends FormElement {
   protected static function getFieldOptions($form_key) {
     \Drupal::getContainer()->get('civicrm')->initialize();
     $pieces = explode('_', $form_key, 6);
-    list( , , , , $table, $name) = $pieces;
+    list( , , $ent, , $table, $name) = $pieces;
+    // Custom fields - use main entity
+    if (substr($table, 0, 2) == 'cg') {
+      $table = $ent;
+    }
     $params = ['field' => $name, 'context' => 'create'];
     return wf_crm_apivalues($table, 'getoptions', $params);
   }
