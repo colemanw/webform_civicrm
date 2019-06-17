@@ -1620,12 +1620,12 @@ class wf_crm_admin_form {
         list(, $c, $ent, $n, $table, $name) = explode('_', $key, 6);
         $info = '';
         $element = $this->webform->getElement($id);
-        $info = '<em>' . $element['#title'];
+        $info = '<em>' . $this->getSettings()["{$c}_webform_label"];
         if ($info && isset($this->sets[$table]['max_instances'])) {
           $info .= ' ' . $this->sets[$table]['label'] . ' ' . $n;
         }
         $info .= $info ? ':</em> ' : '';
-        $msg .= '<li>' . $info . $this->node->webform['components'][$id]['name'] . '</li>';
+        $msg .= '<li>' . $info . $element['#title'] . '</li>';
       }
       $msg .= '</ul><p>' . t('Would you like them to be automatically removed from the webform? This is recommended unless you need to keep webform-results information from these fields. (They can still be deleted manually later if you choose not to remove them now.)') . '</p><p><em>' . t('Note: Deleting webform components cannot be undone, and will result in the loss of webform-results info for those elements. Data in the CiviCRM database will not be affected.') . '</em></p>';
       $this->form_state->set('msg', $msg);
