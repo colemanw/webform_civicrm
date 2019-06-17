@@ -23,19 +23,26 @@ use Drupal\webform_civicrm\Utils;
  * @return string or integer
  */
 function wf_crm_state_abbr($input, $ret = 'abbreviation', $country_id = NULL) {
-  $input_type = $ret == 'id' ? 'abbreviation' : 'id';
-  $sql = "SELECT $ret FROM civicrm_state_province WHERE $input_type = %1";
-  $vars = array(1 => array($input, $ret == 'id' ? 'String' : 'Integer'));
+  $params = [];
+  if ($ret == 'id') {
+    $params['abbreviation'] = $input;
+  }
+  else {
+    $params['id'] = $input;
+  }
   if ($ret === 'id') {
     if (!$country_id || $country_id === 'default') {
-      $config = CRM_Core_Config::singleton();
-      $country_id = (int) $config->defaultContactCountry;
+      $settings = wf_civicrm_api('Setting', 'get', [
+        'sequential' => 1,
+        'return' => 'defaultContactCountry',
+      ]);
+      $country_id = (int) wf_crm_aval($settings, "values:0:defaultContactCountry", 1228);
     }
-    $sql .= ' AND country_id = %2';
-    $vars[2] = array($country_id, 'Integer');
   }
-  $sql .= ' LIMIT 0, 1';
-  return CRM_Core_DAO::singleValueQuery($sql, $vars);
+  $params['country_id'] = $country_id;
+  $params['sequential'] = 1;
+  $result = wf_civicrm_api('StateProvince', 'get', $params);
+  return wf_crm_aval($result, "values:0:$ret");
 }
 
 /**
