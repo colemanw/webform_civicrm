@@ -6,7 +6,9 @@ class ApiReplacementTest  extends CiviCRMTestBase {
 
   protected function setUp() {
     parent::setUp();
-    module_load_include('inc','webform_civicrm','includes/contact_component');
+    module_load_include('inc','webform_civicrm','includes/utils');
+    // needed to load the wf_crm_aval function
+    module_load_include('module','webform_civicrm','webform_civicrm');
   }
 
   /**
