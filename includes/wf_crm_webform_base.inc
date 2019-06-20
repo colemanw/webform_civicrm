@@ -247,15 +247,15 @@ abstract class wf_crm_webform_base {
     $filters = wf_crm_search_filters($this->node, $component);
     // Start with the url - that trumps everything.
     $query = \Drupal::request()->query;
-    if ($query->has("cid$c") || ($c === 1 && $query->has('cid'))) {
+    if ($query->has("cid$c") || ($c == 1 && $query->has('cid'))) {
       $cid = $query->has("cid$c") ? $query->get("cid$c") : $query->get('cid');
-      if ($cid === 0 || $cid === '0' || wf_crm_is_positive($cid)) {
+      if ($cid == 0 || $cid == '0' || wf_crm_is_positive($cid)) {
         $cid = (int) $cid;
         if ($cid === 0) {
           $this->ent['contact'][$c]['id'] = $cid;
           return;
         }
-        if (!empty($component['#allow_url_autofill']) && wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
+        if (!empty($component['#allow_url_autofill']) && wf_crm_contact_access($component, $filters, $cid) != FALSE) {
           $this->ent['contact'][$c]['id'] = $cid;
         }
       }
@@ -296,13 +296,13 @@ abstract class wf_crm_webform_base {
         // Don't pick the same contact twice unless explicitly told to do so
         if (!$dupes_allowed) {
           foreach($this->ent['contact'] as $contact) {
-            if (!empty($contact['id']) && $cid === $contact['id']) {
+            if (!empty($contact['id']) && $cid == $contact['id']) {
               continue 2;
             }
           }
         }
         // Check filters except for 'auto' which already applied them
-        if ($component['#default'] === 'auto' || wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
+        if ($component['#default'] == 'auto' || wf_crm_contact_access($component, $filters, $cid) != FALSE) {
           $this->ent['contact'][$c]['id'] = $cid;
           break;
         }
