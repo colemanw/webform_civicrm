@@ -596,8 +596,8 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       for ($m=1 ; $m<=9; $m++) {
         $membership_fid = 'civicrm_' . $c . '_membership_' . $m . '_membership_fee_amount';
         if (!empty($this->enabled[$membership_fid]) && !empty($elements[$this->enabled[$membership_fid]])) {
+          $field = $elements[$this->enabled[$membership_fid]];
           if ($field['#type'] === 'hidden') {
-            $field = $elements[$this->enabled[$membership_fid]];
             $this->line_items[] = [
               'line_total' => $field['value'],
               'qty'        => 1,
