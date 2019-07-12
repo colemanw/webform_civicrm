@@ -337,6 +337,13 @@ function webform_civicrm_webform_submission_actions($node, $submission) {
           'query' => array('action' => 'view', 'reset' => 1, 'cid' => $data['contact'][1]['id'], 'id' => $data['contribution'][1]['id']),
         );
       }
+      if (!empty($data['participant'][1]['id'])) {
+        $actions['civicrm_action participant_view'] = array(
+          'title' => t('View Participant'),
+          'href' => 'civicrm/contact/view/participant',
+          'query' => array('action' => 'view', 'reset' => 1, 'cid' => $data['contact'][1]['id'], 'id' => $data['participant'][1]['id']),
+        );
+      }
     }
   }
   return $actions;
