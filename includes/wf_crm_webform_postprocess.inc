@@ -1260,7 +1260,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (is_array($data) && !empty($data['case'][1]['client_id'])) {
         $params = $data['case'][1];
         // Set some defaults in create mode
-        if (empty($this->ent['case'][$n]['id'])) {
+        if (empty($this->ent['case'][$n]['id']) || !empty($this->ent['case'][$n]['new'])) {
           if (empty($params['case_type_id'])) {
             // Abort if no case type.
             continue;

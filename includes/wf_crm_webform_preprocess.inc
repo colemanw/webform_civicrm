@@ -660,6 +660,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             $item = wf_civicrm_api('case', 'getsingle', array('id' => $id));
             if (array_intersect((array)wf_crm_aval($item, 'client_id'), $clients)) {
               $this->ent['case'][$n] = array('id' => $id);
+              // Check if want to create new case based on existing case
+              if(isset($_GET["newcase$n"]) && $_GET["newcase$n"] == 'yes') {
+                $this->ent['case'][$n]['new'] = 'yes';
+              }
             }
           }
           // Populate via search
