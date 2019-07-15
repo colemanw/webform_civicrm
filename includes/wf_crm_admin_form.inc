@@ -1656,6 +1656,11 @@ class wf_crm_admin_form {
         if (substr($key, 0, 7) == 'civicrm') {
           ++$i;
           $field = wf_crm_get_field($key);
+          if (substr($key, -11) === '_createmode') {
+            // Update webform's settings with 'Create mode' value for custom group.
+            $this->settings['data']['config']['create_mode'][$key] = $val;
+          }
+
           if (!isset($enabled[$key])) {
             $val = (array) $val;
             if (in_array('create_civicrm_webform_element', $val, TRUE) || (!empty($val[0]) && $field['type'] == 'hidden')) {
@@ -1686,10 +1691,6 @@ class wf_crm_admin_form {
             webform_component_update($component);
           }
 
-          if (substr($key, -11) === '_createmode') {
-            // Update webform's settings with 'Create mode' value for custom group.
-            $this->settings['data']['config']['create_mode'][$key] = $val;
-          }
         }
         // add empty fieldsets for custom civicrm sets with no fields, if "add dynamically" is checked
         elseif (strpos($key, 'settings_dynamic_custom') && $val == 1) {
