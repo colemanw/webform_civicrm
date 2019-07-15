@@ -378,7 +378,7 @@ class wf_crm_admin_help {
     print '<p>' .
       t('If a matching case of the chosen type already exists for the client, it will be autofilled and updated.') .
       '</p><p>' .
-      t('Note: a case can also be autofilled by passing "case1", etc. in the url. To create a new case based on an existing case also append "newcase1=yes" etc.') .
+      t('Note: a case can also be autofilled by passing "case1", etc. in the url. To create a new case based on an existing case also append "newcase1=1" etc.') .
       '</p>';
   }
 
