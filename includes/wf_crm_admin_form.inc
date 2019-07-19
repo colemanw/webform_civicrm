@@ -642,6 +642,12 @@ class wf_crm_admin_form {
         '#multiple' => TRUE,
       );
       $this->help($this->form['caseTab']['case'][$fs]["case_{$n}_settings_existing_case_status"], 'existing_case_status');
+      $this->form['caseTab']['case'][$fs]["case_{$n}_settings_duplicate_case"] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Create new case based on existing case'),
+        '#default_value' => wf_crm_aval($this->data, "case:{$n}:duplicate_case", 0),
+      );
+      $this->help($this->form['caseTab']['case'][$fs]["case_{$n}_settings_duplicate_case"], 'duplicate_case_status');
       $case_type = wf_crm_aval($this->data, "case:{$n}:case:1:case_type_id");
       foreach ($this->filterCaseSets($case_type) as $sid => $set) {
         $fs1 = "case_case_{$n}_fieldset_$sid";
