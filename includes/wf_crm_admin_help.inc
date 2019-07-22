@@ -384,11 +384,11 @@ class wf_crm_admin_help {
 
   public static function duplicate_case_status() {
     print '<p>' .
-      t('This forces a new case to be created based on an existing case.') .
+      t('Choosing this option means a new case will always be created even when an existing case has been selected. If an existing case has been selected the data for this case will NOT be updated.') .
       '</p><p>' .
       t('Useful if you want to pre-fill a form with existing case data, allow the user to make updates and then create a new case with their updates.') .
       '</p><p>' .
-      t('Note: Populate the existing case by selecting an option from the Update Existing Case drop-down or by passing "case1=[caseid]" in the url etc') .
+      t('Note: Populate the existing case by selecting an option from the Update Existing Case drop-down or by passing "case1=[caseid]" in the url etc.') .
       '</p>';
   }
 
