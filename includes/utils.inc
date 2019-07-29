@@ -941,7 +941,7 @@ function wf_crm_get_fields($var = 'fields') {
       foreach (wf_crm_apivalues('case_type', 'get') as $case_type) {
         foreach ($case_type['definition']['caseRoles'] as $role) {
           foreach (wf_crm_get_relationship_types() as $rel_type) {
-            if ($rel_type['name_b_a'] == $role['name']) {
+            if (in_array($role['name'], [$rel_type['name_b_a'], $rel_type['label_b_a']])) {
               if (!isset($fields['case_role_' . $rel_type['id']])) {
                 $fields['case_role_' . $rel_type['id']] = array(
                   'name' => $rel_type['label_b_a'],
