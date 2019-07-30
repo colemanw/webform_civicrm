@@ -16,15 +16,14 @@ before_install:
   - npm i -g npm bower
 install:
   - composer create-project roundearth/drupal-civicrm-project:8.x-dev $TRAVIS_BUILD_DIR/../drupal --no-interaction
-  - cd $TRAVIS_BUILD_DIR/../drupal
-  - composer config repositories.drupal --unset
-  - composer config repositories.0 '{"type": "path", "url": "'$TRAVIS_BUILD_DIR'"}'
-  - composer config repositories.1 composer "https://packages.drupal.org/8
-  - cat composer.json
-  - composer require drupal/webform_civicrm *@dev
+  - |
+      cd /tmp/drupal
+      composer config repositories.aaa '{"type": "path", "url": "~/repo", "options": { "symlink": false }}'
+      cat composer.json
+      composer require drupal/webform_civicrm *@dev
 
 script:
   - cd $TRAVIS_BUILD_DIR/../drupal/web
-  - ../vendor/bin/phpunit -c core modules/contrib/webform_civicrm
+  - ../vendor/bin/phpunit -c core modules/contrib/webform_civicrm --verbose
 notifications:
   email: false
