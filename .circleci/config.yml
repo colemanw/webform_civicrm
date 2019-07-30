@@ -42,6 +42,6 @@ jobs:
     steps:
       - setup-job
       - run: |
-          cd /tmp/drupal
+          cd /tmp/drupal/web
           export SIMPLETEST_DB=mysql://root:@127.0.0.1:3306
           ../vendor/bin/phpunit -c core modules/contrib/webform_civicrm
