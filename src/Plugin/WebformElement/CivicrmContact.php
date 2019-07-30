@@ -3,10 +3,11 @@
 namespace Drupal\webform_civicrm\Plugin\WebformElement;
 
 use CRM_Core_BAO_Tag;
+use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\webform\Plugin\WebformElementBase;
-use Drupal\webform\Utility\WebformArrayHelper;
+use Drupal\webform\WebformInterface;
 use Drupal\webform\WebformSubmissionInterface;
 
 // Include legacy files for their procedural functions.
@@ -76,6 +77,7 @@ class CivicrmContact extends WebformElementBase {
   /**
    * {@inheritdoc}
    *
+   * @todo port logic from _webform_render_civicrm_contact()
    * @see _webform_render_civicrm_contact()
    */
   public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
@@ -447,5 +449,60 @@ class CivicrmContact extends WebformElementBase {
     );
     return $options;
   }
+
+  /**
+   * Lookup contact name from ID, verify permissions, and attach as html data.
+   *
+   * Used when rendering or altering a CiviCRM contact field.
+   *
+   * Also sets options for select lists.
+   *
+   * @param \Drupal\webform\WebformInterface $node
+   *   Node object
+   * @param array $component
+   *   Webform component
+   * @param array $element
+   *   FAPI form element (reference)
+   * @param array $ids
+   *   Known entity ids
+   */
+  public static function wf_crm_fill_contact_value(WebformInterface $node, array $component, array &$element, array $ids = NULL) {
+    $cid = wf_crm_aval($element, '#default_value', '');
+    if ($element['#type'] == 'hidden') {
+      // User may not change this value for hidden fields
+      $element['#value'] = $cid;
+      if (!$component['#show_hidden_contact']) {
+        return;
+      }
+    }
+    if ($cid) {
+      // Don't lookup same contact again
+      if (wf_crm_aval($element, '#attributes:data-civicrm-id') != $cid) {
+        $filters = wf_crm_search_filters($node, $element);
+        $name = wf_crm_contact_access($element, $filters, $cid);
+        if ($name !== FALSE) {
+          $element['#attributes']['data-civicrm-name'] = $name;
+          $element['#attributes']['data-civicrm-id'] = $cid;
+        }
+        else {
+          unset($cid);
+        }
+      }
+    }
+    if (empty($cid) && $element['#type'] == 'hidden' && $element['none_prompt']) {
+      $element['#attributes']['data-civicrm-name'] = Html::escape($element['none_prompt']);
+    }
+    // Set options list for select elements. We do this here so we have access to entity ids.
+    if (is_array($ids) && $element['#type'] == 'select') {
+      $filters = wf_crm_search_filters($node, $component);
+      $element['#options'] = wf_crm_contact_search($node, $component, $filters, wf_crm_aval($ids, 'contact', []));
+      // Display empty option unless there are no results
+      if (!$component['#allow_create'] || count($element['#options']) > 1) {
+        $element['#empty_option'] = Xss::filter($component[$element['#options'] ? 'search_prompt' : 'none_prompt']);
+      }
+    }
+  }
+
+
 
 }

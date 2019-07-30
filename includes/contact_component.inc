@@ -6,55 +6,11 @@
  */
 
 use Drupal\Component\Utility\Html;
+use Drupal\webform_civicrm\Plugin\WebformElement\CivicrmContact;
 use Drupal\webform_civicrm\Utils;
 
 module_load_include('inc', 'webform_civicrm', 'includes/utils');
 module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_help');
-
-/**
- * Implements _webform_defaults_component().
- */
-function _webform_defaults_civicrm_contact() {
-  return array(
-    'name' => '',
-    'form_key' => NULL,
-    'pid' => 0,
-    'weight' => 0,
-    'value' => '',
-    'required' => 0,
-    'extra' => array(
-      'search_prompt' => '',
-      'none_prompt' => '',
-      'results_display' => array('display_name'),
-      'allow_create' => 0,
-      'widget' => 'autocomplete',
-      'show_hidden_contact' => 0,
-      'unique' => 0,
-      'title_display' => 'before',
-      'randomize' => 0,
-      'description' => '',
-      'no_autofill' => array(),
-      'hide_fields' => array(),
-      'hide_method' => 'hide',
-      'no_hide_blank' => FALSE,
-      'submit_disabled' => FALSE,
-      'attributes' => array(),
-      'private' => FALSE,
-      'default' => '',
-      'default_contact_id' => '',
-      'default_relationship' => '',
-      'allow_url_autofill' => TRUE,
-      'dupes_allowed' => FALSE,
-      'filters' => array(
-        'contact_sub_type' => 0,
-        'group' => array(),
-        'tag' => array(),
-        'relationship' => array(),
-        'check_permissions' => 1,
-      ),
-    ),
-  );
-}
 
 /**
  * Implements _webform_edit_component().
@@ -478,62 +434,9 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
   if ($cid = wf_crm_aval($value, 0)) {
     $element['#default_value'] = $cid;
   }
-  wf_crm_fill_contact_value($node, $component, $element);
+  CivicrmContact::wf_crm_fill_contact_value($node, $component, $element);
 
   return $element;
-}
-
-/**
- * Lookup contact name from ID, verify permissions, and attach as html data.
- *
- * Used when rendering or altering a CiviCRM contact field.
- *
- * Also sets options for select lists.
- *
- * @param \Drupal\webform\WebformInterface $node
- *   Node object
- * @param array $component
- *   Webform component
- * @param array $element
- *   FAPI form element (reference)
- * @param array $ids
- *   Known entity ids
- */
-function wf_crm_fill_contact_value(\Drupal\webform\WebformInterface $node, $component, &$element, $ids = NULL) {
-  $cid = wf_crm_aval($element, '#default_value', '');
-  if ($element['#type'] == 'hidden') {
-    // User may not change this value for hidden fields
-    $element['#value'] = $cid;
-    if (!$component['extra']['show_hidden_contact']) {
-      return;
-    }
-  }
-  if ($cid) {
-    // Don't lookup same contact again
-    if (wf_crm_aval($element, '#attributes:data-civicrm-id') != $cid) {
-      $filters = wf_crm_search_filters($node, $element);
-      $name = wf_crm_contact_access($element, $filters, $cid);
-      if ($name !== FALSE) {
-        $element['#attributes']['data-civicrm-name'] = $name;
-        $element['#attributes']['data-civicrm-id'] = $cid;
-      }
-      else {
-        unset($cid);
-      }
-    }
-  }
-  if (empty($cid) && $element['#type'] == 'hidden' && $element['#extra']['none_prompt']) {
-    $element['#attributes']['data-civicrm-name'] = Html::escape($element['#extra']['none_prompt']);
-  }
-  // Set options list for select elements. We do this here so we have access to entity ids.
-  if (is_array($ids) && $element['#type'] == 'select') {
-    $filters = wf_crm_search_filters($node, $component);
-    $element['#options'] = wf_crm_contact_search($node, $component, $filters, wf_crm_aval($ids, 'contact', array()));
-    // Display empty option unless there are no results
-    if (!$component['extra']['allow_create'] || count($element['#options']) > 1) {
-      $element['#empty_option'] = filter_xss($component['extra'][$element['#options'] ? 'search_prompt' : 'none_prompt']);
-    }
-  }
 }
 
 /**
@@ -718,9 +621,9 @@ function wf_crm_contact_search($node, $component, $params, $contacts, $str = NUL
  */
 function wf_crm_contact_access($component, $filters, $cid) {
   // Create new contact doesn't require lookup
-  $cid = "$cid";
+  $cid = (string) $cid;
   list(, $c, ) = explode('_', $component['#form_key'], 3);
-  if ($cid && $cid[0] === '-' && !empty($component['#allow_create']) && !empty($component['#none_prompt'])) {
+  if (!empty($component['#none_prompt']) && !empty($component['#allow_create']) && $cid && strpos($cid, '-') === 0) {
     return Html::escape($component['#none_prompt']);
   }
   if (!is_numeric($cid)) {
@@ -735,7 +638,7 @@ function wf_crm_contact_access($component, $filters, $cid) {
   if (!empty($filters['check_permissions'])) {
     // If we have a valid checksum for this contact, bypass other permission checks
     // For legacy reasons we support "cid" param as an alias of "cid1"
-    if (wf_crm_aval($_GET, "cid$c") == $cid || $c == 1 && wf_crm_aval($_GET, "cid") == $cid) {
+    if (wf_crm_aval($_GET, "cid$c") == $cid || ($c == 1 && wf_crm_aval($_GET, "cid") == $cid)) {
       // For legacy reasons we support "cs" param as an alias of "cs1"
       if (!empty($_GET['cs']) && $c == 1 && CRM_Contact_BAO_Contact_Utils::validChecksum($cid, $_GET['cs'])) {
         $filters['check_permissions'] = FALSE;
@@ -897,20 +800,18 @@ function wf_crm_find_relations($cid, $types = array(), $current = TRUE) {
 /**
  * Format filters for the contact get api
  *
- * @param $node
+ * @param \Drupal\webform\WebformInterface $node
  *   Webform node object
- * @param $component
+ * @param array $component
  *   Webform component of type 'civicrm_contact'
  *
  * @return array
  *   Api params
  */
-function wf_crm_search_filters($node, $component) {
-  $params = array('is_deleted' => 0);
-  list(, $c, ) = explode('_', $component['#form_key'], 3);
-  $params['contact_type'] = ucfirst($component['#extra']['contact_type']);
-  /*
-  foreach ($component['#extra']['filters'] as $key => $val) {
+function wf_crm_search_filters($node, array $component) {
+  $params = ['is_deleted' => 0];
+  $params['contact_type'] = $component['contact_type'];
+  foreach ($component['filters'] as $key => $val) {
     if (is_array($val)) {
       $val = array_filter($val);
     }
@@ -921,7 +822,6 @@ function wf_crm_search_filters($node, $component) {
       $params[$key] = $val;
     }
   }
-  */
   return $params;
 }
 

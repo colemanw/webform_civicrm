@@ -13,6 +13,7 @@ use Drupal\Core\Link;
 use Drupal\Core\Render\Markup;
 use Drupal\Core\Url;
 use Drupal\webform\Plugin\WebformHandlerInterface;
+use Drupal\webform_civicrm\Plugin\WebformElement\CivicrmContact;
 use Drupal\webform_civicrm\Utils;
 
 class wf_crm_webform_preprocess extends wf_crm_webform_base {
@@ -541,7 +542,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           }
           if ($name == 'existing') {
             module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
-            wf_crm_fill_contact_value($this->node, $component, $element, $this->ent);
+            CivicrmContact::wf_crm_fill_contact_value($this->node, $component, $element, $this->ent);
           }
           if ($name === 'contribution_page_id') {
             // Work around to remove manual rendering of display line items.
