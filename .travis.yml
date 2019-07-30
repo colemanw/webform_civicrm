@@ -8,7 +8,7 @@ cache:
     - $HOME/.composer/cache/repo
 env:
   global:
-    - SIMPLETEST_DB=sqlite://localhost/sites/default/files/.ht.sqlite
+    - SIMPLETEST_DB=mysql://root:@127.0.0.1:3306
 before_install:
   - git config --global github.accesstoken $GITHUB_OAUTH_TOKEN
   - composer config -g github-oauth.github.com $GITHUB_OAUTH_TOKEN
@@ -17,7 +17,7 @@ before_install:
 install:
   - composer create-project roundearth/drupal-civicrm-project:8.x-dev $TRAVIS_BUILD_DIR/../drupal --no-interaction
   - |
-      cd /tmp/drupal
+      cd $TRAVIS_BUILD_DIR/../drupal
       composer config repositories.aaa '{"type": "path", "url": "~/repo", "options": { "symlink": false }}'
       cat composer.json
       composer require drupal/webform_civicrm *@dev

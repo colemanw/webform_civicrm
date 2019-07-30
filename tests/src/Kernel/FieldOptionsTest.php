@@ -27,7 +27,6 @@ class FieldOptionsTest extends KernelTestBase {
   }
 
   protected function setUp() {
-    $this->markTestSkipped('Requires MySQL');
     parent::setUp();
 
     module_load_install('civicrm');
