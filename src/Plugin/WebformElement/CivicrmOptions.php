@@ -9,6 +9,8 @@ use Drupal\webform\Plugin\WebformElementBase;
 use Drupal\webform\WebformSubmissionInterface;
 use Drupal\webform_civicrm\Utils;
 
+include_once __DIR__ . '/../../../includes/utils.inc';
+
 /**
  * Provides a 'civicrm_options' element.
  *
@@ -133,6 +135,7 @@ class CivicrmOptions extends WebformElementBase {
    * {@inheritdoc}
    */
   public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
+    \Drupal::service('civicrm')->initialize();
     $as_list = !empty($element['#extra']['aslist']);
     $is_multiple = !empty($element['#extra']['multiple']);
     $use_live_options = !empty($element['#civicrm_live_options']);
