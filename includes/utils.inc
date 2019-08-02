@@ -171,18 +171,19 @@ function wf_crm_get_states($param = NULL) {
  * @return string or integer
  */
 function wf_crm_state_abbr($input, $ret = 'abbreviation', $country_id = NULL) {
-  $input_type = $ret == 'id' ? 'abbreviation' : 'id';
-  $sql = "SELECT $ret FROM civicrm_state_province WHERE $input_type = %1";
-  $vars = array(1 => array($input, $ret == 'id' ? 'String' : 'Integer'));
-  if ($ret === 'id') {
+  $params = ['sequential' => 1];
+  if ($ret == 'id') {
+    $params['abbreviation'] = $input;
     if (!$country_id || $country_id === 'default') {
       $country_id = (int) wf_crm_get_civi_setting('defaultContactCountry', 1228);
     }
-    $sql .= ' AND country_id = %2';
-    $vars[2] = array($country_id, 'Integer');
   }
-  $sql .= ' LIMIT 0, 1';
-  return CRM_Core_DAO::singleValueQuery($sql, $vars);
+  else {
+    $params['id'] = $input;
+  }
+  $params['country_id'] = $country_id;
+  $result = wf_crm_apivalues('StateProvince', 'get', $params, $ret);
+  return wf_crm_aval($result, 0);
 }
 
 /**
