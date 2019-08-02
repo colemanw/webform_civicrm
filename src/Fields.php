@@ -508,7 +508,7 @@ class Fields implements FieldsInterface {
         foreach (wf_crm_aval($case_types, 'values', array()) as $case_type) {
           foreach ($case_type['definition']['caseRoles'] as $role) {
             foreach (wf_crm_get_relationship_types() as $rel_type) {
-              if ($rel_type['name_b_a'] === $role['name']) {
+              if (in_array($role['name'], [$rel_type['name_b_a'], $rel_type['label_b_a']])) {
                 $case_role_fields_key = 'case_role_' . $rel_type['id'];
                 if (!isset($fields[$case_role_fields_key])) {
                   $fields[$case_role_fields_key] = array(
