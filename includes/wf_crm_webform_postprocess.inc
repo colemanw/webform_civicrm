@@ -1092,6 +1092,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                 unset($params['status_id']);
               }
               $result = wf_civicrm_api('participant', 'create', $params);
+              $this->ent['participant'][$n]['id'] = $result['id'];
+
               // Update line-item
               foreach ($this->line_items as &$item) {
                 if ($item['element'] == "civicrm_{$n}_participant_{$e}_participant_{$id_and_type}") {
