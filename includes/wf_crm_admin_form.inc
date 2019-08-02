@@ -2106,7 +2106,7 @@ class wf_crm_admin_form {
    * Default value callback
    */
   public static function get_default_contact_cs($fid, $options) {
-    return CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'checksum_timeout', NULL, 7);
+    return wf_crm_get_civi_setting('checksum_timeout', 7);
   }
 
   /**

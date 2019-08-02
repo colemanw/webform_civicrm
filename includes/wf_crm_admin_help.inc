@@ -350,7 +350,7 @@ class wf_crm_admin_help {
   public static function activity_assignee_contact_id() {
     civicrm_initialize();
     print '<p>';
-    if (CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'activity_assignee_notification')) {
+    if (wf_crm_get_civi_setting('activity_assignee_notification')) {
       print t('A copy of this activity will be emailed to the assignee.');
     }
     else {

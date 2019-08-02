@@ -23,19 +23,19 @@ use Drupal\webform_civicrm\Utils;
  * @return string or integer
  */
 function wf_crm_state_abbr($input, $ret = 'abbreviation', $country_id = NULL) {
-  $input_type = $ret == 'id' ? 'abbreviation' : 'id';
-  $sql = "SELECT $ret FROM civicrm_state_province WHERE $input_type = %1";
-  $vars = array(1 => array($input, $ret == 'id' ? 'String' : 'Integer'));
-  if ($ret === 'id') {
+  $params = ['sequential' => 1];
+  if ($ret == 'id') {
+    $params['abbreviation'] = $input;
     if (!$country_id || $country_id === 'default') {
-      $config = CRM_Core_Config::singleton();
-      $country_id = (int) $config->defaultContactCountry;
+      $country_id = (int) wf_crm_get_civi_setting('defaultContactCountry', 1228);
     }
-    $sql .= ' AND country_id = %2';
-    $vars[2] = array($country_id, 'Integer');
   }
-  $sql .= ' LIMIT 0, 1';
-  return CRM_Core_DAO::singleValueQuery($sql, $vars);
+  else {
+    $params['id'] = $input;
+  }
+  $params['country_id'] = $country_id;
+  $result = wf_crm_apivalues('StateProvince', 'get', $params, $ret);
+  return wf_crm_aval($result, 0);
 }
 
 /**
@@ -87,8 +87,7 @@ function wf_crm_format_event($event, $format) {
   // Date format
   foreach ($format as $value) {
     if (strpos($value, 'dateformat') === 0) {
-      $config = CRM_Core_Config::singleton();
-      $date_format = $config->$value;
+      $date_format = wf_crm_get_civi_setting($value);
     }
   }
   $event = (object) $event;
@@ -107,7 +106,7 @@ function wf_crm_format_event($event, $format) {
     // Avoid showing redundant end-date if it is the same as the start date
     $same_day = substr($event->start_date, 0, 10) == substr($event->end_date, 0, 10);
     if (!$same_day || in_array('dateformatDatetime', $format) || in_array('dateformatTime', $format)) {
-      $end_format = (in_array('dateformatDatetime', $format) && $same_day) ? $config->dateformatTime : $date_format;
+      $end_format = (in_array('dateformatDatetime', $format) && $same_day) ? wf_crm_get_civi_setting('dateformatTime') : $date_format;
       $title[] = CRM_Utils_Date::customFormat($event->end_date, $end_format);
     }
   }
@@ -711,4 +710,14 @@ function wf_crm_custom_types_map_array() {
   );
 
   return $custom_types;
+}
+
+/**
+ * @param string $setting_name
+ * @param mixed $default_value
+ * @return mixed
+ */
+function wf_crm_get_civi_setting($setting_name, $default_value = NULL) {
+  $settings = wf_civicrm_api('Setting', 'get', ['sequential' => 1, 'return' => $setting_name]);
+  return wf_crm_aval($settings, "values:0:$setting_name", $default_value);
 }
