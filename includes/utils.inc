@@ -40,45 +40,56 @@ function wf_crm_state_abbr($input, $ret = 'abbreviation', $country_id = NULL) {
 
 /**
  * Get list of events.
- * FIXME use the api for this.
  *
  * @param array $reg_options
  * @param string $context
+ *
  * @return array
  */
 function wf_crm_get_events($reg_options, $context) {
-  $ret = array();
+  $ret = [];
   $format = wf_crm_aval($reg_options, 'title_display', 'title');
-  $sql = "SELECT id, title, start_date, end_date, event_type_id FROM civicrm_event WHERE is_template = 0 AND is_active = 1";
+  $params = [
+    'is_template' => 0,
+    'is_active' => 1,
+  ];
+  $event_types = array_filter((array) $reg_options['event_type'], "is_numeric");
+  if ($event_types) {
+    $params['event_type_id'] = ['IN' => $event_types];
+  }
+  if (is_numeric(wf_crm_aval($reg_options, 'show_public_events'))) {
+    $params['is_public'] = $reg_options['show_public_events'];
+  }
+  $params['options'] = ['sort' => 'start_date' . ($context == 'config_form' ? ' DESC' : '')];
+  $values = wf_crm_apivalues('Event', 'get', $params);
   // 'now' means only current events, 1 means show all past events, other values are relative date strings
   $date_past = wf_crm_aval($reg_options, 'show_past_events', 'now');
   if ($date_past != '1') {
     $date_past = date('Y-m-d H:i:s', strtotime($date_past));
-    $sql .= " AND (end_date >= '$date_past' OR end_date IS NULL)";
+    foreach ($values as $key => $value) {
+      if (isset($value['end_date']) && $value['end_date'] <= $date_past) {
+        unset($values[$key]);
+      }
+    }
   }
   // 'now' means only past events, 1 means show all future events, other values are relative date strings
   $date_future = wf_crm_aval($reg_options, 'show_future_events', '1');
   if ($date_future != '1') {
     $date_future = date('Y-m-d H:i:s', strtotime($date_future));
-    $sql .= " AND (end_date <= '$date_future' OR end_date IS NULL)";
+    foreach ($values as $key => $value) {
+      if (isset($value['end_date']) && $value['end_date'] >= $date_future) {
+        unset($values[$key]);
+      }
+    }
   }
-  $event_types = array_filter((array) $reg_options['event_type'], "is_numeric");
-  if ($event_types) {
-    $sql .= ' AND event_type_id IN ( ' . implode(", ", $event_types) . ' ) ';
-  }
-  if (is_numeric(wf_crm_aval($reg_options, 'show_public_events'))) {
-    $sql .= ' AND is_public = ' . $reg_options['show_public_events'];
-  }
-  $sql .= ' ORDER BY start_date ' . ($context == 'config_form' ? 'DESC' : '');
-  $dao = CRM_Core_DAO::executeQuery($sql);
-  while ($dao->fetch()) {
-    $ret[$dao->id . '-' . $dao->event_type_id] = wf_crm_format_event($dao, $format);
+  foreach ($values as $value) {
+    $ret[$value['id'] . '-' . $value['event_type_id']] = wf_crm_format_event($value, $format);
   }
   return $ret;
 }
 
 /**
- * @param array|object $event
+ * @param array $event
  * @param string $format
  * @return string
  */
@@ -90,24 +101,26 @@ function wf_crm_format_event($event, $format) {
       $date_format = wf_crm_get_civi_setting($value);
     }
   }
-  $event = (object) $event;
-  $title = array();
+  $title = [];
   if (in_array('title', $format)) {
-    $title[] = $event->title;
+    $title[] = $event['title'];
   }
   if (in_array('type', $format)) {
-    $types = wf_crm_apivalues('event', 'getoptions', array('field' => 'event_type_id', 'context' => 'get'));
-    $title[] = $types[$event->event_type_id];
+    $types = wf_crm_apivalues('event', 'getoptions', [
+      'field' => 'event_type_id',
+      'context' => 'get',
+    ]);
+    $title[] = $types[$event['event_type_id']];
   }
-  if (in_array('start', $format) && $event->start_date) {
-    $title[] = CRM_Utils_Date::customFormat($event->start_date, $date_format);
+  if (in_array('start', $format) && !empty($event['start_date'])) {
+    $title[] = CRM_Utils_Date::customFormat($event['start_date'], $date_format);
   }
-  if (in_array('end', $format) && $event->end_date) {
+  if (in_array('end', $format) && isset($event['end_date'])) {
     // Avoid showing redundant end-date if it is the same as the start date
-    $same_day = substr($event->start_date, 0, 10) == substr($event->end_date, 0, 10);
+    $same_day = substr($event['start_date'], 0, 10) == substr($event['end_date'], 0, 10);
     if (!$same_day || in_array('dateformatDatetime', $format) || in_array('dateformatTime', $format)) {
       $end_format = (in_array('dateformatDatetime', $format) && $same_day) ? wf_crm_get_civi_setting('dateformatTime') : $date_format;
-      $title[] = CRM_Utils_Date::customFormat($event->end_date, $end_format);
+      $title[] = CRM_Utils_Date::customFormat($event['end_date'], $end_format);
     }
   }
   return implode(' - ', $title);
