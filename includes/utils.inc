@@ -248,10 +248,10 @@ function wf_crm_get_matching_rules($contact_type) {
   static $rules;
   $contact_type = ucfirst($contact_type);
   if (!$rules) {
-    $rules = array_fill_keys(array('Individual', 'Organization', 'Household'), array());
-    $dao = CRM_Core_DAO::executeQuery('SELECT * FROM civicrm_dedupe_rule_group');
-    while ($dao->fetch()) {
-      $rules[$dao->contact_type][$dao->id] = $dao->title;
+    $rules = array_fill_keys(['Individual', 'Organization', 'Household'], []);
+    $values = wf_crm_apivalues('RuleGroup', 'get');
+    foreach ($values as $value) {
+      $rules[$value['contact_type']][$value['id']] = $value['title'];
     }
   }
   return $rules[$contact_type];
