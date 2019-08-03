@@ -487,12 +487,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         if ($event['ended']) {
           form_set_error($eid, t('Sorry, you can no longer register for %event.', array('%event' => $event['title'])));
         }
-        elseif ($event['max_participants'] && $event['count'] > $event['remaining']) {
-          if (!empty($event['full'])) {
-            form_set_error($eid, '<em>' . $event['title'] . '</em>: ' . $event['full_message']);
+        elseif ($event['max_participants'] && $event['count'] > $event['available_places']) {
+          if (!empty($event['is_full'])) {
+            form_set_error($eid, '<em>' . $event['title'] . '</em>: ' . $event['event_full_text']);
           }
           else {
-            form_set_error($eid, format_plural($event['remaining'],
+            form_set_error($eid, format_plural($event['available_places'],
               'Sorry, you tried to register !count people for %event but there is only 1 space remaining.',
               'Sorry, you tried to register !count people for %event but there are only @count spaces remaining.',
               array('%event' => $event['title'], '!count' => $event['count'])));
