@@ -279,15 +279,15 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             $this->setMessage(t('Sorry, %event has ended.', array('%event' => $event['title'])), 'warning');
           }
         }
-        elseif ($event['full']) {
+        elseif (!empty($event['is_full'])) {
           if (!empty($reg['show_remaining'])) {
-            $this->setMessage('<em>' . check_plain($event['title']) . '</em>: ' . check_plain($event['full_message']), 'warning');
+            $this->setMessage('<em>' . check_plain($event['title']) . '</em>: ' . check_plain($event['event_full_text']), 'warning');
           }
         }
         else {
           $reg['block_form'] = FALSE;
-          if ($event['max_participants'] && ($reg['show_remaining'] == 'always' || intval($reg['show_remaining']) >= $event['remaining'])) {
-            $this->setMessage(format_plural($event['remaining'],
+          if (!empty($event['max_participants']) && ($reg['show_remaining'] == 'always' || intval($reg['show_remaining']) >= $event['available_places'])) {
+            $this->setMessage(format_plural($event['available_places'],
               '%event has 1 remaining space.',
               '%event has @count remaining spaces.',
               array('%event' => $event['title'])));
