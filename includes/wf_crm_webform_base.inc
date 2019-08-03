@@ -930,18 +930,14 @@ abstract class wf_crm_webform_base {
         'icon' => $val,
       );
     }
-    $file = wf_crm_apivalues('file', 'get', $val);
-    $entity_id = '';
-    if ($entity && $n && (strpos($fieldName, 'custom_') === 0 || strpos($fieldName, 'file_') === 0)) {
-      $entity_id = $this->ent[$entity][$n]['id'];
-    }
+    $file = wf_crm_apivalues('Attachment', 'get', $val);
     if (!empty($file[$val])) {
-      return array(
+      return [
         'data_type' => 'File',
-        'name' => CRM_Utils_File::cleanFileName($file[$val]['uri']),
-        'file_url'=> CRM_Utils_System::url('civicrm/file', "reset=1&id={$val}&eid={$entity_id}", TRUE),
-        'icon' => file_icon_url((object) array('filemime' => $file[$val]['mime_type'])),
-      );
+        'name' => $file[$val]['name'],
+        'file_url'=> $file[$val]['url'],
+        'icon' => file_icon_url((object) ['filemime' => $file[$val]['mime_type']]),
+      ];
     }
     return NULL;
   }
