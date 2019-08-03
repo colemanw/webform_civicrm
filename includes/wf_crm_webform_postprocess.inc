@@ -416,14 +416,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         continue;
       }
       $participants = current(wf_crm_aval($this->data['contact'], "$c:contact", array()));
-      $firstName = CRM_Utils_Array::value('first_name', $participants);
-      $lastName = CRM_Utils_Array::value('last_name', $participants);
 
-      $participantName = "{$firstName} {$lastName}";
+      $participantName = ($participants['first_name'] ?? '') . ' ' . ($participants['last_name'] ?? '');
       if (!trim($participantName)) {
-        $participantName = CRM_Utils_Array::value('webform_label', $participants);
+        $participantName = $participants['webform_label'] ?? NULL;
         if (!empty($this->existing_contacts[$c])) {
-          $participantName = CRM_Contact_BAO_Contact::displayName($this->existing_contacts[$c]);
+          $participantName = wf_crm_apivalues('contact', 'get', $this->existing_contacts[$c], 'display_name')[0];
         }
       }
       // @todo this duplicates a lot in \wf_crm_webform_preprocess::populateEvents
@@ -439,7 +437,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
               'entity_table' => 'civicrm_participant',
               'event_id' => $eid,
               'contact_ids' => $contacts,
-              'unit_price' => $p['fee_amount'],
+              'unit_price' => $p['fee_amount'] ?? 0,
               'element' => "civicrm_{$c}_participant_{$n}_participant_{$id_and_type}",
               'contact_label' => $participantName,
             );
@@ -450,28 +448,29 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Subtract events already registered for - this only works with known contacts
     $cids = array_filter($this->existing_contacts);
     if ($this->events && $cids) {
-      $dao = CRM_Core_DAO::executeQuery("SELECT event_id, contact_id
-      FROM civicrm_participant p, civicrm_participant_status_type s
-      WHERE s.id = p.status_id AND s.is_counted = 1
-      AND event_id IN (" . implode(',', array_keys($this->events)) . ")
-      AND contact_id IN (" . implode(',', $cids) . ")
-      AND is_test = 0");
-      while ($dao->fetch()) {
-        if (isset($this->events[$dao->event_id])) {
-          if (!(--$this->events[$dao->event_id]['count'])) {
-            unset($this->events[$dao->event_id]);
+      $status_types = wf_crm_apivalues('participant_status_type', 'get', ['is_counted' => 1, 'return' => 'id']);
+      $existing = wf_crm_apivalues('Participant', 'get', [
+        'return' => ['event_id', 'contact_id'],
+        'event_id' => ['IN' => array_keys($this->events)],
+        'status_id' => ['IN' => array_keys($status_types)],
+        'contact_id' => ['IN' => $cids],
+        'is_test' => 0,
+      ]);
+      foreach ($existing as $participant) {
+        if (isset($this->events[$participant['event_id']])) {
+          if (!(--$this->events[$participant['event_id']]['count'])) {
+            unset($this->events[$participant['event_id']]);
           }
         }
         foreach ($this->line_items as $k => &$item) {
-          if ($dao->event_id == $item['event_id'] && in_array($dao->contact_id, $item['contact_ids'])) {
-            unset($this->line_items[$k]['contact_ids'][array_search($dao->contact_id, $item['contact_ids'])]);
+          if ($participant['event_id'] == $item['event_id'] && in_array($participant['contact_id'], $item['contact_ids'])) {
+            unset($this->line_items[$k]['contact_ids'][array_search($participant['contact_id'], $item['contact_ids'])]);
             if (!(--$item['qty'])) {
               unset($this->line_items[$k]);
             }
           }
         }
       }
-      $dao->free();
     }
     $this->loadEvents();
     // Add event info to line items
@@ -487,7 +486,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         if ($event['ended']) {
           form_set_error($eid, t('Sorry, you can no longer register for %event.', array('%event' => $event['title'])));
         }
-        elseif ($event['max_participants'] && $event['count'] > $event['available_places']) {
+        elseif (!empty($event['max_participants']) && $event['count'] > $event['available_places']) {
           if (!empty($event['is_full'])) {
             form_set_error($eid, '<em>' . $event['title'] . '</em>: ' . $event['event_full_text']);
           }
@@ -1059,11 +1058,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $n = $this->data['participant_reg_type'] == 'separate' ? $c : 1;
     if ($p = wf_crm_aval($this->data, "participant:$n:participant")) {
       // Fetch existing participant records
-      $existing = array();
-      $dao = CRM_Core_DAO::executeQuery("SELECT id, event_id FROM civicrm_participant WHERE contact_id = $cid AND is_test = 0");
-      while ($dao->fetch()) {
-        $existing[$dao->event_id] = $dao->id;
-      }
+      $existing = wf_crm_apivalues('Participant', 'get', [
+        'return' => ["event_id"],
+        'contact_id' => $cid,
+        'is_test' => 0,
+      ]);
+      $existing = array_column($existing, 'id', 'event_id');
       foreach ($p as $e => $params) {
         $remove = array();
         $fid = "civicrm_{$c}_participant_{$e}_participant_event_id";
