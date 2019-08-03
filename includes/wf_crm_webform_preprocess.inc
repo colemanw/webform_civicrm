@@ -306,23 +306,20 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    * @param int $c
    */
   private function loadParticipants($c) {
-    $select = array('id', 'event_id', 'role_id', 'status_id');
-    if (array_key_exists('participant_campaign_id', $this->all_fields)) {
-      $select[] = 'campaign_id';
-    }
     $status_types = wf_crm_apivalues('participant_status_type', 'get');
-    $dao = CRM_Core_DAO::executeQuery('SELECT ' . implode(',', $select) . '
-      FROM civicrm_participant
-      WHERE contact_id = ' . $this->ent['contact'][$c]['id'] . ' AND event_id IN (' . implode(',', array_keys($this->events)) . ")"
-    );
-    while ($dao->fetch()) {
-      $par = array();
-      foreach ($select as $sel) {
-        $par['participant'][1][$sel] = $dao->$sel;
+    $participants = wf_crm_apivalues('participant', 'get', [
+      'contact_id' => $this->ent['contact'][$c]['id'],
+      'event_id' => ['IN' => array_keys($this->events)],
+    ]);
+    foreach ($participants as $row) {
+      $par = [];
+      // v3 participant api returns some non-standard keys with participant_ prepended
+      foreach (['id', 'event_id', 'role_id', 'status_id', 'campaign_id'] as $sel) {
+        $par['participant'][1][$sel] = $row[$sel] = $row[$sel] ?? $row['participant_' . $sel] ?? NULL;
       }
-      $par += $this->getCustomData($dao->id, 'Participant');
-      $status = $status_types[$dao->status_id];
-      foreach ($this->events[$dao->event_id]['form'] as $event) {
+      $par += $this->getCustomData($row['id'], 'Participant');
+      $status = $status_types[$row['status_id']];
+      foreach ($this->events[$row['event_id']]['form'] as $event) {
         if ($event['contact'] == $c) {
           // If status has been set by admin or exposed to the form, use it as a filter
           if (in_array($status['id'], $event['status_id']) ||
@@ -344,7 +341,6 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         }
       }
     }
-    $dao->free();
   }
 
   /**
