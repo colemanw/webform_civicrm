@@ -1261,7 +1261,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $params = $data['case'][1];
         // Set some defaults in create mode
         // Create duplicate case based on existing case if 'duplicate_case' checkbox is checked
-        if (empty($this->ent['case'][$n]['id']) || $this->data['case'][$n]['duplicate_case'] == 1) {
+        if (empty($this->ent['case'][$n]['id']) || !empty($this->data['case'][$n]['duplicate_case'])) {
           if (empty($params['case_type_id'])) {
             // Abort if no case type.
             continue;
