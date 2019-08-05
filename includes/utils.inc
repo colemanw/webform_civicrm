@@ -485,7 +485,6 @@ function wf_crm_get_fields($var = 'fields') {
   static $sets;
 
   if (!$fields) {
-    $config = CRM_Core_Config::singleton();
     $components = wf_crm_get_civi_setting('enable_components');
 
     $sets = array(
@@ -520,9 +519,9 @@ function wf_crm_get_fields($var = 'fields') {
       'type' => 'number',
       'data_type' => 'Money',
       'extra' => array(
-        'field_prefix' => wf_crm_aval($config, 'defaultCurrencySymbol', '$'),
-        'point' => wf_crm_aval($config, 'monetaryDecimalPoint', '.'),
-        'separator' => wf_crm_aval($config, 'monetaryThousandSeparator', ','),
+        'field_prefix' => wf_crm_get_civi_setting('defaultCurrencySymbol', '$'),
+        'point' => wf_crm_get_civi_setting('monetaryDecimalPoint', '.'),
+        'separator' => wf_crm_get_civi_setting('monetaryThousandSeparator', ','),
         'decimals' => 2,
         'min' => 0,
       ),
@@ -558,7 +557,7 @@ function wf_crm_get_fields($var = 'fields') {
       'type' => 'textfield',
       'contact_type' => 'organization',
     );
-  // Individual names
+    // Individual names
     $enabled_names = wf_crm_get_civi_setting('contact_edit_options');
     $name_options = array_column(wf_crm_apivalues('OptionValue', 'get', ['option_group_id' => 'contact_edit_options', 'return' => ['name', 'value']]), 'name', 'value');
     $enabled_names = array_intersect_key($name_options, array_flip($enabled_names));
@@ -750,14 +749,17 @@ function wf_crm_get_fields($var = 'fields') {
       'type' => 'select',
       'expose_list' => TRUE,
     );
-    $defaultLocType = CRM_Core_BAO_LocationType::getDefault();
+    $defaultLocType = wf_crm_aval(wf_civicrm_api('LocationType', 'get', [
+      'return' => ["id"],
+      'is_default' => 1,
+    ]), 'id');
     foreach (array('address' => t('Address # Location'), 'phone' => t('Phone # Location'), 'email' => t('Email # Location'), 'im' => t('IM # Location')) as $key => $label) {
       if (isset($sets[$key])) {
         $fields[$key . '_location_type_id'] = array(
           'name' => $label,
           'type' => 'select',
           'expose_list' => TRUE,
-          'value' => $defaultLocType->id,
+          'value' => $defaultLocType,
         );
       }
     }
@@ -778,7 +780,15 @@ function wf_crm_get_fields($var = 'fields') {
       'table' => 'group',
       'expose_list' => TRUE,
     );
-    $tagsets = array('' => t('Tag(s)')) + CRM_Core_BAO_Tag::getTagSet('civicrm_contact');
+    $tagsets = ['' => t('Tag(s)')];
+    foreach (wf_crm_apivalues('tag', 'get', [
+      'return' => ['id', 'name'],
+      'is_tagset' => 1,
+      'parent_id' => ['IS NULL' => 1],
+      'used_for' => ['LIKE' => '%civicrm_contact%']
+    ]) as $set) {
+      $tagsets[$set['id']] = $set['name'];
+    }
     foreach ($tagsets as $pid => $name) {
       $fields['other_tag' . ($pid ? "_$pid" : '')] = array(
         'name' => $name,
@@ -860,7 +870,6 @@ function wf_crm_get_fields($var = 'fields') {
       ),
     );
     if (isset($sets['case'])) {
-      $case_info = new CRM_Case_XMLProcessor_Process();
       $fields['case_case_type_id'] = array(
         'name' => t('Case # Type'),
         'type' => 'select',
@@ -870,7 +879,7 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Case # Client'),
         'type' => 'select',
         'expose_list' => TRUE,
-        'extra' => array('required' => 1, 'multiple' => $case_info->getAllowMultipleCaseClients()),
+        'extra' => array('required' => 1, 'multiple' => wf_crm_get_civi_setting('civicaseAllowMultipleClients', 0)),
         'data_type' => 'ContactReference',
         'set' => 'caseRoles',
         'value' => 1,
@@ -1082,7 +1091,7 @@ function wf_crm_get_fields($var = 'fields') {
         ),
         'set' => 'contributionRecur',
       );
-     }
+    }
     if (isset($sets['participant'])) {
       $fields['participant_event_id'] = array(
         'name' => t('Event(s)'),
@@ -1794,6 +1803,24 @@ function wf_crm_custom_types_map_array() {
  * @return mixed
  */
 function wf_crm_get_civi_setting($setting_name, $default_value = NULL) {
-  $settings = wf_civicrm_api('Setting', 'get', ['sequential' => 1, 'return' => $setting_name]);
-  return wf_crm_aval($settings, "values:0:$setting_name", $default_value);
+  $aliases = [
+    'defaultCurrencySymbol' => 'defaultCurrency',
+  ];
+  $settings = wf_civicrm_api('Setting', 'get', [
+    'sequential' => 1,
+    'return' => str_replace(array_keys($aliases), array_values($aliases), $setting_name),
+  ]);
+  // Not a real setting, requires cross-lookup
+  if ($setting_name == 'defaultCurrencySymbol') {
+    $currencies = wf_crm_apivalues('Contribution', 'getoptions', [
+      'field' => "currency",
+      'context' => "abbreviate",
+    ]);
+    return wf_crm_aval($currencies, $settings['values'][0]['defaultCurrency'], $default_value);
+  }
+  $result = wf_crm_aval($settings, "values:0:$setting_name", $default_value);
+  if ($result === 'default') {
+    return $default_value;
+  }
+  return $result;
 }
