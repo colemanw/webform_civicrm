@@ -2357,8 +2357,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         // Fudge together date and time fields
         if ($field['type'] === 'time' && substr($name, -8) === 'timepart') {
           $name = str_replace('_timepart', '', $name);
-          // Add date (default to today)
-          $date = wf_crm_aval($this->data, "$ent:$c:$table:$n:$name", date('Ymd'));
+          $date = wf_crm_aval($this->data, "$ent:$c:$table:$n:$name", '');
           $val = $date . str_replace(':', '', $val);
         }
         // Only known contacts are allowed to empty a field
