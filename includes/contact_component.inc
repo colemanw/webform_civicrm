@@ -505,7 +505,7 @@ function _webform_csv_data_civicrm_contact($component, $export_options, $value) 
 /**
  * Returns a list of contacts based on component settings.
  *
- * @param stdClass $node
+ * @param \Drupal\webform\WebformInterface $node
  *   Node object
  * @param array $component
  *   Webform component

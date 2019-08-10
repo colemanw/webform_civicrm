@@ -126,7 +126,7 @@ var wfCivi = (function ($, D, drupalSettings) {
   var stateProvinceCache = {};
 
   function resetFields(num, nid, clear, op, toHide, hideOrDisable, showEmpty, speed, defaults) {
-    $('div.form-item.webform-component[class*="--civicrm-'+num+'-contact-"]', '.webform-submission-form-'+nid).each(function() {
+    $('div.form-item[class*="-civicrm-'+num+'-contact-"]', '.webform-submission-form-'+nid).each(function() {
       var $el = $(this);
       var name = getFieldNameFromClass($el);
       if (!name) {
@@ -162,12 +162,10 @@ var wfCivi = (function ($, D, drupalSettings) {
         var type = (n[6] === 'name') ? 'name' : n[4];
         if ($.inArray(type, toHide) >= 0) {
           var fn = (op === 'hide' && (!showEmpty || !isFormItemBlank($el))) ? 'hide' : 'show';
-          debugger;
           // What is webformProp?
           // $(':input', $el).webformProp('disabled', fn === 'hide');
           // $(':input', $el).webformProp('readonly', fn === 'hide');
           $('select.civicrm-enabled[name*="_address_state_province_id"]').each(function() {
-            debugger;
             // $(this).webformProp('disabled', fn === 'hide');
             // $(this).webformProp('readonly', fn === 'hide');
           });
@@ -247,7 +245,6 @@ var wfCivi = (function ($, D, drupalSettings) {
           // Checkboxes & radios
           else {
             $.each($.makeArray(val), function(k, v) {
-              debugger;
               // What is webformProp?
               // $(':input[value="'+v+'"]', $wrapper).webformProp('checked', true).trigger('change', 'webform_civicrm:autofill');
             });
@@ -271,11 +268,9 @@ var wfCivi = (function ($, D, drupalSettings) {
     // What is webformProp?
     // $(stateSelect).webformProp('disabled', true);
     if (stateProvinceCache[countryId]) {
-      debugger;
       fillOptions(stateSelect, stateProvinceCache[countryId]);
     }
     else {
-      debugger;
       $.getJSON(setting.callbackPath+'/stateProvince/'+countryId, function(data) {
         fillOptions(stateSelect, data);
         stateProvinceCache[countryId] = data;
@@ -332,7 +327,6 @@ var wfCivi = (function ($, D, drupalSettings) {
     var fields = $(item).parents('form.webform-submission-form').find('[name*="['+(name.replace('master_id', ''))+'"]').not('[name*=location_type_id]').not('[name*=master_id]').not('[type="hidden"]');
     if (action === 'hide') {
       fields.parent().hide(speed, function() {$(this).css('display', 'none');});
-      debugger;
       // What is webformProp?
       // fields.webformProp('disabled', true);
     }
@@ -412,7 +406,6 @@ var wfCivi = (function ($, D, drupalSettings) {
         populateStates($el, countryVal);
 
         if (readOnly) {
-          debugger;
           // What is webformProp?
           // $el.webformProp('readonly', true);
           // $el.webformProp('disabled', true);

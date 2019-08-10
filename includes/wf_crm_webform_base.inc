@@ -268,8 +268,8 @@ abstract class wf_crm_webform_base {
           $found = ($c == 1 && $cid) ? [$cid] : [];
           break;
         case 'contact_id':
-          if ($component['#default_contact_id']) {
-            $found = array($component['#default_contact_id']);
+          if (isset($component['#default_contact_id'])) {
+            $found = [$component['#default_contact_id']];
           }
           break;
         case 'relationship':
