@@ -4,11 +4,16 @@ namespace Drupal\webform_civicrm\Controller;
 
 use Drupal\civicrm\Civicrm;
 use Drupal\webform_civicrm\Utils;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
+include_once __DIR__ . '/../../includes/wf_crm_webform_ajax.inc';
+
 class AjaxController implements ContainerInjectionInterface {
+
+  protected $requestStack;
 
   /**
    * The CiviCRM service.
@@ -17,8 +22,9 @@ class AjaxController implements ContainerInjectionInterface {
    */
   protected $civicrm;
 
-  public function __construct(Civicrm $civicrm) {
+  public function __construct(Civicrm $civicrm, RequestStack $requestStack) {
     $this->civicrm = $civicrm;
+    $this->requestStack = $requestStack;
   }
 
   /**
@@ -26,23 +32,28 @@ class AjaxController implements ContainerInjectionInterface {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-        $container->get('civicrm')
+        $container->get('civicrm'),
+        $container->get('request_stack')
     );
   }
 
-    /**
-     * Handles the ajax request.
-     *
-     * @param string $operation
-     *   The operation to perform: stateProvince or county
-     */
-    public function handle($key, $input = '') {
-        if ($key === 'stateProvince' || $key === 'county') {
-            $this->civicrm->initialize();
-            return $this->$key($input);
-        }
-        return new JsonResponse(null);
+  /**
+   * Handles the ajax request.
+   *
+   * @param string $operation
+   *   The operation to perform: stateProvince or county
+   */
+  public function handle($key, $input = '') {
+    if ($key === 'stateProvince' || $key === 'county') {
+      $this->civicrm->initialize();
+      return $this->$key($input);
     }
+    else {
+      $this->civicrm->initialize();
+      $processor = new \wf_crm_webform_ajax($this->requestStack);
+      return new JsonResponse($processor->contactAjax($key, $input));
+    }
+  }
 
     protected function stateProvince($input) {
         if (!$input || (intval($input) != $input && $input != 'default')) {

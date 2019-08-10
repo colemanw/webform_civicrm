@@ -13,6 +13,7 @@ use Drupal\Core\Link;
 use Drupal\Core\Render\Markup;
 use Drupal\Core\Url;
 use Drupal\webform\Plugin\WebformHandlerInterface;
+use Drupal\webform_civicrm\Plugin\WebformElement\CivicrmContact;
 use Drupal\webform_civicrm\Utils;
 
 class wf_crm_webform_preprocess extends wf_crm_webform_base {
@@ -57,6 +58,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     // Keep track of cids across multipage forms
     if (!empty($this->form_state->getValue('submitted')) && $this->form_state->get(['webform','page_count']) > 1) {
       foreach ($this->enabled as $k => $v) {
+        // @TODO review the cusage of the existing element.
         if (substr($k, -8) == 'existing' && $this->form_state->getValue(['submitted', $v])) {
           list(, $c) = explode('_', $k);
           $val = $this->form_state->getValue(['submitted', $v]);
@@ -92,10 +94,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     }
     */
     // Search for existing contacts
-    $elements = $this->handler->getWebform()->getElementsDecoded();
-    for ($c = 1; $c <= count($this->data['contact']); ++$c) {
+    $counts_count = count($this->data['contact']);
+    for ($c = 1; $c <= $counts_count; ++$c) {
       $this->ent['contact'][$c] = wf_crm_aval($this->ent, "contact:$c", array());
-      $existing_component = $elements["civicrm_{$c}_contact_1_contact_existing"];
+      $existing_component = $this->node->getElement("civicrm_{$c}_contact_1_contact_existing");
       // Search for contact if the user hasn't already chosen one
       if ($existing_component && empty($submitted_contacts[$c])) {
         $this->findContact($existing_component);
@@ -541,7 +543,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           }
           if ($name == 'existing') {
             module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
-            wf_crm_fill_contact_value($this->node, $component, $element, $this->ent);
+            CivicrmContact::wf_crm_fill_contact_value($this->node, $component, $element, $this->ent);
           }
           if ($name === 'contribution_page_id') {
             // Work around to remove manual rendering of display line items.

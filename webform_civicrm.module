@@ -503,6 +503,8 @@ function webform_civicrm_help($section) {
 /**
  * Implements hook_webform_component_presave().
  * Alter form keys when cloning a contact.
+ *
+ * @todo this needs to be handled in CivicrmContact.
  */
 function webform_civicrm_webform_component_presave(&$component) {
   if ($c = wf_crm_contact_clone_storage()) {

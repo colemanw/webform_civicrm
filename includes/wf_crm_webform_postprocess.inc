@@ -573,7 +573,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function verifyExistingContact($cid, $fid) {
     if (wf_crm_is_positive($cid) && !empty($this->enabled[$fid])) {
       module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
-      $component = $this->getComponent($fid);
+      $component = $this->node->getElement($fid);
       $filters = wf_crm_search_filters($this->node, $component);
       // Verify access to this contact
       if (wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
@@ -2396,26 +2396,25 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name, $checkSubmitDisabledSetting = FALSE) {
     if ($ent === 'contact' && isset($this->enabled["civicrm_{$c}_contact_1_contact_existing"])) {
-      $component = $this->getComponent("civicrm_{$c}_contact_1_contact_existing");
+      $component = $this->node->getElement("civicrm_{$c}_contact_1_contact_existing");
       $existing_contact_val = $this->submissionValue($component['#form_key']);
       // Fields are hidden if value is empty (no selection) or a numeric contact id
       if (!$existing_contact_val[0] || is_numeric($existing_contact_val[0])) {
         $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
-        // @todo see why this valud is missing.
-        $component['#extra'] += ['hide_fields' => []];
-        if (in_array($type, $component['#extra']['hide_fields'])) {
+        $component += ['hide_fields' => []];
+        if (in_array($type, $component['hide_fields'])) {
           // Check to see if configured to Submit disabled field value(s)
-          if ($checkSubmitDisabledSetting && $component['#extra']['submit_disabled']) {
+          if ($checkSubmitDisabledSetting && $component['submit_disabled']) {
             return FALSE;
           }
           // With the no_hide_blank setting we must load the contact to determine if the field was hidden
-          if (wf_crm_aval($component['#extra'], 'no_hide_blank')) {
+          if (wf_crm_aval($component, 'no_hide_blank')) {
+            // @todo this method doesn't exist?
             $value = wf_crm_aval($this->loadContact($c), "$table:$n:$name");
             return !(!$value && !is_numeric($value));
           }
-          else {
-            return TRUE;
-          }
+
+          return TRUE;
         }
       }
     }
