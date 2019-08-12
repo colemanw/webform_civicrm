@@ -347,7 +347,7 @@ function _webform_edit_civicrm_contact($component) {
     '#type' => 'select',
     '#multiple' => TRUE,
     '#title' => t('Tags'),
-    '#options' => array('' => '- ' . t('None') . ' -') + CRM_Core_BAO_Tag::getTags("civicrm_contact", $tags, NULL, '- '),
+    '#options' => array('' => '- ' . t('None') . ' -') + wf_crm_get_tags('contact'),
     '#default_value' => $component['extra']['filters']['tag'],
     '#description' => t('Listed contacts must be have at least one of the selected tags (leave blank to not filter by tag).'),
   );
