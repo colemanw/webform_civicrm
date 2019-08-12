@@ -94,7 +94,7 @@ var wfCivi = (function ($, D, drupalSettings) {
 
   pub.initFileField = function(field, info) {
     info = info || {};
-    var container = $('div.webform-component[class$="--' + field.replace(/_/g, '-') + '"] div.civicrm-enabled');
+    var container = $('div.webform-component[class*="--' + field.replace(/_/g, '-') + '"] div.civicrm-enabled');
     if (container.length > 0) {
       if ($('.file', container).length > 0) {
         if ($('.file', container).is(':visible')) {
@@ -114,7 +114,7 @@ var wfCivi = (function ($, D, drupalSettings) {
   };
 
   pub.clearFileField = function(field) {
-    var container = $('div.webform-component[class$="--' + field.replace(/_/g, '-') + '"] div.civicrm-enabled');
+    var container = $('div.webform-component[class*="--' + field.replace(/_/g, '-') + '"] div.civicrm-enabled');
     $('.civicrm-remove-file, .civicrm-file-icon', container).remove();
     $('input[type=file], input[type=submit]', container).show();
   };
