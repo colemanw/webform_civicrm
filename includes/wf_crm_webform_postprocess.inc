@@ -340,6 +340,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
               form_error($element, t('Mismatch: "@state" is not a state/province of %country. Please enter a valid state/province abbreviation for %field.', array('@state' => $element['#value'], '%country' => $countries[$country_id], '%field' => $element['#title'])));
             }
           }
+          elseif ($dt == 'Money') {
+            if (!preg_match('/^-?(?:0|[1-9]\d{0,2}(?:,?\d{3})*)(?:\.\d+)?$/', $element['#value'])) {
+              form_error($element, t('Please enter a currency value for %field.', array('%field' => $element['#title'])));
+            }
+          }
           // Strings and files don't need any validation
           elseif ($dt !== 'String' && $dt !== 'Memo' && $dt !== 'File'
             && CRM_Utils_Type::escape($element['#value'], $dt, FALSE) === NULL) {
@@ -353,9 +358,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                 break;
               case 'Link':
                 $dt = t('a web address starting with http://');
-                break;
-              case 'Money':
-                $dt = t('a currency value');
                 break;
             }
             form_error($element, t('Please enter @type for %field.', array('@type' => $dt, '%field' => $element['#title'])));
@@ -2349,6 +2351,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         elseif ($field['type'] === 'number') {
           $sum = 0;
           foreach ((array) $val as $k => $v) {
+            //Strip any thousand separator for further calculation.
+            $separator = wf_civicrm_api('Setting', 'getvalue', array(
+              'name' => "monetaryThousandSeparator",
+            ));
+            if ($field['data_type'] === 'Money') {
+              $v = preg_replace("/(?<=\d){$separator}(?=\d{3}\b)/", '', $v);
+            }
             // Perform multiplication across grid elements
             if ($component['type'] == 'grid' && is_numeric($k)) {
               $v = $v * $k;
