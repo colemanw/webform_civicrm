@@ -896,11 +896,11 @@ abstract class wf_crm_webform_base {
     $file = file_load($id);
     if ($file) {
       $config = CRM_Core_Config::singleton();
-      $path = file_unmanaged_copy($file->uri, $config->customFileUploadDir);
+      $path = file_unmanaged_copy($file->getFileUri(), $config->customFileUploadDir);
       if ($path) {
         $result = wf_civicrm_api('file', 'create', array(
           'uri' => str_replace($config->customFileUploadDir, '', $path),
-          'mime_type' => $file->filemime,
+          'mime_type' => $file->getMimeType(),
         ));
         return wf_crm_aval($result, 'id');
       }
