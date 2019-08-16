@@ -246,16 +246,16 @@ abstract class wf_crm_webform_base {
     list(, $c,) = explode('_', $component['#form_key'], 3);
     $filters = wf_crm_search_filters($this->node, $component);
     // Start with the url - that trumps everything.
-    $query = \Drupal::request()->query;
-    if ($query->has("cid$c") || ($c == 1 && $query->has('cid'))) {
-      $cid = $query->has("cid$c") ? $query->get("cid$c") : $query->get('cid');
-      if ($cid == 0 || $cid == '0' || wf_crm_is_positive($cid)) {
+    if (!empty($component['#allow_url_autofill'])) {
+      $query = \Drupal::request()->query;
+      if ($query->has("cid$c") || ((int) $c === 1 && $query->has('cid'))) {
+        $cid = $query->has("cid$c") ? $query->get("cid$c") : $query->get('cid');
         $cid = (int) $cid;
         if ($cid === 0) {
           $this->ent['contact'][$c]['id'] = $cid;
           return;
         }
-        if (!empty($component['#allow_url_autofill']) && wf_crm_contact_access($component, $filters, $cid) != FALSE) {
+        if (wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
           $this->ent['contact'][$c]['id'] = $cid;
         }
       }
@@ -265,7 +265,7 @@ abstract class wf_crm_webform_base {
       switch ($component['#default']) {
         case 'user':
           $cid = wf_crm_user_cid();
-          $found = ($c == 1 && $cid) ? [$cid] : [];
+          $found = ((int) $c === 1 && $cid) ? [$cid] : [];
           break;
         case 'contact_id':
           if (isset($component['#default_contact_id'])) {
@@ -302,7 +302,7 @@ abstract class wf_crm_webform_base {
           }
         }
         // Check filters except for 'auto' which already applied them
-        if ($component['#default'] == 'auto' || wf_crm_contact_access($component, $filters, $cid) != FALSE) {
+        if ($component['#default'] == 'auto' || wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
           $this->ent['contact'][$c]['id'] = $cid;
           break;
         }
