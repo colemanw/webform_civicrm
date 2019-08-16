@@ -65,7 +65,7 @@ class FieldOptions implements FieldOptionsInterface {
       elseif ($table === 'other') {
         if ($field['table'] === 'tag') {
           $split = explode('_', $name);
-          $ret = CRM_Core_BAO_Tag::getTags("civicrm_{$ent}", $ret, wf_crm_aval($split, 1), '- ');
+          $ret = wf_crm_get_tags($ent, wf_crm_aval($split, 1));
         }
         elseif ($field['table'] === 'group') {
           $ret = wf_crm_apivalues('group', 'get', array('is_hidden' => 0), 'title');

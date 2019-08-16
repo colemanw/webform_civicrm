@@ -127,6 +127,51 @@ function wf_crm_format_event($event, $format) {
 }
 
 /**
+ * Fetch tags within a given tagset
+ *
+ * If no tagset specified, all tags NOT within a tagset are returned.
+ * Return format is a flat array with some tic marks to indicate nesting.
+ *
+ * @param string $used_for
+ * @param int $parent_id
+ * @return array
+ */
+function wf_crm_get_tags($used_for, $parent_id = NULL) {
+  $params = [
+    'used_for' => ['LIKE' => "%civicrm_{$used_for}%"],
+    'is_tagset' => 0,
+    'is_selectable' => 1,
+    'parent_id' => $parent_id ?: ['IS NULL' => 1],
+    'options' => ['sort' => 'name'],
+  ];
+  $tags = wf_crm_apivalues('Tag', 'get', $params, 'name');
+  // Tagsets cannot be nested so no need to fetch children
+  if ($parent_id || !$tags) {
+    return $tags;
+  }
+  // Fetch child tags
+  unset($params['parent_id']);
+  $params += ['return' => ['name', 'parent_id'], 'parent_id.is_tagset' => 0, 'parent_id.is_selectable' => 1];
+  $unsorted = wf_crm_apivalues('Tag', 'get', $params);
+  $parents = array_fill_keys(array_keys($tags), ['depth' => 1]);
+  // Loop until all children are placed under their parents
+  while ($unsorted) {
+    foreach ($unsorted as $id => $tag) {
+      $parent = $tag['parent_id'];
+      if (isset($parents[$parent])) {
+        $name = str_repeat('- ', $parents[$parent]['depth']) . $tag['name'];
+        $pos = array_search($parents[$parent]['child'] ?? $parent, array_keys($tags)) + 1;
+        $tags = array_slice($tags, 0, $pos, TRUE) + [$id => $name] + array_slice($tags, $pos, NULL, TRUE);
+        $parents[$id] = ['depth' => $parents[$parent]['depth'] + 1];
+        $parents[$parent]['child'] = $id;
+        unset($unsorted[$id]);
+      }
+    }
+  }
+  return $tags;
+}
+
+/**
  * Get list of surveys
  * @param array $act
  *
