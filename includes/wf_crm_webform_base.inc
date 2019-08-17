@@ -107,8 +107,11 @@ abstract class wf_crm_webform_base {
     }
     $contact = $this->data['contact'][$c];
     $prefix = 'civicrm_' . $c . '_contact_1_';
-    $existing_contact_field = $this->getComponent($prefix . 'contact_existing');
-    $exclude = array_merge($exclude, wf_crm_aval($existing_contact_field['#extra'], 'no_autofill', array()));
+    $existing_contact_field = $this->node->getElement($prefix . 'contact_existing');
+    $element_manager = \Drupal::getContainer()->get('plugin.manager.webform.element');
+    $existing_component_plugin = $element_manager->getElementInstance($existing_contact_field);
+    $element_exclude = $existing_component_plugin->getElementProperty($existing_contact_field, 'no_autofill');
+    $exclude = array_merge($exclude, $element_exclude);
     foreach (array_merge(array('contact'), wf_crm_location_fields()) as $ent) {
       if ((!empty($contact['number_of_' . $ent]) && !in_array($ent, $exclude)) || $ent == 'contact') {
         $params = array('contact_id' => $cid);
@@ -145,7 +148,7 @@ abstract class wf_crm_webform_base {
               $result[1]['user_id'] = wf_crm_user_cid($cid, 'contact');
             }
             // Hack for gender as textfield. More general solution needed for all pseudoconsant fields
-            $gender_field = $this->getComponent("civicrm_{$c}_contact_1_contact_gender_id");
+            $gender_field = $this->node->getElement("civicrm_{$c}_contact_1_contact_gender_id");
             if ($gender_field && $gender_field['type'] == 'textfield') {
               $result[1]['gender_id'] = wf_crm_aval($result[1], 'gender');
             }
@@ -246,16 +249,18 @@ abstract class wf_crm_webform_base {
     list(, $c,) = explode('_', $component['#form_key'], 3);
     $filters = wf_crm_search_filters($this->node, $component);
     // Start with the url - that trumps everything.
-    $query = \Drupal::request()->query;
-    if ($query->has("cid$c") || ($c == 1 && $query->has('cid'))) {
-      $cid = $query->has("cid$c") ? $query->get("cid$c") : $query->get('cid');
-      if ($cid == 0 || $cid == '0' || wf_crm_is_positive($cid)) {
-        $cid = (int) $cid;
-        if ($cid === 0) {
+    $element_manager = \Drupal::getContainer()->get('plugin.manager.webform.element');
+    $existing_component_plugin = $element_manager->getElementInstance($component);
+    $allow_url_autofill = $existing_component_plugin->getElementProperty($component, 'allow_url_autofill');
+    if ($allow_url_autofill) {
+      $query = \Drupal::request()->query;
+      if ($query->has("cid$c") || ($c == 1 && $query->has('cid'))) {
+        $cid = $query->has("cid$c") ? $query->get("cid$c") : $query->get('cid');
+        if ($cid == 0) {
           $this->ent['contact'][$c]['id'] = $cid;
           return;
         }
-        if (!empty($component['#allow_url_autofill']) && wf_crm_contact_access($component, $filters, $cid) != FALSE) {
+        if (wf_crm_contact_access($component, $filters, $cid) != FALSE) {
           $this->ent['contact'][$c]['id'] = $cid;
         }
       }
