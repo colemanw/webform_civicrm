@@ -13,10 +13,10 @@ use Drupal\webform_civicrm\Utils;
 /**
  * The versions of CiviCRM and WebForm. Min is >=.  Max is <. FALSE = no MAX
  */
-define('WEBFORM_CIVICRM_CIVICRM_VERSION_MIN', '4.4');
+define('WEBFORM_CIVICRM_CIVICRM_VERSION_MIN', '5.12');
 define('WEBFORM_CIVICRM_CIVICRM_VERSION_MAX', FALSE);
 
-define('WEBFORM_CIVICRM_WEBFORM_VERSION', '4.12');
+define('WEBFORM_CIVICRM_WEBFORM_VERSION', '5.0');
 
 define('WEBFORM_CIVICRM_DEFAULT_CONTACT_ID', 1);
 
@@ -570,23 +570,6 @@ function webform_civicrm_preprocess_webform_results_submissions(&$vars) {
 function webform_civicrm_preprocess_webform_components_form(&$vars) {
   module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_component');
   wf_crm_admin_component::preprocessComponentsForm($vars['form'], $vars['rows'], $vars['form']['#node']);
-}
-
-/**
- * Implements hook_civicrm_alterPaymentProcessorParams().
- *
- * Legacy handling for paypal.
- * We use it to override the return url so that the user gets redirected to the right place from paypal.
- *
- * Remove when dropping support for CiviCRM 4.6 and below.
- */
-function webform_civicrm_civicrm_alterPaymentProcessorParams($paymentObj, $rawParams, &$cookedParams) {
-  if (!empty($rawParams['webform_redirect_cancel']) && !empty($rawParams['webform_redirect_success'])
-    && !empty($cookedParams['return']) && !empty($cookedParams['cancel_return'])
-  ) {
-    $cookedParams['return'] = $rawParams['webform_redirect_success'];
-    $cookedParams['cancel_return'] = $rawParams['webform_redirect_cancel'];
-  }
 }
 
 /**

@@ -502,9 +502,7 @@ class Fields implements FieldsInterface {
         );
         // Fetch case roles
         $sets['caseRoles'] = array('entity_type' => 'case', 'label' => t('Case Roles'));
-        // Use the vanilla civicrm_api for this because it will throw an error in CiviCRM 4.4 (api doesn't exist)
-        $case_types = civicrm_api('case_type', 'get', array('version' => 3, 'options' => array('limit' => 0)));
-        foreach (wf_crm_aval($case_types, 'values', array()) as $case_type) {
+        foreach (wf_crm_apivalues('case_type', 'get') as $case_type) {
           foreach ($case_type['definition']['caseRoles'] as $role) {
             foreach (wf_crm_get_relationship_types() as $rel_type) {
               if (in_array($role['name'], [$rel_type['name_b_a'], $rel_type['label_b_a']])) {
