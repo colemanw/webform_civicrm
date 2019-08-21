@@ -1676,7 +1676,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Email
     for ($i = 1; $i <= $this->data['contact'][1]['number_of_email']; ++$i) {
       if (!empty($this->crmValues["civicrm_1_contact_{$i}_email_email"])) {
-        $params['email'] = $this->crmValues["civicrm_1_contact_{$i}_email_email"];
+        // Force email value to contain a string.
+        // For saved draft $this->form_state['storage']['submitted'] contains
+        // a form values wrapped with array and this causes a payment error
+        // (because email appears as array($email_value) instead of $email_value).
+        $emailArray = (array) $this->crmValues["civicrm_1_contact_{$i}_email_email"];
+        $params['email'] = array_shift($emailArray);
         break;
       }
     }
