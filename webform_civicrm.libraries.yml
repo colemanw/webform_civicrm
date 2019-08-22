@@ -22,10 +22,13 @@ payment:
     - core/drupalSettings
     - webform_civicrm/forms
 
-# TODO decide if required?
-# _webform_render_civicrm_contact
-# only used for autocomplete https://github.com/colemanw/webform_civicrm/blob/8f285b94c4ba444fc894b24f2d23a7c52c92731b/includes/contact_component.inc#L384
-token-input:
+civicrm_contact:
   css:
     component:
       css/token-input.css: {}
+  js:
+    # @todo is this a bad assumption? is there a way to load via CiviCRM helpers?
+    /libraries/civicrm/packages/jquery/plugins/jquery.tokeninput.js: {}
+    js/webform_civicrm_contact.js: {}
+  dependencies:
+    - webform_civicrm/forms
