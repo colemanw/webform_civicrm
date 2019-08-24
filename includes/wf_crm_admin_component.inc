@@ -376,7 +376,7 @@ class wf_crm_admin_component {
       }
     }
     // CSS trick to add currency symbol to options element keys
-    $symbol = wf_crm_aval(CRM_Core_Config::singleton(), 'defaultCurrencySymbol', '$');
+    $symbol = wf_crm_get_civi_setting('defaultCurrencySymbol', '$');
     drupal_add_css('
       .option-key-cell:before {
         content:"' . $symbol . '";
