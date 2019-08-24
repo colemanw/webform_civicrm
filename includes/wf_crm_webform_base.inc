@@ -664,7 +664,7 @@ abstract class wf_crm_webform_base {
    * @return array
    */
   protected function getCustomData($entity_id, $entity_type = NULL, $normalize = TRUE) {
-    static $parents = array();
+    static $parents = [];
     if (empty($parents)) {
       // Create matching table to sort fields by group
       foreach (wf_crm_get_fields() as $key => $value) {
@@ -674,34 +674,23 @@ abstract class wf_crm_webform_base {
         }
       }
     }
-    $params = array('entityID' => $entity_id);
+    $params = ['entity_id' => $entity_id];
     if ($entity_type) {
-      $params['entityType'] = ucfirst($entity_type);
+      $params['entity_table'] = ucfirst($entity_type);
     }
-    $result = CRM_Core_BAO_CustomValueTable::getValues($params);
-    if (!empty($result['is_error'])) {
-      return array();
-    }
-    unset($result['is_error'], $result['entityID']);
-    $values = array();
-    // Convert multi-value strings to arrays and sort by group
+    $result = wf_crm_apivalues('CustomValue', 'get', $params);
+    $values = [];
     foreach ($result as $key => $value) {
-      $pieces = explode('_', $key);
-      if ($pieces[0] == 'custom') {
-        $name = 'custom_' . $pieces[1];
-        if (empty($pieces[2])) {
-          $pieces[2] = ($normalize ? 1 : 0);
+      $name = 'custom_' . $key;
+      // Sort into groups
+      if (isset($parents[$name])) {
+        $n = 1;
+        foreach ($value as $id => $item) {
+          // Non-numeric keys are api extras like "id" and "latest"
+          if (is_numeric($id)) {
+            $values[$parents[$name]][$normalize ? $n++ : $id][$name] = $item;
+          }
         }
-        if (isset($parents[$name])) {
-          $values[$parents[$name]][$pieces[2]][$name] = $value;
-        }
-      }
-    }
-    if ($normalize) {
-      // Normalize array keys
-      foreach ($values as &$value) {
-        array_unshift($value, 0);
-        unset($value[0]);
       }
     }
     return $values;
