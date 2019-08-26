@@ -1528,7 +1528,7 @@ class wf_crm_admin_form {
         ];
         $options = array('attributes' => array('target' => '_blank'));
         $url = Url::fromUri('https://docs.civicrm.org/sysadmin/en/latest/integration/drupal/webform/#cloning-a-contact', $options);
-        $link = Link::fromTextAndUrl('more info', $url)->toString();
+        $link = Link::fromTextAndUrl(t('more info'), $url)->toString();
         \Drupal::messenger()->addStatus(t('Tip: Consider using the clone feature to add multiple similar contacts.  (@link)', ['@link' => $link]));
       }
     }
