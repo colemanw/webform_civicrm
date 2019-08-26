@@ -7,6 +7,7 @@ use Drupal\Core\Url;
 use Drupal\webform\Utility\WebformArrayHelper;
 use Drupal\webform\WebformInterface;
 use Drupal\webform_civicrm\Utils;
+use Drupal\Core\Link;
 
 /**
  * @file
@@ -1525,8 +1526,10 @@ class wf_crm_admin_form {
           'civicrm_' . $c . '_contact_1_contact_first_name' => 'create_civicrm_webform_element',
           'civicrm_' . $c . '_contact_1_contact_last_name' => 'create_civicrm_webform_element',
         ];
-        $link = [':link' => 'href="https://docs.civicrm.org/sysadmin/en/latest/integration/drupal/webform/#cloning-a-contact" target="_blank"'];
-        \Drupal::messenger()->addStatus(t('Tip: Consider using the clone feature to add multiple similar contacts. (<a :link>more info</a>)', $link));
+        $options = array('attributes' => array('target' => '_blank'));
+        $url = Url::fromUri('https://docs.civicrm.org/sysadmin/en/latest/integration/drupal/webform/#cloning-a-contact', $options);
+        $link = Link::fromTextAndUrl('more info', $url)->toString();
+        \Drupal::messenger()->addStatus(t('Tip: Consider using the clone feature to add multiple similar contacts.  (@link)', ['@link' => $link]));
       }
     }
     // Store meta settings, i.e. number of email for contact 1
