@@ -623,7 +623,7 @@ function wf_crm_contact_access($component, $filters, $cid) {
   // Create new contact doesn't require lookup
   $cid = (string) $cid;
   list(, $c, ) = explode('_', $component['#form_key'], 3);
-  if ($cid && !empty($component['#none_prompt']) && !empty($component['#allow_create']) && strpos($cid, '-') === 0) {
+  if (!empty($component['#none_prompt']) && !empty($component['#allow_create']) && $cid && strpos($cid, '-') === 0) {
     return Html::escape($component['#none_prompt']);
   }
   if (!is_numeric($cid)) {

@@ -176,7 +176,8 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
     if (!$fid || empty($webform->getHandler('webform_civicrm'))) {
       return FALSE;
     }
-    if (empty($webform->getElement($fid)) || !$webform->access('view')) {
+    $element = $webform->getElement($fid);
+    if (empty($element) || !$webform->access('view')) {
       return FALSE;
     }
 
@@ -184,7 +185,11 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
       return TRUE;
     };
 
-    if (!empty($webform->getElement($fid)['#private'])) {
+    /** @var \Drupal\webform\Plugin\WebformElementManagerInterface $element_manager */
+    $element_manager = \Drupal::service('plugin.manager.webform.element');
+    $element_instance = $element_manager->getElementInstance($component);
+    // @todo test after moving to getElementProperty.
+    if (!empty($element_instance->getElementProperty($component, 'private'))) {
       return FALSE;
     }
     /* TODO figure out what this means in Drupal 8
