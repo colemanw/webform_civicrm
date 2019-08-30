@@ -617,37 +617,18 @@ abstract class wf_crm_webform_base {
 
   /**
    * Fetch info and remaining spaces for events
-   *
-   * @param $events
-   *   Array of event info to fill (reference)
    */
   protected function loadEvents() {
     if (!empty($this->events)) {
       $now = time();
-      // Fetch event info
-      $dao = CRM_Core_DAO::executeQuery('SELECT id, title, start_date, end_date, event_type_id, max_participants, financial_type_id
-      FROM civicrm_event WHERE id IN (' . implode(',', array_keys($this->events)) . ')');
-      while ($dao->fetch()) {
-        $this->events[$dao->id]['title'] = $dao->title;
-        $this->events[$dao->id]['start_date'] = $dao->start_date;
-        $this->events[$dao->id]['end_date'] = $dao->end_date;
-        $this->events[$dao->id]['event_type_id'] = $dao->event_type_id;
-        $this->events[$dao->id]['financial_type_id'] = $dao->financial_type_id;
-        $this->events[$dao->id]['full'] = FALSE;
-        $this->events[$dao->id]['ended'] = $dao->end_date && strtotime($dao->end_date) < $now;
-        if ($this->events[$dao->id]['max_participants'] = $dao->max_participants) {
-          $remaining = CRM_Event_BAO_Participant::eventFull($dao->id, TRUE, FALSE);
-          if (is_string($remaining)) {
-            $this->events[$dao->id]['full'] = TRUE;
-            $this->events[$dao->id]['remaining'] = 0;
-            $this->events[$dao->id]['full_message'] = $remaining;
-          }
-          else {
-            $this->events[$dao->id]['remaining'] = $remaining ? $remaining : $dao->max_participants;
-          }
-        }
+      $events = wf_crm_apivalues('Event', 'get', [
+        'return' => ['title', 'start_date', 'end_date', 'event_type_id', 'max_participants', 'financial_type_id', 'event_full_text', 'is_full'],
+        'id' => ['IN' => array_keys($this->events)],
+      ]);
+      foreach ($events as $id => $event) {
+        $this->events[$id] = $event + $this->events[$id] + ['available_places' => 0];
+        $this->events[$id]['ended'] = !empty($event['end_date']) && strtotime($event['end_date']) < $now;
       }
-      $dao->free();
     }
   }
 
