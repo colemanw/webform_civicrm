@@ -484,14 +484,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     if (!empty($this->data['reg_options']['validate'])) {
       foreach ($this->events as $eid => $event) {
         if ($event['ended']) {
-          form_set_error($eid, t('Sorry, you can no longer register for %event.', array('%event' => $event['title'])));
+          $this->form_state->setErrorByName($eid, t('Sorry, you can no longer register for %event.', ['%event' => $event['title']]));
         }
         elseif (!empty($event['max_participants']) && $event['count'] > $event['available_places']) {
           if (!empty($event['is_full'])) {
-            form_set_error($eid, '<em>' . $event['title'] . '</em>: ' . $event['event_full_text']);
+            $this->form_state->setErrorByName($eid, format_string('%event : ' . $event['event_full_text'],['%event' => $event['title']]));
           }
           else {
-            form_set_error($eid, format_plural($event['available_places'],
+            $this->form_state->setErrorByName($eid, format_plural($event['available_places'],
               'Sorry, you tried to register !count people for %event but there is only 1 space remaining.',
               'Sorry, you tried to register !count people for %event but there are only @count spaces remaining.',
               array('%event' => $event['title'], '!count' => $event['count'])));
