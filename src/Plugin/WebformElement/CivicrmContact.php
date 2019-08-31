@@ -100,6 +100,7 @@ class CivicrmContact extends WebformElementBase {
     $element['#attached']['drupalSettings']['webform_civicrm'][$element['#form_key']] = [
       'hiddenFields' => [],
     ];
+    $element['#theme'] = 'webform_civicrm_contact';
     $element['#type'] = $element['#widget'] === 'autocomplete' ? 'textfield' : $element['#widget'];
     list(, $c, ) = explode('_', $element['#form_key'], 3);
     $element['#attributes']['data-civicrm-contact'] = $c;
