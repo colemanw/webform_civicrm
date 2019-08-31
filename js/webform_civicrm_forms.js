@@ -11,6 +11,7 @@ var wfCivi = (function ($, D, drupalSettings) {
   var pub = {};
 
   pub.existingSelect = function (num, nid, path, toHide, hideOrDisable, showEmpty, cid, fetch, defaults) {
+    var formClass = getFormClass(nid);
     if (cid.charAt(0) === '-') {
       resetFields(num, nid, true, 'show', toHide, hideOrDisable, showEmpty, 500, defaults);
       // Fill name fields with name typed
@@ -28,21 +29,21 @@ var wfCivi = (function ($, D, drupalSettings) {
         }
         names.organization = names.household = names.first + (names.last ? ' ' : '') + names.last;
         for (i in names) {
-          $(':input[name$="civicrm_'+num+'_contact_1_contact_'+i+'_name]"]', '.webform-submission-form-'+nid).val(names[i]);
+          $(':input[name$="civicrm_'+num+'_contact_1_contact_'+i+'_name]"]', formClass).val(names[i]);
         }
       }
       return;
     }
     resetFields(num, nid, true, 'hide', toHide, hideOrDisable, showEmpty, 500, defaults);
     if (cid && fetch) {
-      $('.webform-submission-form-'+nid).addClass('contact-loading');
+      $(formClass).addClass('contact-loading');
       var params = getCids(nid);
       params.load = 'full';
       params.cid = cid;
       $.getJSON(path, params, function(data) {
         fillValues(data, nid);
         resetFields(num, nid, false, 'hide', toHide, hideOrDisable, showEmpty);
-        $('.webform-submission-form-'+nid).removeClass('contact-loading');
+        $(formClass).removeClass('contact-loading');
       });
     }
   };
@@ -125,15 +126,20 @@ var wfCivi = (function ($, D, drupalSettings) {
 
   var stateProvinceCache = {};
 
+  function getFormClass(webformId) {
+    return '.webform-submission-' + webformId.replace('_', '-') + '-form'
+  }
+
   function resetFields(num, nid, clear, op, toHide, hideOrDisable, showEmpty, speed, defaults) {
-    $('div.form-item[class*="-civicrm-'+num+'-contact-"]', '.webform-submission-form-'+nid).each(function() {
+    var formClass = getFormClass(nid);
+    $('div.form-item[class*="-civicrm-'+num+'-contact-"]', formClass).each(function() {
       var $el = $(this);
       var name = getFieldNameFromClass($el);
       if (!name) {
         return;
       }
       var n = name.split('-');
-      if (n[0] === 'civicrm' && n[1] == num && n[2] === 'contact' && n[5] !== 'existing') {
+      if (n[0] === 'civicrm' && parseInt(n[1]) == num && n[2] === 'contact' && n[5] !== 'existing') {
         if (clear) {
           // Reset country to default
           if (n[5] === 'country') {
@@ -193,8 +199,8 @@ var wfCivi = (function ($, D, drupalSettings) {
   function getFieldNameFromClass($el) {
     var name = false;
     $.each($el.attr('class').split(' '), function(k, val) {
-      if (val.indexOf('webform-component--') === 0 && val.indexOf('--civicrm') > 0) {
-        val = val.substring(val.lastIndexOf('--civicrm') + 2);
+      if (val.indexOf('-civicrm') > 0) {
+        val = val.substring(val.lastIndexOf('-civicrm') + 1);
         if (val.indexOf('fieldset') < 0) {
           name = val;
         }
@@ -204,6 +210,7 @@ var wfCivi = (function ($, D, drupalSettings) {
   }
 
   function fillValues(data, nid) {
+    var formClass = getFormClass(nid);
     $.each(data, function() {
       var fid = this.fid,
         val = this.val;
@@ -213,7 +220,7 @@ var wfCivi = (function ($, D, drupalSettings) {
         return;
       }
       // First try to find a single element - works for textfields and selects
-      var $el = $('.webform-submission-form-'+nid+' :input.civicrm-enabled[name$="'+fid+']"]').not(':checkbox, :radio');
+      var $el = $(formClass +' :input.civicrm-enabled[name$="'+fid+'"]').not(':checkbox, :radio');
       if ($el.length) {
         // For chain-select fields, store value for later if it's not available
         if ((fid.substr(fid.length - 9) === 'county_id' || fid.substr(fid.length - 11) === 'province_id') && !$('option[value='+val+']', $el).length) {
@@ -231,7 +238,7 @@ var wfCivi = (function ($, D, drupalSettings) {
       }
       // Next go after the wrapper - for radios, dates & checkboxes
       else {
-        var $wrapper = $('.webform-submission-form-'+nid+' div.form-item.webform-component[class*="--'+(fid.replace(/_/g, '-'))+'"]');
+        var $wrapper = $(formClass +' div.form-item.webform-component[class*="--'+(fid.replace(/_/g, '-'))+'"]');
         if ($wrapper.length) {
           // Date fields
           if ($wrapper.hasClass('webform-component-date')) {
@@ -346,8 +353,9 @@ var wfCivi = (function ($, D, drupalSettings) {
   }
 
   function getCids(nid) {
-    var cids = $('.webform-submission-form-'+nid).data('civicrm-ids') || {};
-    $('.webform-submission-form-'+nid+' .civicrm-enabled:input[name$="_contact_1_contact_existing]"]').each(function() {
+    var formClass = getFormClass(nid);
+    var cids = $(formClass).data('civicrm-ids') || {};
+    $(formClass + ' .civicrm-enabled:input[name$="_contact_1_contact_existing]"]').each(function() {
       var cid = $(this).val();
       if (cid) {
         var n = parseName($(this).attr('name')).split('_');
