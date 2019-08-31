@@ -21,6 +21,20 @@ define('WEBFORM_CIVICRM_WEBFORM_VERSION', '5.0');
 define('WEBFORM_CIVICRM_DEFAULT_CONTACT_ID', 1);
 
 /**
+ * Implements hook_library_info_alter().
+ */
+function webform_civicrm_library_info_alter(array &$libraries, $extension) {
+  if ($extension === 'webform_civicrm') {
+    $user_framework_resource_url = CRM_Core_Config::singleton()->resourceBase;
+    unset($libraries['civicrm_contact']['js']['/libraries/civicrm/packages/jquery/plugins/jquery.tokeninput.js']);
+    $libraries['civicrm_contact']['js'][$user_framework_resource_url . 'packages/jquery/plugins/jquery.tokeninput.js'] = [
+      'preprocess' => FALSE,
+      'minified' => FALSE
+    ];
+  }
+}
+
+/**
  * Implements hook_menu().
  *
  * @return array
@@ -205,7 +219,11 @@ function webform_civicrm_node_view($node, $view_mode, $langcode) {
  * @return array
  */
 function webform_civicrm_theme() {
-  return [];
+  return [
+    'webform_civicrm_contact' => [
+      'base hook' => 'input',
+    ],
+  ];
   /*
   $theme = array(
     'webform_civicrm_options_table' => array(

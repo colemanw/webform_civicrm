@@ -56,7 +56,7 @@ class AjaxController implements ContainerInjectionInterface {
   }
 
     protected function stateProvince($input) {
-        if (!$input || (intval($input) != $input && $input != 'default')) {
+        if (!$input || ((int) $input != $input && $input != 'default')) {
             $data = ['' => t('- first choose a country')];
         }
         else {

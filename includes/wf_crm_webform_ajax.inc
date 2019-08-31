@@ -29,7 +29,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
    * @return mixed
    */
   private function getParameter($name){
-    return $this->requestStack->getCurrentRequest()->get($name);
+    return $this->requestStack->getCurrentRequest()->query->get($name);
   }
 
   /**
@@ -37,25 +37,29 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
    * @param $webformId
    * @param $fid
    */
-  function contactAjax($webformId,$fid) {
+  function contactAjax($webformId, $fid) {
 
     module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
     if (empty($this->getParameter('str')) && (empty($this->getParameter('load')) || empty($this->getParameter('cid')))) {
-      exit();
+      throw new AccessDeniedHttpException('Invalid parameters.');
     }
     $webform = Webform::load($webformId);
+    if (!$webform instanceof \Drupal\webform\WebformInterface) {
+      throw new AccessDeniedHttpException('Invalid form.');
+    }
     $this->node = $webform;
-    $this->data = $webform->getHandler('webform_civicrm')->getConfiguration()['settings']['data'];
-    $element = $webform->getElementDecoded($fid);
-    $this->settings = $this->node->webform_civicrm;
+    $this->settings = $webform->getHandler('webform_civicrm')->getConfiguration()['settings'];
+    $this->data = $this->settings['data'];
+    $element = $webform->getElement($fid);
     if (!self::autocompleteAccess($webform, $fid)) {
-     throw new AccessDeniedHttpException(t('Access not allowed'));
+     throw new AccessDeniedHttpException('Access not allowed');
     }
 
     $filters = wf_crm_search_filters($webform, $element);
     // Populate other contact ids for related data
     $this->ent += ['contact' => []];
-    foreach ($this->requestStack->getCurrentRequest()->getQueryString() as $k => $v) {
+    $query_params = $this->requestStack->getCurrentRequest()->query->all();
+    foreach ($query_params as $k => $v) {
       if (substr($k, 0, 3) == 'cid' && $v && is_numeric($v)) {
         $this->ent['contact'][substr($k, 3)]['id'] = (int) $v;
       }
@@ -79,7 +83,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
     }
     // Load contact by id
     $data = [] ;
-    if ($name = wf_crm_contact_access($component, $filters, $this->getParameter('cid'))) {
+    if ($name = wf_crm_contact_access($element, $filters, $this->getParameter('cid'))) {
       if ($this->getParameter('load') == 'name') {
         if ($this->getParameter('cid')[0] === '-') {
           // HTML hack to get prompt to show up different than search results
@@ -172,7 +176,8 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
     if (!$fid || empty($webform->getHandler('webform_civicrm'))) {
       return FALSE;
     }
-    if (empty($webform->getElement($fid)) || !$webform->access('view')) {
+    $element = $webform->getElement($fid);
+    if (empty($element) || !$webform->access('view')) {
       return FALSE;
     }
 
@@ -180,7 +185,11 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
       return TRUE;
     };
 
-    if (!empty($webform->getElementDecoded($fid)['#private'])) {
+    /** @var \Drupal\webform\Plugin\WebformElementManagerInterface $element_manager */
+    $element_manager = \Drupal::service('plugin.manager.webform.element');
+    $element_instance = $element_manager->getElementInstance($component);
+    // @todo test after moving to getElementProperty.
+    if (!empty($element_instance->getElementProperty($component, 'private'))) {
       return FALSE;
     }
     /* TODO figure out what this means in Drupal 8

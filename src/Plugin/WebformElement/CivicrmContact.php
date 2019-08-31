@@ -94,13 +94,22 @@ class CivicrmContact extends WebformElementBase {
     foreach ($ensure_keys_have_values as $key) {
       if (empty($element['#' . $key])) {
         $element['#' . $key] = $this->getDefaultProperty($key);
+      }
     }
-    }
+    $element['#attached']['library'][] = 'webform_civicrm/civicrm_contact';
+    $element['#attached']['drupalSettings']['webform_civicrm'][$element['#form_key']] = [
+      'hiddenFields' => [],
+    ];
+    $element['#theme'] = 'webform_civicrm_contact';
     $element['#type'] = $element['#widget'] === 'autocomplete' ? 'textfield' : $element['#widget'];
-    $element['#attributes']['data-hide-method'] = $element['#hide_method'];
-    $element['#attributes']['data-no-hide-blank'] = (int) $element['#no_hide_blank'];
+    list(, $c, ) = explode('_', $element['#form_key'], 3);
+    $element['#attributes']['data-civicrm-contact'] = $c;
+    $element['#attributes']['data-form-id'] = $webform_submission ? $webform_submission->getWebform()->id() : NULL;
+    $element['#attributes']['data-hide-method'] = $this->getElementProperty($element, 'hide_method');
+    $element['#attributes']['data-no-hide-blank'] = (int) $this->getElementProperty($element, 'no_hide_blank');
 
-    $cid = wf_crm_aval($element, '#default_value', '');
+
+    $cid = $this->getElementProperty($element, 'default_value');
     if ($element['#type'] === 'hidden') {
       // User may not change this value for hidden fields
       $element['#value'] = $cid;

@@ -809,9 +809,13 @@ function wf_crm_find_relations($cid, $types = array(), $current = TRUE) {
  *   Api params
  */
 function wf_crm_search_filters($node, array $component) {
+  /** @var \Drupal\webform\Plugin\WebformElementManagerInterface $element_manager */
+  $element_manager = \Drupal::service('plugin.manager.webform.element');
+  $contact_element = $element_manager->getElementInstance($component);
   $params = ['is_deleted' => 0];
-  $params['contact_type'] = $component['contact_type'];
-  foreach ($component['filters'] as $key => $val) {
+  $params['contact_type'] = $contact_element->getElementProperty($component, 'contact_type');
+  $filters = $contact_element->getElementProperty($component, 'filters');
+  foreach ($filters as $key => $val) {
     if (is_array($val)) {
       $val = array_filter($val);
     }
