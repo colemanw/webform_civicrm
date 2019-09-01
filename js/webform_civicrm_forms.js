@@ -93,8 +93,9 @@ var wfCivi = (function ($, D, drupalSettings) {
   };
 
   pub.initFileField = function(field, info) {
+    console.log(info);
     info = info || {};
-    var container = $('div.webform-component[class*="--' + field.replace(/_/g, '-') + '"] div.civicrm-enabled');
+    var container = $('div#edit-' + field.replace(/_/g, '-') + '.civicrm-enabled');
     if (container.length > 0) {
       if ($('.file', container).length > 0) {
         if ($('.file', container).is(':visible')) {
@@ -107,14 +108,14 @@ var wfCivi = (function ($, D, drupalSettings) {
       }
       else {
         $(':visible', container).hide();
-        container.append('<input type="submit" class="form-submit ajax-processed civicrm-remove-file" value="' + Drupal.t('Change') + '" onclick="wfCivi.clearFileField(\'' + field + '\'); return false;">');
+        container.append('<input type="submit" class="button form-submit ajax-processed civicrm-remove-file" value="' + Drupal.t('Remove') + '" onclick="wfCivi.clearFileField(\'' + field + '\'); return false;">');
       }
-      container.prepend('<span class="civicrm-file-icon"><img alt="' + Drupal.t('File') + '" src="' + info.icon + '" /> ' + (info.name ? ('<a href="'+ info.file_url+ '" target="_blank">'+info.name +'</a>') : '') + '</span>');
+      container.prepend('<span class="file civicrm-file-icon file--'+info.icon+'">' + (info.name ? ('<a href="'+ info.file_url+ '" target="_blank">'+info.name +'</a>') : '') + '</span>');
     }
   };
 
   pub.clearFileField = function(field) {
-    var container = $('div.webform-component[class*="--' + field.replace(/_/g, '-') + '"] div.civicrm-enabled');
+    var container = $('div#edit-' + field.replace(/_/g, '-') + '.civicrm-enabled');
     $('.civicrm-remove-file, .civicrm-file-icon', container).remove();
     $('input[type=file], input[type=submit]', container).show();
   };
@@ -437,6 +438,12 @@ var wfCivi = (function ($, D, drupalSettings) {
       // Handle image file ajax refresh
       $('div.civicrm-enabled[id*=contact-1-contact-image-url]:has(.file)', context).each(function() {
         pub.initFileField(getFieldNameFromClass($(this).parent()));
+      });
+
+      $('form.webform-submission-form').once('civicrm').each(function () {
+        drupalSettings.webform_civicrm.fileFields.forEach(function (fileField){
+          wfCivi.initFileField(fileField.eid, fileField.fileInfo);
+        });
       });
     }
   };

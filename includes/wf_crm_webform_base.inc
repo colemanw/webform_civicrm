@@ -912,7 +912,7 @@ abstract class wf_crm_webform_base {
         'data_type' => 'File',
         'name' => CRM_Utils_File::cleanFileName($file[$val]['uri']),
         'file_url'=> CRM_Utils_System::url('civicrm/file', "reset=1&id={$val}&eid={$entity_id}", TRUE),
-        'icon' => file_icon_url((object) array('filemime' => $file[$val]['mime_type'])),
+        'icon' => file_icon_class($file[$val]['mime_type']),
       );
     }
     return NULL;
