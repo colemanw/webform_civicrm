@@ -93,14 +93,12 @@ var wfCivi = (function ($, D, drupalSettings) {
   };
 
   pub.initFileField = function(field, info) {
-    console.log(info);
     info = info || {};
     var container = $('div#edit-' + field.replace(/_/g, '-') + '.civicrm-enabled');
     if (container.length > 0) {
       if ($('.file', container).length > 0) {
         if ($('.file', container).is(':visible')) {
           $('.file', container).hide();
-          info.icon = $('.file a', container).attr('href');
         }
         else {
           return;
