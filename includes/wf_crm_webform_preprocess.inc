@@ -515,9 +515,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             if ($dt == 'File') {
               $fileInfo = $this->getFileInfo($name, $val, $ent, $n);
               if ($fileInfo && in_array($element['#type'], array('file', 'managed_file'))) {
-                $fileInfo = json_encode($fileInfo);
-                $js = "jQuery(function() {wfCivi.initFileField('$eid', $fileInfo)});";
-                $element['#attached']['js'][$js] = array('type' => 'inline');
+                $element['#attached']['drupalSettings']['webform_civicrm']['fileFields'][] = [
+                  'eid' => $eid,
+                  'fileInfo' => $fileInfo
+                ];
               }
             }
             // Set value for "secure value" elements
