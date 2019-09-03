@@ -896,24 +896,20 @@ abstract class wf_crm_webform_base {
       return NULL;
     }
     if ($fieldName === 'image_URL') {
-      return array(
+      return [
         'data_type' => 'File',
         'name' => NULL,
         'icon' => $val,
-      );
+      ];
     }
-    $file = wf_crm_apivalues('file', 'get', $val);
-    $entity_id = '';
-    if ($entity && $n && (strpos($fieldName, 'custom_') === 0 || strpos($fieldName, 'file_') === 0)) {
-      $entity_id = $this->ent[$entity][$n]['id'];
-    }
+    $file = wf_crm_apivalues('Attachment', 'get', $val);
     if (!empty($file[$val])) {
-      return array(
+      return [
         'data_type' => 'File',
-        'name' => CRM_Utils_File::cleanFileName($file[$val]['uri']),
-        'file_url'=> CRM_Utils_System::url('civicrm/file', "reset=1&id={$val}&eid={$entity_id}", TRUE),
+        'name' => $file[$val]['name'],
+        'file_url'=> $file[$val]['url'],
         'icon' => file_icon_class($file[$val]['mime_type']),
-      );
+      ];
     }
     return NULL;
   }
