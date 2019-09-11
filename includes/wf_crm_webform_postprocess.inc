@@ -1459,6 +1459,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   function handleEntityTags($entityType, $entityId, $params) {
     $tagValues = array();
+    $removeTags = array();
+
+    // Get tag ids from params.
     foreach ($params as $param => $val) {
       if ($val && strpos($param, 'tag_') === 0) {
         $val = preg_replace('/[^A-Za-z0-9\-]/', ',', $val);
@@ -1468,12 +1471,19 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
       }
     }
-    $allTags = civicrm_api3('EntityTag', 'getoptions', [
-      'field' => "tag_id",
-    ])['values'];
-    $allTags = array_keys($allTags);
-    $removeTags = array_diff($allTags, $tagValues);
-    $removeTags = array_combine($removeTags, $removeTags);
+
+    // Get tag ids to remove from crmValues.
+    foreach ($this->crmValues as $key => $crmValue) {
+      if (strpos($key, 'case_tag_') === FALSE || !is_array($crmValue)) {
+        continue;
+      }
+      foreach ($crmValue as $tagId => $isTagSet) {
+        if (!$isTagSet) {
+          $removeTags[$tagId] = $tagId;
+        }
+      }
+    }
+
     $this->addOrRemoveMultivaluedData('tag', $entityType, $entityId, $tagValues, $removeTags);
   }
 
