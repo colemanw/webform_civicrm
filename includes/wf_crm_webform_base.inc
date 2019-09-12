@@ -217,19 +217,6 @@ abstract class wf_crm_webform_base {
         $rel = $this->getRelationship($types, $cid, wf_crm_aval($this->ent['contact'], "$r:id"));
         if ($rel) {
           $info['relationship'][$r] = $rel;
-          // Fetch custom data
-          $len = strlen($prefix . 'custom_');
-          foreach ($this->enabled as $k => $v) {
-            if (substr($k, 0, $len) == $prefix . 'custom_') {
-              $custom = wf_civicrm_api('custom_value', 'get', array('entity_id' => $rel['id'], 'entity_table' => 'Relationship'));
-              foreach ($custom['values'] as $k => $v) {
-                if (isset($v[0])) {
-                  $info['relationship'][$r]["custom_$k"] = $v[0];
-                }
-              }
-              break;
-            }
-          }
         }
       }
     }
@@ -482,39 +469,40 @@ abstract class wf_crm_webform_base {
    * @return array
    */
   protected function getRelationship($r_types, $cid1, $cid2) {
-    $found = array();
-    $active_clause = '';
-    if (!empty($this->settings['create_new_relationship'])) {
-      $active_clause = 'AND is_active = 1 AND (end_date IS NULL OR end_date >= now())';
-    }
+    $found = [];
+    $active_only = !empty($this->settings['create_new_relationship']);
     if ($r_types && $cid1 && $cid2) {
-      $types = array();
+      $types = [];
       foreach ($r_types as $r_type) {
         list($type, $side) = explode('_', $r_type);
         $types[$type] = $type;
       }
-      $sql = "SELECT * FROM civicrm_relationship
-      WHERE relationship_type_id IN (" . implode(',', $types) . ")
-      AND ((contact_id_a = $cid1 AND contact_id_b = $cid2) OR (contact_id_a = $cid2 AND contact_id_b = $cid1)) $active_clause
-      ORDER BY is_active DESC, IF(end_date, 1, 0), end_date DESC";
-      $dao = CRM_Core_DAO::executeQuery($sql);
-      while ($dao->fetch()) {
-        $type = $dao->relationship_type_id;
-        $side = $dao->contact_id_a == $cid1 ? 'a' : 'b';
-        // Verify this is the correct orientation for the relationship
-        if (in_array("{$type}_$side", $r_types) || in_array("{$type}_r", $r_types)) {
-          // Discard metadata from the query
-          foreach ((array) $dao as $k => $v) {
-            if ($k[0] != '_' && $k != 'N' && $k != 'relationship_type_id') {
-              $found[$k] = $v;
-            }
-          }
+      $params = [
+        'contact_id_a' => ['IN' => [$cid1, $cid2]],
+        'contact_id_b' => ['IN' => [$cid1, $cid2]],
+        'relationship_type_id' => ['IN' => $types],
+      ];
+      if ($active_only) {
+        $params['is_active'] = 1;
+        $params['options']['sort'] = 'is_active DESC, end_date ASC';
+      }
+      foreach (wf_crm_apivalues('relationship', 'get', $params) as $rel) {
+        $type = $rel['relationship_type_id'];
+        $side = $rel['contact_id_a'] == $cid1 ? 'a' : 'b';
+        if (
+          // Verify relationship orientation
+          (in_array("{$type}_$side", $r_types) || in_array("{$type}_r", $r_types))
+          // Verify 2 contacts are different unless we're specifically looking for a self-relationship
+          && ($rel['contact_id_a'] != $rel['contact_id_b'] || $cid1 == $cid2)
+          // Verify end date is not past when searching for active only
+          && (empty($rel['end_date']) || !$active_only || strtotime($rel['end_date']) > time())
+        ) {
           // Support multi-valued relationship type fields, fudge the rest
           $found['relationship_type_id'][] = in_array("{$type}_r", $r_types) ? "{$type}_r" : "{$type}_$side";
-          $found['relationship_permission'] = ($found['is_permission_a_b'] ? 1 : 0) + ($found['is_permission_b_a'] ? 2 : 0);
+          $found['relationship_permission'] = (!empty($rel['is_permission_a_b']) ? 1 : 0) + (!empty($rel['is_permission_b_a']) ? 2 : 0);
+          $found += $rel;
         }
       }
-      $dao->free();
     }
     return $found;
   }
