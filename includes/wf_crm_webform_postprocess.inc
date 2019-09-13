@@ -1306,7 +1306,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         // Final processing if save was successful
         if (!empty($result['id'])) {
           // handle case tags
-          $this->handleEntityTags('case', $result['id'], $params);
+          $this->handleEntityTags('case', $result['id'], $n, $params);
           // Store id
           $this->ent['case'][$n]['id'] = $result['id'];
           // Save custom field data
@@ -1416,7 +1416,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         // Final processing if save was successful
         if (!empty($activity['id'])) {
           // handle activity tags
-          $this->handleEntityTags('activity', $result['id'], $params);
+          $this->handleEntityTags('activity', $activity['id'], $n, $params);
           // Store id
           $this->ent['activity'][$n]['id'] = $activity['id'];
           // Save custom data & attachments
@@ -1455,36 +1455,23 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    *
    * @param $entityType
    * @param $entityId
+   * @param $n
    * @param $params
    */
-  function handleEntityTags($entityType, $entityId, $params) {
-    $tagValues = array();
-    $removeTags = array();
-
-    // Get tag ids from params.
-    foreach ($params as $param => $val) {
-      if ($val && strpos($param, 'tag_') === 0) {
-        $val = preg_replace('/[^A-Za-z0-9\-]/', ',', $val);
-        $val = array_filter(explode(',', $val), 'strlen');
-        foreach ($val as $tagValue) {
-          $tagValues[$tagValue] = $tagValue;
+  function handleEntityTags($entityType, $entityId, $n, $params) {
+    foreach ($this->all_fields as $fid => $field) {
+      list($set, $type) = explode('_', $fid, 2);
+      if (in_array($set, ['case', 'activity']) && isset($field['table']) && $field['table'] == 'tag') {
+        $field_name = 'civicrm_' . $n . '_' . $entityType. '_1_' . $fid;
+        if (isset($this->enabled[$field_name]) && isset($this->data[$entityType][$n])) {
+          $add = wf_crm_aval($this->data[$entityType][$n], $entityType . ":1:$type", array());
+          $add = preg_replace('/[^A-Za-z0-9\-]/', ',', $add);
+          $add = array_filter(explode(',', $add), 'strlen');
+          $remove = $this->getExposedOptions($field_name, $add);
+          $this->addOrRemoveMultivaluedData('tag', $entityType, $entityId, $add, $remove);
         }
       }
     }
-
-    // Get tag ids to remove from crmValues.
-    foreach ($this->crmValues as $key => $crmValue) {
-      if (strpos($key, 'case_tag_') === FALSE || !is_array($crmValue)) {
-        continue;
-      }
-      foreach ($crmValue as $tagId => $isTagSet) {
-        if (!$isTagSet) {
-          $removeTags[$tagId] = $tagId;
-        }
-      }
-    }
-
-    $this->addOrRemoveMultivaluedData('tag', $entityType, $entityId, $tagValues, $removeTags);
   }
 
  /**
