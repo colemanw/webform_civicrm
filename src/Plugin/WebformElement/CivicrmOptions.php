@@ -182,9 +182,9 @@ class CivicrmOptions extends WebformElementBase {
   }
 
   protected function getFieldOptions($element) {
-    list( , , , , $table, $name) = Utils::wf_crm_explode_key($element['#form_key']);
-    $params = ['field' => $name, 'context' => 'create'];
-    return wf_crm_apivalues($table, 'getoptions', $params);
+    \Drupal::getContainer()->get('civicrm')->initialize();
+    $field_options = \Drupal::service('webform_civicrm.field_options');
+    return $field_options->get(['form_key' => $element['#form_key']], 'create', []);
   }
 
   /**
