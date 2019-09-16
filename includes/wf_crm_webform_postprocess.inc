@@ -922,7 +922,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function addOrRemoveMultivaluedData($data_type, $entity_type, $id, $add, $remove = array()) {
     $confirmations_sent = $existing = $params = array();
-    $add = drupal_map_assoc($add);
+    $add = array_combine($add, $add);
     static $mailing_lists = array();
 
     switch ($data_type) {
