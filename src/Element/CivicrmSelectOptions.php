@@ -52,10 +52,8 @@ class CivicrmSelectOptions extends FormElement {
 
   protected static function getFieldOptions($form_key) {
     \Drupal::getContainer()->get('civicrm')->initialize();
-    $pieces = explode('_', $form_key, 6);
-    list( , , , , $table, $name) = $pieces;
-    $params = ['field' => $name, 'context' => 'create'];
-    return wf_crm_apivalues($table, 'getoptions', $params);
+    $field_options = \Drupal::service('webform_civicrm.field_options');
+    return $field_options->get(['form_key' => $form_key], 'create', []);
   }
 
   public static function processSelectOptions(&$element, FormStateInterface $form_state, &$complete_form) {
