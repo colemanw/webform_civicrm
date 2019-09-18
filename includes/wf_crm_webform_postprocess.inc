@@ -766,7 +766,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
       }
     }
-    
+
     foreach (wf_crm_location_fields() as $location) {
       if (!empty($contact[$location])) {
         $existing = array();
@@ -1868,12 +1868,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     else {
       $paymentProcessorID = $this->data['contribution'][1]['contribution'][1]['payment_processor_id'];
-      $paymentProcessorClassName = civicrm_api3('PaymentProcessor', 'getvalue', array(
-        'return' => 'class_name',
+      $paymentProcessor = civicrm_api3('PaymentProcessor', 'getsingle', array(
+        'return' => ['class_name', 'payment_instrument_id'],
         'id' => $paymentProcessorID,
       ));
 
-      if ($paymentProcessorClassName === 'Payment_Manual') {
+      if ($paymentProcessor['class_name'] === 'Payment_Manual') {
         $this->contributionIsPayLater = TRUE;
       }
     }
@@ -1884,8 +1884,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     //Fix IPN payments marked as paid by cheque
     if (empty($params['payment_instrument_id'])) {
       if (!empty($params['payment_processor_id']) && $this->contribution_page['is_monetary']) {
-        $defaultPaymentInstrument = CRM_Core_OptionGroup::values('payment_instrument', FALSE, FALSE, FALSE, 'AND is_default = 1');
-        $params['payment_instrument_id'] = key($defaultPaymentInstrument);
+        if (!empty($paymentProcessor['payment_instrument_id'])) {
+          $params['payment_instrument_id'] = $paymentProcessor['payment_instrument_id'];
+        }
+        else {
+          $defaultPaymentInstrument = CRM_Core_OptionGroup::values('payment_instrument', FALSE, FALSE, FALSE, 'AND is_default = 1');
+          $params['payment_instrument_id'] = key($defaultPaymentInstrument);
+        }
       }
     }
 
