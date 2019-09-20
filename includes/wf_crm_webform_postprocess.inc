@@ -747,8 +747,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function saveContactLocation($contact, $cid, $c) {
     // Check which location_type_id is to be set as is_primary=1;
-    $is_primary_address_location_type = wf_crm_aval($contact, 'address:1:location_type_id');
-    $is_primary_email_location_type = wf_crm_aval($contact, 'email:1:location_type_id');
+    //$is_primary_address_location_type = wf_crm_aval($contact, 'address:1:location_type_id');
+    //$is_primary_email_location_type = wf_crm_aval($contact, 'email:1:location_type_id');
 
     // Fix address fields.
     if (!empty($contact['address'])) {
@@ -780,18 +780,19 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           // start array index at 1
           $existing = array_merge(array(array()), $result['values']);
         }
+        // Check which location_type_id is to be set as is_primary=1;
+        $is_primary_location_type = $contact[$location][1]['location_type_id'] ?? NULL;
+
         foreach ($contact[$location] as $i => $params) {
           // Update drupal email address
           if ($location == 'email' && !empty($params['email']) && $i == 1) {
             $uid = wf_crm_user_cid($cid, 'contact');
             if ($uid) {
               $user = user_load($uid);
-              if ($params['email'] != $user->mail) {
-                // Verify this email is unique before saving it to user
-                $args = array(':mail' => $params['email']);
-                if (!(db_query("SELECT count(uid) FROM {users} WHERE mail = :mail", $args)->fetchField())) {
-                  user_save($user, array('mail' => $params['email']));
-                }
+              // Verify this email is different from current user email
+              // and unique between Drupal users before updating it
+              if ($params['email'] != $user->mail && !user_load_by_mail($params['email']) ) {
+                user_save($user, array('mail' => $params['email']));
               }
             }
           }
@@ -801,6 +802,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             foreach ($params as $param => $val) {
               if ($val != (string) wf_crm_aval($existing[$i], $param, '')) {
                 $same = FALSE;
+                break;
               }
             }
             if ($same) {
@@ -833,17 +835,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             continue;
           }
           if ($location != 'website') {
-            if (empty($params['location_type_id'])) {
-              $params['location_type_id'] = wf_crm_aval($existing, "$i:location_type_id", 1);
-            }
-            $params['is_primary'] = $i == 1 ? 1 : 0;
-            // Override that just in cases we know
-            if ($location == 'address' && $params['location_type_id'] == $is_primary_address_location_type) {
-              $params['is_primary'] = 1;
-            }
-            if ($location == 'email' && $params['location_type_id'] == $is_primary_email_location_type) {
-              $params['is_primary'] = 1;
-            }
+            $params['location_type_id'] = empty($params['location_type_id']) ? wf_crm_aval($existing, "$i:location_type_id", 1) : $params['location_type_id'];
+            // Modify is_primary parameter if location type of the current field is the same
+            // type of the first field, assuring only first field to be set as primary.
+            $params['is_primary'] = (int) ($params['location_type_id'] == $is_primary_location_type && $i == 1);
           }
           wf_civicrm_api($location, 'create', $params);
         }
