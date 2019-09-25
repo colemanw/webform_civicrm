@@ -898,14 +898,18 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $params['method'] = 'Webform';
         break;
       case 'tag':
-        $api = 'entity_tag';
+        $api = 'EntityTag';
         break;
       default:
         $api = $data_type;
     }
     if (!empty($add) || !empty($remove)) {
       // Retrieve current records for this entity
-      if ($entity_type == 'contact') {
+      if ($api == 'EntityTag') {
+        $params['entity_id'] = $id;
+        $params['entity_table'] = 'civicrm_' . $entity_type;
+      }
+      elseif ($api == 'group_contact' && $entity_type == 'contact') {
         $params['contact_id'] = $id;
       }
       else {
@@ -1303,6 +1307,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $result = wf_civicrm_api('case', 'create', $params);
         // Final processing if save was successful
         if (!empty($result['id'])) {
+          // handle case tags
+          $this->handleEntityTags('case', $result['id'], $n, $params);
           // Store id
           $this->ent['case'][$n]['id'] = $result['id'];
           // Save custom field data
@@ -1411,6 +1417,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $activity = wf_civicrm_api('activity', 'create', $params);
         // Final processing if save was successful
         if (!empty($activity['id'])) {
+          // handle activity tags
+          $this->handleEntityTags('activity', $activity['id'], $n, $params);
           // Store id
           $this->ent['activity'][$n]['id'] = $activity['id'];
           // Save custom data & attachments
@@ -1439,6 +1447,28 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
               }
             }
           }
+        }
+      }
+    }
+  }
+
+  /**
+   * Handle adding/updating tags for entities (cases, activity)
+   *
+   * @param $entityType
+   * @param $entityId
+   * @param $n
+   * @param $params
+   */
+  function handleEntityTags($entityType, $entityId, $n, $params) {
+    foreach ($this->all_fields as $fid => $field) {
+      list($set, $type) = explode('_', $fid, 2);
+      if ($set == $entityType && isset($field['table']) && $field['table'] == 'tag') {
+        $field_name = 'civicrm_' . $n . '_' . $entityType. '_1_' . $fid;
+        if (isset($this->enabled[$field_name]) && isset($this->data[$entityType][$n])) {
+          $add = wf_crm_aval($this->data[$entityType][$n], $entityType . ":1:$type", array());
+          $remove = $this->getExposedOptions($field_name, $add);
+          $this->addOrRemoveMultivaluedData('tag', $entityType, $entityId, $add, $remove);
         }
       }
     }
@@ -2311,7 +2341,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             $val = array_unique(array_merge($val, $this->data[$ent][$c][$table][$n][$name]));
           }
           // Implode data that will be stored as a string
-          if ($table !== 'other' && $name !== 'event_id' && $name !== 'relationship_type_id' && $table !== 'contact' && $dataType != 'ContactReference') {
+          if ($table !== 'other' && $name !== 'event_id' && $name !== 'relationship_type_id' && $table !== 'contact' && $dataType != 'ContactReference' && strpos($name, 'tag') !== 0) {
             $val = CRM_Utils_Array::implodePadded($val);
           }
         }
