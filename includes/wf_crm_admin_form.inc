@@ -1806,7 +1806,12 @@ class wf_crm_admin_form {
         unset($enabled_element['name']);
         $stub_form_state->setValues($enabled_element);
         $properties = $element_plugin->getConfigurationFormProperties($stub_form, $stub_form_state);
-        $this->webform->setElementProperties($enabled_key, $properties);
+
+        $parent_key = '';
+        if (isset($enabled_element['parent'])) {
+          $parent_key = $enabled_element['parent'];
+        }
+        $this->webform->setElementProperties($enabled_key, $properties, $parent_key);
       }
       // Update existing contact fields
       foreach ($existing as $fid => $id) {
@@ -2006,7 +2011,7 @@ class wf_crm_admin_form {
         'form_key' => 'contribution_pagebreak',
         'title' => (string) t('Payment'),
       ];
-      // self::addPageBreak($field);
+      self::addPageBreak($field);
     }
     // Merge defaults and create webform component
     $field += ['extra' => []];

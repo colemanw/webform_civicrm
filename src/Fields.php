@@ -569,6 +569,7 @@ class Fields implements FieldsInterface {
         // @todo moved in order since we can't pass `weight`.
         $fields['contribution_total_amount'] = array(
             'name' => 'Contribution Amount',
+            'parent' => 'contribution_pagebreak',
           ) + $moneyDefaults;
         // @todo moved in order since we can't pass `weight`.
         $fields['contribution_payment_processor_id'] = array(
@@ -588,10 +589,12 @@ class Fields implements FieldsInterface {
           'extra' => array(
             'hidden_type' => 'hidden',
           ),
+          'parent' => 'contribution_pagebreak',
         );
         $fields['contribution_note'] = array(
           'name' => t('Contribution Note'),
           'type' => 'textarea',
+          'parent' => 'contribution_pagebreak',
         );
         $fields['contribution_soft'] = array(
           'name' => t('Soft Credit To'),
@@ -599,6 +602,7 @@ class Fields implements FieldsInterface {
           'expose_list' => TRUE,
           'extra' => array('multiple' => TRUE),
           'data_type' => 'ContactReference',
+          'parent' => 'contribution_pagebreak',
         );
         $fields['contribution_honor_contact_id'] = array(
           'name' => t('In Honor/Memory of'),
@@ -606,11 +610,13 @@ class Fields implements FieldsInterface {
           'expose_list' => TRUE,
           'empty_option' => t('No One'),
           'data_type' => 'ContactReference',
+          'parent' => 'contribution_pagebreak',
         );
         $fields['contribution_honor_type_id'] = array(
           'name' => t('Honoree Type'),
           'type' => 'select',
           'expose_list' => TRUE,
+          'parent' => 'contribution_pagebreak',
         );
         $fields['contribution_is_test'] = array(
           'name' => t('Payment Processor Mode'),
@@ -618,16 +624,18 @@ class Fields implements FieldsInterface {
           'expose_list' => TRUE,
           'extra' => array('civicrm_live_options' => 1),
           'value' => 0,
-          'weight' => 9997,
+          'parent' => 'contribution_pagebreak',
         );
         $fields['contribution_source'] = array(
           'name' => t('Contribution Source'),
           'type' => 'textfield',
+          'parent' => 'contribution_pagebreak',
         );
         // Line items
         $fields['contribution_line_total'] = array(
             'name' => t('Line Item Amount'),
             'set' => 'line_items',
+            'parent' => 'contribution_pagebreak',
           ) + $moneyDefaults;
         $fields['contribution_financial_type_id'] = array(
           'name' => t('Financial Type'),
@@ -637,6 +645,7 @@ class Fields implements FieldsInterface {
           'value' => 1,
           'default' => 1,
           'set' => 'line_items',
+          'parent' => 'contribution_pagebreak',
         );
         $sets['contributionRecur'] = array('entity_type' => 'contribution', 'label' => t('Recurring Contribution'));
         $fields['contribution_frequency_unit'] = array(
