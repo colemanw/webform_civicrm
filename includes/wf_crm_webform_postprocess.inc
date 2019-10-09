@@ -766,7 +766,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
       }
     }
-    
+
     foreach (wf_crm_location_fields() as $location) {
       if (!empty($contact[$location])) {
         $existing = array();
@@ -1198,8 +1198,20 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // The api won't let us manually set status without this weird param
       $params['skipStatusCal'] = !empty($params['status_id']);
 
-      if (isset($this->ent['contribution_recur'][1]['id'])) {
-        $params['contribution_recur_id'] = $this->ent['contribution_recur'][1]['id'];
+      if (isset($this->ent['contribution_recur'][1]['id']) && !empty($params['auto_renew'])) {
+        $contributionRecurId = $this->ent['contribution_recur'][1]['id'];
+
+        $contributionRecur = civicrm_api3('ContributionRecur', 'get', [
+          'return' => 'auto_renew',
+          'sequential' => 1,
+          'id' => $contributionRecurId,
+        ]);
+
+        if (!empty($contributionRecur['values'][0]['auto_renew'])) {
+          $params['contribution_recur_id'] = $contributionRecurId;
+        }
+
+        unset($params['auto_renew']);
       }
 
       $result = wf_civicrm_api('membership', 'create', $params);
@@ -1848,6 +1860,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       'financial_type_id' =>  $contributionParams['financial_type_id'],
     );
 
+    if ($paymentType === 'deferred' && !empty($contributionParams['auto_renew'])) {
+      $contributionRecurParams['auto_renew'] = 1;
+    }
+
     if(empty($contributionParams['payment_processor_id'])) {
       $contributionRecurParams['payment_processor_id'] = 'null';
     }
@@ -1921,7 +1937,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     $numInstallments = wf_crm_aval($params, 'installments', NULL, TRUE);
     $frequencyInterval = wf_crm_aval($params, 'frequency_unit');
-    if ($numInstallments != 1 && !empty($frequencyInterval) && $this->contributionIsPayLater) {
+    $isThereMembershipToBeAutoRenewed = $this->isThereMembershipToBeAutoRenewed();
+    if (($numInstallments != 1 || $isThereMembershipToBeAutoRenewed) && !empty($frequencyInterval) && $this->contributionIsPayLater) {
+      if ($isThereMembershipToBeAutoRenewed) {
+        $params['auto_renew'] = 1;
+      }
+
       $result = $this->contributionRecur($params, 'deferred');
     }
     else {
@@ -1929,6 +1950,22 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     $this->ent['contribution'][1]['id'] = $result['id'];
+  }
+
+  /**
+   * Determines if the webform is configured to have
+   * any membership to be autorenwed or not.
+   */
+  private function isThereMembershipToBeAutoRenewed() {
+    $autoRenewMembership = FALSE;
+    foreach ($this->data['membership'] as $contactMemberships) {
+      foreach($contactMemberships['membership'] as $membership) {
+        if (!empty($membership['auto_renew'])) {
+          $autoRenewMembership = TRUE;
+        }
+      }
+    }
+    return $autoRenewMembership;
   }
 
   /**
