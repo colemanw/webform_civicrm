@@ -513,6 +513,29 @@ var wfCiviAdmin = (function ($, D) {
         }
       }).change();
 
+      var autorenewMembershipsTracker = {};
+      var $membershipPageSelect = $('.form-item-membership-1-number-of-membership');
+      $('select[name$=_membership_auto_renew]').change(function(e, type) {
+        var fieldName = $(this).attr('name');
+        autorenewMembershipsTracker[fieldName] = $(this).val();
+
+        autorenew_counter = 0;
+        for(var key in autorenewMembershipsTracker){
+          if (autorenewMembershipsTracker[key] != 0) {
+            autorenew_counter++;
+          }
+        }
+
+        if (autorenew_counter > 1) {
+          if (!$('.wf-crm-membership-autorenew-alert').length) {
+            var msg = Drupal.t("Ensure that the memberships selected to be Auto-Renewed have the same frequency unit and interval or otherwise it might not work well !");
+            $membershipPageSelect.after('<div class="messages error wf-crm-membership-autorenew-alert">' + msg + '</div>');
+          }
+        } else {
+          $('.wf-crm-membership-autorenew-alert').remove();
+        }
+      });
+
       function billingMessages() {
         var $pageSelect = $('[name=civicrm_1_contribution_1_contribution_contribution_page_id]');
         // Warning about contribution page with no email
