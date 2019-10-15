@@ -1729,7 +1729,7 @@ class wf_crm_admin_form {
                  */
                 // @todo Properly handle fieldset creation.
                 // self::insertComponent($field, $enabled, $this->settings, !isset($previous_data['data'][$type][$c]));
-                self::insertComponent($field, $enabled, $this->settings);
+                self::insertComponent($field, $enabled, $this->settings, TRUE);
                 $created[] = $field['name'];
                 if (isset($field['civicrm_condition'])) {
                   $this->addConditionalRule($field, $enabled);
@@ -1806,7 +1806,12 @@ class wf_crm_admin_form {
         unset($enabled_element['name']);
         $stub_form_state->setValues($enabled_element);
         $properties = $element_plugin->getConfigurationFormProperties($stub_form, $stub_form_state);
-        $this->webform->setElementProperties($enabled_key, $properties);
+
+        $parent_key = '';
+        if (isset($enabled_element['parent'])) {
+          $parent_key = $enabled_element['parent'];
+        }
+        $this->webform->setElementProperties($enabled_key, $properties, $parent_key);
       }
       // Update existing contact fields
       foreach ($existing as $fid => $id) {
@@ -1994,8 +1999,8 @@ class wf_crm_admin_form {
     if ($ent !== 'contribution' &&
       ($ent !== 'participant' || wf_crm_aval($settings['data'], 'participant_reg_type') === 'separate')
     ) {
-      // @todo Properly handle fieldset creation.
-      // self::addFieldset($c, $field, $enabled, $settings, $ent, $create_fieldsets);
+       $fieldset_key = self::addFieldset($c, $field, $enabled, $settings, $ent, $create_fieldsets);
+       $field['parent'] = $fieldset_key;
     }
     // Create page break for contribution page
     if ($name === 'contribution_page_id') {
@@ -2006,7 +2011,7 @@ class wf_crm_admin_form {
         'form_key' => 'contribution_pagebreak',
         'title' => (string) t('Payment'),
       ];
-      // self::addPageBreak($field);
+      self::addPageBreak($field);
     }
     // Merge defaults and create webform component
     $field += ['extra' => []];
@@ -2060,11 +2065,14 @@ class wf_crm_admin_form {
         // @todo We cannot define a default weight.
         // $new_set['weight'] = 200 + (array_search($type, self::$fieldset_entities, TRUE) * 10 + $c);
       }
-      // @todo use WebformElementManager and get defaults
-      // @see \Drupal\webform\Plugin\WebformElement\Fieldset::getDefaultProperties
-      // $new_set += webform_component_invoke('fieldset', 'defaults');
+      $webform_element_manager = \Drupal::getContainer()->get('plugin.manager.webform.element');
+      $element_plugin = $webform_element_manager->getElementInstance([
+        '#type' => $new_set['type'],
+      ]);
+      $new_set = array_merge($element_plugin->getDefaultProperties(), $new_set);
       $enabled[$sid] = $new_set;
     }
+    return $sid;
   }
 
   /**
@@ -2121,22 +2129,6 @@ class wf_crm_admin_form {
       }
     }
     return $ret;
-  }
-
-  /**
-   * Is this a new entity being added to the form?
-   *
-   * If so, create a new fieldset for them.
-   * Otherwise only use an existing one if it exists.
-   * This way we respect the user's choice and don't add a fieldset if they've already deleted it.
-   *
-   * @param $field_key
-   * @return bool
-   */
-  private function isNewFieldset($field_key) {
-    list(, $c, $ent) =  Utils::wf_crm_explode_key($field_key);
-    $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
-    return !isset($this->node->webform_civicrm['data'][$type][$c]);
   }
 
   /**
