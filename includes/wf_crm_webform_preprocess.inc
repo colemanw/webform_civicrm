@@ -21,6 +21,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     $this->node = $form['#node'];
     $this->settings = $this->node->webform_civicrm;
     $this->data = $this->settings['data'];
+    $this->fixPaymentProcessorID();
     $this->ent['contact'] = array();
     $this->all_fields = wf_crm_get_fields();
     $this->all_sets = wf_crm_get_fields('sets');

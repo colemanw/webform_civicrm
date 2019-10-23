@@ -43,6 +43,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->node = $node;
     $this->settings = $node->webform_civicrm;
     $this->data = $this->settings['data'];
+    $this->fixPaymentProcessorID();
     $this->enabled = wf_crm_enabled_fields($node);
     $this->all_fields = wf_crm_get_fields();
     $this->all_sets = wf_crm_get_fields('sets');
@@ -766,7 +767,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
       }
     }
-    
+
     foreach (wf_crm_location_fields() as $location) {
       if (!empty($contact[$location])) {
         $existing = array();
@@ -1931,11 +1932,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params = $this->data['contribution'][1]['contribution'][1];
     $processor_type = wf_civicrm_api('payment_processor', 'getsingle', array('id' => $params['payment_processor_id']));
     $paymentProcessor = \Civi\Payment\System::singleton()->getById($params['payment_processor_id']);
-    // Ideally we would pass the correct id for the test processor through but that seems not to be the
-    // case so load it here.
-    if (!empty($params['is_test'])) {
-      $paymentProcessor = \Civi\Payment\System::singleton()->getByName($processor_type['name'], TRUE);
-    }
+
     // Add contact details to params (most processors want a first_name and last_name)
     $contact = wf_civicrm_api('contact', 'getsingle', array('id' => $this->ent['contact'][1]['id']));
     $params += $contact;
@@ -2078,26 +2075,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (empty($params[$key])) {
         $params[$key] = $value;
       }
-    }
-
-    // Fix bug for testing.
-    if ($params['is_test'] == 1) {
-      $liveProcessorName = wf_civicrm_api('payment_processor', 'getvalue', array(
-        'id' => $params['payment_processor_id'],
-        'return' => 'name',
-      ));
-      // Lookup current domain for multisite support
-      static $domain = 0;
-      if (!$domain) {
-        $domain = wf_civicrm_api('domain', 'get', array('current_domain' => 1, 'return' => 'id'));
-        $domain = wf_crm_aval($domain, 'id', 1);
-      }
-      $params['payment_processor_id'] = wf_civicrm_api('payment_processor', 'getvalue', array(
-        'return' => 'id',
-        'name' => $liveProcessorName,
-        'is_test' => 1,
-        'domain_id' => $domain,
-      ));
     }
 
     if (empty($params['payment_instrument_id'])) {
