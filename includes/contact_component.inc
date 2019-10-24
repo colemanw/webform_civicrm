@@ -267,7 +267,7 @@ function _webform_edit_civicrm_contact($component) {
       '#options' => array('' => '- ' . t('None') . ' -'),
       '#default_value' => wf_crm_aval($component['extra']['filters'], 'relationship:contact'),
     );
-    $form['filters']['relationship']['type'] = array(
+    $form['filters']['relationship']['types'] = array(
       '#type' => 'select',
       '#multiple' => TRUE,
       '#title' => t('Specify Relationship(s)'),
@@ -281,7 +281,7 @@ function _webform_edit_civicrm_contact($component) {
       $rtypes = wf_crm_get_contact_relationship_types($contact_type, $data['contact'][$i]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$i]['contact'][1]['contact_sub_type']);
       foreach ($rtypes as $k => $v) {
         $all_relationship_types[$i][] = array('key' => $k, 'value' => $v . ' ' . wf_crm_contact_label($i, $data, 'plain'));
-        $form['defaults']['default_relationship']['#options'][$k] = $form['filters']['relationship']['type']['#options'][$k] = $v . ' ' . wf_crm_contact_label($i, $data, 'plain');
+        $form['defaults']['default_relationship']['#options'][$k] = $form['filters']['relationship']['types']['#options'][$k] = $v . ' ' . wf_crm_contact_label($i, $data, 'plain');
       }
       if (!$rtypes) {
         $all_relationship_types[$i][] = array('key' => '', 'value' => '- ' . t('No relationship types defined for @a to @b', array('@a' => $contact_types[$contact_type], '@b' => $contact_types[$data['contact'][$i]['contact'][1]['contact_type']])) . ' -');
@@ -541,7 +541,7 @@ function wf_crm_contact_search($node, $component, $params, $contacts, $str = NUL
     $c = $params['relationship']['contact'];
     $relations = NULL;
     if (!empty($contacts[$c]['id'])) {
-      $relations = wf_crm_find_relations($contacts[$c]['id'], wf_crm_aval($params['relationship'], 'type'));
+      $relations = wf_crm_find_relations($contacts[$c]['id'], wf_crm_aval($params['relationship'], 'types'));
       $params['id'] = array('IN' => $relations);
     }
     if (!$relations) {
