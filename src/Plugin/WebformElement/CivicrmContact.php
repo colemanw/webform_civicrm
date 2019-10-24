@@ -59,6 +59,7 @@ class CivicrmContact extends WebformElementBase {
         'private' => FALSE,
         'default' => '',
         'default_contact_id' => '',
+        'default_relationship_to' => '',
         'default_relationship' => '',
         'allow_url_autofill' => TRUE,
         'dupes_allowed' => FALSE,
@@ -284,6 +285,10 @@ class CivicrmContact extends WebformElementBase {
     }
     elseif ($c > 1) {
       $form['defaults']['default']['#options']['relationship'] = $this->t('Relationship to :contact', [':contact' => wf_crm_contact_label(1, $data)]);
+      $form['defaults']['default_relationship_to'] = [
+        '#type' => 'select',
+        '#default_value' => $element_properties['default_relationship_to'],
+      ];
       $form['defaults']['default_relationship'] = [
         '#type' => 'select',
         '#multiple' => TRUE,
