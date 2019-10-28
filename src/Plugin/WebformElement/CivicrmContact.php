@@ -59,6 +59,7 @@ class CivicrmContact extends WebformElementBase {
         'private' => FALSE,
         'default' => '',
         'default_contact_id' => '',
+        'default_relationship_to' => '',
         'default_relationship' => '',
         'allow_url_autofill' => TRUE,
         'dupes_allowed' => FALSE,
@@ -147,7 +148,8 @@ class CivicrmContact extends WebformElementBase {
     $form = parent::form($form, $form_state);
     $form['element']['value']['#access'] = FALSE;
     $form['element']['multiple']['#access'] = FALSE;
-
+    $webform = $form_state->getFormObject()->getWebform();
+    $data = $webform->getHandler('webform_civicrm')->getConfiguration()['settings']['data'];
 
     \Drupal::getContainer()->get('civicrm')->initialize();
     $element_properties = $form_state->get('element_properties');
@@ -283,6 +285,10 @@ class CivicrmContact extends WebformElementBase {
     }
     elseif ($c > 1) {
       $form['defaults']['default']['#options']['relationship'] = $this->t('Relationship to :contact', [':contact' => wf_crm_contact_label(1, $data)]);
+      $form['defaults']['default_relationship_to'] = [
+        '#type' => 'select',
+        '#default_value' => $element_properties['default_relationship_to'],
+      ];
       $form['defaults']['default_relationship'] = [
         '#type' => 'select',
         '#multiple' => TRUE,
@@ -304,14 +310,13 @@ class CivicrmContact extends WebformElementBase {
       ],
     ];
     $cid = $element_properties['default_contact_id'];
-    if ($cid && $name = wf_crm_contact_access($element_properties,
-        ['check_permissions' => 1], $cid)) {
-          $form['defaults']['default_contact_id']['#default_value'] = $cid;
-          $form['defaults']['default_contact_id']['#attributes'] = [
-            'data-civicrm-name' => $name,
-            'data-civicrm-id' => $cid,
-          ];
-        }
+    if ($cid && $name = wf_crm_contact_access($element_properties, ['check_permissions' => 1], $cid)) {
+      $form['defaults']['default_contact_id']['#default_value'] = $cid;
+      $form['defaults']['default_contact_id']['#attributes'] = [
+        'data-civicrm-name' => $name,
+        'data-civicrm-id' => $cid,
+      ];
+    }
     $form['defaults']['allow_url_autofill'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Use contact id from URL'),
@@ -375,28 +380,26 @@ class CivicrmContact extends WebformElementBase {
         '#options' => ['' => '- ' . $this->t('None') . ' -'],
         '#default_value' => wf_crm_aval($element_properties['filters'], 'relationship:contact'),
       ];
-      $form['filters']['relationship']['type'] = [
+      $form['filters']['relationship']['types'] = [
         '#type' => 'select',
         '#multiple' => TRUE,
         '#title' => $this->t('Specify Relationship(s)'),
         '#options' => ['' => '- ' . $this->t('Any relation') . ' -'],
-        '#default_value' => wf_crm_aval($element_properties['filters'], 'relationship:type'),
+        '#default_value' => wf_crm_aval($element_properties['filters'], 'relationship:types'),
       ];
       // Fill relationship data for defaults and filters
-      /*
       $all_relationship_types = array_fill(1, $c - 1, array());
       for ($i = 1; $i < $c; ++$i) {
         $form['defaults']['default_relationship_to']['#options'][$i] = $form['filters']['relationship']['contact']['#options'][$i] = wf_crm_contact_label($i, $data, 'plain');
         $rtypes = wf_crm_get_contact_relationship_types($contact_type, $data['contact'][$i]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$i]['contact'][1]['contact_sub_type']);
         foreach ($rtypes as $k => $v) {
           $all_relationship_types[$i][] = ['key' => $k, 'value' => $v . ' ' . wf_crm_contact_label($i, $data, 'plain')];
-          $form['defaults']['default_relationship']['#options'][$k] = $form['filters']['relationship']['type']['#options'][$k] = $v . ' ' . wf_crm_contact_label($i, $data, 'plain');
+          $form['defaults']['default_relationship']['#options'][$k] = $form['filters']['relationship']['types']['#options'][$k] = $v . ' ' . wf_crm_contact_label($i, $data, 'plain');
         }
         if (!$rtypes) {
           $all_relationship_types[$i][] = ['key' => '', 'value' => '- ' . t('No relationship types defined for @a to @b', ['@a' => $contact_types[$contact_type], '@b' => $contact_types[$data['contact'][$i]['contact'][1]['contact_type']]]) . ' -'];
         }
       }
-      */
       $form['#attributes']['data-reltypes'] = json_encode($all_relationship_types);
     }
     $form['filters']['check_permissions'] = array(
