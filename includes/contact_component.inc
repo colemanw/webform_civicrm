@@ -267,12 +267,12 @@ function _webform_edit_civicrm_contact($component) {
       '#options' => array('' => '- ' . t('None') . ' -'),
       '#default_value' => wf_crm_aval($component['extra']['filters'], 'relationship:contact'),
     );
-    $form['filters']['relationship']['types'] = array(
+    $form['filters']['relationship']['filter_relationship_types'] = array(
       '#type' => 'select',
       '#multiple' => TRUE,
       '#title' => t('Specify Relationship(s)'),
       '#options' => array('' => '- ' . t('Any relation') . ' -'),
-      '#default_value' => wf_crm_aval($component['extra']['filters'], 'relationship:type'),
+      '#default_value' => wf_crm_aval($component['extra']['filters'], 'relationship:filter_relationship_types'),
     );
     // Fill relationship data for defaults and filters
     $all_relationship_types = array_fill(1, $c - 1, array());
@@ -281,7 +281,7 @@ function _webform_edit_civicrm_contact($component) {
       $rtypes = wf_crm_get_contact_relationship_types($contact_type, $data['contact'][$i]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$i]['contact'][1]['contact_sub_type']);
       foreach ($rtypes as $k => $v) {
         $all_relationship_types[$i][] = array('key' => $k, 'value' => $v . ' ' . wf_crm_contact_label($i, $data, 'plain'));
-        $form['defaults']['default_relationship']['#options'][$k] = $form['filters']['relationship']['types']['#options'][$k] = $v . ' ' . wf_crm_contact_label($i, $data, 'plain');
+        $form['defaults']['default_relationship']['#options'][$k] = $form['filters']['relationship']['filter_relationship_types']['#options'][$k] = $v . ' ' . wf_crm_contact_label($i, $data, 'plain');
       }
       if (!$rtypes) {
         $all_relationship_types[$i][] = array('key' => '', 'value' => '- ' . t('No relationship types defined for @a to @b', array('@a' => $contact_types[$contact_type], '@b' => $contact_types[$data['contact'][$i]['contact'][1]['contact_type']])) . ' -');
@@ -814,17 +814,28 @@ function wf_crm_search_filters($node, array $component) {
   $element_manager = \Drupal::service('plugin.manager.webform.element');
   $contact_element = $element_manager->getElementInstance($component);
   $params = ['is_deleted' => 0];
-  $params['contact_type'] = $contact_element->getElementProperty($component, 'contact_type');
-  $filters = $contact_element->getElementProperty($component, 'filters');
-  foreach ($filters as $key => $val) {
-    if (is_array($val)) {
-      $val = array_filter($val);
-    }
-    if (!empty($val)) {
-      if ($key === 'tag' || $key === 'group') {
-        $val = array_fill_keys($val, 1);
+  $contactFilters = [
+    'contact_type',
+    'contact_sub_type',
+    'tag',
+    'group',
+    'relationship' => [
+      'contact',
+      'types',
+    ],
+  ];
+  foreach ($contactFilters as $key => $filter) {
+    //Add Relationship filter
+    if ($key === 'relationship') {
+      foreach ($filter as $val) {
+        $filterVal = $contact_element->getElementProperty($component, "filter_relationship_{$val}");
+        if ($filterVal) {
+          $params['relationship'][$val] = $filterVal;
+        }
       }
-      $params[$key] = $val;
+    }
+    else {
+      $params[$filter] = $contact_element->getElementProperty($component, $filter);
     }
   }
   return $params;
