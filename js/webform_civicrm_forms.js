@@ -126,7 +126,7 @@ var wfCivi = (function ($, D, drupalSettings) {
   var stateProvinceCache = {};
 
   function getFormClass(webformId) {
-    return '.webform-submission-' + webformId.replace('_', '-') + '-form'
+    return '.webform-submission-' + webformId.replace(/_/g, '-') + '-form'
   }
 
   function resetFields(num, nid, clear, op, toHide, hideOrDisable, showEmpty, speed, defaults) {
