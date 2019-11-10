@@ -64,6 +64,11 @@ function webform_civicrm_menu() {
  * Implements hook_form_alter().
  */
 function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'webform_edit_form' && $form_state->getFormObject()->getEntity()->getHandlers()->has('webform_civicrm')) {
+    \Drupal::service('civicrm')->initialize();
+    \CRM_Core_Resources::singleton()->addCoreResources();
+  }
+
   /*
   // Alter back-end webform component edit forms
   if ($form_id == 'webform_component_edit_form') {

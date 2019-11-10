@@ -216,7 +216,7 @@ function wf_crm_get_contact_types() {
         $contact_types[strtolower($type['name'])] = $type['label'];
         continue;
       }
-      $sub_types[strtolower($data[$type['parent_id']]['name'])][$type['name']] = $type['label'];
+      $sub_types[strtolower($data[$type['parent_id']]['name'])][strtolower($type['name'])] = $type['label'];
     }
   }
   return array($contact_types, $sub_types);

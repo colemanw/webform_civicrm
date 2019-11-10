@@ -267,7 +267,7 @@ abstract class wf_crm_webform_base {
         case 'relationship':
           $to = $component['#default_relationship_to'];
           if (!empty($component['#default_relationship']) && !empty($this->ent['contact'][$to]['id'])) {
-            $found = wf_crm_find_relations($this->ent['contact'][$to]['id'], $component['default_relationship']);
+            $found = wf_crm_find_relations($this->ent['contact'][$to]['id'], $component['#default_relationship']);
           }
           break;
         case 'auto':

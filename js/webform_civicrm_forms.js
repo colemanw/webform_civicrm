@@ -126,7 +126,7 @@ var wfCivi = (function ($, D, drupalSettings) {
   var stateProvinceCache = {};
 
   function getFormClass(webformId) {
-    return '.webform-submission-' + webformId.replace('_', '-') + '-form'
+    return '.webform-submission-' + webformId.replace(/_/g, '-') + '-form'
   }
 
   function resetFields(num, nid, clear, op, toHide, hideOrDisable, showEmpty, speed, defaults) {
@@ -354,7 +354,7 @@ var wfCivi = (function ($, D, drupalSettings) {
   function getCids(nid) {
     var formClass = getFormClass(nid);
     var cids = $(formClass).data('civicrm-ids') || {};
-    $(formClass + ' .civicrm-enabled:input[name$="_contact_1_contact_existing]"]').each(function() {
+    $(formClass + ' .civicrm-enabled:input[name$="_contact_1_contact_existing"]').each(function() {
       var cid = $(this).val();
       if (cid) {
         var n = parseName($(this).attr('name')).split('_');
