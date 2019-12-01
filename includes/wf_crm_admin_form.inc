@@ -1738,7 +1738,7 @@ class wf_crm_admin_form {
             }
           }
           elseif ($field['type'] === 'hidden' && !empty($field['expose_list'])) {
-            $elements = $this->webform->getElementsDecoded();
+            $elements = $this->webform->getElementsDecodedAndFlattened();
             $component = $elements[$enabled[$key]];
             $component = WebformArrayHelper::removePrefix($component);
             $component['value'] = $val;
