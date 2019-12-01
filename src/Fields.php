@@ -659,21 +659,17 @@ class Fields implements FieldsInterface {
         $fields['contribution_installments'] = array(
           'name' => t('Number of Installments'),
           'type' => 'number',
-          'value' => '1',
-          'extra' => array(
-            'integer' => 1,
-            'min' => 0,
-          ),
+          'default_value' => '1',
+          'min' => '0',
+          'step' => '1',
           'set' => 'contributionRecur',
         );
         $fields['contribution_frequency_interval'] = array(
           'name' => t('Interval of Installments'),
           'type' => 'number',
-          'value' => '1',
-          'extra' => array(
-            'integer' => 1,
-            'min' => 1,
-          ),
+          'default_value' => '1',
+          'min' => '0',
+          'step' => '1',
           'set' => 'contributionRecur',
         );
       }
