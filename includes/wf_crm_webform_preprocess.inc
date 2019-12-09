@@ -560,7 +560,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
 
     $taxRates = CRM_Core_PseudoConstant::getTaxRates();
     foreach ($this->line_items as $item) {
-      $total += $item['line_total'];
+      $total = wf_crm_money_operations::add($total, $item['line_total']);
       // Sales Tax integration
       if (!empty($item['financial_type_id'])) {
         $itemTaxRate = isset($taxRates[$item['financial_type_id']]) ? $taxRates[$item['financial_type_id']] : NULL;
@@ -578,11 +578,12 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         }
 
         // Add calculation for financial type that contains tax
-        $item['tax_amount'] = ($itemTaxRate / 100) * $item['line_total'];
-        $total += $item['tax_amount'];
+        $item['tax_amount'] = wf_crm_money_operations::multiply(($itemTaxRate / 100), $item['line_total']);
+        $total = wf_crm_money_operations::add($total, $item['tax_amount']);
         $label = $item['label'] . ($item['qty'] > 1 ? " ({$item['qty']})" : '');
+        $lineTotalWithTax = wf_crm_money_operations::add($item['line_total'], $item['tax_amount']);
         $rows[] = array(
-          'data' => array($label, CRM_Utils_Money::format($item['line_total'] + $item['tax_amount'])),
+          'data' => array($label, CRM_Utils_Money::format($lineTotalWithTax)),
           'class' => array($item['element'], 'line-item'),
           'data-amount' => $item['line_total'] + $item['tax_amount'],
           'data-tax' => (float)$itemTaxRate,

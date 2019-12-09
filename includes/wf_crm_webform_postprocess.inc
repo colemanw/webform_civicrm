@@ -1627,16 +1627,18 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
 
       if (!is_null($itemTaxRate)) {
-        $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
-        $item['tax_amount'] = ($itemTaxRate / 100) * $item['line_total'];
-        $this->totalContribution += ($item['unit_price'] * (int) $item['qty']) + $item['tax_amount'];
+        $item['line_total'] = wf_crm_money_operations::multiply($item['unit_price'], (int) $item['qty']);
+        $item['tax_amount'] = wf_crm_money_operations::multiply(($itemTaxRate / 100), $item['line_total']);
+
+        $lineItemTotalAmount = wf_crm_money_operations::add($item['line_total'], $item['tax_amount']);
+        $this->totalContribution = wf_crm_money_operations::add($this->totalContribution, $lineItemTotalAmount);
       }
       else {
-        $item['line_total'] = $item['unit_price'] * (int) $item['qty'];
-        $this->totalContribution += $item['line_total'];
+        $item['line_total'] = wf_crm_money_operations::multiply($item['unit_price'], (int) $item['qty']);
+        $this->totalContribution = wf_crm_money_operations::add($this->totalContribution, $item['line_total']);
       }
     }
-    return round($this->totalContribution, 2);
+    return wf_crm_money_operations::round($this->totalContribution);
   }
 
   /**
@@ -1820,19 +1822,21 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $numInstallments = wf_crm_aval($contributionParams, 'installments', NULL, TRUE);
     // if ($installments === 0) or $installments is not defined we treat as an open-ended recur
     $contributionFirstAmount = $contributionRecurAmount = $contributionParams['total_amount'];
-    $salesTaxFirstAmount = wf_crm_aval($contributionParams, 'tax_amount', NULL, TRUE);;
+    $salesTaxFirstAmount = wf_crm_aval($contributionParams, 'tax_amount', NULL, TRUE);
     if ($numInstallments > 0) {
-      // DRU-2862396 - we must ensure to only present 2 decimals to CiviCRM:
-      $contributionRecurAmount = floor(($contributionParams['total_amount'] / $numInstallments) * 100) / 100;
-      $contributionFirstAmount = $contributionParams['total_amount'] - $contributionRecurAmount * ($numInstallments - 1);
-      $salesTaxFirstAmount = $salesTaxFirstAmount - floor(($salesTaxFirstAmount / $numInstallments) * 100) / 100 * ($numInstallments - 1);
+      $contributionRecurAmount = wf_crm_money_operations::divide($contributionParams['total_amount'], $numInstallments);
+      $contributionFirstAmount = $contributionRecurAmount;
+      $salesTaxFirstAmount = wf_crm_money_operations::divide($salesTaxFirstAmount, $numInstallments);
 
       // Calculate the line_items for the first contribution:
       // At this point line_items are set to the full (non-installment) amounts.
       foreach ($this->line_items as $key => $k) {
-        $this->line_items[$key]['unit_price'] = $k['unit_price'] / $numInstallments;
-        $this->line_items[$key]['line_total'] = $k['line_total'] / $numInstallments;
-        $this->line_items[$key]['tax_amount'] = $k['tax_amount'] / $numInstallments;
+        $this->line_items[$key]['unit_price'] = wf_crm_money_operations::divide($k['unit_price'], $numInstallments);
+        $this->line_items[$key]['line_total'] = wf_crm_money_operations::divide($k['line_total'], $numInstallments);
+
+        if (!empty($k['tax_amount'])) {
+          $this->line_items[$key]['tax_amount'] = wf_crm_money_operations::divide($k['tax_amount'], $numInstallments);
+        }
       }
     }
 
@@ -2032,7 +2036,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['currency'] = $params['currencyID'] = $this->contribution_page['currency'];
     $params['skipRecentView'] = $params['skipLineItem'] = 1;
     $params['contact_id'] = $this->ent['contact'][1]['id'];
-    $params['total_amount'] = round($this->totalContribution, 2);
+    $params['total_amount'] = wf_crm_money_operations::round($this->totalContribution);
 
     // Most payment processors expect this (normally be set by contribution page processConfirm)
     $params['contactID'] = $params['contact_id'];
@@ -2047,10 +2051,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     if (isset($this->form_state['civicrm']['line_items'])) {
       foreach ($this->form_state['civicrm']['line_items'] as $lineItem) {
         if (!empty($lineItem['tax_amount'])) {
-          $params['tax_amount'] += $lineItem['tax_amount'];
+          $params['tax_amount'] = wf_crm_money_operations::add($params['tax_amount'], $lineItem['tax_amount']);
         }
       }
-      $params['tax_amount'] = round($params['tax_amount'], 2);
+      $params['tax_amount'] = wf_crm_money_operations::round($params['tax_amount']);
     }
     $params['description'] = t('Webform Payment: @title', array('@title' => $this->node->title));
     if (!isset($params['source'])) {

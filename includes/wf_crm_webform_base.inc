@@ -6,6 +6,7 @@
  */
 
 module_load_include('inc', 'webform_civicrm', 'includes/utils');
+module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_money_operations');
 
 /**
  * Class wf_crm_webform_base
