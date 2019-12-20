@@ -8,6 +8,7 @@
  */
 
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\webform\Entity\WebformSubmission;
 use Drupal\webform_civicrm\Utils;
 
 /**
@@ -499,10 +500,53 @@ function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = N
       ->condition('contact_id', '%-' . $old_id . '-%', 'LIKE')
       ->execute();
     // Update contact reference field data
-    db_query("UPDATE {webform_submitted_data} d, {webform_component} c SET d.data = :new
-      WHERE d.data = :old AND d.cid = c.cid AND d.nid = c.nid AND c.type = 'civicrm_contact'",
-      array(':new' => $new_id, ':old' => $old_id)
-    );
+    $webforms = \Drupal\webform\Entity\Webform::loadMultiple();
+    foreach ($webforms as $webform) {
+      $elements = $webform->getElementsInitializedAndFlattened();
+      foreach ($elements as $key => $value) {
+        $handler_collection = $webform->getHandlers('webform_civicrm');
+        if (!$handler_collection->has('webform_civicrm')) {
+          continue;
+        }
+        $submissions = \Drupal::entityTypeManager()
+            ->getListBuilder('webform_submission')
+            ->getStorage()
+            ->loadByProperties([
+                'webform_id' => $webform->id(),
+            ]);
+        foreach ($submissions as $submission) {
+          $sid = $submission->get('sid')->value;
+          //Load submission and update old contact id with the new id.
+          /** @var Drupal\webform\Entity\WebformSubmission $submission */
+          $submission = \Drupal\webform\Entity\WebformSubmission::load($sid);
+          $suid = $submission->getOwnerId();
+
+          \Drupal::service('civicrm')->initialize();
+          try {
+            $old_user = civicrm_api3('User', 'getsingle', [
+                'contact_id' => $old_id,
+            ]);
+            $new_user = civicrm_api3('User', 'getsingle', [
+                'contact_id' => $new_id,
+            ]);
+            if (!empty($old_user) && !empty($new_user)) {
+              $old_uid = $old_user['id'];
+              $new_uid = $new_user['id'];
+
+              if ($suid == $old_uid) {
+                //Set $submission->summited_by to the new user id
+                $submission->setOwnerId($new_uid);
+                $submission->save();
+              }
+            }
+          }
+          catch (CiviCRM_API3_Exception $e) {
+            $errorMessage = $e->getMessage();
+            \Drupal::logger('webform_civicrm')->error($errorMessage);
+          }
+        }
+      }
+    }
   }
 }
 
