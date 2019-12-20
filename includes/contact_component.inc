@@ -253,7 +253,7 @@ function _webform_edit_civicrm_contact($component) {
       '#parents' => array('extra', 'default_custom_ref'),
     );
   }
-  
+
   $case_count = isset($data['case']['number_of_case']) ? $data['case']['number_of_case'] : 0;
   if ($case_count > 0) {
     $form['defaults']['default']['#options']['case_roles'] = t('Case roles');
@@ -918,8 +918,8 @@ function wf_crm_find_relations($cid, $types = array(), $current = TRUE) {
     }
     $params = [
       'return' => ['contact_id_a', 'contact_id_b', 'relationship_type_id', 'end_date'],
-      'contact_id_a' => 'user_contact_id',
-      'contact_id_b' => 'user_contact_id',
+      'contact_id_a' => $cid,
+      'contact_id_b' => $cid,
       'options' => ['or' => [['contact_id_a', 'contact_id_b']]],
     ];
     if ($type_ids) {
