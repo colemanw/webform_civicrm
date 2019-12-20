@@ -134,7 +134,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
             }
           }
           // Populate related contacts
-          elseif ($c == 1 && $i > $c && $field == 'existing') {
+          elseif ($i > $c && $field == 'existing') {
             $related_component = $this->getComponent($fid);
             if (wf_crm_aval($related_component['extra'], 'default') == 'relationship') {
               $old_related_cid = wf_crm_aval($this->ent, "contact:$i:id");
