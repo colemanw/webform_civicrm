@@ -2357,7 +2357,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $val = $sum;
         }
         else {
-          $val = isset($val[0]) ? $val[0] : '';
+          $val = is_array($val) ? reset($val) : $val;
         }
         if ($component['type'] == 'autocomplete' && is_string($val) && strlen($val)) {
           $options = wf_crm_field_options($component, '', $this->data);
