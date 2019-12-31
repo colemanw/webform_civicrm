@@ -516,7 +516,7 @@ function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = N
             ]);
         foreach ($submissions as $submission) {
           $sid = $submission->get('sid')->value;
-          //Load submission and update old contact id with the new id.
+          //Update old Drupal User ID with new Drupal User ID
           /** @var Drupal\webform\Entity\WebformSubmission $submission */
           $submission = \Drupal\webform\Entity\WebformSubmission::load($sid);
           $suid = $submission->getOwnerId();
@@ -534,7 +534,6 @@ function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = N
               $new_uid = $new_user['id'];
 
               if ($suid == $old_uid) {
-                //Set $submission->summited_by to the new user id
                 $submission->setOwnerId($new_uid);
                 $submission->save();
               }
