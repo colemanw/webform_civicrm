@@ -769,7 +769,10 @@ abstract class wf_crm_webform_base {
         $result = CRM_Core_BAO_CustomValueTable::setValues($single_param);
         if (!empty($result['is_error'])) {
           $file = explode('/', $bt[0]['file']);
-          watchdog('webform_civicrm', 'The CiviCRM "CustomValueTable::setValues" function returned the error: "%msg" when called by line !line of !file with the following parameters: "!params"', array('%msg' => $result['error_message'], '!line' => $bt[0]['line'], '!file' => array_pop($file), '!params' => print_r($single_param, TRUE)), WATCHDOG_ERROR);
+          \Drupal::logger('webform_civicrm')->error(
+            'The CiviCRM "CustomValueTable::setValues" function returned the error: "%msg" when called by line !line of !file with the following parameters: "!params"',
+            ['%msg' => $result['error_message'], '!line' => $bt[0]['line'], '!file' => array_pop($file), '!params' => print_r($single_param, TRUE)]
+          );
         }
       }
     }
