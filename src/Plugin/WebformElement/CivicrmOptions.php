@@ -133,6 +133,7 @@ class CivicrmOptions extends WebformElementBase {
    * {@inheritdoc}
    */
   public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
+    \Drupal::service('civicrm')->initialize();
     $as_list = !empty($element['#extra']['aslist']);
     $is_multiple = !empty($element['#extra']['multiple']);
     $use_live_options = !empty($element['#civicrm_live_options']);
