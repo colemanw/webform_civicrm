@@ -82,6 +82,7 @@ class CivicrmContact extends WebformElementBase {
    * @see _webform_render_civicrm_contact()
    */
   public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
+    \Drupal::service('civicrm')->initialize();
     // Webform removes values which equal their defaults but does not populate
     // they keys.
     $ensure_keys_have_values = [

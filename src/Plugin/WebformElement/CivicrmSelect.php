@@ -49,6 +49,7 @@ class CivicrmSelect extends WebformElementBase {
    * {@inheritdoc}
    */
   public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
+    \Drupal::service('civicrm')->initialize();
     parent::prepare($element, $webform_submission);
     if (empty($element['#options'])) {
       $element['#options'] = $this->getFieldOptions($element);
