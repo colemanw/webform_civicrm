@@ -492,7 +492,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $this->existing_contacts[$c] = $this->crmValues[$fid];
         }
         // Or else see if enough info was entered to create a contact - use 0 as a placeholder for unknown cid
-        elseif (wf_crm_name_field_exists($this->crmValues, $c, $contact['contact'][1]['contact_type'])) {
+        elseif (wf_crm_name_field_exists($this->crmValues, $c, $contact['contact'][1]['contact_type'], $this->node)) {
           $this->existing_contacts[$c] = 0;
         }
       }

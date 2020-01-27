@@ -73,7 +73,7 @@ function _webform_edit_civicrm_contact($component) {
   $enabled = wf_crm_enabled_fields($node);
   list(, $c, ) = explode('_', $component['form_key'], 3);
   $contact_type = $data['contact'][$c]['contact'][1]['contact_type'];
-  wf_crm_update_existing_component($component, $enabled, $data);
+  wf_crm_update_existing_component($component, $enabled, $data, $node);
   $allow_create = $component['extra']['allow_create'];
 
   // Load scripts & css
@@ -860,12 +860,13 @@ function wf_crm_contact_fields($node, $con) {
  *   Array of enabled fields
  * @param $data
  *   Array of crm entity data
+ * @param stdClass $node
  */
-function wf_crm_update_existing_component(&$component, $enabled, $data) {
+function wf_crm_update_existing_component(&$component, $enabled, $data, $node) {
   list(, $c, ) = explode('_', $component['form_key'], 3);
   if (!empty($data['contact'][$c])) {
     $contact_type = $data['contact'][$c]['contact'][1]['contact_type'];
-    $allow_create = wf_crm_name_field_exists($enabled, $c, $contact_type);
+    $allow_create = wf_crm_name_field_exists($enabled, $c, $contact_type, $node);
     if ($allow_create != $component['extra']['allow_create']) {
       $component['extra']['none_prompt'] = $allow_create ? t('+ Create new +') : t('- None Found -');
       $component['extra']['allow_create'] = $allow_create;
