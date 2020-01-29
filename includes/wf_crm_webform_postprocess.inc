@@ -2077,7 +2077,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
     }
 
-    if (empty($params['payment_instrument_id'])) {
+    if (empty($params['payment_instrument_id']) && !empty($params['payment_processor_id'])) {
       $params['payment_instrument_id'] = $this->getPaymentInstrument($params['payment_processor_id']);
     }
 
