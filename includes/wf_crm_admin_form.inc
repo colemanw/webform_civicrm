@@ -1683,7 +1683,7 @@ class wf_crm_admin_form {
                   'form_key' => $key,
                   'weight' => $i,
                 );
-                self::insertComponent($field, $enabled, $this->settings, $this->isNewFieldset($key));
+                self::insertComponent($field, $enabled, $this->settings, $this->node, $this->isNewFieldset($key));
                 $created[] = $field['name'];
                 if (isset($field['civicrm_condition'])) {
                   $this->addConditionalRule($field, $enabled);
@@ -1737,7 +1737,7 @@ class wf_crm_admin_form {
       // Update existing contact fields
       foreach ($existing as $fid => $id) {
         if (substr($fid, -8) === 'existing') {
-          wf_crm_update_existing_component($this->node->webform['components'][$id], $enabled, $this->data);
+          wf_crm_update_existing_component($this->node->webform['components'][$id], $enabled, $this->data, $this->node);
         }
       }
     }
@@ -1842,9 +1842,10 @@ class wf_crm_admin_form {
    *   Array of enabled fields (reference)
    * @param $settings
    *   webform_civicrm configuration for this form
+   * @param stdClass $node
    * @param bool $create_fieldsets
    */
-  public static function insertComponent(&$field, &$enabled, $settings, $create_fieldsets = FALSE) {
+  public static function insertComponent(&$field, &$enabled, $settings, $node, $create_fieldsets = FALSE) {
     $options = NULL;
     list(, $c, $ent, $n, $table, $name) = explode('_', $field['form_key'], 6);
     $contact_type = wf_crm_aval($settings['data']['contact'], "$c:contact:1:contact_type");
@@ -1871,7 +1872,7 @@ class wf_crm_admin_form {
     if ($name == 'existing') {
       $vals = $enabled + $settings;
       // Set the allow_create flag based on presence of name or email fields
-      $field['extra']['allow_create'] = $a = wf_crm_name_field_exists($vals, $c, $contact_type);
+      $field['extra']['allow_create'] = $a = wf_crm_name_field_exists($vals, $c, $contact_type, $node);
       $field['extra']['none_prompt'] = $a ? t('+ Create new +') : t('- None Found -');
       if ($c == 1 && $contact_type == 'individual') {
         // Default to hidden field for 1st contact
@@ -2127,7 +2128,7 @@ class wf_crm_admin_form {
               $custom_types = wf_crm_custom_types_map_array();
               $new['type'] = $custom_types[$fieldConfigs['html_type']]['type'];
             }
-            wf_crm_admin_form::insertComponent($new, $enabled, $node->webform_civicrm);
+            wf_crm_admin_form::insertComponent($new, $enabled, $node->webform_civicrm, $node);
           }
         }
       }

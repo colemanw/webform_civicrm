@@ -1705,7 +1705,7 @@ function wf_crm_apivalues($entity, $operation, $params = array(), $value = NULL)
 }
 
 /**
- * Check if a name or email field exists for this contact.
+ * Check if a (non-disabled) name or email field exists for this contact.
  * This determines whether a new contact can be created on the webform.
  *
  * @param $enabled
@@ -1714,12 +1714,13 @@ function wf_crm_apivalues($entity, $operation, $params = array(), $value = NULL)
  *   Contact #
  * @param $contact_type
  *   Contact type
+ * @param stdClass $node
  * @return int
  */
-function wf_crm_name_field_exists($enabled, $c, $contact_type) {
+function wf_crm_name_field_exists($enabled, $c, $contact_type, $node) {
   foreach (wf_crm_required_contact_fields($contact_type) as $f) {
     $fid = 'civicrm_' . $c . '_contact_1_' . $f['table'] . '_' . $f['name'];
-    if (!empty($enabled[$fid])) {
+    if (!empty($enabled[$fid]) && empty($node->webform['components'][$enabled[$fid]]['extra']['disabled'])) {
       return 1;
     }
   }
