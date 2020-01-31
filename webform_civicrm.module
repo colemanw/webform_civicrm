@@ -496,18 +496,19 @@ function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = N
   if (!empty($new_id) && !empty($old_id) && $type == 'sqls') {
     // Update civicrm submissions table
     db_update('webform_civicrm_submissions')
-      ->expression('contact_id', 'REPLACE(contact_id, :old, :new)', array(':old' => '-' . $old_id . '-', ':new' => '-' . $new_id . '-'))
-      ->condition('contact_id', '%-' . $old_id . '-%', 'LIKE')
-      ->execute();
+        ->expression('contact_id', 'REPLACE(contact_id, :old, :new)', array(':old' => '-' . $old_id . '-', ':new' => '-' . $new_id . '-'))
+        ->condition('contact_id', '%-' . $old_id . '-%', 'LIKE')
+        ->execute();
+    \Drupal::service('civicrm')->initialize();
     // Update contact reference field data
     $webforms = \Drupal\webform\Entity\Webform::loadMultiple();
     foreach ($webforms as $webform) {
+      $handler_collection = $webform->getHandlers('webform_civicrm');
+      if (!$handler_collection->has('webform_civicrm')) {
+        continue;
+      }
       $elements = $webform->getElementsInitializedAndFlattened();
       foreach ($elements as $key => $value) {
-        $handler_collection = $webform->getHandlers('webform_civicrm');
-        if (!$handler_collection->has('webform_civicrm')) {
-          continue;
-        }
         $submissions = \Drupal::entityTypeManager()
             ->getListBuilder('webform_submission')
             ->getStorage()
@@ -515,13 +516,11 @@ function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = N
                 'webform_id' => $webform->id(),
             ]);
         foreach ($submissions as $submission) {
-          $sid = $submission->get('sid')->value;
+          $sid = $submission->id();
           //Update old Drupal User ID with new Drupal User ID
           /** @var Drupal\webform\Entity\WebformSubmission $submission */
-          $submission = \Drupal\webform\Entity\WebformSubmission::load($sid);
           $suid = $submission->getOwnerId();
 
-          \Drupal::service('civicrm')->initialize();
           try {
             $old_user = civicrm_api3('User', 'getsingle', [
                 'contact_id' => $old_id,
