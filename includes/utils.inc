@@ -1739,7 +1739,6 @@ function wf_crm_required_contact_fields($contact_type) {
       array('table' => 'email', 'name' => 'email'),
       array('table' => 'contact', 'name' => 'first_name'),
       array('table' => 'contact', 'name' => 'last_name'),
-      array('table' => 'contact', 'name' => 'nick_name'),
     );
   }
   return array(array('table' => 'contact', 'name' => $contact_type . '_name'));
