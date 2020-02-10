@@ -1820,19 +1820,31 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $numInstallments = wf_crm_aval($contributionParams, 'installments', NULL, TRUE);
     // if ($installments === 0) or $installments is not defined we treat as an open-ended recur
     $contributionFirstAmount = $contributionRecurAmount = $contributionParams['total_amount'];
-    $salesTaxFirstAmount = wf_crm_aval($contributionParams, 'tax_amount', NULL, TRUE);;
+    $salesTaxFirstAmount = wf_crm_aval($contributionParams, 'tax_amount', NULL, TRUE);
+    $nondeductibleamountFirstAmount = wf_crm_aval($contributionParams, 'non_deductible_amount', NULL, TRUE);
+
     if ($numInstallments > 0) {
-      // DRU-2862396 - we must ensure to only present 2 decimals to CiviCRM:
-      $contributionRecurAmount = floor(($contributionParams['total_amount'] / $numInstallments) * 100) / 100;
-      $contributionFirstAmount = $contributionParams['total_amount'] - $contributionRecurAmount * ($numInstallments - 1);
-      $salesTaxFirstAmount = $salesTaxFirstAmount - floor(($salesTaxFirstAmount / $numInstallments) * 100) / 100 * ($numInstallments - 1);
+      // DRU-2862396 - we must ensure to only present 2 decimals to CiviCRM;
+      // CiviCRM recurring contribution amount must be pre Sales Tax
+      $contributionAmountPreSalesTax = $contributionParams['total_amount'] - $contributionParams['tax_amount'];
+      $contributionRecurAmount = floor(($contributionAmountPreSalesTax / $numInstallments) * 100) / 100;
+      $contributionFirstAmountPreSalesTax = round($contributionAmountPreSalesTax - $contributionRecurAmount * ($numInstallments - 1), 2);
+      $salesTaxRate = $contributionParams['tax_amount'] / ($contributionParams['total_amount'] - $contributionParams['tax_amount']);
+      $salesTaxFirstAmount = round($contributionFirstAmountPreSalesTax * $salesTaxRate, 2);
+      $contributionFirstAmount = $contributionFirstAmountPreSalesTax + $salesTaxFirstAmount;
+
+      if ($nondeductibleamountFirstAmount > 0) {
+        $nondeductibleamountFirstAmount = $contributionFirstAmount;
+      }
 
       // Calculate the line_items for the first contribution:
       // At this point line_items are set to the full (non-installment) amounts.
       foreach ($this->line_items as $key => $k) {
         $this->line_items[$key]['unit_price'] = $k['unit_price'] / $numInstallments;
         $this->line_items[$key]['line_total'] = $k['line_total'] / $numInstallments;
-        $this->line_items[$key]['tax_amount'] = $k['tax_amount'] / $numInstallments;
+        if (isset($this->line_items[$key]['tax_amount'])) {
+          $this->line_items[$key]['tax_amount'] = $k['tax_amount'] / $numInstallments;
+        }
       }
     }
 
@@ -1859,6 +1871,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Run the Transaction - and Create the Contribution Record - relay Recurring Series information in addition to the already existing Params [and re-key where needed]; at times two keys are required
     $contributionParams['total_amount'] = $contributionFirstAmount;
     $contributionParams['tax_amount'] = $salesTaxFirstAmount;
+    $contributionParams['non_deductible_amount'] = $nondeductibleamountFirstAmount;
     $additionalParams = array(
       'contribution_recur_id' => $resultRecur['id'],
       'contributionRecurID' => $resultRecur['id'],
