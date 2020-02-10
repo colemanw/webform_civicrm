@@ -816,6 +816,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                 'id' => wf_crm_aval($existing, "$i:id"),
                 'mc' => $params['master_id'],
                 'loc' => $params['location_type_id'],
+                'pri' => $params['location_type_id'] == $is_primary_address_location_type,
               );
               continue;
             }
@@ -1251,7 +1252,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             $params['master_id'] = $params['id'];
             $params['id'] = $addr['id'];
             $params['contact_id'] = $cid;
-            $params['is_primary'] = $i == 1;
+            $params['is_primary'] = $addr['pri'];
             wf_civicrm_api('address', 'create', $params);
           }
         }
