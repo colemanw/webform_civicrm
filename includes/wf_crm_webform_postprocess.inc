@@ -1717,7 +1717,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         break;
       }
     }
-    if (empty($params['email'])) {
+    if (empty($params['email']) AND !$processor->supports('NoEmailProvided')) {
       form_set_error('billing_email', ts('An email address is required to complete this transaction.'));
       $valid = FALSE;
     }
