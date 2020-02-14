@@ -8,6 +8,7 @@
  */
 
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\webform\Entity\WebformSubmission;
 use Drupal\webform_civicrm\Utils;
 
 /**
@@ -493,16 +494,18 @@ function webform_civicrm_civicrm_buildForm($formName, $form) {
  */
 function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = NULL, $tables = NULL) {
   if (!empty($new_id) && !empty($old_id) && $type == 'sqls') {
-    // Update civicrm submissions table
-    db_update('webform_civicrm_submissions')
-      ->expression('contact_id', 'REPLACE(contact_id, :old, :new)', array(':old' => '-' . $old_id . '-', ':new' => '-' . $new_id . '-'))
-      ->condition('contact_id', '%-' . $old_id . '-%', 'LIKE')
-      ->execute();
-    // Update contact reference field data
-    db_query("UPDATE {webform_submitted_data} d, {webform_component} c SET d.data = :new
-      WHERE d.data = :old AND d.cid = c.cid AND d.nid = c.nid AND c.type = 'civicrm_contact'",
-      array(':new' => $new_id, ':old' => $old_id)
-    );
+    $connection = \Drupal::database();
+    
+    $connection->update('webform_civicrm_submissions')
+        ->expression('contact_id', 'REPLACE(contact_id, :old, :new)', array(':old' => '-' . $old_id . '-', ':new' => '-' . $new_id . '-'))
+        ->condition('contact_id', '%-' . $old_id . '-%', 'LIKE')
+        ->execute();
+
+    $connection->update('webform_submission_data')
+        ->expression('value', ':new_cid', array(':new_cid' => $new_id))
+        ->condition('value', $old_id)
+        ->condition('name', '%contact_id', 'LIKE')
+        ->execute();
   }
 }
 
