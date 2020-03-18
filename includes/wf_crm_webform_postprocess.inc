@@ -5,6 +5,7 @@
  * Front-end form validation and post-processing.
  */
 
+use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
@@ -985,7 +986,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         if ($data_type == 'group' && isset($mailing_lists[$a]) && !empty($email)) {
           $result = wf_civicrm_api('mailing_event_subscribe', 'create', $mailer_params);
           if (empty($result['is_error'])) {
-            $confirmations_sent[] = check_plain($mailing_lists[$a]);
+            $confirmations_sent[] = Html::escape($mailing_lists[$a]);
           }
           else {
             wf_civicrm_api($api, 'create', $params);
@@ -1306,7 +1307,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             $params['status_id'] = current(array_keys($options));
           }
           if (empty($params['subject'])) {
-            $params['subject'] = check_plain($this->node->title);
+            $params['subject'] = Html::escape($this->node->title);
           }
           // Automatic creator_id - default to current user or contact 1
           if (empty($data['case'][1]['creator_id'])) {
