@@ -481,7 +481,7 @@ function theme_display_civicrm_contact($variables) {
  * Implements _webform_table_component().
  */
 function _webform_table_civicrm_contact($component, $value) {
-  return empty($value[0]) ? '' : check_plain(wf_crm_display_name($value[0]));
+  return empty($value[0]) ? '' : Html::escape(wf_crm_display_name($value[0]));
 }
 
 /**
