@@ -199,7 +199,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       $this->addPaymentJs();
       $this->form['#attached']['library'][] = 'webform_civicrm/payment';
       $currency = $this->contribution_page['currency'];
-      $contributionCallbackQuery = ['currency' => $currency, 'snippet' => 4];
+      $contributionCallbackQuery = ['currency' => $currency, 'snippet' => 4, 'is_drupal_webform' => 1];
       $contributionCallbackUrl = 'base://civicrm/payment/form';
       $js_vars['processor_id_key'] = 'processor_id';
       if (!empty($this->data['contribution'][1]['contribution'][1]['is_test'])) {
