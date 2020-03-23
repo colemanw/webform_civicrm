@@ -2082,7 +2082,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $params['payment_instrument_id'] = $this->getPaymentInstrument($params['payment_processor_id']);
     }
 
-    // doPayment requries payment_processor and payment_processor_mode fields.
+    // doPayment requires payment_processor and payment_processor_mode fields.
     $params['payment_processor'] = wf_crm_aval($params, 'payment_processor_id');
 
     if (!empty($params['credit_card_number'])) {

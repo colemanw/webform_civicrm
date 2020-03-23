@@ -45,6 +45,7 @@ abstract class wf_crm_webform_base {
   function __get($name) {
     switch ($name) {
       case 'payment_processor':
+        $this->fixPaymentProcessorID();
         $payment_processor_id = wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id');
         if ($payment_processor_id && !$this->_payment_processor) {
           $this->_payment_processor = wf_civicrm_api('payment_processor', 'getsingle', array('id' => $payment_processor_id));
