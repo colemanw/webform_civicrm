@@ -74,6 +74,14 @@ class CivicrmOptions extends WebformElementBase {
       '#default_value' => $element_properties['extra']['aslist'],
       '#parents' => ['properties', 'extra', 'aslist'],
     ];
+    $form['extra']['multiple'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Multiple'),
+      '#description' => $this->t('Check this option if multiple options can be selected for the input field.'),
+      '#access' => TRUE,
+      '#default_value' => $element_properties['extra']['multiple'],
+      '#parents' => ['properties', 'extra', 'multiple'],
+    ];
 
     // Options.
     $form['options'] = [
@@ -82,6 +90,12 @@ class CivicrmOptions extends WebformElementBase {
       '#open' => TRUE,
       '#prefix' => '<div id="webform-civicrm-options-wrapper">',
       '#suffix' => '</div>',
+    ];
+    $form['options']['empty_option'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Empty option label'),
+      '#description' => $this->t('The label to show for the initial option denoting no selection in a select element.'),
+      '#default_value' => $element_properties['empty_option'],
     ];
 
     if ($element_properties['civicrm_live_options']) {
