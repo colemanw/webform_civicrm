@@ -1,7 +1,7 @@
 (function ($, D, drupalSettings) {
   D.behaviors.webform_civicrm_contact = {
     attach: function (context) {
-      $('[data-civicrm-contact]', context).each(function (i, el) {
+      $('[data-civicrm-contact]', context).once('webform_civicrm_contact').each(function (i, el) {
         var toHide = []
         var field = $(el)
         var autocompleteUrl = D.url('webform-civicrm/js/' + field.data('form-id') + '/' + field.data('civicrm-field-key'));
