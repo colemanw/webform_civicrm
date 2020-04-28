@@ -1996,8 +1996,8 @@ class wf_crm_admin_form {
       $field['value'] = $settings[$field['form_key']];
     }
     // Create fieldsets for multivalued entities
-    if ($ent !== 'contribution' &&
-      ($ent !== 'participant' || wf_crm_aval($settings['data'], 'participant_reg_type') === 'separate')
+    if (empty($enabled[$field['form_key']]) && ($ent !== 'contribution' &&
+      ($ent !== 'participant' || wf_crm_aval($settings['data'], 'participant_reg_type') === 'separate'))
     ) {
        $fieldset_key = self::addFieldset($c, $field, $enabled, $settings, $ent, $create_fieldsets);
        $field['parent'] = $fieldset_key;
