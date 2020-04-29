@@ -1,5 +1,7 @@
 <?php
 
+use Drupal\Core\Session\AnonymousUserSession;
+use Drupal\webform\Entity\Webform;
 use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
@@ -1222,7 +1224,7 @@ class wf_crm_admin_form {
 
     /** @var \Drupal\webform\WebformAccessRulesManagerInterface $access_rules_manager */
     $access_rules_manager = \Drupal::service('webform.access_rules_manager');
-    $anonymous_access = $access_rules_manager->checkWebformAccess('create', new \Drupal\Core\Session\AnonymousUserSession(), $webform);
+    $anonymous_access = $access_rules_manager->checkWebformAccess('create', new AnonymousUserSession(), $webform);
     // If anonymous users don't have access to the form, no need for a warning.
     if (!$anonymous_access->isAllowed()) {
       return;
@@ -1242,12 +1244,12 @@ class wf_crm_admin_form {
           ->fields(array('submit_limit' => $submit_limit, 'submit_interval' => $submit_interval))
           ->execute();
       }
-      drupal_set_message(t('Per-user submission limit has been updated. You may revisit these options any time on the <em>Form Settings</em> tab of this webform.'));
+      \Drupal::messenger()->addStatus(t('Per-user submission limit has been updated. You may revisit these options any time on the <em>Form Settings</em> tab of this webform.'));
     }
     // Handle ajax submission from "webform_tracking_mode" mini-form below
     if (!empty($_POST['webform_tracking_mode']) && $_POST['webform_tracking_mode'] == 'strict') {
       variable_set('webform_tracking_mode', 'strict');
-      drupal_set_message(t('Webform anonymous user tracking has been updated to use the strict method. You may revisit this option any time on the global <a :link>Webform Settings</a> page.',
+      \Drupal::messenger()->addStatus(t('Webform anonymous user tracking has been updated to use the strict method. You may revisit this option any time on the global <a :link>Webform Settings</a> page.',
         array(':link' => 'href="/admin/config/content/webform" target="_blank"')
       ));
     }
@@ -1653,14 +1655,14 @@ class wf_crm_admin_form {
       }
       if ($deleted == 1) {
         $p = array('%name' => $field['#title']);
-        drupal_set_message($button === 'edit-delete' ? t('Deleted field: %name', $p) : t('Disabled field: %name', $p));
+        \Drupal::messenger()->addStatus($button === 'edit-delete' ? t('Deleted field: %name', $p) : t('Disabled field: %name', $p));
       }
       else {
         $p = array(':num' => $deleted);
-        drupal_set_message($button === 'edit-delete' ? t('Deleted :num fields.', $p) : t('Disabled :num fields.', $p));
+        \Drupal::messenger()->addStatus($button === 'edit-delete' ? t('Deleted :num fields.', $p) : t('Disabled :num fields.', $p));
       }
       if ($button === 'edit-disable') {
-        drupal_set_message(t('Disabled fields will still be processed as normal Webform fields, but they will not be autofilled from or saved to the CiviCRM database.'));
+        \Drupal::messenger()->addStatus(t('Disabled fields will still be processed as normal Webform fields, but they will not be autofilled from or saved to the CiviCRM database.'));
       }
       else {
         // Remove empty fieldsets for deleted contacts
@@ -1707,7 +1709,7 @@ class wf_crm_admin_form {
               if (isset($disabled[$key])) {
                 webform_component_update($disabled[$key]);
                 $enabled[$key] = $disabled[$key]['cid'];
-                drupal_set_message(t('Re-enabled field: %name', array('%name' => $disabled[$key]['name'])));
+                \Drupal::messenger()->addStatus(t('Re-enabled field: %name', array('%name' => $disabled[$key]['name'])));
               }
               // Create new component
               else {
@@ -2177,7 +2179,7 @@ class wf_crm_admin_form {
     $sets = Utils::wf_crm_get_fields('sets');
     // @todo Start using webform_civicrm_forms to track enabled webforms.
     /** @var \Drupal\webform\WebformInterface[] $webforms */
-    $webforms = \Drupal\webform\Entity\Webform::loadMultiple();
+    $webforms = Webform::loadMultiple();
     foreach ($webforms as $webform) {
       $handler_collection = $webform->getHandlers('webform_civicrm');
 
