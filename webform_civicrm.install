@@ -162,7 +162,7 @@ function webform_civicrm_update_6100() {
  */
 function webform_civicrm_update_6101() {
   civicrm_initialize();
-  $db = db_query('SELECT * FROM {webform_civicrm_submissions} WHERE contact_id <> :contact_id AND activity_id <> :activity_id', array(':contact_id' => 0, ':activity_id' => 0));
+  $db = \Drupal::database()->query('SELECT * FROM {webform_civicrm_submissions} WHERE contact_id <> :contact_id AND activity_id <> :activity_id', array(':contact_id' => 0, ':activity_id' => 0));
   $sql = 'INSERT INTO civicrm_activity_target (activity_id, target_contact_id) VALUES (%1,%2)';
   $n = 1;
   $c = 0;
@@ -244,7 +244,7 @@ function webform_civicrm_update_6200() {
   $match['civicrm_state_province'] = 'civicrm_1_contact_1_address_state_province';
 
   // Collect entity data
-  $db = db_query("SELECT form_key, nid FROM {webform_component} WHERE form_key LIKE 'civicrm_%%' AND type <> 'fieldset'");
+  $db = \Drupal::database()->query("SELECT form_key, nid FROM {webform_component} WHERE form_key LIKE 'civicrm_%%' AND type <> 'fieldset'");
   foreach ($db as $row) {
     if (array_key_exists($row->form_key, $match)) {
       $update[$row->form_key] = $match[$row->form_key];
@@ -270,7 +270,7 @@ function webform_civicrm_update_6200() {
   }
 
   // Populate entity data
-  $db = db_query("SELECT * FROM {webform_civicrm_forms}");
+  $db = \Drupal::database()->query("SELECT * FROM {webform_civicrm_forms}");
   foreach ($db as $row) {
     $data = array(
       'contact' => array(
@@ -340,14 +340,14 @@ function webform_civicrm_update_6203() {
   module_load_include('inc', 'webform', 'includes/webform.components');
 
   // First get rid of redundant fields
-  $db = db_query("SELECT c1.* FROM {webform_component} c1, {webform_component} c2 WHERE c1.nid = c2.nid AND c1.form_key LIKE 'civicrm_%%_contact_%%_address_state_province' AND c2.form_key = CONCAT(c1.form_key, '_id')");
+  $db = \Drupal::database()->query("SELECT c1.* FROM {webform_component} c1, {webform_component} c2 WHERE c1.nid = c2.nid AND c1.form_key LIKE 'civicrm_%%_contact_%%_address_state_province' AND c2.form_key = CONCAT(c1.form_key, '_id')");
   foreach ($db as $item) {
     webform_component_delete($item, (array) $item);
   }
 
   // Update state_province fields
   $submitted = array();
-  $db = db_query("SELECT * FROM {webform_component} WHERE form_key LIKE 'civicrm_%%_contact_%%_address_state_province%%'");
+  $db = \Drupal::database()->query("SELECT * FROM {webform_component} WHERE form_key LIKE 'civicrm_%%_contact_%%_address_state_province%%'");
   foreach ($db as $item) {
     if (substr($item->form_key, -3) == '_id') {
       $submitted[] = '(nid = ' . $item->nid . ' AND cid = ' . $item->cid . ')';
@@ -369,10 +369,10 @@ function webform_civicrm_update_6203() {
     $where = implode(' OR ', $submitted);
     civicrm_initialize();
     module_load_include('inc', 'webform_civicrm', 'includes/utils');
-    $db = db_query('SELECT DISTINCT data FROM {webform_submitted_data} WHERE ' . $where);
+    $db = \Drupal::database()->query('SELECT DISTINCT data FROM {webform_submitted_data} WHERE ' . $where);
     foreach ($db as $row) {
       if ($row->data && is_numeric($row->data)) {
-        db_query('UPDATE {webform_submitted_data} SET data = \'' . wf_crm_state_abbr($row->data) . '\' WHERE data = ' . $row->data . ' AND (' . $where . ')');
+        \Drupal::database()->query('UPDATE {webform_submitted_data} SET data = \'' . wf_crm_state_abbr($row->data) . '\' WHERE data = ' . $row->data . ' AND (' . $where . ')');
       }
     }
   }
@@ -386,7 +386,7 @@ function webform_civicrm_update_6203() {
 function webform_civicrm_update_6204() {
   module_load_include('inc', 'webform_civicrm', 'includes/utils');
 
-  $db = db_query("SELECT * FROM {webform_civicrm_forms}");
+  $db = \Drupal::database()->query("SELECT * FROM {webform_civicrm_forms}");
   foreach ($db as $form) {
     $data = unserialize($form->data);
     if (isset($data['event_type'])) {
@@ -410,7 +410,7 @@ function webform_civicrm_update_6205() {
   civicrm_initialize();
   module_load_include('inc', 'webform_civicrm', 'includes/utils');
   module_load_include('inc', 'webform', 'includes/webform.components');
-  $db = db_query("SELECT * FROM {webform_component} WHERE form_key LIKE 'civicrm_%%_other_tags' OR form_key LIKE 'civicrm_%%_other_group%%'");
+  $db = \Drupal::database()->query("SELECT * FROM {webform_component} WHERE form_key LIKE 'civicrm_%%_other_tags' OR form_key LIKE 'civicrm_%%_other_group%%'");
   $tag = $group = array();
   foreach ($db as $row) {
     if ($pieces = Utils::wf_crm_explode_key($row->form_key)) {
@@ -425,8 +425,8 @@ function webform_civicrm_update_6205() {
       ${$type}[$row->nid][$c] = (array) $row;
     }
   }
-  db_query("UPDATE {webform_component} SET form_key = REPLACE(form_key, 'other_groups', 'other_group') WHERE form_key LIKE 'civicrm_%%_other_groups'");
-  $db = db_query("SELECT * FROM {webform_civicrm_forms}");
+  \Drupal::database()->query("UPDATE {webform_component} SET form_key = REPLACE(form_key, 'other_groups', 'other_group') WHERE form_key LIKE 'civicrm_%%_other_groups'");
+  $db = \Drupal::database()->query("SELECT * FROM {webform_civicrm_forms}");
   foreach ($db as $form) {
     $nid = $form->nid;
     $data = unserialize($form->data);
@@ -489,7 +489,7 @@ function webform_civicrm_update_7300() {
   module_load_include('inc', 'webform', 'includes/webform.components');
   civicrm_initialize();
   $fields = wf_crm_get_fields();
-  $db = db_query("SELECT * FROM {webform_civicrm_forms}");
+  $db = \Drupal::database()->query("SELECT * FROM {webform_civicrm_forms}");
   foreach ($db as $form) {
     $form = (array) $form;
     $form['data'] = unserialize($form['data']);
@@ -676,7 +676,7 @@ function webform_civicrm_update_7300() {
   db_drop_field('webform_civicrm_forms', 'contact_matching');
 
   $msg = st('There are important changes in Webform CiviCRM 3 that require your attention. Read the upgrade instructions at http://drupal.org/node/1615380 and review your existing webforms to ensure they are working as expected. Enjoy the new contact matching features!');
-  drupal_set_message($msg, 'warning');
+  \Drupal::messenger()->addWarning($msg);
   return $msg;
 }
 
@@ -686,7 +686,7 @@ function webform_civicrm_update_7300() {
 function webform_civicrm_update_7301() {
   module_load_include('inc', 'webform_civicrm', 'includes/utils');
 
-  $db = db_query("SELECT * FROM {webform_civicrm_forms}");
+  $db = \Drupal::database()->query("SELECT * FROM {webform_civicrm_forms}");
   foreach ($db as $form) {
     $data = unserialize($form->data);
     if (!empty($data['case'][1])) {
@@ -741,11 +741,11 @@ function webform_civicrm_update_7401(&$batch) {
     );
     db_add_field('webform_civicrm_submissions', 'civicrm_data', $field);
     $batch['progress'] = $batch['current_sid'] = 0;
-    $batch['max'] = db_query('SELECT COUNT(sid) FROM {webform_civicrm_submissions}')->fetchField();
+    $batch['max'] = \Drupal::database()->query('SELECT COUNT(sid) FROM {webform_civicrm_submissions}')->fetchField();
   }
 
   // Process the next group of submissions.
-  $result = db_query("SELECT * FROM {webform_civicrm_submissions} WHERE sid > {$batch['current_sid']} ORDER BY sid LIMIT 500");
+  $result = \Drupal::database()->query("SELECT * FROM {webform_civicrm_submissions} WHERE sid > {$batch['current_sid']} ORDER BY sid LIMIT 500");
   foreach ($result as $row) {
     $data = array();
     if ($row->activity_id) {
@@ -780,7 +780,7 @@ function webform_civicrm_update_7402() {
   civicrm_initialize();
   module_load_include('inc', 'webform', 'includes/webform.components');
   module_load_include('inc', 'webform_civicrm', 'includes/utils');
-  $forms = db_query("SELECT * FROM {webform_civicrm_forms}");
+  $forms = \Drupal::database()->query("SELECT * FROM {webform_civicrm_forms}");
   foreach ($forms as $form) {
     $data = $orig = unserialize($form->data);
     if (isset($data['activity'][1]['activity'][1])) {
@@ -801,7 +801,7 @@ function webform_civicrm_update_7402() {
       }
       // Create hidden field for activity subject to replace the removed "default subject" setting
       $fid = 'civicrm_1_activity_1_activity_subject';
-      if (!(db_query("SELECT nid FROM {webform_component} WHERE form_key = '$fid' AND nid = {$form->nid}")->fetchField())) {
+      if (!(\Drupal::database()->query("SELECT nid FROM {webform_component} WHERE form_key = '$fid' AND nid = {$form->nid}")->fetchField())) {
         $component = array(
           'form_key' => $fid,
           'nid' => $form->nid,

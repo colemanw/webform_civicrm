@@ -1,5 +1,6 @@
 <?php
 
+use Drupal\webform\Entity\Webform;
 /**
  * @file
  * Webform CiviCRM Integration Module:
@@ -464,7 +465,7 @@ function webform_civicrm_civicrm_buildForm($formName, $form) {
     if ($fid) {
       // @todo Start using webform_civicrm_forms to track enabled webforms.
       /** @var \Drupal\webform\WebformInterface[] $webforms */
-      $webforms = \Drupal\webform\Entity\Webform::loadMultiple();
+      $webforms = Webform::loadMultiple();
       foreach ($webforms as $webform) {
         $handler_collection = $webform->getHandlers('webform_civicrm');
 
