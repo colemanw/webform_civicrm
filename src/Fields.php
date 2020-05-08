@@ -424,7 +424,7 @@ class Fields implements FieldsInterface {
       );
       $fields['activity_activity_date_time_timepart'] = array(
         'name' => t('Activity # Time'),
-        'type' => 'time',
+        'type' => 'webform_time',
         'value' => 'now',
       );
       $fields['activity_duration'] = array(
@@ -959,7 +959,7 @@ class Fields implements FieldsInterface {
               $fields[$id]['name'] .= ' - ' . t('date');
               $fields[$id . '_timepart'] = array(
                 'name' => $dao->label . ' - ' . t('time'),
-                'type' => 'time',
+                'type' => 'webform_time',
                 'extra' => array('hourformat' => $dao->time_format == 1 ? '12-hour' : '24-hour'),
               );
             }
