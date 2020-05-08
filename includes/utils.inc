@@ -525,8 +525,8 @@ function wf_crm_array2str($arr) {
  *   Result of API call
  */
 function wf_civicrm_api($entity, $operation, $params) {
-  if (is_null($entity)) {
-    return;
+  if (!$entity) {
+    return [];
   }
 
   $params += array(
