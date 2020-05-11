@@ -1239,7 +1239,7 @@ class wf_crm_admin_form {
       if ($submit_limit > 0 && $submit_interval != 0) {
         $webform['submit_limit'] = $submit_limit;
         $webform['submit_interval'] = $submit_interval;
-        db_update('webform')
+        \Drupal::database()->update('webform')
           ->condition('nid', $this->node->nid)
           ->fields(array('submit_limit' => $submit_limit, 'submit_interval' => $submit_interval))
           ->execute();

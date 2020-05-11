@@ -1,7 +1,0 @@
-name = Webform CiviCRM Integration
-description = A powerful, flexible, user-friendly form builder for CiviCRM.
-core = 7.x
-package = CiviCRM
-dependencies[] = civicrm (>=4.4)
-dependencies[] = webform (>=4.12)
-dependencies[] = options_element
