@@ -34,7 +34,7 @@ class CivicrmContact extends WebformElementBase {
   public function getDefaultProperties() {
     return [
         'name' => '',
-        'form_key' => NULL,
+        'form_key' => '',
         'pid' => 0,
         'weight' => 0,
         'value' => '',
