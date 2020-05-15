@@ -1296,7 +1296,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (is_array($data) && !empty($data['case'][1]['client_id'])) {
         $params = $data['case'][1];
         // Set some defaults in create mode
-        if (empty($this->ent['case'][$n]['id'])) {
+        // Create duplicate case based on existing case if 'duplicate_case' checkbox is checked
+        if (empty($this->ent['case'][$n]['id']) || !empty($this->data['case'][$n]['duplicate_case'])) {
           if (empty($params['case_type_id'])) {
             // Abort if no case type.
             continue;
@@ -1311,7 +1312,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
           // Automatic creator_id - default to current user or contact 1
           if (empty($data['case'][1]['creator_id'])) {
-            if (user_is_logged_in()) {
+            if (\Drupal::currentUser()->isAuthenticated()) {
               $params['creator_id'] = wf_crm_user_cid();
             }
             elseif (!empty($this->ent['contact'][1]['id'])) {
