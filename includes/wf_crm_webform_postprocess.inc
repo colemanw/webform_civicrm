@@ -1312,7 +1312,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
           // Automatic creator_id - default to current user or contact 1
           if (empty($data['case'][1]['creator_id'])) {
-            if (user_is_logged_in()) {
+            if (\Drupal::currentUser()->isAuthenticated()) {
               $params['creator_id'] = wf_crm_user_cid();
             }
             elseif (!empty($this->ent['contact'][1]['id'])) {
