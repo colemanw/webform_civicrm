@@ -496,7 +496,7 @@ function webform_civicrm_civicrm_buildForm($formName, $form) {
 function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = NULL, $tables = NULL) {
   if (!empty($new_id) && !empty($old_id) && $type == 'sqls') {
     $connection = \Drupal::database();
-    
+
     $connection->update('webform_civicrm_submissions')
         ->expression('contact_id', 'REPLACE(contact_id, :old, :new)', array(':old' => '-' . $old_id . '-', ':new' => '-' . $new_id . '-'))
         ->condition('contact_id', '%-' . $old_id . '-%', 'LIKE')
