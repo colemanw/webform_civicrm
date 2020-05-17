@@ -11,7 +11,7 @@ use Drupal\webform_civicrm\Utils;
 module_load_include('inc', 'webform_civicrm', 'includes/utils');
 
 // FIXME: Temporary workaround for https://www.drupal.org/node/2389537
-variable_set('webform_table', TRUE);
+\Drupal::state()->set('webform_table', TRUE);
 
 class wf_crm_admin_component {
   private $form;
