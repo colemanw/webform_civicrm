@@ -81,9 +81,9 @@ class Fields implements FieldsInterface {
       if (in_array('CiviContribute', $components, TRUE)) {
         $sets['line_items'] = ['entity_type' => 'line_item', 'label' => t('Line Items')];
       }
-
-      $extra_sets = wf_crm_get_empty_sets();
-      $sets += $extra_sets;
+      // ToDo: figure out why this function blows up -> Error: "Maximum function nesting level of '2000' reached, aborting!"
+      // $extra_sets = wf_crm_get_empty_sets();
+      // $sets += $extra_sets;
       $this->sets = $sets;
     }
 

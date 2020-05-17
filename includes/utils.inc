@@ -679,6 +679,7 @@ function wf_crm_is_positive($val) {
  *
  * @return array $sets
  */
+// ToDo: figure out why this function blows up -> Error: "Maximum function nesting level of '2000' reached, aborting!"
 function wf_crm_get_empty_sets() {
   $sets = Utils::wf_crm_get_fields('sets');
   foreach (array_keys(Utils::wf_crm_get_fields()) as $key) {
