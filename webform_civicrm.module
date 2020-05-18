@@ -11,6 +11,7 @@ use Drupal\webform\Entity\Webform;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\webform\Entity\WebformSubmission;
 use Drupal\webform_civicrm\Utils;
+use Drupal\node\Entity\Node;
 
 /**
  * The versions of CiviCRM and WebForm. Min is >=.  Max is <. FALSE = no MAX
@@ -651,7 +652,7 @@ function wf_crm_contact_clone($form, $form_state) {
   form_load_include($form_state, 'inc', 'webform_civicrm', 'includes/utils');
   $fid = $form['form_key']['#default_value'];
   list(, $old) = Utils::wf_crm_explode_key($fid);
-  $node = node_load($form['nid']['#value']);
+  $node = Node::load($form['nid']['#value']);
   $settings = $node->webform_civicrm;
   $new = count($settings['data']['contact']) + 1;
   // Clone contact
