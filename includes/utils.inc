@@ -697,12 +697,13 @@ function wf_crm_get_empty_sets() {
       if ($dao->extends == 'address' || $dao->extends == 'relationship' || $dao->extends == 'membership') {
         $set = $dao->extends;
       }
-      $sets[$set] = array(
+      $sets[$set] = [
         'label' => $dao->title,
         'entity_type' => strtolower($dao->extends),
         'help_text' => $dao->help_pre,
-      );
+      ];
     }
+  }
 
   return $sets;
 }
