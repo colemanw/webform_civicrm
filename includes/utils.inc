@@ -679,13 +679,31 @@ function wf_crm_is_positive($val) {
  *
  * @return array $sets
  */
-// ToDo: figure out why this function blows up -> Error: "Maximum function nesting level of '2000' reached, aborting!"
 function wf_crm_get_empty_sets() {
-  $sets = Utils::wf_crm_get_fields('sets');
-  foreach (array_keys(Utils::wf_crm_get_fields()) as $key) {
-    list($set) = explode('_', $key);
-    unset($sets[$set]);
-  }
+  $sets = array();
+
+  $sql = "SELECT cg.id, cg.title, cg.help_pre, cg.extends, SUM(cf.is_active) as custom_field_sum
+          FROM civicrm_custom_group cg
+          LEFT OUTER JOIN civicrm_custom_field cf
+          ON (cg.id = cf.custom_group_id)
+          GROUP By cg.id";
+
+  $dao = CRM_Core_DAO::executeQuery($sql);
+
+  while($dao->fetch()) {
+    // Because a set with all fields disabled = empty set
+    if (empty($dao->custom_field_sum)) {
+      $set = 'cg' . $dao->id;
+      if ($dao->extends == 'address' || $dao->extends == 'relationship' || $dao->extends == 'membership') {
+        $set = $dao->extends;
+      }
+      $sets[$set] = array(
+        'label' => $dao->title,
+        'entity_type' => strtolower($dao->extends),
+        'help_text' => $dao->help_pre,
+      );
+    }
+    
   return $sets;
 }
 

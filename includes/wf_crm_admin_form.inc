@@ -1767,8 +1767,7 @@ class wf_crm_admin_form {
         }
         // add empty fieldsets for custom civicrm sets with no fields, if "add dynamically" is checked
         elseif (strpos($key, 'settings_dynamic_custom') && $val == 1) {
-          // ToDo: figure out why this function blows up -> Error: "Maximum function nesting level of '2000' reached, aborting!"
-          // $emptySets = wf_crm_get_empty_sets();
+          $emptySets = wf_crm_get_empty_sets();
           list($ent, $n, , , ,$cgId) = explode('_', $key, 6);
           $fieldsetKey = "civicrm_{$n}_{$ent}_1_{$cgId}_fieldset";
           if (array_key_exists($cgId, $emptySets) && !isset($existing[$fieldsetKey])) {
