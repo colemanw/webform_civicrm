@@ -994,6 +994,8 @@ class Fields implements FieldsInterface {
           $fields[$id]['extra']['rows'] = $custom_field['note_rows'] ?? 4;
         }
       }
+      // The sets are modified in this function to include the custom sets.
+      $this->sets = $sets;
     }
     return $$var;
   }
