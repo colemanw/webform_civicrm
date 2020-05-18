@@ -10,7 +10,6 @@ use Drupal\webform_civicrm\Plugin\WebformElement\CivicrmContact;
 use Drupal\webform_civicrm\Utils;
 use Drupal\node\Entity\Node;
 
-
 module_load_include('inc', 'webform_civicrm', 'includes/utils');
 module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_help');
 
