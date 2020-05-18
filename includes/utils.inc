@@ -703,7 +703,7 @@ function wf_crm_get_empty_sets() {
         'help_text' => $dao->help_pre,
       );
     }
-    
+
   return $sets;
 }
 

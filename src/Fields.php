@@ -54,24 +54,24 @@ class Fields implements FieldsInterface {
 
   protected function getSets(array $components): array {
     if (empty($this->sets)) {
-      $sets = array(
-        'contact' => array('entity_type' => 'contact', 'label' => t('Contact Fields')),
-        'other' => array('entity_type' => 'contact', 'label' => t('Tags and Groups'), 'max_instances' => 1),
-        'address' => array('entity_type' => 'contact', 'label' => t('Address'), 'max_instances' => 9, 'custom_fields' => 'combined'),
-        'phone' => array('entity_type' => 'contact', 'label' => t('Phone'), 'max_instances' => 9, 'custom_fields' => 'combined'),
-        'email' => array('entity_type' => 'contact', 'label' => t('Email'), 'max_instances' => 9, 'custom_fields' => 'combined'),
-        'website' => array('entity_type' => 'contact', 'label' => t('Website'), 'max_instances' => 9, 'custom_fields' => 'combined'),
-        'im' => array('entity_type' => 'contact', 'label' => t('Instant Message'), 'max_instances' => 9, 'custom_fields' => 'combined'),
-        'activity' => array('entity_type' => 'activity', 'label' => t('Activity'), 'max_instances' => 60,  'attachments' => TRUE),
-        'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship'), 'help_text' => TRUE, 'custom_fields' => 'combined'),
-      );
-      $conditional_sets = array(
-        'CiviCase' => array('entity_type' => 'case', 'label' => t('Case'), 'max_instances' => 30),
-        'CiviEvent' => array('entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9),
-        'CiviContribute' => array('entity_type' => 'contribution', 'label' => t('Contribution')),
-        'CiviMember' => array('entity_type' => 'membership', 'label' => t('Membership'), 'custom_fields' => 'combined'),
-        'CiviGrant' => array('entity_type' => 'grant', 'label' => t('Grant'), 'max_instances' => 30, 'attachments' => TRUE),
-      );
+      $sets = [
+        'contact' => ['entity_type' => 'contact', 'label' => t('Contact Fields')],
+        'other' => ['entity_type' => 'contact', 'label' => t('Tags and Groups'), 'max_instances' => 1],
+        'address' => ['entity_type' => 'contact', 'label' => t('Address'), 'max_instances' => 9, 'custom_fields' => 'combined'],
+        'phone' => ['entity_type' => 'contact', 'label' => t('Phone'), 'max_instances' => 9, 'custom_fields' => 'combined'],
+        'email' => ['entity_type' => 'contact', 'label' => t('Email'), 'max_instances' => 9, 'custom_fields' => 'combined'],
+        'website' => ['entity_type' => 'contact', 'label' => t('Website'), 'max_instances' => 9, 'custom_fields' => 'combined'],
+        'im' => ['entity_type' => 'contact', 'label' => t('Instant Message'), 'max_instances' => 9, 'custom_fields' => 'combined'],
+        'activity' => ['entity_type' => 'activity', 'label' => t('Activity'), 'max_instances' => 60,  'attachments' => TRUE],
+        'relationship' => ['entity_type' => 'contact', 'label' => t('Relationship'), 'help_text' => TRUE, 'custom_fields' => 'combined'],
+      ];
+      $conditional_sets = [
+        'CiviCase' => ['entity_type' => 'case', 'label' => t('Case'), 'max_instances' => 30],
+        'CiviEvent' => ['entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9],
+        'CiviContribute' => ['entity_type' => 'contribution', 'label' => t('Contribution')],
+        'CiviMember' => ['entity_type' => 'membership', 'label' => t('Membership'), 'custom_fields' => 'combined'],
+        'CiviGrant' => ['entity_type' => 'grant', 'label' => t('Grant'), 'max_instances' => 30, 'attachments' => TRUE],
+      ];
       foreach ($conditional_sets as $component => $set) {
         if (in_array($component, $components, TRUE)) {
           $sets[$set['entity_type']] = $set;
@@ -90,17 +90,17 @@ class Fields implements FieldsInterface {
   }
 
   protected function getMoneyDefaults(): array {
-    return array(
+    return [
       'type' => 'number',
       'data_type' => 'Money',
-      'extra' => array(
+      'extra' => [
         'field_prefix' => wf_crm_get_civi_setting('defaultCurrencySymbol', '$'),
         'point' => wf_crm_get_civi_setting('monetaryDecimalPoint', '.'),
         'separator' => wf_crm_get_civi_setting('monetaryThousandSeparator', ','),
         'decimals' => 2,
         'min' => 0,
-      ),
-    );
+      ],
+    ];
   }
 
   protected function wf_crm_get_fields($var = 'fields') {
@@ -523,11 +523,11 @@ class Fields implements FieldsInterface {
           }
         }
       }
-      $all_tagsets = wf_crm_apivalues('tag', 'get', array(
-        'return' => array('id', 'name', 'used_for'),
+      $all_tagsets = wf_crm_apivalues('tag', 'get', [
+        'return' => ['id', 'name', 'used_for'],
         'is_tagset' => 1,
-        'parent_id' => array('IS NULL' => 1),
-      ));
+        'parent_id' => ['IS NULL' => 1],
+      ]);
       foreach ($tag_entities as $entity) {
         $table_name = $entity == 'other' ? 'civicrm_contact' : "civicrm_$entity";
         $tagsets = ['' => t('Tag(s)')];
