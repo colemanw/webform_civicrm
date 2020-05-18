@@ -177,7 +177,7 @@ abstract class wf_crm_webform_base {
     foreach ($contact as $k => $v) {
       if (substr($k, 0, 12) == 'number_of_cg' && !empty($v)) {
         if (!in_array(substr($k, 10), $exclude)) {
-          $info += $this->getCustomData($cid);
+          $info += array_diff_key($this->getCustomData($cid), array_flip($exclude));
           break;
         }
       }
