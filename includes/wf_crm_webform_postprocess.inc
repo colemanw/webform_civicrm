@@ -1798,7 +1798,55 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $result = $this->contributionRecur($contributionParams);
     }
     else {
-      $result = wf_civicrm_api('contribution', 'transact', $contributionParams);
+
+      // KG
+      $test = 1;
+      $contributionParamsOrder = [
+        'contact_id' => $contributionParams['contact_id'],
+        'total_amount' => $contributionParams['total_amount'],
+        'financial_type_id' => $contributionParams['financial_type_id'],
+        'contribution_status_id' => "Pending",
+        'source' =>  $contributionParams['source'],
+      ];
+      // 'receive_date' => // I think this defaults to now - which is what we want - may have to be specific
+      // 'line_items' => // not yet
+
+      $resultOrder = wf_civicrm_api('Order', 'create', $contributionParamsOrder);
+
+      try {
+        $contributionParamsPaymentProcessor = [
+          'payment_processor_id' => $contributionParams['payment_processor'],
+          'contribution_id' => $resultOrder['id'],
+          'amount' => $contributionParams['total_amount'],
+          'credit_card_number' => $contributionParams['credit_card_number'],
+          'cvv2' => $contributionParams['cvv2'],
+          'month' => $contributionParams['month'],
+          'year' => $contributionParams['year'],
+        ];
+
+        $resultPaymentProcessor = wf_civicrm_api('PaymentProcessor', 'pay', $contributionParamsPaymentProcessor);
+
+        if ($resultPaymentProcessor['values'][0]['trxn_id']) {
+
+          $contributionParamsPayment = [
+            'contribution_id' => $resultOrder['id'],
+            'total_amount' => $contributionParams['total_amount'],
+            'payment_instrument_id' => $contributionParams['payment_instrument_id'],
+            'payment_processor_id' => $contributionParams['payment_processor'],
+            'trxn_id' => $resultPaymentProcessor['values'][0]['trxn_id'],
+          ];
+
+          $resultPayment = wf_civicrm_api('Payment', 'create', $contributionParamsPayment);
+          $result = $resultPayment;
+
+        }
+
+      }
+      catch (Exception $e) {
+        // it failed
+      }
+
+        $test = 1;
     }
 
     if (empty($result['id'])) {
