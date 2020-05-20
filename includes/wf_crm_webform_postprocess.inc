@@ -1826,8 +1826,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
         $resultPaymentProcessor = wf_civicrm_api('PaymentProcessor', 'pay', $contributionParamsPaymentProcessor);
 
+        // $resultPaymentProcessor['values'][0]['trxn_id'] = NULL;
         if ($resultPaymentProcessor['values'][0]['trxn_id']) {
-
           $contributionParamsPayment = [
             'contribution_id' => $resultOrder['id'],
             'total_amount' => $contributionParams['total_amount'],
@@ -1835,10 +1835,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             'payment_processor_id' => $contributionParams['payment_processor'],
             'trxn_id' => $resultPaymentProcessor['values'][0]['trxn_id'],
           ];
-
           $resultPayment = wf_civicrm_api('Payment', 'create', $contributionParamsPayment);
           $result = $resultPayment;
-
+        } else {
+          // update the Order (Contribution) with status = Failed;
+          $contributionUpdateParams = [
+            'id' => $resultOrder['id'],
+            'contribution_status_id' => "Failed",
+          ];
+          $resultContribution = wf_civicrm_api('Contribution', 'create', $contributionUpdateParams);
         }
 
       }
