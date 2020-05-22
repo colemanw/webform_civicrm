@@ -686,8 +686,8 @@ function _webform_civicrm_status() {
   $status = array();
   $status['webform_civicrm'] = FALSE;
 
-  $civicrm = system_get_info('module', 'civicrm');
-  $webform = system_get_info('module', 'webform');
+  $civicrm = \Drupal::service('extension.list.module')->getExtensionInfo('civicrm');
+  $webform = \Drupal::service('extension.list.module')->getExtensionInfo('webform');
 
   if (version_compare($civicrm['version'], WEBFORM_CIVICRM_CIVICRM_VERSION_MIN, '>=') &&
     version_compare($webform['version'], WEBFORM_CIVICRM_WEBFORM_VERSION, '>=')) {
