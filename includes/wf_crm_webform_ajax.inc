@@ -193,7 +193,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
       return FALSE;
     }
     /* TODO figure out what this means in Drupal 8
-    if (variable_get('webform_submission_access_control', 1)) {
+    if (\Drupal::state()->get('webform_submission_access_control', 1)) {
       $allowed_roles = array();
       foreach ($node->webform['roles'] as $rid) {
         $allowed_roles[$rid] = isset($user->roles[$rid]) ? TRUE : FALSE;

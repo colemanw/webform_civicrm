@@ -8,6 +8,7 @@
 use Drupal\Component\Utility\Html;
 use Drupal\webform_civicrm\Plugin\WebformElement\CivicrmContact;
 use Drupal\webform_civicrm\Utils;
+use Drupal\node\Entity\Node;
 
 module_load_include('inc', 'webform_civicrm', 'includes/utils');
 module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_help');
@@ -18,7 +19,7 @@ module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_help');
 function _webform_edit_civicrm_contact($component) {
   civicrm_initialize();
   $form = array();
-  $node = node_load($component['nid']);
+  $node = Node::load($component['nid']);
   if (empty($node->webform_civicrm) && node_is_page($node)) {
     \Drupal::messenger()->addError(t('CiviCRM processing is not enabled for this webform.'));
     return $form;
@@ -319,7 +320,7 @@ function wf_crm_contact_component_form_help(&$form) {
  * Implements _webform_render_component().
  */
 function _webform_render_civicrm_contact($component, $value = NULL, $filter = TRUE) {
-  $node = isset($component['nid']) ? node_load($component['nid']) : NULL;
+  $node = isset($component['nid']) ? Node::load($component['nid']) : NULL;
   civicrm_initialize();
   list(, $c, ) = explode('_', $component['form_key'], 3);
   $hide_fields = array_filter($component['extra']['hide_fields']);

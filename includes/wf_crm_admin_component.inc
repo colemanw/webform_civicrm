@@ -7,11 +7,12 @@
 
 use Drupal\Component\Utility\Html;
 use Drupal\webform_civicrm\Utils;
+use Drupal\node\Entity\Node;
 
 module_load_include('inc', 'webform_civicrm', 'includes/utils');
 
 // FIXME: Temporary workaround for https://www.drupal.org/node/2389537
-variable_set('webform_table', TRUE);
+\Drupal::state()->set('webform_table', TRUE);
 
 class wf_crm_admin_component {
   private $form;
@@ -26,7 +27,7 @@ class wf_crm_admin_component {
     civicrm_initialize();
     $this->form = &$form;
     $this->form_state = &$form_state;
-    $this->node = node_load($form['nid']['#value']);
+    $this->node = Node::load($form['nid']['#value']);
     $this->data = wf_crm_aval($this->node, 'webform_civicrm:data');
     $this->component = wf_crm_aval($this->node, 'webform:components:' . $this->form['cid']['#value']);
   }

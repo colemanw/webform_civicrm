@@ -6,6 +6,7 @@
  */
 
 use Drupal\webform_civicrm\Utils;
+use Drupal\node\Entity\Node;
 
 /**
  * Implements hook_requirements().
@@ -445,7 +446,7 @@ function webform_civicrm_update_6205() {
       }
     }
     if (!empty($tag[$nid]) || !empty($group[$nid])) {
-      $node = node_load($nid);
+      $node = Node::load($nid);
       $both = wf_crm_aval($tag, $nid, array()) + wf_crm_aval($group, $nid, array());
       foreach ($both as $c => $val) {
         $data['contact'][$c]['number_of_other'] = 1;
@@ -494,7 +495,7 @@ function webform_civicrm_update_7300() {
     $form = (array) $form;
     $form['data'] = unserialize($form['data']);
     $data = &$form['data'];
-    $node = node_load($form['nid']);
+    $node = Node::load($form['nid']);
     $enabled = wf_crm_enabled_fields($node);
     // Add existing contact field
     $field = $fields['contact_existing'];
