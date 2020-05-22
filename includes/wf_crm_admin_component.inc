@@ -74,13 +74,13 @@ class wf_crm_admin_component {
         if (empty($this->form_state['input'])) {
           $types = wf_crm_get_contact_types();
           $type = $types[0][$this->data['contact'][$i]['contact'][1]['contact_type']];
-          drupal_set_message(t('Press the "Clone Contact" button below and a new @type will be added to the form with all the settings for :contact. All fields within this fieldset will be cloned (be careful, that may include non-contact fields).', array('@type' => $type, ':contact' => wf_crm_contact_label($i, $this->data))), 'status', FALSE);
+          \Drupal::messenger()->addStatus(t('Press the "Clone Contact" button below and a new @type will be added to the form with all the settings for :contact. All fields within this fieldset will be cloned (be careful, that may include non-contact fields).', array('@type' => $type, ':contact' => wf_crm_contact_label($i, $this->data))));
         }
       }
     }
     elseif (empty($this->form_state['input'])) {
       // Clone a single CiviCRM field
-      drupal_set_message(t('You are cloning a CiviCRM component. Refer to the Webform CiviCRM instructions for how to set the key if you want the new field to be processed by CiviCRM. You can also clone an entire contact by clicking the clone button by their fieldset.'), 'status', FALSE);
+      \Drupal::messenger()->addStatus(t('You are cloning a CiviCRM component. Refer to the Webform CiviCRM instructions for how to set the key if you want the new field to be processed by CiviCRM. You can also clone an entire contact by clicking the clone button by their fieldset.'));
     }
 
     // Show dropdown list of states
@@ -631,7 +631,7 @@ class wf_crm_admin_component {
     if ($message) {
       $message = t('In order for line-items to be displayed correctly to the user, it is recommended to add a page break in-between Contribution Billing Fields and the following:') .
         '<ul>' . $message . '</ul>';
-      drupal_set_message($message, 'warning', FALSE);
+      \Drupal::messenger()->addWarning($message);
     }
   }
 }
@@ -728,7 +728,7 @@ function wf_crm_money_validate($form, &$form_state) {
 function wf_crm_change_widget($form, &$form_state) {
   // Get rid of default message
   unset($_SESSION['messages']['status']);
-  drupal_set_message(t('Click "Save component" to change this field to %type (or go back to cancel). Test your form to ensure that the new widget works with this CiviCRM field.', array('%type' => $form['widget']['type']['#options'][$form_state['values']['widget']['type']])));
+  \Drupal::messenger()->addStatus(t('Click "Save component" to change this field to %type (or go back to cancel). Test your form to ensure that the new widget works with this CiviCRM field.', array('%type' => $form['widget']['type']['#options'][$form_state['values']['widget']['type']])));
   // Set redirect to current form with 'type' arg to trigger type change
   // @see webform_civicrm_node_load
   $form_state['redirect'] = array(

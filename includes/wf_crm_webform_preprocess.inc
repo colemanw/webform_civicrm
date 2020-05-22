@@ -800,14 +800,14 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
   }
 
   /**
-   * Wrapper for drupal_set_message
+   * Wrapper for \Drupal::messenger()
    * Ensures we only set the message on the first page of the node display
    * @param $message
    * @param string $type
    */
   function setMessage($message, $type='status') {
     if (empty($_POST)) {
-      drupal_set_message($message, $type, FALSE);
+      \Drupal::messenger()->addStatus($message);
     }
   }
 
