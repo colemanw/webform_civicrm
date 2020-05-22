@@ -489,7 +489,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
         elseif (!empty($event['max_participants']) && $event['count'] > $event['available_places']) {
           if (!empty($event['is_full'])) {
-            $this->form_state->setErrorByName($eid, format_string('%event : ' . $event['event_full_text'],['%event' => $event['title']]));
+            $this->form_state->setErrorByName($eid, t('%event : @text', ['%event' => $event['title'], '@text' => $event['event_full_text']]));
           }
           else {
             $this->form_state->setErrorByName($eid, format_plural($event['available_places'],
