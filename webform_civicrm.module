@@ -189,59 +189,6 @@ function webform_civicrm_webform_component_info() {
 }
 
 /**
- * Implements hook_webform_submission_delete().
- */
-function webform_civicrm_webform_submission_delete($submission) {
-  /*
-  db_delete('webform_civicrm_submissions')
-    ->condition('sid', $submission->sid)
-    ->execute();
-  */
-}
-
-/**
- * Implements hook_webform_submission_load().
- * Add CiviCRM contact info to submission objects.
- */
-function webform_civicrm_webform_submission_load(&$submissions) {
-  /*
-  if (empty($submissions)) {
-    return;
-  }
-  $db = db_query('SELECT * FROM {webform_civicrm_submissions} WHERE sid IN (' . implode(',', array_keys($submissions)) . ')');
-  $contacts = array();
-  foreach ($db as $row) {
-    $data = unserialize($row->civicrm_data) + array('contact' => array());
-    if ($row->contact_id) {
-      foreach (explode('-', trim($row->contact_id, '-')) as $c => $cid) {
-        $data['contact'][$c + 1]['id'] = $cid;
-        $data['contact'][$c + 1]['display_name'] = '';
-        if ($c == 0 && $cid) {
-          $contacts[$cid] = '';
-        }
-      }
-    }
-    $submissions[$row->sid]->civicrm = $data;
-  }
-  if ($contacts) {
-    // Retrieve contact names and add to submission objects
-    civicrm_initialize();
-    $sql = 'SELECT id, display_name FROM civicrm_contact WHERE id IN (' . implode(',', array_keys($contacts)) . ')';
-
-    $dao = CRM_Core_DAO::executeQuery($sql);
-    while ($dao->fetch()) {
-      $contacts[$dao->id] = $dao->display_name;
-    }
-    foreach ($submissions as &$s) {
-      if (!empty($s->civicrm['contact'][1]['id'])) {
-        $s->civicrm['contact'][1]['display_name'] = $contacts[$s->civicrm['contact'][1]['id']];
-      }
-    }
-  }
-  */
-}
-
-/**
  * Implements hook_webform_submission_render_alter().
  * Add display name to title while viewing a submission.
  */
