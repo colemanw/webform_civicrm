@@ -6,6 +6,8 @@
  */
 
 use Drupal\webform_civicrm\Utils;
+use Drupal\File\Entity\File;
+use Drupal\Core\File\FileSystemInterface;
 
 module_load_include('inc', 'webform_civicrm', 'includes/utils');
 
@@ -859,10 +861,10 @@ abstract class wf_crm_webform_base {
    * @return int|null Civi file id
    */
   public static function saveDrupalFileToCivi($id) {
-    $file = file_load($id);
+    $file = File::load($id);
     if ($file) {
       $config = CRM_Core_Config::singleton();
-      $path = file_unmanaged_copy($file->getFileUri(), $config->customFileUploadDir);
+      $path = FileSystemInterface::copy($file->getFileUri(), $config->customFileUploadDir);
       if ($path) {
         $result = wf_civicrm_api('file', 'create', array(
           'uri' => str_replace($config->customFileUploadDir, '', $path),
@@ -913,7 +915,8 @@ abstract class wf_crm_webform_base {
    * @return string|bool: url of file if found
    */
   function getDrupalFileUrl($id) {
-    $file = file_load($id);
+    $file = File::load($id);
+
     return $file ? file_create_url($file->uri) : FALSE;
   }
 
