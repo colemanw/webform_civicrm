@@ -14,7 +14,7 @@ use Drupal\webform\WebformInterface;
 use Drupal\webform\WebformSubmissionInterface;
 use Drupal\webform_civicrm\Utils;
 
-module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_base');
+\Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/wf_crm_webform_base');
 
 class wf_crm_webform_postprocess extends wf_crm_webform_base {
   // Variables used during validation
@@ -572,7 +572,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function verifyExistingContact($cid, $fid) {
     if (wf_crm_is_positive($cid) && !empty($this->enabled[$fid])) {
-      module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
+      \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/contact_component');
       $component = $this->node->getElement($fid);
       $filters = wf_crm_search_filters($this->node, $component);
       // Verify access to this contact

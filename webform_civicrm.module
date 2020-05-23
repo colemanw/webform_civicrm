@@ -118,7 +118,7 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
  * @param string $str
  */
 function webform_civicrm_webform_autocomplete_options_alter(&$results, $node, $cid, $str) {
-  module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_ajax');
+  \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/wf_crm_webform_ajax');
   if (wf_crm_webform_ajax::autocompleteAccess($node, $cid)) {
     $key = Utils::wf_crm_explode_key($node->webform['components'][$cid]['form_key']);
   }
@@ -249,7 +249,7 @@ function webform_civicrm_webform_submission_actions($node, $submission) {
  * @param CRM_Core_DAO_CustomField $dao
  */
 function webform_civicrm_civicrm_postSave_civicrm_custom_field($dao) {
-  module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_form');
+  \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/wf_crm_admin_form');
   if (empty($dao->custom_group_id)) {
     $dao->find(TRUE);
   }
@@ -273,7 +273,7 @@ function webform_civicrm_civicrm_postSave_civicrm_custom_field($dao) {
  */
 function webform_civicrm_civicrm_post($op, $name, $id, $dao) {
   if ($name == 'CustomField' && $op == 'delete') {
-    module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_form');
+    \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/wf_crm_admin_form');
     wf_crm_admin_form::handleDynamicCustomField($op, $id, $dao->custom_group_id);
   }
 }
@@ -389,7 +389,7 @@ function webform_civicrm_webform_component_presave(&$component) {
  */
 function webform_civicrm_preprocess_webform_results_submissions(&$vars) {
   if (count($vars['table']['#rows']) && !empty($vars['node']->webform_civicrm) && webform_results_access($vars['node'])) {
-    module_load_include('inc', 'webform_civicrm', 'includes/utils');
+    \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/utils');
     $access = user_access('access CiviCRM');
     $temp = $vars['table']['#header'];
     $vars['table']['#header'] = array();
@@ -433,7 +433,7 @@ function webform_civicrm_preprocess_webform_results_submissions(&$vars) {
  * Implements hook_preprocess_HOOK().
  */
 function webform_civicrm_preprocess_webform_components_form(&$vars) {
-  module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_component');
+  \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/wf_crm_admin_component');
   wf_crm_admin_component::preprocessComponentsForm($vars['form'], $vars['rows'], $vars['form']['#node']);
 }
 
@@ -873,7 +873,7 @@ function webform_civicrm_civicrm_pre($op, $objectName, $id, &$params) {
       $result = civicrm_api3('CustomField', 'get', $queryParams);
       // run only if this field already exist in db to make sure we donot run it for create op
       if ($result['count'] == 1) {
-        module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_form');
+        \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/wf_crm_admin_form');
         $previousStatus = $result['values'][0]['is_active'];
         $customGroupId = $result['values'][0]['custom_group_id'];
         if ($statusToSet == FALSE && $previousStatus == TRUE) {

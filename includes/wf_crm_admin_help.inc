@@ -482,7 +482,7 @@ class wf_crm_admin_help {
       return;
     }
     civicrm_initialize();
-    module_load_include('inc', 'webform_civicrm', 'includes/utils');
+    \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/utils');
     $info = wf_civicrm_api('custom_field', 'getsingle', array('id' => $id));
     if (!empty($info['help_pre'])) {
       print '<p>' . $info['help_pre'] . '</p>';
@@ -498,7 +498,7 @@ class wf_crm_admin_help {
   public static function fieldset($param) {
     list( , $set) = explode('_', $param);
     civicrm_initialize();
-    module_load_include('inc', 'webform_civicrm', 'includes/utils');
+    \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/utils');
     $sets = wf_crm_get_fields('sets');
     if (!empty($sets[$set]['help_text'])) {
       print '<p>' . $sets[$set]['help_text'] . '</p>';

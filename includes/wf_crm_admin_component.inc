@@ -9,7 +9,7 @@ use Drupal\Component\Utility\Html;
 use Drupal\webform_civicrm\Utils;
 use Drupal\node\Entity\Node;
 
-module_load_include('inc', 'webform_civicrm', 'includes/utils');
+\Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/utils');
 
 // FIXME: Temporary workaround for https://www.drupal.org/node/2389537
 \Drupal::state()->set('webform_table', TRUE);
@@ -438,7 +438,7 @@ class wf_crm_admin_component {
    * @return string
    */
   private function componentToken($cid) {
-    module_load_include('inc', 'webform', 'includes/webform.components');
+    \Drupal::ModuleHandler()->loadInclude('webform', 'inc', 'includes/webform.components');
     $component = $this->node->webform['components'][$cid];
     $parents = webform_component_parent_keys($this->node, $component);
 

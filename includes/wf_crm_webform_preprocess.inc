@@ -531,7 +531,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             }
           }
           if ($name == 'existing') {
-            module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
+            \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/contact_component');
             CivicrmContact::wf_crm_fill_contact_value($this->node, $component, $element, $this->ent);
           }
           if ($name === 'contribution_page_id') {

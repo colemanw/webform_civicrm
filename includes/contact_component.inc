@@ -10,8 +10,8 @@ use Drupal\webform_civicrm\Plugin\WebformElement\CivicrmContact;
 use Drupal\webform_civicrm\Utils;
 use Drupal\node\Entity\Node;
 
-module_load_include('inc', 'webform_civicrm', 'includes/utils');
-module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_help');
+\Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/utils');
+\Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/wf_crm_admin_help');
 
 /**
  * Implements _webform_edit_component().

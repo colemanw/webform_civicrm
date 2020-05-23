@@ -9,7 +9,7 @@ use Drupal\webform_civicrm\Utils;
 use Drupal\File\Entity\File;
 use Drupal\Core\File\FileSystemInterface;
 
-module_load_include('inc', 'webform_civicrm', 'includes/utils');
+\Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/utils');
 
 /**
  * Class wf_crm_webform_base
@@ -234,7 +234,7 @@ abstract class wf_crm_webform_base {
    *   Webform component of type 'civicrm_contact'
    */
   protected function findContact($component) {
-    module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
+    \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/contact_component');
     list(, $c,) = explode('_', $component['#form_key'], 3);
     $filters = wf_crm_search_filters($this->node, $component);
     // Start with the url - that trumps everything.

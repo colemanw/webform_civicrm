@@ -1640,8 +1640,8 @@ class wf_crm_admin_form {
       return;
     }
 
-    module_load_include('inc', 'webform', 'includes/webform.components');
-    module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
+    \Drupal::ModuleHandler()->loadInclude('webform', 'inc', 'includes/webform.components');
+    \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/contact_component');
 
     // Delete/disable fields
     $deleted = 0;
@@ -1887,7 +1887,7 @@ class wf_crm_admin_form {
     }
     if ($rule_group['rules']) {
       $this->node->webform['conditionals'][] = $rule_group;
-      module_load_include('inc', 'webform', 'includes/webform.conditionals');
+      \Drupal::ModuleHandler()->loadInclude('webform', 'inc', 'includes/webform.conditionals');
       webform_conditional_insert($rule_group);
     }
   }
@@ -2180,7 +2180,7 @@ class wf_crm_admin_form {
    * @param int $gid
    */
   public static function handleDynamicCustomField($op, $fid, $gid) {
-    module_load_include('inc', 'webform_civicrm', 'includes/utils');
+    \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/utils');
     $sets = Utils::wf_crm_get_fields('sets');
     // @todo Start using webform_civicrm_forms to track enabled webforms.
     /** @var \Drupal\webform\WebformInterface[] $webforms */
