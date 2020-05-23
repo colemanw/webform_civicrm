@@ -28,6 +28,7 @@ define('WEBFORM_CIVICRM_DEFAULT_CONTACT_ID', 1);
  */
 function webform_civicrm_library_info_alter(array &$libraries, $extension) {
   if ($extension === 'webform_civicrm') {
+    \Drupal::getContainer()->get('civicrm')->initialize();
     $user_framework_resource_url = CRM_Core_Config::singleton()->resourceBase;
     unset($libraries['civicrm_contact']['js']['/libraries/civicrm/packages/jquery/plugins/jquery.tokeninput.js']);
     $libraries['civicrm_contact']['js'][$user_framework_resource_url . 'packages/jquery/plugins/jquery.tokeninput.js'] = [
