@@ -81,7 +81,6 @@ class Fields implements FieldsInterface {
       if (in_array('CiviContribute', $components, TRUE)) {
         $sets['line_items'] = ['entity_type' => 'line_item', 'label' => t('Line Items')];
       }
-
       $extra_sets = wf_crm_get_empty_sets();
       $sets += $extra_sets;
       $this->sets = $sets;
@@ -91,14 +90,13 @@ class Fields implements FieldsInterface {
   }
 
   protected function getMoneyDefaults(): array {
-    $config = (array) CRM_Core_Config::singleton();
     return [
       'type' => 'number',
       'data_type' => 'Money',
       'extra' => [
-        'field_prefix' => $config['defaultCurrencySymbol'] ?? '$',
-        'point' => $config['monetaryDecimalPoint'] ?? '.',
-        'separator' => $config['monetaryThousandSeparator'] ?? ',',
+        'field_prefix' => wf_crm_get_civi_setting('defaultCurrencySymbol', '$'),
+        'point' => wf_crm_get_civi_setting('monetaryDecimalPoint', '.'),
+        'separator' => wf_crm_get_civi_setting('monetaryThousandSeparator', ','),
         'decimals' => 2,
         'min' => 0,
       ],
@@ -339,6 +337,16 @@ class Fields implements FieldsInterface {
         'type' => 'select',
         'expose_list' => TRUE,
       );
+      /*
+       * @todo is this fine w/ the core file element?
+       $defaultLocType = wf_crm_aval(wf_civicrm_api('LocationType', 'get', [
+         'return' => ["id"],
+         'is_default' => 1,
+       ]), 'id');
+       ...
+      'value' => $defaultLocType,
+      ...
+       */
       foreach (array('address' => t('Address # Location'), 'phone' => t('Phone # Location'), 'email' => t('Email # Location'), 'im' => t('IM # Location')) as $key => $label) {
         if (isset($sets[$key])) {
           $fields[$key . '_location_type_id'] = array(
@@ -440,7 +448,6 @@ class Fields implements FieldsInterface {
       $tag_entities = array('other', 'activity');
       if (isset($sets['case'])) {
         $tag_entities[] = 'case';
-        $case_info = new CRM_Case_XMLProcessor_Process();
         $fields['case_case_type_id'] = array(
           'name' => t('Case # Type'),
           'type' => 'select',
@@ -450,7 +457,7 @@ class Fields implements FieldsInterface {
           'name' => t('Case # Client'),
           'type' => 'select',
           'expose_list' => TRUE,
-          'extra' => array('required' => 1, 'multiple' => $case_info->getAllowMultipleCaseClients()),
+          'extra' => array('required' => 1, 'multiple' => wf_crm_get_civi_setting('civicaseAllowMultipleClients', 0)),
           'data_type' => 'ContactReference',
           'set' => 'caseRoles',
           'value' => 1,
@@ -876,110 +883,118 @@ class Fields implements FieldsInterface {
         }
       }
 
-      // Pull custom fields and match to Webform element types
-      $custom_types = wf_crm_custom_types_map_array();
+      // Fetch custom groups
       list($contact_types) = wf_crm_get_contact_types();
-      $custom_extends = "'" . implode("','", array_keys($contact_types + $sets)) . "'";
-      $sql = "
-      SELECT cf.*, cg.title AS custom_group_name, LOWER(cg.extends) AS entity_type, cg.extends_entity_column_id, cg.extends_entity_column_value AS sub_types, cg.is_multiple, cg.max_multiple, cg.id AS custom_group_id, cg.help_pre as cg_help
-      FROM civicrm_custom_field cf
-      INNER JOIN civicrm_custom_group cg ON cg.id = cf.custom_group_id
-      WHERE cf.is_active <> 0 AND cg.extends IN ($custom_extends) AND cg.is_active <> 0
-      ORDER BY cf.custom_group_id, cf.weight";
-      $dao = CRM_Core_DAO::executeQuery($sql);
-      while ($dao->fetch()) {
-        if (isset($custom_types[$dao->html_type])) {
-          $set = 'cg' . $dao->custom_group_id;
-          // Place these custom fields directly into their entity
-          if (wf_crm_aval($sets, "$dao->entity_type:custom_fields") == 'combined') {
-            //if ($dao->entity_type == 'address' || $dao->entity_type == 'relationship' || $dao->entity_type == 'membership' || $dao->entity_type == 'phone') {
-            $set = $dao->entity_type;
-          }
-          elseif (!isset($sets[$set])) {
-            $sets[$set]['label'] = $dao->custom_group_name;
-            if (isset($contact_types[$dao->entity_type]) || $dao->entity_type == 'contact') {
-              $sets[$set]['entity_type'] = 'contact';
-              if ($dao->entity_type != 'contact') {
-                $sets[$set]['contact_type'] = $dao->entity_type;
-              }
-              if ($dao->is_multiple) {
-                $sets[$set]['max_instances'] = ($dao->max_multiple ? $dao->max_multiple : 9);
-              }
-              else {
-                $sets[$set]['max_instances'] = 1;
-              }
+      $custom_sets = [];
+      $custom_groups = wf_crm_apivalues('CustomGroup', 'get', array(
+        'return' => array('title', 'extends', 'extends_entity_column_value', 'extends_entity_column_id', 'is_multiple', 'max_multiple', 'help_pre'),
+        'is_active' => 1,
+        'extends' => array('IN' => array_keys($contact_types + $sets)),
+        'options' => array('sort' => 'weight'),
+      ));
+      foreach ($custom_groups as $custom_group) {
+        $set = 'cg' . $custom_group['id'];
+        $entity_type = strtolower($custom_group['extends']);
+        // Place these custom fields directly into their entity
+        if (wf_crm_aval($sets, "$entity_type:custom_fields") == 'combined') {
+          $set = $entity_type;
+        }
+        else {
+          $sets[$set] = array(
+            'label' => $custom_group['title'],
+            'entity_type' => $entity_type,
+            'max_instances' => 1,
+          );
+          if (isset($contact_types[$entity_type]) || $entity_type == 'contact') {
+            $sets[$set]['entity_type'] = 'contact';
+            if ($entity_type != 'contact') {
+              $sets[$set]['contact_type'] = $entity_type;
             }
-            else {
-              $sets[$set]['entity_type'] = $dao->entity_type;
+            if (!empty($custom_group['is_multiple'])) {
+              $sets[$set]['max_instances'] = $custom_group['max_multiple'] ?? 9;
             }
-            if ($dao->sub_types) {
-              $sets[$set]['sub_types'] = wf_crm_explode_multivalue_str($dao->sub_types);
-            }
-            if ($dao->extends_entity_column_id) {
-              $sets[$set]['extension_of'] = $dao->extends_entity_column_id;
-            }
-            $sets[$set]['help_text'] = $dao->cg_help;
           }
-          $id = $set . '_custom_' . $dao->id;
-          $fields[$id] = $custom_types[$dao->html_type];
-          if ($dao->html_type == 'Text' && $dao->data_type == 'Money') {
-            $fields[$id] = $moneyDefaults;
+          if (!empty($custom_group['extends_entity_column_value'])) {
+            $sets[$set]['sub_types'] = $custom_group['extends_entity_column_value'];
           }
-          $fields[$id]['name'] = $dao->label;
-          $fields[$id]['required'] = $dao->is_required;
-          $fields[$id]['default_value'] = implode(',', wf_crm_explode_multivalue_str($dao->default_value));
-          $fields[$id]['data_type'] = $dao->data_type;
-          if (!empty($dao->help_pre) || !empty($dao->help_post)) {
-            $fields[$id]['extra']['description'] = $dao->help_pre ? $dao->help_pre : $dao->help_post;
-            $fields[$id]['extra']['description_above'] = (int) !$dao->help_pre;
-            $fields[$id]['has_help'] = TRUE;
+          if (!empty($custom_group['extends_entity_column_id'])) {
+            $sets[$set]['extension_of'] = $custom_group['extends_entity_column_id'];
           }
-          // Conditional rule - todo: support additional entities
-          if ($sets[$set]['entity_type'] == 'contact' && !empty($sets[$set]['sub_types'])) {
-            $fields[$id]['civicrm_condition'] = array(
-              'andor' => 'or',
-              'action' => 'show',
-              'rules' => array(
-                'contact_contact_sub_type' => array(
-                  'values' => $sets[$set]['sub_types'],
-                ),
+          $sets[$set]['help_text'] = $custom_group['help_pre'] ?? NULL;
+        }
+        $custom_sets[$custom_group['id']] = $set;
+      }
+
+      // Fetch custom fields
+      $custom_types = wf_crm_custom_types_map_array();
+      $custom_fields = wf_crm_apivalues('CustomField', 'get', array(
+        'is_active' => 1,
+        'custom_group_id' => array('IN' => array_keys($custom_sets)),
+        'html_type' => array('IN' => array_keys($custom_types)),
+        'options' => array('sort' => 'weight'),
+      ));
+      foreach ($custom_fields as $custom_field) {
+        $set = $custom_sets[$custom_field['custom_group_id']];
+        $custom_group = $custom_groups[$custom_field['custom_group_id']];
+        $id = $set . '_custom_' . $custom_field['id'];
+        $fields[$id] = $custom_types[$custom_field['html_type']];
+        if ($custom_field['html_type'] == 'Text' && $custom_field['data_type'] == 'Money') {
+          $fields[$id] = $moneyDefaults;
+        }
+        $fields[$id]['name'] = $custom_field['label'];
+        $fields[$id]['required'] = (int) !empty($custom_field['is_required']);
+        if (!empty($custom_field['default_value'])) {
+          $fields[$id]['value'] = implode(',', wf_crm_explode_multivalue_str($custom_field['default_value']));
+        }
+        $fields[$id]['data_type'] = $custom_field['data_type'];
+        if (!empty($custom_field['help_pre']) || !empty($custom_field['help_post'])) {
+          $fields[$id]['extra']['description'] = !empty($custom_field['help_pre']) ? $custom_field['help_pre'] : $custom_field['help_post'];
+          $fields[$id]['extra']['description_above'] = (int) empty($custom_field['help_pre']);
+          $fields[$id]['has_help'] = TRUE;
+        }
+        // Conditional rule - todo: support additional entities
+        if ($sets[$set]['entity_type'] == 'contact' && !empty($sets[$set]['sub_types'])) {
+          $fields[$id]['civicrm_condition'] = array(
+            'andor' => 'or',
+            'action' => 'show',
+            'rules' => array(
+              'contact_contact_sub_type' => array(
+                'values' => $sets[$set]['sub_types'],
               ),
+            ),
+          );
+        }
+        if ($set == 'relationship' && !empty($custom_group['extends_entity_column_value'])) {
+          $fields[$id]['attributes']['data-relationship-type'] = implode(',', $custom_group['extends_entity_column_value']);
+        }
+
+        if ($fields[$id]['type'] == 'date') {
+          $fields[$id]['extra']['start_date'] = (!empty($custom_field['start_date_years']) ? '-' . $custom_field['start_date_years'] : '-50') . ' years';
+          $fields[$id]['extra']['end_date'] = (!empty($custom_field['end_date_years']) ? '+' . $custom_field['end_date_years'] : '+50') . ' years';
+          // Add "time" component for datetime fields
+          if (!empty($custom_field['time_format'])) {
+            $fields[$id]['name'] .= ' - ' . t('date');
+            $fields[$id . '_timepart'] = array(
+              'name' => $custom_field['label'] . ' - ' . t('time'),
+              'type' => 'time',
+              'extra' => array('hourformat' => $custom_field['time_format'] == 1 ? '12-hour' : '24-hour'),
             );
           }
-
-          if ($dao->entity_type == 'relationship' && $dao->sub_types) {
-            $fields[$id]['attributes']['data-relationship-type'] = implode(',', wf_crm_explode_multivalue_str($dao->sub_types));
-          }
-
-          if ($fields[$id]['type'] == 'date') {
-            $fields[$id]['extra']['start_date'] = ($dao->start_date_years ? '-' . $dao->start_date_years : '-50') . ' years';
-            $fields[$id]['extra']['end_date'] = ($dao->end_date_years ? '+' . $dao->end_date_years : '+50') . ' years';
-            // Add "time" component for datetime fields
-            if (!empty($dao->time_format)) {
-              $fields[$id]['name'] .= ' - ' . t('date');
-              $fields[$id . '_timepart'] = array(
-                'name' => $dao->label . ' - ' . t('time'),
-                'type' => 'webform_time',
-                'extra' => array('hourformat' => $dao->time_format == 1 ? '12-hour' : '24-hour'),
-              );
-            }
-          }
-          elseif ($fields[$id]['data_type'] == 'ContactReference') {
-            $fields[$id]['expose_list'] = TRUE;
-            $fields[$id]['empty_option'] = t('None');
-          }
-          elseif ($fields[$id]['data_type'] !== 'Boolean' && $fields[$id]['type'] == 'select') {
-            $fields[$id]['extra']['civicrm_live_options'] = 1;
-          }
-          elseif ($fields[$id]['type'] == 'textarea') {
-            $fields[$id]['extra']['cols'] = $dao->note_columns;
-            $fields[$id]['extra']['rows'] = $dao->note_rows;
-          }
+        }
+        elseif ($fields[$id]['data_type'] == 'ContactReference') {
+          $fields[$id]['expose_list'] = TRUE;
+          $fields[$id]['empty_option'] = t('None');
+        }
+        elseif ($fields[$id]['data_type'] !== 'Boolean' && $fields[$id]['type'] == 'select') {
+          $fields[$id]['extra']['civicrm_live_options'] = 1;
+        }
+        elseif ($fields[$id]['type'] == 'textarea') {
+          $fields[$id]['extra']['cols'] = $custom_field['note_columns'] ?? 60;
+          $fields[$id]['extra']['rows'] = $custom_field['note_rows'] ?? 4;
         }
       }
       // The sets are modified in this function to include the custom sets.
       $this->sets = $sets;
-      $dao->free();
     }
     return $$var;
   }
