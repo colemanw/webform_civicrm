@@ -864,7 +864,7 @@ abstract class wf_crm_webform_base {
     $file = File::load($id);
     if ($file) {
       $config = CRM_Core_Config::singleton();
-      $path = FileSystemInterface::copy($file->getFileUri(), $config->customFileUploadDir);
+      $path = \Drupal::service('file_system')->copy($file->getFileUri(), $config->customFileUploadDir);
       if ($path) {
         $result = wf_civicrm_api('file', 'create', array(
           'uri' => str_replace($config->customFileUploadDir, '', $path),
