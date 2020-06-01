@@ -28,6 +28,7 @@ define('WEBFORM_CIVICRM_DEFAULT_CONTACT_ID', 1);
  */
 function webform_civicrm_library_info_alter(array &$libraries, $extension) {
   if ($extension === 'webform_civicrm') {
+    \Drupal::service('civicrm')->initialize();
     $user_framework_resource_url = CRM_Core_Config::singleton()->resourceBase;
     unset($libraries['civicrm_contact']['js']['/libraries/civicrm/packages/jquery/plugins/jquery.tokeninput.js']);
     $libraries['civicrm_contact']['js'][$user_framework_resource_url . 'packages/jquery/plugins/jquery.tokeninput.js'] = [
@@ -118,7 +119,7 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
  * @param string $str
  */
 function webform_civicrm_webform_autocomplete_options_alter(&$results, $node, $cid, $str) {
-  module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_ajax');
+  \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/wf_crm_webform_ajax');
   if (wf_crm_webform_ajax::autocompleteAccess($node, $cid)) {
     $key = Utils::wf_crm_explode_key($node->webform['components'][$cid]['form_key']);
   }
@@ -138,87 +139,6 @@ function webform_civicrm_webform_autocomplete_options_alter(&$results, $node, $c
       $results = array_combine($options, $options);
     }
   }
-}
-
-/**
- * Implements hook_node_load().
- *
- * @param array $nodes
- */
-/*
-function webform_civicrm_node_load($nodes, $types) {
-  $db = db_query('SELECT * FROM {webform_civicrm_forms} WHERE nid IN(:nids)', array(':nids' => array_keys($nodes)));
-  foreach ($db as $settings) {
-    $node = &$nodes[$settings->nid];
-    $settings->data = unserialize($settings->data);
-    $node->webform_civicrm = (array) $settings;
-    // Allow a component widget to be changed
-    if (!empty($_GET['type']) && arg(0) == 'node' && arg(1) == $node->nid && arg(3) == 'components') {
-      if (!empty($node->webform['components'][arg(4)]) && array_key_exists($_GET['type'], webform_components())) {
-        $node->webform['components'][arg(4)]['type'] = $_GET['type'];
-        webform_component_defaults($node->webform['components'][arg(4)]);
-        if ($_GET['type'] == 'select') {
-          module_load_include('inc', 'webform_civicrm', 'includes/utils');
-          civicrm_initialize();
-          $node->webform['components'][arg(4)]['extra']['items'] = wf_crm_array2str(wf_crm_field_options($node->webform['components'][arg(4)], 'component_insert', $node->webform_civicrm['data']));
-        }
-      }
-    }
-  }
-}
-*/
-
-/**
- * Implements hook_node_insert().
- * Preserve webform_civicrm data when cloning or importing a node
- *
- * @param object $node
- */
-function webform_civicrm_node_insert($node) {
-  /*
-  if (isset($node->webform_civicrm)) {
-    $node->webform_civicrm['nid'] = $node->nid;
-    drupal_write_record('webform_civicrm_forms', $node->webform_civicrm);
-  }
-  */
-}
-
-/**
- * Implements hook_node_delete().
- *
- * @param object $node
- */
-function webform_civicrm_node_delete($node) {
-  /*
-  if (!empty($node->webform)) {
-    db_delete('webform_civicrm_forms')
-      ->condition('nid', $node->nid)
-      ->execute();
-    // Submissions have already been deleted from webform_submissions table
-    // So we'll do the opposite of a join to find them
-    db_delete('webform_civicrm_submissions')
-      ->where('sid NOT IN (SELECT sid FROM {webform_submissions})')
-      ->execute();
-  }
-  */
-}
-
-/**
- * Implements hook_node_view().
- *
- * Handles localization.
- */
-function webform_civicrm_node_view($node, $view_mode, $langcode) {
-  /*
-  if (module_exists('webform_localization') && in_array($node->type, webform_node_types()) && !isset($node->webform_civicrm)) {
-    if ($nid = webform_localization_single_webform_nid($node)) {
-      $source_node = node_load($nid);
-      if (!empty($source_node->webform_civicrm)) {
-        $node->webform_civicrm = $source_node->webform_civicrm;
-      }
-    }
-  }
-  */
 }
 
 /**
@@ -267,59 +187,6 @@ function webform_civicrm_webform_component_info() {
       'file' => 'includes/contact_component.inc',
     ),
   );
-}
-
-/**
- * Implements hook_webform_submission_delete().
- */
-function webform_civicrm_webform_submission_delete($submission) {
-  /*
-  db_delete('webform_civicrm_submissions')
-    ->condition('sid', $submission->sid)
-    ->execute();
-  */
-}
-
-/**
- * Implements hook_webform_submission_load().
- * Add CiviCRM contact info to submission objects.
- */
-function webform_civicrm_webform_submission_load(&$submissions) {
-  /*
-  if (empty($submissions)) {
-    return;
-  }
-  $db = db_query('SELECT * FROM {webform_civicrm_submissions} WHERE sid IN (' . implode(',', array_keys($submissions)) . ')');
-  $contacts = array();
-  foreach ($db as $row) {
-    $data = unserialize($row->civicrm_data) + array('contact' => array());
-    if ($row->contact_id) {
-      foreach (explode('-', trim($row->contact_id, '-')) as $c => $cid) {
-        $data['contact'][$c + 1]['id'] = $cid;
-        $data['contact'][$c + 1]['display_name'] = '';
-        if ($c == 0 && $cid) {
-          $contacts[$cid] = '';
-        }
-      }
-    }
-    $submissions[$row->sid]->civicrm = $data;
-  }
-  if ($contacts) {
-    // Retrieve contact names and add to submission objects
-    civicrm_initialize();
-    $sql = 'SELECT id, display_name FROM civicrm_contact WHERE id IN (' . implode(',', array_keys($contacts)) . ')';
-
-    $dao = CRM_Core_DAO::executeQuery($sql);
-    while ($dao->fetch()) {
-      $contacts[$dao->id] = $dao->display_name;
-    }
-    foreach ($submissions as &$s) {
-      if (!empty($s->civicrm['contact'][1]['id'])) {
-        $s->civicrm['contact'][1]['display_name'] = $contacts[$s->civicrm['contact'][1]['id']];
-      }
-    }
-  }
-  */
 }
 
 /**
@@ -383,7 +250,7 @@ function webform_civicrm_webform_submission_actions($node, $submission) {
  * @param CRM_Core_DAO_CustomField $dao
  */
 function webform_civicrm_civicrm_postSave_civicrm_custom_field($dao) {
-  module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_form');
+  \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/wf_crm_admin_form');
   if (empty($dao->custom_group_id)) {
     $dao->find(TRUE);
   }
@@ -407,7 +274,7 @@ function webform_civicrm_civicrm_postSave_civicrm_custom_field($dao) {
  */
 function webform_civicrm_civicrm_post($op, $name, $id, $dao) {
   if ($name == 'CustomField' && $op == 'delete') {
-    module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_form');
+    \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/wf_crm_admin_form');
     wf_crm_admin_form::handleDynamicCustomField($op, $id, $dao->custom_group_id);
   }
 }
@@ -422,35 +289,6 @@ function webform_civicrm_civicrm_post($op, $name, $id, $dao) {
 function webform_civicrm_civicrm_postSave_civicrm_custom_group($dao) {
   // @todo Webform elements are not stored in the table and this does not work.
   // @todo evaluate how to update webform when custom groups change.
-  /*
-  module_load_include('inc', 'webform', 'includes/webform.components');
-
-  // get all fieldsets with custom group ID
-  $customGroupId = $dao->id;
-  $dbResource = db_query("SELECT * FROM {webform_component} WHERE type ='fieldset' "
-          . "AND form_key LIKE '%cg{$customGroupId}_fieldset'");
-  $fieldsets = $dbResource->fetchAll(PDO::FETCH_ASSOC);
-
-  // check if dao fields have been fetched
-  if (!$dao->title) {
-    $dao->find(TRUE);
-  }
-
-  // run only if the title of the custom group has changed in civicrm
-  if (!empty($fieldsets[0]) && $fieldsets[0]['name'] != $dao->title) {
-    foreach ($fieldsets as $field_info) {
-      $component = array();
-      $component['name'] = $dao->title;
-      $component['type'] = $field_info['type'];
-      $component['form_key'] = $field_info['form_key'];
-      $component['weight'] = $field_info['weight'];
-      $component['nid'] = $field_info['nid'];
-      $component['cid'] = $field_info['cid'];
-      $component['pid'] = $field_info['pid'];
-      webform_component_update($component);
-    }
-  }
-  */
 }
 
 /**
@@ -552,7 +390,7 @@ function webform_civicrm_webform_component_presave(&$component) {
  */
 function webform_civicrm_preprocess_webform_results_submissions(&$vars) {
   if (count($vars['table']['#rows']) && !empty($vars['node']->webform_civicrm) && webform_results_access($vars['node'])) {
-    module_load_include('inc', 'webform_civicrm', 'includes/utils');
+    \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/utils');
     $access = user_access('access CiviCRM');
     $temp = $vars['table']['#header'];
     $vars['table']['#header'] = array();
@@ -596,7 +434,7 @@ function webform_civicrm_preprocess_webform_results_submissions(&$vars) {
  * Implements hook_preprocess_HOOK().
  */
 function webform_civicrm_preprocess_webform_components_form(&$vars) {
-  module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_component');
+  \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/wf_crm_admin_component');
   wf_crm_admin_component::preprocessComponentsForm($vars['form'], $vars['rows'], $vars['form']['#node']);
 }
 
@@ -686,8 +524,8 @@ function _webform_civicrm_status() {
   $status = array();
   $status['webform_civicrm'] = FALSE;
 
-  $civicrm = system_get_info('module', 'civicrm');
-  $webform = system_get_info('module', 'webform');
+  $civicrm = \Drupal::service('extension.list.module')->getExtensionInfo('civicrm');
+  $webform = \Drupal::service('extension.list.module')->getExtensionInfo('webform');
 
   if (version_compare($civicrm['version'], WEBFORM_CIVICRM_CIVICRM_VERSION_MIN, '>=') &&
     version_compare($webform['version'], WEBFORM_CIVICRM_WEBFORM_VERSION, '>=')) {
@@ -1036,7 +874,7 @@ function webform_civicrm_civicrm_pre($op, $objectName, $id, &$params) {
       $result = civicrm_api3('CustomField', 'get', $queryParams);
       // run only if this field already exist in db to make sure we donot run it for create op
       if ($result['count'] == 1) {
-        module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_form');
+        \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/wf_crm_admin_form');
         $previousStatus = $result['values'][0]['is_active'];
         $customGroupId = $result['values'][0]['custom_group_id'];
         if ($statusToSet == FALSE && $previousStatus == TRUE) {

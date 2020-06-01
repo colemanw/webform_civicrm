@@ -14,7 +14,7 @@ use Drupal\webform\WebformInterface;
 use Drupal\webform\WebformSubmissionInterface;
 use Drupal\webform_civicrm\Utils;
 
-module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_base');
+\Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/wf_crm_webform_base');
 
 class wf_crm_webform_postprocess extends wf_crm_webform_base {
   // Variables used during validation
@@ -489,7 +489,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
         elseif (!empty($event['max_participants']) && $event['count'] > $event['available_places']) {
           if (!empty($event['is_full'])) {
-            $this->form_state->setErrorByName($eid, format_string('%event : ' . $event['event_full_text'],['%event' => $event['title']]));
+            $this->form_state->setErrorByName($eid, t('%event : @text', ['%event' => $event['title'], '@text' => $event['event_full_text']]));
           }
           else {
             $this->form_state->setErrorByName($eid, format_plural($event['available_places'],
@@ -572,7 +572,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function verifyExistingContact($cid, $fid) {
     if (wf_crm_is_positive($cid) && !empty($this->enabled[$fid])) {
-      module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
+      \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/contact_component');
       $component = $this->node->getElement($fid);
       $filters = wf_crm_search_filters($this->node, $component);
       // Verify access to this contact
@@ -998,7 +998,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
       }
       if ($confirmations_sent) {
-        drupal_set_message(t('A message has been sent to %email to confirm subscription to !group.', array('%email' => $email, '!group' => '<em>' . implode('</em> ' . t('and') . ' <em>', $confirmations_sent) . '</em>')));
+        \Drupal::messenger()->addStatus(t('A message has been sent to %email to confirm subscription to !group.', array('%email' => $email, '!group' => '<em>' . implode('</em> ' . t('and') . ' <em>', $confirmations_sent) . '</em>')));
       }
     }
     // Remove data from entity
@@ -1009,7 +1009,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     if (!empty($remove) && $data_type == 'group') {
       $display_name = wf_civicrm_api('contact', 'get', array('contact_id' => $id, 'return.display_name' => 1));
       $display_name = wf_crm_aval($display_name, "values:$id:display_name", t('Contact'));
-      drupal_set_message(t('%contact has been removed from !group.', array('%contact' => $display_name, '!group' => '<em>' . implode('</em> ' . t('and') . ' <em>', $remove) . '</em>')));
+      \Drupal::messenger()->addStatus(t('%contact has been removed from !group.', array('%contact' => $display_name, '!group' => '<em>' . implode('</em> ' . t('and') . ' <em>', $remove) . '</em>')));
     }
   }
 
@@ -1155,7 +1155,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
         foreach ($remove as $eid => $title) {
           wf_civicrm_api('participant', 'create', array('status_id' => "Cancelled", 'id' => $existing[$eid]));
-          drupal_set_message(t('Registration cancelled for !event', array('!event' => $title)));
+          \Drupal::messenger()->addStatus(t('Registration cancelled for !event', array('!event' => $title)));
         }
       }
     }

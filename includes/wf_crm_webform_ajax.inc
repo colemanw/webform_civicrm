@@ -12,7 +12,7 @@ use Drupal\webform\Entity\Webform;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
-module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_base');
+\Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/wf_crm_webform_base');
 
 class wf_crm_webform_ajax extends wf_crm_webform_base {
 
@@ -39,7 +39,8 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
    */
   function contactAjax($webformId, $fid) {
 
-    module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
+    \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/contact_component');
+
     if (empty($this->getParameter('str')) && (empty($this->getParameter('load')) || empty($this->getParameter('cid')))) {
       throw new AccessDeniedHttpException('Invalid parameters.');
     }

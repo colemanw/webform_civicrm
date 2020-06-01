@@ -6,8 +6,10 @@
  */
 
 use Drupal\webform_civicrm\Utils;
+use Drupal\File\Entity\File;
+use Drupal\Core\File\FileSystemInterface;
 
-module_load_include('inc', 'webform_civicrm', 'includes/utils');
+\Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/utils');
 
 /**
  * Class wf_crm_webform_base
@@ -232,7 +234,7 @@ abstract class wf_crm_webform_base {
    *   Webform component of type 'civicrm_contact'
    */
   protected function findContact($component) {
-    module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
+    \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/contact_component');
     list(, $c,) = explode('_', $component['#form_key'], 3);
     $filters = wf_crm_search_filters($this->node, $component);
     // Start with the url - that trumps everything.
@@ -859,10 +861,10 @@ abstract class wf_crm_webform_base {
    * @return int|null Civi file id
    */
   public static function saveDrupalFileToCivi($id) {
-    $file = file_load($id);
+    $file = File::load($id);
     if ($file) {
       $config = CRM_Core_Config::singleton();
-      $path = file_unmanaged_copy($file->getFileUri(), $config->customFileUploadDir);
+      $path = \Drupal::service('file_system')->copy($file->getFileUri(), $config->customFileUploadDir);
       if ($path) {
         $result = wf_civicrm_api('file', 'create', array(
           'uri' => str_replace($config->customFileUploadDir, '', $path),
@@ -913,7 +915,8 @@ abstract class wf_crm_webform_base {
    * @return string|bool: url of file if found
    */
   function getDrupalFileUrl($id) {
-    $file = file_load($id);
+    $file = File::load($id);
+
     return $file ? file_create_url($file->uri) : FALSE;
   }
 
