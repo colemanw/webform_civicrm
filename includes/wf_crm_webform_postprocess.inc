@@ -18,6 +18,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private $totalContribution = 0;
   private $contributionIsIncomplete = FALSE;
   private $contributionIsPayLater = FALSE;
+  private $formFieldOrder = array();
 
   // During validation this contains an array of known contact ids and the placeholder 0 for valid contacts
   // During submission processing this contains an array of known contact ids
@@ -74,6 +75,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->form_state = &$form_state;
     $this->rawValues = _webform_client_form_submit_flatten($this->node, wf_crm_aval($this->form_state, 'values:submitted'));
     $this->crmValues = wf_crm_enabled_fields($this->node, $this->rawValues);
+    foreach ($form['#node']->webform['components'] as $componentField) {
+      $this->formFieldOrder[$componentField['form_key']] = $componentField['weight'];
+    }
     // Even though this object is destroyed between page submissions, this trick allows us to persist some data - see below
     $this->ent = wf_crm_aval($form_state, 'civicrm:ent', array());
 
@@ -401,7 +405,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             $this->events[$eid]['ended'] = TRUE;
             $this->events[$eid]['title'] = t('this event');
             $this->events[$eid]['count'] = wf_crm_aval($this->events, "$eid:count", 0) + $count;
-            $this->line_items[] = array(
+            $this->line_items[$this->formFieldOrder["civicrm_{$c}_participant_{$n}_participant_{$id_and_type}"]] = array(
               'qty' => $count,
               'entity_table' => 'civicrm_participant',
               'event_id' => $eid,
@@ -1531,7 +1535,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Contribution
     $fid = 'civicrm_1_contribution_1_contribution_total_amount';
     if (isset($this->enabled[$fid]) || $this->getData($fid) > 0) {
-      $this->line_items[] = array(
+      $this->line_items[$this->formFieldOrder[$fid]] = array(
         'qty' => 1,
         'unit_price' => $this->getData($fid),
         'financial_type_id' => $this->contribution_page['financial_type_id'],
@@ -1546,7 +1550,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       foreach ($this->data['lineitem'][1]['contribution'] as $n => $lineitem) {
         $fid = "civicrm_1_lineitem_{$n}_contribution_line_total";
         if ($this->getData($fid) != 0) {
-          $this->line_items[] = array(
+          $this->line_items[$this->formFieldOrder[$fid]] = array(
             'qty' => 1,
             'unit_price' => $lineitem['line_total'],
             'financial_type_id' => $lineitem['financial_type_id'],
@@ -1580,7 +1584,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             };
 
             if ($price) {
-              $this->line_items[] = array(
+              $this->line_items[$this->formFieldOrder["civicrm_{$c}_membership_{$n}_membership_membership_type_id"]] = array(
                 'qty' => $item['num_terms'],
                 'unit_price' => $price,
                 'financial_type_id' => $membership_financialtype,
@@ -1593,6 +1597,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
       }
     }
+    // order the line itema using weight, key are the fields weight
+    ksort($this->line_items);
     // Calculate totals
     $this->totalContribution = 0;
     $taxRates = CRM_Core_PseudoConstant::getTaxRates();
