@@ -124,7 +124,7 @@ class wf_crm_admin_help {
   public static function contribution_contribution_page_id() {
     print '<p>' .
       t("It is recommended to <a !link>create a new contribution page</a> solely for webform use. When configuring the page, most options will be irrelevant (such as profiles, premiums, widgets, recurring, etc.). Only the following need to be configured:",
-        array('!link' => 'target="_blank" href="' . url('civicrm/admin/contribute/add', array('query' => array('reset' => 1, 'action' => 'add'))) . '"')) .
+        ['!link' => 'target="_blank" href="' . url('civicrm/admin/contribute/add', ['query' => ['reset' => 1, 'action' => 'add']]) . '"']) .
       '</p><ul>' .
       '<li>' . t('Title: Displayed on the webform.') . '</li>' .
       '<li>' . t('Financial Type: Controls overall contribution type.') . '</li>' .
@@ -250,9 +250,9 @@ class wf_crm_admin_help {
     print '<p>' .
       t('Allow events in "User Select" mode to be auto-filled from URL.') .
       '</p>'.'<br /><p>'.t('Example for "Register all":') .
-      '<br /><code>' . url("node", array('absolute' => TRUE)) . '/{node.nid}?event1={event1.event_id},{event2.event_id}</code></p><br />'.
+      '<br /><code>' . url("node", ['absolute' => TRUE]) . '/{node.nid}?event1={event1.event_id},{event2.event_id}</code></p><br />'.
       t('Example for "Register separately":') .
-      '<br /><code>' . url("node", array('absolute' => TRUE)) .
+      '<br /><code>' . url("node", ['absolute' => TRUE]) .
       '/{node.nid}?c1event1={event1.event_id},{event2.event_id}&amp;c2event1={event3.event_id}</code></p>';
   }
 
@@ -277,7 +277,7 @@ class wf_crm_admin_help {
   public static function reg_options_title_display() {
     print '<p>' .
       t('Controls how events are displayed. Date formats can be further configured in <a !link>CiviCRM Date Settings</a>',
-        array('!link' => 'target="_blank" href="' . url('civicrm/admin/setting/date', array('query' => array('reset' => 1))) . '"')
+        ['!link' => 'target="_blank" href="' . url('civicrm/admin/setting/date', ['query' => ['reset' => 1]]) . '"']
       ) .
       '</p><p>' .
       t('Note: End-date will automatically be omitted if it is the same as the start-date.') .
@@ -481,7 +481,7 @@ class wf_crm_admin_help {
     }
     civicrm_initialize();
     module_load_include('inc', 'webform_civicrm', 'includes/utils');
-    $info = wf_civicrm_api('custom_field', 'getsingle', array('id' => $id));
+    $info = wf_civicrm_api('custom_field', 'getsingle', ['id' => $id]);
     if (!empty($info['help_pre'])) {
       print '<p>' . $info['help_pre'] . '</p>';
     }

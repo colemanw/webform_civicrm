@@ -19,7 +19,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
    */
   function stateProvince($input) {
     if (!$input || (intval($input) != $input && $input != 'default')) {
-      drupal_json_output(array('' => t('- first choose a country -')));
+      drupal_json_output(['' => t('- first choose a country -')]);
       exit();
     }
     drupal_json_output(wf_crm_get_states($input));
@@ -33,10 +33,10 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
   function county($input) {
     if (strpos($input, '-')) {
       list($state, $country) = explode('-', $input);
-      $params = array(
+      $params = [
         'field' => 'county_id',
         'state_province_id' => wf_crm_state_abbr($state, 'id', $country)
-      );
+      ];
       drupal_json_output(wf_crm_apivalues('address', 'getoptions', $params));
       exit();
     }
@@ -61,7 +61,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
     $component = $this->node->webform['components'][$fid];
     $filters = wf_crm_search_filters($this->node, $component);
     // Populate other contact ids for related data
-    $this->ent += array('contact' => array());
+    $this->ent += ['contact' => []];
     foreach ($_GET as $k => $v) {
       if (substr($k, 0, 3) == 'cid' && $v && is_numeric($v)) {
         $this->ent['contact'][substr($k, 3)]['id'] = (int) $v;
@@ -69,7 +69,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
     }
     // Bypass filters when choosing contact on component edit form
     if (!empty($_GET['admin']) && wf_crm_admin_access($this->node)) {
-      $filters = array('check_permissions' => 1, 'is_deleted' => 0, 'contact_type' => $filters['contact_type']);
+      $filters = ['check_permissions' => 1, 'is_deleted' => 0, 'contact_type' => $filters['contact_type']];
       $component['extra']['allow_create'] = 0;
     }
     // Autocomplete contact names
@@ -80,7 +80,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
       exit();
     }
     // Load contact by id
-    $data = array();
+    $data = [];
     if ($name = wf_crm_contact_access($component, $filters, $_GET['cid'])) {
       if ($_GET['load'] == 'name') {
         if ($_GET['cid'][0] === '-') {
@@ -98,18 +98,18 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
         list(, $c, ) = explode('_', $component['form_key'], 3);
         $this->ent['contact'][$c]['id'] = (int) $_GET['cid'];
         // Redact fields if they are to be hidden unconditionally, otherwise they are needed on the client side
-        $to_hide = (wf_crm_aval($component['extra'], 'hide_method', 'hide') == 'hide' && !wf_crm_aval($component['extra'], 'no_hide_blank')) ? $component['extra']['hide_fields'] : array();
+        $to_hide = (wf_crm_aval($component['extra'], 'hide_method', 'hide') == 'hide' && !wf_crm_aval($component['extra'], 'no_hide_blank')) ? $component['extra']['hide_fields'] : [];
         $contact = $this->loadContact($c, $to_hide);
-        $states = $countries = array();
+        $states = $countries = [];
         // Format as json array
         foreach ($this->enabled as $fid => $f) {
           list(, $i, $ent, $n, $table, $field) = explode('_', $fid, 6);
           if ($i == $c && $ent == 'contact' && isset($contact[$table][$n][$field])) {
             $type = ($table == 'contact' && strpos($field, 'name')) ? 'name' : $table;
             // Exclude blank and hidden fields
-            if ($contact[$table][$n][$field] !== '' && $contact[$table][$n][$field] !== array() && !in_array($type, $to_hide)) {
+            if ($contact[$table][$n][$field] !== '' && $contact[$table][$n][$field] !== [] && !in_array($type, $to_hide)) {
               $dataType = wf_crm_aval(wf_crm_get_field("{$table}_$field"), 'data_type');
-              $val = array('val' => $contact[$table][$n][$field]);
+              $val = ['val' => $contact[$table][$n][$field]];
               // Retrieve file info
               if ($dataType === 'File') {
                 $val = $this->getFileInfo($field, $val['val'], $ent, $n);
@@ -144,11 +144,11 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
               $this->findContact($related_component);
               $related_cid = wf_crm_aval($this->ent, "contact:$i:id");
               if ($related_cid && $related_cid != $old_related_cid) {
-                $data[] = array(
+                $data[] = [
                   'fid' => $fid,
                   'val' => $related_cid,
                   'display' => wf_crm_contact_access($related_component,  wf_crm_search_filters($this->node, $related_component), $related_cid),
-                );
+                ];
               }
             }
           }
@@ -184,7 +184,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
       return FALSE;
     }
     if (variable_get('webform_submission_access_control', 1)) {
-      $allowed_roles = array();
+      $allowed_roles = [];
       foreach ($node->webform['roles'] as $rid) {
         $allowed_roles[$rid] = isset($user->roles[$rid]) ? TRUE : FALSE;
       }

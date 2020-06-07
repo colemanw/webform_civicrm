@@ -12,17 +12,17 @@ module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_help');
  * Implements _webform_defaults_component().
  */
 function _webform_defaults_civicrm_contact() {
-  return array(
+  return [
     'name' => '',
     'form_key' => NULL,
     'pid' => 0,
     'weight' => 0,
     'value' => '',
     'required' => 0,
-    'extra' => array(
+    'extra' => [
       'search_prompt' => '',
       'none_prompt' => '',
-      'results_display' => array('display_name'),
+      'results_display' => ['display_name'],
       'allow_create' => 0,
       'widget' => 'autocomplete',
       'show_hidden_contact' => 0,
@@ -30,12 +30,12 @@ function _webform_defaults_civicrm_contact() {
       'title_display' => 'before',
       'randomize' => 0,
       'description' => '',
-      'no_autofill' => array(),
-      'hide_fields' => array(),
+      'no_autofill' => [],
+      'hide_fields' => [],
       'hide_method' => 'hide',
       'no_hide_blank' => FALSE,
       'submit_disabled' => FALSE,
-      'attributes' => array(),
+      'attributes' => [],
       'private' => FALSE,
       'default' => '',
       'default_contact_id' => '',
@@ -46,15 +46,15 @@ function _webform_defaults_civicrm_contact() {
       'default_case_roles' => '',
       'allow_url_autofill' => TRUE,
       'dupes_allowed' => FALSE,
-      'filters' => array(
+      'filters' => [
         'contact_sub_type' => 0,
-        'group' => array(),
-        'tag' => array(),
-        'relationship' => array(),
+        'group' => [],
+        'tag' => [],
+        'relationship' => [],
         'check_permissions' => 1,
-      ),
-    ),
-  );
+      ],
+    ],
+  ];
 }
 
 /**
@@ -62,7 +62,7 @@ function _webform_defaults_civicrm_contact() {
  */
 function _webform_edit_civicrm_contact($component) {
   civicrm_initialize();
-  $form = array();
+  $form = [];
   $node = node_load($component['nid']);
   if (empty($node->webform_civicrm) && node_is_page($node)) {
     drupal_set_message(t('CiviCRM processing is not enabled for this webform.'), 'error');
@@ -81,10 +81,10 @@ function _webform_edit_civicrm_contact($component) {
   $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_admin.js';
   CRM_Core_Resources::singleton()->addCoreResources();
   $form['#suffix'] = wf_crm_admin_help::helpTemplate();
-  $callback_path = '"' . url('webform-civicrm/js/' . $node->nid . '-' . $component['cid'], array('alias' => TRUE, 'query' => array('admin' => 1))) . '"';
+  $callback_path = '"' . url('webform-civicrm/js/' . $node->nid . '-' . $component['cid'], ['alias' => TRUE, 'query' => ['admin' => 1]]) . '"';
   $settings = '{
     queryParam: "str",
-    hintText: "' . t('Choose @type', array('@type' => $contact_types[$contact_type])) . '",
+    hintText: "' . t('Choose @type', ['@type' => $contact_types[$contact_type]]) . '",
     noResultsText: "' . t('Not found') . '",
     searchingText: "' . t('Searching...') . '",
     tokenLimit: 1,
@@ -95,22 +95,22 @@ function _webform_edit_civicrm_contact($component) {
     var prep = wfCiviContact.init(' . $callback_path . ');
     $("#default-contact-id").tokenInput(' . $callback_path . ', ' . $settings . ');
   });';
-  $form['#attached']['js'][$js] = array('type' => 'inline');
+  $form['#attached']['js'][$js] = ['type' => 'inline'];
   $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/token-input.css';
   $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/css/webform_civicrm_admin.css';
   $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/js/contact_component.js';
 
-  $form['display']['widget'] = array(
+  $form['display']['widget'] = [
     '#type' => 'select',
     '#title' => t('Form Widget'),
     '#default_value' => $component['extra']['widget'],
-    '#options' => array('autocomplete' => t('Autocomplete'), 'select' => t('Select List'), 'hidden' => t('Static'), 'textfield' => t('Enter Contact ID')),
+    '#options' => ['autocomplete' => t('Autocomplete'), 'select' => t('Select List'), 'hidden' => t('Static'), 'textfield' => t('Enter Contact ID')],
     '#weight' => -9,
-    '#parents' => array('extra', 'widget'),
-  );
+    '#parents' => ['extra', 'widget'],
+  ];
   $status = $allow_create ? t('<strong>Contact Creation: Enabled</strong> - this contact has name/email fields on the webform.') : t('<strong>Contact Creation: Disabled</strong> - no name/email fields for this contact on the webform.');
   $form['display']['#description'] = '<div class="messages ' . ($allow_create ? 'status' : 'warning') . '">' . $status . ' ' . wf_crm_admin_help::helpIcon('contact_creation', t('Contact Creation')) . '</div>';
-  $form['display']['search_prompt'] = array(
+  $form['display']['search_prompt'] = [
     '#type' => 'textfield',
     '#title' => t('Search Prompt'),
     '#default_value' => $component['extra']['search_prompt'],
@@ -118,9 +118,9 @@ function _webform_edit_civicrm_contact($component) {
     '#size' => 60,
     '#maxlength' => 1024,
     '#weight' => -7,
-    '#parents' => array('extra', 'search_prompt'),
-  );
-  $form['display']['none_prompt'] = array(
+    '#parents' => ['extra', 'search_prompt'],
+  ];
+  $form['display']['none_prompt'] = [
     '#type' => 'textfield',
     '#title' => $allow_create ? t('Create Prompt') : t('Not Found Prompt'),
     '#default_value' => $component['extra']['none_prompt'],
@@ -128,264 +128,264 @@ function _webform_edit_civicrm_contact($component) {
     '#size' => 60,
     '#maxlength' => 1024,
     '#weight' => -6,
-    '#parents' => array('extra', 'none_prompt'),
-  );
-  $form['display']['results_display'] = array(
+    '#parents' => ['extra', 'none_prompt'],
+  ];
+  $form['display']['results_display'] = [
     '#type' => 'select',
     '#multiple' => TRUE,
     '#title' => t("Contact Display Field(s)"),
     '#required' => TRUE,
     '#default_value' => $component['extra']['results_display'],
     '#options' => wf_crm_results_display_options($contact_type),
-    '#parents' => array('extra', 'results_display'),
-  );
-  $form['display']['show_hidden_contact'] = array(
+    '#parents' => ['extra', 'results_display'],
+  ];
+  $form['display']['show_hidden_contact'] = [
     '#type' => 'radios',
     '#title' => t('Display Contact Name'),
     '#description' => t('If enabled, this static element will show the contact that has been pre-selected (or else the Create/Not Found Prompt if set). Otherwise the element will not be visible.'),
-    '#options' => array(t('No'), t('Yes')),
+    '#options' => [t('No'), t('Yes')],
     '#default_value' => $component['extra']['show_hidden_contact'],
-    '#parents' => array('extra', 'show_hidden_contact'),
+    '#parents' => ['extra', 'show_hidden_contact'],
     '#weight' => -5,
-  );
-  $form['field_handling'] = array(
+  ];
+  $form['field_handling'] = [
     '#type' => 'fieldset',
     '#collapsible' => TRUE,
     '#title' => t('Contact Field Handling'),
     '#description' => t('By default, all contact data will be autopopulated on the form for this existing contact. You can modify that behavior here.'),
-  );
-  $form['field_handling']['no_autofill'] = array(
+  ];
+  $form['field_handling']['no_autofill'] = [
     '#type' => 'select',
     '#multiple' => TRUE,
     '#title' => t('Skip Autofilling of'),
     '#description' => t('Which fields should <em>not</em> be autofilled for this contact?'),
     '#default_value' => $component['extra']['no_autofill'],
-    '#options' => array('' => '- ' . t('None') . ' -') + wf_crm_contact_fields($node, $c),
-    '#parents' => array('extra', 'no_autofill'),
-  );
-  $form['field_handling']['hide_fields'] = array(
+    '#options' => ['' => '- ' . t('None') . ' -'] + wf_crm_contact_fields($node, $c),
+    '#parents' => ['extra', 'no_autofill'],
+  ];
+  $form['field_handling']['hide_fields'] = [
     '#type' => 'select',
     '#multiple' => TRUE,
     '#title' => t('Fields to Lock'),
     '#description' => t('Prevent editing by disabling or hiding fields when a contact already exists.'),
     '#default_value' => $component['extra']['hide_fields'],
-    '#options' => array('' => '- ' . t('None') . ' -') + wf_crm_contact_fields($node, $c),
-    '#parents' => array('extra', 'hide_fields'),
-  );
-  $form['field_handling']['hide_method'] = array(
+    '#options' => ['' => '- ' . t('None') . ' -'] + wf_crm_contact_fields($node, $c),
+    '#parents' => ['extra', 'hide_fields'],
+  ];
+  $form['field_handling']['hide_method'] = [
     '#type' => 'select',
     '#title' => t('Locked fields should be'),
     '#default_value' => $component['extra']['hide_method'],
-    '#options' => array('hide' => t('Hidden'), 'disable' => t('Disabled')),
-    '#parents' => array('extra', 'hide_method'),
-  );
-  $form['field_handling']['no_hide_blank'] = array(
+    '#options' => ['hide' => t('Hidden'), 'disable' => t('Disabled')],
+    '#parents' => ['extra', 'hide_method'],
+  ];
+  $form['field_handling']['no_hide_blank'] = [
     '#type' => 'checkbox',
     '#title' => t("Don't lock fields that are empty"),
     '#default_value' => $component['extra']['no_hide_blank'],
-    '#parents' => array('extra', 'no_hide_blank'),
-  );
-  $form['field_handling']['submit_disabled'] = array(
+    '#parents' => ['extra', 'no_hide_blank'],
+  ];
+  $form['field_handling']['submit_disabled'] = [
     '#type' => 'checkbox',
     '#title' => t("Submit disabled field value(s)"),
     '#description' => t('Store disabled field value(s) in webform submissions.'),
     '#default_value' => $component['extra']['submit_disabled'],
-    '#parents' => array('extra', 'submit_disabled'),
-  );
-  $form['validation']['unique'] = array(
+    '#parents' => ['extra', 'submit_disabled'],
+  ];
+  $form['validation']['unique'] = [
     '#type' => 'checkbox',
     '#title' => t('Unique'),
     '#return_value' => 1,
     '#description' => t('Require this field to be unique for every submission. The same contact may not be entered twice.'),
     '#weight' => 1,
     '#default_value' => $component['extra']['unique'],
-    '#parents' => array('extra', 'unique'),
-  );
-  $form['extra']['allow_create'] = array(
+    '#parents' => ['extra', 'unique'],
+  ];
+  $form['extra']['allow_create'] = [
     '#type' => 'hidden',
     '#value' => $allow_create,
-  );
-  $form['defaults'] = array(
+  ];
+  $form['defaults'] = [
     '#type' => 'fieldset',
     '#title' => t('Default value'),
     '#description' => t('Should the form be pre-populated with an existing contact?<ul><li>Any filters set below will restrict this default.</li><li>If more than one contact meets the criteria, the first match will be picked. If multiple existing contact fields exist on the webform, each will select a different contact.</li></ul>'),
     '#collapsible' => TRUE,
-  );
-  $form['defaults']['default'] = array(
+  ];
+  $form['defaults']['default'] = [
     '#type' => 'select',
     '#title' => t('Set default contact from'),
-    '#options' => array('contact_id' => t('Specified Contact')),
+    '#options' => ['contact_id' => t('Specified Contact')],
     '#empty_option' => t('- None -'),
     '#default_value' => $component['extra']['default'],
-    '#parents' => array('extra', 'default'),
-  );
+    '#parents' => ['extra', 'default'],
+  ];
   if ($c == 1 && $contact_type == 'individual') {
     $form['defaults']['default']['#options']['user'] = t('Current User');
   }
   elseif ($c > 1) {
     $form['defaults']['default']['#options']['relationship'] = t('Relationship to...');
     $to = $component['extra']['default_relationship_to'];
-    $form['defaults']['default_relationship_to'] = array(
+    $form['defaults']['default_relationship_to'] = [
       '#type' => 'select',
       '#title' => t('Relationship to Contact'),
       '#default_value' => $to,
-      '#parents' => array('extra', 'default_relationship_to'),
-    );
-    $form['defaults']['default_relationship'] = array(
+      '#parents' => ['extra', 'default_relationship_to'],
+    ];
+    $form['defaults']['default_relationship'] = [
       '#type' => 'select',
       '#multiple' => TRUE,
       '#title' => t('Specify Relationship(s)'),
-      '#options' => array('-' => '-'),
+      '#options' => ['-' => '-'],
       '#required' => TRUE,
       '#default_value' => $component['extra']['default_relationship'],
-      '#parents' => array('extra', 'default_relationship'),
-    );
+      '#parents' => ['extra', 'default_relationship'],
+    ];
   }
   $custom_ref_options = wf_crm_get_custom_ref_options();
   if ($custom_ref_options) {
     $form['defaults']['default']['#options']['custom_ref'] = t('Custom reference field');
-    $form['defaults']['default_custom_ref'] = array(
+    $form['defaults']['default_custom_ref'] = [
       '#type' => 'select',
       '#title' => t('Specify Custom Field'),
       '#options' => $custom_ref_options,
       '#required' => TRUE,
       '#default_value' => $component['extra']['default_custom_ref'],
-      '#parents' => array('extra', 'default_custom_ref'),
-    );
+      '#parents' => ['extra', 'default_custom_ref'],
+    ];
   }
 
   $case_count = isset($data['case']['number_of_case']) ? $data['case']['number_of_case'] : 0;
   if ($case_count > 0) {
     $form['defaults']['default']['#options']['case_roles'] = t('Case roles');
     $dc = $component['extra']['default_relationship_to'];
-    $form['defaults']['default_for_case'] = array(
+    $form['defaults']['default_for_case'] = [
       '#type' => 'select',
       '#title' => t('For Case'),
       '#default_value' => $dc,
-      '#parents' => array('extra', 'default_for_case'),
-    );
-    $form['defaults']['default_case_roles'] = array(
+      '#parents' => ['extra', 'default_for_case'],
+    ];
+    $form['defaults']['default_case_roles'] = [
       '#type' => 'select',
       '#title' => t('Specify Case Role(s)'),
       '#options' => wf_crm_get_case_roles_options(),
       '#required' => TRUE,
       '#default_value' => $component['extra']['default_case_roles'],
-      '#parents' => array('extra', 'default_case_roles'),
-    );
-    $case_type = array();
+      '#parents' => ['extra', 'default_case_roles'],
+    ];
+    $case_type = [];
     for ($i = 1; $i <= $case_count; $i++) {
       $form['defaults']['default_for_case']['#options'][$i] = 'Case ' . $i;
     }
   }
 
   $form['defaults']['default']['#options']['auto'] = t('Auto - From Filters');
-  $form['defaults']['default_contact_id'] = array(
+  $form['defaults']['default_contact_id'] = [
     '#type' => 'textfield',
     '#title' => t('Contact'),
     '#id' => 'default-contact-id',
-    '#parents' => array('extra', 'default_contact_id'),
-  );
+    '#parents' => ['extra', 'default_contact_id'],
+  ];
   $cid = $component['extra']['default_contact_id'];
   if ($cid) {
-    if ($name = wf_crm_contact_access($component, array('check_permissions' => 1), $cid)) {
+    if ($name = wf_crm_contact_access($component, ['check_permissions' => 1], $cid)) {
       $form['defaults']['default_contact_id']['#default_value'] = $cid;
-      $form['defaults']['default_contact_id']['#attributes'] = array(
+      $form['defaults']['default_contact_id']['#attributes'] = [
         'data-civicrm-name' => $name,
         'data-civicrm-id' => $cid,
-      );
+      ];
     }
   }
-  $form['defaults']['allow_url_autofill'] = array(
+  $form['defaults']['allow_url_autofill'] = [
     '#type' => 'checkbox',
     '#title' => t('Use contact id from URL'),
     '#default_value' => $component['extra']['allow_url_autofill'],
-    '#parents' => array('extra', 'allow_url_autofill'),
-    '#description' => t('If the url contains e.g. %arg, it will be used to pre-populate this contact (takes precidence over other default values).', array('%arg' => "cid$c=123")),
-  );
+    '#parents' => ['extra', 'allow_url_autofill'],
+    '#description' => t('If the url contains e.g. %arg, it will be used to pre-populate this contact (takes precidence over other default values).', ['%arg' => "cid$c=123"]),
+  ];
   if ($c > 1) {
-    $form['defaults']['dupes_allowed'] = array(
+    $form['defaults']['dupes_allowed'] = [
       '#type' => 'checkbox',
       '#title' => t('Allow Duplicate Autofill'),
       '#default_value' => $component['extra']['dupes_allowed'],
-      '#parents' => array('extra', 'dupes_allowed'),
+      '#parents' => ['extra', 'dupes_allowed'],
       '#description' => t('Check this box to allow a contact to be selected even if they already autofilled a prior field on the form. (For example, if contact 1 was autofilled with Bob Smith, should this field also be allowed to select Bob Smith or should it pick a different contact?)'),
-    );
+    ];
   }
-  $form['defaults']['randomize'] = array(
+  $form['defaults']['randomize'] = [
     '#type' => 'checkbox',
     '#title' => t('Randomize'),
     '#default_value' => $component['extra']['randomize'],
-    '#parents' => array('extra', 'randomize'),
+    '#parents' => ['extra', 'randomize'],
     '#description' => t('Pick a contact at random if more than one meets criteria.'),
-  );
-  $form['filters'] = array(
+  ];
+  $form['filters'] = [
     '#type' => 'fieldset',
     '#title' => t('Filters'),
     '#description' => t('Only contacts meeting filter criteria will be available as select options or default value.<br />Note: Filters only apply to how a contact is chosen on the form, they do not affect how a contact is saved.'),
-    '#parents' => array('extra', 'filters'),
+    '#parents' => ['extra', 'filters'],
     '#tree' => TRUE,
     '#collapsible' => TRUE,
-  );
+  ];
   if (!empty($sub_types[$contact_type])) {
-    $form['filters']['contact_sub_type'] = array(
+    $form['filters']['contact_sub_type'] = [
       '#type' => 'select',
-      '#title' => t('Type of @contact', array('@contact' => $contact_types[$contact_type])),
-      '#options' => array(t('- Any -')) + $sub_types[$contact_type],
+      '#title' => t('Type of @contact', ['@contact' => $contact_types[$contact_type]]),
+      '#options' => [t('- Any -')] + $sub_types[$contact_type],
       '#default_value' => $component['extra']['filters']['contact_sub_type'],
-    );
+    ];
   }
-  $form['filters']['group'] = array(
+  $form['filters']['group'] = [
     '#type' => 'select',
     '#multiple' => TRUE,
     '#title' => t('Groups'),
-    '#options' => array('' => '- ' . t('None') . ' -') + wf_crm_apivalues('group_contact', 'getoptions', array('field' => 'group_id')),
+    '#options' => ['' => '- ' . t('None') . ' -'] + wf_crm_apivalues('group_contact', 'getoptions', ['field' => 'group_id']),
     '#default_value' => $component['extra']['filters']['group'],
     '#description' => t('Listed contacts must be members of at least one of the selected groups (leave blank to not filter by group).'),
-  );
-  $tags = array();
-  $form['filters']['tag'] = array(
+  ];
+  $tags = [];
+  $form['filters']['tag'] = [
     '#type' => 'select',
     '#multiple' => TRUE,
     '#title' => t('Tags'),
-    '#options' => array('' => '- ' . t('None') . ' -') + wf_crm_get_tags('contact'),
+    '#options' => ['' => '- ' . t('None') . ' -'] + wf_crm_get_tags('contact'),
     '#default_value' => $component['extra']['filters']['tag'],
     '#description' => t('Listed contacts must be have at least one of the selected tags (leave blank to not filter by tag).'),
-  );
+  ];
   if ($c > 1) {
-    $form['filters']['relationship']['contact'] = array(
+    $form['filters']['relationship']['contact'] = [
       '#type' => 'select',
       '#title' => t('Relationships to'),
-      '#options' => array('' => '- ' . t('None') . ' -'),
+      '#options' => ['' => '- ' . t('None') . ' -'],
       '#default_value' => wf_crm_aval($component['extra']['filters'], 'relationship:contact'),
-    );
-    $form['filters']['relationship']['type'] = array(
+    ];
+    $form['filters']['relationship']['type'] = [
       '#type' => 'select',
       '#multiple' => TRUE,
       '#title' => t('Specify Relationship(s)'),
-      '#options' => array('' => '- ' . t('Any relation') . ' -'),
+      '#options' => ['' => '- ' . t('Any relation') . ' -'],
       '#default_value' => wf_crm_aval($component['extra']['filters'], 'relationship:type'),
-    );
+    ];
     // Fill relationship data for defaults and filters
-    $all_relationship_types = array_fill(1, $c - 1, array());
+    $all_relationship_types = array_fill(1, $c - 1, []);
     for ($i = 1; $i < $c; ++$i) {
       $form['defaults']['default_relationship_to']['#options'][$i] = $form['filters']['relationship']['contact']['#options'][$i] = wf_crm_contact_label($i, $data, 'plain');
       $rtypes = wf_crm_get_contact_relationship_types($contact_type, $data['contact'][$i]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$i]['contact'][1]['contact_sub_type']);
       foreach ($rtypes as $k => $v) {
-        $all_relationship_types[$i][] = array('key' => $k, 'value' => $v . ' ' . wf_crm_contact_label($i, $data, 'plain'));
+        $all_relationship_types[$i][] = ['key' => $k, 'value' => $v . ' ' . wf_crm_contact_label($i, $data, 'plain')];
         $form['defaults']['default_relationship']['#options'][$k] = $form['filters']['relationship']['type']['#options'][$k] = $v . ' ' . wf_crm_contact_label($i, $data, 'plain');
       }
       if (!$rtypes) {
-        $all_relationship_types[$i][] = array('key' => '', 'value' => '- ' . t('No relationship types defined for @a to @b', array('@a' => $contact_types[$contact_type], '@b' => $contact_types[$data['contact'][$i]['contact'][1]['contact_type']])) . ' -');
+        $all_relationship_types[$i][] = ['key' => '', 'value' => '- ' . t('No relationship types defined for @a to @b', ['@a' => $contact_types[$contact_type], '@b' => $contact_types[$data['contact'][$i]['contact'][1]['contact_type']]]) . ' -'];
       }
     }
     $form['#attributes']['data-reltypes'] = json_encode($all_relationship_types);
   }
-  $form['filters']['check_permissions'] = array(
+  $form['filters']['check_permissions'] = [
     '#type' => 'checkbox',
     '#title' => t('Enforce Permissions'),
     '#default_value' => $component['extra']['filters']['check_permissions'],
     '#description' => t('Only show contacts the acting user has permission to see in CiviCRM.') . '<br />' . t('WARNING: Keeping this option enabled is highly recommended unless you are effectively controlling access by another method.'),
-  );
+  ];
   wf_crm_contact_component_form_help($form);
   return $form;
 }
@@ -417,22 +417,22 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
   $hide_method = wf_crm_aval($component['extra'], 'hide_method', 'hide');
   $no_hide_blank = (int) wf_crm_aval($component['extra'], 'no_hide_blank', 0);
   $js = '';
-  $element = array(
+  $element = [
     '#type' => $component['extra']['widget'] == 'autocomplete' ? 'textfield' : $component['extra']['widget'],
     '#weight' => $component['weight'],
     '#attributes' => $component['extra']['attributes'],
-  );
+  ];
   $element['#attributes']['data-hide-method'] = $hide_method;
   $element['#attributes']['data-no-hide-blank'] = $no_hide_blank;
   if ($component['extra']['widget'] != 'hidden' || $component['extra']['show_hidden_contact']) {
-    $element += array(
+    $element += [
       '#title' => $filter ? webform_filter_xss($component['name']) : $component['name'],
       '#title_display' => $component['extra']['title_display'] ? $component['extra']['title_display'] : 'before',
       '#required' => $component['required'],
       '#description' => $filter ? webform_filter_descriptions($component['extra']['description'], $node) : $component['extra']['description'],
-      '#translatable' => array('title', 'description'),
-      '#theme_wrappers' => array('webform_element'),
-    );
+      '#translatable' => ['title', 'description'],
+      '#theme_wrappers' => ['webform_element'],
+    ];
   }
   // See if there are any fields to fetch via ajax
   $other_fields = wf_crm_contact_fields($node, $c);
@@ -443,7 +443,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
   }
   $defaults = json_encode(wf_crm_get_defaults($node));
   $ajax = $other_fields ? 'true' : 'false';
-  $callback_path = '"' . url('webform-civicrm/js/' . $node->nid . '-' . $component['cid'], array('alias' => TRUE)) . '"';
+  $callback_path = '"' . url('webform-civicrm/js/' . $node->nid . '-' . $component['cid'], ['alias' => TRUE]) . '"';
   $onChange = "field.change(function() {
                   wfCivi.existingSelect($c, {$node->nid}, $callback_path, toHide, '$hide_method', $no_hide_blank, \$(this).val(), $ajax, $defaults);
                 });";
@@ -466,7 +466,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
 
     case 'select':
       // Options will be set by wf_crm_fill_contact_value.
-      $element['#options'] = array();
+      $element['#options'] = [];
       if ($node && isset($node->webform_civicrm)) {
         $js = "$onChange wfCivi.existingInit(field, $c, {$node->nid}, $callback_path, toHide);";
       }
@@ -484,9 +484,9 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
         if ($hide_fields) {
           $js .= "wfCivi.existingInit(field, $c, {$node->nid}, $callback_path, toHide);";
         }
-        $element['#theme_wrappers'] = array('static_contact_element');
+        $element['#theme_wrappers'] = ['static_contact_element'];
         if ($component['required']) {
-          $element['#element_validate'] = array('wf_crm_contact_component_required');
+          $element['#element_validate'] = ['wf_crm_contact_component_required'];
         }
       }
       break;
@@ -515,7 +515,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
           }
         };
       })(jQuery, Drupal);';
-    $element['#attached']['js'][$js] = array('type' => 'inline');
+    $element['#attached']['js'][$js] = ['type' => 'inline'];
   }
 
   // Enforce uniqueness.
@@ -575,7 +575,7 @@ function wf_crm_fill_contact_value($node, $component, &$element, $ids = NULL) {
   // Set options list for select elements. We do this here so we have access to entity ids.
   if (is_array($ids) && $element['#type'] == 'select') {
     $filters = wf_crm_search_filters($node, $component);
-    $element['#options'] = wf_crm_contact_search($node, $component, $filters, wf_crm_aval($ids, 'contact', array()));
+    $element['#options'] = wf_crm_contact_search($node, $component, $filters, wf_crm_aval($ids, 'contact', []));
     // Display empty option unless there are no results
     if (!$component['extra']['allow_create'] || count($element['#options']) > 1) {
       $element['#empty_option'] = filter_xss($component['extra'][$element['#options'] ? 'search_prompt' : 'none_prompt']);
@@ -589,25 +589,25 @@ function wf_crm_fill_contact_value($node, $component, &$element, $ids = NULL) {
 function _webform_display_civicrm_contact($component, $value, $format = 'html') {
   $display = empty($value[0]) ? '' : wf_crm_display_name($value[0]);
   if ($format == 'html' && $display && user_access('access CiviCRM')) {
-    $display = l($display, 'civicrm/contact/view', array(
+    $display = l($display, 'civicrm/contact/view', [
       'alias' => TRUE,
-      'query' => array(
+      'query' => [
         'reset' => 1,
         'cid' => $value[0],
-      ),
-    ));
+      ],
+    ]);
   }
-  return array(
+  return [
     '#title' => $component['name'],
     '#weight' => $component['weight'],
     '#theme' => 'display_civicrm_contact',
-    '#theme_wrappers' => $format == 'html' ? array('webform_element') : array('webform_element_text'),
+    '#theme_wrappers' => $format == 'html' ? ['webform_element'] : ['webform_element_text'],
     '#field_prefix' => '',
     '#field_suffix' => '',
     '#format' => $format,
     '#value' => $display,
-    '#translatable' => array('title'),
-  );
+    '#translatable' => ['title'],
+  ];
 }
 
 /**
@@ -632,7 +632,7 @@ function _webform_table_civicrm_contact($component, $value) {
  * Implements _webform_csv_headers_component().
  */
 function _webform_csv_headers_civicrm_contact($component, $export_options) {
-  $header = array();
+  $header = [];
   $header[0] = '';
   $header[1] = '';
   $header[2] = $component['name'];
@@ -664,10 +664,10 @@ function _webform_csv_data_civicrm_contact($component, $export_options, $value) 
  */
 function wf_crm_contact_search($node, $component, $params, $contacts, $str = NULL) {
   if (empty($node->webform_civicrm)) {
-    return array();
+    return [];
   }
   $limit = $str ? 12 : 500;
-  $ret = array();
+  $ret = [];
   $display_fields = array_values($component['extra']['results_display']);
   $search_field = 'display_name';
   $sort_field = 'sort_name';
@@ -675,17 +675,17 @@ function wf_crm_contact_search($node, $component, $params, $contacts, $str = NUL
   if (!in_array('display_name', $display_fields)) {
     $search_field = $sort_field = $display_fields[0];
   }
-  $params += array(
+  $params += [
     'rowCount' => $limit,
     'sort' => $sort_field,
     'return' => $display_fields,
-  );
+  ];
   if (!empty($params['relationship']['contact'])) {
     $c = $params['relationship']['contact'];
     $relations = NULL;
     if (!empty($contacts[$c]['id'])) {
       $relations = wf_crm_find_relations($contacts[$c]['id'], wf_crm_aval($params['relationship'], 'type'));
-      $params['id'] = array('IN' => $relations);
+      $params['id'] = ['IN' => $relations];
     }
     if (!$relations) {
       return $ret;
@@ -695,25 +695,25 @@ function wf_crm_contact_search($node, $component, $params, $contacts, $str = NUL
   if ($str) {
     $str = str_replace(' ', '%', CRM_Utils_Type::escape($str, 'String'));
     // The contact api takes a quirky format for display_name and sort_name
-    if (in_array($search_field, array('sort_name', 'display_name'))) {
+    if (in_array($search_field, ['sort_name', 'display_name'])) {
       $params[$search_field] = $str;
     }
     // Others use the standard convention
     else {
-      $params[$search_field] = array('LIKE' => "%$str%");
+      $params[$search_field] = ['LIKE' => "%$str%"];
     }
   }
   $result = wf_civicrm_api('contact', 'get', $params);
   // Autocomplete results
   if ($str) {
-    foreach (wf_crm_aval($result, 'values', array()) as $contact) {
+    foreach (wf_crm_aval($result, 'values', []) as $contact) {
       if ($name = wf_crm_format_contact($contact, $display_fields)) {
-        $ret[] = array('id' => $contact['id'], 'name' => $name);
+        $ret[] = ['id' => $contact['id'], 'name' => $name];
       }
     }
     if (count($ret) < $limit && $component['extra']['allow_create']) {
       // HTML hack to get prompt to show up different than search results
-      $ret[] = array('id' => "-$str", 'name' => '<em><i>' . filter_xss($component['extra']['none_prompt']) . '</i></em>');
+      $ret[] = ['id' => "-$str", 'name' => '<em><i>' . filter_xss($component['extra']['none_prompt']) . '</i></em>'];
     }
   }
   // Select results
@@ -721,7 +721,7 @@ function wf_crm_contact_search($node, $component, $params, $contacts, $str = NUL
     if ($component['extra']['allow_create']) {
       $ret['-'] = filter_xss($component['extra']['none_prompt']);
     }
-    foreach (wf_crm_aval($result, 'values', array()) as $contact) {
+    foreach (wf_crm_aval($result, 'values', []) as $contact) {
       // Select lists will be escaped by FAPI
       if ($name = wf_crm_format_contact($contact, $display_fields, FALSE)) {
         $ret[$contact['id']] = $name;
@@ -732,7 +732,7 @@ function wf_crm_contact_search($node, $component, $params, $contacts, $str = NUL
       watchdog(
         'webform_civicrm',
         'Maximum contacts exceeded, list truncated on the webform "@title". The webform_civicrm "@field" field cannot display more than !limit contacts because it is a select list. Recommend switching to autocomplete widget in component settings.',
-        array('!limit' => $limit, '@field' => $component['name'], '@title' => $node->title),
+        ['!limit' => $limit, '@field' => $component['name'], '@title' => $node->title],
         WATCHDOG_WARNING,
         l(t('Edit component'), "node/{$node->nid}/webform/components/{$component['cid']}")
       );
@@ -740,7 +740,7 @@ function wf_crm_contact_search($node, $component, $params, $contacts, $str = NUL
         drupal_set_message(
           '<strong>' . t('Maximum contacts exceeded, list truncated.') .'</strong><br>' .
           t('The field "@field" cannot show more than !limit contacts because it is a select list. Recommend switching to autocomplete widget in <a !link>component settings</a>.',
-            array('!limit' => $limit, '@field' => $component['name'], '!link' => 'href="' . url("node/{$node->nid}/webform/components/{$component['cid']}") . '"')),
+            ['!limit' => $limit, '@field' => $component['name'], '!link' => 'href="' . url("node/{$node->nid}/webform/components/{$component['cid']}") . '"']),
           'warning'
         );
       }
@@ -811,7 +811,7 @@ function wf_crm_format_contact($contact, $display_fields, $escape = TRUE) {
   if (!$contact) {
     return FALSE;
   }
-  $display = array();
+  $display = [];
   foreach ($display_fields as $field) {
     if ($field && !empty($contact[$field])) {
       $display[] = $escape ? check_plain($contact[$field]) : $contact[$field];
@@ -831,9 +831,9 @@ function wf_crm_format_contact($contact, $display_fields, $escape = TRUE) {
  * @return array
  */
 function wf_crm_contact_fields($node, $con) {
-  $ret = array();
+  $ret = [];
   $sets = wf_crm_get_fields('sets');
-  $sets['name'] = array('label' => t('Name'));
+  $sets['name'] = ['label' => t('Name')];
   foreach ($node->webform['components'] as $f) {
     if ($pieces = wf_crm_explode_key($f['form_key'])) {
       list( , $c, $ent, , $table, $field) = $pieces;
@@ -887,13 +887,13 @@ function wf_crm_update_existing_component(&$component, $enabled, $data, $node) {
  *
  * @return array
  */
-function wf_crm_find_relations($cid, $types = array(), $current = TRUE) {
+function wf_crm_find_relations($cid, $types = [], $current = TRUE) {
   $found = $allowed = $type_ids = [];
   $cid = (int) $cid;
   static $employer_type = 0;
   if ($cid) {
     if (!$employer_type && $current) {
-      $employer_type = wf_crm_aval(wf_civicrm_api('relationshipType', 'get', array('name_a_b' => 'Employee of', 'return' => 'id')), 'id');
+      $employer_type = wf_crm_aval(wf_civicrm_api('relationshipType', 'get', ['name_a_b' => 'Employee of', 'return' => 'id']), 'id');
     }
     foreach ($types as $t) {
       list($type, $a) = explode('_', $t);
@@ -948,13 +948,13 @@ function wf_crm_find_relations($cid, $types = array(), $current = TRUE) {
  * @return array
  */
 function wf_crm_get_custom_ref_options() {
-  $filters = array(
+  $filters = [
     'sequential' => 1,
     'return' => ["id", "label"],
     'data_type' => "ContactReference",
-  );
+  ];
   $result = wf_civicrm_api('CustomField', 'get', $filters);
-  $options = array();
+  $options = [];
   foreach ($result['values'] as $val) {
     $options[$val['id']] = $val['label'];
   }
@@ -969,15 +969,15 @@ function wf_crm_get_custom_ref_options() {
  * @return array
  */
 function wf_crm_find_custom_refs($cid, $customFieldID) {
-  $filters = array(
+  $filters = [
     'return' => ['custom_'.$customFieldID],
     'id' => $cid,
-  );
+  ];
   $result = wf_civicrm_api('Contact', 'get', $filters);
   if (isset($result['values'][$cid]['custom_'.$customFieldID])) {
-    return array($result['values'][$cid]['custom_'.$customFieldID] => $result['values'][$cid]['custom_'.$customFieldID]);
+    return [$result['values'][$cid]['custom_'.$customFieldID] => $result['values'][$cid]['custom_'.$customFieldID]];
   }
-  return array();
+  return [];
 }
 
 /**
@@ -986,23 +986,23 @@ function wf_crm_find_custom_refs($cid, $customFieldID) {
  * @return array
  */
 function wf_crm_get_case_roles_options() {
-  $filters = array(
+  $filters = [
     'return' => ["definition"],
     'options' => ['limit' => 0],
-  );
+  ];
   $result = wf_civicrm_api('CaseType', 'get', $filters);
-  $options = array();
+  $options = [];
   $options['case_client'] = t('Case Client');
   foreach ($result['values'] as $k => $val) {
     if (isset($val['definition']['caseRoles'])) {
       foreach ($val['definition']['caseRoles'] as $caseRole) {
-        $caseRoleID = wf_civicrm_api('RelationshipType', 'get', array(
+        $caseRoleID = wf_civicrm_api('RelationshipType', 'get', [
           'sequential' => 1,
           'return' => ["id", "label_b_a", "label_a_b"],
           'name_b_a' => $caseRole['name'],
           'label_b_a' => $caseRole['name'],
           'options' => ['or' => [["name_b_a", "label_b_a"]]]
-        ))['values'][0];
+        ])['values'][0];
         $options[$caseRoleID['id']] = $caseRoleID['label_b_a'];
       }
     }
@@ -1028,22 +1028,22 @@ function wf_crm_find_case_roles($contact_a, $case, $case_role) {
     ]);
     if (isset($result['values'][0]['client_id'])) {
       $firstCaseClient = reset($result['values'][0]['client_id']);
-      return array($firstCaseClient => $firstCaseClient);
+      return [$firstCaseClient => $firstCaseClient];
     }
-    return array();
+    return [];
   }
-  $params = array(
+  $params = [
     'sequential' => 1,
     'return' => ["contact_id_b"],
     'relationship_type_id' => $case_role,
     'contact_id_a' => $contact_a,
     'case_id' => $case,
-  );
+  ];
   $result = wf_civicrm_api('Relationship', 'get', $params);
   if (isset($result['values'][0]['contact_id_b'])) {
-    return array($result['values'][0]['contact_id_b'] => $result['values'][0]['contact_id_b']);
+    return [$result['values'][0]['contact_id_b'] => $result['values'][0]['contact_id_b']];
   }
-  return array();
+  return [];
 }
 
 /**
@@ -1058,7 +1058,7 @@ function wf_crm_find_case_roles($contact_a, $case, $case_role) {
  *   Api params
  */
 function wf_crm_search_filters($node, $component) {
-  $params = array('is_deleted' => 0);
+  $params = ['is_deleted' => 0];
   list(, $c, ) = explode('_', $component['form_key'], 3);
   $params['contact_type'] = ucfirst($node->webform_civicrm['data']['contact'][$c]['contact'][1]['contact_type']);
   foreach ($component['extra']['filters'] as $key => $val) {
@@ -1090,13 +1090,13 @@ function theme_static_contact_element($vars) {
   $nested_level = $element['#parents'][0] == 'submitted' ? 1 : 0;
   $parents = str_replace('_', '-', implode('--', array_slice($element['#parents'], $nested_level)));
 
-  $wrapper_classes = array(
+  $wrapper_classes = [
     'form-item',
     'webform-component',
     'webform-component-' . $type,
     'static',
     'webform-component--' . $parents,
-  );
+  ];
 
   if ($component['extra']['title_display'] === 'inline') {
     $wrapper_classes[] = 'webform-container-inline';
@@ -1108,7 +1108,7 @@ function theme_static_contact_element($vars) {
   if ($type == 'civicrm_contact' && !empty($element['#attributes']['data-civicrm-name'])) {
 
     if ($component['extra']['title_display'] != 'none') {
-      $output .= theme('form_element_label', array('element' => $element));
+      $output .= theme('form_element_label', ['element' => $element]);
     }
 
     $output .= '<ul class="token-input-list"><li class="token-input-token"><p>' . $element['#attributes']['data-civicrm-name'] . "</p></li></ul>\n";
@@ -1128,23 +1128,23 @@ function theme_static_contact_element($vars) {
  * @return array
  */
 function wf_crm_results_display_options($contact_type) {
-  $options = array(
+  $options = [
     'display_name' => t("Display Name"),
     'sort_name' => t("Sort Name"),
-  );
+  ];
   if ($contact_type == 'individual') {
-    $options += array(
+    $options += [
       'first_name' => t("First Name"),
       'middle_name' => t("Middle Name"),
       'last_name' => t("Last Name"),
       'current_employer' => t("Current Employer"),
       'job_title' => t("Job Title"),
-    );
+    ];
   }
   else {
     $options[$contact_type . '_name'] = $contact_type == 'organization' ? t("Organization Name") : t("Household Name");
   }
-  $options += array(
+  $options += [
     'nick_name' => t("Nick Name"),
     'id' => t("Contact ID"),
     'external_identifier' => t("External ID"),
@@ -1157,7 +1157,7 @@ function wf_crm_results_display_options($contact_type) {
     'country' => t("Country"),
     'postal_code' => t("Postal Code"),
     'phone' => t("Phone"),
-  );
+  ];
   return $options;
 }
 
@@ -1189,7 +1189,7 @@ function wf_crm_tokeninput_path() {
  */
 function wf_crm_contact_component_required($element, &$form_state) {
   if (empty($element['#value'])) {
-    form_error($element, t('!name field is required.', array('!name' => $element['#title'])));
+    form_error($element, t('!name field is required.', ['!name' => $element['#title']]));
   }
 }
 
@@ -1201,7 +1201,7 @@ function wf_crm_contact_component_required($element, &$form_state) {
  * @return array
  */
 function wf_crm_get_defaults($node) {
-  $defaults = array();
+  $defaults = [];
   foreach ($node->webform['components'] as $comp) {
     if (!empty($comp['value'])) {
       $key = str_replace('_', '-', $comp['form_key']);

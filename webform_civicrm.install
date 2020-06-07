@@ -9,26 +9,26 @@
  * Implements hook_requirements().
  */
 function webform_civicrm_requirements($phase) {
-  $requirements = array();
+  $requirements = [];
 
   if ($phase == 'runtime') {
     $t = get_t();
     $status = _webform_civicrm_status();
     if (!$status['webform_civicrm']) {
-      $requirements['webform_civicrm'] = array(
+      $requirements['webform_civicrm'] = [
         'title' => 'Webform CiviCRM Integration',
         'value' => $t('Version error'),
         'severity' => REQUIREMENT_ERROR,
         'description' => $t('The versions of the Webform CiviCRM Integration, Webform, CiviCRM enabled are not compatible. ') .
         l($t('See the Webform CiviCRM Integration project page for version compatibility'), 'https://drupal.org/project/webform_civicrm'),
-      );
+      ];
     }
     else {
-      $requirements['webform_civicrm'] = array(
+      $requirements['webform_civicrm'] = [
         'title' => 'Webform CiviCRM Integration',
         'severity' => REQUIREMENT_OK,
         'value' => t('Required version of CiviCRM and Webform are enabled.'),
-      );
+      ];
     }
   }
 
@@ -39,102 +39,102 @@ function webform_civicrm_requirements($phase) {
  * Implements hook_schema().
  */
 function webform_civicrm_schema() {
-  $schema = array();
-  $schema['webform_civicrm_forms'] = array(
+  $schema = [];
+  $schema['webform_civicrm_forms'] = [
     'description' => 'CiviCRM settings for individual Webform nodes.',
-    'fields' => array(
-      'nid' => array(
+    'fields' => [
+      'nid' => [
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
         'description' => 'Webform Node ID',
-      ),
-      'data' => array(
+      ],
+      'data' => [
         'type' => 'text',
         'serialize' => TRUE,
         'description' => 'Array of entity data for this webform',
-      ),
-      'prefix_known' => array(
+      ],
+      'prefix_known' => [
         'description' => 'Form prefix for known users.',
         'type' => 'text',
         'not null' => TRUE,
-      ),
-      'prefix_unknown' => array(
+      ],
+      'prefix_unknown' => [
         'description' => 'Form prefix for unknown users.',
         'type' => 'text',
         'not null' => TRUE,
-      ),
-      'message' => array(
+      ],
+      'message' => [
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
         'default' => '',
         'description' => 'Message to show to known users',
-      ),
-      'confirm_subscription' => array(
+      ],
+      'confirm_subscription' => [
         'description' => 'Send confirmation for mailing list subscriptions.',
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
         'default' => 0,
-      ),
-      'block_unknown_users' => array(
+      ],
+      'block_unknown_users' => [
         'description' => 'Only allow known contacts to use form.',
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
         'default' => 0,
-      ),
-      'create_new_relationship' => array(
+      ],
+      'create_new_relationship' => [
         'description' => 'Create new relationship if duplicate record exists and is expired or inactive.',
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
         'default' => 0,
-      ),
-      'create_fieldsets' => array(
+      ],
+      'create_fieldsets' => [
         'description' => 'Add fieldsets around contacts.',
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
         'default' => 0,
-      ),
-      'new_contact_source' => array(
+      ],
+      'new_contact_source' => [
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
         'default' => '',
         'description' => 'Source label for newly created contacts',
-      ),
-    ),
-    'primary key' => array('nid'),
-  );
-  $schema['webform_civicrm_submissions'] = array(
+      ],
+    ],
+    'primary key' => ['nid'],
+  ];
+  $schema['webform_civicrm_submissions'] = [
     'description' => 'Link between form submissions and CiviCRM data.',
-    'fields' => array(
-      'sid' => array(
+    'fields' => [
+      'sid' => [
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
         'description' => 'Webform Submission ID',
-      ),
-      'contact_id' => array(
+      ],
+      'contact_id' => [
         'type' => 'varchar',
         'length' => 2000,
         'not null' => TRUE,
         'default' => '',
         'description' => 'CiviCRM contact ids from this submission',
-      ),
-      'civicrm_data' => array(
+      ],
+      'civicrm_data' => [
         'type' => 'text',
         'serialize' => TRUE,
         'description' => 'Array of entity ids for this submission',
-      ),
-    ),
-    'primary key' => array('sid'),
-  );
+      ],
+    ],
+    'primary key' => ['sid'],
+  ];
   return $schema;
 }
 
@@ -143,13 +143,13 @@ function webform_civicrm_schema() {
  * Add column for message to webform_civicrm_forms table.
  */
 function webform_civicrm_update_6100() {
-  $message = array(
+  $message = [
     'type' => 'varchar',
     'length' => 255,
     'not null' => TRUE,
     'default' => '',
     'description' => 'Message to show to known users',
-  );
+  ];
   db_add_field('webform_civicrm_forms', 'message', $message);
 }
 
@@ -158,14 +158,14 @@ function webform_civicrm_update_6100() {
  */
 function webform_civicrm_update_6101() {
   civicrm_initialize();
-  $db = db_query('SELECT * FROM {webform_civicrm_submissions} WHERE contact_id <> :contact_id AND activity_id <> :activity_id', array(':contact_id' => 0, ':activity_id' => 0));
+  $db = db_query('SELECT * FROM {webform_civicrm_submissions} WHERE contact_id <> :contact_id AND activity_id <> :activity_id', [':contact_id' => 0, ':activity_id' => 0]);
   $sql = 'INSERT INTO civicrm_activity_target (activity_id, target_contact_id) VALUES (%1,%2)';
   $n = 1;
   $c = 0;
-  $params = array();
+  $params = [];
   foreach ($db as $row) {
-    $params[$n] = array($row->activity_id, 'Integer');
-    $params[$n + 1] = array($row->contact_id, 'Integer');
+    $params[$n] = [$row->activity_id, 'Integer'];
+    $params[$n + 1] = [$row->contact_id, 'Integer'];
     if ($n > 1) {
       $sql .= ',(%' . $n . ',%' . ($n + 1) . ')';
     }
@@ -175,20 +175,20 @@ function webform_civicrm_update_6101() {
   if ($n > 1) {
     CRM_Core_DAO::executeQuery($sql, $params);
   }
-  return st('@num activity target contacts added.', array('@num' => $c));
+  return st('@num activity target contacts added.', ['@num' => $c]);
 }
 
 /**
  * Add column for confirm_subscription to webform_civicrm_forms table.
  */
 function webform_civicrm_update_6102() {
-  $confirm_subscription = array(
+  $confirm_subscription = [
     'description' => 'Send confirmation for mailing list subscriptions.',
     'type' => 'int',
     'size' => 'tiny',
     'not null' => TRUE,
     'default' => 0,
-  );
+  ];
   db_add_field('webform_civicrm_forms', 'confirm_subscription', $confirm_subscription);
 }
 
@@ -197,29 +197,29 @@ function webform_civicrm_update_6102() {
  * Add columns to webform_civicrm_forms table, and convert existing forms to new multi-entity schema.
  */
 function webform_civicrm_update_6200() {
-  $field = array(
+  $field = [
     'type' => 'text',
     'serialize' => TRUE,
     'description' => 'Array of entity data for this form',
-  );
+  ];
   db_add_field('webform_civicrm_forms', 'data', $field);
-  $field = array(
+  $field = [
     'description' => 'Add fieldsets around contacts.',
     'type' => 'int',
     'size' => 'tiny',
     'not null' => TRUE,
     'default' => 0,
-  );
+  ];
   db_add_field('webform_civicrm_forms', 'create_fieldsets', $field);
 
   // Add value separator to CID
-  $field = array(
+  $field = [
     'type' => 'varchar',
     'length' => 2000,
     'not null' => TRUE,
     'default' => '',
     'description' => 'CiviCRM contact ids from this submission',
-  );
+  ];
   db_change_field('webform_civicrm_submissions', 'contact_id', 'contact_id', $field);
 
   db_update('webform_civicrm_submissions')
@@ -230,7 +230,7 @@ function webform_civicrm_update_6200() {
   civicrm_initialize();
   module_load_include('inc', 'webform_civicrm', 'includes/utils');
   $fields = wf_crm_get_fields();
-  $match = $contacts = $update = array();
+  $match = $contacts = $update = [];
   // Create matching table
   foreach ($fields as $key => $field) {
     list($table, $name) = explode('_', $key, 2);
@@ -260,7 +260,7 @@ function webform_civicrm_update_6200() {
   // Update field keys
   foreach ($update as $old => $new) {
     db_update('webform_component')
-    ->fields(array('form_key' => $new))
+    ->fields(['form_key' => $new])
     ->condition('form_key', $old)
     ->execute();
   }
@@ -268,30 +268,30 @@ function webform_civicrm_update_6200() {
   // Populate entity data
   $db = db_query("SELECT * FROM {webform_civicrm_forms}");
   foreach ($db as $row) {
-    $data = array(
-      'contact' => array(
-        1 => array(
-          'contact' => array(1 => array(
+    $data = [
+      'contact' => [
+        1 => [
+          'contact' => [1 => [
               'contact_type' => 'individual',
               'contact_sub_type' => NULL,
-            )),
+            ]],
           'activity_target' => 1,
-        ),
-      ),
-    );
+        ],
+      ],
+    ];
     if (!empty($contacts[$row->nid])) {
       $data['contact'][1] += $contacts[$row->nid];
     }
     if ($row->activity_type_id) {
       $data['activity'][1]['add_link'] = TRUE;
-      $data['activity'][1]['activity'][1] = array(
+      $data['activity'][1]['activity'][1] = [
         'activity_type_id' => $row->activity_type_id,
         'subject' => $row->activity_subject,
         'status_id' => 2,
-      );
+      ];
     }
     db_update('webform_civicrm_forms')
-    ->fields(array('data' => serialize($data)))
+    ->fields(['data' => serialize($data)])
     ->condition('nid', $row->nid)
     ->execute();
   }
@@ -305,13 +305,13 @@ function webform_civicrm_update_6200() {
  * Add column for new_contact_source to webform_civicrm_forms table.
  */
 function webform_civicrm_update_6201() {
-  $field = array(
+  $field = [
     'type' => 'varchar',
     'length' => 255,
     'not null' => TRUE,
     'default' => '',
     'description' => 'Source label for newly created contacts',
-  );
+  ];
   db_add_field('webform_civicrm_forms', 'new_contact_source', $field);
 }
 
@@ -319,13 +319,13 @@ function webform_civicrm_update_6201() {
  * Add column for contact_matching to webform_civicrm_forms table.
  */
 function webform_civicrm_update_6202() {
-  $field = array(
+  $field = [
     'description' => 'How to match and autofill for contacts',
     'type' => 'int',
     'size' => 'tiny',
     'not null' => TRUE,
     'default' => 1,
-  );
+  ];
   db_add_field('webform_civicrm_forms', 'contact_matching', $field);
 }
 
@@ -342,7 +342,7 @@ function webform_civicrm_update_6203() {
   }
 
   // Update state_province fields
-  $submitted = array();
+  $submitted = [];
   $db = db_query("SELECT * FROM {webform_component} WHERE form_key LIKE 'civicrm_%%_contact_%%_address_state_province%%'");
   foreach ($db as $item) {
     if (substr($item->form_key, -3) == '_id') {
@@ -352,11 +352,11 @@ function webform_civicrm_update_6203() {
       $item->form_key .= '_id';
     }
     $item->type = 'textfield';
-    $item->extra = array(
+    $item->extra = [
       'maxlength' => 5,
       'width' => 4,
       'private' => 0,
-    );
+    ];
     webform_component_update((array) $item);
   }
 
@@ -386,10 +386,10 @@ function webform_civicrm_update_6204() {
   foreach ($db as $form) {
     $data = unserialize($form->data);
     if (isset($data['event_type'])) {
-      $data['reg_options'] = array(
+      $data['reg_options'] = [
         'event_type' => $data['event_type'],
         'show_past_events' => wf_crm_aval($data, 'show_past_events', 0),
-      );
+      ];
       $form = (array) $form;
       $form['data'] = $data;
       drupal_write_record('webform_civicrm_forms', $form, 'nid');
@@ -407,13 +407,13 @@ function webform_civicrm_update_6205() {
   module_load_include('inc', 'webform_civicrm', 'includes/utils');
   module_load_include('inc', 'webform', 'includes/webform.components');
   $db = db_query("SELECT * FROM {webform_component} WHERE form_key LIKE 'civicrm_%%_other_tags' OR form_key LIKE 'civicrm_%%_other_group%%'");
-  $tag = $group = array();
+  $tag = $group = [];
   foreach ($db as $row) {
     if ($pieces = wf_crm_explode_key($row->form_key)) {
       list( , $c, $ent, $n, $table, $name) = $pieces;
       if ($name == 'groups') {
         if (empty($group[$row->nid][$c])) {
-          $group[$row->nid][$c] = array('value' => '');
+          $group[$row->nid][$c] = ['value' => ''];
         }
         continue;
       }
@@ -427,14 +427,14 @@ function webform_civicrm_update_6205() {
     $nid = $form->nid;
     $data = unserialize($form->data);
     if (!empty($data['activity'][1])) {
-      $data['activity'][1]['details'] = array(
+      $data['activity'][1]['details'] = [
         'view_link' => !empty($data['activity'][1]['add_link']) ? 'view_link' : 0,
-      );
-      $data['activity'][1]['existing_activity_status'] = empty($data['activity'][1]['existing_activity_status']) ? array() : array($data['activity'][1]['existing_activity_status']);
+      ];
+      $data['activity'][1]['existing_activity_status'] = empty($data['activity'][1]['existing_activity_status']) ? [] : [$data['activity'][1]['existing_activity_status']];
     }
     foreach ($data['contact'] as &$con) {
       if (empty($con['contact'][1]['contact_sub_type'])) {
-        $con['contact'][1]['contact_sub_type'] = array();
+        $con['contact'][1]['contact_sub_type'] = [];
       }
       else {
         $con['contact'][1]['contact_sub_type'] = (array) $con['contact'][1]['contact_sub_type'];
@@ -442,14 +442,14 @@ function webform_civicrm_update_6205() {
     }
     if (!empty($tag[$nid]) || !empty($group[$nid])) {
       $node = node_load($nid);
-      $both = wf_crm_aval($tag, $nid, array()) + wf_crm_aval($group, $nid, array());
+      $both = wf_crm_aval($tag, $nid, []) + wf_crm_aval($group, $nid, []);
       foreach ($both as $c => $val) {
         $data['contact'][$c]['number_of_other'] = 1;
         if (!empty($tag[$nid][$c])) {
-          $tag_ids = array();
+          $tag_ids = [];
           $tag_names = drupal_explode_tags($tag[$nid][$c]['value']);
           foreach ($tag_names as $t) {
-            $result = wf_civicrm_api('tag', 'get', array('name' => $t));
+            $result = wf_civicrm_api('tag', 'get', ['name' => $t]);
             if ($tid = wf_crm_aval($result, 'id')) {
               $tag_ids[$tid] = $tid;
             }
@@ -459,7 +459,7 @@ function webform_civicrm_update_6205() {
         }
         if (!empty($group[$nid][$c]['form_key'])) {
           if (empty($group[$nid][$c]['value'])) {
-            $data['contact'][$c]['other'][1]['group'] = array();
+            $data['contact'][$c]['other'][1]['group'] = [];
           }
           else {
             $data['contact'][$c]['other'][1]['group'] = drupal_map_assoc(explode(',', $group[$nid][$c]['value']));
@@ -498,7 +498,7 @@ function webform_civicrm_update_7300() {
     $field['form_key'] = 'civicrm_1_contact_1_contact_existing';
     $field['weight'] = -255;
     $field['extra']['default'] = $form['contact_matching'] ? 'user' : '';
-    $field['extra']['hide_fields'] = array();
+    $field['extra']['hide_fields'] = [];
     wf_crm_admin_form::insertComponent($field, $enabled, $form);
 
     // Activity target
@@ -515,7 +515,7 @@ function webform_civicrm_update_7300() {
       if (!empty($contact['relationship'])) {
         foreach ($contact['relationship'] as $n => $rel) {
           if (!empty($rel['relationship_type_id'])) {
-            $r_types = wf_crm_field_options(array('form_key' => "civicrm_{$c}_contact_{$n}_relationship_relationship_type_id"), 'config_form', $data);
+            $r_types = wf_crm_field_options(['form_key' => "civicrm_{$c}_contact_{$n}_relationship_relationship_type_id"], 'config_form', $data);
             $type = $rel['relationship_type_id'];
             list($r, $a_b) = explode('_', $type);
             if (!isset($r_types[$type]) && isset($r_types[$r . '_r'])) {
@@ -542,8 +542,8 @@ function webform_civicrm_update_7300() {
                 $field['form_key'] = "civicrm_{$c}_contact_1_contact_existing";
                 $field['extra']['widget'] = 'hidden';
                 $field['extra']['default'] = 'relationship';
-                $field['extra']['default_relationship'] = array($e_type . '_' . $a_b);
-                $field['extra']['hide_fields'] = array();
+                $field['extra']['default_relationship'] = [$e_type . '_' . $a_b];
+                $field['extra']['hide_fields'] = [];
                 wf_crm_admin_form::insertComponent($field, $enabled, $form);
               }
             }
@@ -553,7 +553,7 @@ function webform_civicrm_update_7300() {
     }
 
     // Activity assignee & case manager
-    foreach (array('activity' => 'assignee_contact_id', 'case' => 'creator_id') as $table => $name) {
+    foreach (['activity' => 'assignee_contact_id', 'case' => 'creator_id'] as $table => $name) {
       if (!empty($data[$table][1][$table][1][$name])) {
         $val = &$data[$table][1][$table][1][$name];
         if ($val[0] == '#') {
@@ -562,12 +562,12 @@ function webform_civicrm_update_7300() {
         else {
           // Create contact
           $c = count($data['contact']) + 1;
-          $data['contact'][$c] = array(
-            'contact' => array(1 => array(
+          $data['contact'][$c] = [
+            'contact' => [1 => [
               'contact_type' => 'individual',
-              'contact_sub_type' => array(),
-            )),
-          );
+              'contact_sub_type' => [],
+            ]],
+          ];
           // Set existing contact id
           $field = $fields['contact_existing'] + _webform_defaults_civicrm_contact();
           $field['nid'] = $form['nid'];
@@ -599,7 +599,7 @@ function webform_civicrm_update_7300() {
           }
           if (!empty($field['extra']['items'])) {
             $old = wf_crm_str2array($field['extra']['items']);
-            $new = array();
+            $new = [];
             foreach ($old as $k => $v) {
               $new[substr($k, 1)] = $v;
             }
@@ -610,7 +610,7 @@ function webform_civicrm_update_7300() {
         elseif ($field['type'] === 'select') {
           $group = $field['extra']['civicrm_group'];
           // Get a sample from the group for a hint of this contact's type
-          $result = wf_civicrm_api('contact', 'get', array('rowCount' => 1, 'group' => array($group => 1), 'return.contact_type' => 1));
+          $result = wf_civicrm_api('contact', 'get', ['rowCount' => 1, 'group' => [$group => 1], 'return.contact_type' => 1]);
           $type = 'individual';
           if (!empty($result['values'])) {
             $result = array_pop($result['values']);
@@ -618,12 +618,12 @@ function webform_civicrm_update_7300() {
           }
           // Create contact
           $c = count($data['contact']) + 1;
-          $data['contact'][$c] = array(
-            'contact' => array(1 => array(
+          $data['contact'][$c] = [
+            'contact' => [1 => [
               'contact_type' => $type,
-              'contact_sub_type' => array(),
-            )),
-          );
+              'contact_sub_type' => [],
+            ]],
+          ];
           $data[$ent][$c][$table][$n][$name] = $c;
           // Change this field type from select to civicrm_contact
           $field['form_key'] = 'civicrm_' . $c . '_contact_1_contact_existing';
@@ -633,7 +633,7 @@ function webform_civicrm_update_7300() {
           $field['extra']['none_prompt'] = t('- None Found -');
           $default = _webform_defaults_civicrm_contact();
           $field['extra']['filters'] = $default['extra']['filters'];
-          $field['extra']['filters']['group'] = array($group);
+          $field['extra']['filters']['group'] = [$group];
         }
         webform_component_update($field);
       }
@@ -642,7 +642,7 @@ function webform_civicrm_update_7300() {
         $r_types = wf_crm_field_options($field, '', $data);
         if (!empty($field['extra']['items'])) {
           $old = wf_crm_str2array($field['extra']['items']);
-          $new = array();
+          $new = [];
           foreach ($old as $k => $v) {
             if (!isset($r_types[$k])) {
               list($r, $a_b) = explode('_', $k);
@@ -714,13 +714,13 @@ function webform_civicrm_update_7302() {
  * Add column for contribution_id to webform_civicrm_submissions table.
  */
 function webform_civicrm_update_7400() {
-  $field = array(
+  $field = [
     'type' => 'int',
     'unsigned' => TRUE,
     'not null' => TRUE,
     'default' => 0,
     'description' => 'FK to {civicrm_contribution} id',
-  );
+  ];
   db_add_field('webform_civicrm_submissions', 'contribution_id', $field);
 }
 
@@ -730,11 +730,11 @@ function webform_civicrm_update_7400() {
 function webform_civicrm_update_7401(&$batch) {
   // Initialize batch api and create new field
   if (!isset($batch['progress'])) {
-    $field = array(
+    $field = [
       'type' => 'text',
       'serialize' => TRUE,
       'description' => 'Array of entity ids for this submission',
-    );
+    ];
     db_add_field('webform_civicrm_submissions', 'civicrm_data', $field);
     $batch['progress'] = $batch['current_sid'] = 0;
     $batch['max'] = db_query('SELECT COUNT(sid) FROM {webform_civicrm_submissions}')->fetchField();
@@ -743,16 +743,16 @@ function webform_civicrm_update_7401(&$batch) {
   // Process the next group of submissions.
   $result = db_query("SELECT * FROM {webform_civicrm_submissions} WHERE sid > {$batch['current_sid']} ORDER BY sid LIMIT 500");
   foreach ($result as $row) {
-    $data = array();
+    $data = [];
     if ($row->activity_id) {
-      $data['activity'] = array(1 => array('id' => $row->activity_id));
+      $data['activity'] = [1 => ['id' => $row->activity_id]];
     }
     if ($row->contribution_id) {
-      $data['contribution'] = array(1 => array('id' => $row->contribution_id));
+      $data['contribution'] = [1 => ['id' => $row->contribution_id]];
     }
     db_update('webform_civicrm_submissions')
       ->condition('sid', $row->sid)
-      ->fields(array('civicrm_data' => serialize($data)))
+      ->fields(['civicrm_data' => serialize($data)])
       ->execute();
 
     $batch['current_sid'] = $row->sid;
@@ -782,7 +782,7 @@ function webform_civicrm_update_7402() {
     if (isset($data['activity'][1]['activity'][1])) {
       $data['activity']['number_of_activity'] = 1;
       // Fix misnamed fields
-      foreach (array('campaign_id', 'survey_id') as $field) {
+      foreach (['campaign_id', 'survey_id'] as $field) {
         if (!empty($data['activity'][1]['activity'][1]['activity_' . $field])) {
           $data['activity'][1]['activity'][1][$field] = $data['activity'][1]['activity'][1]['activity_' . $field];
           unset($data['activity'][1]['activity'][1]['activity_' . $field]);
@@ -798,12 +798,12 @@ function webform_civicrm_update_7402() {
       // Create hidden field for activity subject to replace the removed "default subject" setting
       $fid = 'civicrm_1_activity_1_activity_subject';
       if (!(db_query("SELECT nid FROM {webform_component} WHERE form_key = '$fid' AND nid = {$form->nid}")->fetchField())) {
-        $component = array(
+        $component = [
           'form_key' => $fid,
           'nid' => $form->nid,
           'value' => $data['activity'][1]['activity'][1]['subject'],
           'type' => 'hidden',
-        ) + wf_crm_get_field('activity_subject');
+        ] + wf_crm_get_field('activity_subject');
         webform_component_defaults($component);
         webform_component_insert($component);
       }
@@ -813,7 +813,7 @@ function webform_civicrm_update_7402() {
     }
     if ($data !== $orig) {
       db_update('webform_civicrm_forms')
-        ->fields(array('data' => serialize($data)))
+        ->fields(['data' => serialize($data)])
         ->condition('nid', $form->nid)
         ->execute();
     }
@@ -823,12 +823,12 @@ function webform_civicrm_update_7402() {
  * Add field to create new relationship for duplicate records(expired/inactive).
  */
 function webform_civicrm_update_7403() {
-  $field =  array(
+  $field =  [
     'description' => 'Create new relationship if duplicate record exists and is expired or inactive.',
     'type' => 'int',
     'size' => 'tiny',
     'not null' => TRUE,
     'default' => 0,
-  );
+  ];
   db_add_field('webform_civicrm_forms', 'create_new_relationship', $field);
 }
