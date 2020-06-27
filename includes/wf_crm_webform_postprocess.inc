@@ -523,7 +523,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (substr($field_key, -8) == 'existing') {
         list(, $c, ) = explode('_', $field_key, 3);
         $cid = wf_crm_aval($this->submissionValue($fid), 0);
-        $this->ent['contact'][$c]['id'] = $this->verifyExistingContact($cid, $field_key);
+        // Do not overwrite existing Id.  Otherwise can overwrite a valid value with zero.
+        if (!$this->ent['contact'][$c]['id']) {
+          $this->ent['contact'][$c]['id'] = $this->verifyExistingContact($cid, $field_key);
+        }
         if ($this->ent['contact'][$c]['id']) {
           $this->existing_contacts[$c] = $cid;
         }
