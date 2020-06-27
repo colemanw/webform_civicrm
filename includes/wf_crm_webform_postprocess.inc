@@ -632,6 +632,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     if ($params['contact_type'] == 'Individual' && empty($params['first_name']) && empty($params['last_name'])) {
       $params['display_name'] = $params['sort_name'] = empty($params['nick_name']) ? $contact['email'][1]['email'] : $params['nick_name'];
     }
+    // Trim (to remove trailing whitespaces) first_name and last_name prior to creating a new contact
+    $params['first_name'] = trim($params['first_name']);
+    $params['last_name'] = trim($params['last_name']);
     $result = wf_civicrm_api('contact', 'create', $params);
     return wf_crm_aval($result, 'id', 0);
   }
