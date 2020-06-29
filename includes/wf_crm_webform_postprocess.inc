@@ -2340,6 +2340,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
         else {
           $val = is_array($val) ? reset($val) : $val;
+          // Trim whitespace from user input
+          if (is_string($val)) {
+            $val = trim($val);
+          }
         }
         if ($component['type'] == 'autocomplete' && is_string($val) && strlen($val)) {
           $options = wf_crm_field_options($component, '', $this->data);
