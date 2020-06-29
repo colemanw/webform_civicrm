@@ -96,16 +96,11 @@ var wfCivi = (function ($, D) {
     var container = $('div.webform-component[class*="--' + field.replace(/_/g, '-') + '"] div.civicrm-enabled');
     if (container.length > 0) {
       if ($('.file', container).length > 0) {
-        if ($('.file', container).is(':visible')) {
-          $('.file', container).hide();
-          info.icon = $('.file a', container).attr('href');
-        }
-        else {
-          return;
-        }
+        $('.file', container).hide();
+        info.icon = $('.file a', container).attr('href');
       }
       else {
-        $(':visible', container).hide();
+        $(container).children().hide();
         container.append('<input type="submit" class="form-submit ajax-processed civicrm-remove-file" value="' + Drupal.t('Change') + '" onclick="wfCivi.clearFileField(\'' + field + '\'); return false;">');
       }
       container.prepend('<span class="civicrm-file-icon"><img alt="' + Drupal.t('File') + '" src="' + info.icon + '" /> ' + (info.name ? ('<a href="'+ info.file_url+ '" target="_blank">'+info.name +'</a>') : '') + '</span>');
@@ -115,7 +110,7 @@ var wfCivi = (function ($, D) {
   pub.clearFileField = function(field) {
     var container = $('div.webform-component[class*="--' + field.replace(/_/g, '-') + '"] div.civicrm-enabled');
     $('.civicrm-remove-file, .civicrm-file-icon', container).remove();
-    $('input[type=file], input[type=submit]', container).show();
+    $(container).children().show();
   };
 
   /**
