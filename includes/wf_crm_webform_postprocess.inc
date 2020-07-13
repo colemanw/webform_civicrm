@@ -1287,7 +1287,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             $params['status_id'] = current(array_keys($options));
           }
           if (empty($params['subject'])) {
-            $params['subject'] = Html::escape($this->node->title);
+            $params['subject'] = Html::escape($this->node->get('title'));
           }
           // Automatic creator_id - default to current user or contact 1
           if (empty($data['case'][1]['creator_id'])) {
