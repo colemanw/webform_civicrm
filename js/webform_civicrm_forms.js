@@ -447,9 +447,11 @@ var wfCivi = (function ($, D, drupalSettings) {
       });
 
       $('form.webform-submission-form').once('civicrm').each(function () {
-        drupalSettings.webform_civicrm.fileFields.forEach(function (fileField){
-          wfCivi.initFileField(fileField.eid, fileField.fileInfo);
-        });
+        if (Array.isArray(drupalSettings.webform_civicrm.fileFields)) {
+          drupalSettings.webform_civicrm.fileFields.forEach(function (fileField){
+            wfCivi.initFileField(fileField.eid, fileField.fileInfo);
+          });
+        }
       });
     }
   };
