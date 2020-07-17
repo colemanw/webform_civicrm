@@ -221,7 +221,7 @@ class wf_crm_admin_form {
     );
     $this->form['webform_civicrm'] = array('#type' => 'vertical_tabs');
     /*
-     * @todo evaluate this; inline JS is not allowed in D8.
+     * @todo evaluate this; inline JS is not allowed in D8 - KG - not needed anymore
     if (!\Drupal::state()->get('webform_civicrm_help_seen')) {
       \Drupal::state()->set('webform_civicrm_help_seen', TRUE);
       drupal_add_js('cj(function() {CRM.help("' . t('Welcome to Webform-CiviCRM') . '", {}, "' . url('webform-civicrm/help/intro') . '");});', array('type' => 'inline', 'scope' => 'footer'));
@@ -254,9 +254,13 @@ class wf_crm_admin_form {
       '#type' => 'textfield',
       '#title' => t('Label'),
       '#default_value' => wf_crm_contact_label($n, $this->data, 'plain'),
+      '#description' => t('Labels help you keep track of the role of each contact on the form. For example, you might label Contact 1 "Parent", Contact 2 "Spouse" and Contact 3 "Child".') . '<br /><br />' . t('Labels do not have to be shown to the end-user. By default they will be the title of each contact\'s fieldset, but you may rename (or remove) fieldsets without affecting this label..'),
       '#suffix' => '</div>',
     );
-    $this->help($this->form['contact_' . $n][$n . '_webform_label'], 'webform_label', t('Contact Label'));
+    /*
+     * @todo replacing this with #description - track down further: private function help etc.
+     $this->help($this->form['contact_' . $n][$n . '_webform_label'], 'webform_label', t('Contact Label'));
+     */
     $this->addAjaxItem('contact_' . $n, $n . '_contact_type', 'contact_subtype_wrapper', 'contact-subtype-wrapper');
 
     // Contact sub-type
