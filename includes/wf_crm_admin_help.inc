@@ -11,19 +11,6 @@
  */
 class wf_crm_admin_help {
 
-  public static function intro() {
-    print '<p>' .
-      t('Create anything from a simple newsletter signup, to a complex multi-step registration system.') .
-      '</p><strong>' .
-      t('Getting Started:') .
-      '</strong><ul>' .
-      '<li>' . t('Enable fields for one or more contacts.') . '</li>' .
-      '<li>' . t('Arrange and configure those fields on the "Webform" tab.') . '</li>' .
-      '<li>' . t('Click the blue help icons to learn more.') . '</li>' .
-      '<li><a href="https://docs.civicrm.org/sysadmin/en/latest/integration/drupal/webform/" target="_blank">' . t('Read the instructions.') . '</a></li>' .
-      '</ul>';
-  }
-
   public static function contact_existing() {
     print '<p>' .
       t('Gives many options for how this contact can be autofilled or selected. From the Webform tab you can edit this field to configure:') .'</p><ul>' .
@@ -74,18 +61,6 @@ class wf_crm_admin_help {
 
   public static function contact_cs() {
     self::contact_contact_id();
-  }
-
-  public static function matching_rule() {
-    print '<p>' .
-      t('This determines how an <em>unknown</em> contact will be handled when the webform is submitted.') .
-      '</p><ul>' .
-      '<li>' . t('Select the "Default Unsupervised" rule for the same duplicate matching used by CiviCRM event registration &amp contribution forms.') . '</li>' .
-      '<li>' . t('Select a specific rule to customize how matching is performed.') . '</li>' .
-      '<li>' . t('Or select "- None -" to always create a new contact.') . '</li>' .
-      '</ul><p>' .
-      t('Note: Matching rules are only used if the contact is not already selected via "Existing Contact" field.') .
-      '</p>';
   }
 
   public static function address_street_address() {
@@ -322,14 +297,6 @@ class wf_crm_admin_help {
       t('Click the + button to select more than one option.') .
       '</p><p>' .
       t('You may set options here and/or add this element to the webform ("User Select"). Options chosen here will be applied automatically and will not appear on the form.') .
-      '</p>';
-  }
-
-  public static function webform_label() {
-    print '<p>' .
-      t('Labels help you keep track of the role of each contact on the form. For example, you might label Contact 1 "Parent", Contact 2 "Spouse" and Contact 3 "Child".') .
-      '</p><p>' .
-      t("Labels do not have to be shown to the end-user. By default they will be the title of each contact's fieldset, but you may rename (or remove) fieldsets without affecting this label.") .
       '</p>';
   }
 
