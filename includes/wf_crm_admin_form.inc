@@ -204,9 +204,16 @@ class wf_crm_admin_form {
     $this->form['nid'] = array(
       '#type' => 'checkbox',
       '#title' => t('Enable CiviCRM Processing'),
+      '#description' => t('Create anything from a simple newsletter signup, to a complex multi-step registration system.
+        </p><strong> Getting Started:
+        </strong><ul>
+        <li>Enable fields for one or more contacts.</li>
+        <li>Arrange and configure those fields on the "Webform" tab.</li>
+        <li>Click the blue help icons to learn more.</li>
+        <li>Read the instructions: <a href="https://docs.civicrm.org/webform-civicrm/en/latest/" target="_blank">Click here!</a></li>
+        </ul>'),
       '#default_value' => $has_handler->count(),
     );
-    $this->help($this->form['nid'], 'intro', t('Webform-CiviCRM Integration'));
     $this->form['number_of_contacts'] = array(
       '#type' => 'select',
       '#title' => t('Number of Contacts'),
@@ -220,13 +227,6 @@ class wf_crm_admin_form {
       '#suffix' => '<div>' . t('You have Javascript disabled. You will need to click this button after changing any option to see the result.') . '</div></div>',
     );
     $this->form['webform_civicrm'] = array('#type' => 'vertical_tabs');
-    /*
-     * @todo evaluate this; inline JS is not allowed in D8 - KG - not needed anymore
-    if (!\Drupal::state()->get('webform_civicrm_help_seen')) {
-      \Drupal::state()->set('webform_civicrm_help_seen', TRUE);
-      drupal_add_js('cj(function() {CRM.help("' . t('Welcome to Webform-CiviCRM') . '", {}, "' . url('webform-civicrm/help/intro') . '");});', array('type' => 'inline', 'scope' => 'footer'));
-    }
-    */
   }
 
   /**
@@ -258,7 +258,7 @@ class wf_crm_admin_form {
       '#suffix' => '</div>',
     );
     /*
-     * @todo replacing this with #description - track down further: private function help etc.
+     * @todo remove private function help()
      $this->help($this->form['contact_' . $n][$n . '_webform_label'], 'webform_label', t('Contact Label'));
      */
     $this->addAjaxItem('contact_' . $n, $n . '_contact_type', 'contact_subtype_wrapper', 'contact-subtype-wrapper');
@@ -396,24 +396,28 @@ class wf_crm_admin_form {
       }
       if ($sid == 'contact') {
         // Matching rule
-        $rule_field = $this->form['contact_' . $n]['contact_subtype_wrapper']["contact_{$n}_settings_matching_rule"] = array(
+        $rule_field = $this->form['contact_' . $n]['contact_subtype_wrapper']["contact_{$n}_settings_matching_rule"] = [
           '#type' => 'select',
-          '#options' => array(
+          '#options' => [
               0 =>t('- None -'),
               'Unsupervised' => t('Default Unsupervised'),
               'Supervised' => t('Default Supervised'),
-            ) + wf_crm_get_matching_rules($c['contact'][1]['contact_type']),
+            ] + wf_crm_get_matching_rules($c['contact'][1]['contact_type']),
           '#title' => t('Matching Rule'),
           '#prefix' => '<div class="number-of">',
           '#suffix' => '</div>',
           '#default_value' => wf_crm_aval($this->data['contact'][$n], 'matching_rule', 'Unsupervised', TRUE),
-        );
+          '#description' => t('This determines how an <em>unknown</em> contact will be handled when the webform is submitted. <br /><ul>
+             <li>Select the "Default Unsupervised" rule for the same duplicate matching used by CiviCRM event registration &amp contribution forms</li>
+             <li>Select a specific rule to customize how matching is performed</li>
+             <li>Or select "- None -" to always create a new contact</li>
+             </ul>Note: Matching rules are only used if the contact is not already selected via "Existing Contact" field.'),
+        ];
         $rule_field =& $this->form['contact_' . $n]['contact_subtype_wrapper']["contact_{$n}_settings_matching_rule"];
         // Reset to default if selected rule doesn't exist or isn't valid for this contact type
         if (!array_key_exists($rule_field['#default_value'], $rule_field['#options'])) {
           $rule_field['#default_value'] = $this->form_state['input']["contact_{$n}_settings_matching_rule"] = 'Unsupervised';
         }
-        $this->help($rule_field, 'matching_rule');
       }
     }
   }
