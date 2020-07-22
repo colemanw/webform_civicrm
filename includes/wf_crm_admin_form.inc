@@ -418,7 +418,6 @@ class wf_crm_admin_form {
         if (!array_key_exists($rule_field['#default_value'], $rule_field['#options'])) {
           $rule_field['#default_value'] = $this->form_state['input']["contact_{$n}_settings_matching_rule"] = 'Unsupervised';
         }
-        // $this->help($rule_field, 'matching_rule');
       }
     }
   }
