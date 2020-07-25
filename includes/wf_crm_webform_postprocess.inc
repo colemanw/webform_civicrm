@@ -2470,8 +2470,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
   /**
    * Get or set a value from a webform submission
-   * During validation phase we use $this->crmValues
-   * During submission processing we use $this->submission
+   * Always use \Drupal\webform\WebformSubmissionInterface $webform_submission [more reliable according to JR]
    *
    * @param $fid
    *   Numeric webform component id
@@ -2481,34 +2480,22 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @return array|null field value if found
    */
   protected function submissionValue($fid, $value = NULL) {
-    // In submission processing context
-    if ($this->submission) {
-      $data = $this->submission->getData();
-      if (!isset($data[$fid])) {
-        return NULL;
-      }
-      // Expects an array.
-      $field = (array) $data[$fid];
-      // During submission preprocessing this is used to alter the submission
-      if ($value !== NULL) {
-        $field = (array) $value;
-      }
-      return $field;
+    $form_object = $this->form_state->getFormObject();
+    /** @var \Drupal\webform\WebformSubmissionInterface $webform_submission */
+    $webform_submission = $form_object->getEntity();
+    $data = $webform_submission->getData();
+
+    if (!isset($data[$fid])) {
+      return NULL;
     }
-    // In validation context - no need to ever change the value so just return it
-    else {
-      if (!isset($this->rawValues[$fid])) {
-        return NULL;
-      }
-      // rawValues is slightly different from submission->data in that empty values are present in arrays
-      if (is_array($this->rawValues[$fid])) {
-        $val = array_filter($this->rawValues[$fid]);
-        return $val;
-      }
-      else {
-        return (array) $this->rawValues[$fid];
-      }
+
+    // Expects an array.
+    $field = (array) $data[$fid];
+    // During submission preprocessing this is used to alter the submission
+    if ($value !== NULL) {
+      $field = (array) $value;
     }
+    return $field;
   }
 
   /**
