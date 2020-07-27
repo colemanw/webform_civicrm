@@ -612,8 +612,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
   }
 
  /**
-   * Function to load default contact (cid1) if default loading is set to case_roles
-   */
+  * Function to load default contact (cid1) if default loading is set to case_roles
+  *
+  * @param int $c
+  */
   function findCaseClientForDefaultContact($c) {
     // Support legacy url param
     if (empty($_GET["case1"]) && !empty($_GET["caseid"])) {
@@ -627,7 +629,6 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         if (count($clients) > 0) {
           $caseClient = reset($clients);
           $this->ent['contact'][$c]['id'] = $caseClient;
-          return;
         }
       }
     }
