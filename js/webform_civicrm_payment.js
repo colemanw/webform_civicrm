@@ -54,11 +54,18 @@ cj(function($) {
   });
   loadBillingBlock();
 
+  function getTotalAmount() {
+    var totalAmount = 0.0;
+    $('.line-item:visible', '#wf-crm-billing-items').each(function() {
+      totalAmount += parseFloat($(this).data('amount'));
+    });
+    return totalAmount;
+  }
+
   function tally() {
     var total = 0;
-    $('.line-item:visible', '#wf-crm-billing-items').each(function() {
-      total += parseFloat($(this).data('amount'));
-    });
+    total = getTotalAmount();
+
     $('td+td', '#wf-crm-billing-total').html(CRM.formatMoney(total));
     if (total > 0) {
       $('#billing-payment-block').show();
@@ -120,4 +127,18 @@ cj(function($) {
     });
 
   tally();
+
+  var payment = {
+    getTotalAmount: function() {
+      return getTotalAmount();
+    }
+  };
+
+  if (typeof CRM.payment === 'undefined') {
+    CRM.payment = payment;
+  }
+  else {
+    $.extend(CRM.payment, payment);
+  }
+
 });
