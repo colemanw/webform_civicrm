@@ -1901,7 +1901,7 @@ class wf_crm_admin_form {
   }
 
   private function help(&$field, $topic, $title = NULL) {
-    \wf_crm_admin_help::addHelp($field, $topic, $title);
+    \wf_crm_admin_help::addHelpDescription($field, $topic, $title);
   }
 
   /**
