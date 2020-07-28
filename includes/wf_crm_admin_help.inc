@@ -207,6 +207,34 @@ class wf_crm_admin_help {
       '</p>';
   }
 
+  public static function reg_options_validate() {
+    return '<p>' .
+      t('Will not allow the form to be submitted if user registers for an event that is ended or full.') .
+      '</p>';
+  }
+
+  public static function reg_options_block_form() {
+    return '<p>' .
+      t('Hide webform if all the events for the form are full or ended.') .
+      '</p>';
+  }
+
+  public static function reg_options_disable_unregister() {
+    return '<p>' .
+      t('If this is selected, on "User Select mode", participants will not be unregistered from unchecked events.') .
+      '</p>';
+  }
+
+  public static function reg_options_allow_url_load() {
+    return '<p>' .
+      t('Allow events in "User Select" mode to be auto-filled from URL.') .
+      '</p>'.'<br /><p>'.t('Example for "Register all":') .
+      '<br /><code>' . Url::fromUri("internal:/node", array('absolute' => TRUE))->toString() . '/{node.nid}?event1={event1.event_id},{event2.event_id}</code></p><br />'.
+      t('Example for "Register separately":') .
+      '<br /><code>' . Url::fromUri("internal:/node", array('absolute' => TRUE))->toString() .
+      '/{node.nid}?c1event1={event1.event_id},{event2.event_id}&amp;c2event1={event3.event_id}</code></p>';
+  }
+
   public static function reg_options_show_past_events() {
     return '<p>' .
       t('To also display events that have ended, choose an option for how far in the past to search.') .
@@ -503,5 +531,4 @@ function wf_crm_admin_help($topic) {
   elseif (strpos($topic, 'fieldset_') === 0) {
     return wf_crm_admin_help::fieldset($topic);
   }
-  //exit();
 }
