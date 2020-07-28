@@ -1,5 +1,6 @@
 <?php
 use Drupal\Core\Url;
+use Drupal\webform_civicrm\Utils;
 
 /**
  * @file
@@ -288,7 +289,7 @@ class wf_crm_admin_help {
   }
 
   public static function activity_assignee_contact_id() {
-    civicrm_initialize();
+    \Drupal::service('civicrm')->initialize();
     print '<p>';
     if (wf_crm_get_civi_setting('activity_assignee_notification')) {
       print t('A copy of this activity will be emailed to the assignee.');
@@ -421,7 +422,7 @@ class wf_crm_admin_help {
     if (!is_numeric($id)) {
       return;
     }
-    civicrm_initialize();
+    \Drupal::service('civicrm')->initialize();
     $help = '';
     \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/utils');
     $info = wf_civicrm_api('custom_field', 'getsingle', array('id' => $id));
@@ -439,13 +440,14 @@ class wf_crm_admin_help {
    */
   public static function fieldset($param) {
     list( , $set) = explode('_', $param);
-    civicrm_initialize();
+    \Drupal::service('civicrm')->initialize();
     $help = '';
     \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/utils');
-    $sets = wf_crm_get_fields('sets');
+    $sets = Utils::wf_crm_get_fields('sets');
     if (!empty($sets[$set]['help_text'])) {
       $help .= '<p>' . $sets[$set]['help_text'] . '</p>';
     }
+    return $help;
   }
 
   /**
