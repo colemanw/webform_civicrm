@@ -75,6 +75,38 @@ function wf_crm_field_options($field, $context, $data) {
     elseif ($table == 'membership' && $name == 'num_terms') {
       $ret = drupal_map_assoc(range(1, 9));
     }
+    elseif ($table === 'contribution' && $name === 'payment_processor_id') {
+      // For the config form we display a list of all active (live) payment processors
+      // Saving will map the IDs to live or test.
+      // For the frontend we display the selected payment processors (with correct ID for live or test)
+      $params = wf_crm_aval($data, "$ent:$c:$table:$n", []);
+      if ($context === 'config_form') {
+        $paymentProcessors = wf_crm_apivalues('PaymentProcessor', 'get', ['is_test' => $params['is_test'], 'is_active' => 1]);
+        $paymentProcessors[0]['name'] = $field['exposed_empty_option'];
+        foreach ($paymentProcessors as $paymentProcessorID => $paymentProcessor) {
+          $ret[$paymentProcessorID] = $paymentProcessor['title'] ?? $paymentProcessor['name'];
+        }
+        return $ret;
+      }
+      else {
+        $selectedPaymentProcessors = wf_crm_aval($params, "payment_processor_id", []);
+        if (in_array(0, $selectedPaymentProcessors)) {
+          $ret[0] = $field['exposed_empty_option'];
+        }
+        $paymentProcessors = wf_crm_apivalues('PaymentProcessor', 'get', []);
+        $testPaymentProcessors = wf_crm_apivalues('PaymentProcessor', 'get', ['is_test' => 1], 'name');
+        foreach ($selectedPaymentProcessors as $paymentProcessorID) {
+          if (array_key_exists((int) $paymentProcessorID, $paymentProcessors)) {
+            if (!empty($params['is_test'])) {
+              $paymentProcessorName = $paymentProcessors[$paymentProcessorID]['name'];
+              $paymentProcessorID = array_search($paymentProcessorName, $testPaymentProcessors);
+            }
+            $ret[$paymentProcessorID] = $paymentProcessors[$paymentProcessorID]['title'] ?? $paymentProcessors[$paymentProcessorID]['name'];
+          }
+        }
+        return $ret;
+      }
+    }
     // Aside from the above special cases, most lists can be fetched from api.getoptions
     else {
       $params = ['field' => $name, 'context' => 'create'];
@@ -106,14 +138,17 @@ function wf_crm_field_options($field, $context, $data) {
       }
     }
     // Remove options that were set behind the scenes on the admin form
-    if ($context != 'config_form' && !empty($field['extra']['multiple']) && !empty($field['expose_list'])) {
+    if ($context != 'config_form' && !empty($field['extra']['multiple']) && !empty($field['expose_list'])
+      && "{$table}_{$name}" !== 'contribution_payment_processor_id') {
       foreach (wf_crm_aval($data, "$ent:$c:$table:$n:$name", []) as $key => $val) {
         unset($ret[$key]);
       }
     }
   }
   if (!empty($field['exposed_empty_option'])) {
-    $ret = [0 => $field['exposed_empty_option']] + $ret;
+    if ($context === 'config_form' || ($context !== 'config_form' && "{$table}_{$name}" !== 'contribution_payment_processor_id')) {
+      $ret = [0 => $field['exposed_empty_option']] + $ret;
+    }
   }
   return $ret;
 }
@@ -1057,10 +1092,26 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Payment Processor'),
         'type' => 'select',
         'expose_list' => TRUE,
-        'extra' => ['aslist' => 0],
+        'extra' => [
+          'aslist' => 0,
+          'civicrm_live_options' => TRUE,
+          'required' => TRUE
+        ],
         'exposed_empty_option' => t('Pay Later'),
         'value_callback' => TRUE,
         'weight' => 9995,
+        'admin' => [
+          'disable_user_select' => TRUE,
+          'multiple' => TRUE,
+        ]
+      ];
+      $fields['contribution_is_test'] = [
+        'name' => t('Payment Processor Mode'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'value' => 0,
+        'weight' => 9996,
+        'disable_user_select' => TRUE,
       ];
       $fields['contribution_note'] = [
         'name' => t('Contribution Note'),
@@ -1085,14 +1136,6 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Honoree Type'),
         'type' => 'select',
         'expose_list' => TRUE,
-      ];
-      $fields['contribution_is_test'] = [
-        'name' => t('Payment Processor Mode'),
-        'type' => 'select',
-        'expose_list' => TRUE,
-        'extra' => ['civicrm_live_options' => 1],
-        'value' => 0,
-        'weight' => 9997,
       ];
       $fields['contribution_source'] = [
         'name' => t('Contribution Source'),

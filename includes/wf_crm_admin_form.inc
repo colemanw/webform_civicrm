@@ -54,6 +54,10 @@ class wf_crm_admin_form {
     // Merge in existing fields
     $existing = array_keys(wf_crm_enabled_fields($this->node, NULL, TRUE));
     $this->settings += array_fill_keys($existing, 'create_civicrm_webform_element');
+    unset(
+      $this->settings['civicrm_1_contribution_1_contribution_payment_processor_id'],
+      $this->settings['civicrm_1_contribution_1_contribution_is_test']
+    );
 
     // Sort fields by set
     foreach ($this->fields as $fid => $field) {
@@ -1000,6 +1004,7 @@ class wf_crm_admin_form {
     $this->form['contribution'] = [
       '#type' => 'fieldset',
       '#title' => t('Contribution'),
+
       '#group' => 'webform_civicrm',
       '#description' => t('In order to process live transactions for events, memberships, or contributions, select a contribution page and its billing fields will be included on the webform.'),
       '#attributes' => ['class' => ['civi-icon-contribution']],
@@ -1311,7 +1316,8 @@ class wf_crm_admin_form {
       if (!empty($field['extra']['required'])) {
         $item['#attributes']['class'][] = 'required';
       }
-      if ($field['type'] != 'hidden') {
+
+      if (($field['type'] != 'hidden') && (empty($field['admin']['disable_user_select']))) {
         $options += ['create_civicrm_webform_element' => t('- User Select -')];
       }
       $options += wf_crm_field_options($field, 'config_form', $this->data);
@@ -1669,7 +1675,9 @@ class wf_crm_admin_form {
 
           if (!isset($enabled[$key])) {
             $val = (array) $val;
-            if (in_array('create_civicrm_webform_element', $val, TRUE) || (!empty($val[0]) && $field['type'] == 'hidden')) {
+            if (in_array('create_civicrm_webform_element', $val, TRUE)
+                || (!empty($val[0]) && $field['type'] == 'hidden')
+                || ((count($val) > 1) && (!empty($field['admin']['disable_user_select'])))) {
               // Restore disabled component
               if (isset($disabled[$key])) {
                 webform_component_update($disabled[$key]);
@@ -1825,7 +1833,8 @@ class wf_crm_admin_form {
       }
       else {
         $field = wf_crm_get_field($key);
-        if (!empty($val[0]) && $field['type'] == 'hidden') {
+        if ((!empty($val[0]) && $field['type'] == 'hidden')
+          ) {
           unset($fields[$key]);
         }
       }

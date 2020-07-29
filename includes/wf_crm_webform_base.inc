@@ -949,22 +949,4 @@ abstract class wf_crm_webform_base {
     return CRM_Core_Key::get('CRM_Contribute_Controller_Contribution', TRUE);
   }
 
-  /**
-   * Historically webform_civicrm was configured with the live payment processor ID and the is_test flag.
-   * But this is not how CiviCRM expects it to work and this can cause problems where payments use the live processor
-   *   instead of test.  So we "fix" the processor ID here to be the correct one for live/test.
-   * An "improved" fix would involve changing the configuration saved by the user but this avoids that.
-   *
-   * @throws \CiviCRM_API3_Exception
-   */
-  protected function fixPaymentProcessorID() {
-    // Check for is_test and payment_processor_id (pay later = 0 is set to '' here. is_test has no meaning for pay later).
-    if (!empty($this->data['contribution'][1]['contribution'][1]['is_test'])
-        && !empty($this->data['contribution'][1]['contribution'][1]['payment_processor_id'])) {
-      $paymentProcessor = \Civi\Payment\System::singleton()->getById($this->data['contribution'][1]['contribution'][1]['payment_processor_id']);
-      $paymentProcessor = \Civi\Payment\System::singleton()->getByName($paymentProcessor->getPaymentProcessor()['name'], TRUE);
-      $this->data['contribution'][1]['contribution'][1]['payment_processor_id'] = $paymentProcessor->getPaymentProcessor()['id'];
-    }
-  }
-
 }
