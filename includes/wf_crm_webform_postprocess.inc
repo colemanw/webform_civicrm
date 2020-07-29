@@ -43,7 +43,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->node = $node;
     $this->settings = $node->webform_civicrm;
     $this->data = $this->settings['data'];
-    $this->fixPaymentProcessorID();
     $this->enabled = wf_crm_enabled_fields($node);
     $this->all_fields = wf_crm_get_fields();
     $this->all_sets = wf_crm_get_fields('sets');
