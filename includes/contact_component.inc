@@ -310,7 +310,7 @@ function wf_crm_contact_component_form_help(&$form) {
     if (is_array($form[$element])) {
       wf_crm_contact_component_form_help($form[$element]);
       if (method_exists('wf_crm_admin_help', "contact_component_$element")) {
-        wf_crm_admin_help::addHelp($form[$element], "contact_component_$element");
+        wf_crm_admin_help::addHelpDescription($form[$element], "contact_component_$element");
       }
     }
   }

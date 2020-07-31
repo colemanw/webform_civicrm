@@ -204,16 +204,9 @@ class wf_crm_admin_form {
     $this->form['nid'] = array(
       '#type' => 'checkbox',
       '#title' => t('Enable CiviCRM Processing'),
-      '#description' => t('Create anything from a simple newsletter signup, to a complex multi-step registration system.
-        </p><strong> Getting Started:
-        </strong><ul>
-        <li>Enable fields for one or more contacts.</li>
-        <li>Arrange and configure those fields on the "Webform" tab.</li>
-        <li>Click the blue help icons to learn more.</li>
-        <li>Read the instructions: <a href="https://docs.civicrm.org/webform-civicrm/en/latest/" target="_blank">Click here!</a></li>
-        </ul>'),
       '#default_value' => $has_handler->count(),
     );
+    $this->help($this->form['nid'], 'intro');
     $this->form['number_of_contacts'] = array(
       '#type' => 'select',
       '#title' => t('Number of Contacts'),
@@ -254,13 +247,9 @@ class wf_crm_admin_form {
       '#type' => 'textfield',
       '#title' => t('Label'),
       '#default_value' => wf_crm_contact_label($n, $this->data, 'plain'),
-      '#description' => t('Labels help you keep track of the role of each contact on the form. For example, you might label Contact 1 "Parent", Contact 2 "Spouse" and Contact 3 "Child".') . '<br /><br />' . t('Labels do not have to be shown to the end-user. By default they will be the title of each contact\'s fieldset, but you may rename (or remove) fieldsets without affecting this label..'),
       '#suffix' => '</div>',
     );
-    /*
-     * @todo remove private function help()
-     $this->help($this->form['contact_' . $n][$n . '_webform_label'], 'webform_label', t('Contact Label'));
-     */
+    $this->help($this->form['contact_' . $n][$n . '_webform_label'], 'webform_label', t('Contact Label'));
     $this->addAjaxItem('contact_' . $n, $n . '_contact_type', 'contact_subtype_wrapper', 'contact-subtype-wrapper');
 
     // Contact sub-type
@@ -407,17 +396,13 @@ class wf_crm_admin_form {
           '#prefix' => '<div class="number-of">',
           '#suffix' => '</div>',
           '#default_value' => wf_crm_aval($this->data['contact'][$n], 'matching_rule', 'Unsupervised', TRUE),
-          '#description' => t('This determines how an <em>unknown</em> contact will be handled when the webform is submitted. <br /><ul>
-             <li>Select the "Default Unsupervised" rule for the same duplicate matching used by CiviCRM event registration &amp contribution forms</li>
-             <li>Select a specific rule to customize how matching is performed</li>
-             <li>Or select "- None -" to always create a new contact</li>
-             </ul>Note: Matching rules are only used if the contact is not already selected via "Existing Contact" field.'),
         ];
         $rule_field =& $this->form['contact_' . $n]['contact_subtype_wrapper']["contact_{$n}_settings_matching_rule"];
         // Reset to default if selected rule doesn't exist or isn't valid for this contact type
         if (!array_key_exists($rule_field['#default_value'], $rule_field['#options'])) {
           $rule_field['#default_value'] = $this->form_state['input']["contact_{$n}_settings_matching_rule"] = 'Unsupervised';
         }
+        $this->help($rule_field, 'matching_rule');
       }
     }
   }
@@ -1901,7 +1886,7 @@ class wf_crm_admin_form {
   }
 
   private function help(&$field, $topic, $title = NULL) {
-    \wf_crm_admin_help::addHelp($field, $topic, $title);
+    \wf_crm_admin_help::addHelpDescription($field, $topic, $title);
   }
 
   /**
