@@ -281,7 +281,7 @@ class wf_crm_admin_form {
         continue;
       }
       if (!empty($set['sub_types'])) {
-        if (!$subTypeIsUserSelect && !array_intersect($c['contact'][1]['contact_sub_type'], $set['sub_types'])) {
+        if (!$subTypeIsUserSelect && !array_intersect($c['contact'][1]['contact_sub_type'], array_map('strtolower', $set['sub_types']))) {
           continue;
         }
         $pos = &$this->form['contact_' . $n]['contact_subtype_wrapper']['contact_custom_wrapper'];
