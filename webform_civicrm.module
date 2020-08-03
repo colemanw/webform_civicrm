@@ -325,11 +325,39 @@ function webform_civicrm_webform_submission_load(&$submissions) {
 
 /**
  * Implements hook_webform_submission_render_alter().
- * Add display name to title while viewing a submission.
  */
-function webform_civicrm_webform_submission_render_alter(&$sub) {
-  if (!empty($sub['#submission']->civicrm['contact'][1]['display_name']) && empty($sub['#email']) && $sub['#format'] == 'html') {
-    drupal_set_title(t('Submission #!num by @name', ['!num' => $sub['#submission']->sid, '@name' => $sub['#submission']->civicrm['contact'][1]['display_name']]));
+function webform_civicrm_webform_submission_render_alter(&$renderable) {
+  // Add display name to title while viewing a submission.
+  if (!empty($renderable['#submission']->civicrm['contact'][1]['display_name']) && empty($renderable['#email']) && $renderable['#format'] == 'html') {
+    drupal_set_title(t('Submission #!num by @name', ['!num' => $renderable['#submission']->sid, '@name' => $renderable['#submission']->civicrm['contact'][1]['display_name']]));
+  }
+
+  // Show labels for hidden (select) fields when submissions are rendered.
+  foreach ($renderable['#node']->webform['components'] as $component) {
+    if ($component['type'] == 'hidden') {
+      $options = wf_crm_field_options($component, 'submission', $renderable['#node']->webform_civicrm['data']);
+      if (empty($options)) {
+        continue;
+      }
+      $parentkeys = webform_component_parent_keys($renderable['#node'], $component);
+      $value = &$renderable[array_shift($parentkeys)];
+      foreach ($parentkeys as $parentkey) {
+        $value = &$value[$parentkey];
+      }
+
+      // Handle multiple values.
+      if (!empty($component['extra']['multiple'])) {
+        $selected_options = explode(',', $value['#markup']);
+        $items = [];
+        foreach ($selected_options as $selected_option) {
+          $items[] = $options[$selected_option];
+        }
+        $value['#markup'] = implode(', ', $items);
+      }
+      else {
+        $value['#markup'] = $options[$value['#markup']];
+      }
+    }
   }
 }
 
