@@ -98,7 +98,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   public function validate($form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
     $this->form = $form;
     $this->form_state = $form_state;
-    $this->rawValues = $form_state->getValues();
+    $this->rawValues = $form_state->getValues() + $form_state->getUserInput();
     $this->crmValues = wf_crm_enabled_fields($webform_submission->getWebform(), $this->rawValues);
     // Even though this object is destroyed between page submissions, this trick allows us to persist some data - see below
     $this->ent = $form_state->get(['civicrm', 'ent']) ?: [];
