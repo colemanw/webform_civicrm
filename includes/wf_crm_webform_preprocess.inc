@@ -451,6 +451,10 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           if ($table == 'contribution' && in_array($name, array('line_total', 'total_amount'))) {
             $element['#attributes']['class'][] = 'contribution-line-item';
           }
+          // For membership line-items
+          if ($table == 'membership' && in_array($name, array('fee_amount'))) {
+            $element['#attributes']['class'][] = 'contribution-line-item';
+          }
           // Provide live options from the Civi DB
           if (!empty($element['#civicrm_live_options']) && isset($element['#options'])) {
             $params = [
@@ -562,10 +566,11 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
   private function displayLineItems() {
     $rows = [];
     $total = 0;
+    $elements = $this->node->getElementsDecoded();
+
     // Support hidden contribution field
     $fid = 'civicrm_1_contribution_1_contribution_total_amount';
     if (!$this->line_items && isset($this->enabled[$fid])) {
-      $elements = $this->node->getElementsDecoded();
       $field = $elements[$this->enabled[$fid]];
       if ($field['#type'] === 'hidden') {
         $this->line_items[] = [
@@ -574,6 +579,24 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           'element' => 'civicrm_1_contribution_1',
           'label' => !empty($field['name']) ? $field['name'] : t('Contribution Amount'),
         ];
+      }
+    }
+
+    // add membership line items if membership fee form elements are hidden
+    for ($c=1; $c<=30; $c++) {
+      for ($m=1 ; $m<=9; $m++) {
+        $membership_fid = 'civicrm_' . $c . '_membership_' . $m . '_membership_fee_amount';
+        if (!empty($this->enabled[$membership_fid]) && !empty($elements[$this->enabled[$membership_fid]])) {
+          $field = $elements[$this->enabled[$membership_fid]];
+          if ($field['#type'] === 'hidden') {
+            $this->line_items[] = [
+              'line_total' => $field['value'],
+              'qty'        => 1,
+              'element'    => 'civicrm_' . $c . 'membership_' . $m,
+              'label'      => !empty($field['name']) ? $field['name'] : t('Membership Fee'), // update for membership type id in label
+            ];
+          }
+        }
       }
     }
 

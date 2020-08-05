@@ -106,7 +106,7 @@ cj(function($) {
   function calculateLineItemAmount() {
     var fieldKey = $(this).data('civicrmFieldKey'),
       amount = getFieldAmount(fieldKey),
-      label = $(this).closest('div.webform-component').find('label').text() || Drupal.t('Contribution'),
+      label = $('label[for=' + this.id + ']').text() || Drupal.t('Contribution'),
       lineKey = fieldKey.split('_').slice(0, 4).join('_');
     updateLineItem(lineKey, amount, label);
   }
