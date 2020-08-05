@@ -767,6 +767,7 @@ class Fields implements FieldsInterface {
         if (isset($sets['contribution'])) {
           $fields['membership_fee_amount'] = array(
               'name' => t('Membership Fee'),
+              'type' => 'civicrm_membership_fee',
             ) + $moneyDefaults;
         }
         $fields['membership_join_date'] = array(
