@@ -1278,7 +1278,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         else {
           $params['id'] = $this->ent['case'][$n]['id'];
           // These params aren't allowed in update mode
-          unset($params['creator_id'], $params['case_type_id']);
+          unset($params['creator_id']);
         }
         // Allow "automatic" status to pass-thru
         if (empty($params['status_id'])) {
