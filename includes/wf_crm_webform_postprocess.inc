@@ -976,7 +976,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
       }
       if ($confirmations_sent) {
-        \Drupal::messenger()->addStatus(t('A message has been sent to %email to confirm subscription to !group.', array('%email' => $email, '!group' => '<em>' . implode('</em> ' . t('and') . ' <em>', $confirmations_sent) . '</em>')));
+        \Drupal::messenger()->addStatus(t('A message has been sent to %email to confirm subscription to :group.', array('%email' => $email, ':group' => '' . implode('' . t('and') . '', $confirmations_sent) . '')));
       }
     }
     // Remove data from entity
