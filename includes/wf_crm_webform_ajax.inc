@@ -178,7 +178,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
       return FALSE;
     }
     $element = $webform->getElement($fid);
-    if (empty($element) || !$webform->access('view')) {
+    if (empty($element) || !$webform->access('submission_create')) {
       return FALSE;
     }
 
@@ -188,9 +188,9 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
 
     /** @var \Drupal\webform\Plugin\WebformElementManagerInterface $element_manager */
     $element_manager = \Drupal::service('plugin.manager.webform.element');
-    $element_instance = $element_manager->getElementInstance($component);
+    $element_instance = $element_manager->getElementInstance($element);
     // @todo test after moving to getElementProperty.
-    if (!empty($element_instance->getElementProperty($component, 'private'))) {
+    if (!empty($element_instance->getElementProperty($element, 'private'))) {
       return FALSE;
     }
     /* TODO figure out what this means in Drupal 8
@@ -203,6 +203,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
         return FALSE;
       }
     }*/
+    // ToDo - to be refactored -> it would be safer to return FALSE by default.
     return TRUE;
   }
 

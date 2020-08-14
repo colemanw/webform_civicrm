@@ -636,6 +636,7 @@ function wf_crm_contact_access($component, $filters, $cid) {
   if (!empty($filters['check_permissions'])) {
     // If we have a valid checksum for this contact, bypass other permission checks
     // For legacy reasons we support "cid" param as an alias of "cid1"
+    // ToDo use: \Drupal::request()->query->all();
     if (wf_crm_aval($_GET, "cid$c") == $cid || ($c == 1 && wf_crm_aval($_GET, "cid") == $cid)) {
       // For legacy reasons we support "cs" param as an alias of "cs1"
       if (!empty($_GET['cs']) && $c == 1 && CRM_Contact_BAO_Contact_Utils::validChecksum($cid, $_GET['cs'])) {
@@ -817,13 +818,14 @@ function wf_crm_search_filters($node, array $component) {
     'contact_sub_type',
     'tag',
     'group',
+    'check_permissions',
     'relationship' => [
       'contact',
       'types',
     ],
   ];
   foreach ($contactFilters as $key => $filter) {
-    //Add Relationship filter
+    // Add Relationship filter
     if ($key === 'relationship') {
       foreach ($filter as $val) {
         $filterVal = $contact_element->getElementProperty($component, "filter_relationship_{$val}");
