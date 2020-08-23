@@ -2167,6 +2167,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       isset($item['tax_amount']) ? $item['tax_amount'] = CRM_Utils_Money::format($item['tax_amount'], NULL, NULL, TRUE) : NULL;
 
       // Save the line_item
+      $price_field_value = $this->fetchPriceField($this->contribution_page['id'], $item['financial_type_id']);
+      $item['price_field_id'] = $price_field_value['price_field_id'];
+      $item['price_field_value_id'] = $price_field_value['id'];
       $line_result = wf_civicrm_api('line_item', 'create', $item);
       $item['id'] = $line_result['id'];
 
@@ -2187,6 +2190,49 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           "{$type}_id" => $item["{$type}_id"],
           'contribution_id' => $id,
         ]);
+      }
+    }
+  }
+
+  /**
+   * @param int $contribution_page_id - the ID of the contribution page associated with the webform
+   * @param int $financial_type_id - the ID of the financial type belonging to the a line_item
+   */
+  private function fetchPriceField($contribution_page_id, $financial_type_id) {
+
+    // Get all available price field values that we might be able to match line items with.
+    $price_set_id = CRM_Price_BAO_PriceSet::getFor('civicrm_contribution_page', $contribution_page_id);
+    $price_field_values = array();
+    if ($price_set_id) {
+      $price_fields_result = wf_civicrm_api('PriceField', 'get',
+        array(
+          'return' => array('id'),
+          'price_set_id' => $price_set_id,
+          'is_active' => 1,
+        )
+      );
+    }
+    if ($price_fields_result['count'] != 0) {
+      foreach($price_fields_result['values'] as $price_field) {
+        $price_field_values_result = wf_civicrm_api('PriceFieldValue', 'get',
+          array(
+            'price_field_id' => $price_field['id'],
+            'is_active' => 1,
+          )
+        );
+        if ($price_field_values_result['count'] != 0) {
+          foreach($price_field_values_result['values'] as $price_field_value) {
+            $price_field_values[] = $price_field_value;
+          }
+        }
+      }
+    }
+    $test = 1;
+    if (count($price_field_values)) {
+      foreach($price_field_values as $price_field_value) {
+        if ($price_field_value['financial_type_id'] == $financial_type_id) {
+          return $price_field_value;
+        }
       }
     }
   }
