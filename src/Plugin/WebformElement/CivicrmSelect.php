@@ -105,6 +105,14 @@ class CivicrmSelect extends WebformElementBase {
       '#prefix' => '<div id="webform-civicrm-options-wrapper">',
       '#suffix' => '</div>',
     ];
+    // M.H added this, provide empty option for CiviCRM Select
+    $form['options']['empty_option'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Empty option label'),
+      '#description' => $this->t('The label to show for the initial option denoting no selection in a select element.'),
+      '#default_value' => $element_properties['empty_option'],
+    ];
+    // end added
 
     if ($element_properties['civicrm_live_options']) {
       $live_options_description = t('You cannot control the presentation of live options. They will be loaded from the CiviCRM database every time the form is displayed.');

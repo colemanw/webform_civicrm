@@ -199,7 +199,18 @@ class CivicrmOptions extends WebformElementBase {
   protected function getFieldOptions($element) {
     \Drupal::getContainer()->get('civicrm')->initialize();
     $field_options = \Drupal::service('webform_civicrm.field_options');
-    return $field_options->get(['form_key' => $element['#form_key']], 'create', []);
+    $data = [];
+    if (!empty($this->webform) && is_object($this->webform)) {
+      $webform_id = $this->webform->get('id');
+      if (!empty($webform_id)) {
+        $webform = \Drupal::entityTypeManager()->getStorage('webform')->load($webform_id);
+        $handler_collection = $webform->getHandlers('webform_civicrm');
+        $handler = $handler_collection->get('webform_civicrm');
+        $settings = $handler->getConfiguration()['settings'];
+        $data = $settings['data'];
+      }
+    }
+    return $field_options->get(['form_key' => $element['#form_key']], 'create', $data);
   }
 
   /**
