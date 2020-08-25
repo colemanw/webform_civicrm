@@ -1748,6 +1748,9 @@ class wf_crm_admin_form {
             // Try to "update" options for existing fields via ::insertComponent
             // Always insert fieldsets, as there are checks to see if the
             // fieldset already exists.
+            if (!isset($field)) {
+              $field = [];
+            }
             $field += ['form_key' => $key];
             self::insertComponent($field, $enabled, $this->settings);
           }
