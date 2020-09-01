@@ -531,6 +531,9 @@ abstract class wf_crm_webform_base {
       return $exposed;
     }
 
+    if ($field && $field['#type'] == 'civicrm_options') {
+      return $field['#options'] ?? [];
+    }
     if ($field && $field['#type'] == 'select') {
       // Fetch static options
       if (empty($field['#extra']['civicrm_live_options'])) {
@@ -555,7 +558,7 @@ abstract class wf_crm_webform_base {
    */
   protected function getComponent($field_key) {
     if ($field_key && isset($this->enabled[$field_key])) {
-      $elements = $this->node->getElementsDecoded();
+      $elements = $this->node->getElementsDecodedAndFlattened();
       return $elements[$this->enabled[$field_key]];
     }
     return NULL;
