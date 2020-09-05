@@ -143,11 +143,14 @@ function wf_crm_get_tags($used_for, $parent_id = NULL) {
   }
   // Fetch child tags
   unset($params['parent_id']);
-  $params += ['return' => ['name', 'parent_id'], 'parent_id.is_tagset' => 0, 'parent_id.is_selectable' => 1];
+  $params += ['return' => ['name', 'parent_id'], 'parent_id.is_tagset' => 0, 'parent_id.is_selectable' => 1, 'parent_id.used_for' => $params['used_for']];
   $unsorted = wf_crm_apivalues('Tag', 'get', $params);
   $parents = array_fill_keys(array_keys($tags), ['depth' => 1]);
-  // Loop until all children are placed under their parents
-  while ($unsorted) {
+  // Place children under their parents.
+  $prevLoop = NULL;
+  while ($unsorted && count($unsorted) !== $prevLoop) {
+    // If count stops going down then we are left with only orphan tags & will abort the loop
+    $prevLoop = count($unsorted);
     foreach ($unsorted as $id => $tag) {
       $parent = $tag['parent_id'];
       if (isset($parents[$parent])) {
