@@ -1307,8 +1307,20 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         else {
           $params['id'] = $this->ent['case'][$n]['id'];
           // These params aren't allowed in update mode
-          unset($params['creator_id'], $params['case_type_id']);
+          unset($params['creator_id']);
         }
+
+        // If orig_contact_id is missing and there's more than one Contact
+        // on the Case, set orig_contact_id to the current ID. Otherwise
+        // we get a Case.create error "Case is linked with more than one
+        // contact id".
+        if (empty($params['orig_contact_id']) && !empty($params['id'])) {
+          $caseContactCount = wf_civicrm_api('CaseContact', 'getcount', ['case_id' => $params['id']]);
+          if ($caseContactCount > 1 && !empty($params['client_id'])) {
+            $params['orig_contact_id'] = current((array) $params['client_id']);
+          }
+        }
+
         // Allow "automatic" status to pass-thru
         if (empty($params['status_id'])) {
           unset($params['status_id']);
