@@ -586,6 +586,8 @@ abstract class wf_crm_webform_base {
       'contact_id' => $cid,
       // Limit to only enabled membership types
       'membership_type_id' => ['IN' => $membership_types],
+      // skip membership through Inheritance.
+      'owner_membership_id' => ['IS NULL' => 1],
     ]);
     if (!$existing) {
       return [];
