@@ -573,7 +573,8 @@ abstract class wf_crm_webform_base {
     static $status_types;
     static $membership_types;
     if (!isset($membership_types)) {
-      $membership_types = array_keys(wf_crm_apivalues('membershipType', 'get', array('is_active' => 1, 'return' => 'id')));
+      $domainId = CRM_Core_Config::domainID();
+      $membership_types = array_keys(wf_crm_apivalues('membershipType', 'get', array('is_active' => 1, 'domain_id' => $domainId, 'return' => 'id')));
     }
     $existing = wf_crm_apivalues('membership', 'get', array(
       'contact_id' => $cid,
