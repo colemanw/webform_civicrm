@@ -43,8 +43,10 @@ class CivicrmWebformHandler extends WebformHandlerBase {
   protected $civicrm;
 
   /**
-   * Constructs a CivicrmWebformHandler object.
+   * Creates a CivicrmWebformHandler object.
    *
+   * @param \Symfony\Component\DependencyInjection\ContainerInterface $container
+   *   The interface to the service container classes.
    * @param array $configuration
    *   A configuration array containing information about the plugin instance.
    * @param string $plugin_id
@@ -62,26 +64,11 @@ class CivicrmWebformHandler extends WebformHandlerBase {
    * @param \Drupal\civicrm\Civicrm $civicrm
    *   The CiviCRM service.
    */
-  public function __construct(array $configuration, string $plugin_id, array $plugin_definition, LoggerChannelFactoryInterface $logger_factory, ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager, WebformSubmissionConditionsValidatorInterface $conditions_validator, Civicrm $civicrm) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition, $logger_factory, $config_factory, $entity_type_manager, $conditions_validator);
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition, LoggerChannelFactoryInterface $logger_factory, ConfigFactoryInterface $config_factory, EntityTypeManagerInterface $entity_type_manager, WebformSubmissionConditionsValidatorInterface $conditions_validator, Civicrm $civicrm) {
+    $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition, $logger_factory, $config_factory, $entity_type_manager, $conditions_validator);
+    $instance->civicrm = $civicrm;
 
-    $this->civicrm = $civicrm;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
-    return new static(
-      $configuration,
-      $plugin_id,
-      $plugin_definition,
-      $container->get('logger.factory'),
-      $container->get('config.factory'),
-      $container->get('entity_type.manager'),
-      $container->get('webform_submission.conditions_validator'),
-      $container->get('civicrm')
-    );
+    return $instance;
   }
 
   /**
