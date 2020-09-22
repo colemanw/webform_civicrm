@@ -1052,6 +1052,13 @@ function wf_crm_get_fields($var = 'fields') {
         ],
         'weight' => 9999,
       ];
+      $fields['contribution_contact_id'] = [
+        'name' => t('Contact'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'data_type' => 'ContactReference',
+        'weight' => 9998,
+      ];
       $fields['contribution_total_amount'] = [
         'name' => t('Contribution Amount'),
         'weight' => 9991,
