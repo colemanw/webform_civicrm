@@ -906,7 +906,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     switch ($data_type) {
       case 'group':
         $api = 'group_contact';
-        $params['method'] = t('Webform');
+        $params['method'] = substr(t('Webform'), 0, 8);
         break;
       case 'tag':
         $api = 'EntityTag';
