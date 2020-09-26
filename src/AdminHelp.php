@@ -1,4 +1,7 @@
 <?php
+
+namespace Drupal\webform_civicrm;
+
 use Drupal\Core\Url;
 use Drupal\webform_civicrm\Utils;
 
@@ -8,12 +11,12 @@ use Drupal\webform_civicrm\Utils;
  */
 
 /**
- * Class wf_crm_admin_help
- * Adding a static function to this class with the same name as a field will magically add pop-up help for that field to the admin form.
+ * Class AdminHelp
+ * Adding a function to this class with the same name as a field will magically add pop-up help for that field to the admin form.
  */
-class wf_crm_admin_help {
+class AdminHelp implements AdminHelpInterface {
 
-  public static function intro() {
+  protected function intro() {
     return '<p>' .
       t('Create anything from a simple newsletter signup, to a complex multi-step registration system.') .
       '</p><strong>' .
@@ -26,7 +29,7 @@ class wf_crm_admin_help {
       '</ul>';
   }
 
-  public static function contact_existing() {
+  protected function contact_existing() {
     return '<p>' .
       t('Gives many options for how this contact can be autofilled or selected. From the Webform tab you can edit this field to configure:') .'</p><ul>' .
       '<li>' . t('Widget: Determine whether to expose this field to the form as an autocomplete or select element, or hide it and pick the contact automatically.') . '</li>' .
@@ -36,7 +39,7 @@ class wf_crm_admin_help {
       '</ul>';
   }
 
-  public static function contact_employer_id() {
+  protected function contact_employer_id() {
     return '<p>' .
       t('Choose a webform contact of type "Organization" to be the employer for this individual.') .
       '</p><p>' .
@@ -46,39 +49,39 @@ class wf_crm_admin_help {
       '</p>';
   }
 
-  public static function contact_image_URL() {
+  protected function contact_image_URL() {
     return '<p>' .
       t('Allows an image to be associated with a contact. This image will appear in CiviCRM, but the file is stored in Drupal. If the webform submission or entire webform were to be deleted, the image would be lost.') .
       '</p>';
   }
 
-  public static function contact_contact_id() {
+  protected function contact_contact_id() {
     return '<p>' .
       t('This read-only field can be used to as a token to generate links, for example to include an email link back to this form to update their info.') .
       '</p>';
   }
 
-  public static function contact_user_id() {
+  protected function contact_user_id() {
     return '<p>' .
       t("This read-only field will load the contact's drupal user id. Works even for anonymous users following a checksum.") .
       '</p>';
   }
 
-  public static function contact_external_identifier() {
-    self::contact_contact_id();
+  protected function contact_external_identifier() {
+    $this->contact_contact_id();
   }
 
-  public static function contact_source() {
+  protected function contact_source() {
     return '<p>' .
       t('This field will override the "Source Label" in "Additional Options".') .
       '</p>';
   }
 
-  public static function contact_cs() {
-    self::contact_contact_id();
+  protected function contact_cs() {
+    $this->contact_contact_id();
   }
 
-  public static function matching_rule() {
+  protected function matching_rule() {
     return '<p>' .
       t('This determines how an <em>unknown</em> contact will be handled when the webform is submitted.') .
       '</p><ul>' .
@@ -90,31 +93,31 @@ class wf_crm_admin_help {
       '</p>';
   }
 
-  public static function address_street_address() {
+  protected function address_street_address() {
     return '<p>' .
       t('Single field for whole address line: Street Name, Number and Number Suffix. Don\'t use together with the separate fields.') .
       '</p>';
   }
 
-  public static function address_street_name() {
+  protected function address_street_name() {
     return '<p>' .
       t('Use together with Street Number and Street Number Suffix as an alternative for Street Address.') .
       '</p>';
   }
 
-  public static function address_street_number() {
+  protected function address_street_number() {
     return '<p>' .
       t('Use together with Street Name and Street Number Suffix as an alternative for Street Address.') .
       '</p>';
   }
 
-  public static function address_street_unit() {
+  protected function address_street_unit() {
     return '<p>' .
       t('Use together with Street Name and Street Number as an alternative for Street Address.') .
       '</p>';
   }
 
-  public static function address_master_id() {
+  protected function address_master_id() {
     return '<p>' .
       t('When selected, will hide fields for this address and use those of the other contact.') .
       '</p><p>' .
@@ -123,11 +126,11 @@ class wf_crm_admin_help {
   }
 
 
-  public static function contribution_contribution_page_id() {
+  protected function contribution_contribution_page_id() {
     return '<p>' .
-      t('It is recommended to <a href=":link">create a new contribution page</a> 
-      solely for webform use. When configuring the page, most options will be 
-      irrelevant (such as profiles, premiums, widgets, recurring, etc.). Only 
+      t('It is recommended to <a href=":link">create a new contribution page</a>
+      solely for webform use. When configuring the page, most options will be
+      irrelevant (such as profiles, premiums, widgets, recurring, etc.). Only
       the following need to be configured:',
       array(
         ':link' => Url::fromUri(
@@ -145,7 +148,7 @@ class wf_crm_admin_help {
       '</ul>';
   }
 
-  public static function contribution_payment_processor_id() {
+  protected function contribution_payment_processor_id() {
     return '<p>' .
       t('Supported payment processors enabled on the contribution page are available here. "Pay Later" option allows the user to purchase events/memberships without entering a credit card.') .
       '</p><p>' .
@@ -153,44 +156,44 @@ class wf_crm_admin_help {
       '</p>';
   }
 
-  public static function contribution_total_amount() {
+  protected function contribution_total_amount() {
     return '<p>' .
       t('This amount will be in addition to any paid events and memberships.') .
       '</p>';
-    self::fee();
+    $this->fee();
   }
 
-  public static function contribution_frequency_unit() {
+  protected function contribution_frequency_unit() {
     return '<p>' .
       t('Frequency of Installments. ') .
       t('Set the frequency for the installments - options are: day, week, month, year - or make this a user-select element on the webform.') .
       '</p>';
   }
 
-  public static function contribution_installments() {
+  protected function contribution_installments() {
     return '<p>' .
       t('Number of Installments. ') .
       t('Create a webform element that allows the Number of Installments to be specified: for example - total amount is paid in 10 installments. For a Contribution of unspecified duration/commitment use installments = 0.') .
       '</p>';
   }
 
-  public static function contribution_frequency_interval() {
+  protected function contribution_frequency_interval() {
     return '<p>' .
       t('Interval of Installments. ') .
       t('Create a webform elements that allows the Interval of Installments to be specified: for example - every second (month).') .
       '</p>';
   }
 
-  public static function participant_fee_amount() {
+  protected function participant_fee_amount() {
     return '<p>' .
       t('Price for this event. If multiple events or participants are registered with this field, the amount will be multiplied per-person, per-event.') .
       '</p><p>' .
       t('Note that any event prices you have configured in CiviCRM are not imported into the Webform - you will need to reconfigure them here.') .
       '</p>';
-    self::fee();
+    $this->fee();
   }
 
-  public static function fee() {
+  protected function fee() {
     return '<p>' .
       t('Once added to the webform, this field can be configured in a number of ways by changing its settings.') .
       '</p><strong>' .
@@ -204,7 +207,7 @@ class wf_crm_admin_help {
       '</ul>';
   }
 
-  public static function participant_reg_type() {
+  protected function participant_reg_type() {
     return '<p>' .
       t('Registering as a group will set Contact 1 as the primary registrant. Registering participants separately gives finer control over which contacts register for what events.') .
       '</p><p>' .
@@ -212,7 +215,7 @@ class wf_crm_admin_help {
       '</p>';
   }
 
-  public static function participant_event_id() {
+  protected function participant_event_id() {
     return '<p>' .
       t('Events can be selected here without giving the user a choice, or this field can be added to the form ("User Select").') .
       '</p><p>' .
@@ -224,7 +227,7 @@ class wf_crm_admin_help {
       '</p>';
   }
 
-  public static function participant_status_id() {
+  protected function participant_status_id() {
     return '<ul><li>' .
       t('In "Automatic" mode, status will be set to "Registered" (or "Pending" if the user chooses to "Pay Later" for events with a fee). The user will be able to cancel registration by re-visiting the form and de-selecting any events they are registered for.') .
       '</li><li>' .
@@ -234,31 +237,31 @@ class wf_crm_admin_help {
       '</li></ul>';
   }
 
-  public static function reg_options_show_remaining() {
+  protected function reg_options_show_remaining() {
     return '<p>' .
       t('Display a message at the top of the form for each event with a registration limit or past end date.') .
       '</p>';
   }
 
-  public static function reg_options_validate() {
+  protected function reg_options_validate() {
     return '<p>' .
       t('Will not allow the form to be submitted if user registers for an event that is ended or full.') .
       '</p>';
   }
 
-  public static function reg_options_block_form() {
+  protected function reg_options_block_form() {
     return '<p>' .
       t('Hide webform if all the events for the form are full or ended.') .
       '</p>';
   }
 
-  public static function reg_options_disable_unregister() {
+  protected function reg_options_disable_unregister() {
     return '<p>' .
       t('If this is selected, on "User Select mode", participants will not be unregistered from unchecked events.') .
       '</p>';
   }
 
-  public static function reg_options_allow_url_load() {
+  protected function reg_options_allow_url_load() {
     return '<p>' .
       t('Allow events in "User Select" mode to be auto-filled from URL.') .
       '</p>'.'<br /><p>'.t('Example for "Register all":') .
@@ -268,27 +271,27 @@ class wf_crm_admin_help {
       '/{node.nid}?c1event1={event1.event_id},{event2.event_id}&amp;c2event1={event3.event_id}</code></p>';
   }
 
-  public static function reg_options_show_past_events() {
+  protected function reg_options_show_past_events() {
     return '<p>' .
       t('To also display events that have ended, choose an option for how far in the past to search.') .
       '</p>';
   }
 
-  public static function reg_options_show_future_events() {
+  protected function reg_options_show_future_events() {
     return '<p>' .
       t('To also display events in the future, choose an option for how far in the future to search.') .
       '</p>';
   }
 
-  public static function reg_options_show_public_events() {
+  protected function reg_options_show_public_events() {
     return '<p>' .
       t('Choose whether to display events marked as Public, Private or all.') .
       '</p>';
   }
 
-  public static function reg_options_title_display() {
+  protected function reg_options_title_display() {
     return '<p>' .
-      t('Controls how events are displayed. Date formats can be further configured in 
+      t('Controls how events are displayed. Date formats can be further configured in
         <a href=":link">CiviCRM Date Settings</a>',
         array(
           ':link' => Url::fromUri(
@@ -302,19 +305,19 @@ class wf_crm_admin_help {
       '</p>';
   }
 
-  public static function membership_membership_type_id() {
+  protected function membership_membership_type_id() {
     return '<p>' .
       t('Fee will be calculated automatically based on selected membership type and number of terms chosen. A contribution page must be enabled to collect fees.') .
       '</p>';
   }
 
-  public static function membership_status_id() {
+  protected function membership_status_id() {
     return '<p>' .
       t('If number of terms is enabled, status can be calculated automatically based on new/renewal status and payment.') .
       '</p>';
   }
 
-  public static function membership_num_terms() {
+  protected function membership_num_terms() {
     return '<p>' .
       t('Membership dates will be filled automatically by selecting terms. This can be overridden by entering dates manually.') .
       '</p><p>' .
@@ -324,16 +327,16 @@ class wf_crm_admin_help {
       '</p>';
   }
 
-  public static function membership_fee_amount() {
+  protected function membership_fee_amount() {
     return '<p>' .
       t('Price for this membership per term. If this field is enabled, the default minimum membership fee from CiviCRM membership type settings will not be loaded.') .
       '</p><p>' .
       t('Note that if this field is enabled, the default minimum membership fee from CiviCRM membership type settings will not be loaded.') .
       '</p>';
-    self::fee();
+    $this->fee();
   }
 
-  public static function multiselect_options() {
+  protected function multiselect_options() {
     return '<p>' .
       t('Click the + button to select more than one option.') .
       '</p><p>' .
@@ -341,7 +344,7 @@ class wf_crm_admin_help {
       '</p>';
   }
 
-  public static function webform_label() {
+  protected function webform_label() {
     return '<p>' .
       t('Labels help you keep track of the role of each contact on the form. For example, you might label Contact 1 "Parent", Contact 2 "Spouse" and Contact 3 "Child".') .
       '</p><p>' .
@@ -349,21 +352,21 @@ class wf_crm_admin_help {
       '</p>';
   }
 
-  public static function activity_target_contact_id() {
+  protected function activity_target_contact_id() {
     return '<p>' .
       t('Which contacts should be tagged as part of this activity?') .
       '</p>';
-    self::contact_reference();
+    $this->contact_reference();
   }
 
-  public static function activity_source_contact_id() {
+  protected function activity_source_contact_id() {
     return '<p>' .
       t('Choose "automatic" to have this activity attributed to the current user (or contact 1 if the user is anonymous).') .
       '</p>';
-    self::contact_reference();
+    $this->contact_reference();
   }
 
-  public static function activity_assignee_contact_id() {
+  protected function activity_assignee_contact_id() {
     \Drupal::service('civicrm')->initialize();
     if (wf_crm_get_civi_setting('activity_assignee_notification')) {
       return '<p>' . t('A copy of this activity will be emailed to the assignee.') . '</p>';
@@ -371,16 +374,16 @@ class wf_crm_admin_help {
     else {
       return '<p>' . t('Assignee notifications are currently disabled in CiviCRM; no email will be sent to the assignee.') . '</p>';
     }
-    self::contact_reference();
+    $this->contact_reference();
   }
 
-  public static function activity_duration() {
+  protected function activity_duration() {
     return '<p>' .
       t('Total time spent on this activity (in minutes).') .
       '</p>';
   }
 
-  public static function existing_activity_status() {
+  protected function existing_activity_status() {
     return '<p>' .
       t('If a matching activity of the chosen type already exists for Contact 1, it will be autofilled and updated.') .
       '</p><p>' .
@@ -388,7 +391,7 @@ class wf_crm_admin_help {
       '</p>';
   }
 
-  public static function existing_case_status() {
+  protected function existing_case_status() {
     return '<p>' .
       t('If a matching case of the chosen type already exists for the client, it will be autofilled and updated.') .
       '</p><p>' .
@@ -396,7 +399,7 @@ class wf_crm_admin_help {
       '</p>';
   }
 
-  public static function duplicate_case_status() {
+  protected function duplicate_case_status() {
     return '<p>' .
       t('Choosing this option means a new case will always be created even when an existing case has been selected. If an existing case has been selected the data for this case will NOT be updated.') .
       '</p><p>' .
@@ -406,7 +409,7 @@ class wf_crm_admin_help {
       '</p>';
   }
 
-  public static function existing_grant_status() {
+  protected function existing_grant_status() {
     return '<p>' .
       t('If a matching grant of the chosen type already exists for the applicant, it will be autofilled and updated.') .
       '</p><p>' .
@@ -414,7 +417,7 @@ class wf_crm_admin_help {
       '</p>';
   }
 
-  public static function file_on_case() {
+  protected function file_on_case() {
     return '<p>' .
       t('Add this activity to either a specific case from this webform, or an already existing case based on matching criteria.') .
       '</p><p>' .
@@ -422,13 +425,13 @@ class wf_crm_admin_help {
       '</p>';
   }
 
-  public static function case_medium_id() {
+  protected function case_medium_id() {
     return '<p>' .
       t('Medium for activities added to cases from this webform.') .
       '</p>';
   }
 
-  public static function contact_reference() {
+  protected function contact_reference() {
     return '<p>' .
       t('This is a contact reference field. Webform gives you a great deal of flexibility about how this field is displayed:') .
       '</p><ul>' .
@@ -440,7 +443,7 @@ class wf_crm_admin_help {
       '</ul>';
   }
 
-  public static function fieldset_relationship() {
+  protected function fieldset_relationship() {
     return '<p>' .
       t('Relationships are created from higher-number contacts to lower-number contacts.') .
       '</p><p>' .
@@ -448,7 +451,7 @@ class wf_crm_admin_help {
       '</p>';
   }
 
-  public static function contact_creation() {
+  protected function contact_creation() {
     return '<p>' .
       t('CiviCRM requires at minimum a name or email address to create a new contact.') .
       '</p><p>' .
@@ -456,7 +459,7 @@ class wf_crm_admin_help {
       '</p>';
   }
 
-  public static function contact_component_widget() {
+  protected function contact_component_widget() {
     return '<ul>
       <li>' . t('Autocomplete will suggest names of contacts as the user types. Good for large numbers of contacts.') . '</li>
       <li>' . t('A select list will show all possible contacts in a dropdown menu. Good for small lists - use filters.') . '</li>
@@ -465,7 +468,7 @@ class wf_crm_admin_help {
       </ul>';
   }
 
-  public static function contact_component_hide_fields() {
+  protected function contact_component_hide_fields() {
     return '<p>' .
       t('When an existing contact is selected or prepopulated, which fields should the user not be allowed to edit?') .
       '</p><p>' .
@@ -473,13 +476,13 @@ class wf_crm_admin_help {
       '</p>';
   }
 
-  public static function dynamic_custom() {
+  protected function dynamic_custom() {
     return '<p>' .
       t("This will add all fields from this custom group, and automatically update the webform whenever this group's custom fields are added, edited, or deleted in CiviCRM.") .
       '</p>';
   }
 
-  public static function multivalue_fieldset_create_mode() {
+  protected function multivalue_fieldset_create_mode() {
     return '<p>' .
         t("Create/ Edit Mode (Default): Pre-populate the existing entry (if any) in order to allow user modifying it. If there isn't any existing entry, any value entered into the fieldset will be created as a new entry.") .
         '<br><br>' .
@@ -490,7 +493,7 @@ class wf_crm_admin_help {
   /**
    * Get help for a custom field
    */
-  public static function custom($param) {
+  protected function custom($param) {
     list( , $id) = explode('_', $param);
     if (!is_numeric($id)) {
       return;
@@ -511,7 +514,7 @@ class wf_crm_admin_help {
   /**
    * Get help for a fieldset
    */
-  public static function fieldset($param) {
+  protected function fieldset($param) {
     list( , $set) = explode('_', $param);
     \Drupal::service('civicrm')->initialize();
     $help = '';
@@ -524,56 +527,29 @@ class wf_crm_admin_help {
   }
 
   /**
-   * Copied from Core CiviCRM's templates/notifications.tpl
-   * @return string
+   * Get help text for the field.
+   * @param string $topic
    */
-  public static function helpTemplate() {
-    return '
-    <div class="crm-container">
-      <div id="crm-notification-container" style="display:none">
-        <div id="crm-notification-alert" class="#{type}">
-          <div class="icon ui-notify-close" title="' . t('close') . '"> </div>
-          <a class="ui-notify-cross ui-notify-close" href="#" title="' . t('close') . '">x</a>
-          <h1>#{title}</h1>
-          <div class="notify-content">#{text}</div>
-        </div>
-      </div>
-    </div>';
+  public function getHelpText($topic) {
+    if (method_exists($this, $topic)) {
+      return $this->$topic();
+    }
+    elseif (strpos($topic, 'custom_') === 0) {
+      return $this->custom($topic);
+    }
+    elseif (strpos($topic, 'fieldset_') === 0) {
+      return $this->fieldset($topic);
+    }
+    return '';
   }
 
   /**
-   * Add Civi help icon to a FAPI field
+   * Set help text on the field description.
    * @param array $field
    * @param string $topic
-   * @param string|null $title
    */
-  public static function addHelp(&$field, $topic, $title = NULL) {
-    $title = $title ? $title : $field['#title'];
-    $field['#title'] .= ' &nbsp;' . self::helpIcon($topic, $title);
+  public function addHelpDescription(&$field, $topic) {
+    $field['#description'] = $this->getHelpText($topic) ?? NULL;
   }
 
-  public static function helpIcon($topic, $title) {
-    return '<span class="crm-container"><a class="helpicon" href="#' . $topic . '" title="' . $title .'">&nbsp;</a></span>';
-  }
-
-  public static function addHelpDescription(&$field, $topic) {
-    $helpText = wf_crm_admin_help($topic);
-    if ($helpText) $field['#description'] = $helpText;
-  }
-}
-
-/**
- * Ajax page callback
- * @param string $topic
- */
-function wf_crm_admin_help($topic) {
-  if (method_exists('wf_crm_admin_help', $topic)) {
-    return wf_crm_admin_help::$topic();
-  }
-  elseif (strpos($topic, 'custom_') === 0) {
-    return wf_crm_admin_help::custom($topic);
-  }
-  elseif (strpos($topic, 'fieldset_') === 0) {
-    return wf_crm_admin_help::fieldset($topic);
-  }
 }

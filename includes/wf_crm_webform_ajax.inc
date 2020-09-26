@@ -101,7 +101,10 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
         list(, $c, ) = explode('_', $element['#form_key'], 3);
         $this->ent['contact'][$c]['id'] = (int) $_GET['cid'];
         // Redact fields if they are to be hidden unconditionally, otherwise they are needed on the client side
-        $to_hide = (wf_crm_aval($element, '#hide_method', 'hide') == 'hide' && !wf_crm_aval($element, '#no_hide_blank')) ? $component['extra']['hide_fields'] : array();
+        $to_hide = [];
+        if (!empty($element['#hide_fields']) && (wf_crm_aval($element, '#hide_method', 'hide') == 'hide' && !wf_crm_aval($element, '#no_hide_blank'))) {
+          $to_hide = $element['#hide_fields'];
+        }
         $contact = $this->loadContact($c, $to_hide);
         $states = $countries = [];
         // Format as json array

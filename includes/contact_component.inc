@@ -11,13 +11,13 @@ use Drupal\webform_civicrm\Utils;
 use Drupal\node\Entity\Node;
 
 \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/utils');
-\Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/wf_crm_admin_help');
 
 /**
  * Implements _webform_edit_component().
  */
 function _webform_edit_civicrm_contact($component) {
-  civicrm_initialize();
+  \Drupal::service('civicrm')->initialize();
+  $adminHelp = \Drupal::service('webform_civicrm.admin_help');
   $form = array();
   $node = Node::load($component['nid']);
   if (empty($node->webform_civicrm) && node_is_page($node)) {
@@ -36,7 +36,6 @@ function _webform_edit_civicrm_contact($component) {
   $form['#attached']['js'][] = wf_crm_tokeninput_path();
   $form['#attached']['js'][] = drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_admin.js';
   CRM_Core_Resources::singleton()->addCoreResources();
-  $form['#suffix'] = wf_crm_admin_help::helpTemplate();
   $callback_path = '"' . url('webform-civicrm/js/' . $node->nid . '-' . $component['cid'], array('alias' => TRUE, 'query' => array('admin' => 1))) . '"';
   $settings = '{
     queryParam: "str",
@@ -64,7 +63,8 @@ function _webform_edit_civicrm_contact($component) {
     '#parents' => array('extra', 'widget'),
   );
   $status = $allow_create ? t('<strong>Contact Creation: Enabled</strong> - this contact has name/email fields on the webform.') : t('<strong>Contact Creation: Disabled</strong> - no name/email fields for this contact on the webform.');
-  $form['display']['#description'] = '<div class="messages ' . ($allow_create ? 'status' : 'warning') . '">' . $status . ' ' . wf_crm_admin_help::helpIcon('contact_creation', t('Contact Creation')) . '</div>';
+  $adminHelp->addHelpDescription($form['display'], 'contact_creation');
+  $form['display']['#description'] = '<div class="messages ' . ($allow_create ? 'status' : 'warning') . '">' . $status . ' ' . $form['display']['#description'] . '</div>';
   $form['display']['search_prompt'] = array(
     '#type' => 'textfield',
     '#title' => t('Search Prompt'),
@@ -309,8 +309,9 @@ function wf_crm_contact_component_form_help(&$form) {
   foreach (element_children($form) as $element) {
     if (is_array($form[$element])) {
       wf_crm_contact_component_form_help($form[$element]);
-      if (method_exists('wf_crm_admin_help', "contact_component_$element")) {
-        wf_crm_admin_help::addHelpDescription($form[$element], "contact_component_$element");
+      $adminHelp = \Drupal::service('webform_civicrm.admin_help');
+      if (method_exists($adminHelp, "contact_component_{$element}")) {
+        $adminHelp->addHelpDescription($form[$element], "contact_component_$element");
       }
     }
   }

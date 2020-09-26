@@ -192,8 +192,6 @@ class wf_crm_admin_form {
     $this->form['#attached']['drupalSettings']['webform_civicrm'] = array('rTypes' => wf_crm_get_relationship_types());
     // Add CiviCRM core css & js, which includes jQuery, jQuery UI + other plugins
     CRM_Core_Resources::singleton()->addCoreResources();
-    // Markup needed by CRM popup notifications
-    $this->form['#suffix'] = wf_crm_admin_help::helpTemplate();
   }
 
   /**
@@ -314,7 +312,7 @@ class wf_crm_admin_form {
           $selector['#title'] = t('Enable %type Fields', array('%type' => $set['label']));
         }
         if (!empty($set['help_text'])) {
-          $this->help($selector, "fieldset_$sid", $set['label']);
+          $this->help($selector, "fieldset_$sid");
         }
         $pos['contact_' . $n . '_number_of_' . $sid] = $selector;
         $this->addAjaxItem($path, 'contact_' . $n . '_number_of_' . $sid, $n . $sid . '_wrapper');
@@ -372,7 +370,7 @@ class wf_crm_admin_form {
             '#title' => t('Create mode'),
             '#weight' => -1,
           );
-          $this->help($multivalueFieldsetCreateMode, 'multivalue_fieldset_create_mode', t('Multivalue fieldset create mode'));
+          $this->help($multivalueFieldsetCreateMode, 'multivalue_fieldset_create_mode');
           $fieldset[$createModeKey] = $multivalueFieldsetCreateMode;
         }
 
@@ -1403,7 +1401,8 @@ class wf_crm_admin_form {
     }
     // Add help
     $topic = $table . '_' . $name;
-    if (method_exists('wf_crm_admin_help', $topic)) {
+    $adminHelp = \Drupal::service('webform_civicrm.admin_help');
+    if (method_exists($adminHelp, $topic)) {
       $this->help($item, $topic);
     }
     elseif (!empty($field['has_help'])) {
@@ -1413,7 +1412,7 @@ class wf_crm_admin_form {
       $this->help($item, 'contact_reference');
     }
     elseif (!empty($field['expose_list']) && !empty($field['extra']['multiple'])) {
-      $this->help($item, 'multiselect_options', t('Multiple Select Options'));
+      $this->help($item, 'multiselect_options');
     }
     return $item;
   }
@@ -1888,8 +1887,14 @@ class wf_crm_admin_form {
     }
   }
 
-  private function help(&$field, $topic, $title = NULL) {
-    \wf_crm_admin_help::addHelpDescription($field, $topic, $title);
+  /**
+   * Set help text on the field description.
+   * @param array $field
+   * @param string $topic
+   */
+  private function help(&$field, $topic) {
+    $adminHelp = \Drupal::service('webform_civicrm.admin_help');
+    $adminHelp->addHelpDescription($field, $topic);
   }
 
   /**
