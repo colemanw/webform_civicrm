@@ -131,7 +131,7 @@ class wf_crm_admin_help {
       the following need to be configured:',
       array(
         ':link' => Url::fromUri(
-            'internal:/civicrm/admin/contribute/add', 
+            'internal:/civicrm/admin/contribute/add',
             array('query' => array('reset' => 1, 'action' => 'add'))
           )->toString()
       )) .
@@ -292,7 +292,7 @@ class wf_crm_admin_help {
         <a href=":link">CiviCRM Date Settings</a>',
         array(
           ':link' => Url::fromUri(
-              'internal:/civicrm/admin/setting/date', 
+              'internal:/civicrm/admin/setting/date',
               array('query' => array('reset' => 1))
             )->toString()
         )
@@ -365,14 +365,12 @@ class wf_crm_admin_help {
 
   public static function activity_assignee_contact_id() {
     \Drupal::service('civicrm')->initialize();
-    print '<p>';
     if (wf_crm_get_civi_setting('activity_assignee_notification')) {
-      print t('A copy of this activity will be emailed to the assignee.');
+      return '<p>' . t('A copy of this activity will be emailed to the assignee.') . '</p>';
     }
     else {
-      print t('Assignee notifications are currently disabled in CiviCRM; no email will be sent to the assignee.');
+      return '<p>' . t('Assignee notifications are currently disabled in CiviCRM; no email will be sent to the assignee.') . '</p>';
     }
-    print '</p>';
     self::contact_reference();
   }
 
