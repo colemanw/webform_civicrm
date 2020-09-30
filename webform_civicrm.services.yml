@@ -4,3 +4,5 @@ services:
   webform_civicrm.field_options:
     class: Drupal\webform_civicrm\FieldOptions
     arguments: ['@webform_civicrm.fields']
+  webform_civicrm.admin_help:
+    class: Drupal\webform_civicrm\AdminHelp

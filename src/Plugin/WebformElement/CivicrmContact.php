@@ -10,10 +10,6 @@ use Drupal\webform\Plugin\WebformElementBase;
 use Drupal\webform\WebformInterface;
 use Drupal\webform\WebformSubmissionInterface;
 
-// Include legacy files for their procedural functions.
-// @todo convert required functions into injectable services.
-include_once __DIR__ . '/../../../includes/wf_crm_admin_help.inc';
-
 /**
  * Provides a 'textfield' element.
  *
@@ -180,7 +176,8 @@ class CivicrmContact extends WebformElementBase {
     ];
 
     $allow_create ? $this->t('<strong>Contact Creation: Enabled</strong> - this contact has name/email fields on the webform.') : $this->t('<strong>Contact Creation: Disabled</strong> - no name/email fields for this contact on the webform.');
-//    $form['civicrm']['#description'] = '<div class="messages ' . ($allow_create ? 'status' : 'warning') . '">' . $status . ' ' . \wf_crm_admin_help::helpIcon('contact_creation', t('Contact Creation')) . '</div>';
+    // $adminHelp->addHelpDescription($form['display'], 'contact_creation');
+    // $form['civicrm']['#description'] = '<div class="messages ' . ($allow_create ? 'status' : 'warning') . '">' . $status . ' ' . $form['display']['#description'] . '</div>';
     $form['form']['search_prompt'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Search Prompt'),
