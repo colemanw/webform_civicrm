@@ -124,6 +124,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     $this->fillDataFromSubmission();
+    //Fill Custom Contact reference fields.
+    $this->fillContactRefs(NULL, 0, TRUE);
 
     // Create/update contacts
     foreach ($this->data['contact'] as $c => $contact) {
@@ -1271,7 +1273,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
           // If orig_contact_id is missing and there's more than one Contact
           // on the Case, set orig_contact_id to the current ID. Otherwise
-          // we get a Case.create error "Case is linked with more than one 
+          // we get a Case.create error "Case is linked with more than one
           // contact id".
           if (empty($params['orig_contact_id']) && !empty($params['id'])) {
             $caseContactCount = wf_civicrm_api('CaseContact', 'getcount', ['case_id' => $params['id']]);
@@ -2217,8 +2219,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    *   Leave blank - used internally to recurse through data
    * @internal param $depth int
    *   Leave blank - used internally to track recursion level
+   * @param $customOnly
+   *   TRUE if only custom contact reference needs to be filled.
    */
-  private function fillContactRefs($values = NULL, $depth = 0) {
+  private function fillContactRefs($values = NULL, $depth = 0, $customOnly = FALSE) {
     $order = ['ent', 'c', 'table', 'n', 'name'];
     static $ent = '';
     static $c = '';
@@ -2230,13 +2234,17 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     foreach ($values as $key => $val) {
       ${$order[$depth]} = $key;
       if ($depth < 4 && is_array($val)) {
-        $this->fillContactRefs($val, $depth + 1);
+        $this->fillContactRefs($val, $depth + 1, $customOnly);
       }
       elseif ($depth == 4 && $val && wf_crm_aval($this->all_fields, "{$table}_$name:data_type") == 'ContactReference') {
+        if ($customOnly && substr($name, 0, 6) != 'custom') {
+          return;
+        }
         if (is_array($val)) {
           $this->data[$ent][$c][$table][$n][$name] = [];
           foreach ($val as $v) {
             if (is_numeric($v) && !empty($this->ent['contact'][$v]['id'])) {
+              $table = $customOnly ? $ent : $table;
               $this->data[$ent][$c][$table][$n][$name][] = $this->ent['contact'][$v]['id'];
             }
           }
@@ -2244,6 +2252,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         else {
           unset($this->data[$ent][$c][$table][$n][$name]);
           if (!empty($this->ent['contact'][$val]['id'])) {
+            $table = $customOnly ? $ent : $table;
             $this->data[$ent][$c][$table][$n][$name] = $this->ent['contact'][$val]['id'];
           }
         }
@@ -2367,6 +2376,19 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         if (($val !== '' && $val !== NULL && $val !== []) || !empty($this->existing_contacts[$c])) {
           $this->data[$ent][$c][$table][$n][$name] = $val;
           if (substr($name, 0, 6) === 'custom') {
+            $multivaluesCreateMode = NULL;
+            // Handle 'Create mode' for multivalues custom fields of Contact entity.
+            if ($ent === 'contact' && is_numeric(substr($name, 7))) {
+              $createModeKey = 'civicrm_' . $c . '_contact_' . $n . '_' . $table . '_createmode';
+              $multivaluesCreateMode = isset($this->data['config']['create_mode'][$createModeKey]) ? (int) $this->data['config']['create_mode'][$createModeKey] : NULL;
+              $multiRecordGid = CRM_Core_BAO_CustomField::isMultiRecordField(substr($name, 7));
+              if (empty($multivaluesCreateMode) && !empty($multiRecordGid) && !empty($this->existing_contacts[$c])) {
+                $existingValue = $this->getCustomData($this->existing_contacts[$c], NULL, FALSE)["cg{$multiRecordGid}"] ?? NULL;
+                if (!empty($existingValue)) {
+                  $name = "{$name}_" . key($existingValue);
+                }
+              }
+            }
             $this->data[$ent][$c][$ent][$n][$name] = $customValue ?? $val;
           }
         }
