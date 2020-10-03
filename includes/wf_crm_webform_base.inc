@@ -234,9 +234,9 @@ abstract class wf_crm_webform_base {
    *   Webform component of type 'civicrm_contact'
    */
   protected function findContact($component) {
-    \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/contact_component');
+    $contactComponent = \Drupal::service('webform_civicrm.contact_component');
     list(, $c,) = explode('_', $component['#form_key'], 3);
-    $filters = wf_crm_search_filters($this->node, $component);
+    $filters = $contactComponent->wf_crm_search_filters($this->node, $component);
     // Start with the url - that trumps everything.
     $element_manager = \Drupal::getContainer()->get('plugin.manager.webform.element');
     $existing_component_plugin = $element_manager->getElementInstance($component);
@@ -249,7 +249,7 @@ abstract class wf_crm_webform_base {
           $this->ent['contact'][$c]['id'] = $cid;
           return;
         }
-        if (wf_crm_contact_access($component, $filters, $cid) != FALSE) {
+        if ($contactComponent->wf_crm_contact_access($component, $filters, $cid) != FALSE) {
           $this->ent['contact'][$c]['id'] = $cid;
         }
       }
@@ -269,12 +269,12 @@ abstract class wf_crm_webform_base {
         case 'relationship':
           $to = $component['#default_relationship_to'];
           if (!empty($component['#default_relationship']) && !empty($this->ent['contact'][$to]['id'])) {
-            $found = wf_crm_find_relations($this->ent['contact'][$to]['id'], $component['#default_relationship']);
+            $found = $contactComponent->wf_crm_find_relations($this->ent['contact'][$to]['id'], $component['#default_relationship']);
           }
           break;
         case 'auto':
           $component['#allow_create'] = FALSE;
-          $found = array_keys(wf_crm_contact_search($this->node, $component, $filters, wf_crm_aval($this->ent, 'contact', array())));
+          $found = array_keys($contactComponent->wf_crm_contact_search($this->node, $component, $filters, wf_crm_aval($this->ent, 'contact', array())));
           break;
       }
       if (isset($component['#randomize']) && $component['#randomize']) {
@@ -296,7 +296,7 @@ abstract class wf_crm_webform_base {
           }
         }
         // Check filters except for 'auto' which already applied them
-        if ($component['#default'] == 'auto' || wf_crm_contact_access($component, $filters, $cid) != FALSE) {
+        if ($component['#default'] == 'auto' || $contactComponent->wf_crm_contact_access($component, $filters, $cid) != FALSE) {
           $this->ent['contact'][$c]['id'] = $cid;
           break;
         }

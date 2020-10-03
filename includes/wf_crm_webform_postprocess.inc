@@ -572,11 +572,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function verifyExistingContact($cid, $fid) {
     if (wf_crm_is_positive($cid) && !empty($this->enabled[$fid])) {
-      \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/contact_component');
+      $contactComponent = \Drupal::service('webform_civicrm.contact_component');
       $component = $this->node->getElement($fid);
-      $filters = wf_crm_search_filters($this->node, $component);
+      $filters = $contactComponent->wf_crm_search_filters($this->node, $component);
       // Verify access to this contact
-      if (wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
+      if ($contactComponent->wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
         return $cid;
       }
     }
