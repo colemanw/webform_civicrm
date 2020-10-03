@@ -39,7 +39,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
    */
   function contactAjax($webformId, $fid) {
 
-    \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/contact_component');
+    $contactComponent = \Drupal::service('webform_civicrm.contact_component');
 
     if (empty($this->getParameter('str')) && (empty($this->getParameter('load')) || empty($this->getParameter('cid')))) {
       throw new AccessDeniedHttpException('Invalid parameters.');
@@ -56,7 +56,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
      throw new AccessDeniedHttpException('Access not allowed');
     }
 
-    $filters = wf_crm_search_filters($webform, $element);
+    $filters = $contactComponent->wf_crm_search_filters($webform, $element);
     // Populate other contact ids for related data
     $this->ent += ['contact' => []];
     $query_params = $this->requestStack->getCurrentRequest()->query->all();
@@ -78,13 +78,13 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
     // Autocomplete contact names
     if (!empty($this->getParameter('str'))) {
       if ($str = trim($this->getParameter('str'))) {
-        return wf_crm_contact_search($webform, $element, $filters, $this->ent['contact'], $str);
+        return $contactComponent->wf_crm_contact_search($webform, $element, $filters, $this->ent['contact'], $str);
       }
       exit();
     }
     // Load contact by id
     $data = [] ;
-    if ($name = wf_crm_contact_access($element, $filters, $this->getParameter('cid'))) {
+    if ($name = $contactComponent->wf_crm_contact_access($element, $filters, $this->getParameter('cid'))) {
       if ($this->getParameter('load') == 'name') {
         if ($this->getParameter('cid')[0] === '-') {
           // HTML hack to get prompt to show up different than search results
@@ -153,7 +153,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
                 $data[] = [
                   'fid' => $fid,
                   'val' => $related_cid,
-                  'display' => wf_crm_contact_access($related_component, wf_crm_search_filters($this->node, $related_component), $related_cid),
+                  'display' => $contactComponent->wf_crm_contact_access($related_component, $contactComponent->wf_crm_search_filters($this->node, $related_component), $related_cid),
                 ];
               }
             }

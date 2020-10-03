@@ -6,3 +6,5 @@ services:
     arguments: ['@webform_civicrm.fields']
   webform_civicrm.admin_help:
     class: Drupal\webform_civicrm\AdminHelp
+  webform_civicrm.contact_component:
+    class: Drupal\webform_civicrm\ContactComponent

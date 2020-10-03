@@ -1633,7 +1633,7 @@ class wf_crm_admin_form {
     }
 
     \Drupal::ModuleHandler()->loadInclude('webform', 'inc', 'includes/webform.components');
-    \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/contact_component');
+    $contactComponent = \Drupal::service('webform_civicrm.contact_component');
 
     // Delete/disable fields
     $deleted = 0;

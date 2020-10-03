@@ -117,10 +117,12 @@ class CivicrmContact extends WebformElementBase {
     }
     if (!empty($cid)) {
       $webform = $webform_submission->getWebform();
+      $contactComponent = \Drupal::service('webform_civicrm.contact_component');
+
       // Don't lookup same contact again
       if (wf_crm_aval($element, '#attributes:data-civicrm-id') != $cid) {
-        $filters = wf_crm_search_filters($webform, $element);
-        $name = wf_crm_contact_access($element, $filters, $cid);
+        $filters = $contactComponent->wf_crm_search_filters($webform, $element);
+        $name = $contactComponent->wf_crm_contact_access($element, $filters, $cid);
         if ($name !== FALSE) {
           $element['#attributes']['data-civicrm-name'] = $name;
           $element['#attributes']['data-civicrm-id'] = $cid;
@@ -312,7 +314,8 @@ class CivicrmContact extends WebformElementBase {
       ],
     ];
     $cid = $element_properties['default_contact_id'];
-    if ($cid && $name = wf_crm_contact_access($element_properties, ['check_permissions' => 1], $cid)) {
+    $contactComponent = \Drupal::service('webform_civicrm.contact_component');
+    if ($cid && $name = $contactComponent->wf_crm_contact_access($element_properties, ['check_permissions' => 1], $cid)) {
       $form['defaults']['default_contact_id']['#default_value'] = $cid;
       $form['defaults']['default_contact_id']['#attributes'] = [
         'data-civicrm-name' => $name,
@@ -483,6 +486,7 @@ class CivicrmContact extends WebformElementBase {
    */
   public static function wf_crm_fill_contact_value(WebformInterface $node, array $component, array &$element, array $ids = NULL) {
     $cid = wf_crm_aval($element, '#default_value', '');
+    $contactComponent = \Drupal::service('webform_civicrm.contact_component');
     if ($element['#type'] == 'hidden') {
       // User may not change this value for hidden fields
       $element['#value'] = $cid;
@@ -493,8 +497,8 @@ class CivicrmContact extends WebformElementBase {
     if ($cid) {
       // Don't lookup same contact again
       if (wf_crm_aval($element, '#attributes:data-civicrm-id') != $cid) {
-        $filters = wf_crm_search_filters($node, $element);
-        $name = wf_crm_contact_access($element, $filters, $cid);
+        $filters = $contactComponent->wf_crm_search_filters($node, $element);
+        $name = $contactComponent->wf_crm_contact_access($element, $filters, $cid);
         if ($name !== FALSE) {
           $element['#attributes']['data-civicrm-name'] = $name;
           $element['#attributes']['data-civicrm-id'] = $cid;
@@ -509,8 +513,8 @@ class CivicrmContact extends WebformElementBase {
     }
     // Set options list for select elements. We do this here so we have access to entity ids.
     if (is_array($ids) && $element['#type'] == 'select') {
-      $filters = wf_crm_search_filters($node, $component);
-      $element['#options'] = wf_crm_contact_search($node, $component, $filters, wf_crm_aval($ids, 'contact', []));
+      $filters = $contactComponent->wf_crm_search_filters($node, $component);
+      $element['#options'] = $contactComponent->wf_crm_contact_search($node, $component, $filters, wf_crm_aval($ids, 'contact', []));
       // Display empty option unless there are no results
       if (!$component['#allow_create'] || count($element['#options']) > 1) {
         $element['#empty_option'] = Xss::filter($component[$element['#options'] ? 'search_prompt' : 'none_prompt']);
