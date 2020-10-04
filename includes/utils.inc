@@ -80,32 +80,12 @@ function wf_crm_field_options($field, $context, $data) {
       // Saving will map the IDs to live or test.
       // For the frontend we display the selected payment processors (with correct ID for live or test)
       $params = wf_crm_aval($data, "$ent:$c:$table:$n", []);
-      if ($context === 'config_form') {
-        $paymentProcessors = wf_crm_apivalues('PaymentProcessor', 'get', ['is_test' => $params['is_test'], 'is_active' => 1]);
-        $paymentProcessors[0]['name'] = $field['exposed_empty_option'];
-        foreach ($paymentProcessors as $paymentProcessorID => $paymentProcessor) {
-          $ret[$paymentProcessorID] = $paymentProcessor['title'] ?? $paymentProcessor['name'];
-        }
-        return $ret;
+      $paymentProcessors = wf_crm_apivalues('PaymentProcessor', 'get', ['is_test' => $params['is_test'] ?? 0, 'is_active' => 1]);
+      $paymentProcessors[0]['name'] = $field['exposed_empty_option'];
+      foreach ($paymentProcessors as $paymentProcessorID => $paymentProcessor) {
+        $ret[$paymentProcessorID] = $paymentProcessor['title'] ?? $paymentProcessor['name'];
       }
-      else {
-        $selectedPaymentProcessors = wf_crm_aval($params, "payment_processor_id", []);
-        if (in_array(0, $selectedPaymentProcessors)) {
-          $ret[0] = $field['exposed_empty_option'];
-        }
-        $paymentProcessors = wf_crm_apivalues('PaymentProcessor', 'get', []);
-        $testPaymentProcessors = wf_crm_apivalues('PaymentProcessor', 'get', ['is_test' => 1], 'name');
-        foreach ($selectedPaymentProcessors as $paymentProcessorID) {
-          if (array_key_exists((int) $paymentProcessorID, $paymentProcessors)) {
-            if (!empty($params['is_test'])) {
-              $paymentProcessorName = $paymentProcessors[$paymentProcessorID]['name'];
-              $paymentProcessorID = array_search($paymentProcessorName, $testPaymentProcessors);
-            }
-            $ret[$paymentProcessorID] = $paymentProcessors[$paymentProcessorID]['title'] ?? $paymentProcessors[$paymentProcessorID]['name'];
-          }
-        }
-        return $ret;
-      }
+      return $ret;
     }
     // Aside from the above special cases, most lists can be fetched from api.getoptions
     else {
@@ -138,17 +118,14 @@ function wf_crm_field_options($field, $context, $data) {
       }
     }
     // Remove options that were set behind the scenes on the admin form
-    if ($context != 'config_form' && !empty($field['extra']['multiple']) && !empty($field['expose_list'])
-      && "{$table}_{$name}" !== 'contribution_payment_processor_id') {
+    if ($context != 'config_form' && !empty($field['extra']['multiple']) && !empty($field['expose_list'])) {
       foreach (wf_crm_aval($data, "$ent:$c:$table:$n:$name", []) as $key => $val) {
         unset($ret[$key]);
       }
     }
   }
   if (!empty($field['exposed_empty_option'])) {
-    if ($context === 'config_form' || ($context !== 'config_form' && "{$table}_{$name}" !== 'contribution_payment_processor_id')) {
-      $ret = [0 => $field['exposed_empty_option']] + $ret;
-    }
+    $ret = [0 => $field['exposed_empty_option']] + $ret;
   }
   return $ret;
 }
@@ -1103,18 +1080,13 @@ function wf_crm_get_fields($var = 'fields') {
         'exposed_empty_option' => t('Pay Later'),
         'value_callback' => TRUE,
         'weight' => 9995,
-        'admin' => [
-          'disable_user_select' => TRUE,
-          'multiple' => TRUE,
-        ]
       ];
       $fields['contribution_is_test'] = [
         'name' => t('Payment Processor Mode'),
-        'type' => 'select',
+        'type' => 'hidden',
         'expose_list' => TRUE,
         'value' => 0,
         'weight' => 9996,
-        'disable_user_select' => TRUE,
       ];
       $fields['contribution_note'] = [
         'name' => t('Contribution Note'),

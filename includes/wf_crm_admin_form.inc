@@ -54,10 +54,6 @@ class wf_crm_admin_form {
     // Merge in existing fields
     $existing = array_keys(wf_crm_enabled_fields($this->node, NULL, TRUE));
     $this->settings += array_fill_keys($existing, 'create_civicrm_webform_element');
-    unset(
-      $this->settings['civicrm_1_contribution_1_contribution_payment_processor_id'],
-      $this->settings['civicrm_1_contribution_1_contribution_is_test']
-    );
 
     // Sort fields by set
     foreach ($this->fields as $fid => $field) {
@@ -1004,7 +1000,6 @@ class wf_crm_admin_form {
     $this->form['contribution'] = [
       '#type' => 'fieldset',
       '#title' => t('Contribution'),
-
       '#group' => 'webform_civicrm',
       '#description' => t('In order to process live transactions for events, memberships, or contributions, select a contribution page and its billing fields will be included on the webform.'),
       '#attributes' => ['class' => ['civi-icon-contribution']],
@@ -1316,8 +1311,7 @@ class wf_crm_admin_form {
       if (!empty($field['extra']['required'])) {
         $item['#attributes']['class'][] = 'required';
       }
-
-      if (($field['type'] != 'hidden') && (empty($field['admin']['disable_user_select']))) {
+      if ($field['type'] != 'hidden') {
         $options += ['create_civicrm_webform_element' => t('- User Select -')];
       }
       $options += wf_crm_field_options($field, 'config_form', $this->data);
@@ -1548,6 +1542,9 @@ class wf_crm_admin_form {
           (!empty($val) || (in_array($name, ['num_terms', 'is_active', 'is_test', 'payment_processor_id'])))) {
           // Don't add data for non-existent contacts
           if (!in_array($ent, ['contact', 'participant', 'membership']) || isset($this->data['contact'][$c])) {
+            if ($name == 'payment_processor_id' && !empty($val) && is_numeric($val)) {
+              $val = $this->getPaymentProcessorValue($val);
+            }
             $this->data[$ent][$c][$table][$n][$name] = $val;
           }
         }
@@ -1675,9 +1672,7 @@ class wf_crm_admin_form {
 
           if (!isset($enabled[$key])) {
             $val = (array) $val;
-            if (in_array('create_civicrm_webform_element', $val, TRUE)
-                || (!empty($val[0]) && $field['type'] == 'hidden')
-                || ((count($val) > 1) && (!empty($field['admin']['disable_user_select'])))) {
+            if (in_array('create_civicrm_webform_element', $val, TRUE) || (!empty($val[0]) && $field['type'] == 'hidden')) {
               // Restore disabled component
               if (isset($disabled[$key])) {
                 webform_component_update($disabled[$key]);
@@ -1833,8 +1828,7 @@ class wf_crm_admin_form {
       }
       else {
         $field = wf_crm_get_field($key);
-        if ((!empty($val[0]) && $field['type'] == 'hidden')
-          ) {
+        if ($field['type'] == 'hidden' && (!empty($val[0]) || $field['name'] == 'Payment Processor Mode')) {
           unset($fields[$key]);
         }
       }
@@ -2021,6 +2015,18 @@ class wf_crm_admin_form {
    */
   public static function get_default_contact_cs($fid, $options) {
     return wf_crm_get_civi_setting('checksum_timeout', 7);
+  }
+
+  /**
+   * Ensure processor option is set as per is_test flag.
+   */
+  protected function getPaymentProcessorValue($val) {
+    $params = [
+      'is_test' => $this->settings['civicrm_1_contribution_1_contribution_is_test'] ?? 0,
+      'is_active' => 1,
+      'name' => CRM_Financial_BAO_PaymentProcessor::getPaymentProcessorName($val),
+    ];
+    return key(wf_crm_apivalues('PaymentProcessor', 'get', $params));
   }
 
   /**

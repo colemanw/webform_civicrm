@@ -213,9 +213,6 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       }
       else {
         $js_vars['paymentProcessor'] = $this->getData($fid);
-        if (is_array($js_vars['paymentProcessor'])) {
-          $js_vars['paymentProcessor'] = reset($js_vars['paymentProcessor']);
-        }
       }
     }
     if ($js_vars) {
