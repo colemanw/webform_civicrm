@@ -1542,6 +1542,9 @@ class wf_crm_admin_form {
           (!empty($val) || (in_array($name, ['num_terms', 'is_active', 'is_test', 'payment_processor_id'])))) {
           // Don't add data for non-existent contacts
           if (!in_array($ent, ['contact', 'participant', 'membership']) || isset($this->data['contact'][$c])) {
+            if ($name == 'payment_processor_id' && !empty($val) && is_numeric($val)) {
+              $val = $this->getPaymentProcessorValue($val);
+            }
             $this->data[$ent][$c][$table][$n][$name] = $val;
           }
         }
@@ -1825,7 +1828,7 @@ class wf_crm_admin_form {
       }
       else {
         $field = wf_crm_get_field($key);
-        if (!empty($val[0]) && $field['type'] == 'hidden') {
+        if ($field['type'] == 'hidden' && (!empty($val[0]) || $field['name'] == 'Payment Processor Mode')) {
           unset($fields[$key]);
         }
       }
@@ -2012,6 +2015,18 @@ class wf_crm_admin_form {
    */
   public static function get_default_contact_cs($fid, $options) {
     return wf_crm_get_civi_setting('checksum_timeout', 7);
+  }
+
+  /**
+   * Ensure processor option is set as per is_test flag.
+   */
+  protected function getPaymentProcessorValue($val) {
+    $params = [
+      'is_test' => $this->settings['civicrm_1_contribution_1_contribution_is_test'] ?? 0,
+      'is_active' => 1,
+      'name' => CRM_Financial_BAO_PaymentProcessor::getPaymentProcessorName($val),
+    ];
+    return key(wf_crm_apivalues('PaymentProcessor', 'get', $params));
   }
 
   /**
