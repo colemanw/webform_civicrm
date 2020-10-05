@@ -83,6 +83,18 @@ class FieldOptions implements FieldOptionsInterface {
       elseif ($table == 'membership' && $name == 'num_terms') {
         $ret = array_combine(range(1, 9), range(1, 9));
       }
+      elseif ($table === 'contribution' && $name === 'payment_processor_id') {
+        // For the config form we display a list of all active (live) payment processors
+        // Saving will map the IDs to live or test.
+        // For the frontend we display the selected payment processors (with correct ID for live or test)
+        $params = wf_crm_aval($data, "$ent:$c:$table:$n", []);
+        $paymentProcessors = wf_crm_apivalues('PaymentProcessor', 'get', ['is_test' => $params['is_test'] ?? 0, 'is_active' => 1]);
+        $paymentProcessors[0]['name'] = $field['exposed_empty_option'];
+        foreach ($paymentProcessors as $paymentProcessorID => $paymentProcessor) {
+          $ret[$paymentProcessorID] = $paymentProcessor['title'] ?? $paymentProcessor['name'];
+        }
+        return $ret;
+      }
       // Aside from the above special cases, most lists can be fetched from api.getoptions
       else {
         $params = array('field' => $name, 'context' => 'create');
