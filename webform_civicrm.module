@@ -327,6 +327,11 @@ function webform_civicrm_webform_submission_load(&$submissions) {
  * Implements hook_webform_submission_render_alter().
  */
 function webform_civicrm_webform_submission_render_alter(&$renderable) {
+  if (empty($renderable['#node']->webform_civicrm)) {
+    return;
+  }
+  civicrm_initialize();
+
   // Add display name to title while viewing a submission.
   if (!empty($renderable['#submission']->civicrm['contact'][1]['display_name']) && empty($renderable['#email']) && $renderable['#format'] == 'html') {
     drupal_set_title(t('Submission #!num by @name', ['!num' => $renderable['#submission']->sid, '@name' => $renderable['#submission']->civicrm['contact'][1]['display_name']]));
