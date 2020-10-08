@@ -124,6 +124,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     $this->fillDataFromSubmission();
+    //Fill Custom Contact reference fields.
+    $this->fillContactRefs(TRUE);
 
     // Create/update contacts
     foreach ($this->data['contact'] as $c => $contact) {
@@ -171,8 +173,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         continue;
       }
       $this->saveCurrentEmployer($contact, $cid);
-
-      $this->saveCustomData($contact, $cid, 'Contact', !empty($this->existing_contacts[$c]), $c);
 
       $this->fillHiddenContactFields($cid, $c);
 
@@ -226,7 +226,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (isset($this->data['grant']['number_of_grant'])) {
         $this->processGrants();
       }
-      // Save contribution custom data & line-items
+      // Save contribution line-items
       if (!empty($this->ent['contribution'][1]['id'])) {
         $this->processContribution();
       }
@@ -1034,13 +1034,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           if (empty($params['campaign_id']) || empty($this->all_fields['participant_campaign_id'])) {
             unset($params['campaign_id']);
           }
-          // Reformat custom data from nested arrays
-          $custom = [];
-          foreach ($this->data['participant'][$n] as $key => $vals) {
-            if (substr($key, 0, 2) == 'cg' && isset($vals[$e])) {
-              $custom[$key][1] = $vals[$e];
-            }
-          }
+
           // Loop through event ids to support multi-valued form elements
           $this->events = (array) $params['event_id'];
           foreach ($this->events as $i => $id_and_type) {
@@ -1091,9 +1085,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
               // When registering contact 1, store id to apply to other contacts
               if ($c == 1) {
                 $registered_by_id[$e][$i] = $result['id'];
-              }
-              if ($custom) {
-                $this->saveCustomData($custom, $result['id'], 'Participant');
               }
             }
           }
@@ -1282,7 +1273,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
           // If orig_contact_id is missing and there's more than one Contact
           // on the Case, set orig_contact_id to the current ID. Otherwise
-          // we get a Case.create error "Case is linked with more than one 
+          // we get a Case.create error "Case is linked with more than one
           // contact id".
           if (empty($params['orig_contact_id']) && !empty($params['id'])) {
             $caseContactCount = wf_civicrm_api('CaseContact', 'getcount', ['case_id' => $params['id']]);
@@ -1297,14 +1288,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           unset($params['status_id']);
         }
         $result = wf_civicrm_api('case', 'create', $params);
+
         // Final processing if save was successful
         if (!empty($result['id'])) {
           // handle case tags
           $this->handleEntityTags('case', $result['id'], $n, $params);
           // Store id
           $this->ent['case'][$n]['id'] = $result['id'];
-          // Save custom field data
-          $this->saveCustomData($data, $result['id'], 'Case', FALSE);
           // Save case roles
           foreach ($params as $param => $val) {
             if ($val && strpos($param, 'role_') === 0) {
@@ -1413,8 +1403,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $this->handleEntityTags('activity', $activity['id'], $n, $params);
           // Store id
           $this->ent['activity'][$n]['id'] = $activity['id'];
-          // Save custom data & attachments
-          $this->saveCustomData($data, $activity['id'], 'Activity', FALSE);
+          // Save attachments
           if (isset($data['activityupload'])) {
             $this->processAttachments('activity', $n, $activity['id'], empty($params['id']));
           }
@@ -1526,8 +1515,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         if (!empty($result['id'])) {
           // Store id
           $this->ent['grant'][$n]['id'] = $result['id'];
-          // Save custom data & attachments
-          $this->saveCustomData($data, $result['id'], 'Grant', FALSE);
+          // Save attachments
           if (isset($data['grantupload'])) {
             $this->processAttachments('grant', $n, $result['id'], empty($params['id']));
           }
@@ -2104,8 +2092,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function processContribution() {
     $contribution = $this->data['contribution'][1]['contribution'][1];
     $id = $this->ent['contribution'][1]['id'];
-    // Save custom data
-    $this->saveCustomData($this->data['contribution'][1], $id, 'Contribution', FALSE);
     // Save soft credits
     if (!empty($contribution['soft'])) {
       // Get total amount from total amount after line item calculation
@@ -2229,12 +2215,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   /**
    * Recursive function to fill ContactRef fields with contact IDs
    *
+   * @param $customOnly
+   *   TRUE if only custom contact reference needs to be filled.
    * @internal param $values null|array
    *   Leave blank - used internally to recurse through data
    * @internal param $depth int
    *   Leave blank - used internally to track recursion level
    */
-  private function fillContactRefs($values = NULL, $depth = 0) {
+  private function fillContactRefs($customOnly = FALSE, $values = NULL, $depth = 0) {
     $order = ['ent', 'c', 'table', 'n', 'name'];
     static $ent = '';
     static $c = '';
@@ -2246,13 +2234,17 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     foreach ($values as $key => $val) {
       ${$order[$depth]} = $key;
       if ($depth < 4 && is_array($val)) {
-        $this->fillContactRefs($val, $depth + 1);
+        $this->fillContactRefs($customOnly, $val, $depth + 1);
       }
       elseif ($depth == 4 && $val && wf_crm_aval($this->all_fields, "{$table}_$name:data_type") == 'ContactReference') {
+        if ($customOnly && substr($name, 0, 6) != 'custom') {
+          return;
+        }
         if (is_array($val)) {
           $this->data[$ent][$c][$table][$n][$name] = [];
           foreach ($val as $v) {
             if (is_numeric($v) && !empty($this->ent['contact'][$v]['id'])) {
+              $table = $customOnly ? $ent : $table;
               $this->data[$ent][$c][$table][$n][$name][] = $this->ent['contact'][$v]['id'];
             }
           }
@@ -2260,6 +2252,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         else {
           unset($this->data[$ent][$c][$table][$n][$name]);
           if (!empty($this->ent['contact'][$val]['id'])) {
+            $table = $customOnly ? $ent : $table;
             $this->data[$ent][$c][$table][$n][$name] = $this->ent['contact'][$val]['id'];
           }
         }
@@ -2273,6 +2266,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function fillDataFromSubmission() {
     foreach ($this->enabled as $field_key => $fid) {
       $val = $this->submissionValue($fid);
+      $customValue = NULL;
       // If value is null then it was hidden by a webform conditional rule - skip it
       if ($val !== NULL && $val !== [NULL]) {
         list( , $c, $ent, $n, $table, $name) = explode('_', $field_key, 6);
@@ -2308,6 +2302,16 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           if (!empty($this->data[$ent][$c][$table][$n][$name]) && is_array($this->data[$ent][$c][$table][$n][$name])) {
             $val = array_unique(array_merge($val, $this->data[$ent][$c][$table][$n][$name]));
           }
+          // We need to handle items being de-selected too and provide an array to pass to Entity.create API
+          // Extract a list of available items
+          $exposedOptions = $this->getExposedOptions($field_key);
+          $customValue = [];
+          foreach ($exposedOptions as $itemName => $itemLabel) {
+            if (in_array($itemName, $val)) {
+              $customValue[] = $itemName;
+            }
+          }
+
           // Implode data that will be stored as a string
           if ($table !== 'other' && $name !== 'event_id' && $name !== 'relationship_type_id' && $table !== 'contact' && $dataType != 'ContactReference' && strpos($name, 'tag') !== 0) {
             $val = CRM_Utils_Array::implodePadded($val);
@@ -2367,9 +2371,26 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $date = wf_crm_aval($this->data, "$ent:$c:$table:$n:$name", '');
           $val = $date . str_replace(':', '', $val);
         }
+
         // Only known contacts are allowed to empty a field
         if (($val !== '' && $val !== NULL && $val !== []) || !empty($this->existing_contacts[$c])) {
           $this->data[$ent][$c][$table][$n][$name] = $val;
+          if (substr($name, 0, 6) === 'custom') {
+            $multivaluesCreateMode = NULL;
+            // Handle 'Create mode' for multivalues custom fields of Contact entity.
+            if ($ent === 'contact' && is_numeric(substr($name, 7))) {
+              $createModeKey = 'civicrm_' . $c . '_contact_' . $n . '_' . $table . '_createmode';
+              $multivaluesCreateMode = $this->data['config']['create_mode'][$createModeKey] ?? NULL;
+              $cgMaxInstance = $this->all_sets[$table]['max_instances'] ?? 1;
+              if ($cgMaxInstance > 1 && empty($multivaluesCreateMode) && !empty($this->existing_contacts[$c])) {
+                $existingValue = $this->getCustomData($this->existing_contacts[$c], NULL, FALSE)[$table] ?? NULL;
+                if (!empty($existingValue)) {
+                  $name = "{$name}_" . key($existingValue);
+                }
+              }
+            }
+            $this->data[$ent][$c][$ent][$n][$name] = $customValue ?? $val;
+          }
         }
       }
     }
