@@ -125,7 +125,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     $this->fillDataFromSubmission();
     //Fill Custom Contact reference fields.
-    $this->fillContactRefs(NULL, 0, TRUE);
+    $this->fillContactRefs(TRUE);
 
     // Create/update contacts
     foreach ($this->data['contact'] as $c => $contact) {
@@ -2215,14 +2215,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   /**
    * Recursive function to fill ContactRef fields with contact IDs
    *
+   * @param $customOnly
+   *   TRUE if only custom contact reference needs to be filled.
    * @internal param $values null|array
    *   Leave blank - used internally to recurse through data
    * @internal param $depth int
    *   Leave blank - used internally to track recursion level
-   * @param $customOnly
-   *   TRUE if only custom contact reference needs to be filled.
    */
-  private function fillContactRefs($values = NULL, $depth = 0, $customOnly = FALSE) {
+  private function fillContactRefs($customOnly = FALSE, $values = NULL, $depth = 0) {
     $order = ['ent', 'c', 'table', 'n', 'name'];
     static $ent = '';
     static $c = '';
@@ -2234,7 +2234,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     foreach ($values as $key => $val) {
       ${$order[$depth]} = $key;
       if ($depth < 4 && is_array($val)) {
-        $this->fillContactRefs($val, $depth + 1, $customOnly);
+        $this->fillContactRefs($customOnly, $val, $depth + 1);
       }
       elseif ($depth == 4 && $val && wf_crm_aval($this->all_fields, "{$table}_$name:data_type") == 'ContactReference') {
         if ($customOnly && substr($name, 0, 6) != 'custom') {
@@ -2380,10 +2380,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             // Handle 'Create mode' for multivalues custom fields of Contact entity.
             if ($ent === 'contact' && is_numeric(substr($name, 7))) {
               $createModeKey = 'civicrm_' . $c . '_contact_' . $n . '_' . $table . '_createmode';
-              $multivaluesCreateMode = isset($this->data['config']['create_mode'][$createModeKey]) ? (int) $this->data['config']['create_mode'][$createModeKey] : NULL;
-              $multiRecordGid = CRM_Core_BAO_CustomField::isMultiRecordField(substr($name, 7));
-              if (empty($multivaluesCreateMode) && !empty($multiRecordGid) && !empty($this->existing_contacts[$c])) {
-                $existingValue = $this->getCustomData($this->existing_contacts[$c], NULL, FALSE)["cg{$multiRecordGid}"] ?? NULL;
+              $multivaluesCreateMode = $this->data['config']['create_mode'][$createModeKey] ?? NULL;
+              $cgMaxInstance = $this->all_sets[$table]['max_instances'] ?? 1;
+              if ($cgMaxInstance > 1 && empty($multivaluesCreateMode) && !empty($this->existing_contacts[$c])) {
+                $existingValue = $this->getCustomData($this->existing_contacts[$c], NULL, FALSE)[$table] ?? NULL;
                 if (!empty($existingValue)) {
                   $name = "{$name}_" . key($existingValue);
                 }
