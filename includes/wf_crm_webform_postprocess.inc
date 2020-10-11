@@ -285,10 +285,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 //      webform_submission_send_mail($this->node, $this->submission);
       $this->submitIPNPayment();
     }
+    $isEmailReceipt = wf_crm_aval($this->data, "receipt:number_number_of_receipt", FALSE);
     // Send receipt
     if (empty($this->submission->isDraft())
       && !empty($this->ent['contribution'][1]['id'])
-      && !empty($this->contribution_page['is_email_receipt'])
+      && !empty($isEmailReceipt)
       && (!$this->contributionIsIncomplete || $this->contributionIsPayLater)
     ) {
       $this->sendReceipt();
@@ -299,6 +300,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * Send receipt
    */
   private function sendReceipt() {
+    $receipt = wf_crm_aval($this->data, "receipt", []);
     // tax integration
     if (!is_null($this->tax_rate)) {
       $template = CRM_Core_Smarty::singleton();
@@ -311,6 +313,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params = array_merge($this->contribution_page, array('id' => $this->ent['contribution'][1]['id']));
     $params['payment_processor_id'] = $this->data['contribution'][1]['contribution'][1]['payment_processor_id'];
     unset($params['payment_processor']);
+    //Assign receipt values set on the webform config page.
+    $receiptValues = ['cc_receipt', 'bcc_receipt', 'receipt_text', 'receipt_from_name', 'receipt_from_email'];
+    foreach ($receiptValues as $val) {
+      $params[$val] = $receipt["number_number_of_receipt_{$val}"] ?? '';
+    }
     wf_civicrm_api('contribution', 'sendconfirmation', $params);
   }
 

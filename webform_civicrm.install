@@ -7,6 +7,7 @@
 
 use Drupal\webform_civicrm\Utils;
 use Drupal\node\Entity\Node;
+use Drupal\webform\Entity\Webform;
 
 /**
  * Implements hook_requirements().
@@ -141,4 +142,36 @@ function webform_civicrm_schema() {
     'primary key' => array('sid'),
   );
   return $schema;
+}
+
+/**
+ * Update receipt setting as per the value set in the contribution page.
+ */
+function webform_civicrm_update_8001() {
+  \Drupal::service('civicrm')->initialize();
+  $webforms = Webform::loadMultiple();
+  foreach ($webforms as $webform) {
+    $handler = $webform->getHandlers('webform_civicrm');
+    $config = $handler->getConfiguration();
+    if (empty($config['webform_civicrm'])) {
+      continue;
+    }
+    $contribution = wf_crm_aval($config, "webform_civicrm:settings:data:contribution:1:contribution:1", []);
+    if (!empty($contribution['contribution_page_id'])) {
+      $contribution_page = current(wf_crm_apivalues('ContributionPage', 'get', [
+        'return' => ["bcc_receipt", "cc_receipt", "receipt_text", "receipt_from_name", "receipt_from_email", "is_email_receipt"],
+        'id' => $contribution['contribution_page_id'],
+      ]));
+      if (!empty($contribution_page['is_email_receipt'])) {
+        $settings = &$config['webform_civicrm']['settings'];
+        $settings['receipt_1_number_of_receipt'] = $settings['data']['receipt']['number_number_of_receipt'] = 1;
+        $receiptValues = ['cc_receipt', 'bcc_receipt', 'receipt_text', 'receipt_from_name', 'receipt_from_email'];
+        foreach ($receiptValues as $val) {
+          $settings["receipt_1_number_of_receipt_{$val}"] = $settings['data']['receipt']["number_number_of_receipt_{$val}"] =  $contribution_page[$val] ?? '';
+        }
+        $handler->setConfiguration($config);
+        $webform->save();
+      }
+    }
+  }
 }

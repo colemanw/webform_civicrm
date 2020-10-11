@@ -1082,6 +1082,66 @@ class wf_crm_admin_form {
         $this->form['contribution']['sets']['lineitem'][$fs][$fid] = $this->addItem($fid, $field);
       }
     }
+
+    // Receipt
+    $n = wf_crm_aval($this->data, "receipt:number_number_of_receipt", 0);
+    $this->form['contribution']['sets']["receipt_1_number_of_receipt"] = [
+      '#type' => 'select',
+      '#title' => t('Enable Receipt?'),
+      '#default_value' => $n,
+      '#options' => [t('No'), t('Yes')],
+      '#prefix' => '<div class="number-of">',
+      '#suffix' => '</div>',
+      '#description' => t('Enable this section if you want an electronic receipt to be sent automatically to the contributor\'s email address.'),
+    ];
+    $this->addAjaxItem("contribution:sets", "receipt_1_number_of_receipt", "receipt");
+    if ($n) {
+      $fs = "contribution_sets_receipt_{$n}_fieldset";
+      $this->form['contribution']['sets']['receipt'][$fs] = [
+        '#type' => 'fieldset',
+        '#title' => t('Receipt'),
+        '#attributes' => ['id' => $fs, 'class' => ['web-civi-checkbox-set']],
+        'js_select' => $this->addToggle($fs),
+      ];
+      $emailFields = [
+        'receipt_1_number_of_receipt_receipt_from_name' => [
+          '#type' => 'textfield',
+          '#default_value' => wf_crm_aval($this->data, "receipt:number_number_of_receipt_receipt_from_name", ''),
+          '#title' => t('Receipt From Name'),
+          '#description' => t('Enter the FROM name to be used in receipt emails.'),
+        ],
+        'receipt_1_number_of_receipt_receipt_from_email' => [
+          '#type' => 'textfield',
+          '#default_value' => wf_crm_aval($this->data, "receipt:number_number_of_receipt_receipt_from_email", ''),
+          '#title' => t('Receipt From Email'),
+          '#required' => TRUE,
+          '#description' => t('Enter the FROM email address to be used in receipt emails.'),
+        ],
+        'receipt_1_number_of_receipt_receipt_text' => [
+          '#type' => 'textarea',
+          '#default_value' => wf_crm_aval($this->data, "receipt:number_number_of_receipt_receipt_text", ''),
+          '#title' => t('Receipt Text'),
+          '#prefix' => '<div class="auto-width">',
+          '#suffix' => '</div>',
+          '#description' => t('Enter a message you want included at the beginning of emailed receipts. NOTE: The text entered here will be used for both TEXT and HTML versions of receipt emails so we do not recommend including HTML tags / formatting here.'),
+        ],
+        'receipt_1_number_of_receipt_cc_receipt' => [
+          '#type' => 'textfield',
+          '#default_value' => wf_crm_aval($this->data, "receipt:number_number_of_receipt_cc_receipt", ''),
+          '#title' => t('CC Receipt To'),
+          '#description' => t('If you want member(s) of your organization to receive a carbon copy of each emailed receipt, enter one or more email addresses here. Multiple email addresses should be separated by a comma (e.g. jane@example.org, paula@example.org).'),
+        ],
+        'receipt_1_number_of_receipt_bcc_receipt' => [
+          '#type' => 'textfield',
+          '#default_value' => wf_crm_aval($this->data, "receipt:number_number_of_receipt_bcc_receipt", ''),
+          '#title' => t('BCC Receipt To'),
+          '#description' => t('If you want member(s) of your organization to receive a BLIND carbon copy of each emailed receipt, enter one or more email addresses here. Multiple email addresses should be separated by a comma (e.g. jane@example.org, paula@example.org).'),
+        ],
+      ];
+      foreach ($emailFields as $k => $fld) {
+        $this->form['contribution']['sets']['receipt'][$fs][$k] = $fld;
+      }
+    }
   }
 
   /**
@@ -1536,7 +1596,7 @@ class wf_crm_admin_form {
           $this->data[$ent][$c][$key] = $val;
         }
         // Standalone entities keep their own count independent of contacts
-        elseif ($ent == 'grant' || $ent == 'activity' || $ent == 'case' || $ent == 'lineitem') {
+        elseif ($ent == 'grant' || $ent == 'activity' || $ent == 'case' || $ent == 'lineitem' || $ent == 'receipt') {
           $this->data[$ent]["number_$key"] = $val;
         }
       }
