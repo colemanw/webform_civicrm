@@ -85,7 +85,7 @@ class AdminHelp implements AdminHelpInterface {
     return '<p>' .
       t('This determines how an <em>unknown</em> contact will be handled when the webform is submitted.') .
       '</p><ul>' .
-      '<li>' . t('Select the "Default Unsupervised" rule for the same duplicate matching used by CiviCRM event registration &amp contribution forms.') . '</li>' .
+      '<li>' . t('Select the "Default Unsupervised" rule for the same duplicate matching used by CiviCRM event registration and contribution forms.') . '</li>' .
       '<li>' . t('Select a specific rule to customize how matching is performed.') . '</li>' .
       '<li>' . t('Or select "- None -" to always create a new contact.') . '</li>' .
       '</ul><p>' .
