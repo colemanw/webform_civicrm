@@ -836,9 +836,14 @@ abstract class wf_crm_webform_base {
    *   instead of test.  So we "fix" the processor ID here to be the correct one for live/test.
    * An "improved" fix would involve changing the configuration saved by the user but this avoids that.
    *
+   * This way also allows one to invoke Test mode at run time with a URL argument.
+   *
    * @throws \CiviCRM_API3_Exception
    */
   protected function fixPaymentProcessorID() {
+    if (isset($_GET['payment']) && $_GET['payment'] == 'test') { 
+    	$this->data['contribution'][1]['contribution'][1]['is_test'] = 1;
+    }
     // Check for is_test and payment_processor_id (pay later = 0 is set to '' here. is_test has no meaning for pay later).
     if (!empty($this->data['contribution'][1]['contribution'][1]['is_test'])
         && !empty($this->data['contribution'][1]['contribution'][1]['payment_processor_id'])) {
