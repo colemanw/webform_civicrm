@@ -84,7 +84,9 @@ class wf_crm_admin_help {
       '<li>' . t('Select a specific rule to customize how matching is performed.') . '</li>' .
       '<li>' . t('Or select "- None -" to always create a new contact.') . '</li>' .
       '</ul><p>' .
-      t('Note: Matching rules are only used if the contact is not already selected via "Existing Contact" field.') .
+      t('Note: Matching rules are only used if the contact is not already selected via "Existing Contact" field.') . '</p><p>' .
+      t('Note: Contacts are created (using this matching rule) before any other entities are stored as Contacts need to exist before e.g. shared addresses can be processed.') . '</p><p>' .
+      t('Note: Ensure all fields that are configured in your matching rule are added and required on your Webform - else you may get unexpected results') .
       '</p>';
   }
 
