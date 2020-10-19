@@ -338,7 +338,7 @@ function _webform_edit_civicrm_contact($component) {
     '#type' => 'select',
     '#multiple' => TRUE,
     '#title' => t('Groups'),
-    '#options' => ['' => '- ' . t('None') . ' -'] + wf_crm_apivalues('group_contact', 'getoptions', ['field' => 'group_id']),
+    '#options' => ['' => '- ' . t('None') . ' -'] + wf_crm_apivalues('group', 'get', [], 'title'),
     '#default_value' => $component['extra']['filters']['group'],
     '#description' => t('Listed contacts must be members of at least one of the selected groups (leave blank to not filter by group).'),
   ];
