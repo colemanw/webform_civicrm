@@ -21,6 +21,20 @@ final class WebformCivicrmTest extends CiviCrmTestBase {
   ];
 
   /**
+   * {@inheritdoc}
+   *
+   * During tests configuration schema is validated. This module does not
+   * provide schema definitions for its handler.
+   *
+   * To fix: webform.webform.civicrm_webform_test:handlers.webform_civicrm.settings
+   *
+   * @see \Drupal\Core\Test\TestSetupTrait::getConfigSchemaExclusions
+   */
+  protected static $configSchemaCheckerExclusions = [
+    'webform.webform.civicrm_webform_test',
+  ];
+
+  /**
    * The test user.
    *
    * @var \Drupal\user\Entity\User
@@ -56,8 +70,7 @@ final class WebformCivicrmTest extends CiviCrmTestBase {
     $this->getSession()->getPage()->clickLink('CiviCRM');
     $this->getSession()->getPage()->checkField('Enable CiviCRM Processing');
     $this->getSession()->getPage()->pressButton('Save Settings');
-    // There is an error. But let's see some green!
-    //$this->assertSession()->pageTextNotContains('The website encountered an unexpected error. Please try again later.');
+    $this->assertSession()->pageTextNotContains('The website encountered an unexpected error. Please try again later.');
   }
 
 }
