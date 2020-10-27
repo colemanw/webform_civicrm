@@ -58,7 +58,7 @@ final class WebformCivicrmTest extends CiviCrmTestBase {
   /**
    * Test creating a Webform.
    */
-  public function testCreateWebform() {
+  public function testEnableCiviCrmHandler() {
     $this->drupalLogin($this->testUser);
     $this->drupalGet(Url::fromRoute('entity.webform.collection'));
     $this->clickLink('Add webform');
@@ -70,7 +70,15 @@ final class WebformCivicrmTest extends CiviCrmTestBase {
     $this->getSession()->getPage()->clickLink('CiviCRM');
     $this->getSession()->getPage()->checkField('Enable CiviCRM Processing');
     $this->getSession()->getPage()->pressButton('Save Settings');
-    $this->assertSession()->pageTextNotContains('The website encountered an unexpected error. Please try again later.');
+    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    $this->assertSession()->checkboxChecked('Existing Contact');
+    $this->assertSession()->checkboxChecked('First Name');
+    $this->assertSession()->checkboxChecked('Last Name');
+    $this->getSession()->getPage()->clickLink('Build');
+    $this->assertSession()->pageTextContains('civicrm_1_contact_1_fieldset_fieldset');
+    $this->assertSession()->pageTextContains('civicrm_1_contact_1_contact_existing');
+    $this->assertSession()->pageTextContains('civicrm_1_contact_1_contact_first_name');
+    $this->assertSession()->pageTextContains('civicrm_1_contact_1_contact_last_name');
   }
 
 }
