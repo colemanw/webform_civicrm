@@ -11,6 +11,7 @@
     "source": "http://cgit.drupalcode.org/webform_civicrm"
   },
   "require": {
+      "civicrm/civicrm-drupal-8": "~5.0",
       "drupal/webform": "^5.0"
   },
   "extra": {
