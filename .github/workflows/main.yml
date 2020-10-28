@@ -32,6 +32,7 @@ jobs:
             extensions: dom, curl, libxml, mbstring, zip, pdo, mysql, pdo_mysql, bcmath, soap, intl, gd, exif, iconv
             coverage: none
             tools: composer:v1
+      - uses: nanasess/setup-chromedriver@master
       - name: Setup Drupal
         run: |
           COMPOSER_MEMORY_LIMIT=-1 composer create-project drupal/recommended-project:^8.9 $GITHUB_WORKSPACE/../drupal --no-interaction
@@ -42,6 +43,8 @@ jobs:
           COMPOSER_MEMORY_LIMIT=-1 composer require --dev drupal/core-dev-pinned:^8.9
           COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages}:'~5.29' drupal/webform_civicrm *@dev
           cd web
+      - name: Run chromedriver
+        run: chromedriver &
       - name: Run php built-in server
         run: php -S 127.0.0.1:8080 -t $GITHUB_WORKSPACE/../drupal/web &
       - name: Run PHPUnit
@@ -52,4 +55,4 @@ jobs:
           SYMFONY_DEPRECATIONS_HELPER: weak
           SIMPLETEST_DB: mysql://root:@127.0.0.1:${{ job.services.mysql.ports[3306] }}/db
           SIMPLETEST_BASE_URL: http://127.0.0.1:8080
-          MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","chromeOptions":{"args":["--disable-gpu","--headless", "--no-sandbox"]}}, "http://127.0.0.1:9515"]'
+          MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","chromeOptions":{"args":["--disable-gpu", "--no-sandbox", "--headless"]}}, "http://127.0.0.1:9515"]'

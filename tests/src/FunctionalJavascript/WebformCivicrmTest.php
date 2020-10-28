@@ -1,8 +1,8 @@
 <?php
 
-namespace Drupal\Tests\webform_civicrm\Functional;
+namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
-use Drupal\Core\Url;
+use Drupal\Tests\webform\Traits\WebformBrowserTestTrait;
 
 /**
  * Tests Webform CiviCRM.
@@ -10,6 +10,8 @@ use Drupal\Core\Url;
  * @group webform_civicrm
  */
 final class WebformCivicrmTest extends CiviCrmTestBase {
+
+  use WebformBrowserTestTrait;
 
   /**
    * {@inheritdoc}
@@ -53,6 +55,8 @@ final class WebformCivicrmTest extends CiviCrmTestBase {
       'access webform overview',
       'administer webform',
     ]);
+
+
   }
 
   /**
@@ -60,16 +64,16 @@ final class WebformCivicrmTest extends CiviCrmTestBase {
    */
   public function testEnableCiviCrmHandler() {
     $this->drupalLogin($this->testUser);
-    $this->drupalGet(Url::fromRoute('entity.webform.collection'));
-    $this->clickLink('Add webform');
-    $this->getSession()->getPage()->fillField('Title', 'CiviCRM Webform Test');
-    $this->getSession()->getPage()->fillField('Machine-readable name', 'civicrm_webform_test');
-    $this->getSession()->getPage()->pressButton('Save');
-    $this->assertSession()->pageTextContainsOnce('Webform CiviCRM Webform Test created.');
-    $this->getSession()->getPage()->clickLink('Settings');
+
+    $webform = $this->createWebform([
+      'id' => 'civicrm_webform_test',
+      'title' => 'CiviCRM Webform Test',
+    ]);
+    $this->drupalGet($webform->toUrl('settings'));
     $this->getSession()->getPage()->clickLink('CiviCRM');
     $this->getSession()->getPage()->checkField('Enable CiviCRM Processing');
     $this->getSession()->getPage()->pressButton('Save Settings');
+    $this->htmlOutput();
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
     $this->assertSession()->checkboxChecked('Existing Contact');
     $this->assertSession()->checkboxChecked('First Name');
