@@ -73,7 +73,6 @@ final class WebformCivicrmTest extends CiviCrmTestBase {
     $this->getSession()->getPage()->clickLink('CiviCRM');
     $this->getSession()->getPage()->checkField('Enable CiviCRM Processing');
     $this->getSession()->getPage()->pressButton('Save Settings');
-    $this->htmlOutput();
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
     $this->assertSession()->checkboxChecked('Existing Contact');
     $this->assertSession()->checkboxChecked('First Name');
@@ -83,6 +82,11 @@ final class WebformCivicrmTest extends CiviCrmTestBase {
     $this->assertSession()->pageTextContains('civicrm_1_contact_1_contact_existing');
     $this->assertSession()->pageTextContains('civicrm_1_contact_1_contact_first_name');
     $this->assertSession()->pageTextContains('civicrm_1_contact_1_contact_last_name');
+
+    // @todo submit form and verify CiviCRM contact created.
+    $this->drupalGet($webform->toUrl('canonical'));
+    $this->assertSession()->fieldExists('First name');
+    $this->assertSession()->fieldExists('Last name');
   }
 
 }
