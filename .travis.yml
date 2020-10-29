@@ -2,23 +2,41 @@ language: php
 php:
   - 7.2
 sudo: false
+services:
+  - mysql
+addons:
+  chrome: stable
+  apt:
+    packages:
+    - chromium-browser
+    - chromium-chromedriver
 cache:
   directories:
     - $HOME/.composer/cache/files
     - $HOME/.composer/cache/repo
 env:
   global:
-    - SIMPLETEST_DB=sqlite://localhost/sites/default/files/.ht.sqlite
+    - SIMPLETEST_DB=mysql://root:@127.0.0.1:3306/db
+    - SIMPLETEST_BASE_URL=http://127.0.0.1:8080
+    - SYMFONY_DEPRECATIONS_HELPER=weak
+    - MINK_DRIVER_ARGS_WEBDRIVER='["chrome", {"browserName":"chrome","chromeOptions":{"args":["--disable-gpu","--headless", "--no-sandbox"]}}, "http://127.0.0.1:9515"]'
 before_install:
-  - composer global require "hirak/prestissimo:^0.3"
+  # Composer 1.x is required for now due to civicrm/composer-downloads-plugin
+  - composer self-update --1
 install:
-  - composer create-project roundearth/drupal-civicrm-project:8.x-dev $TRAVIS_BUILD_DIR/../drupal --no-interaction
+  # Webform 5.x is for ^8.0.0; Webform 6.x is for Drupal 9.x.x
+  - COMPOSER_MEMORY_LIMIT=-1 composer create-project drupal/recommended-project:^8.9 $TRAVIS_BUILD_DIR/../drupal --no-interaction
   - cd $TRAVIS_BUILD_DIR/../drupal
+  - composer config extra.enable-patching true
   - composer config repositories.0 path $TRAVIS_BUILD_DIR
-  - cat composer.json
-  - composer require drupal/webform_civicrm *@dev
-
+  - composer config repositories.1 composer https://packages.drupal.org/8
+  - COMPOSER_MEMORY_LIMIT=-1 composer require --dev drupal/core-dev-pinned:^8.9
+  - COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages}:'~5.29' drupal/webform_civicrm *@dev
+before_script:
+  - cd web
+  - php -S 127.0.0.1:8080 &
+  - chromedriver &
 script:
-  - ./vendor/bin/phpunit -c core modules/contrib/webform_civicrm
+  - ../vendor/bin/phpunit -c core modules/contrib/webform_civicrm
 notifications:
   email: false

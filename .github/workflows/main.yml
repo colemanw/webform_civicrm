@@ -1,0 +1,58 @@
+name: Integration Tests
+on:
+  push:
+  pull_request:
+    branches:
+      - 8.x-5.x
+
+jobs:
+  phpunit:
+    runs-on: ubuntu-latest
+    name: PHPUnit tests
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_DATABASE: db
+        ports:
+          - 3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+            path: |
+              ~/.composer/cache/files
+              ~/.composer/cache/repo
+            key: dependencies-php-${{ matrix.php }}-composer-${{ hashFiles('composer.json') }}
+      - uses: shivammathur/setup-php@v2
+        with:
+            php-version: 7.2
+            extensions: dom, curl, libxml, mbstring, zip, pdo, mysql, pdo_mysql, bcmath, soap, intl, gd, exif, iconv
+            coverage: none
+            tools: composer:v1
+      - uses: nanasess/setup-chromedriver@master
+      - name: Setup Drupal
+        run: |
+          COMPOSER_MEMORY_LIMIT=-1 composer create-project drupal/recommended-project:^8.9 $GITHUB_WORKSPACE/../drupal --no-interaction
+          cd $GITHUB_WORKSPACE/../drupal
+          composer config extra.enable-patching true
+          composer config repositories.0 path $GITHUB_WORKSPACE
+          composer config repositories.1 composer https://packages.drupal.org/8
+          COMPOSER_MEMORY_LIMIT=-1 composer require --dev drupal/core-dev-pinned:^8.9
+          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages}:'~5.29' drupal/webform_civicrm *@dev
+          cd web
+      - name: Run chromedriver
+        run: chromedriver &
+      - name: Run php built-in server
+        run: php -S 127.0.0.1:8080 -t $GITHUB_WORKSPACE/../drupal/web &
+      - name: Run PHPUnit
+        run: |
+          cd $GITHUB_WORKSPACE/../drupal/web
+          ../vendor/bin/phpunit -c core modules/contrib/webform_civicrm
+        env:
+          SYMFONY_DEPRECATIONS_HELPER: weak
+          SIMPLETEST_DB: mysql://root:@127.0.0.1:${{ job.services.mysql.ports[3306] }}/db
+          SIMPLETEST_BASE_URL: http://127.0.0.1:8080
+          MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","chromeOptions":{"args":["--disable-gpu", "--no-sandbox", "--headless"]}}, "http://127.0.0.1:9515"]'

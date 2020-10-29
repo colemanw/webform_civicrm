@@ -10,5 +10,15 @@
     "issues": "https://www.drupal.org/project/issues/webform_civicrm",
     "source": "http://cgit.drupalcode.org/webform_civicrm"
   },
-  "require": { }
+  "require": {
+      "civicrm/civicrm-drupal-8": "~5.0",
+      "drupal/webform": "^5.0"
+  },
+  "extra": {
+    "patches": {
+        "civicrm/civicrm-core": {
+            "Fix Drupal 8+ settings location during tests": "https://patch-diff.githubusercontent.com/raw/civicrm/civicrm-core/pull/18843.patch"
+        }
+    }
+  }
 }
