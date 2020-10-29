@@ -20,39 +20,48 @@ jobs:
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
     steps:
       - uses: actions/checkout@v2
+      - name: Get composer cache directory
+        id: composercache
+        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
       - uses: actions/cache@v2
         with:
-            path: |
-              ~/.composer/cache/files
-              ~/.composer/cache/repo
-            key: dependencies-php-${{ matrix.php }}-composer-${{ hashFiles('composer.json') }}
+            path: ${{ steps.composercache.outputs.dir }}
+            key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+            restore-keys: ${{ runner.os }}-composer-
       - uses: shivammathur/setup-php@v2
         with:
             php-version: 7.2
             extensions: dom, curl, libxml, mbstring, zip, pdo, mysql, pdo_mysql, bcmath, soap, intl, gd, exif, iconv
             coverage: none
             tools: composer:v1
+      - name: Setup problem matchers for PHPUnit
+        run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
       - uses: nanasess/setup-chromedriver@master
       - name: Setup Drupal
         run: |
-          COMPOSER_MEMORY_LIMIT=-1 composer create-project drupal/recommended-project:^8.9 $GITHUB_WORKSPACE/../drupal --no-interaction
-          cd $GITHUB_WORKSPACE/../drupal
+          COMPOSER_MEMORY_LIMIT=-1 composer create-project drupal/recommended-project:^8.9 ~/drupal --no-interaction
+          cd ~/drupal
           composer config extra.enable-patching true
           composer config repositories.0 path $GITHUB_WORKSPACE
           composer config repositories.1 composer https://packages.drupal.org/8
-          COMPOSER_MEMORY_LIMIT=-1 composer require --dev drupal/core-dev-pinned:^8.9
-          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages}:'~5.29' drupal/webform_civicrm *@dev
-          cd web
+          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:^8.9 civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages}:'~5.29' drupal/webform_civicrm *@dev  --no-suggest
       - name: Run chromedriver
         run: chromedriver &
       - name: Run php built-in server
-        run: php -S 127.0.0.1:8080 -t $GITHUB_WORKSPACE/../drupal/web &
+        run: php -S 127.0.0.1:8080 -t ~/drupal/web &
       - name: Run PHPUnit
         run: |
-          cd $GITHUB_WORKSPACE/../drupal/web
+          mkdir $BROWSERTEST_OUTPUT_DIRECTORY
+          cd ~/drupal/web
           ../vendor/bin/phpunit -c core modules/contrib/webform_civicrm
         env:
           SYMFONY_DEPRECATIONS_HELPER: weak
           SIMPLETEST_DB: mysql://root:@127.0.0.1:${{ job.services.mysql.ports[3306] }}/db
           SIMPLETEST_BASE_URL: http://127.0.0.1:8080
           MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","chromeOptions":{"args":["--disable-gpu", "--no-sandbox", "--headless"]}}, "http://127.0.0.1:9515"]'
+          BROWSERTEST_OUTPUT_DIRECTORY: '${{ runner.temp }}/browser_output'
+      - uses: actions/upload-artifact@v2
+        with:
+          name: phpunit_browser_output
+          # For some reason Drupal prints here and not our specified BROWSERTEST_OUTPUT_DIRECTORY.
+          path: '/home/runner/drupal/web/sites/simpletest/browser_output'
