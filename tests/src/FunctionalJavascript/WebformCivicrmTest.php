@@ -85,8 +85,9 @@ final class WebformCivicrmTest extends CiviCrmTestBase {
 
     // @todo submit form and verify CiviCRM contact created.
     $this->drupalGet($webform->toUrl('canonical'));
-    $this->assertSession()->fieldExists('First name');
-    $this->assertSession()->fieldExists('Last name');
+    $this->assertSession()->fieldExists('First Name');
+    $this->assertSession()->fieldExists('Last Name');
+    $this->createScreenshot($this->htmlOutputDirectory . '/webform.png');
   }
 
 }
