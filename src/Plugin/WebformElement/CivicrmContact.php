@@ -488,8 +488,6 @@ class CivicrmContact extends WebformElementBase {
     $cid = wf_crm_aval($element, '#default_value', '');
     $contactComponent = \Drupal::service('webform_civicrm.contact_component');
     if ($element['#type'] == 'hidden') {
-      // User may not change this value for hidden fields
-      $element['#value'] = $cid;
       if (!$component['#show_hidden_contact']) {
         return;
       }
