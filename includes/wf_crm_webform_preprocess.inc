@@ -611,30 +611,6 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     ]);
   }
 
- /**
-  * Function to load default contact (cid1) if default loading is set to case_roles
-  *
-  * @param int $c
-  */
-  function findCaseClientForDefaultContact($c) {
-    // Support legacy url param
-    if (empty($_GET["case1"]) && !empty($_GET["caseid"])) {
-      $_GET["case1"] = $_GET["caseid"];
-    }
-    for ($n = 1; $n <= $this->data['case']['number_of_case']; ++$n) {
-      if (isset($_GET["case$n"]) && wf_crm_is_positive($_GET["case$n"])) {
-        $id = $_GET["case$n"];
-        $item = wf_civicrm_api('case', 'getsingle', ['id' => $id]);
-        $clients = (array)wf_crm_aval($item, 'client_id');
-        if (count($clients) > 0) {
-          $caseClient = reset($clients);
-          $this->ent['contact'][$c]['id'] = $caseClient;
-        }
-      }
-    }
-  }
-
-
   /**
    * Find case ids based on url input or "existing case" settings
    */
@@ -642,6 +618,12 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     // Support legacy url param
     if (empty($_GET["case1"]) && !empty($_GET["caseid"])) {
       $_GET["case1"] = $_GET["caseid"];
+    }
+    $allContacts = [];
+    foreach ($this->ent['contact'] as $contact) {
+      if (!empty($contact['id'])) {
+        $allContacts[] = $contact['id'];
+      }
     }
     for ($n = 1; $n <= $this->data['case']['number_of_case']; ++$n) {
       if (!empty($this->data['case'][$n]['case'][1]['client_id'])) {
@@ -651,13 +633,20 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             $clients[] = $this->ent['contact'][$c]['id'];
           }
         }
-        if ($clients) {
+        if ($clients || $allContacts) {
           // Populate via url argument
           if (isset($_GET["case$n"]) && wf_crm_is_positive($_GET["case$n"])) {
             $id = $_GET["case$n"];
             $item = wf_civicrm_api('case', 'getsingle', ['id' => $id]);
             if (array_intersect((array)wf_crm_aval($item, 'client_id'), $clients)) {
               $this->ent['case'][$n] = ['id' => $id];
+            }
+            else {
+              foreach ($item['contacts'] ?? [] as $caseContact) {
+                if (!empty($caseContact['manager']) && in_array($caseContact['contact_id'], $allContacts)) {
+                  $this->ent['case'][$n] = ['id' => $id];
+                }
+              }
             }
           }
           // Populate via search
