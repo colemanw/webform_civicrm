@@ -2,25 +2,12 @@
 
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
-use Drupal\Tests\webform\Traits\WebformBrowserTestTrait;
-
 /**
  * Tests Webform CiviCRM.
  *
  * @group webform_civicrm
  */
-final class WebformCivicrmTest extends CiviCrmTestBase {
-
-  use WebformBrowserTestTrait;
-
-  /**
-   * {@inheritdoc}
-   */
-  protected static $modules = [
-    'webform',
-    'webform_ui',
-    'webform_civicrm',
-  ];
+final class ContactSubmissionTest extends WebformCivicrmTestBase {
 
   /**
    * {@inheritdoc}
@@ -37,37 +24,11 @@ final class WebformCivicrmTest extends CiviCrmTestBase {
   ];
 
   /**
-   * The test user.
-   *
-   * @var \Drupal\user\Entity\User
-   */
-  private $testUser;
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function setUp() {
-    parent::setUp();
-    $this->testUser = $this->createUser([
-      'administer CiviCRM',
-      'access CiviCRM',
-      'access administration pages',
-      'access webform overview',
-      'administer webform',
-    ]);
-  }
-
-  /**
-   * Test creating a Webform.
+   * Test submitting a contact.
    */
   public function testEnableCiviCrmHandler() {
     $this->drupalLogin($this->testUser);
-
-    $webform = $this->createWebform([
-      'id' => 'civicrm_webform_test',
-      'title' => 'CiviCRM Webform Test',
-    ]);
-    $this->drupalGet($webform->toUrl('settings'));
+    $this->drupalGet($this->webform->toUrl('settings'));
     $this->getSession()->getPage()->clickLink('CiviCRM');
     $this->getSession()->getPage()->checkField('Enable CiviCRM Processing');
     $this->getSession()->getPage()->pressButton('Save Settings');
@@ -81,7 +42,7 @@ final class WebformCivicrmTest extends CiviCrmTestBase {
     $this->assertSession()->pageTextContains('civicrm_1_contact_1_contact_first_name');
     $this->assertSession()->pageTextContains('civicrm_1_contact_1_contact_last_name');
 
-    $this->drupalGet($webform->toUrl('canonical'));
+    $this->drupalGet($this->webform->toUrl('canonical'));
     $error_messages = $this->getSession()->getPage()->findAll('css', '.messages.messages--error');
     $this->assertCount(0, $error_messages);
 
