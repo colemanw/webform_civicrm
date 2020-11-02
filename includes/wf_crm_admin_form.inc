@@ -1185,6 +1185,12 @@ class wf_crm_admin_form {
       '#default_value' => $this->settings['new_contact_source'],
       '#description' => t('Optional "source" label for any new contact/participant/membership created by this webform.'),
     ];
+    $this->form['options']['existing_membership_type'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Keep Existing Membership Type'),
+      '#default_value' => !empty($this->settings['existing_membership_type']),
+      '#description' => t('If enabled, when the webform includes a Membership, the Membership Type will be respected in order to update it (if User already has it, if not it will created).'),
+    ];
   }
 
   /**
