@@ -36,6 +36,11 @@ abstract class wf_crm_webform_base {
     MULTIVALUE_FIELDSET_MODE_CREATE_OR_EDIT = 0,
     MULTIVALUE_FIELDSET_MODE_CREATE_ONLY = 1;
 
+  const
+    MEMBERSHIP_TYPE_ACTION_UPDATE_ANY_TYPE = 0,
+    MEMBERSHIP_TYPE_ACTION_UPDATE_SAME_TYPE = 1,
+    MEMBERSHIP_TYPE_ACTION_ADD_ALWAYS = 2;
+
   /**
    * Magic method to retrieve otherwise inaccessible properties
    * @param $name

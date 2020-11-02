@@ -107,6 +107,13 @@ function webform_civicrm_schema() {
         'default' => '',
         'description' => 'Source label for newly created contacts',
       ],
+      'membership_type_action' => [
+        'description' => 'Update the Membership based on existing membership types.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ],
     ],
     'primary key' => ['nid'],
   ];
@@ -831,4 +838,18 @@ function webform_civicrm_update_7403() {
     'default' => 0,
   ];
   db_add_field('webform_civicrm_forms', 'create_new_relationship', $field);
+}
+
+/**
+ * Add field to respect membership_type or not on existing Membership updates.
+ */
+function webform_civicrm_update_7404() {
+  $field = [
+    'description' => 'Update the Membership based on existing membership types.',
+    'type' => 'int',
+    'size' => 'tiny',
+    'not null' => TRUE,
+    'default' => 0,
+  ];
+  db_add_field('webform_civicrm_forms', 'membership_type_action', $field);
 }
