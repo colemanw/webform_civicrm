@@ -55,8 +55,6 @@ final class WebformCivicrmTest extends CiviCrmTestBase {
       'access webform overview',
       'administer webform',
     ]);
-
-
   }
 
   /**
@@ -83,11 +81,26 @@ final class WebformCivicrmTest extends CiviCrmTestBase {
     $this->assertSession()->pageTextContains('civicrm_1_contact_1_contact_first_name');
     $this->assertSession()->pageTextContains('civicrm_1_contact_1_contact_last_name');
 
-    // @todo submit form and verify CiviCRM contact created.
     $this->drupalGet($webform->toUrl('canonical'));
-    $this->assertSession()->fieldExists('First Name');
-    $this->assertSession()->fieldExists('Last Name');
-    $this->createScreenshot($this->htmlOutputDirectory . '/webform.png');
+    $error_messages = $this->getSession()->getPage()->findAll('css', '.messages.messages--error');
+    $this->assertCount(0, $error_messages);
+
+    $this->getSession()->getPage()->fillField('First Name', 'Frederick');
+    $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
+    $result = civicrm_api('contact', 'get', [
+      'version' => 3,
+      'sequential' => 1,
+      'first_name' => 'Frederick',
+      'last_name' => 'Pabst',
+    ]);
+    $this->assertArrayHasKey('count', $result, var_export($result, TRUE));
+    $this->assertEquals(1, $result['count'], var_export($result, TRUE));
+    $contact = $result['values'][0];
+    $this->assertEquals('Individual', $contact['contact_type']);
+    $this->assertEquals('Pabst, Frederick', $contact['sort_name']);
   }
 
 }
