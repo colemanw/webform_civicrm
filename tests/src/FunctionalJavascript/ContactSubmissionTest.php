@@ -72,6 +72,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
     $contact_result = wf_civicrm_api('contact', 'get', [
+      'sequential' => 1,
       'first_name' => $contact_values['contact']['first_name'],
       'last_name' => $contact_values['contact']['last_name'],
     ]);
@@ -79,7 +80,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
 
     $this->assertArrayHasKey('count', $contact_result, $result_debug);
     $this->assertEquals(1, $contact_result['count'], $result_debug);
-    $contact = reset($contact_result['values']);
+    $contact = $contact_result['values'][0];
     $this->assertEquals($contact_type, $contact['contact_type']);
 
     foreach ($contact_values['contact'] as $field_name => $field_value) {
@@ -89,6 +90,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     if (isset($contact_values['email'])) {
       $this->assertEquals($contact_values['email'][0]['email'], $contact['email']);
       $email_result = wf_civicrm_api('email', 'get', [
+        'sequential' => 1,
         'contact_id' => $contact['contact_id'],
       ]);
       $this->assertEquals(count($contact_values['email']), $email_result['count']);
@@ -98,6 +100,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     }
     if (isset($contact_values['website'])) {
       $website_result = wf_civicrm_api('website', 'get', [
+        'sequential' => 1,
         'contact_id' => $contact['contact_id'],
       ]);
       $this->assertEquals(count($contact_values['website']), $website_result['count'], var_export($website_result, TRUE));
