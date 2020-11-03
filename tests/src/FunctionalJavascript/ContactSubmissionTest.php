@@ -29,22 +29,23 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('1_contact_type', strtolower($contact_type));
     $this->assertSession()->assertWaitOnAjaxRequest();
 
-    // @todo this should be refactored as its duplicated for each other type.
-    if (isset($contact_values['email'])) {
-      $this->assertTrue(is_array($contact_values['email']));
-      $this->assertTrue(isset($contact_values['email'][0]));
-      $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_email', count($contact_values['email'][0]));
-      $this->assertSession()->assertWaitOnAjaxRequest();
-      $this->htmlOutput();
-      $this->assertSession()->checkboxChecked('civicrm_1_contact_1_email_email');
-    }
-    if (isset($contact_values['website'])) {
-      $this->assertTrue(is_array($contact_values['website']));
-      $this->assertTrue(isset($contact_values['website'][0]));
-      $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_website', count($contact_values['website'][0]));
-      $this->assertSession()->assertWaitOnAjaxRequest();
-      $this->htmlOutput();
-      $this->assertSession()->checkboxChecked('civicrm_1_contact_1_website_url');
+    // @see wf_crm_location_fields().
+    $configurable_contact_field_groups = [
+      'address' => 'address',
+      'email' => 'email',
+      'website' => 'url',
+      'phone' => 'phone',
+      'im' => 'name',
+    ];
+    foreach ($configurable_contact_field_groups as $field_group => $field_value_key) {
+      if (isset($contact_values[$field_group])) {
+        $this->assertTrue(is_array($contact_values[$field_group]));
+        $this->assertTrue(isset($contact_values[$field_group][0]));
+        $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_' . $field_group, count($contact_values[$field_group][0]));
+        $this->assertSession()->assertWaitOnAjaxRequest();
+        $this->htmlOutput();
+        $this->assertSession()->checkboxChecked("civicrm_1_contact_1_{$field_group}_{$field_value_key}");
+      }
     }
 
     $this->getSession()->getPage()->pressButton('Save Settings');
@@ -86,26 +87,20 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     foreach ($contact_values['contact'] as $field_name => $field_value) {
       $this->assertEquals($field_value, $contact[$field_name], $result_debug);
     }
-
     if (isset($contact_values['email'])) {
       $this->assertEquals($contact_values['email'][0]['email'], $contact['email']);
-      $email_result = wf_civicrm_api('email', 'get', [
-        'sequential' => 1,
-        'contact_id' => $contact['contact_id'],
-      ]);
-      $this->assertEquals(count($contact_values['email']), $email_result['count']);
-      foreach ($email_result['values'] as $key => $email_entity) {
-        $this->assertEquals($contact_values['email'][$key]['email'], $email_entity['email']);
-      }
     }
-    if (isset($contact_values['website'])) {
-      $website_result = wf_civicrm_api('website', 'get', [
-        'sequential' => 1,
-        'contact_id' => $contact['contact_id'],
-      ]);
-      $this->assertEquals(count($contact_values['website']), $website_result['count'], var_export($website_result, TRUE));
-      foreach ($website_result['values'] as $key => $website_entity) {
-        $this->assertEquals($contact_values['website'][$key]['url'], $website_entity['url']);
+
+    foreach ($configurable_contact_field_groups as $field_group => $field_value_key) {
+      if (isset($contact_values[$field_group])) {
+        $api_result = wf_civicrm_api($field_group, 'get', [
+          'sequential' => 1,
+          'contact_id' => $contact['contact_id'],
+        ]);
+        $this->assertEquals(count($contact_values[$field_group]), $api_result['count']);
+        foreach ($api_result['values'] as $key => $result_entity) {
+          $this->assertEquals($contact_values[$field_group][$key][$field_value_key], $result_entity[$field_value_key]);
+        }
       }
     }
   }
@@ -166,6 +161,42 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
         'website' => [
           [
             'url' => 'https://example.com',
+          ]
+        ],
+    ]];
+    yield [
+      'Individual',
+      [
+        'contact' => [
+          'first_name' => 'Frederick',
+          'last_name' => 'Pabst',
+        ],
+        'phone' => [
+          [
+            'phone' => '555-555-5555',
+          ]
+        ],
+    ]];
+    yield [
+      'Individual',
+      [
+        'contact' => [
+          'first_name' => 'Frederick',
+          'last_name' => 'Pabst',
+        ],
+        'email' => [
+          [
+            'email' => 'fred@example.com',
+          ]
+        ],
+        'website' => [
+          [
+            'url' => 'https://example.com',
+          ]
+        ],
+        'phone' => [
+          [
+            'phone' => '555-555-5555',
           ]
         ],
     ]];
