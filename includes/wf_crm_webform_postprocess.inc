@@ -1108,7 +1108,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     if (!isset($types)) {
       $types = wf_crm_apivalues('membership_type', 'get');
     }
-    $existing = $this->findMemberships($cid);
+    if ($this->settings['membership_type_action'] != wf_crm_webform_base::MEMBERSHIP_TYPE_ACTION_ADD_ALWAYS) {
+      $existing = $this->findMemberships($cid);
+    }
+    else{
+      $existing = [];
+    }
     foreach (wf_crm_aval($this->data, "membership:$c:membership", []) as $n => $params) {
       $membershipStatus = "";
       $membershipEndDate = "";
@@ -1123,18 +1128,21 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
 
       // Search for existing membership to renew - must belong to same domain and organization
-      // But not necessarily the same membership type to allow for upsell
+      // Depending on membership_type_action setting allow update different membership type for upsell or not, or force new creation always
       if (!empty($params['num_terms'])) {
         $type = $types[$params['membership_type_id']];
         foreach ($existing as $mem) {
           $existing_type = $types[$mem['membership_type_id']];
           if ($type['domain_id'] == $existing_type['domain_id'] && $type['member_of_contact_id'] == $existing_type['member_of_contact_id']) {
-            $params['id'] = $mem['id'];
+            if (empty($this->settings['membership_type_action'])) {
+              $params['id'] = $mem['id'];
+            }
             // If we have an exact match, look no further
             if ($mem['membership_type_id'] == $params['membership_type_id']) {
               $is_active = $mem['is_active'];
               $membershipStatus = $mem['status'];
               $membershipEndDate = $mem['end_date'];
+              $params['id'] = $mem['id'];
               break;
             }
           }

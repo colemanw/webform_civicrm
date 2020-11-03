@@ -1185,6 +1185,20 @@ class wf_crm_admin_form {
       '#default_value' => $this->settings['new_contact_source'],
       '#description' => t('Optional "source" label for any new contact/participant/membership created by this webform.'),
     ];
+    $this->form['options']['membership_type_action'] = [
+      '#type' => 'select',
+      '#options' => [
+        wf_crm_webform_base::MEMBERSHIP_TYPE_ACTION_UPDATE_ANY_TYPE => t('Update existing membership of different type and change type'),
+        wf_crm_webform_base::MEMBERSHIP_TYPE_ACTION_UPDATE_SAME_TYPE => t('Update existing membership of same type'),
+        wf_crm_webform_base::MEMBERSHIP_TYPE_ACTION_ADD_ALWAYS => t('Add new membership and don\'t touch existing'),
+      ],
+      '#title' => t('Existing Membership Type Actions'),
+      '#default_value' => $this->settings['membership_type_action'],
+      '#description' => t('Choose the action to take for Memberships in this webform'),
+      '#attributes' => [
+        'style' => 'max-width: 450px;'
+      ],
+    ];
   }
 
   /**
