@@ -597,9 +597,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             'limit' => 1,
           ]);
           if (!empty($masters)) {
-            $contact['address'][1] = array_shift($masters);
+            $contact['address'][1] = reset($masters);
           }
         }
+      }
+      // Translate state abbr to id (skip if using $masters address which would have returned id not abbr from the api)
+      if (empty($masters) && !empty($contact['address'][1]['state_province_id'])) {
+        $contact['address'][1]['state_province_id'] = wf_crm_state_abbr($contact['address'][1]['state_province_id'], 'id', $contact['address'][1]['country_id'] ?? NULL);
       }
       foreach ($contact as $table => $fields) {
         if (is_array($fields) && !empty($fields[1])) {
