@@ -154,7 +154,7 @@ class AdminHelp implements AdminHelpInterface {
     return '<p>' .
       t('Supported payment processors enabled on the contribution page are available here. "Pay Later" option allows the user to purchase events/memberships without entering a credit card.') .
       '</p><p>' .
-      t("Note that only on-site credit card processors are currently supported on Webforms. Services that redirect to an external website, such as Paypal Standard, are not supported. Recurring payments are not supported.") .
+      t("Note that only on-site credit card processors are currently supported on Webforms. Services that redirect to an external website, such as Paypal Standard, are not supported. Note: Recurring payments may or may not be supported by your Payment Processor.") .
       '</p>';
   }
 
