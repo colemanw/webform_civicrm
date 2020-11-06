@@ -598,11 +598,22 @@ class Fields implements FieldsInterface {
           'name' => 'Payment Processor',
           'type' => 'select',
           'expose_list' => TRUE,
-          'extra' => array('aslist' => 0),
+          'extra' => [
+            'aslist' => 0,
+            'civicrm_live_options' => TRUE,
+            'required' => TRUE
+          ],
           'exposed_empty_option' => 'Pay Later',
           // Removed due to error, when a custom element is made, revisit.
           // 'value_callback' => TRUE,
         );
+        $fields['contribution_is_test'] = [
+          'name' => t('Payment Processor Mode'),
+          'type' => 'hidden',
+          'expose_list' => TRUE,
+          'value' => 0,
+          'weight' => 9996,
+        ];
         $fields['contribution_contribution_page_id'] = array(
           'name' => ts('Contribution Page'),
           'type' => 'hidden',
@@ -638,14 +649,6 @@ class Fields implements FieldsInterface {
           'name' => t('Honoree Type'),
           'type' => 'select',
           'expose_list' => TRUE,
-          'parent' => 'contribution_pagebreak',
-        );
-        $fields['contribution_is_test'] = array(
-          'name' => t('Payment Processor Mode'),
-          'type' => 'select',
-          'expose_list' => TRUE,
-          'extra' => array('civicrm_live_options' => 1),
-          'value' => 0,
           'parent' => 'contribution_pagebreak',
         );
         $fields['contribution_source'] = array(

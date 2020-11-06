@@ -1644,6 +1644,9 @@ class wf_crm_admin_form {
           (!empty($val) || (in_array($name, array('num_terms', 'is_active', 'is_test', 'payment_processor_id'))))) {
           // Don't add data for non-existent contacts
           if (!in_array($ent, array('contact', 'participant', 'membership')) || isset($this->data['contact'][$c])) {
+            if ($name == 'payment_processor_id' && !empty($val) && is_numeric($val)) {
+              $val = $this->getPaymentProcessorValue($val);
+            }
             $this->data[$ent][$c][$table][$n][$name] = $val;
           }
         }
@@ -1975,7 +1978,7 @@ class wf_crm_admin_form {
       }
       else {
         $field = wf_crm_get_field($key);
-        if (!empty($val[0]) && $field['type'] == 'hidden') {
+        if ($field['type'] == 'hidden' && (!empty($val[0]) || $field['name'] == 'Payment Processor Mode')) {
           unset($fields[$key]);
         }
       }
@@ -2168,6 +2171,28 @@ class wf_crm_admin_form {
     $pagebreak += webform_component_invoke('pagebreak', 'defaults');
     webform_component_insert($pagebreak);
     */
+  }
+
+  /**
+   * Return payment processor id as per is_test flag set on the webform.
+   *
+   * @param int $ppId.
+   *  Payment Processor ID.
+   *
+   * @return int
+   *  id of the payment processor as per is_test flag.
+   */
+  protected function getPaymentProcessorValue($ppId) {
+    $pName = wf_civicrm_api('PaymentProcessor', 'getvalue', [
+      'return' => "name",
+      'id' => $ppId,
+    ]);
+    $params = [
+      'is_test' => $this->settings['civicrm_1_contribution_1_contribution_is_test'] ?? 0,
+      'is_active' => 1,
+      'name' => $pName,
+    ];
+    return key(wf_crm_apivalues('PaymentProcessor', 'get', $params));
   }
 
   /**
