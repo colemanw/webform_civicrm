@@ -158,20 +158,28 @@ function webform_civicrm_update_8001() {
     }
     $contribution = wf_crm_aval($config, "webform_civicrm:settings:data:contribution:1:contribution:1", []);
     if (!empty($contribution['contribution_page_id'])) {
+      $returnParams = [
+        "financial_type_id", "currency", "bcc_receipt", "cc_receipt",
+        "receipt_text", "receipt_from_name", "receipt_from_email", "is_email_receipt"
+      ];
       $contribution_page = current(wf_crm_apivalues('ContributionPage', 'get', [
-        'return' => ["bcc_receipt", "cc_receipt", "receipt_text", "receipt_from_name", "receipt_from_email", "is_email_receipt"],
+        'return' => $returnParams,
         'id' => $contribution['contribution_page_id'],
       ]));
+      $settings = &$config['webform_civicrm']['settings'];
+      $settings['civicrm_1_contribution_1_contribution_enable_contribution'] = $settings['data']['contribution'][1]['contribution'][1]["enable_contribution"] = 1;
+      unset($settings['data']['contribution'][1]['contribution'][1]["contribution_page_id"]);
+      $settings['civicrm_1_contribution_1_contribution_financial_type_id'] = $settings['data']['contribution'][1]['contribution'][1]["financial_type_id"] = $contribution_page['financial_type_id'] ?? '';
+      $settings['contribution_1_settings_currency'] = $settings['data']['contribution'][1]['currency'] = $contribution_page['currency'] ?? '';
       if (!empty($contribution_page['is_email_receipt'])) {
-        $settings = &$config['webform_civicrm']['settings'];
         $settings['receipt_1_number_of_receipt'] = $settings['data']['receipt']['number_number_of_receipt'] = 1;
         $receiptValues = ['cc_receipt', 'bcc_receipt', 'receipt_text', 'receipt_from_name', 'receipt_from_email'];
         foreach ($receiptValues as $val) {
           $settings["receipt_1_number_of_receipt_{$val}"] = $settings['data']['receipt']["number_number_of_receipt_{$val}"] =  $contribution_page[$val] ?? '';
         }
-        $handler->setConfiguration($config);
-        $webform->save();
       }
+      $handler->setConfiguration($config);
+      $webform->save();
     }
   }
 }

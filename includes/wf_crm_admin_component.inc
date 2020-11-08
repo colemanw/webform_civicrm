@@ -93,7 +93,7 @@ class wf_crm_admin_component {
       $this->form['value']['#empty_value'] = '';
     }
 
-    elseif ($name == 'contribution_page_id') {
+    elseif ($name == 'enable_contribution') {
       $this->form['value']['#access'] = FALSE;
       $this->form['#prefix'] = '<p>' . t('This is a placeholder for a Contribution Page.') . '</p>';
     }
@@ -207,7 +207,7 @@ class wf_crm_admin_component {
   public function adjustPageBreak() {
     $components = $this->node->webform['components'];
     foreach ($components as $cid => $component) {
-      if ($component['form_key'] == 'civicrm_1_contribution_1_contribution_contribution_page_id') {
+      if ($component['form_key'] == 'civicrm_1_contribution_1_contribution_enable_contribution') {
         // Iterate up through parents
         while ($component['pid']) {
           $component = $components[$component['pid']];
@@ -573,7 +573,7 @@ class wf_crm_admin_component {
             $row['data'][3]['data'] = $val;
           }
           // Contribution page - link to civicrm config form instead of component edit form
-          if ($name == 'contribution_page_id') {
+          if ($name == 'enable_contribution') {
             $type = t('CiviCRM Billing Fields');
             $class .= ' contribution';
             $row['data'][6]['data'] = l(t('Configure'), 'civicrm/admin/contribute/settings', array(
@@ -614,7 +614,7 @@ class wf_crm_admin_component {
         if (in_array($key, $field_ids)) {
           $payment_fields[$cid] = $component;
         }
-        elseif ($key == 'contribution_contribution_page_id') {
+        elseif ($key == 'contribution_enable_contribution') {
           $contribution_page_page = $component['page_num'];
         }
       }
@@ -756,7 +756,7 @@ function wf_crm_components_form_validate($form, &$form_state) {
   $components = wf_crm_aval($form_state, 'values:components', array());
   foreach ($components as $cid => $component) {
     $component += $form['#node']->webform['components'][$cid];
-    if ($component['form_key'] == 'civicrm_1_contribution_1_contribution_contribution_page_id') {
+    if ($component['form_key'] == 'civicrm_1_contribution_1_contribution_enable_contribution') {
       // Iterate up through parents
       while ($component['pid']) {
         $component = $components[$component['pid']];

@@ -127,29 +127,6 @@ class AdminHelp implements AdminHelpInterface {
       '</p>';
   }
 
-
-  protected function contribution_contribution_page_id() {
-    return '<p>' .
-      t('It is recommended to <a href=":link">create a new contribution page</a>
-      solely for webform use. When configuring the page, most options will be
-      irrelevant (such as profiles, premiums, widgets, recurring, etc.). Only
-      the following need to be configured:',
-      array(
-        ':link' => Url::fromUri(
-            'internal:/civicrm/admin/contribute/add',
-            array('query' => array('reset' => 1, 'action' => 'add'))
-          )->toString()
-      )) .
-      '</p><ul>' .
-      '<li>' . t('Title: Displayed on the webform.') . '</li>' .
-      '<li>' . t('Financial Type: Controls overall contribution type.') . '</li>' .
-      '<li>' . t('Currency: Sets currency for all payment fields on this form.') . '</li>' .
-      '<li>' . t('Payment Processors: Controls list of options here.') . '</li>' .
-      '<li>' . t('Contribution Amounts: Must be enabled with a label and Allow Other Amounts checked.') . '</li>' .
-      '<li>' . t('Email Receipt: Configure email receipts from this webform.') . '</li>' .
-      '</ul>';
-  }
-
   protected function contribution_payment_processor_id() {
     return '<p>' .
       t('Supported payment processors enabled on the contribution page are available here. "Pay Later" option allows the user to purchase events/memberships without entering a credit card.') .

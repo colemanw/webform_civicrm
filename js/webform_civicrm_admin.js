@@ -523,7 +523,7 @@ var wfCiviAdmin = (function ($, D) {
       }).change();
 
       function billingMessages() {
-        var $pageSelect = $('[name=civicrm_1_contribution_1_contribution_contribution_page_id]');
+        var $pageSelect = $('[name=civicrm_1_contribution_1_contribution_enable_contribution]');
         // Warning about contribution page with no email
         if ($pageSelect.val() !== '0' && ($('[name=civicrm_1_contact_1_email_email]:checked').length < 1 || $('[name=contact_1_number_of_email]').val() == '0')) {
           var msg = Drupal.t('You must enable an email field for :contact in order to process transactions.', {':contact': getContactLabel(1)});
@@ -550,7 +550,7 @@ var wfCiviAdmin = (function ($, D) {
           $('#edit-participant').prepend('<div class="wf-crm-paid-entities-info messages status">' + Drupal.t('Configure the Contribution settings to enable paid events.') + '</div>');
         }
       }
-      $('[name=civicrm_1_contribution_1_contribution_contribution_page_id], [name=civicrm_1_contact_1_email_email]', context).once('email-alert').change(billingMessages);
+      $('[name=civicrm_1_contribution_1_contribution_enable_contribution], [name=civicrm_1_contact_1_email_email]', context).once('email-alert').change(billingMessages);
       billingMessages();
 
       // Handlers for submit-limit & tracking-mode mini-forms
@@ -563,11 +563,11 @@ var wfCiviAdmin = (function ($, D) {
         $('#configure-submit-limit').show();
       });
       $('#configure-submit-limit-save', context).once('wf-civi').click(function() {
-        $('[name=civicrm_1_contribution_1_contribution_contribution_page_id]').change();
+        $('[name=civicrm_1_contribution_1_contribution_enable_contribution]').change();
       });
       $('#webform-tracking-mode', context).once('wf-civi').click(function() {
         $('[name=webform_tracking_mode]').val('strict');
-        $('[name=civicrm_1_contribution_1_contribution_contribution_page_id]').change();
+        $('[name=civicrm_1_contribution_1_contribution_enable_contribution]').change();
       });
     }
   };
