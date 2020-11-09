@@ -1027,22 +1027,26 @@ class wf_crm_admin_form {
       '#description' => t('In order to process live transactions for events, memberships, or contributions, select a contribution page and its billing fields will be included on the webform.'),
       '#attributes' => array('class' => array('civi-icon-contribution')),
     );
-    $fid = 'civicrm_1_contribution_1_contribution_contribution_page_id';
-    $this->form['contribution'][$fid] = $this->addItem($fid, $this->fields['contribution_contribution_page_id']);
-    unset($this->sets['contribution']['fields']['contribution_contribution_page_id']);
+    $fid = 'civicrm_1_contribution_1_contribution_enable_contribution';
+    $enable_contribution = wf_crm_aval($this->data, 'contribution:1:contribution:1:enable_contribution');
+    unset($this->sets['contribution']['fields']['contribution_enable_contribution']);
+    $this->form['contribution'][$fid] = [
+      '#type' => 'select',
+      '#title' => t('Enable Contribution?'),
+      '#default_value' => $enable_contribution,
+      '#options' => [t('No'), t('Yes')],
+      '#description' => t('Enable this section to submit a payment for the contact.'),
+    ];
     $this->addAjaxItem('contribution', $fid, 'sets');
-    $page_id = wf_crm_aval($this->data, 'contribution:1:contribution:1:contribution_page_id');
-    if ($page_id) {
-      $page = wf_civicrm_api('contribution_page', 'getsingle', array('id' => $page_id));
-    }
-    if (!$page_id || empty($page['financial_type_id'])) {
+    $contribution = wf_crm_aval($this->data, 'contribution:1:contribution:1:enable_contribution');
+    if (!$contribution) {
       return;
     }
     // Make sure webform is set-up to prevent credit card abuse.
     $this->checkSubmissionLimit();
     // Add contribution fields
     foreach ($this->sets as $sid => $set) {
-      if ($set['entity_type'] == 'contribution' && (empty($set['sub_types']) || in_array($page['financial_type_id'], $set['sub_types']) )) {
+      if ($set['entity_type'] == 'contribution' && (empty($set['sub_types']))) {
         $this->form['contribution']['sets'][$sid] = array(
           '#type' => 'fieldset',
           '#title' => $set['label'],
@@ -1058,6 +1062,27 @@ class wf_crm_admin_form {
         }
       }
     }
+    //Add financial type config.
+    $ft_options = (array) wf_crm_apivalues('Contribution', 'getoptions', [
+      'field' => "financial_type_id",
+    ]);
+    $this->form['contribution']['sets']['contribution']['civicrm_1_contribution_1_contribution_financial_type_id'] = [
+      '#type' => 'select',
+      '#title' => t('Financial Type'),
+      '#default_value' => wf_crm_aval($this->data, 'contribution:1:contribution:1:financial_type_id'),
+      '#options' => $ft_options,
+      '#required' => TRUE,
+    ];
+
+    //Add Currency.
+    $this->form['contribution']['sets']['contribution']['contribution_1_settings_currency'] = [
+      '#type' => 'select',
+      '#title' => t('Currency'),
+      '#default_value' => wf_crm_aval($this->data, "contribution:1:currency"),
+      '#options' => CRM_Core_OptionGroup::values('currencies_enabled'),
+      '#required' => TRUE,
+    ];
+
     // LineItem
     $num = wf_crm_aval($this->data, "lineitem:number_number_of_lineitem", 0);
     $this->form['contribution']['sets']["lineitem_1_number_of_lineitem"] = array(
@@ -1757,7 +1782,7 @@ class wf_crm_admin_form {
       }*/
 
       $i = 0;
-      $created = array();
+      $created = [];
       foreach ($this->settings as $key => $val) {
         if (strpos($key, 'civicrm') === 0) {
           ++$i;
@@ -2073,8 +2098,8 @@ class wf_crm_admin_form {
        $fieldset_key = self::addFieldset($c, $field, $enabled, $settings, $ent, $create_fieldsets);
        $field['parent'] = $fieldset_key;
     }
-    // Create page break for contribution page
-    if ($name === 'contribution_page_id') {
+    // Create page break for contribution
+    if ($name === 'enable_contribution') {
       // @todo properly inject a page break.
       // there needs to be a root page and nested elements.
       $enabled['contribution_pagebreak'] = [
@@ -2083,6 +2108,8 @@ class wf_crm_admin_form {
         'title' => (string) t('Payment'),
       ];
       self::addPageBreak($field);
+      unset($enabled[$field['form_key']]);
+      return;
     }
     // Merge defaults and create webform component
     $field += ['extra' => []];

@@ -614,8 +614,8 @@ class Fields implements FieldsInterface {
           'value' => 0,
           'weight' => 9996,
         ];
-        $fields['contribution_contribution_page_id'] = array(
-          'name' => ts('Contribution Page'),
+        $fields['contribution_enable_contribution'] = array(
+          'name' => ts('Enable Contribution?'),
           'type' => 'hidden',
           'expose_list' => TRUE,
           'empty_option' => 'None',

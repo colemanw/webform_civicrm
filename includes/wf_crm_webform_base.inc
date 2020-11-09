@@ -15,7 +15,6 @@ use Drupal\Core\File\FileSystemInterface;
  * Class wf_crm_webform_base
  *
  * @property array $payment_processor
- * @property array $contribution_page
  * @property number $tax_rate
  * @property number $civicrm_version
  */
@@ -36,7 +35,6 @@ abstract class wf_crm_webform_base {
 
   // No direct access - storage for variables fetched via __get
   private $_payment_processor;
-  private $_contribution_page;
   // tax integration
   private $_tax_rate;
 
@@ -59,20 +57,15 @@ abstract class wf_crm_webform_base {
         }
         return $this->_payment_processor;
 
-      case 'contribution_page':
-        $contribution_page_id = wf_crm_aval($this->data, 'contribution:1:contribution:1:contribution_page_id');
-        if ($contribution_page_id && !$this->_contribution_page) {
-          $this->_contribution_page = wf_civicrm_api('contribution_page', 'getsingle', array('id' => $contribution_page_id));
-        }
-        return $this->_contribution_page;
-
       case 'tax_rate':
         $taxSettings = wf_crm_get_civi_setting('contribution_invoice_settings');
         if (is_array($taxSettings) && !empty($taxSettings['invoicing'])) {
-          if ($this->contribution_page) {
+          $contribution_enabled = wf_crm_aval($this->data, 'contribution:1:contribution:1:enable_contribution');
+          if ($contribution_enabled) {
             // tax integration
             $taxRates = CRM_Core_PseudoConstant::getTaxRates();
-            $this->_tax_rate = isset($taxRates[$this->_contribution_page['financial_type_id']]) ? $taxRates[$this->_contribution_page['financial_type_id']] : NULL;
+            $ft = wf_crm_aval($this->data, 'contribution:1:contribution:1:financial_type_id');
+            $this->_tax_rate = $taxRates[$ft] ?? NULL;
           }
           return $this->_tax_rate;
         }

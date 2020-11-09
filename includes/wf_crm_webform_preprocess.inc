@@ -171,6 +171,16 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     // Passing $submitted helps avoid overwriting values that have been entered on a multi-step form
     $submitted = $this->form_state->getValue('submitted', []);
     $this->fillForm($this->form, $submitted);
+
+    $enable_contribution = wf_crm_aval($this->data, 'contribution:1:contribution:1:enable_contribution');
+    if ($enable_contribution && $this->form_state->get('current_page') === 'contribution_pagebreak' && empty($this->form['payment_section'])) {
+      $this->form['payment_section'] = [
+        'line_items' => $this->displayLineItems(),
+        'billing_payment_block' => [
+          '#markup' => Markup::create('<div class="crm-container crm-public" id="billing-payment-block"></div>'),
+        ],
+      ];
+    }
   }
 
   /**
@@ -198,7 +208,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     if (!empty($this->data['contribution'])) {
       $this->addPaymentJs();
       $this->form['#attached']['library'][] = 'webform_civicrm/payment';
-      $currency = $this->contribution_page['currency'];
+      $currency = wf_crm_aval($this->data, "contribution:1:currency");
       $contributionCallbackQuery = ['currency' => $currency, 'snippet' => 4, 'is_drupal_webform' => 1];
       $contributionCallbackUrl = 'base://civicrm/payment/form';
       $js_vars['processor_id_key'] = 'processor_id';
@@ -534,20 +544,6 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/contact_component');
             CivicrmContact::wf_crm_fill_contact_value($this->node, $component, $element, $this->ent);
           }
-          if ($name === 'contribution_page_id') {
-            // Work around to remove manual rendering of display line items.
-            // This prevents us from needing to setup a composite element
-            // immediately and remove rendering hacks.
-            $contribution_element = [];
-            $contribution_element['contribution_page_id'] = $element;
-            $contribution_element['contribution_page_id']['#value'] = wf_crm_aval($this->data, 'contribution:1:contribution:1:contribution_page_id');
-            unset($contribution_element['contribution_page_id']['#default_value']);
-            $contribution_element['line_items'] = $this->displayLineItems();
-            $contribution_element['billing_payment_block'] = [
-              '#markup' => Markup::create('<div class="crm-container crm-public" id="billing-payment-block"></div>'),
-            ];
-            $element = $contribution_element;
-          }
         }
       }
     }
@@ -625,7 +621,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     return [
       '#type' => 'table',
       '#sticky' => FALSE,
-      '#caption' => $this->contribution_page['title'],
+      '#caption' => 'Payment Information',
       '#header' => [],
       '#rows' => $rows,
       '#attributes' => ['id' => 'wf-crm-billing-items'],

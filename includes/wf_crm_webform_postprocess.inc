@@ -129,7 +129,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
 
     // Process live contribution. If the transaction is unsuccessful it will trigger a form validation error.
-    if ($this->contribution_page) {
+    $contribution_enabled = wf_crm_aval($this->data, 'contribution:1:contribution:1:enable_contribution');
+    if ($contribution_enabled) {
       // Ensure contribution js is still loaded if the form has to refresh
       $this->addPaymentJs();
       $this->loadMultiPageData();
@@ -300,7 +301,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * Send receipt
    */
   private function sendReceipt() {
-    $receipt = wf_crm_aval($this->data, "receipt", []);
     // tax integration
     if (!is_null($this->tax_rate)) {
       $template = CRM_Core_Smarty::singleton();
@@ -310,15 +310,30 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $template = CRM_Core_Smarty::singleton();
       $template->assign('is_pay_later', 1);
     }
-    $params = array_merge($this->contribution_page, array('id' => $this->ent['contribution'][1]['id']));
-    $params['payment_processor_id'] = $this->data['contribution'][1]['contribution'][1]['payment_processor_id'];
+    wf_civicrm_api('contribution', 'sendconfirmation', $this->getReceiptParams());
+  }
+
+  /**
+   * Build params for contribution receipt.
+   *
+   * @return array
+   */
+  private function getReceiptParams() {
+    $contributionData = wf_crm_aval($this->data, 'contribution:1:contribution:1');
+    $params = ['id' => $this->ent['contribution'][1]['id']];
+    $params['payment_processor_id'] = $contributionData['payment_processor_id'];
     unset($params['payment_processor']);
+
+    $params['financial_type_id'] = $contributionData['financial_type_id'];
+    $params['currency'] = wf_crm_aval($this->data, "contribution:1:currency");
+
     //Assign receipt values set on the webform config page.
+    $receipt = wf_crm_aval($this->data, "receipt", []);
     $receiptValues = ['cc_receipt', 'bcc_receipt', 'receipt_text', 'receipt_from_name', 'receipt_from_email'];
     foreach ($receiptValues as $val) {
       $params[$val] = $receipt["number_number_of_receipt_{$val}"] ?? '';
     }
-    wf_civicrm_api('contribution', 'sendconfirmation', $params);
+    return $params;
   }
 
   /**
@@ -1569,7 +1584,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $this->line_items[] = array(
         'qty' => 1,
         'unit_price' => $this->getData($fid),
-        'financial_type_id' => $this->contribution_page['financial_type_id'],
+        'financial_type_id' => wf_crm_aval($this->data, 'contribution:1:contribution:1:financial_type_id'),
         'label' => wf_crm_aval($this->node->getElementsDecoded(), $this->enabled[$fid] . ':title', t('Contribution')),
         'element' => 'civicrm_1_contribution_1',
         'entity_table' => 'civicrm_contribution',
@@ -1926,7 +1941,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['is_pay_later'] = $this->contributionIsPayLater;
     //Fix IPN payments marked as paid by cheque
     if (empty($params['payment_instrument_id'])) {
-      if (!empty($params['payment_processor_id']) && $this->contribution_page['is_monetary']) {
+      if (!empty($params['payment_processor_id'])) {
         $defaultPaymentInstrument = CRM_Core_OptionGroup::values('payment_instrument', FALSE, FALSE, FALSE, 'AND is_default = 1');
         $params['payment_instrument_id'] = key($defaultPaymentInstrument);
       }
@@ -1964,12 +1979,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['qfKey'] = $this->getQfKey();
 
     $params['contactID'] = $params['contact_id'];
-    $params['currency'] = $params['currencyID'] = $this->contribution_page['currency'];
+    $params['currency'] = $params['currencyID'] = wf_crm_aval($this->data, "contribution:1:currency");
     $params['total_amount'] = round($this->totalContribution, 2);
     // Some processors want this one way, some want it the other
     $params['amount'] = $params['total_amount'];
 
-    $params['financial_type_id'] = $this->contribution_page['financial_type_id'];
+    $params['financial_type_id'] = wf_crm_aval($this->data, 'contribution:1:contribution:1:financial_type_id');
 
     $params['source'] = $this->settings['new_contact_source'];
     $params['item_name'] = $params['description'] = t('Webform Payment: @title', array('@title' => $this->node->label()));
@@ -2025,8 +2040,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function contributionParams() {
     $params = $this->billing_params + $this->data['contribution'][1]['contribution'][1];
-    $params['financial_type_id'] = $this->contribution_page['financial_type_id'];
-    $params['currency'] = $params['currencyID'] = $this->contribution_page['currency'];
+    $params['financial_type_id'] = wf_crm_aval($this->data, 'contribution:1:contribution:1:financial_type_id');
+    $params['currency'] = $params['currencyID'] = wf_crm_aval($this->data, "contribution:1:currency");
     $params['skipRecentView'] = $params['skipLineItem'] = 1;
     $params['contact_id'] = $this->ent['contact'][1]['id'];
     $params['total_amount'] = round($this->totalContribution, 2);
@@ -2142,7 +2157,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           'contact_id' => $cid,
           'contribution_id' => $id,
           'amount' => $amount,
-          'currency' => $this->contribution_page['currency'],
+          'currency' => wf_crm_aval($this->data, "contribution:1:currency"),
           'soft_credit_type_id' => $default_soft_credit_type['value'],
         ));
       }
