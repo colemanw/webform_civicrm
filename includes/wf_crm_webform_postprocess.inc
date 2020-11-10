@@ -1304,12 +1304,31 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             if ($val && strpos($param, 'role_') === 0) {
               foreach ((array) $params['client_id'] as $client) {
                 foreach ((array) $val as $contactB) {
-                  wf_civicrm_api('relationship', 'create', [
+                  $parameters = [
                     'relationship_type_id' => substr($param, 5),
                     'contact_id_a' => $client,
                     'contact_id_b' => $contactB,
                     'case_id' => $result['id'],
-                  ]);
+                    'is_active' => TRUE,
+                  ];
+                  // Add case role if active case role does not exist.
+                  if (empty($relationship['count'])) {
+                    $parameters['start_date'] = 'now';
+                    $parameters['end_date'] = '';
+                    $relationship = wf_civicrm_api('relationship', 'create', $parameters);
+                    if (empty($relationship['is_error'])) {
+                      // Record 'Assign Case Role' Activity.
+                      $relationship_types = wf_crm_get_relationship_types();
+                      $relationship_type = $relationship_types[$parameters['relationship_type_id']]['label_a_b'];
+                      $contact_name = wf_crm_display_name($contactB);
+                      wf_civicrm_api('Activity', 'create', [
+                        'case_id' => $result['id'],
+                        'status_id' => CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_status_id', 'Completed'),
+                        'activity_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_type_id', 'Assign Case Role'),
+                        'subject' => "{$contact_name} added as {$relationship_type}",
+                      ]);
+                    }
+                  }
                 }
               }
             }
