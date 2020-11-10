@@ -638,7 +638,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           if (isset($_GET["case$n"]) && wf_crm_is_positive($_GET["case$n"])) {
             $id = $_GET["case$n"];
             $item = wf_civicrm_api('case', 'getsingle', ['id' => $id]);
-            if (array_intersect((array)wf_crm_aval($item, 'client_id'), $clients)) {
+            if (array_intersect((array) wf_crm_aval($item, 'client_id'), $clients) || user_access('access all cases and activities')) {
               $this->ent['case'][$n] = ['id' => $id];
             }
             else {
