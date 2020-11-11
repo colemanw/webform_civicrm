@@ -42,6 +42,7 @@ jobs:
           COMPOSER_MEMORY_LIMIT=-1 composer create-project drupal/recommended-project:^8.9 ~/drupal --no-interaction
           cd ~/drupal
           composer config extra.enable-patching true
+          composer config extra.compile-mode all
           composer config repositories.0 path $GITHUB_WORKSPACE
           composer config repositories.1 composer https://packages.drupal.org/8
           COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:^8.9 civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages}:'~5.29' drupal/webform_civicrm *@dev  --no-suggest
