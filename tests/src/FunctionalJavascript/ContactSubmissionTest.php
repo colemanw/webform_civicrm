@@ -23,6 +23,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalGet($this->webform->toUrl('settings'));
     $this->getSession()->getPage()->clickLink('CiviCRM');
     // @todo Randomly this fails saying that the checkbox does not exist.
+    $this->assertSession()->waitForText('Enable CiviCRM Processing');
     $this->assertSession()->waitForField('Enable CiviCRM Processing');
     $this->htmlOutput();
     $this->getSession()->getPage()->checkField('Enable CiviCRM Processing');
