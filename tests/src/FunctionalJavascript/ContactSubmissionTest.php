@@ -22,11 +22,10 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalLogin($this->adminUser);
     $this->drupalGet($this->webform->toUrl('settings'));
     $this->getSession()->getPage()->clickLink('CiviCRM');
-    // @todo Randomly this fails saying that the checkbox does not exist.
+    // The label has a <div> in it which can cause weird failures here.
     $this->assertSession()->waitForText('Enable CiviCRM Processing');
-    $this->assertSession()->waitForField('Enable CiviCRM Processing');
     $this->htmlOutput();
-    $this->getSession()->getPage()->checkField('Enable CiviCRM Processing');
+    $this->getSession()->getPage()->checkField('nid');
     $this->getSession()->getPage()->selectFieldOption('1_contact_type', strtolower($contact_type));
     $this->assertSession()->assertWaitOnAjaxRequest();
 
