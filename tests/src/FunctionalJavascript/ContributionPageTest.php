@@ -16,20 +16,20 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
       'domain_id' => 1,
       'name' => 'Dummy',
       'payment_processor_type_id' => 'Dummy',
-      'is_test' => TRUE,
       'is_active' => 1,
       'is_default' => 1,
-      'user_name' => '',
+      'is_test' => 0,
       'url_site' => 'http://dummy.com',
       'url_recur' => 'http://dummy.com',
+      'class_name' => 'Payment_Dummy',
       'billing_mode' => 1,
-      'sequential' => 1,
+      'is_recur' => 1,
       'payment_instrument_id' => 'Credit Card',
     ];
     $result = \wf_civicrm_api('payment_processor', 'create', $params);
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
-    return $result['values'][0];
+    return current($result['values']);
   }
 
   public function testSubmitContribution() {
@@ -40,6 +40,7 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->clickLink('CiviCRM');
     // The label has a <div> in it which can cause weird failures here.
     $this->assertSession()->waitForText('Enable CiviCRM Processing');
+    $this->assertSession()->waitForField('nid');
     $this->getSession()->getPage()->checkField('nid');
     $this->getSession()->getPage()->clickLink('Contribution');
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
@@ -57,13 +58,18 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
       return $el->getValue();
     }, $opts)));
     $this->getSession()->getPage()->selectFieldOption('Payment Processor', $payment_processor['id']);
-    // @todo is there an enum/constant where 'Donation' is 1.
-    $this->createScreenshot('../test.png');
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    $this->getSession()->getPage()->clickLink('Build');
+    $this->htmlOutput();
     $this->drupalGet($this->webform->toUrl('canonical'));
+    // @todo this is failing on `Undefined index: civicrm_1_contribution_1_contribution_total_amount`
+    // This is due to contribution being in a "Wizard page" and Contacts is not.
+    // This is a manual setup that must be done to create a wizard page and move contacts into there.
     $error_messages = $this->getSession()->getPage()->findAll('css', '.messages.messages--error');
-    $this->assertCount(0, $error_messages);
+    $this->assertCount(0, $error_messages, implode(', ', array_map(static function(NodeElement $el) {
+      return $el->getValue();
+    }, $error_messages)));
     $this->htmlOutput();
   }
 

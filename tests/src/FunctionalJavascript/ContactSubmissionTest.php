@@ -24,6 +24,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->clickLink('CiviCRM');
     // The label has a <div> in it which can cause weird failures here.
     $this->assertSession()->waitForText('Enable CiviCRM Processing');
+    $this->assertSession()->waitForField('nid');
     $this->htmlOutput();
     $this->getSession()->getPage()->checkField('nid');
     $this->getSession()->getPage()->selectFieldOption('1_contact_type', strtolower($contact_type));
