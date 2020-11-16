@@ -1299,17 +1299,30 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $this->handleEntityTags('case', $result['id'], $n, $params);
           // Store id
           $this->ent['case'][$n]['id'] = $result['id'];
+          $relationshipStartDate = date('Ymd');
           // Save case roles
           foreach ($params as $param => $val) {
             if ($val && strpos($param, 'role_') === 0) {
               foreach ((array) $params['client_id'] as $client) {
                 foreach ((array) $val as $contactB) {
-                  wf_civicrm_api('relationship', 'create', [
+                  $relationshipParams = [
                     'relationship_type_id' => substr($param, 5),
                     'contact_id_a' => $client,
                     'contact_id_b' => $contactB,
                     'case_id' => $result['id'],
-                  ]);
+                    'is_active' => TRUE,
+                  ];
+                  // We can't create a duplicate relationship so check if active relationship exists first.
+                  $existingRelationships = wf_civicrm_api('relationship', 'get', $relationshipParams);
+                  if (!empty($existingRelationships['count'])) {
+                    // Update the existing active relationship (case role)
+                    $relationshipParams['id'] = reset($existingRelationships['values'])['id'];
+                  }
+                  else {
+                    // We didn't used to set start_date - now we do when creating new relationships (case roles)
+                    $relationshipParams['start_date'] = $relationshipStartDate;
+                  }
+                  wf_civicrm_api('relationship', 'create', $relationshipParams);
                 }
               }
             }
