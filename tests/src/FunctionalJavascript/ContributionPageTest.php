@@ -107,8 +107,14 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
     $this->getSession()->getPage()->pressButton('Next >');
-    // @todo submit contribution form.
+    // @todo need to figure out why the credit card form does not render.
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->fillField('Contribution Amount', '25.00');
+    $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '25.00');
+    $this->getSession()->getPage()->pressButton('Submit');
     $this->htmlOutput();
+    $this->assertSession()->pageTextNotContains('Card Number field is required.');
   }
 
 }
