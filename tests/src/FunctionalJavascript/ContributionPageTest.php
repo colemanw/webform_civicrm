@@ -125,7 +125,9 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('City', 'Milwaukee');
     $this->getSession()->getPage()->fillField('Country', '1228');
     $this->assertSession()->assertWaitOnAjaxRequest();
+    // @todo find a better way to wait for select2.
     sleep(1);
+    $this->getSession()->getPage()->fillField('State/Province', '1048');
     $this->getSession()->getPage()->fillField('Postal Code', '53177');
     $this->createScreenshot($this->htmlOutputDirectory . '/test.png');
 
