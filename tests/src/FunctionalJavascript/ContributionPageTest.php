@@ -28,6 +28,7 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
       'is_active' => 1,
       'is_default' => 1,
       'is_test' => 0,
+      'user_name' => 'foo',
       'url_site' => 'http://dummy.com',
       'url_recur' => 'http://dummy.com',
       'class_name' => 'Payment_Dummy',
@@ -107,14 +108,31 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
     $this->getSession()->getPage()->pressButton('Next >');
-    // @todo need to figure out why the credit card form does not render.
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
     $this->getSession()->getPage()->fillField('Contribution Amount', '25.00');
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '25.00');
+
+    // Wait for the credit card form to load in.
+    $this->assertSession()->waitForField('credit_card_number');
+    $this->getSession()->getPage()->fillField('Card Number', '4111111111111111');
+    $this->getSession()->getPage()->fillField('Security Code', '123');
+    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[M]', '11');
+    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[Y]', '2023');
+    $this->getSession()->getPage()->fillField('Billing First Name', 'Frederick');
+    $this->getSession()->getPage()->fillField('Billing Last Name', 'Pabst');
+    $this->getSession()->getPage()->fillField('Street Address', '123 Milwaukee Ave');
+    $this->getSession()->getPage()->fillField('City', 'Milwaukee');
+    $this->getSession()->getPage()->fillField('Country', '1228');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    sleep(1);
+    $this->getSession()->getPage()->fillField('Postal Code', '53177');
+    $this->createScreenshot($this->htmlOutputDirectory . '/test.png');
+
     $this->getSession()->getPage()->pressButton('Submit');
     $this->htmlOutput();
-    $this->assertSession()->pageTextNotContains('Card Number field is required.');
+    $error_messages = $this->getSession()->getPage()->findAll('css', '.messages.messages--error');
+    $this->assertCount(0, $error_messages);
   }
 
 }

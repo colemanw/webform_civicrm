@@ -51,6 +51,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   protected function setUp() {
     parent::setUp();
     $this->adminUser = $this->createUser([
+      'access content',
       'administer CiviCRM',
       'access CiviCRM',
       'access administration pages',
