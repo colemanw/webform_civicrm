@@ -130,10 +130,13 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
 
     // Select2 is being difficult; unhide the state/province. select.
     $driver->executeScript("document.getElementById('billing_state_province_id-5').style.display = 'block';");
+    $this->getSession()->getPage()->fillField('billing_state_province_id-5', '1048');
     $this->createScreenshot($this->htmlOutputDirectory . '/select2_state.png');
 
     $this->getSession()->getPage()->fillField('Postal Code', '53177');
     $this->getSession()->getPage()->pressButton('Submit');
+    $this->createScreenshot($this->htmlOutputDirectory . '/webform_complete.png');
+    $this->htmlOutput();
     $error_messages = $this->getSession()->getPage()->findAll('css', '.messages.messages--error');
     $this->assertCount(0, $error_messages);
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
