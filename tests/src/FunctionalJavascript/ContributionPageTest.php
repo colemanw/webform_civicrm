@@ -123,9 +123,10 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     // @todo find a way to better wait for select2 to populate.
     $this->assertSession()->assertWaitOnAjaxRequest();
     sleep(1);
-    $this->getSession()->getPage()->find('css', '.select2-container')->click();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->find('css', '.select2-container .select2-choice')->click();
     $this->getSession()->getPage()->find('css', 'input.select2-input')->setValue('Wisconsin');
-    $this->getSession()->getPage()->find('css', '.select2-results .select2-highlighted')->click();
+    $this->getSession()->getPage()->find('css', '.select2-results li.select2-result-selectable')->click();
     $this->getSession()->getPage()->fillField('Postal Code', '53177');
     $this->getSession()->getPage()->pressButton('Submit');
     $error_messages = $this->getSession()->getPage()->findAll('css', '.messages.messages--error');
