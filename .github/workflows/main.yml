@@ -62,6 +62,7 @@ jobs:
           MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","chromeOptions":{"args":["--disable-gpu", "--no-sandbox", "--headless"]}}, "http://127.0.0.1:9515"]'
           BROWSERTEST_OUTPUT_DIRECTORY: '${{ runner.temp }}/browser_output'
       - uses: actions/upload-artifact@v2
+        if: ${{ failure() || success() }}
         with:
           name: phpunit_browser_output
           # For some reason Drupal prints here and not our specified BROWSERTEST_OUTPUT_DIRECTORY.
