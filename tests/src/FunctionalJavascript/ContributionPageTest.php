@@ -3,6 +3,7 @@
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Behat\Mink\Element\NodeElement;
+use Drupal\Core\Url;
 use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
 
 /**
@@ -47,8 +48,9 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     // $payment_processor['id'];
     $payment_processor = $this->createPaymentProcessor();
     $this->drupalLogin($this->adminUser);
-    $this->drupalGet($this->webform->toUrl('settings'));
-    $this->getSession()->getPage()->find('css', 'nav.tabs')->clickLink('CiviCRM');
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
     // The label has a <div> in it which can cause weird failures here.
     $this->assertSession()->waitForText('Enable CiviCRM Processing');
     $this->assertSession()->waitForField('nid');

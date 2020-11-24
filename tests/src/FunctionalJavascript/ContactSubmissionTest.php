@@ -2,6 +2,8 @@
 
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
+use Drupal\Core\Url;
+
 /**
  * Tests submitting a Webform with CiviCRM and a single contact.
  *
@@ -20,8 +22,9 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertArrayHasKey('last_name', $contact_values['contact'], 'Test confact data must contain last_name');
 
     $this->drupalLogin($this->adminUser);
-    $this->drupalGet($this->webform->toUrl('settings'));
-    $this->getSession()->getPage()->find('css', 'nav.tabs')->clickLink('CiviCRM');
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
     // The label has a <div> in it which can cause weird failures here.
     $this->assertSession()->waitForText('Enable CiviCRM Processing');
     $this->assertSession()->waitForField('nid');
