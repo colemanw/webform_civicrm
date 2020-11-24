@@ -77,6 +77,7 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $element_form = $this->getSession()->getPage()->findById('webform-ui-element-form-ajax');
     $element_form->fillField('Title', 'Contact information');
     // @todo Regular tricks waiting for the machine name fail, here.
+    // @todo this was fixed, needed `access content` permission, need to undo test hack.
     $element_form->pressButton('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertSession()->pageTextContains('Key field is required.');
@@ -124,17 +125,27 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Street Address', '123 Milwaukee Ave');
     $this->getSession()->getPage()->fillField('City', 'Milwaukee');
     $this->getSession()->getPage()->fillField('Country', '1228');
+    // @todo find a way to better wait for select2 to populate.
     $this->assertSession()->assertWaitOnAjaxRequest();
-    // @todo find a better way to wait for select2.
     sleep(1);
-    $this->getSession()->getPage()->fillField('State/Province', '1048');
+    $this->getSession()->getPage()->fillField('State/Province', 'Wisconsin');
+    $this->getSession()->getPage()->find('css', '.select2-results .select2-highlighted')->click();
     $this->getSession()->getPage()->fillField('Postal Code', '53177');
-    $this->createScreenshot($this->htmlOutputDirectory . '/test.png');
-
     $this->getSession()->getPage()->pressButton('Submit');
-    $this->htmlOutput();
     $error_messages = $this->getSession()->getPage()->findAll('css', '.messages.messages--error');
     $this->assertCount(0, $error_messages);
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
+    $api_result = wf_civicrm_api('contribution', 'get', [
+      'sequential' => 1,
+    ]);
+    $this->assertEquals(1, $api_result['count']);
+    $contribution = reset($api_result['values']);
+    $this->assertNotEmpty($contribution['trxn_id']);
+    $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
+    $this->assertEquals('Donation', $contribution['financial_type']);
+    $this->assertEquals('25.00', $contribution['net_amount']);
+    $this->assertEquals('25.00', $contribution['total_amount']);
   }
 
 }
