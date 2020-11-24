@@ -76,12 +76,7 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
     $element_form = $this->getSession()->getPage()->findById('webform-ui-element-form-ajax');
     $element_form->fillField('Title', 'Contact information');
-    // @todo Regular tricks waiting for the machine name fail, here.
-    // @todo this was fixed, needed `access content` permission, need to undo test hack.
-    $element_form->pressButton('Save');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertSession()->pageTextContains('Key field is required.');
-    $this->getSession()->getPage()->fillField('Key', 'contact_information');
+    $this->assertSession()->waitForElementVisible('css', '.machine-name-value');
     $element_form->pressButton('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
