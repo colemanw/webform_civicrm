@@ -21,7 +21,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
 
     $this->drupalLogin($this->adminUser);
     $this->drupalGet($this->webform->toUrl('settings'));
-    $this->getSession()->getPage()->clickLink('CiviCRM');
+    $this->getSession()->getPage()->find('css', 'nav.tabs')->clickLink('CiviCRM');
     // The label has a <div> in it which can cause weird failures here.
     $this->assertSession()->waitForText('Enable CiviCRM Processing');
     $this->assertSession()->waitForField('nid');

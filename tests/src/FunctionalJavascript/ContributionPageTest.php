@@ -3,6 +3,7 @@
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Behat\Mink\Element\NodeElement;
+use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
 
 /**
  * Tests submitting a Webform with a contribution page.
@@ -47,7 +48,7 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $payment_processor = $this->createPaymentProcessor();
     $this->drupalLogin($this->adminUser);
     $this->drupalGet($this->webform->toUrl('settings'));
-    $this->getSession()->getPage()->clickLink('CiviCRM');
+    $this->getSession()->getPage()->find('css', 'nav.tabs')->clickLink('CiviCRM');
     // The label has a <div> in it which can cause weird failures here.
     $this->assertSession()->waitForText('Enable CiviCRM Processing');
     $this->assertSession()->waitForField('nid');
@@ -73,7 +74,6 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->clickLink('Build');
     $this->getSession()->getPage()->clickLink('Add page');
     $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->htmlOutput();
     $element_form = $this->getSession()->getPage()->findById('webform-ui-element-form-ajax');
     $element_form->fillField('Title', 'Contact information');
     $this->assertSession()->waitForElementVisible('css', '.machine-name-value');
@@ -99,12 +99,10 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->assertCount(0, $error_messages, implode(', ', array_map(static function(NodeElement $el) {
       return $el->getValue();
     }, $error_messages)));
-    $this->htmlOutput();
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
     $this->getSession()->getPage()->pressButton('Next >');
-    $this->htmlOutput();
     $this->getSession()->getPage()->fillField('Contribution Amount', '25.00');
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '25.00');
@@ -119,14 +117,21 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Billing Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Street Address', '123 Milwaukee Ave');
     $this->getSession()->getPage()->fillField('City', 'Milwaukee');
-    $this->getSession()->getPage()->fillField('Country', '1228');
-    // @todo find a way to better wait for select2 to populate.
+
+    // Select2 is being difficult; unhide the country select.
+    $driver = $this->getSession()->getDriver();
+    assert($driver instanceof DrupalSelenium2Driver);
+    $driver->executeScript("document.getElementById('billing_country_id-5').style.display = 'block';");
+    $this->getSession()->getPage()->fillField('billing_country_id-5', '1228');
+
+    // @todo find a way to better wait for state/pronvince to populate.
     $this->assertSession()->assertWaitOnAjaxRequest();
     sleep(1);
-    $this->htmlOutput();
-    $this->getSession()->getPage()->find('css', '.select2-container .select2-choice')->click();
-    $this->getSession()->getPage()->find('css', 'input.select2-input')->setValue('Wisconsin');
-    $this->getSession()->getPage()->find('css', '.select2-results li.select2-result-selectable')->click();
+
+    // Select2 is being difficult; unhide the state/province. select.
+    $driver->executeScript("document.getElementById('billing_state_province_id-5').style.display = 'block';");
+    $this->createScreenshot($this->htmlOutputDirectory . '/select2_state.png');
+
     $this->getSession()->getPage()->fillField('Postal Code', '53177');
     $this->getSession()->getPage()->pressButton('Submit');
     $error_messages = $this->getSession()->getPage()->findAll('css', '.messages.messages--error');
