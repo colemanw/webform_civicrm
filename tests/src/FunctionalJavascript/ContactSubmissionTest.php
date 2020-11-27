@@ -57,8 +57,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
 
     $this->drupalLogout();
     $this->drupalGet($this->webform->toUrl('canonical'));
-    $error_messages = $this->getSession()->getPage()->findAll('css', '.messages.messages--error');
-    $this->assertCount(0, $error_messages);
+    $this->assertPageNoErrorMessages();
 
     foreach ($contact_values as $entity_type => $field_values) {
       foreach ($field_values as $field_name => $field_value) {
