@@ -13,15 +13,6 @@ use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
  */
 final class ContributionPageTest extends WebformCivicrmTestBase {
 
-  /**
-   * {@inheritdoc}
-   */
-  protected function initFrontPage() {
-    parent::initFrontPage();
-    // Fix hidden columns on build page.
-    $this->getSession()->resizeWindow(1440, 900);
-  }
-
   private function createPaymentProcessor() {
     $params = [
       'domain_id' => 1,
@@ -73,34 +64,12 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('Payment Processor', $payment_processor['id']);
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
-    $this->getSession()->getPage()->clickLink('Build');
-    $this->getSession()->getPage()->clickLink('Add page');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $element_form = $this->getSession()->getPage()->findById('webform-ui-element-form-ajax');
-    $element_form->fillField('Title', 'Contact information');
-    $this->assertSession()->waitForElementVisible('css', '.machine-name-value');
-    $element_form->pressButton('Save');
-    $this->assertSession()->assertWaitOnAjaxRequest();
 
-    // Put contact elements into new page.
-    $contact_information_page_row_handle = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-contact-information"] a.tabledrag-handle');
-    $contact_information_page_row_handle->keyDown(38);
-    $contact_information_page_row_handle->keyUp(38);
-    $contact_information_page_row_handle->keyDown(38);
-    $contact_information_page_row_handle->keyUp(38);
-    $contact_information_page_row_handle->blur();
-    $contact_fieldset_row_handle = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-fieldset-fieldset"] a.tabledrag-handle');
-    $contact_fieldset_row_handle->keyDown(39);
-    $contact_fieldset_row_handle->keyUp(39);
-    $contact_fieldset_row_handle->blur();
-    $this->getSession()->getPage()->pressButton('Save elements');
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    // Setup contact information wizard page.
+    $this->configureContactInformationWizardPage();
 
     $this->drupalGet($this->webform->toUrl('canonical'));
-    $error_messages = $this->getSession()->getPage()->findAll('css', '.messages.messages--error');
-    $this->assertCount(0, $error_messages, implode(', ', array_map(static function(NodeElement $el) {
-      return $el->getValue();
-    }, $error_messages)));
+    $this->assertPageNoErrorMessages();
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
@@ -120,27 +89,21 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Street Address', '123 Milwaukee Ave');
     $this->getSession()->getPage()->fillField('City', 'Milwaukee');
 
-    // Select2 is being difficult; unhide the country select.
+    // Select2 is being difficult; unhide the country and state/province select.
     $driver = $this->getSession()->getDriver();
     assert($driver instanceof DrupalSelenium2Driver);
     $driver->executeScript("document.getElementById('billing_country_id-5').style.display = 'block';");
-    $this->getSession()->getPage()->fillField('billing_country_id-5', '1228');
-
-    // @todo find a way to better wait for state/pronvince to populate.
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    sleep(1);
-
-    // Select2 is being difficult; unhide the state/province. select.
     $driver->executeScript("document.getElementById('billing_state_province_id-5').style.display = 'block';");
+
+    $this->getSession()->getPage()->fillField('billing_country_id-5', '1228');
+    // Wait for select2's AJAX request.
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->wait(1000, 'document.getElementById("billing_state_province_id-5").options.length > 1');
     $this->getSession()->getPage()->fillField('billing_state_province_id-5', '1048');
-    $this->createScreenshot($this->htmlOutputDirectory . '/select2_state.png');
 
     $this->getSession()->getPage()->fillField('Postal Code', '53177');
     $this->getSession()->getPage()->pressButton('Submit');
-    $this->createScreenshot($this->htmlOutputDirectory . '/webform_complete.png');
-    $this->htmlOutput();
-    $error_messages = $this->getSession()->getPage()->findAll('css', '.messages.messages--error');
-    $this->assertCount(0, $error_messages);
+    $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     $api_result = wf_civicrm_api('contribution', 'get', [
