@@ -719,6 +719,10 @@ class Fields implements FieldsInterface {
           'value' => 0,
           'exposed_empty_option' => '- ' . t('Automatic') . ' -',
         );
+        $fields['participant_note'] = [
+          'name' => t('Participant Notes'),
+          'type' => 'textarea',
+        ];
         if (isset($sets['contribution'])) {
           $fields['participant_fee_amount'] = array(
               'name' => t('Participant Fee'),
