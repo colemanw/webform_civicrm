@@ -3,11 +3,8 @@
 namespace Drupal\webform_civicrm;
 
 use Drupal\Component\Utility\Html;
-use Drupal\webform_civicrm\Plugin\WebformElement\CivicrmContact;
-use Drupal\webform_civicrm\Utils;
-use Drupal\node\Entity\Node;
 
-\Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/utils');
+include_once __DIR__ . '/../includes/utils.inc';
 
 /**
  * Class ContactComponent

@@ -12,7 +12,7 @@ use Drupal\webform\Entity\Webform;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
-\Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/wf_crm_webform_base');
+include_once __DIR__ . '/wf_crm_webform_base.inc';
 
 class wf_crm_webform_ajax extends wf_crm_webform_base {
 

@@ -7,9 +7,8 @@
 
 use Drupal\webform_civicrm\Utils;
 use Drupal\File\Entity\File;
-use Drupal\Core\File\FileSystemInterface;
 
-\Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/utils');
+include_once __DIR__ . '/../includes/utils.inc';
 
 /**
  * Class wf_crm_webform_base

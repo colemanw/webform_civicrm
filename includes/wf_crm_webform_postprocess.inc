@@ -14,7 +14,7 @@ use Drupal\webform\WebformInterface;
 use Drupal\webform\WebformSubmissionInterface;
 use Drupal\webform_civicrm\Utils;
 
-\Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/wf_crm_webform_base');
+include_once __DIR__ . '/wf_crm_webform_base.inc';
 
 class wf_crm_webform_postprocess extends wf_crm_webform_base {
   // Variables used during validation
