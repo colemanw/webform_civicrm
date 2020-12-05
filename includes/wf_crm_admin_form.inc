@@ -1142,14 +1142,6 @@ class wf_crm_admin_form {
           '#required' => TRUE,
           '#description' => t('Enter the FROM email address to be used in receipt emails.'),
         ],
-        'receipt_1_number_of_receipt_receipt_text' => [
-          '#type' => 'textarea',
-          '#default_value' => wf_crm_aval($this->data, "receipt:number_number_of_receipt_receipt_text", ''),
-          '#title' => t('Receipt Text'),
-          '#prefix' => '<div class="auto-width">',
-          '#suffix' => '</div>',
-          '#description' => t('Enter a message you want included at the beginning of emailed receipts. NOTE: The text entered here will be used for both TEXT and HTML versions of receipt emails so we do not recommend including HTML tags / formatting here.'),
-        ],
         'receipt_1_number_of_receipt_cc_receipt' => [
           '#type' => 'textfield',
           '#default_value' => wf_crm_aval($this->data, "receipt:number_number_of_receipt_cc_receipt", ''),
@@ -1161,6 +1153,22 @@ class wf_crm_admin_form {
           '#default_value' => wf_crm_aval($this->data, "receipt:number_number_of_receipt_bcc_receipt", ''),
           '#title' => t('BCC Receipt To'),
           '#description' => t('If you want member(s) of your organization to receive a BLIND carbon copy of each emailed receipt, enter one or more email addresses here. Multiple email addresses should be separated by a comma (e.g. jane@example.org, paula@example.org).'),
+        ],
+        'receipt_1_number_of_receipt_pay_later_receipt' => [
+          '#type' => 'textarea',
+          '#default_value' => wf_crm_aval($this->data, "receipt:number_number_of_receipt_pay_later_receipt", ''),
+          '#title' => t('Pay Later Text'),
+          '#prefix' => '<div class="auto-width">',
+          '#suffix' => '</div>',
+          '#description' => t("Text added to the confirmation email, when the user selects the 'pay later' option (e.g. 'Mail your check to ... within 3 business days.')."),
+        ],
+        'receipt_1_number_of_receipt_receipt_text' => [
+          '#type' => 'textarea',
+          '#default_value' => wf_crm_aval($this->data, "receipt:number_number_of_receipt_receipt_text", ''),
+          '#title' => t('Receipt Text'),
+          '#prefix' => '<div class="auto-width">',
+          '#suffix' => '</div>',
+          '#description' => t('Enter a message you want included at the beginning of emailed receipts. NOTE: The text entered here will be used for both TEXT and HTML versions of receipt emails so we do not recommend including HTML tags / formatting here.'),
         ],
       ];
       foreach ($emailFields as $k => $fld) {
