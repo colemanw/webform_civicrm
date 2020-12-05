@@ -329,7 +329,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     //Assign receipt values set on the webform config page.
     $receipt = wf_crm_aval($this->data, "receipt", []);
-    $receiptValues = ['cc_receipt', 'bcc_receipt', 'receipt_text', 'receipt_from_name', 'receipt_from_email'];
+    $receiptValues = ['cc_receipt', 'bcc_receipt', 'receipt_text', 'pay_later_receipt', 'receipt_from_name', 'receipt_from_email'];
     foreach ($receiptValues as $val) {
       $params[$val] = $receipt["number_number_of_receipt_{$val}"] ?? '';
     }

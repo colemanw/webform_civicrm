@@ -160,7 +160,7 @@ function webform_civicrm_update_8001() {
     if (!empty($contribution['contribution_page_id'])) {
       $returnParams = [
         "financial_type_id", "currency", "bcc_receipt", "cc_receipt",
-        "receipt_text", "receipt_from_name", "receipt_from_email", "is_email_receipt"
+        "receipt_text", "pay_later_receipt", "receipt_from_name", "receipt_from_email", "is_email_receipt"
       ];
       $contribution_page = current(wf_crm_apivalues('ContributionPage', 'get', [
         'return' => $returnParams,
@@ -173,7 +173,7 @@ function webform_civicrm_update_8001() {
       $settings['contribution_1_settings_currency'] = $settings['data']['contribution'][1]['currency'] = $contribution_page['currency'] ?? '';
       if (!empty($contribution_page['is_email_receipt'])) {
         $settings['receipt_1_number_of_receipt'] = $settings['data']['receipt']['number_number_of_receipt'] = 1;
-        $receiptValues = ['cc_receipt', 'bcc_receipt', 'receipt_text', 'receipt_from_name', 'receipt_from_email'];
+        $receiptValues = ['cc_receipt', 'bcc_receipt', 'receipt_text', 'pay_later_receipt', 'receipt_from_name', 'receipt_from_email'];
         foreach ($receiptValues as $val) {
           $settings["receipt_1_number_of_receipt_{$val}"] = $settings['data']['receipt']["number_number_of_receipt_{$val}"] =  $contribution_page[$val] ?? '';
         }
