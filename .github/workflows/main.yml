@@ -23,6 +23,12 @@ jobs:
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
     steps:
       - uses: actions/checkout@v2
+      - uses: shivammathur/setup-php@v2
+        with:
+            php-version: 7.3
+            extensions: dom, curl, libxml, mbstring, zip, pdo, mysql, pdo_mysql, bcmath, soap, intl, gd, exif, iconv
+            coverage: none
+            tools: composer:v1
       - name: Get composer cache directory
         id: composercache
         run: echo "::set-output name=dir::$(composer config cache-files-dir)"
@@ -31,20 +37,11 @@ jobs:
             path: ${{ steps.composercache.outputs.dir }}
             key: ${{ runner.os }}-${{ matrix.drupal }}-composer-${{ hashFiles('**/composer.json') }}
             restore-keys: ${{ runner.os }}-composer-
-      - uses: shivammathur/setup-php@v2
-        with:
-            php-version: 7.3
-            extensions: dom, curl, libxml, mbstring, zip, pdo, mysql, pdo_mysql, bcmath, soap, intl, gd, exif, iconv
-            coverage: none
-            tools: composer:v1
       - name: Setup problem matchers for PHPUnit
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
-      - uses: nanasess/setup-chromedriver@master
-
       # Notes
       # - Must enable patching for civicrm/civicrm-core
       # - CiviCRM requires `compile-mode: all`
-      # - D9 removes `minimum-stability: dev`
       - name: Setup Drupal
         run: |
           COMPOSER_MEMORY_LIMIT=-1 composer create-project drupal/recommended-project:${{ matrix.drupal }} ~/drupal --no-interaction
@@ -55,13 +52,29 @@ jobs:
           composer config prefer-stable true
           composer config repositories.0 path $GITHUB_WORKSPACE
           composer config repositories.1 composer https://packages.drupal.org/8
-          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:${{ matrix.drupal }} civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages}:'~5.29' drupal/webform_civicrm *@dev --no-suggest
+          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:${{ matrix.drupal }} --no-suggest
+      # Drupal 9 support for CiviCRM requires 5.33, so we conditionally add based on the Drupal version constraint.
+      - name: Install CiviCRM ~5.32.0
+        if: matrix.drupal !=  '^9.0'
+        run: |
+          cd ~/drupal
+          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages}:'~5.32' --no-suggest
+      - name: Install CiviCRM 5.33@rc
+        if: matrix.drupal ==  '^9.0'
+        run: |
+          cd ~/drupal
+          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:5.33.x-dev --no-suggest
       # For some reason drupal/webform:5.x installs even if it is drupal:^9.0
       - name: Ensure Webform ^6.0
         if: matrix.drupal == '^9.0'
         run: |
           cd ~/drupal
           COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:^6.0@beta' --no-suggest
+      - name: Install webform_civicrm
+        run: |
+          cd ~/drupal
+          COMPOSER_MEMORY_LIMIT=-1 composer require  drupal/webform_civicrm *@dev
+      - uses: nanasess/setup-chromedriver@master
       - name: Run chromedriver
         run: chromedriver &
       - name: Run php built-in server
