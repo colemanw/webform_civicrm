@@ -31,11 +31,33 @@ abstract class CiviCrmTestBase extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
+  protected function cleanupEnvironment() {
+    parent::cleanupEnvironment();
+    $civicrm_test_conn = Database::getConnection('default', 'civicrm_test');
+    // Disable foreign key checks so that tables can be dropped.
+    $civicrm_test_conn->query('SET FOREIGN_KEY_CHECKS = 0;')->execute();
+    $civicrm_schema = $civicrm_test_conn->schema();
+    $tables = $civicrm_schema->findTables('%');
+    foreach ($tables as $table) {
+      if ($civicrm_schema->dropTable($table)) {
+        unset($tables[$table]);
+      }
+    }
+    $civicrm_test_conn->query('SET FOREIGN_KEY_CHECKS = 1;')->execute();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   protected function changeDatabasePrefix() {
     parent::changeDatabasePrefix();
     $connection_info = Database::getConnectionInfo('default');
-    Database::addConnectionInfo('civicrm_test', 'default', $connection_info['default']);
-    Database::addConnectionInfo('civicrm', 'default', $connection_info['default']);
+    // CiviCRM does not leverage table prefixes, so we unset it. This way any
+    // `civicrm_` tables are more easily cleaned up at the end of the test.
+    $civicrm_connection_info = $connection_info['default'];
+    unset($civicrm_connection_info['prefix']);
+    Database::addConnectionInfo('civicrm_test', 'default', $civicrm_connection_info);
+    Database::addConnectionInfo('civicrm', 'default', $civicrm_connection_info);
   }
 
   /**
