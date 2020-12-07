@@ -8,6 +8,7 @@ on:
 jobs:
   phpunit:
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.drupal == '^9.0' }}
     strategy:
       matrix:
         drupal: ['^8.9', '^9.0']
