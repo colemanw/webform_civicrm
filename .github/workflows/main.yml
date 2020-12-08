@@ -18,7 +18,7 @@ jobs:
             civicrm: '5.33.x-dev'
           - drupal: '^9.0'
             civicrm: '5.33.x-dev'
-    name: D${{ matrix.drupal }} - PHPUnit tests
+    name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
     services:
       mysql:
         image: mysql:5.7
