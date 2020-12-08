@@ -6,6 +6,7 @@
  */
 
 use Drupal\Component\Utility\Html;
+use Drupal\Core\Render\Element;
 use Drupal\webform_civicrm\Utils;
 use Drupal\node\Entity\Node;
 
@@ -475,7 +476,7 @@ class wf_crm_admin_component {
       elseif (in_array('webform-add-form', $row['class'])) {
         unset($form['add']['type']['#options']['civicrm_contact']);
         $form['add']['type']['#printed'] = FALSE;
-        $row['data'][1] = drupal_render($form['add']['type']);
+        $row['data'][1] = \Drupal::service('renderer')->renderPlain($form['add']['type']);
       }
       // Component row
       elseif (!empty($row['data-cid']) && isset($node->webform['components'][$row['data-cid']])) {
@@ -641,9 +642,11 @@ class wf_crm_admin_component {
  * Format civicrm options form as a table
  */
 function theme_webform_civicrm_options_table($variables) {
+  /** @var \Drupal\Core\Render\RendererInterface $renderer */
+  $renderer = \Drupal::service('renderer');
   $element = $variables['element'];
   $element['civicrm_defaults']['']['#attributes']['class'][] = 'select-all-civi-defaults';
-  $default_box = drupal_render($element['civicrm_defaults']['']);
+  $default_box = $renderer->renderPlain($element['civicrm_defaults']['']);
   $select_box = '<input class="select-all-civi-options" type="checkbox" checked="checked" title="' . t('Select All') . '"> ';
   $table = array(
     'rows' => array(),
@@ -666,24 +669,24 @@ function theme_webform_civicrm_options_table($variables) {
   foreach (element_children($element['civicrm_defaults']) as $k) {
     if ($k) {
       $v = str_replace('_web_civi_option_selected_', '', $k);
-      $row = array(drupal_render($element['civicrm_option_name_' . $v]));
+      $row = array($renderer->renderPlain($element['civicrm_option_name_' . $v]));
       if (!empty($element['civicrm_options'])) {
         $element['civicrm_option_weight_' . $v]['#attributes']['class'] = array('civicrm-option-weight');
         $element['civicrm_options'][$k]['#attributes']['class'] = array('civicrm-enabled');
         $element['civicrm_option_label_' . $v]['#attributes']['class'] = array('civicrm-label');
-        $row[] = drupal_render($element['civicrm_option_weight_' . $v]);
-        $row[] = array('data' => drupal_render($element['civicrm_options'][$k]), 'class' => array('live-options-hide'));
-        $row[] = array('data' => drupal_render($element['civicrm_option_label_' . $v]), 'class' => array('live-options-hide'));
+        $row[] = $renderer->renderPlain($element['civicrm_option_weight_' . $v]);
+        $row[] = array('data' => $renderer->renderPlain($element['civicrm_options'][$k]), 'class' => array('live-options-hide'));
+        $row[] = array('data' => $renderer->renderPlain($element['civicrm_option_label_' . $v]), 'class' => array('live-options-hide'));
       }
       $element['civicrm_defaults'][$k]['#attributes']['class'] = array('civicrm-default');
-      $row[] = drupal_render($element['civicrm_defaults'][$k]);
+      $row[] = $renderer->renderPlain($element['civicrm_defaults'][$k]);
       $table['rows'][] = array(
         'data' => $row,
         'class' => array('draggable'),
       );
     }
   }
-  return drupal_render_children($element) . theme('table', $table);
+  return Element::children($element) . theme('table', $table);
 }
 
 /**

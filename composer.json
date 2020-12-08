@@ -12,13 +12,6 @@
   },
   "require": {
       "civicrm/civicrm-drupal-8": "~5.0",
-      "drupal/webform": "^5.0"
-  },
-  "extra": {
-    "patches": {
-        "civicrm/civicrm-core": {
-            "Fix Drupal 8+ settings location during tests": "https://patch-diff.githubusercontent.com/raw/civicrm/civicrm-core/pull/18843.patch"
-        }
-    }
+      "drupal/webform": "^5.0 || ^6.0"
   }
 }
