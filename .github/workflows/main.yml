@@ -11,7 +11,13 @@ jobs:
     continue-on-error: ${{ matrix.drupal == '^9.0' }}
     strategy:
       matrix:
-        drupal: ['^8.9', '^9.0']
+        include:
+          - drupal: '^8.9'
+            civicrm: '~5.32'
+          - drupal: '^8.9'
+            civicrm: '5.33.x-dev'
+          - drupal: '^9.0'
+            civicrm: '5.33.x-dev'
     name: D${{ matrix.drupal }} - PHPUnit tests
     services:
       mysql:
@@ -54,17 +60,10 @@ jobs:
           composer config repositories.0 path $GITHUB_WORKSPACE
           composer config repositories.1 composer https://packages.drupal.org/8
           COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:${{ matrix.drupal }} --no-suggest
-      # Drupal 9 support for CiviCRM requires 5.33, so we conditionally add based on the Drupal version constraint.
-      - name: Install CiviCRM ~5.32.0
-        if: matrix.drupal !=  '^9.0'
+      - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages}:'~5.32' --no-suggest
-      - name: Install CiviCRM 5.33@rc
-        if: matrix.drupal ==  '^9.0'
-        run: |
-          cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:5.33.x-dev --no-suggest
+          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages}:${{ matrix.civicrm }} --no-suggest
       # For some reason drupal/webform:5.x installs even if it is drupal:^9.0
       - name: Ensure Webform ^6.0
         if: matrix.drupal == '^9.0'
