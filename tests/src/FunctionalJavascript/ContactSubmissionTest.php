@@ -19,7 +19,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
   public function testSubmitWebform($contact_type, array $contact_values) {
     $this->assertArrayHasKey('contact', $contact_values, 'Test data must contain contact');
     $this->assertArrayHasKey('first_name', $contact_values['contact'], 'Test contact data must contain first_name');
-    $this->assertArrayHasKey('last_name', $contact_values['contact'], 'Test confact data must contain last_name');
+    $this->assertArrayHasKey('last_name', $contact_values['contact'], 'Test contact data must contain last_name');
 
     $this->drupalLogin($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
@@ -34,11 +34,11 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
 
     // @see wf_crm_location_fields().
-    $configurable_contact_field_groups = [
-      'address' => 'address',
+    /*$configurable_contact_field_groups = [
+      'address' => 'city',
+      'phone' => 'phone',
       'email' => 'email',
       'website' => 'url',
-      'phone' => 'phone',
       'im' => 'name',
     ];
     foreach ($configurable_contact_field_groups as $field_group => $field_value_key) {
@@ -49,6 +49,28 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
         $this->assertSession()->assertWaitOnAjaxRequest();
         $this->htmlOutput();
         $this->assertSession()->checkboxChecked("civicrm_1_contact_1_{$field_group}_{$field_value_key}");
+      }
+    }*/
+    $configurable_contact_field_groups = [
+      'address',
+      'phone',
+      'email',
+      'website',
+    ];
+    foreach ($configurable_contact_field_groups as $field_group) {
+      if (isset($contact_values[$field_group])) {
+        $this->assertTrue(is_array($contact_values[$field_group]));
+        $this->assertTrue(isset($contact_values[$field_group][0]));
+        // @ToDo - Let's just enable 1 for now (to support more location types this integer will need to change
+        $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_' . $field_group, 1);
+        $this->assertSession()->assertWaitOnAjaxRequest();
+        $this->htmlOutput();
+        foreach ($contact_values[$field_group] as $field => $field_value_key) {
+          foreach (array_keys($field_value_key) as $civi_field) {
+             // echo sprintf('<pre>%s</pre>', print_r("civicrm_1_contact_1_{$field_group}_{$civi_field}",true));
+             $this->assertSession()->checkboxChecked("civicrm_1_contact_1_{$field_group}_{$civi_field}");
+          }
+        }
       }
     }
 
@@ -90,11 +112,20 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     foreach ($contact_values['contact'] as $field_name => $field_value) {
       $this->assertEquals($field_value, $contact[$field_name], $result_debug);
     }
+    // ToDo: isn't email it's own api query? Perhaps this is Primary?
     if (isset($contact_values['email'])) {
       $this->assertEquals($contact_values['email'][0]['email'], $contact['email']);
     }
 
-    foreach ($configurable_contact_field_groups as $field_group => $field_value_key) {
+    $api_address_result = wf_civicrm_api('address', 'get', [
+      'sequential' => 1,
+      'contact_id' => $contact['contact_id'],
+      ]);
+    $address = reset($api_address_result['values']);
+    $this->assertEquals('Calgary', $address['city']);
+    $this->assertEquals('T3H 4Y4', $address['postal_code']);
+
+    /*foreach ($configurable_contact_field_groups as $field_group => $field_value_key) {
       if (isset($contact_values[$field_group])) {
         $api_result = wf_civicrm_api($field_group, 'get', [
           'sequential' => 1,
@@ -105,7 +136,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
           $this->assertEquals($contact_values[$field_group][$key][$field_value_key], $result_entity[$field_value_key]);
         }
       }
-    }
+    }*/
   }
 
   /**
@@ -133,7 +164,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
    *   The test data.
    */
   public function dataContactValues() {
-    yield [
+   /* yield [
       'Individual',
       [
         'contact' => [
@@ -179,7 +210,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
             'phone' => '555-555-5555',
           ]
         ],
-    ]];
+    ]];*/
     yield [
       'Individual',
       [
@@ -200,6 +231,12 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
         'phone' => [
           [
             'phone' => '555-555-5555',
+          ]
+        ],
+        'address' => [
+          [
+            'city' => 'Calgary',
+            'postal_code' => 'T3H 4Y4',
           ]
         ],
     ]];
