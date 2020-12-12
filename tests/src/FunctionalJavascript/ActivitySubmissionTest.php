@@ -29,6 +29,11 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
+    $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_subject");
+    $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_activity_date_time");
+    $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_activity_date_time_timepart");
+    $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_duration");
+
     $this->assertSession()->checkboxChecked("civicrm_1_activity_1_activity_subject");
     $this->assertSession()->checkboxChecked("civicrm_1_activity_1_activity_activity_date_time");
     $this->assertSession()->checkboxChecked("civicrm_1_activity_1_activity_activity_date_time_timepart");
