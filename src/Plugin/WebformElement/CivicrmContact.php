@@ -132,7 +132,7 @@ class CivicrmContact extends WebformElementBase {
         }
       }
     }
-    if (empty($cid) && $element['#type'] === 'hidden' && $element['none_prompt']) {
+    if (empty($cid) && $element['#type'] === 'hidden' && isset($element['none_prompt'])) {
       $element['#attributes']['data-civicrm-name'] = Xss::filter($element['none_prompt']);
     }
     parent::prepare($element, $webform_submission);

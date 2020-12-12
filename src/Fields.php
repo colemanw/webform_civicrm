@@ -428,23 +428,21 @@ class Fields implements FieldsInterface {
       $fields['activity_activity_date_time'] = array(
         'name' => t('Activity # Date'),
         'type' => 'date',
-        'value' => 'now',
+        'default_value' => 'now',
       );
       $fields['activity_activity_date_time_timepart'] = array(
         'name' => t('Activity # Time'),
-        'type' => 'webform_time',
-        'value' => 'now',
+        'type' => 'time',
+        'default_value' => 'now',
       );
       $fields['activity_duration'] = array(
         'name' => t('Activity # Duration'),
         'type' => 'number',
-        'extra' => array(
-          'field_suffix' => t('min.'),
-          'min' => 0,
-          'step' => 5,
-          'integer' => 1,
-        ),
-      );
+        'field_suffix' =>  t('min.'),
+        /*ToDo Figure out why setting min does not work!*/
+        'min' => 0,
+        'step' => 5,
+       );
       $tag_entities = array('other', 'activity');
       if (isset($sets['case'])) {
         $tag_entities[] = 'case';
