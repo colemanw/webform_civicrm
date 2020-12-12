@@ -13,8 +13,6 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
 
   /**
    * Test submitting an activity
-   *
-   * @dataProvider dataContactValues
    */
   public function testSubmitWebform() {
     $this->drupalLogin($this->adminUser);
