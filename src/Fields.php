@@ -932,12 +932,15 @@ class Fields implements FieldsInterface {
 
       // Fetch custom fields
       $custom_types = wf_crm_custom_types_map_array();
-      $custom_fields = wf_crm_apivalues('CustomField', 'get', array(
-        'is_active' => 1,
-        'custom_group_id' => array('IN' => array_keys($custom_sets)),
-        'html_type' => array('IN' => array_keys($custom_types)),
-        'options' => array('sort' => 'weight'),
-      ));
+      $custom_fields = [];
+      if (count($custom_sets) > 0) {
+        $custom_fields = wf_crm_apivalues('CustomField', 'get', [
+          'is_active' => 1,
+          'custom_group_id' => ['IN' => array_keys($custom_sets)],
+          'html_type' => ['IN' => array_keys($custom_types)],
+          'options' => ['sort' => 'weight'],
+        ]);
+      }
       foreach ($custom_fields as $custom_field) {
         $set = $custom_sets[$custom_field['custom_group_id']];
         $custom_group = $custom_groups[$custom_field['custom_group_id']];
