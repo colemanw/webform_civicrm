@@ -19,7 +19,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
   public function testSubmitWebform($contact_type, array $contact_values) {
     $this->assertArrayHasKey('contact', $contact_values, 'Test data must contain contact');
     $this->assertArrayHasKey('first_name', $contact_values['contact'], 'Test contact data must contain first_name');
-    $this->assertArrayHasKey('last_name', $contact_values['contact'], 'Test confact data must contain last_name');
+    $this->assertArrayHasKey('last_name', $contact_values['contact'], 'Test contact data must contain last_name');
 
     $this->drupalLogin($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
