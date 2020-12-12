@@ -2414,7 +2414,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $val = array_search($val, $options);
         }
         // Fudge together date and time fields
-        if ($field['type'] === 'time' && substr($name, -8) === 'timepart') {
+        if (($field['type'] === 'time' || $field['type'] === 'webform_time') && substr($name, -8) === 'timepart') {
           $name = str_replace('_timepart', '', $name);
           // Add date (default to today)
           $date = wf_crm_aval($this->data, "$ent:$c:$table:$n:$name", date('Ymd'));

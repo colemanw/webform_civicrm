@@ -432,7 +432,8 @@ class Fields implements FieldsInterface {
       );
       $fields['activity_activity_date_time_timepart'] = array(
         'name' => t('Activity # Time'),
-        'type' => 'time',
+        /*This must be set to webform_time in order to appear on the build tab as Type = Time; later we'll convert the type to glue it to the date*/
+        'type' => 'webform_time',
         'default_value' => 'now',
       );
       $fields['activity_duration'] = array(
