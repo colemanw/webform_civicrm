@@ -46,6 +46,8 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
 
+    $today = date('Y-m-d H:i:s');
+
     $this->assertSession()->waitForField('First Name');
 
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
@@ -66,6 +68,10 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals(1, $api_result['count']);
     $activity = reset($api_result['values']);
     $this->assertEquals('Awesome Activity', $activity['subject']);
+    // CiviCRM Activity Type 1 -> Meeting (default)
+    $this->assertEquals('1', $activity['activity_type_id']);
+    $delta = strtotime($today) -  strtotime($activity['activity_date_time']);
+    $this->assertTrue($delta < 60);
   }
 
 }
