@@ -70,8 +70,8 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals('Awesome Activity', $activity['subject']);
     // CiviCRM Activity Type 1 -> Meeting (default)
     $this->assertEquals('1', $activity['activity_type_id']);
-    $delta = strtotime($today) -  strtotime($activity['activity_date_time']);
-    $this->assertTrue($delta < 60);
+    $this->assertTrue(strtotime($today) -  strtotime($activity['activity_date_time']) < 60);
+    $this->assertEquals(90, $activity['duration']);
   }
 
 }
