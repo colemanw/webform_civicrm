@@ -58,7 +58,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     // Keep track of cids across multipage forms
     if (!empty($this->form_state->getValue('submitted')) && $this->form_state->get(['webform','page_count']) > 1) {
       foreach ($this->enabled as $k => $v) {
-        // @TODO review the cusage of the existing element.
+        // @TODO review the usage of the existing element.
         if (substr($k, -8) == 'existing' && $this->form_state->getValue(['submitted', $v])) {
           list(, $c) = explode('_', $k);
           $val = $this->form_state->getValue(['submitted', $v]);
@@ -537,7 +537,12 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             }
             // Set default value
             else {
-              $element['#default_value'] = $val;
+              if (substr($eid, -9) === 'date_time') {
+                // Must pass date only
+                $element['#default_value'] = substr($val, 0, 10);
+              } else {
+                $element['#default_value'] = $val;
+              }
             }
           }
           if ($name == 'existing') {
