@@ -547,14 +547,14 @@ function wf_civicrm_api($entity, $operation, $params) {
     }
     $stop = null;
     \Drupal::logger('webform_civicrm')->error(
-      'The CiviCRM ":function" API returned the error: ":msg" when called by function ":fn" on line :line of :file with parameters: ":params"',
+      'The CiviCRM "@function" API returned the error: "@msg" when called by function "@fn" on line @line of @file with parameters: "@params"',
       array(
-        ':function' => $entity . ' ' . $operation,
-        ':msg' => $result['error_message'],
-        ':fn' => $bt[$n+1]['function'],
-        ':line' => $bt[$n]['line'],
-        ':file' => array_pop($file),
-        ':params' => print_r($params, TRUE),
+        '@function' => $entity . ' ' . $operation,
+        '@msg' => $result['error_message'],
+        '@fn' => $bt[$n+1]['function'],
+        '@line' => $bt[$n]['line'],
+        '@file' => array_pop($file),
+        '@params' => print_r($params, TRUE),
       )
     );
   }

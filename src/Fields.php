@@ -428,23 +428,22 @@ class Fields implements FieldsInterface {
       $fields['activity_activity_date_time'] = array(
         'name' => t('Activity # Date'),
         'type' => 'date',
-        'value' => 'now',
+        'default_value' => 'now',
       );
       $fields['activity_activity_date_time_timepart'] = array(
         'name' => t('Activity # Time'),
+        /*This must be set to webform_time in order to appear on the build tab as Type = Time; later we'll convert the type to glue it to the date*/
         'type' => 'webform_time',
-        'value' => 'now',
+        'default_value' => 'now',
       );
       $fields['activity_duration'] = array(
         'name' => t('Activity # Duration'),
         'type' => 'number',
-        'extra' => array(
-          'field_suffix' => t('min.'),
-          'min' => 0,
-          'step' => 5,
-          'integer' => 1,
-        ),
-      );
+        'field_suffix' =>  t('min.'),
+        /*ToDo Figure out why setting min does not work!*/
+        'min' => 0,
+        'step' => 5,
+       );
       $tag_entities = array('other', 'activity');
       if (isset($sets['case'])) {
         $tag_entities[] = 'case';
@@ -934,12 +933,15 @@ class Fields implements FieldsInterface {
 
       // Fetch custom fields
       $custom_types = wf_crm_custom_types_map_array();
-      $custom_fields = wf_crm_apivalues('CustomField', 'get', array(
-        'is_active' => 1,
-        'custom_group_id' => array('IN' => array_keys($custom_sets)),
-        'html_type' => array('IN' => array_keys($custom_types)),
-        'options' => array('sort' => 'weight'),
-      ));
+      $custom_fields = [];
+      if (count($custom_sets) > 0) {
+        $custom_fields = wf_crm_apivalues('CustomField', 'get', [
+          'is_active' => 1,
+          'custom_group_id' => ['IN' => array_keys($custom_sets)],
+          'html_type' => ['IN' => array_keys($custom_types)],
+          'options' => ['sort' => 'weight'],
+        ]);
+      }
       foreach ($custom_fields as $custom_field) {
         $set = $custom_sets[$custom_field['custom_group_id']];
         $custom_group = $custom_groups[$custom_field['custom_group_id']];
