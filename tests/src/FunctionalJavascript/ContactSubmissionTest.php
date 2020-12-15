@@ -10,7 +10,6 @@ use Drupal\Core\Url;
  * @group webform_civicrm
  */
 final class ContactSubmissionTest extends WebformCivicrmTestBase {
-
   /**
    * Test submitting a contact.
    *
