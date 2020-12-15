@@ -159,19 +159,15 @@ class ContactComponent implements ContactComponentInterface {
         }
       }
       // If we get exactly $limit results, there are probably more - warn that the list is truncated
-      // TODO Error reporting is still Drupal7-ish
       if (wf_crm_aval($result, 'count') >= $limit) {
-        watchdog(
-          'webform_civicrm',
-          'Maximum contacts exceeded, list truncated on the webform "@title". The webform_civicrm "@field" field cannot display more than !limit contacts because it is a select list. Recommend switching to autocomplete widget in component settings.',
-          array('!limit' => $limit, '@field' => $component['name'], '@title' => $node->title),
-          WATCHDOG_WARNING,
-          l(t('Edit component'), "node/{$node->nid}/webform/components/{$component['cid']}")
+        \Drupal::logger('webform_civicrm')->warning(
+          'Maximum contacts exceeded, list truncated on the webform "@title". The webform_civicrm "@field" field cannot display more than @limit contacts because it is a select list. Recommend switching to autocomplete widget in component settings.',
+          array('@limit' => $limit, '@field' => $component['#title'], '@title' => $node->label()),
         );
-        if (wf_crm_admin_access($node) && node_is_page($node)) {
-          \Drupal::messenger()->addWarning('<strong>' . t('Maximum contacts exceeded, list truncated.') .'</strong><br>' .
-          t('The field "@field" cannot show more than !limit contacts because it is a select list. Recommend switching to autocomplete widget in <a !link>component settings</a>.',
-            array('!limit' => $limit, '@field' => $component['name'], '!link' => 'href="' . url("node/{$node->nid}/webform/components/{$component['cid']}") . '"')));
+        if ($node->access('update') && \Drupal::currentUser()->hasPermission('access CiviCRM')) {
+          $warning_message = \Drupal\Core\Render\Markup::create('<strong>' . t('Maximum contacts exceeded, list truncated.') .'</strong><br>' .
+          t('The field "@field" cannot show more than @limit contacts because it is a select list. Recommend switching to autocomplete widget.', ['@limit' => $limit, '@field' => $component['#title']]));
+          \Drupal::messenger()->addMessage($warning_message);
         }
       }
     }
