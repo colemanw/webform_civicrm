@@ -76,7 +76,6 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->fillField('Text', 'Lorem Ipsum');
 
-    // KG
     // ToDo -> custom dates
     // $this->getSession()->getPage()->fillField('Date', '2020-12-12');
 
@@ -88,6 +87,10 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $result = wf_civicrm_api('Contact', 'get', [
       'sequential' => 1,
     ]);
+
+    print_r($result);
+    print_r($debug);
+    // throw new \Exception(var_export($thing, TRUE));
 
     /*$result = civicrm_api3('CustomValue', 'get', [
       'sequential' => 1,

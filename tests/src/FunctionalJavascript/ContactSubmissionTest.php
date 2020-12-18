@@ -40,6 +40,8 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
       'phone' => 'phone',
       'im' => 'name',
     ];
+    // refactor that -> use yield
+    // address => 'street_address' or 'city'
     foreach ($configurable_contact_field_groups as $field_group => $field_value_key) {
       if (isset($contact_values[$field_group])) {
         $this->assertTrue(is_array($contact_values[$field_group]));
