@@ -19,15 +19,28 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $result = \wf_civicrm_api('CustomGroup', 'create', $params);
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
+    $customgroup_id = $result['id'];
 
     $params = [
-      'custom_group_id' => $result['id'],
+      'custom_group_id' => $customgroup_id,
       'label' => 'Text',
       'data_type' => 'String',
       'html_type' => 'Text',
       'is_active' => 1,
     ];
     $result = \wf_civicrm_api('CustomField', 'create', $params);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+
+    $dateParams = [
+      'custom_group_id' => $customgroup_id,
+      'label' => 'Date',
+      'data_type' => 'Date',
+      'is_active' => 1,
+      'debug' => 1,
+    ];
+    $result = \wf_civicrm_api('CustomField', 'create', $dateParams);
+    // throw new \Exception(var_export($result, TRUE));
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
   }
@@ -53,12 +66,12 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
 
     $this->getSession()->getPage()->checkField("civicrm_1_contact_1_cg1_custom_1");
-    //$this->getSession()->getPage()->checkField("civicrm_1_contact_1_cg1_custom_2");
-    //$this->getSession()->getPage()->checkField("civicrm_1_contact_1_cg1_custom_2_timepart");
+    $this->getSession()->getPage()->checkField("civicrm_1_contact_1_cg1_custom_2");
+    $this->getSession()->getPage()->checkField("civicrm_1_contact_1_cg1_custom_2_timepart");
 
     $this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_1");
-    //$this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_2");
-    //$this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_2_timepart");
+    $this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_2");
+    $this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_2_timepart");
 
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
@@ -67,36 +80,26 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
 
-    $today = date('Y-m-d H:i:s');
-
     $this->assertSession()->waitForField('First Name');
 
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
 
     $this->getSession()->getPage()->fillField('Text', 'Lorem Ipsum');
+    // $this->getSession()->getPage()->fillField('Date - date', '2017-03-01T20:02:00');
+    // $this->getSession()->getPage()->fillField('Date - time', '2017-03-01T20:02:00');
 
     // ToDo -> custom dates
     // $this->getSession()->getPage()->fillField('Date', '2020-12-12');
 
     $this->getSession()->getPage()->pressButton('Submit');
-    // ToDo -> figure out what Error message it is! The submission itself works well.
-    // $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     $result = wf_civicrm_api('Contact', 'get', [
       'sequential' => 1,
     ]);
 
-    // print_r($result);
-    // print_r($debug);
     // throw new \Exception(var_export($thing, TRUE));
-
-    /*$result = civicrm_api3('CustomValue', 'get', [
-      'sequential' => 1,
-      'return' => ["custom_1"],
-      'entity_id' => 3,
-    ]);*/
 
     $result = wf_civicrm_api('CustomValue', 'get', [
       'sequential' => 1,
