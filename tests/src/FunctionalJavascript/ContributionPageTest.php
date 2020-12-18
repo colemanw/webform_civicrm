@@ -36,7 +36,6 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
   }
 
   public function testSubmitContribution() {
-    // $payment_processor['id'];
     $payment_processor = $this->createPaymentProcessor();
     $this->drupalLogin($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
@@ -63,11 +62,13 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     }, $opts)));
     $this->getSession()->getPage()->selectFieldOption('Payment Processor', $payment_processor['id']);
 
-    $this->getSession()->getPage()->selectFieldOption('lineitem_1_number_of_lineitem', 1);
+    $this->getSession()->getPage()->selectFieldOption('lineitem_1_number_of_lineitem', 2);
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
     $this->getSession()->getPage()->checkField("civicrm_1_lineitem_1_contribution_line_total");
     $this->assertSession()->checkboxChecked("civicrm_1_lineitem_1_contribution_line_total");
+    $this->getSession()->getPage()->checkField("civicrm_1_lineitem_2_contribution_line_total");
+    $this->assertSession()->checkboxChecked("civicrm_1_lineitem_2_contribution_line_total");
 
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
@@ -80,13 +81,14 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
-    $this->getSession()->getPage()->fillField('Line Item Amount', '12.345');
+    $this->getSession()->getPage()->fillField('Line Item Amount', '704.5454');
+    $this->getSession()->getPage()->fillField('Line Item Amount 2', '70.45454');
 
     $this->getSession()->getPage()->pressButton('Next >');
-    $this->getSession()->getPage()->fillField('Contribution Amount', '25.00');
+    $this->getSession()->getPage()->fillField('Contribution Amount', '10.00');
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->htmlOutput();
-    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '37.345');
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '785.00');
 
     // Wait for the credit card form to load in.
     $this->assertSession()->waitForField('credit_card_number');
@@ -124,14 +126,19 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->assertNotEmpty($contribution['trxn_id']);
     $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
     $this->assertEquals('Donation', $contribution['financial_type']);
-    $this->assertEquals('25.00', $contribution['net_amount']);
-    $this->assertEquals('25.00', $contribution['total_amount']);
+    $this->assertEquals('785.00', $contribution['net_amount']);
+    $this->assertEquals('785.00', $contribution['total_amount']);
 
     $api_result = wf_civicrm_api('line_item', 'get', [
       'sequential' => 1,
     ]);
-    throw new \Exception(var_export($api_result, TRUE));
-
+    $this->assertEquals(3, $api_result['count']);
+    $this->assertEquals('10.00', $api_result['values'][0]['line_total']);
+    $this->assertEquals('704.55', $api_result['values'][1]['line_total']);
+    $this->assertEquals('70.45', $api_result['values'][2]['line_total']);
+    $sum_line_items = $api_result['values'][0]['line_total'] + $api_result['values'][1]['line_total'] + $api_result['values'][2]['line_total'];
+    $this->assertEquals($contribution['total_amount'], $sum_line_items);
+    // throw new \Exception(var_export($api_result, TRUE));
   }
 
 }
