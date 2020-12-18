@@ -58,6 +58,14 @@ abstract class CiviCrmTestBase extends WebDriverTestBase {
     unset($civicrm_connection_info['prefix']);
     Database::addConnectionInfo('civicrm_test', 'default', $civicrm_connection_info);
     Database::addConnectionInfo('civicrm', 'default', $civicrm_connection_info);
+
+    // Assert that there are no `civicrm_` tables in the test database.
+    $connection = Database::getConnection('default', 'civicrm_test');
+    $schema = $connection->schema();
+    $tables = $schema->findTables('civicrm_%');
+    if (count($tables) > 0) {
+      throw new \RuntimeException('The provided database connection in SIMPLETEST_DB contains CiviCRM tables, use a different database.');
+    }
   }
 
   /**
