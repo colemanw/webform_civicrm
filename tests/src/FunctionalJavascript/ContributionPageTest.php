@@ -62,6 +62,13 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
       return $el->getValue();
     }, $opts)));
     $this->getSession()->getPage()->selectFieldOption('Payment Processor', $payment_processor['id']);
+
+    $this->getSession()->getPage()->selectFieldOption('lineitem_1_number_of_lineitem', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->checkField("civicrm_1_lineitem_1_contribution_line_total");
+    $this->assertSession()->checkboxChecked("civicrm_1_lineitem_1_contribution_line_total");
+
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
 
@@ -73,10 +80,13 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
+    $this->getSession()->getPage()->fillField('Line Item Amount', '12.345');
+
     $this->getSession()->getPage()->pressButton('Next >');
     $this->getSession()->getPage()->fillField('Contribution Amount', '25.00');
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
-    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '25.00');
+    $this->htmlOutput();
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '37.345');
 
     // Wait for the credit card form to load in.
     $this->assertSession()->waitForField('credit_card_number');
@@ -116,6 +126,12 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->assertEquals('Donation', $contribution['financial_type']);
     $this->assertEquals('25.00', $contribution['net_amount']);
     $this->assertEquals('25.00', $contribution['total_amount']);
+
+    $api_result = wf_civicrm_api('line_item', 'get', [
+      'sequential' => 1,
+    ]);
+    throw new \Exception(var_export($api_result, TRUE));
+
   }
 
 }
