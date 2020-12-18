@@ -88,8 +88,8 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
       'sequential' => 1,
     ]);
 
-    print_r($result);
-    print_r($debug);
+    // print_r($result);
+    // print_r($debug);
     // throw new \Exception(var_export($thing, TRUE));
 
     /*$result = civicrm_api3('CustomValue', 'get', [
