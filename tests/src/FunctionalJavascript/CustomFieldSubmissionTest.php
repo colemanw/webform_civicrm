@@ -3,6 +3,7 @@
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Drupal\Core\Url;
+use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
 
 /**
  * Tests submitting a Webform with CiviCRM and a single contact.
@@ -87,10 +88,14 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
 
     $this->getSession()->getPage()->fillField('Text', 'Lorem Ipsum');
+
     // ToDo
-    // $this->getSession()->getPage()->fillField('DateTime - date', '2020-12-12');
-    $this->getSession()->getPage()->fillField('DateTime - date', '20170301');
-    // $this->getSession()->getPage()->fillField('DateTime - time', '2017-03-01T20:02:00');
+    // Could not figure out how to use $this->getSession()->getPage()->fillField so using javascript instead
+    $driver = $this->getSession()->getDriver();
+    assert($driver instanceof DrupalSelenium2Driver);
+    $driver->executeScript("document.getElementById('edit-civicrm-1-contact-1-cg1-custom-2').setAttribute('value', '2020-12-12')");
+    // ToDo - can't get this time to fill in!
+    $driver->executeScript("document.getElementById('edit-civicrm-1-contact-1-cg1-custom-2-timepart').setAttribute('value', '02:41PM')");
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
@@ -102,9 +107,8 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     ]);
     $this->assertEquals(2, $api_result['count']);
     // throw new \Exception(var_export($api_result, TRUE));
-
     $this->assertEquals('Lorem Ipsum', $api_result['values'][0]['latest']);
-    $this->assertEquals('2020-12-21', $api_result['values'][1]['latest']);
+    $this->assertEquals('2020-12-12 00:00:00', $api_result['values'][1]['latest']);
   }
 
 }

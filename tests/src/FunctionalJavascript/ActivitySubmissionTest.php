@@ -46,11 +46,6 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->assertPageNoErrorMessages();
 
     $today = date('Y-m-d H:i:s');
-    // $this->getSession()->getPage()->fillField('date_field_name', TIMESTRING_AS_HTML_DATE)
-    // date('c')
-    // '2017-03-01T20:02:00'
-    // core check date time - date time range - perhaps smart date module
-    // DateRangeFieldTest lines 88-91
 
     $this->assertSession()->waitForField('First Name');
 
@@ -58,12 +53,10 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Activity Subject', 'Awesome Activity');
     // ToDo -> try different dates -> default is 'now'
-    // $this->getSession()->getPage()->fillField('Activity Date', '2020-12-12');
     $this->getSession()->getPage()->fillField('Activity Duration', '90');
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->createScreenshot('test.png');
-    // $this->createScreenshot($this->htmlOutputDirectory . '/test.png');
     // $this->htmlOutput();
 
     // ToDo -> figure out what Error message it is! The submission itself works well.
@@ -80,7 +73,7 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals('1', $activity['activity_type_id']);
     $this->assertTrue(strtotime($today) -  strtotime($activity['activity_date_time']) < 60);
     $this->assertEquals(90, $activity['duration']);
-
+    // ToDo get contact id and activity id from the URL query:
     // $this->webform->toUrl('canonical', ['query' => ['cid1' => 12, 'aid' => 12]]);
   }
 
