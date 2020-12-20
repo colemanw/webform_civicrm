@@ -38,6 +38,8 @@ abstract class CiviCrmTestBase extends WebDriverTestBase {
     $civicrm_test_conn->query('SET FOREIGN_KEY_CHECKS = 0;')->execute();
     $civicrm_schema = $civicrm_test_conn->schema();
     $tables = $civicrm_schema->findTables('%');
+    // Comment out if you want to view the tables/contents before deleting them
+    // throw new \Exception(var_export($tables, TRUE));
     foreach ($tables as $table) {
       if ($civicrm_schema->dropTable($table)) {
         unset($tables[$table]);

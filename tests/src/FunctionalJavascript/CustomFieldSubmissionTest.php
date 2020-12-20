@@ -32,21 +32,22 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
 
-    $dateParams = [
-      'custom_group_id' => $customgroup_id,
-      'label' => 'Date',
-      'data_type' => 'Date',
+    $result = civicrm_api3('CustomField', 'create', [
+      'custom_group_id' => "Custom",
+      'label' => "DateTime",
+      'data_type' => "Date",
+      'html_type' => "Select Date",
+      'date_format' => "yy-mm-dd",
+      'time_format' => 2,
       'is_active' => 1,
-      'debug' => 1,
-    ];
-    $result = \wf_civicrm_api('CustomField', 'create', $dateParams);
+    ]);
     // throw new \Exception(var_export($result, TRUE));
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
   }
 
   /**
-   * Test submitting a Custom Field
+   * Test submitting Custom Fields
    */
   public function testSubmitWebform() {
 
@@ -86,28 +87,24 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
 
     $this->getSession()->getPage()->fillField('Text', 'Lorem Ipsum');
-    // $this->getSession()->getPage()->fillField('Date - date', '2017-03-01T20:02:00');
-    // $this->getSession()->getPage()->fillField('Date - time', '2017-03-01T20:02:00');
-
-    // ToDo -> custom dates
-    // $this->getSession()->getPage()->fillField('Date', '2020-12-12');
+    // ToDo
+    // $this->getSession()->getPage()->fillField('DateTime - date', '2020-12-12');
+    $this->getSession()->getPage()->fillField('DateTime - date', '20170301');
+    // $this->getSession()->getPage()->fillField('DateTime - time', '2017-03-01T20:02:00');
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
-    $result = wf_civicrm_api('Contact', 'get', [
-      'sequential' => 1,
-    ]);
-
-    // throw new \Exception(var_export($thing, TRUE));
-
-    $result = wf_civicrm_api('CustomValue', 'get', [
+    // Note: custom fields are on contact_id=3 (1=default org; 2=the drupal user)
+    $api_result = wf_civicrm_api('CustomValue', 'get', [
       'sequential' => 1,
       'entity_id' => 3,
     ]);
-    $this->assertEquals(1, $result['count']);
-    $custom_field = reset($result['values']);
-    $this->assertEquals('Lorem Ipsum', $custom_field[0]);
+    $this->assertEquals(2, $api_result['count']);
+    // throw new \Exception(var_export($api_result, TRUE));
+
+    $this->assertEquals('Lorem Ipsum', $api_result['values'][0]['latest']);
+    $this->assertEquals('2020-12-21', $api_result['values'][1]['latest']);
   }
 
 }
