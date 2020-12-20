@@ -6,7 +6,7 @@ use Drupal\Core\Url;
 use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
 
 /**
- * Tests submitting a Webform with CiviCRM and a single contact.
+ * Tests submitting a Webform with CiviCRM: single contact + custom fields.
  *
  * @group webform_civicrm
  */
@@ -89,12 +89,10 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->fillField('Text', 'Lorem Ipsum');
 
-    // ToDo
-    // Could not figure out how to use $this->getSession()->getPage()->fillField so using javascript instead
+    // ToDo - Could not figure out how to use $this->getSession()->getPage()->fillField so using javascript instead
     $driver = $this->getSession()->getDriver();
     assert($driver instanceof DrupalSelenium2Driver);
     $driver->executeScript("document.getElementById('edit-civicrm-1-contact-1-cg1-custom-2').setAttribute('value', '2020-12-12')");
-    // ToDo - can't get this time to fill in!
     $driver->executeScript("document.getElementById('edit-civicrm-1-contact-1-cg1-custom-2-timepart').setAttribute('value', '10:20:00')");
 
     $this->getSession()->getPage()->pressButton('Submit');
