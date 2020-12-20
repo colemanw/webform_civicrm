@@ -56,7 +56,6 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Activity Duration', '90');
 
     $this->getSession()->getPage()->pressButton('Submit');
-    $this->createScreenshot('test.png');
     // $this->htmlOutput();
 
     // ToDo -> figure out what Error message it is! The submission itself works well.

@@ -95,7 +95,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     assert($driver instanceof DrupalSelenium2Driver);
     $driver->executeScript("document.getElementById('edit-civicrm-1-contact-1-cg1-custom-2').setAttribute('value', '2020-12-12')");
     // ToDo - can't get this time to fill in!
-    $driver->executeScript("document.getElementById('edit-civicrm-1-contact-1-cg1-custom-2-timepart').setAttribute('value', '02:41PM')");
+    $driver->executeScript("document.getElementById('edit-civicrm-1-contact-1-cg1-custom-2-timepart').setAttribute('value', '10:20:00')");
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
@@ -108,7 +108,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals(2, $api_result['count']);
     // throw new \Exception(var_export($api_result, TRUE));
     $this->assertEquals('Lorem Ipsum', $api_result['values'][0]['latest']);
-    $this->assertEquals('2020-12-12 00:00:00', $api_result['values'][1]['latest']);
+    $this->assertEquals('2020-12-12 10:20:00', $api_result['values'][1]['latest']);
   }
 
 }
