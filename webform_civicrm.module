@@ -145,23 +145,6 @@ function webform_civicrm_theme() {
       'base hook' => 'input',
     ],
   ];
-  /*
-  $theme = array(
-    'webform_civicrm_options_table' => array(
-      'render element' => 'element',
-      'file' => 'includes/wf_crm_admin_form.inc',
-    ),
-    'display_civicrm_contact' => array(
-      'render element' => 'element',
-      'file' => 'includes/contact_component.inc',
-    ),
-    'static_contact_element' => array(
-      'render element' => 'element',
-      'file' => 'includes/contact_component.inc',
-    ),
-  );
-  return $theme;
-  */
 }
 
 /**
@@ -243,12 +226,12 @@ function webform_civicrm_webform_submission_actions($node, $submission) {
  * @param CRM_Core_DAO_CustomField $dao
  */
 function webform_civicrm_civicrm_postSave_civicrm_custom_field($dao) {
-  \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/wf_crm_admin_form');
   if (empty($dao->custom_group_id)) {
     $dao->find(TRUE);
   }
   if ($dao->is_active) {
-    wf_crm_admin_form::handleDynamicCustomField('create', $dao->id, $dao->custom_group_id);
+    $admin_form = \Drupal::service('webform_civicrm.admin_form');
+    $admin_form::handleDynamicCustomField('create', $dao->id, $dao->custom_group_id);
   }
 }
 
@@ -267,8 +250,8 @@ function webform_civicrm_civicrm_postSave_civicrm_custom_field($dao) {
  */
 function webform_civicrm_civicrm_post($op, $name, $id, $dao) {
   if ($name == 'CustomField' && $op == 'delete') {
-    \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/wf_crm_admin_form');
-    wf_crm_admin_form::handleDynamicCustomField($op, $id, $dao->custom_group_id);
+    $admin_form = \Drupal::service('webform_civicrm.admin_form');
+    $admin_form::handleDynamicCustomField($op, $id, $dao->custom_group_id);
   }
 }
 
@@ -867,7 +850,7 @@ function webform_civicrm_civicrm_pre($op, $objectName, $id, &$params) {
       $result = civicrm_api3('CustomField', 'get', $queryParams);
       // run only if this field already exist in db to make sure we donot run it for create op
       if ($result['count'] == 1) {
-        \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/wf_crm_admin_form');
+        $admin_form = \Drupal::service('webform_civicrm.admin_form');
         $previousStatus = $result['values'][0]['is_active'];
         $customGroupId = $result['values'][0]['custom_group_id'];
         if ($statusToSet == FALSE && $previousStatus == TRUE) {
@@ -877,7 +860,7 @@ function webform_civicrm_civicrm_pre($op, $objectName, $id, &$params) {
           $opName = 'enable';
         }
         if (isset($opName)) {
-          wf_crm_admin_form::handleDynamicCustomField($opName, $id, $customGroupId);
+          $admin_form::handleDynamicCustomField($opName, $id, $customGroupId);
         }
       }
     }

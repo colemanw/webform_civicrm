@@ -1,5 +1,8 @@
 <?php
 
+namespace Drupal\webform_civicrm;
+
+
 use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\webform\Entity\Webform;
 use Drupal\Component\Render\FormattableMarkup;
@@ -15,7 +18,8 @@ use Drupal\webform_civicrm\Utils;
  * Webform CiviCRM module's admin form.
  */
 
-class wf_crm_admin_form {
+class AdminForm implements AdminFormInterface {
+
   private $form;
   /**
    * @var \Drupal\Core\Form\FormStateInterface
@@ -38,7 +42,15 @@ class wf_crm_admin_form {
    */
   public static $fieldset_entities = array('contact', 'activity', 'case', 'grant');
 
-  function __construct(array $form, FormStateInterface $form_state, WebformInterface $webform) {
+  /**
+   * Initialize and set form variables.
+   * @param array $form
+   * @param object $form_state
+   * @param object $webform
+   *
+   * @return object
+   */
+  function initialize(array $form, FormStateInterface $form_state, WebformInterface $webform) {
     \Drupal::getContainer()->get('civicrm')->initialize();
     $this->form = $form;
     $this->form_state = $form_state;
@@ -46,6 +58,7 @@ class wf_crm_admin_form {
     $this->sets = Utils::wf_crm_get_fields('sets');
     $this->settings = $form_state->getValues();
     $this->webform = $webform;
+    return $this;
   }
 
   /**
@@ -191,7 +204,7 @@ class wf_crm_admin_form {
     $this->form['#attached']['library'][] = 'webform_civicrm/admin';
     $this->form['#attached']['drupalSettings']['webform_civicrm'] = array('rTypes' => wf_crm_get_relationship_types());
     // Add CiviCRM core css & js, which includes jQuery, jQuery UI + other plugins
-    CRM_Core_Resources::singleton()->addCoreResources();
+    \CRM_Core_Resources::singleton()->addCoreResources();
   }
 
   /**
@@ -1079,7 +1092,7 @@ class wf_crm_admin_form {
       '#type' => 'select',
       '#title' => t('Currency'),
       '#default_value' => wf_crm_aval($this->data, "contribution:1:currency"),
-      '#options' => CRM_Core_OptionGroup::values('currencies_enabled'),
+      '#options' => \CRM_Core_OptionGroup::values('currencies_enabled'),
       '#required' => TRUE,
     ];
 
@@ -2284,7 +2297,7 @@ class wf_crm_admin_form {
   /**
    * A shim to set the settings manually.
    *
-   * Replicates code in \wf_crm_admin_form::postProcess where the settings
+   * Replicates code in \AdminForm::postProcess where the settings
    * property is set before rebuilding data.
    *
    * @param array $settings
