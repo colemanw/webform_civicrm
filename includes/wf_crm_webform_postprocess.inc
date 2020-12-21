@@ -1754,6 +1754,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     if ($cid) {
       $address['contact_id'] = $email['contact_id'] = $this->ent['contact'][1]['id'] = $cid;
+      $this->data['contribution'][1]['contribution'][1]['contact_id'] = $cid;
       wf_civicrm_api('address', 'create', $address);
       wf_civicrm_api('email', 'create', $email);
     }
