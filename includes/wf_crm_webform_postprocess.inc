@@ -1187,6 +1187,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             'source_contact_id' => $cid,
             'activity_type_id' => 'Membership Renewal',
             'target_id' => $cid,
+            'source_record_id' => $result['id'],
           ];
           $memType = wf_civicrm_api('MembershipType', 'getsingle', ['id' => $membership['membership_type_id']]);
           $memStatus = wf_civicrm_api('MembershipStatus', 'getsingle', ['id' => $membership['status_id']]);
