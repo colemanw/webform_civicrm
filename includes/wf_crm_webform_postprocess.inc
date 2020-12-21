@@ -1300,17 +1300,37 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $this->handleEntityTags('case', $result['id'], $n, $params);
           // Store id
           $this->ent['case'][$n]['id'] = $result['id'];
+          $caseStatus = wf_crm_apivalues('OptionValue', 'get', [
+            'sequential' => 1,
+            'return' => ["grouping", "value"],
+            'option_group_id' => "case_status",
+          ]);
+          $caseStatus = array_column($caseStatus, 'grouping', 'value');
+
           // Save case roles
           foreach ($params as $param => $val) {
             if ($val && strpos($param, 'role_') === 0) {
               foreach ((array) $params['client_id'] as $client) {
                 foreach ((array) $val as $contactB) {
-                  wf_civicrm_api('relationship', 'create', [
+                  $rel_params = [
                     'relationship_type_id' => substr($param, 5),
                     'contact_id_a' => $client,
                     'contact_id_b' => $contactB,
                     'case_id' => $result['id'],
-                  ]);
+                  ];
+                  $caseRel = wf_civicrm_api('relationship', 'get', $rel_params);
+                  if (!empty($caseRel['id'])) {
+                    $rel_params['id'] = $caseRel['id'];
+                  }
+                  if (!empty($params['status_id']) && !empty($caseStatus[$params['status_id']])) {
+                    if ($caseStatus[$params['status_id']] == 'Closed') {
+                      $rel_params['end_date'] = 'now';
+                    }
+                    elseif ($caseStatus[$params['status_id']] == 'Opened') {
+                      $rel_params['end_date'] = 'null';
+                    }
+                  }
+                  wf_civicrm_api('relationship', 'create', $rel_params);
                 }
               }
             }
