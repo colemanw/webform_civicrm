@@ -13,7 +13,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 // Include legacy files for their procedural functions.
 // @todo convert required functions into injectable services.
 include_once __DIR__ . '/../../includes/utils.inc';
-include_once __DIR__ . '/../../includes/wf_crm_admin_form.inc';
 
 class WebformCiviCRMSettingsForm extends FormBase {
 
@@ -55,7 +54,7 @@ class WebformCiviCRMSettingsForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $webform = $this->getWebform();
-    $admin_form = new \wf_crm_admin_form($form, $form_state, $webform);
+    $admin_form = \Drupal::service('webform_civicrm.admin_form')->initialize($form, $form_state, $webform);
     $form = $admin_form->buildForm();
     return $form;
   }
@@ -112,7 +111,7 @@ class WebformCiviCRMSettingsForm extends FormBase {
       return;
     }
 
-    $admin_form = new \wf_crm_admin_form($form, $form_state, $webform);
+    $admin_form = \Drupal::service('webform_civicrm.admin_form')->initialize($form, $form_state, $webform);
     $form_state->cleanValues();
     $admin_form->setSettings($form_state->getValues());
     $admin_form->rebuildData();
