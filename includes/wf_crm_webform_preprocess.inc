@@ -537,7 +537,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             }
             // Set default value
             else {
-              if (substr($eid, -9) === 'date_time') {
+              if ($element['#type'] === 'date') {
                 // Must pass date only
                 $element['#default_value'] = substr($val, 0, 10);
               } else {

@@ -985,7 +985,7 @@ class Fields implements FieldsInterface {
             $fields[$id]['name'] .= ' - ' . t('date');
             $fields[$id . '_timepart'] = array(
               'name' => $custom_field['label'] . ' - ' . t('time'),
-              'type' => 'time',
+              'type' => 'webform_time',
               'extra' => array('hourformat' => $custom_field['time_format'] == 1 ? '12-hour' : '24-hour'),
             );
           }
