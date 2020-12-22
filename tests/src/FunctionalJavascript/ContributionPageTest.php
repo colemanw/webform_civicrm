@@ -45,7 +45,6 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $params = array_merge([
       'name' => 'Sales tax account ' . substr(sha1(rand()), 0, 4),
       'financial_account_type_id' => key(CRM_Core_PseudoConstant::accountOptionValues('financial_account_type', NULL, " AND v.name LIKE 'Liability' ")),
-      'is_deductible' => 1,
       'is_tax' => 1,
       'tax_rate' => 5,
       'is_active' => 1,
@@ -74,6 +73,7 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $payment_processor = $this->createPaymentProcessor();
 
     $financialAccount = $this->setupSalesTax(2, $accountParams = []);
+    // throw new \Exception(var_export($financialAccount, TRUE));
 
     $this->drupalLogin($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
@@ -107,7 +107,8 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->assertSession()->checkboxChecked("civicrm_1_lineitem_1_contribution_line_total");
     $this->getSession()->getPage()->checkField("civicrm_1_lineitem_2_contribution_line_total");
     $this->assertSession()->checkboxChecked("civicrm_1_lineitem_2_contribution_line_total");
-    $this->getSession()->getPage()->selectFieldOption('Financial Type', 2);
+    // $this->getSession()->getPage()->selectFieldOption('Financial Type', 2);
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_lineitem_2_contribution_financial_type_id', 2);
 
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
