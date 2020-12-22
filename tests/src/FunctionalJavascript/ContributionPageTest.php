@@ -6,8 +6,13 @@ use Behat\Mink\Element\NodeElement;
 use Drupal\Core\Url;
 use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
 
+use CRM_Core_PseudoConstant;
+use CRM_Financial_BAO_FinancialAccount;
+use CRM_Financial_DAO_EntityFinancialAccount;
+use CRM_Financial_BAO_FinancialTypeAccount;
+
 /**
- * Tests submitting a Webform with a contribution page.
+ * Tests submitting a Webform with CiviCRM: Contribution with Line Items
  *
  * @group webform_civicrm
  */
@@ -35,8 +40,42 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     return current($result['values']);
   }
 
+  private function setupSalesTax(int $financialTypeId, $accountParams = []) {
+    // https://github.com/civicrm/civicrm-core/blob/master/tests/phpunit/CiviTest/CiviUnitTestCase.php#L3104
+    // includeFile('vendor/civicrm/civicrm-core/CRM/Core/PseudoConstant.php');
+    $params = array_merge([
+      'name' => 'Sales tax account ' . substr(sha1(rand()), 0, 4),
+      'financial_account_type_id' => key(CRM_Core_PseudoConstant::accountOptionValues('financial_account_type', NULL, " AND v.name LIKE 'Liability' ")),
+      'is_deductible' => 1,
+      'is_tax' => 1,
+      'tax_rate' => 5,
+      'is_active' => 1,
+    ], $accountParams);
+    $account = CRM_Financial_BAO_FinancialAccount::add($params);
+    $entityParams = [
+      'entity_table' => 'civicrm_financial_type',
+      'entity_id' => $financialTypeId,
+      'account_relationship' => key(CRM_Core_PseudoConstant::accountOptionValues('account_relationship', NULL, " AND v.name LIKE 'Sales Tax Account is' ")),
+    ];
+
+    \Civi::$statics['CRM_Core_PseudoConstant']['taxRates'][$financialTypeId] = $params['tax_rate'];
+
+    $dao = new CRM_Financial_DAO_EntityFinancialAccount();
+    $dao->copyValues($entityParams);
+    $dao->find();
+    if ($dao->fetch()) {
+      $entityParams['id'] = $dao->id;
+    }
+    $entityParams['financial_account_id'] = $account->id;
+
+    return CRM_Financial_BAO_FinancialTypeAccount::add($entityParams);
+  }
+
   public function testSubmitContribution() {
     $payment_processor = $this->createPaymentProcessor();
+
+    $financialAccount = $this->setupSalesTax(1, $accountParams = []);
+
     $this->drupalLogin($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
@@ -92,10 +131,11 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
 
     // Wait for the credit card form to load in.
     $this->assertSession()->waitForField('credit_card_number');
-    $this->getSession()->getPage()->fillField('Card Number', '4111111111111111');
+    $this->getSession()->getPage()->fillField('Card Number', '4222222222222220');
     $this->getSession()->getPage()->fillField('Security Code', '123');
     $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[M]', '11');
-    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[Y]', '2023');
+    $this_year = date('Y');
+    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[Y]', $this_year + 1);
     $this->getSession()->getPage()->fillField('Billing First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Billing Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Street Address', '123 Milwaukee Ave');
