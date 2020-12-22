@@ -168,6 +168,7 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
     $this->assertEquals('Donation', $contribution['financial_type']);
     $this->assertEquals('60.98', $contribution['total_amount']);
+    $contribution_total_amount = $contribution['total_amount'];
     $this->assertEquals('Completed', $contribution['contribution_status']);
     $this->assertEquals('USD', $contribution['currency']);
 
@@ -178,6 +179,7 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     ]);
     $contribution = reset($api_result['values']);
     $this->assertEquals('1.48', $contribution['tax_amount']);
+    $tax_total_amount = $contribution['tax_amount'];
 
     $api_result = wf_civicrm_api('line_item', 'get', [
       'sequential' => 1,
@@ -194,7 +196,8 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     // throw new \Exception(var_export($api_result, TRUE));
     $sum_line_total = $api_result['values'][0]['line_total'] + $api_result['values'][1]['line_total'] + $api_result['values'][2]['line_total'];
     $sum_tax_amount = $api_result['values'][2]['tax_amount'];
-    $this->assertEquals($contribution['total_amount'], $sum_line_total + $sum_tax_amount);
+    $this->assertEquals($tax_total_amount, $sum_tax_amount);
+    $this->assertEquals($contribution_total_amount, $sum_line_total + $sum_tax_amount);
   }
 
 }
