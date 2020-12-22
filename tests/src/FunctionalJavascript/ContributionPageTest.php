@@ -73,7 +73,6 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $payment_processor = $this->createPaymentProcessor();
 
     $financialAccount = $this->setupSalesTax(2, $accountParams = []);
-    // throw new \Exception(var_export($financialAccount, TRUE));
 
     $this->drupalLogin($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
@@ -107,7 +106,7 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->assertSession()->checkboxChecked("civicrm_1_lineitem_1_contribution_line_total");
     $this->getSession()->getPage()->checkField("civicrm_1_lineitem_2_contribution_line_total");
     $this->assertSession()->checkboxChecked("civicrm_1_lineitem_2_contribution_line_total");
-    // $this->getSession()->getPage()->selectFieldOption('Financial Type', 2);
+    // Set the Financial Type for the second line item to Member Dues (which has Sales Tax on it).
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_lineitem_2_contribution_financial_type_id', 2);
 
     $this->getSession()->getPage()->pressButton('Save Settings');
@@ -162,24 +161,40 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $api_result = wf_civicrm_api('contribution', 'get', [
       'sequential' => 1,
     ]);
+
     $this->assertEquals(1, $api_result['count']);
     $contribution = reset($api_result['values']);
     $this->assertNotEmpty($contribution['trxn_id']);
     $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
     $this->assertEquals('Donation', $contribution['financial_type']);
-    $this->assertEquals('785.00', $contribution['net_amount']);
-    $this->assertEquals('785.00', $contribution['total_amount']);
+    $this->assertEquals('60.98', $contribution['total_amount']);
+    $this->assertEquals('Completed', $contribution['contribution_status']);
+    $this->assertEquals('USD', $contribution['currency']);
+
+    // Also retrieve tax_amount (have to ask for it to be returned):
+    $api_result = wf_civicrm_api('contribution', 'get', [
+      'sequential' => 1,
+      'return' => 'tax_amount',
+    ]);
+    $contribution = reset($api_result['values']);
+    $this->assertEquals('1.48', $contribution['tax_amount']);
 
     $api_result = wf_civicrm_api('line_item', 'get', [
       'sequential' => 1,
     ]);
-    $this->assertEquals(3, $api_result['count']);
+
     $this->assertEquals('10.00', $api_result['values'][0]['line_total']);
-    $this->assertEquals('704.55', $api_result['values'][1]['line_total']);
-    $this->assertEquals('70.45', $api_result['values'][2]['line_total']);
-    $sum_line_items = $api_result['values'][0]['line_total'] + $api_result['values'][1]['line_total'] + $api_result['values'][2]['line_total'];
-    $this->assertEquals($contribution['total_amount'], $sum_line_items);
+    $this->assertEquals('1', $api_result['values'][0]['financial_type_id']);
+    $this->assertEquals('20.00', $api_result['values'][1]['line_total']);
+    $this->assertEquals('1', $api_result['values'][1]['financial_type_id']);
+    $this->assertEquals('29.50', $api_result['values'][2]['line_total']);
+    $this->assertEquals('1.48', $api_result['values'][2]['tax_amount']);
+    $this->assertEquals('2', $api_result['values'][2]['financial_type_id']);
+
     // throw new \Exception(var_export($api_result, TRUE));
+    $sum_line_total = $api_result['values'][0]['line_total'] + $api_result['values'][1]['line_total'] + $api_result['values'][2]['line_total'];
+    $sum_tax_amount = $api_result['values'][2]['tax_amount'];
+    $this->assertEquals($contribution['total_amount'], $sum_line_total + $sum_tax_amount);
   }
 
 }
