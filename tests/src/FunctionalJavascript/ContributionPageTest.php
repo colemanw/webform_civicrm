@@ -12,7 +12,7 @@ use CRM_Financial_DAO_EntityFinancialAccount;
 use CRM_Financial_BAO_FinancialTypeAccount;
 
 /**
- * Tests submitting a Webform with CiviCRM: Contribution with Line Items
+ * Tests submitting a Webform with CiviCRM: Contribution with Line Items and Sales Tax
  *
  * @group webform_civicrm
  */
@@ -42,7 +42,6 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
 
   private function setupSalesTax(int $financialTypeId, $accountParams = []) {
     // https://github.com/civicrm/civicrm-core/blob/master/tests/phpunit/CiviTest/CiviUnitTestCase.php#L3104
-    // includeFile('vendor/civicrm/civicrm-core/CRM/Core/PseudoConstant.php');
     $params = array_merge([
       'name' => 'Sales tax account ' . substr(sha1(rand()), 0, 4),
       'financial_account_type_id' => key(CRM_Core_PseudoConstant::accountOptionValues('financial_account_type', NULL, " AND v.name LIKE 'Liability' ")),
@@ -74,7 +73,7 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
   public function testSubmitContribution() {
     $payment_processor = $this->createPaymentProcessor();
 
-    $financialAccount = $this->setupSalesTax(1, $accountParams = []);
+    $financialAccount = $this->setupSalesTax(2, $accountParams = []);
 
     $this->drupalLogin($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
@@ -108,6 +107,7 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->assertSession()->checkboxChecked("civicrm_1_lineitem_1_contribution_line_total");
     $this->getSession()->getPage()->checkField("civicrm_1_lineitem_2_contribution_line_total");
     $this->assertSession()->checkboxChecked("civicrm_1_lineitem_2_contribution_line_total");
+    $this->getSession()->getPage()->selectFieldOption('Financial Type', 2);
 
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
@@ -120,14 +120,14 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
-    $this->getSession()->getPage()->fillField('Line Item Amount', '704.5454');
-    $this->getSession()->getPage()->fillField('Line Item Amount 2', '70.45454');
+    $this->getSession()->getPage()->fillField('Line Item Amount', '20.00');
+    $this->getSession()->getPage()->fillField('Line Item Amount 2', '29.50');
 
     $this->getSession()->getPage()->pressButton('Next >');
     $this->getSession()->getPage()->fillField('Contribution Amount', '10.00');
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->htmlOutput();
-    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '785.00');
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '60.98');
 
     // Wait for the credit card form to load in.
     $this->assertSession()->waitForField('credit_card_number');
