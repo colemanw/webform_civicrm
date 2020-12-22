@@ -6,8 +6,13 @@ use Behat\Mink\Element\NodeElement;
 use Drupal\Core\Url;
 use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
 
+use CRM_Core_PseudoConstant;
+use CRM_Financial_BAO_FinancialAccount;
+use CRM_Financial_DAO_EntityFinancialAccount;
+use CRM_Financial_BAO_FinancialTypeAccount;
+
 /**
- * Tests submitting a Webform with a contribution page.
+ * Tests submitting a Webform with CiviCRM: Contribution with Line Items and Sales Tax
  *
  * @group webform_civicrm
  */
@@ -35,8 +40,40 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     return current($result['values']);
   }
 
+  private function setupSalesTax(int $financialTypeId, $accountParams = []) {
+    // https://github.com/civicrm/civicrm-core/blob/master/tests/phpunit/CiviTest/CiviUnitTestCase.php#L3104
+    $params = array_merge([
+      'name' => 'Sales tax account ' . substr(sha1(rand()), 0, 4),
+      'financial_account_type_id' => key(CRM_Core_PseudoConstant::accountOptionValues('financial_account_type', NULL, " AND v.name LIKE 'Liability' ")),
+      'is_tax' => 1,
+      'tax_rate' => 5,
+      'is_active' => 1,
+    ], $accountParams);
+    $account = CRM_Financial_BAO_FinancialAccount::add($params);
+    $entityParams = [
+      'entity_table' => 'civicrm_financial_type',
+      'entity_id' => $financialTypeId,
+      'account_relationship' => key(CRM_Core_PseudoConstant::accountOptionValues('account_relationship', NULL, " AND v.name LIKE 'Sales Tax Account is' ")),
+    ];
+
+    \Civi::$statics['CRM_Core_PseudoConstant']['taxRates'][$financialTypeId] = $params['tax_rate'];
+
+    $dao = new CRM_Financial_DAO_EntityFinancialAccount();
+    $dao->copyValues($entityParams);
+    $dao->find();
+    if ($dao->fetch()) {
+      $entityParams['id'] = $dao->id;
+    }
+    $entityParams['financial_account_id'] = $account->id;
+
+    return CRM_Financial_BAO_FinancialTypeAccount::add($entityParams);
+  }
+
   public function testSubmitContribution() {
     $payment_processor = $this->createPaymentProcessor();
+
+    $financialAccount = $this->setupSalesTax(2, $accountParams = []);
+
     $this->drupalLogin($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
@@ -69,6 +106,8 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->assertSession()->checkboxChecked("civicrm_1_lineitem_1_contribution_line_total");
     $this->getSession()->getPage()->checkField("civicrm_1_lineitem_2_contribution_line_total");
     $this->assertSession()->checkboxChecked("civicrm_1_lineitem_2_contribution_line_total");
+    // Set the Financial Type for the second line item to Member Dues (which has Sales Tax on it).
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_lineitem_2_contribution_financial_type_id', 2);
 
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
@@ -81,21 +120,22 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
-    $this->getSession()->getPage()->fillField('Line Item Amount', '704.5454');
-    $this->getSession()->getPage()->fillField('Line Item Amount 2', '70.45454');
+    $this->getSession()->getPage()->fillField('Line Item Amount', '20.00');
+    $this->getSession()->getPage()->fillField('Line Item Amount 2', '29.50');
 
     $this->getSession()->getPage()->pressButton('Next >');
     $this->getSession()->getPage()->fillField('Contribution Amount', '10.00');
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->htmlOutput();
-    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '785.00');
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '60.98');
 
     // Wait for the credit card form to load in.
     $this->assertSession()->waitForField('credit_card_number');
-    $this->getSession()->getPage()->fillField('Card Number', '4111111111111111');
+    $this->getSession()->getPage()->fillField('Card Number', '4222222222222220');
     $this->getSession()->getPage()->fillField('Security Code', '123');
     $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[M]', '11');
-    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[Y]', '2023');
+    $this_year = date('Y');
+    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[Y]', $this_year + 1);
     $this->getSession()->getPage()->fillField('Billing First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Billing Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Street Address', '123 Milwaukee Ave');
@@ -121,24 +161,43 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $api_result = wf_civicrm_api('contribution', 'get', [
       'sequential' => 1,
     ]);
+
     $this->assertEquals(1, $api_result['count']);
     $contribution = reset($api_result['values']);
     $this->assertNotEmpty($contribution['trxn_id']);
     $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
     $this->assertEquals('Donation', $contribution['financial_type']);
-    $this->assertEquals('785.00', $contribution['net_amount']);
-    $this->assertEquals('785.00', $contribution['total_amount']);
+    $this->assertEquals('60.98', $contribution['total_amount']);
+    $contribution_total_amount = $contribution['total_amount'];
+    $this->assertEquals('Completed', $contribution['contribution_status']);
+    $this->assertEquals('USD', $contribution['currency']);
+
+    // Also retrieve tax_amount (have to ask for it to be returned):
+    $api_result = wf_civicrm_api('contribution', 'get', [
+      'sequential' => 1,
+      'return' => 'tax_amount',
+    ]);
+    $contribution = reset($api_result['values']);
+    $this->assertEquals('1.48', $contribution['tax_amount']);
+    $tax_total_amount = $contribution['tax_amount'];
 
     $api_result = wf_civicrm_api('line_item', 'get', [
       'sequential' => 1,
     ]);
-    $this->assertEquals(3, $api_result['count']);
+
     $this->assertEquals('10.00', $api_result['values'][0]['line_total']);
-    $this->assertEquals('704.55', $api_result['values'][1]['line_total']);
-    $this->assertEquals('70.45', $api_result['values'][2]['line_total']);
-    $sum_line_items = $api_result['values'][0]['line_total'] + $api_result['values'][1]['line_total'] + $api_result['values'][2]['line_total'];
-    $this->assertEquals($contribution['total_amount'], $sum_line_items);
+    $this->assertEquals('1', $api_result['values'][0]['financial_type_id']);
+    $this->assertEquals('20.00', $api_result['values'][1]['line_total']);
+    $this->assertEquals('1', $api_result['values'][1]['financial_type_id']);
+    $this->assertEquals('29.50', $api_result['values'][2]['line_total']);
+    $this->assertEquals('1.48', $api_result['values'][2]['tax_amount']);
+    $this->assertEquals('2', $api_result['values'][2]['financial_type_id']);
+
     // throw new \Exception(var_export($api_result, TRUE));
+    $sum_line_total = $api_result['values'][0]['line_total'] + $api_result['values'][1]['line_total'] + $api_result['values'][2]['line_total'];
+    $sum_tax_amount = $api_result['values'][2]['tax_amount'];
+    $this->assertEquals($tax_total_amount, $sum_tax_amount);
+    $this->assertEquals($contribution_total_amount, $sum_line_total + $sum_tax_amount);
   }
 
 }

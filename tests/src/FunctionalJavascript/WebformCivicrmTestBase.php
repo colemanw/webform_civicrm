@@ -118,7 +118,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   }
 
   /**
-   * Asserts the page has no error mesages.
+   * Asserts the page has no error messages.
    */
   protected function assertPageNoErrorMessages() {
     $error_messages = $this->getSession()->getPage()->findAll('css', '.messages.messages--error');
