@@ -1994,20 +1994,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $paymentProcessor->setCancelUrl($this->getIpnRedirectUrl('cancel'));
     }
 
-    if (method_exists($paymentProcessor, 'doTransferCheckout')) {
-      // doTransferCheckout is deprecated but some processors might still implement it.
-      // Somewhere around 4.6 it was replaced by doPayment as the method of choice,
-      // but to be safe still call it if it exists for now.
-      $paymentProcessor->doTransferCheckout($params, 'contribute');
+    try {
+      $paymentProcessor->doPayment($params);
     }
-    else {
-      try {
-        $paymentProcessor->doPayment($params);
-      }
-      catch (\Civi\Payment\Exception\PaymentProcessorException $e) {
-        drupal_set_message(ts('Payment approval failed with message: ') . $e->getMessage(),'error');
-        CRM_Utils_System::redirect($this->getIpnRedirectUrl('cancel'));
-      }
+    catch (\Civi\Payment\Exception\PaymentProcessorException $e) {
+      drupal_set_message(ts('Payment approval failed with message: ') . $e->getMessage(),'error');
+      CRM_Utils_System::redirect($this->getIpnRedirectUrl('cancel'));
     }
 
   }
