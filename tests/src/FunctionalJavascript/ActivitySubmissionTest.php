@@ -5,7 +5,7 @@ namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 use Drupal\Core\Url;
 
 /**
- * Tests submitting a Webform with CiviCRM and a single contact.
+ * Tests submitting a Webform with CiviCRM: Contact with Activity
  *
  * @group webform_civicrm
  */
