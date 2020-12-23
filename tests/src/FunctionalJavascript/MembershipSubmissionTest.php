@@ -74,10 +74,6 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
     $today = date('Y-m-d');
     // throw new \Exception(var_export($today, TRUE));
-    //  'join_date' => '2020-12-24',
-    //  'start_date' => '2020-12-24',
-    //  'end_date' => '2021-12-23',
-    //  $today : '2020-12-24'
 
     $this->assertEquals($today,  $membership['join_date']);
     $this->assertEquals($today,  $membership['start_date']);
