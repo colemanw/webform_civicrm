@@ -2,10 +2,6 @@
 
 namespace Drupal\webform_civicrm;
 
-// Include legacy files for their procedural functions.
-// @todo convert required functions into injectable services.
-include_once __DIR__ . '/../includes/utils.inc';
-
 class FieldOptions implements FieldOptionsInterface {
 
   protected $fields;
@@ -20,7 +16,8 @@ class FieldOptions implements FieldOptionsInterface {
   public function get($field, $context, $data) {
     $ret = [];
     $fields = $this->fields->get();
-    $pieces = Utils::wf_crm_explode_key($field['form_key']);
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $pieces = $utils->wf_crm_explode_key($field['form_key']);
     if (!empty($pieces)) {
       list( , $c, $ent, $n, $table, $name) = $pieces;
       // Ensure we have complete info for this field
@@ -29,21 +26,21 @@ class FieldOptions implements FieldOptionsInterface {
       }
 
       if ($name === 'contact_sub_type') {
-        list($contact_types, $sub_types) = wf_crm_get_contact_types();
+        list($contact_types, $sub_types) = $utils->wf_crm_get_contact_types();
         $ret = wf_crm_aval($sub_types, $data['contact'][$c]['contact'][1]['contact_type'], array());
       }
       elseif ($name === 'relationship_type_id') {
-        $ret = wf_crm_get_contact_relationship_types($data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][$n]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$n]['contact'][1]['contact_sub_type']);
+        $ret = $utils->wf_crm_get_contact_relationship_types($data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][$n]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$n]['contact'][1]['contact_sub_type']);
       }
       elseif ($name === 'relationship_permission') {
         $ret = [
           1 => t(':a may view and edit :b', [
-            ':a' => wf_crm_contact_label($c, $data, 'plain'),
-            ':b' => wf_crm_contact_label($n, $data, 'plain'),
+            ':a' => $utils->wf_crm_contact_label($c, $data, 'plain'),
+            ':b' => $utils->wf_crm_contact_label($n, $data, 'plain'),
           ]),
           2 => t(':a may view and edit :b', [
-            ':a' => wf_crm_contact_label($n, $data, 'plain'),
-            ':b' => wf_crm_contact_label($c, $data, 'plain'),
+            ':a' => $utils->wf_crm_contact_label($n, $data, 'plain'),
+            ':b' => $utils->wf_crm_contact_label($c, $data, 'plain'),
           ]),
           3 => t('Both contacts may view and edit each other'),
         ];
@@ -54,26 +51,26 @@ class FieldOptions implements FieldOptionsInterface {
         foreach ($data['contact'] as $num => $contact) {
           if ($num != $c || $name != 'master_id') {
             if ($contact_type == 'contact' || $contact_type == $contact['contact'][1]['contact_type']) {
-              $ret[$num] = wf_crm_contact_label($num, $data, 'plain');
+              $ret[$num] = $utils->wf_crm_contact_label($num, $data, 'plain');
             }
           }
         }
       }
       elseif ($name == 'privacy') {
-        $ret = wf_crm_get_privacy_options();
+        $ret = $utils->wf_crm_get_privacy_options();
       }
       elseif (isset($field['table']) && $field['table'] === 'tag') {
         $split = explode('_', $name);
-        $ret = wf_crm_get_tags($ent, wf_crm_aval($split, 1));
+        $ret = $utils->wf_crm_get_tags($ent, wf_crm_aval($split, 1));
       }
       elseif (isset($field['table']) && $field['table'] === 'group') {
-        $ret = wf_crm_apivalues('group', 'get', array('is_hidden' => 0), 'title');
+        $ret = $utils->wf_crm_apivalues('group', 'get', array('is_hidden' => 0), 'title');
       }
       elseif ($name === 'survey_id') {
-        $ret = wf_crm_get_surveys(wf_crm_aval($data, "activity:$c:activity:1", array()));
+        $ret = $utils->wf_crm_get_surveys(wf_crm_aval($data, "activity:$c:activity:1", array()));
       }
       elseif ($name == 'event_id') {
-        $ret = wf_crm_get_events($data['reg_options'], $context);
+        $ret = $utils->wf_crm_get_events($data['reg_options'], $context);
       }
       elseif ($table == 'contribution' && $name == 'is_test') {
         // Getoptions would return 'yes' and 'no' - this is a bit more descriptive
@@ -88,7 +85,7 @@ class FieldOptions implements FieldOptionsInterface {
         // Saving will map the IDs to live or test.
         // For the frontend we display the selected payment processors (with correct ID for live or test)
         $params = wf_crm_aval($data, "$ent:$c:$table:$n", []);
-        $paymentProcessors = wf_crm_apivalues('PaymentProcessor', 'get', ['is_test' => $params['is_test'] ?? 0, 'is_active' => 1]);
+        $paymentProcessors = $utils->wf_crm_apivalues('PaymentProcessor', 'get', ['is_test' => $params['is_test'] ?? 0, 'is_active' => 1]);
         $paymentProcessors[0]['name'] = $field['exposed_empty_option'];
         foreach ($paymentProcessors as $paymentProcessorID => $paymentProcessor) {
           $ret[$paymentProcessorID] = $paymentProcessor['title'] ?? $paymentProcessor['name'];
@@ -114,7 +111,7 @@ class FieldOptions implements FieldOptionsInterface {
           // Pass data into api.getoptions for contextual filtering
           $params += wf_crm_aval($data, "$ent:$c:$table:$n", array());
         }
-        $ret = wf_crm_apivalues($table, 'getoptions', $params);
+        $ret = $utils->wf_crm_apivalues($table, 'getoptions', $params);
 
         // Hack to format money data correctly
         if (!empty($field['data_type']) && $field['data_type'] === 'Money') {

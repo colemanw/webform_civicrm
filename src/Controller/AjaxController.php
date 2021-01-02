@@ -3,7 +3,6 @@
 namespace Drupal\webform_civicrm\Controller;
 
 use Drupal\civicrm\Civicrm;
-use Drupal\webform_civicrm\Utils;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -60,7 +59,7 @@ class AjaxController implements ContainerInjectionInterface {
             $data = ['' => t('- first choose a country')];
         }
         else {
-            $data = Utils::wf_crm_get_states($input);
+            $data = \Drupal::service('webform_civicrm.utils')->wf_crm_get_states($input);
         }
 
         // @todo use Drupal's cacheable response?
@@ -69,13 +68,14 @@ class AjaxController implements ContainerInjectionInterface {
 
     protected function county($input) {
         $data = [];
+        $utils = \Drupal::service('webform_civicrm.utils');
         if (strpos($input, '-') !== FALSE) {
             list($state, $country) = explode('-', $input);
             $params = [
               'field' => 'county_id',
-              'state_province_id' => wf_crm_state_abbr($state, 'id', $country)
+              'state_province_id' => $utils->wf_crm_state_abbr($state, 'id', $country)
             ];
-            $data = wf_crm_apivalues('address', 'getoptions', $params);
+            $data = $utils->wf_crm_apivalues('address', 'getoptions', $params);
         }
         // @todo use Drupal's cacheable response?
         return new JsonResponse($data);

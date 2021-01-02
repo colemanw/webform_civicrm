@@ -76,7 +76,8 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     }
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
-    $contact_result = wf_civicrm_api('contact', 'get', [
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $contact_result = $utils->wf_civicrm_api('contact', 'get', [
       'sequential' => 1,
       'first_name' => $contact_values['contact']['first_name'],
       'last_name' => $contact_values['contact']['last_name'],
@@ -97,7 +98,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
 
     foreach ($configurable_contact_field_groups as $field_group => $field_value_key) {
       if (isset($contact_values[$field_group])) {
-        $api_result = wf_civicrm_api($field_group, 'get', [
+        $api_result = $utils->wf_civicrm_api($field_group, 'get', [
           'sequential' => 1,
           'contact_id' => $contact['contact_id'],
         ]);

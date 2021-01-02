@@ -5,7 +5,6 @@
  * Front-end form ajax handler.
  */
 
-use Drupal\webform_civicrm\Utils;
 use Drupal\Component\Utility\Xss;
 use Drupal\node\Entity\Node;
 use Drupal\webform\Entity\Webform;
@@ -40,6 +39,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
   function contactAjax($webformId, $fid) {
 
     $contactComponent = \Drupal::service('webform_civicrm.contact_component');
+    $utils = \Drupal::service('webform_civicrm.utils');
 
     if (empty($this->getParameter('str')) && (empty($this->getParameter('load')) || empty($this->getParameter('cid')))) {
       throw new AccessDeniedHttpException('Invalid parameters.');
@@ -97,7 +97,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
       // Fetch entire contact to populate form via ajax
       if ($this->getParameter('load') == 'full') {
         $sp = CRM_Core_DAO::VALUE_SEPARATOR;
-        $this->enabled = wf_crm_enabled_fields($webform);
+        $this->enabled = $utils->wf_crm_enabled_fields($webform);
         list(, $c, ) = explode('_', $element['#form_key'], 3);
         $this->ent['contact'][$c]['id'] = (int) $_GET['cid'];
         // Redact fields if they are to be hidden unconditionally, otherwise they are needed on the client side
@@ -114,7 +114,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
             $type = ($table == 'contact' && strpos($field, 'name')) ? 'name' : $table;
             // Exclude blank and hidden fields
             if ($contact[$table][$n][$field] !== '' && $contact[$table][$n][$field] !== array() && !in_array($type, $to_hide)) {
-              $dataType = wf_crm_aval(wf_crm_get_field("{$table}_$field"), 'data_type');
+              $dataType = wf_crm_aval($utils->wf_crm_get_field("{$table}_$field"), 'data_type');
               $val = ['val' => $contact[$table][$n][$field]];
               // Retrieve file info
               if ($dataType === 'File') {
@@ -122,7 +122,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
               }
               // Explode multivalue strings
               elseif (is_string($val['val']) && strpos($val['val'], $sp) !== FALSE) {
-                $val['val'] = wf_crm_explode_multivalue_str($val['val']);
+                $val['val'] = $utils->wf_crm_explode_multivalue_str($val['val']);
               }
               $val['fid'] = $fid;
               if ($dataType) {

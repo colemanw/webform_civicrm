@@ -3,7 +3,6 @@
 namespace Drupal\webform_civicrm;
 
 use Drupal\Core\Url;
-use Drupal\webform_civicrm\Utils;
 
 /**
  * @file
@@ -347,7 +346,8 @@ class AdminHelp implements AdminHelpInterface {
 
   protected function activity_assignee_contact_id() {
     \Drupal::service('civicrm')->initialize();
-    if (wf_crm_get_civi_setting('activity_assignee_notification')) {
+    $utils = \Drupal::service('webform_civicrm.utils');
+    if ($utils->wf_crm_get_civi_setting('activity_assignee_notification')) {
       return '<p>' . t('A copy of this activity will be emailed to the assignee.') . '</p>';
     }
     else {
@@ -479,8 +479,7 @@ class AdminHelp implements AdminHelpInterface {
     }
     \Drupal::service('civicrm')->initialize();
     $help = '';
-    \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/utils');
-    $info = wf_civicrm_api('custom_field', 'getsingle', array('id' => $id));
+    $info = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('custom_field', 'getsingle', array('id' => $id));
     if (!empty($info['help_pre'])) {
       $help .= '<p>' . $info['help_pre'] . '</p>';
     }
@@ -497,8 +496,7 @@ class AdminHelp implements AdminHelpInterface {
     list( , $set) = explode('_', $param);
     \Drupal::service('civicrm')->initialize();
     $help = '';
-    \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/utils');
-    $sets = Utils::wf_crm_get_fields('sets');
+    $sets = \Drupal::service('webform_civicrm.utils')->wf_crm_get_fields('sets');
     if (!empty($sets[$set]['help_text'])) {
       $help .= '<p>' . $sets[$set]['help_text'] . '</p>';
     }

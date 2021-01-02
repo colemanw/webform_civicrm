@@ -10,10 +10,6 @@ use Drupal\webform\Plugin\WebformHandlerInterface;
 use Drupal\webform\Plugin\WebformHandlerManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
-// Include legacy files for their procedural functions.
-// @todo convert required functions into injectable services.
-include_once __DIR__ . '/../../includes/utils.inc';
-
 class WebformCiviCRMSettingsForm extends FormBase {
 
   protected $webformHandlerManager;

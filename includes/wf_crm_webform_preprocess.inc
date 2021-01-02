@@ -25,6 +25,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
   private $handler;
 
   function __construct(&$form, FormStateInterface $form_state, WebformHandlerInterface $handler) {
+    $utils = \Drupal::service('webform_civicrm.utils');
     $this->handler = $handler;
     $this->form = &$form;
     $this->form_state = $form_state;
@@ -32,9 +33,9 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     $this->settings = $handler->getConfiguration()['settings'];
     $this->data = $this->settings['data'];
     $this->ent['contact'] = [];
-    $this->all_fields = Utils::wf_crm_get_fields();
-    $this->all_sets = Utils::wf_crm_get_fields('sets');
-    $this->enabled = wf_crm_enabled_fields($handler->getWebform());
+    $this->all_fields = $utils->wf_crm_get_fields();
+    $this->all_sets = $utils->wf_crm_get_fields('sets');
+    $this->enabled = $utils->wf_crm_enabled_fields($handler->getWebform());
     $this->line_items = $form_state->get(['civicrm', 'line_items']) ?: [];
   }
 
@@ -188,8 +189,9 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    */
   private function addResources() {
     $this->form['#attached']['library'][] = 'webform_civicrm/forms';
+    $utils = \Drupal::service('webform_civicrm.utils');
 
-    $default_country = wf_crm_get_civi_setting('defaultContactCountry', 1228);
+    $default_country = $utils->wf_crm_get_civi_setting('defaultContactCountry', 1228);
     // Variables to push to the client-side
     $js_vars = array();
     // JS Cache eliminates the need for most ajax state/province callbacks
@@ -197,7 +199,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       if (!empty($c['number_of_address'])) {
         $js_vars += [
           'defaultCountry' => $default_country,
-          'defaultStates' => Utils::wf_crm_get_states($default_country),
+          'defaultStates' => $utils->wf_crm_get_states($default_country),
           'noCountry' => t('- First Choose a Country -'),
           'callbackPath' => Url::fromUserInput('/webform-civicrm/js', ['alias' => TRUE])->toString(),
         ];
@@ -318,8 +320,9 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    * @param int $c
    */
   private function loadParticipants($c) {
-    $status_types = wf_crm_apivalues('participant_status_type', 'get');
-    $participants = wf_crm_apivalues('participant', 'get', [
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $status_types = $utils->wf_crm_apivalues('participant_status_type', 'get');
+    $participants = $utils->wf_crm_apivalues('participant', 'get', [
       'contact_id' => $this->ent['contact'][$c]['id'],
       'event_id' => ['IN' => array_keys($this->events)],
     ]);
@@ -441,7 +444,8 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       if (empty($element['#type']) || $element['#type'] == 'fieldset') {
         continue;
       }
-      if (!empty($element['#webform']) && $pieces = Utils::wf_crm_explode_key($eid)) {
+      $utils = \Drupal::service('webform_civicrm.utils');
+      if (!empty($element['#webform']) && $pieces = $utils->wf_crm_explode_key($eid)) {
         list( , $c, $ent, $n, $table, $name) = $pieces;
         // Separate out time fields
         if (substr($name, -8) === 'timepart') {
@@ -467,7 +471,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
               'extra' => wf_crm_aval($field, 'extra', []) + $element['#extra'],
               'form_key' => $element['#webform_key'],
             ];
-            $new = Utils::wf_crm_field_options($params, 'live_options', $this->data);
+            $new = $utils->wf_crm_field_options($params, 'live_options', $this->data);
             $old = $element['#options'];
             $resave = FALSE;
             // If an item doesn't exist, we add it. If it's changed, we update it.
@@ -480,7 +484,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
               }
             }
             if ($resave) {
-              $element['#extra']['extra']['items'] = wf_crm_array2str($old);
+              $element['#extra']['extra']['items'] = $utils->wf_crm_array2str($old);
               //webform_component_update($component);
             }
             $element['#options'] = $new;
@@ -500,7 +504,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
               }
             }
             if (($element['#type'] == 'checkboxes' || !empty($element['#multiple'])) && !is_array($val)) {
-              $val = wf_crm_explode_multivalue_str($val);
+              $val = $utils->wf_crm_explode_multivalue_str($val);
             }
             if ($element['#type'] != 'checkboxes' && $element['#type'] != 'date'
               && empty($element['#multiple']) && is_array($val)) {
@@ -518,7 +522,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
               }
             }
             if ($element['#type'] == 'autocomplete' && is_string($val) && strlen($val)) {
-              $options = Utils::wf_crm_field_options($component, '', $this->data);
+              $options = $utils->wf_crm_field_options($component, '', $this->data);
               $val = wf_crm_aval($options, $val);
             }
             // Contact image & custom file fields
@@ -561,6 +565,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    *   The render array for line items table.
    */
   private function displayLineItems() {
+    $utils = \Drupal::service('webform_civicrm.utils');
     $rows = [];
     $total = 0;
     // Support hidden contribution field
@@ -591,7 +596,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
 
       if ($itemTaxRate !== NULL) {
         // Change the line item label to display the tax rate it contains
-        $taxSettings = wf_crm_get_civi_setting('contribution_invoice_settings');
+        $taxSettings = $utils->wf_crm_get_civi_setting('contribution_invoice_settings');
 
         if (($itemTaxRate !== 0) && ($taxSettings['tax_display_settings'] !== 'Do_not_show')) {
           $item['label'] .= ' (' . t('includes @rate @tax', ['@rate' => (float) $itemTaxRate . '%', '@tax' => $taxSettings['tax_term']]) . ')';
@@ -637,6 +642,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    * Find case ids based on url input or "existing case" settings
    */
   private function findExistingCases() {
+    $utils = \Drupal::service('webform_civicrm.utils');
     // Support legacy url param
     if (empty($_GET["case1"]) && !empty($_GET["caseid"])) {
       $_GET["case1"] = $_GET["caseid"];
@@ -651,9 +657,9 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         }
         if ($clients) {
           // Populate via url argument
-          if (isset($_GET["case$n"]) && wf_crm_is_positive($_GET["case$n"])) {
+          if (isset($_GET["case$n"]) && $utils->wf_crm_is_positive($_GET["case$n"])) {
             $id = $_GET["case$n"];
-            $item = wf_civicrm_api('case', 'getsingle', array('id' => $id));
+            $item = $utils->wf_civicrm_api('case', 'getsingle', array('id' => $id));
             if (array_intersect((array)wf_crm_aval($item, 'client_id'), $clients)) {
               $this->ent['case'][$n] = array('id' => $id);
             }
@@ -678,6 +684,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    */
   private function findExistingActivities() {
     $request = \Drupal::request();
+    $utils = \Drupal::service('webform_civicrm.utils');
     // Support legacy url param
     if (empty($request->query->get('activity1')) && !empty($request->query->get('aid'))) {
       $request->query->set('activity1', $request->query->get('aid'));
@@ -691,9 +698,9 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           }
         }
         if ($targets) {
-          if (wf_crm_is_positive($request->query->get("activity$n"))) {
+          if ($utils->wf_crm_is_positive($request->query->get("activity$n"))) {
             $id = $request->query->get("activity$n");
-            $item = wf_civicrm_api('activity', 'getsingle', ['id' => $id, 'return' => ['target_contact_id']]);
+            $item = $utils->wf_civicrm_api('activity', 'getsingle', ['id' => $id, 'return' => ['target_contact_id']]);
             if (array_intersect($targets, $item['target_contact_id'])) {
               $this->ent['activity'][$n] = ['id' => $id];
             }
@@ -717,7 +724,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
                 'options' => array('limit' => 1),
               );
               $params['activity_type_id'] = $this->data['activity'][$n]['activity'][1]['activity_type_id'];
-              $items = wf_crm_apivalues('activity', 'get', $params);
+              $items = $utils->wf_crm_apivalues('activity', 'get', $params);
               if (isset($items[0]['id'])) {
                 $this->ent['activity'][$n] = array('id' => $items[0]['id']);
                 break;
@@ -733,13 +740,14 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    * Find grant ids based on url input or "existing grant" settings
    */
   private function findExistingGrants() {
+    $utils = \Drupal::service('webform_civicrm.utils');
     for ($n = 1; $n <= $this->data['grant']['number_of_grant']; ++$n) {
       if (!empty($this->data['grant'][$n]['grant'][1]['contact_id'])) {
         $cid = $this->ent['contact'][$this->data['grant'][$n]['grant'][1]['contact_id']]['id'];
         if ($cid) {
-          if (isset($_GET["grant$n"]) && wf_crm_is_positive($_GET["grant$n"])) {
+          if (isset($_GET["grant$n"]) && $utils->wf_crm_is_positive($_GET["grant$n"])) {
             $id = $_GET["grant$n"];
-            $item = wf_civicrm_api('grant', 'getsingle', array('id' => $id));
+            $item = $utils->wf_civicrm_api('grant', 'getsingle', array('id' => $id));
             if ($cid == $item['contact_id']) {
               $this->ent['grant'][$n] = array('id' => $id);
             }
@@ -754,7 +762,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             if (!empty($this->data['grant'][$n]['grant'][1]['grant_type_id'])) {
               $params['grant_type_id'] = $this->data['grant'][$n]['grant'][1]['grant_type_id'];
             }
-            $items = wf_crm_apivalues('grant', 'get', $params);
+            $items = $utils->wf_crm_apivalues('grant', 'get', $params);
             if (isset($items[0]['id'])) {
               $this->ent['grant'][$n] = array('id' => $items[0]['id']);
             }
@@ -770,13 +778,14 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    */
   private function populateExistingEntity($type) {
     $items = array();
+    $utils = \Drupal::service('webform_civicrm.utils');
     foreach ($this->ent[$type] as $key => $item) {
       if (!empty($item['id'])) {
         $items[$key] = $item['id'];
       }
     }
     if ($items) {
-      $values = wf_crm_apivalues($type, 'get', array('id' => array('IN' => array_values($items))));
+      $values = $utils->wf_crm_apivalues($type, 'get', array('id' => array('IN' => array_values($items))));
       foreach ($items as $n => $id) {
         if (isset($values[$id])) {
           // Load core + custom data
@@ -791,7 +800,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           $tags = NULL;
           foreach (array_keys($this->enabled) as $fid) {
             if (strpos($fid, "civicrm_{$n}_{$type}_1_{$type}_tag") === 0) {
-              $tags = $tags ?? wf_crm_apivalues('EntityTag', 'get', ['entity_id' => $id, 'entity_table' => "civicrm_" . $type, 'sequential' => 1], 'tag_id');
+              $tags = $tags ?? $utils->wf_crm_apivalues('EntityTag', 'get', ['entity_id' => $id, 'entity_table' => "civicrm_" . $type, 'sequential' => 1], 'tag_id');
               $this->info[$type][$n][$type][1][str_replace("civicrm_{$n}_{$type}_1_{$type}_", '', $fid)] = $tags;
             }
           }
@@ -850,7 +859,8 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    * @return mixed
    */
   private function replaceTokens($str, $contact) {
-    $tokens = Utils::wf_crm_get_fields('tokens');
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $tokens = $utils->wf_crm_get_fields('tokens');
     $values = array();
     foreach ($tokens as $k => &$t) {
       if (empty($contact[$k])) {
@@ -860,7 +870,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       if (is_array($value)) {
         $value = implode(', ', $value);
       }
-      $values[] = implode(' &amp; ', wf_crm_explode_multivalue_str($value));
+      $values[] = implode(' &amp; ', $utils->wf_crm_explode_multivalue_str($value));
       $t = "[$t]";
     }
     return str_ireplace($tokens, $values, $str);

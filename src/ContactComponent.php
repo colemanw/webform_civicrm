@@ -4,8 +4,6 @@ namespace Drupal\webform_civicrm;
 
 use Drupal\Component\Utility\Html;
 
-include_once __DIR__ . '/../includes/utils.inc';
-
 /**
  * Class ContactComponent
  *
@@ -17,7 +15,7 @@ class ContactComponent implements ContactComponentInterface {
    * Implements _webform_display_component().
    */
   function _webform_display_civicrm_contact($component, $value, $format = 'html') {
-    $display = empty($value[0]) ? '' : wf_crm_display_name($value[0]);
+    $display = empty($value[0]) ? '' : \Drupal::service('webform_civicrm.utils')->wf_crm_display_name($value[0]);
     if ($format == 'html' && $display && user_access('access CiviCRM')) {
       $display = l($display, 'civicrm/contact/view', array(
         'alias' => TRUE,
@@ -55,7 +53,7 @@ class ContactComponent implements ContactComponentInterface {
    * Implements _webform_table_component().
    */
   function _webform_table_civicrm_contact($component, $value) {
-    return empty($value[0]) ? '' : Html::escape(wf_crm_display_name($value[0]));
+    return empty($value[0]) ? '' : Html::escape(\Drupal::service('webform_civicrm.utils')->wf_crm_display_name($value[0]));
   }
 
   /**
@@ -73,7 +71,7 @@ class ContactComponent implements ContactComponentInterface {
    * Implements _webform_csv_data_component().
    */
   function _webform_csv_data_civicrm_contact($component, $export_options, $value) {
-    return empty($value[0]) ? '' : wf_crm_display_name($value[0]);
+    return empty($value[0]) ? '' : \Drupal::service('webform_civicrm.utils')->wf_crm_display_name($value[0]);
   }
 
   /**
@@ -134,7 +132,7 @@ class ContactComponent implements ContactComponentInterface {
         $params[$search_field] = array('LIKE' => "%$str%");
       }
     }
-    $result = wf_civicrm_api('contact', 'get', $params);
+    $result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('contact', 'get', $params);
     // Autocomplete results
     if ($str) {
       foreach (wf_crm_aval($result, 'values', array()) as $contact) {
@@ -187,6 +185,7 @@ class ContactComponent implements ContactComponentInterface {
    * @return bool|string
    */
   function wf_crm_contact_access($component, $filters, $cid) {
+    $utils = \Drupal::service('webform_civicrm.utils');
     // Create new contact doesn't require lookup
     $cid = (string) $cid;
     list(, $c, ) = explode('_', $component['#form_key'], 3);
@@ -199,7 +198,7 @@ class ContactComponent implements ContactComponentInterface {
     $filters['id'] = $cid;
     $filters['is_deleted'] = 0;
     // A contact always has permission to view self
-    if ($cid == wf_crm_user_cid()) {
+    if ($cid == $utils->wf_crm_user_cid()) {
       $filters['check_permissions'] = FALSE;
     }
     if (!empty($filters['check_permissions'])) {
@@ -217,7 +216,7 @@ class ContactComponent implements ContactComponentInterface {
       }
     }
     // Fetch contact name with filters applied
-    $result = wf_civicrm_api('contact', 'get', $filters);
+    $result = $utils->wf_civicrm_api('contact', 'get', $filters);
     return $this->wf_crm_format_contact(wf_crm_aval($result, "values:$cid"), /*$component['#extra']['results_display']*/ ['display_name']);
   }
 
@@ -255,6 +254,7 @@ class ContactComponent implements ContactComponentInterface {
    * @return array
    */
   function wf_crm_find_relations($cid, $types = array(), $current = TRUE) {
+    $utils = \Drupal::service('webform_civicrm.utils');
     $found = $allowed = $type_ids = [];
     $cid = (int) $cid;
     static $employer_type = 0;
@@ -268,7 +268,7 @@ class ContactComponent implements ContactComponentInterface {
         if ($type == $employer_type && $current) {
           $search_key = $a == 'b' ? 'id' : 'employer_id';
           // Note: inconsistency in api3 - search key is "employer_id" but return key is "current_employer_id"
-          $employer = wf_crm_apivalues('contact', 'get', [
+          $employer = $utils->wf_crm_apivalues('contact', 'get', [
             $search_key => $cid,
             'sequential' => 1,
           ], $a == 'b' ? 'current_employer_id' : 'id');
@@ -296,7 +296,7 @@ class ContactComponent implements ContactComponentInterface {
       if ($current) {
         $params['is_active'] = 1;
       }
-      foreach (wf_crm_apivalues('relationship', 'get', $params) as $relationship) {
+      foreach ($utils->wf_crm_apivalues('relationship', 'get', $params) as $relationship) {
         $a = $relationship['contact_id_a'] == $cid ? 'b' : 'a';
         if (!$current || empty($relationship['end_date']) || strtotime($relationship['end_date']) > time()) {
           if (!$allowed || in_array($relationship['relationship_type_id'] . '_' . $a, $allowed)) {

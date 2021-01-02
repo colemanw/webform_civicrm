@@ -63,7 +63,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     // $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
-    $api_result = wf_civicrm_api('membership', 'get', [
+    $api_result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('membership', 'get', [
       'sequential' => 1,
     ]);
     $this->assertEquals(1, $api_result['count']);
