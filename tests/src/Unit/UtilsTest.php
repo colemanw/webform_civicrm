@@ -3,6 +3,8 @@
 namespace Drupal\Tests\webform_civicrm\Unit;
 
 use Drupal\Tests\UnitTestCase;
+use Drupal\Core\DependencyInjection\ContainerBuilder;
+use Drupal\webform_civicrm\Utils;
 
 /**
  * @group webform_civicrm
@@ -10,6 +12,11 @@ use Drupal\Tests\UnitTestCase;
 class UtilsTest extends UnitTestCase {
 
   public function testWfCrmExplodeKey() {
+    $utils = new Utils();
+    $container = new ContainerBuilder();
+    \Drupal::setContainer($container);
+    $container->set('webform_civicrm.utils', $utils);
+
     $utils = \Drupal::service('webform_civicrm.utils');
     $this->assertNull(
       $utils->wf_crm_explode_key('not_even_remotely_valid')

@@ -28,7 +28,6 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
    * Test submitting a Membership
    */
   public function testSubmitWebform() {
-
     $this->createMembershipType();
 
     $this->drupalLogin($this->adminUser);
