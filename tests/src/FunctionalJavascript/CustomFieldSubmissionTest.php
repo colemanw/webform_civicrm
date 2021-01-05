@@ -17,7 +17,8 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
       'title' => "Custom",
       'extends' => 'Individual',
     ];
-    $result = \wf_civicrm_api('CustomGroup', 'create', $params);
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $result = $utils->wf_civicrm_api('CustomGroup', 'create', $params);
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
     $customgroup_id = $result['id'];
@@ -29,7 +30,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
       'html_type' => 'Text',
       'is_active' => 1,
     ];
-    $result = \wf_civicrm_api('CustomField', 'create', $params);
+    $result = $utils->wf_civicrm_api('CustomField', 'create', $params);
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
 
@@ -99,7 +100,8 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     // Note: custom fields are on contact_id=3 (1=default org; 2=the drupal user)
-    $api_result = wf_civicrm_api('CustomValue', 'get', [
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $api_result = $utils->wf_civicrm_api('CustomValue', 'get', [
       'sequential' => 1,
       'entity_id' => 3,
     ]);

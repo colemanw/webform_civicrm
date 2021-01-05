@@ -29,7 +29,8 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
       'is_recur' => 1,
       'payment_instrument_id' => 'Credit Card',
     ];
-    $result = \wf_civicrm_api('payment_processor', 'create', $params);
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $result = $utils->wf_civicrm_api('payment_processor', 'create', $params);
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
     return current($result['values']);
@@ -153,7 +154,8 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
-    $api_result = wf_civicrm_api('contribution', 'get', [
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $api_result = $utils->wf_civicrm_api('contribution', 'get', [
       'sequential' => 1,
     ]);
 
@@ -168,7 +170,7 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->assertEquals('USD', $contribution['currency']);
 
     // Also retrieve tax_amount (have to ask for it to be returned):
-    $api_result = wf_civicrm_api('contribution', 'get', [
+    $api_result = $utils->wf_civicrm_api('contribution', 'get', [
       'sequential' => 1,
       'return' => 'tax_amount',
     ]);
@@ -176,7 +178,7 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->assertEquals('1.48', $contribution['tax_amount']);
     $tax_total_amount = $contribution['tax_amount'];
 
-    $api_result = wf_civicrm_api('line_item', 'get', [
+    $api_result = $utils->wf_civicrm_api('line_item', 'get', [
       'sequential' => 1,
     ]);
 

@@ -5,10 +5,6 @@ namespace Drupal\webform_civicrm\Element;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element\FormElement;
 
-// Include legacy files for their procedural functions.
-// @todo convert required functions into injectable services.
-include_once __DIR__ . '/../../includes/utils.inc';
-
 /**
  * @FormElement("civicrm_select_options")
  */

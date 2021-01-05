@@ -10,3 +10,5 @@ services:
     class: Drupal\webform_civicrm\AdminForm
   webform_civicrm.contact_component:
     class: Drupal\webform_civicrm\ContactComponent
+  webform_civicrm.utils:
+    class: Drupal\webform_civicrm\Utils
