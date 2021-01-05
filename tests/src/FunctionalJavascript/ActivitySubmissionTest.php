@@ -32,6 +32,7 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_activity_date_time");
     $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_activity_date_time_timepart");
     $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_duration");
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_activity_1_activity_assignee_contact_id[]', 'Contact 1');
 
     $this->assertSession()->checkboxChecked("civicrm_1_activity_1_activity_subject");
     $this->assertSession()->checkboxChecked("civicrm_1_activity_1_activity_activity_date_time");
@@ -58,8 +59,9 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->pressButton('Submit');
     $this->htmlOutput();
 
-    // ToDo -> figure out what Error message it is! The submission itself works well.
-    // $this->assertPageNoErrorMessages();
+    // ToDo -> figure out why we get this Notice:
+    // `Notice: Array to string conversion in Drupal\webform\WebformSubmissionStorage->saveData() (line 1339 of modules/contrib/webform/src/WebformSubmissionStorage.php).`
+    $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     $api_result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('activity', 'get', [
@@ -76,6 +78,12 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     // ToDo get contact id and activity id from the URL query for authenticated user
     // $this->webform->toUrl('canonical', ['query' => ['cid1' => 12, 'aid' => 12]]);
     $this->drupalLogin($this->adminUser);
+
+    // Needed?
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+
     $this->webform->toUrl('canonical', ['query' => ['cid1' => 3, 'aid' => $activity['id']]]);
     $this->assertPageNoErrorMessages();
     $this->assertSession()->waitForField('First Name');
