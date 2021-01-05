@@ -414,7 +414,6 @@ class Fields implements FieldsInterface {
         'name' => t('Assign Activity # to'),
         'type' => 'select',
         'expose_list' => TRUE,
-        'empty_option' => t('No One'),
         'extra' => ['multiple' => 1],
         'data_type' => 'ContactReference',
       ];

@@ -32,7 +32,6 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_activity_date_time");
     $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_activity_date_time_timepart");
     $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_duration");
-    $this->getSession()->getPage()->selectFieldOption('civicrm_1_activity_1_activity_assignee_contact_id[]', 'Contact 1');
 
     $this->assertSession()->checkboxChecked("civicrm_1_activity_1_activity_subject");
     $this->assertSession()->checkboxChecked("civicrm_1_activity_1_activity_activity_date_time");
