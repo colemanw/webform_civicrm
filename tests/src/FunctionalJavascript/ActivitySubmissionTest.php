@@ -56,7 +56,7 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Activity Duration', '90');
 
     $this->getSession()->getPage()->pressButton('Submit');
-    // $this->htmlOutput();
+    $this->htmlOutput();
 
     // ToDo -> figure out what Error message it is! The submission itself works well.
     // $this->assertPageNoErrorMessages();
@@ -72,8 +72,17 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals('1', $activity['activity_type_id']);
     $this->assertTrue(strtotime($today) -  strtotime($activity['activity_date_time']) < 60);
     $this->assertEquals(90, $activity['duration']);
-    // ToDo get contact id and activity id from the URL query:
+
+    // ToDo get contact id and activity id from the URL query for authenticated user
     // $this->webform->toUrl('canonical', ['query' => ['cid1' => 12, 'aid' => 12]]);
+    $this->drupalLogin($this->adminUser);
+    $this->webform->toUrl('canonical', ['query' => ['cid1' => 3, 'aid' => $activity['id']]]);
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->waitForField('First Name');
+    $this->htmlOutput();
+    // $this->assertSession()->checkField('civicrm_1_activity_1_activity_subject','Awesome Activity');
+    $this->assertSession()->pageTextContains('Awesome Activity');
+
   }
 
 }
