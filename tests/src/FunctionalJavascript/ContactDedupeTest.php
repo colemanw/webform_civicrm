@@ -41,14 +41,18 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField('nid');
 
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contact_1_contact_contact_sub_type[]', 'Student');
+    $this->assertSession()->assertWaitOnAjaxRequest();
 
     // The Default Unsupervised Matching Rule in CiviCRM is: Email so we need to get it on the webform:
     $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_email', 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->checkboxChecked("civicrm_1_contact_1_email_email");
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contact_1_email_location_type_id', 'Main');
     $this->htmlOutput();
 
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    $this->assertPageNoErrorMessages();
 
     $this->drupalLogout();
     $this->drupalGet($this->webform->toUrl('canonical'));
@@ -68,20 +72,19 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $utils = \Drupal::service('webform_civicrm.utils');
     $api_result = $utils->wf_civicrm_api('Contact', 'get', [
       'sequential' => 1,
-      'entity_id' => 3,
+      'contact_id' => 3,
     ]);
     $contact = reset($api_result['values']);
-    $this->assertEquals(1, $contact['count']);
+
     $this->assertEquals('Frederick', $contact['first_name']);
     $this->assertEquals('Pabst', $contact['last_name']);
-    $this->assertEquals('Student', $contact['contact_sub_type']);
+    $this->assertEquals('Student', implode($contact['contact_sub_type']));
 
     $api_result = $utils->wf_civicrm_api('Email', 'get', [
       'contact_id' => $contact['id'],
       'sequential' => 1,
     ]);
     $email = reset($api_result['values']);
-    $this->assertEquals(1, $email['count']);
     $this->assertEquals('frederick@pabst.io', $email['email']);
 
     // Next: load the form with cid1 -> and resubmit it -> update the Last Name:
@@ -97,11 +100,12 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     // Check to see Last Name has been updated
     $api_result = $utils->wf_civicrm_api('Contact', 'get', [
       'sequential' => 1,
-      'entity_id' => $contact['id'],
+      'contact_id' => $contact['id'],
     ]);
     $contact = reset($api_result['values']);
-    $this->assertEquals(1, $contact['count']);
+
     $this->assertEquals('Pabsted', $contact['last_name']);
+    throw new \Exception(var_export($contact, TRUE));
 
     // First Name and Email should have remained the same:
     $this->assertEquals('Frederick', $contact['first_name']);
@@ -114,8 +118,6 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $email = reset($api_result['values']);
     $this->assertEquals(1, $email['count']);
     $this->assertEquals('frederick@pabst.io', $email['email']);
-
-    // throw new \Exception(var_export($api_result, TRUE));
   }
 
 }
