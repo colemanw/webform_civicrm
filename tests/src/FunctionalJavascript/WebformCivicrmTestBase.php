@@ -58,6 +58,8 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       'access administration pages',
       'access webform overview',
       'administer webform',
+      'edit all contacts',
+      'view all activities',
     ]);
     $this->webform = $this->createWebform([
       'id' => 'civicrm_webform_test',
