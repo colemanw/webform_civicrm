@@ -32,6 +32,9 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_activity_date_time");
     $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_activity_date_time_timepart");
     $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_duration");
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_activity_1_activity_assignee_contact_id[]', 'Contact 1');
+    // ToDo -> assigning multiple contacts may fail with Notice in webform itself:
+    // https://www.drupal.org/project/webform/issues/3191088
 
     $this->assertSession()->checkboxChecked("civicrm_1_activity_1_activity_subject");
     $this->assertSession()->checkboxChecked("civicrm_1_activity_1_activity_activity_date_time");
@@ -52,14 +55,13 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Activity Subject', 'Awesome Activity');
-    // ToDo -> try different dates -> default is 'now'
+    // ToDo -> use different dates -> default is 'now'
     $this->getSession()->getPage()->fillField('Activity Duration', '90');
 
     $this->getSession()->getPage()->pressButton('Submit');
-    // $this->htmlOutput();
+    $this->htmlOutput();
 
-    // ToDo -> figure out what Error message it is! The submission itself works well.
-    // $this->assertPageNoErrorMessages();
+    $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     $api_result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('activity', 'get', [
@@ -72,8 +74,40 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals('1', $activity['activity_type_id']);
     $this->assertTrue(strtotime($today) -  strtotime($activity['activity_date_time']) < 60);
     $this->assertEquals(90, $activity['duration']);
-    // ToDo get contact id and activity id from the URL query:
-    // $this->webform->toUrl('canonical', ['query' => ['cid1' => 12, 'aid' => 12]]);
+
+    $api_result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('ActivityContact', 'get', [
+      'sequential' => 1,
+      'return' => ["contact_id"],
+      'record_type_id' => "Activity Assignees",
+      'activity_id' => 1,
+    ]);
+    $activityContact = reset($api_result['values']);
+    // In this test: contact_id 1 = Default Organization; contact_id 2 = Drupal User; contact_id 3 = Frederick
+    $this->assertEquals(3, $activityContact['contact_id']);
+
+    // Ok now let's log back in and retrieve the Activity we just stored - so that we can update it.
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => 3, 'aid' => $activity['id']]]));
+    $this->assertPageNoErrorMessages();
+
+    $this->assertSession()->waitForField('Activity Duration');
+    $this->htmlOutput();
+    $this->getSession()->getPage()->fillField('Activity Duration', '120');
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->htmlOutput();
+
+    // All we've updated is the Activity Duration
+    $api_result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('activity', 'get', [
+      'sequential' => 1,
+    ]);
+    $this->assertEquals(1, $api_result['count']);
+    $activity = reset($api_result['values']);
+    $this->assertEquals(120, $activity['duration']);
+
+    // Everything else should have remained the same:
+    $this->assertEquals('Awesome Activity', $activity['subject']);
+    $this->assertEquals('1', $activity['activity_type_id']);
+    $this->assertTrue(strtotime($today) -  strtotime($activity['activity_date_time']) < 60);
   }
 
 }
