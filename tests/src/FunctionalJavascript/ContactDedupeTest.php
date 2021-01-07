@@ -120,7 +120,6 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
       'sequential' => 1,
     ]);
     $email = reset($api_result['values']);
-    $this->assertEquals(1, $email['count']);
     $this->assertEquals('frederick@pabst.io', $email['email']);
   }
 
