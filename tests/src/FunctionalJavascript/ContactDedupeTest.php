@@ -87,15 +87,19 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $email = reset($api_result['values']);
     $this->assertEquals('frederick@pabst.io', $email['email']);
 
-    // Next: load the form with cid1 -> and resubmit it -> update the Last Name:
-    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $contact['id']]]));
+    // Next: load the form again and resubmit it -> update the Last Name:
+    $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
 
-    $this->assertSession()->waitForField('Last Name');
-    $this->htmlOutput();
+    $this->assertSession()->waitForField('First Name');
+
+    $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabsted');
+    $this->getSession()->getPage()->fillField('Email', 'frederick@pabst.io');
+
     $this->getSession()->getPage()->pressButton('Submit');
-    $this->htmlOutput();
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     // Check to see Last Name has been updated
     $api_result = $utils->wf_civicrm_api('Contact', 'get', [
@@ -105,11 +109,11 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $contact = reset($api_result['values']);
 
     $this->assertEquals('Pabsted', $contact['last_name']);
-    throw new \Exception(var_export($contact, TRUE));
+    // throw new \Exception(var_export($contact, TRUE));
 
     // First Name and Email should have remained the same:
     $this->assertEquals('Frederick', $contact['first_name']);
-    $this->assertEquals('Student', $contact['contact_sub_type']);
+    $this->assertEquals('Student', implode($contact['contact_sub_type']));
 
     $api_result = $utils->wf_civicrm_api('Email', 'get', [
       'contact_id' => $contact['id'],
