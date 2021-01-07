@@ -736,7 +736,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             unset($exist[$k]);
           }
         }
-        $params[$name] = array_unique(array_merge($params[$name], $exist));
+        $params[$name] = array_unique(array_map("strtolower", array_merge($params[$name], $exist)));
       }
     }
     $params['id'] = $this->ent['contact'][$c]['id'];
