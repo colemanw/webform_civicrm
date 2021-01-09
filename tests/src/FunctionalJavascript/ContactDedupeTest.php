@@ -3,7 +3,6 @@
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Drupal\Core\Url;
-use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
 
 /**
  * Tests submitting a Webform with CiviCRM: single contact + custom fields.
