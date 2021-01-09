@@ -604,7 +604,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     ];
     return theme('table', [
       'sticky' => FALSE,
-      'caption' => $this->contribution_page['title'],
+      'caption' => $this->contribution_page['frontend_title'] ?? $this->contribution_page['title'],
       'header' => [],
       'rows' => $rows,
       'attributes' => ['id' => "wf-crm-billing-items"],
