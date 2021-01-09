@@ -631,7 +631,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     return [
       '#type' => 'table',
       '#sticky' => FALSE,
-      '#caption' => 'Payment Information',
+      '#caption' => t('Payment Information'),
       '#header' => [],
       '#rows' => $rows,
       '#attributes' => ['id' => 'wf-crm-billing-items'],
