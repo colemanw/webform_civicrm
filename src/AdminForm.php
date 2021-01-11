@@ -1318,6 +1318,12 @@ class AdminForm implements AdminFormInterface {
       '#default_value' => !empty($this->settings['create_new_relationship']),
       '#description' => t('If enabled, only Active relationships will load on the form, and will be updated on Submit. If there are no Active relationships then a new one will be created.'),
     );
+    $this->form['options']['skip_membership_type_change'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Skip Membership Type Change'),
+      '#default_value' => !empty($this->settings['skip_membership_type_change']),
+      '#description' => t('If enabled, if contact have existing membership and signing up for another one, it will create new membership record of instead of changing membership type.'),
+    );
     $this->form['options']['new_contact_source'] = array(
       '#type' => 'textfield',
       '#title' => t('Source Label'),
