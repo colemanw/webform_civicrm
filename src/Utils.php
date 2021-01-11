@@ -357,7 +357,13 @@ class Utils implements UtilsInterface {
         $r['type_a'] = strtolower(wf_crm_aval($r, 'contact_type_a'));
         $r['type_b'] = strtolower(wf_crm_aval($r, 'contact_type_b'));
         $r['sub_type_a'] = wf_crm_aval($r, 'contact_sub_type_a');
+        if (!is_null($r['sub_type_a'])) {
+          $r['sub_type_a'] = strtolower($r['sub_type_a']);
+        }
         $r['sub_type_b'] = wf_crm_aval($r, 'contact_sub_type_b');
+        if (!is_null($r['sub_type_b'])) {
+          $r['sub_type_b'] = strtolower($r['sub_type_b']);
+        }
         $types[$r['id']] = $r;
       }
     }
@@ -384,8 +390,8 @@ class Utils implements UtilsInterface {
       $reciprocal = ($t['label_a_b'] != $t['label_b_a'] && $t['label_b_a'] || $t['type_a'] != $t['type_b']);
       if (($t['type_a'] == $type_a || !$t['type_a'])
         && ($t['type_b'] == $type_b || !$t['type_b'])
-        && (in_array(strtolower($t['sub_type_a']), $sub_type_a) || !strtolower($t['sub_type_a']))
-        && (in_array(strtolower($t['sub_type_b']), $sub_type_b) || !strtolower($t['sub_type_b']))
+        && (in_array($t['sub_type_a'], $sub_type_a) || !$t['sub_type_a'])
+        && (in_array($t['sub_type_b'], $sub_type_b) || !$t['sub_type_b'])
       ) {
         $ret[$t['id'] . ($reciprocal ? '_a' : '_r')] = $t['label_a_b'];
       }
@@ -393,8 +399,8 @@ class Utils implements UtilsInterface {
       if ($reciprocal
         && ($t['type_a'] == $type_b || !$t['type_a'])
         && ($t['type_b'] == $type_a || !$t['type_b'])
-        && (in_array(strtolower($t['sub_type_a']), $sub_type_b) || !strtolower($t['sub_type_a']))
-        && (in_array(strtolower($t['sub_type_b']), $sub_type_a) || !strtolower($t['sub_type_b']))
+        && (in_array($t['sub_type_a'], $sub_type_b) || !$t['sub_type_a'])
+        && (in_array($t['sub_type_b'], $sub_type_a) || !$t['sub_type_b'])
       ) {
         $ret[$t['id'] . '_b'] = $t['label_b_a'];
       }
