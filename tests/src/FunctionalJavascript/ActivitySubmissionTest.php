@@ -29,6 +29,8 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
 
     $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_subject");
+    $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_details");
+    $this->getSession()->getPage()->uncheckField('activity_1_settings_details[view_link]');
     $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_activity_date_time");
     $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_activity_date_time_timepart");
     $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_duration");
@@ -37,6 +39,7 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     // https://www.drupal.org/project/webform/issues/3191088
 
     $this->assertSession()->checkboxChecked("civicrm_1_activity_1_activity_subject");
+    $this->assertSession()->checkboxChecked("civicrm_1_activity_1_activity_details");
     $this->assertSession()->checkboxChecked("civicrm_1_activity_1_activity_activity_date_time");
     $this->assertSession()->checkboxChecked("civicrm_1_activity_1_activity_activity_date_time_timepart");
     $this->assertSession()->checkboxChecked("civicrm_1_activity_1_activity_duration");
@@ -55,6 +58,7 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Activity Subject', 'Awesome Activity');
+    $this->getSession()->getPage()->fillField('Activity Details', 'Lorem ipsum dolor sit amet.');
     // ToDo -> use different dates -> default is 'now'
     $this->getSession()->getPage()->fillField('Activity Duration', '90');
 
@@ -70,6 +74,7 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals(1, $api_result['count']);
     $activity = reset($api_result['values']);
     $this->assertEquals('Awesome Activity', $activity['subject']);
+    $this->assertEquals('Lorem ipsum dolor sit amet.', $activity['details']);
     // CiviCRM Activity Type 1 -> Meeting (default)
     $this->assertEquals('1', $activity['activity_type_id']);
     $this->assertTrue(strtotime($today) -  strtotime($activity['activity_date_time']) < 60);
