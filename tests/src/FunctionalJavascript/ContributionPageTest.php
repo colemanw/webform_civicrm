@@ -151,6 +151,7 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->fillField('Postal Code', '53177');
     $this->getSession()->getPage()->pressButton('Submit');
+    $this->htmlOutput();
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
