@@ -640,7 +640,8 @@ class Utils implements UtilsInterface {
     );
     // KG
     if ($operation == 'transact') {
-      $result = wf_civicrm_api3_contribution_transact_spec($params);
+      $utils = \Drupal::service('webform_civicrm.utils');
+      $result = $utils->wf_civicrm_api3_contribution_transact($params);
     }
     else {
       $result = civicrm_api3($entity, $operation, $params);
