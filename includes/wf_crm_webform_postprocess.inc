@@ -1934,7 +1934,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       'frequency_unit' => wf_crm_aval($contributionParams, 'frequency_unit', 'month'),
     );
 
-    // KG
     $APIAction = 'transact';
     if ($paymentType === 'deferred') {
       $APIAction = 'create';

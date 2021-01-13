@@ -8,7 +8,7 @@ use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
 // Requires patching for civicrm-core.
 // @see https://github.com/civicrm/civicrm-core/pull/18843
 // @see https://lab.civicrm.org/dev/core/-/issues/2140
-// @todo move into civicrm-drupal-8 package.
+// @todo move into civicrm-drupal-8 package - DONE
 abstract class CiviCrmTestBase extends WebDriverTestBase {
 
   protected $defaultTheme = 'classy';
