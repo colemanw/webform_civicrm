@@ -638,7 +638,6 @@ class Utils implements UtilsInterface {
     $params += array(
       'check_permissions' => FALSE,
     );
-    // KG
     if ($operation == 'transact') {
       $utils = \Drupal::service('webform_civicrm.utils');
       $result = $utils->wf_civicrm_api3_contribution_transact($params);
@@ -718,7 +717,7 @@ class Utils implements UtilsInterface {
 
     $params['payment_instrument_id'] = $paymentProcessor['object']->getPaymentInstrumentID();
 
-    return civicrm_api('Contribution', 'create', $params);
+    return civicrm_api3('Contribution', 'create', $params);
   }
 
   /**

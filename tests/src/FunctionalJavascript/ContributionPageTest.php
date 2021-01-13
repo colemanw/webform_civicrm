@@ -36,8 +36,32 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     return current($result['values']);
   }
 
+  private function createiATSPaymentProcessor() {
+    $params = [
+      'domain_id' => 1,
+      'name' => 'iATS Credit Card - TE4188',
+      'payment_processor_type_id' => 'iATS Payments Credit Card',
+      'financial_account_id' => 12,
+      'is_test' => FALSE,
+      'is_active' => 1,
+      'user_name' => 'TE4188',
+      'password' => 'abcde01',
+      'url_site' => 'https://www.iatspayments.com/NetGate/ProcessLinkv2.asmx?WSDL',
+      'url_recur' => 'https://www.iatspayments.com/NetGate/ProcessLinkv2.asmx?WSDL',
+      'class_name' => 'Payment_iATSService',
+      'is_recur' => 1,
+      'sequential' => 1,
+      'payment_type' => 1,
+      'payment_instrument_id' => 'Credit Card',
+    ];
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $result = $utils->wf_civicrm_api('payment_processor', 'create', $params);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+    return current($result['values']);
+  }
+
   private function setupSalesTax(int $financialTypeId, $accountParams = []) {
-    // https://github.com/civicrm/civicrm-core/blob/master/tests/phpunit/CiviTest/CiviUnitTestCase.php#L3104
     $params = array_merge([
       'name' => 'Sales tax account ' . substr(sha1(rand()), 0, 4),
       'financial_account_type_id' => key(\CRM_Core_PseudoConstant::accountOptionValues('financial_account_type', NULL, " AND v.name LIKE 'Liability' ")),
@@ -153,7 +177,7 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->pressButton('Submit');
     $this->htmlOutput();
     // ToDo -> re-enable once transact API deprecation notice is resolved
-    // $this->assertPageNoErrorMessages();
+    $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     $utils = \Drupal::service('webform_civicrm.utils');
