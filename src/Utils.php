@@ -695,7 +695,7 @@ class Utils implements UtilsInterface {
    *   contribution of created or updated record (or a civicrm error)
    */
   function wf_civicrm_api3_contribution_transact($params) {
-    CRM_Core_Error::deprecatedFunctionWarning('The contibution.transact api is unsupported & known to have issues. Please see the section at the bottom of https://docs.civicrm.org/dev/en/latest/financial/OrderAPI/ for getting off it');
+    // CRM_Core_Error::deprecatedFunctionWarning('The contibution.transact api is unsupported & known to have issues. Please see the section at the bottom of https://docs.civicrm.org/dev/en/latest/financial/OrderAPI/ for getting off it');
     // Set some params specific to payment processing
     // @todo - fix this function - none of the results checked by civicrm_error would ever be an array with
     // 'is_error' set
@@ -711,9 +711,9 @@ class Utils implements UtilsInterface {
     }
 
     // Some payment processors expect a unique invoice_id - generate one if not supplied
-    $params['invoice_id'] = CRM_Utils_Array::value('invoice_id', $params, md5(uniqid(rand(), TRUE)));
+    $params['invoice_id'] = \CRM_Utils_Array::value('invoice_id', $params, md5(uniqid(rand(), TRUE)));
 
-    $paymentProcessor = CRM_Financial_BAO_PaymentProcessor::getPayment($params['payment_processor'], $params['payment_processor_mode']);
+    $paymentProcessor = \CRM_Financial_BAO_PaymentProcessor::getPayment($params['payment_processor'], $params['payment_processor_mode']);
     $paymentProcessor['object']->doPayment($params);
 
     $params['payment_instrument_id'] = $paymentProcessor['object']->getPaymentInstrumentID();
