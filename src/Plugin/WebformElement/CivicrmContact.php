@@ -273,12 +273,12 @@ class CivicrmContact extends WebformElementBase {
       ],
     ];
 
-    $form['defaults'] = [
+    $form['contact_defaults'] = [
       '#type' => 'details',
       '#title' => $this->t('Default value'),
       '#description' => $this->t('Should the form be pre-populated with an existing contact?<ul><li>Any filters set below will restrict this default.</li><li>If more than one contact meets the criteria, the first match will be picked. If multiple existing contact fields exist on the webform, each will select a different contact.</li></ul>'),
     ];
-    $form['defaults']['default'] = [
+    $form['contact_defaults']['default'] = [
       '#type' => 'select',
       '#title' => $this->t('Set default contact from'),
       '#options' => ['contact_id' => $this->t('Specified Contact')],
@@ -286,15 +286,15 @@ class CivicrmContact extends WebformElementBase {
       '#default_value' => $element_properties['default'],
     ];
     if ($c == 1 && $contact_type == 'individual') {
-      $form['defaults']['default']['#options']['user'] = $this->t('Current User');
+      $form['contact_defaults']['default']['#options']['user'] = $this->t('Current User');
     }
     elseif ($c > 1) {
-      $form['defaults']['default']['#options']['relationship'] = $this->t('Relationship to...');
-      $form['defaults']['default_relationship_to'] = [
+      $form['contact_defaults']['default']['#options']['relationship'] = $this->t('Relationship to...');
+      $form['contact_defaults']['default_relationship_to'] = [
         '#type' => 'select',
         '#default_value' => $element_properties['default_relationship_to'],
       ];
-      $form['defaults']['default_relationship'] = [
+      $form['contact_defaults']['default_relationship'] = [
         '#type' => 'select',
         '#multiple' => TRUE,
         '#title' => $this->t('Specify Relationship(s)'),
@@ -303,8 +303,8 @@ class CivicrmContact extends WebformElementBase {
         '#default_value' => $element_properties['default_relationship'],
       ];
     }
-    $form['defaults']['default']['#options']['auto'] = $this->t('Auto - From Filters');
-    $form['defaults']['default_contact_id'] = [
+    $form['contact_defaults']['default']['#options']['auto'] = $this->t('Auto - From Filters');
+    $form['contact_defaults']['default_contact_id'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Contact'),
       '#id' => 'default-contact-id',
@@ -317,27 +317,27 @@ class CivicrmContact extends WebformElementBase {
     $cid = $element_properties['default_contact_id'];
     $contactComponent = \Drupal::service('webform_civicrm.contact_component');
     if ($cid && $name = $contactComponent->wf_crm_contact_access($element_properties, ['check_permissions' => 1], $cid)) {
-      $form['defaults']['default_contact_id']['#default_value'] = $cid;
-      $form['defaults']['default_contact_id']['#attributes'] = [
+      $form['contact_defaults']['default_contact_id']['#default_value'] = $cid;
+      $form['contact_defaults']['default_contact_id']['#attributes'] = [
         'data-civicrm-name' => $name,
         'data-civicrm-id' => $cid,
       ];
     }
-    $form['defaults']['allow_url_autofill'] = [
+    $form['contact_defaults']['allow_url_autofill'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Use contact id from URL'),
       '#default_value' => $element_properties['allow_url_autofill'],
       '#description' => $this->t('If the url contains e.g. %arg, it will be used to pre-populate this contact (takes precidence over other default values).', ['%arg' => "cid$c=123"]),
     ];
     if ($c > 1) {
-      $form['defaults']['dupes_allowed'] = array(
+      $form['contact_defaults']['dupes_allowed'] = array(
         '#type' => 'checkbox',
         '#title' => $this->t('Allow Duplicate Autofill'),
         '#default_value' => $element_properties['dupes_allowed'],
         '#description' => $this->t('Check this box to allow a contact to be selected even if they already autofilled a prior field on the form. (For example, if contact 1 was autofilled with Bob Smith, should this field also be allowed to select Bob Smith or should it pick a different contact?)'),
       );
     }
-    $form['defaults']['randomize'] = [
+    $form['contact_defaults']['randomize'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Randomize'),
       '#default_value' => $element_properties['randomize'],
