@@ -64,17 +64,6 @@ jobs:
         run: |
           cd ~/drupal
           COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages}:${{ matrix.civicrm }} --no-suggest --prefer-dist
-      # curl -L -O https://github.com/iATSPayments/com.iatspayments.civicrm/archive/1.7.3.zip --output 1.7.3.zip
-      # Actually get the latest
-      - name: Install iATS Payments CiviCRM Extension
-        run: |
-          cd ~/drupal/web/sites/default/files/civicrm/ext
-          git clone https://github.com/iATSPayments/com.iatspayments.civicrm.git
-      # not sure we need this but could be handy to enable the iATS Payments Extension
-      - name: Install CV
-        run: |
-          curl -LsS https://download.civicrm.org/cv/cv.phar -o /usr/local/bin/cv
-          chmod +x /usr/local/bin/cv
       # For some reason drupal/webform:5.x installs even if it is drupal:^9.0
       - name: Ensure Webform ^6.0
         if: matrix.drupal == '^9.0'

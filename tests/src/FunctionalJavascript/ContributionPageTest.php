@@ -37,7 +37,11 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
   }
 
   private function createiATSPaymentProcessor() {
-    $params = [
+    // Download installs and enables!
+    $result = civicrm_api3('Extension', 'download', [
+      'key' => "com.iatspayments.civicrm",
+    ]);
+   $params = [
       'domain_id' => 1,
       'name' => 'iATS Credit Card - TE4188',
       'payment_processor_type_id' => 'iATS Payments Credit Card',
@@ -91,7 +95,7 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
 
   public function testSubmitContribution() {
     // ToDo: call createiATSPaymentProcessor()
-    $payment_processor = $this->createPaymentProcessor();
+    $payment_processor = $this->createiATSPaymentProcessor();
 
     $financialAccount = $this->setupSalesTax(2, $accountParams = []);
 
