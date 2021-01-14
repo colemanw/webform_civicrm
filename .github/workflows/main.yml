@@ -68,7 +68,7 @@ jobs:
       # Actually get the latest
       - name: Install iATS Payments CiviCRM Extension
         run: |
-          cd ~drupal/web/sites/default/files/civicrm/ext
+          cd ~/drupal/web/sites/default/files/civicrm/ext
           git clone https://github.com/iATSPayments/com.iatspayments.civicrm.git
       # not sure we need this but could be handy to enable the iATS Payments Extension
       - name: Install CV
