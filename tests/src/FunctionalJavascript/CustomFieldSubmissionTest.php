@@ -134,14 +134,16 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
-    $element_form = $this->getSession()->getPage()->findById('properties[extra][aslist]');
-    $element_form->uncheckField('Listbox');
+    // $element_form = $this->getSession()->getPage()->findById('properties[extra][aslist]');
+    // $element_form->uncheckField('Listbox');
+    $this->getSession()->getPage()->uncheckField('Listbox?');
     $this->assertSession()->waitForElementVisible('css', '.machine-name-value');
-    $element_form->pressButton('Save');
+    $this->getSession()->getPage()->pressButton('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->drupalLogout();
     $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->htmlOutput();
     $this->assertPageNoErrorMessages();
 
     $this->assertSession()->waitForField('First Name');
