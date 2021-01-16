@@ -47,8 +47,8 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals(1, $result['count']);
 
     $result = civicrm_api3('OptionGroup', 'create', [
-      'name' => "checkbox_1",
-      'label' => "Checkbox",
+      'name' => "checkboxes_1",
+      'title' => "Checkboxes",
       'data_type' => "String",
       'is_active' => 1,
     ]);
@@ -57,10 +57,11 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $optiongroup_id = $result['id'];
 
     $result = civicrm_api3('OptionValue', 'create', [
-      'option_group_id' => $optiongroup_id,
+      'option_group_id' => "checkboxes_1",
       'name' => "Red",
       'label' => "Red",
       'value' => 1,
+      'is_default' => 0,
       'weight' => 1,
       'is_active' => 1,
     ]);
@@ -68,10 +69,11 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals(1, $result['count']);
 
     $result = civicrm_api3('OptionValue', 'create', [
-      'option_group_id' => $optiongroup_id,
+      'option_group_id' => "checkboxes_1",
       'name' => "Green",
       'label' => "Green",
       'value' => 2,
+      'is_default' => 0,
       'weight' => 2,
       'is_active' => 1,
     ]);
@@ -81,10 +83,9 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $result = civicrm_api3('CustomField', 'create', [
       'custom_group_id' => "Custom",
       'label' => "Checkboxes",
-      'data_type' => "String",
       'html_type' => "CheckBox",
-      'option_group_id' => $optiongroup_id,
-      'serialize' => 1,
+      'data_type' => "String",
+      'option_group_id' => "checkboxes_1",
       'is_active' => 1,
     ]);
     $this->assertEquals(0, $result['is_error']);
@@ -134,10 +135,8 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
-    // $element_form = $this->getSession()->getPage()->findById('properties[extra][aslist]');
-    // $element_form->uncheckField('Listbox');
-    $this->getSession()->getPage()->uncheckField('Listbox?');
-    $this->assertSession()->waitForElementVisible('css', '.machine-name-value');
+    $this->getSession()->getPage()->uncheckField('properties[extra][aslist]');
+    $this->assertSession()->checkboxNotChecked('properties[extra][aslist]');
     $this->getSession()->getPage()->pressButton('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
