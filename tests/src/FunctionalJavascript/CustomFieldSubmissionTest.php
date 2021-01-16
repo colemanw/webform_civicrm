@@ -126,6 +126,9 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     // Change the Checkbox -> no Listbox (that should probably be the default)
     $this->drupalGet($this->webform->toUrl('edit-form'));
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+
     $this->getSession()->getPage()->clickLink('edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-3-operations');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $element_form = $this->getSession()->getPage()->findById('properties[extra][aslist]');
