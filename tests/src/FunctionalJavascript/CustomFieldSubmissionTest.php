@@ -82,7 +82,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
       'custom_group_id' => "Custom",
       'label' => "Checkboxes",
       'data_type' => "String",
-      'html_type' => "Checkbox",
+      'html_type' => "CheckBox",
       'option_group_id' => $optiongroup_id,
       'serialize' => 1,
       'is_active' => 1,
