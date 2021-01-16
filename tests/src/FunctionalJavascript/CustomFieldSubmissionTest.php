@@ -87,10 +87,8 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
       'serialize' => 1,
       'is_active' => 1,
     ]);
-    throw new \Exception(var_export($result, TRUE));
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
-
   }
 
   /**
