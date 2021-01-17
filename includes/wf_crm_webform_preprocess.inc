@@ -1,5 +1,7 @@
 <?php
 
+namespace Drupal\webform_civicrm;
+
 /**
  * @file
  * Front-end form pre-processor.
@@ -14,7 +16,6 @@ use Drupal\Core\Render\Markup;
 use Drupal\Core\Url;
 use Drupal\webform\Plugin\WebformHandlerInterface;
 use Drupal\webform_civicrm\Plugin\WebformElement\CivicrmContact;
-use Drupal\webform_civicrm\Utils;
 
 class wf_crm_webform_preprocess extends wf_crm_webform_base {
   private $form;
@@ -216,7 +217,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       $js_vars['processor_id_key'] = 'processor_id';
       if (!empty($this->data['contribution'][1]['contribution'][1]['is_test'])) {
         // RM: This is needed in order for CiviCRM to know that this is a 'test' (i.e. 'preview' action in CiviCRM) transaction - otherwise, CiviCRM defaults to 'live' and returns the payment form with public key for the live payment processor!
-        $contributionCallbackQuery['action'] = CRM_Core_Action::description(CRM_Core_Action::PREVIEW);
+        $contributionCallbackQuery['action'] = \CRM_Core_Action::description(\CRM_Core_Action::PREVIEW);
       }
 
       $js_vars['contributionCallback'] = Url::fromUri($contributionCallbackUrl, ['query' => $contributionCallbackQuery, 'alias' => TRUE])->toString();
@@ -410,7 +411,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         '@status' => $membership['status'],
       ));
       if (!empty($membership['end_date'])) {
-        $end = array('@date' => CRM_Utils_Date::customFormat($membership['end_date']));
+        $end = array('@date' => \CRM_Utils_Date::customFormat($membership['end_date']));
         $msg .= ' ' . ($membership['end_date'] > $today ? t('Expires @date.', $end) : t('Expired @date.', $end));
       }
       $this->setMessage($msg);
@@ -583,7 +584,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       }
     }
 
-    $taxRates = CRM_Core_PseudoConstant::getTaxRates();
+    $taxRates = \CRM_Core_PseudoConstant::getTaxRates();
     foreach ($this->line_items as $item) {
       $total += $item['line_total'];
       // Sales Tax integration
@@ -607,7 +608,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         $total += $item['tax_amount'];
         $label = $item['label'] . ($item['qty'] > 1 ? " ({$item['qty']})" : '');
         $rows[] = [
-          'data' => [$label, CRM_Utils_Money::format($item['line_total'] + $item['tax_amount'])],
+          'data' => [$label, \CRM_Utils_Money::format($item['line_total'] + $item['tax_amount'])],
           'class' => [$item['element'], 'line-item'],
           'data-amount' => $item['line_total'] + $item['tax_amount'],
           'data-tax' => (float) $itemTaxRate,
@@ -616,14 +617,14 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       else {
         $label = $item['label'] . ($item['qty'] > 1 ? " ({$item['qty']})" : '');
         $rows[] = [
-          'data' => [$label, CRM_Utils_Money::format($item['line_total'])],
+          'data' => [$label, \CRM_Utils_Money::format($item['line_total'])],
           'class' => [$item['element'], 'line-item'],
           'data-amount' => $item['line_total'],
         ];
       }
     }
     $rows[] = [
-      'data' => [t('Total'), CRM_Utils_Money::format($total)],
+      'data' => [t('Total'), \CRM_Utils_Money::format($total)],
       'id' => 'wf-crm-billing-total',
       'data-amount' => $total,
     ];

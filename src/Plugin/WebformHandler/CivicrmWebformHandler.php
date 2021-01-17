@@ -116,7 +116,7 @@ class CivicrmWebformHandler extends WebformHandlerBase {
     $this->civicrm->initialize();
     $settings = $this->configuration;
     $data = $settings['data'];
-    $processor = new \wf_crm_webform_preprocess($form, $form_state, $this);
+    $processor = new \Drupal\webform_civicrm\wf_crm_webform_preprocess($form, $form_state, $this);
     $processor->alterForm();
   }
 
@@ -132,7 +132,7 @@ class CivicrmWebformHandler extends WebformHandlerBase {
    */
   public function validateForm(array &$form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
     $this->civicrm->initialize();
-    $processor = \wf_crm_webform_postprocess::singleton($webform_submission->getWebform());
+    $processor = \Drupal\webform_civicrm\wf_crm_webform_postprocess::singleton($webform_submission->getWebform());
     $processor->validate($form, $form_state, $webform_submission);
   }
 
@@ -141,7 +141,7 @@ class CivicrmWebformHandler extends WebformHandlerBase {
    */
   public function preSave(WebformSubmissionInterface $webform_submission) {
     $this->civicrm->initialize();
-    $processor = \wf_crm_webform_postprocess::singleton($webform_submission->getWebform());
+    $processor = \Drupal\webform_civicrm\wf_crm_webform_postprocess::singleton($webform_submission->getWebform());
     $processor->preSave($webform_submission);
   }
 
@@ -150,7 +150,7 @@ class CivicrmWebformHandler extends WebformHandlerBase {
    */
   public function postSave(WebformSubmissionInterface $webform_submission, $update = TRUE) {
     $this->civicrm->initialize();
-    $processor = \wf_crm_webform_postprocess::singleton($webform_submission->getWebform());
+    $processor = \Drupal\webform_civicrm\wf_crm_webform_postprocess::singleton($webform_submission->getWebform());
     $processor->postSave($webform_submission);
   }
 

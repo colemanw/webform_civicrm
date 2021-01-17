@@ -1,11 +1,11 @@
 <?php
+namespace Drupal\webform_civicrm;
 
 /**
  * @file
  * Front-end form handler base class.
  */
 
-use Drupal\webform_civicrm\Utils;
 use Drupal\File\Entity\File;
 
 /**
@@ -61,7 +61,7 @@ abstract class wf_crm_webform_base {
           $contribution_enabled = wf_crm_aval($this->data, 'contribution:1:contribution:1:enable_contribution');
           if ($contribution_enabled) {
             // tax integration
-            $taxRates = CRM_Core_PseudoConstant::getTaxRates();
+            $taxRates = \CRM_Core_PseudoConstant::getTaxRates();
             $ft = wf_crm_aval($this->data, 'contribution:1:contribution:1:financial_type_id');
             $this->_tax_rate = $taxRates[$ft] ?? NULL;
           }
@@ -70,7 +70,7 @@ abstract class wf_crm_webform_base {
         return NULL;
 
       case 'civicrm_version':
-        return CRM_Utils_System::version();
+        return \CRM_Utils_System::version();
 
       default:
         throw new Exception('Unknown property');
@@ -726,17 +726,17 @@ abstract class wf_crm_webform_base {
    * @return void
    */
   function addPaymentJs() {
-    $currentVer = CRM_Core_BAO_Domain::version();
+    $currentVer = \CRM_Core_BAO_Domain::version();
     if (version_compare($currentVer, '5.8') <= 0 && method_exists('CRM_Core_Payment_Form', 'getCreditCardCSSNames')) {
-      $credit_card_types = CRM_Core_Payment_Form::getCreditCardCSSNames();
-      CRM_Core_Resources::singleton()
+      $credit_card_types = \CRM_Core_Payment_Form::getCreditCardCSSNames();
+      \CRM_Core_Resources::singleton()
         ->addCoreResources()
         ->addSetting(array('config' => array('creditCardTypes' => $credit_card_types)))
         ->addScriptFile('civicrm', 'templates/CRM/Core/BillingBlock.js', -10, 'html-header');
     }
     else {
-      CRM_Core_Resources::singleton()->addCoreResources();
-      CRM_Financial_Form_Payment::addCreditCardJs(NULL, 'html-header');
+      \CRM_Core_Resources::singleton()->addCoreResources();
+      \CRM_Financial_Form_Payment::addCreditCardJs(NULL, 'html-header');
     }
   }
 
@@ -749,7 +749,7 @@ abstract class wf_crm_webform_base {
   public static function saveDrupalFileToCivi($id) {
     $file = File::load($id);
     if ($file) {
-      $config = CRM_Core_Config::singleton();
+      $config = \CRM_Core_Config::singleton();
       $path = \Drupal::service('file_system')->copy($file->getFileUri(), $config->customFileUploadDir);
       if ($path) {
         $result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('file', 'create', array(
@@ -815,7 +815,7 @@ abstract class wf_crm_webform_base {
   public function getAttachments($ent, $id) {
     $n = 1;
     $attachments = array();
-    $dao = CRM_Core_DAO::executeQuery("SELECT * FROM civicrm_entity_file WHERE entity_table = 'civicrm_$ent' AND entity_id = $id");
+    $dao = \CRM_Core_DAO::executeQuery("SELECT * FROM civicrm_entity_file WHERE entity_table = 'civicrm_$ent' AND entity_id = $id");
     while ($dao->fetch()) {
       $attachments[$n++] = array('id' => $dao->id, 'file_id' => $dao->file_id);
     }
@@ -827,7 +827,7 @@ abstract class wf_crm_webform_base {
    * @return string
    */
   public function getQfKey() {
-    return CRM_Core_Key::get('CRM_Contribute_Controller_Contribution', TRUE);
+    return \CRM_Core_Key::get('CRM_Contribute_Controller_Contribution', TRUE);
   }
 
 }

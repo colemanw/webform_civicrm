@@ -1,5 +1,7 @@
 <?php
 
+namespace Drupal\webform_civicrm;
+
 /**
  * @file
  * Front-end form validation and post-processing.
@@ -305,11 +307,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function sendReceipt() {
     // tax integration
     if (!is_null($this->tax_rate)) {
-      $template = CRM_Core_Smarty::singleton();
+      $template = \CRM_Core_Smarty::singleton();
       $template->assign('dataArray', array("{$this->tax_rate}" => $this->tax_rate / 100));
     }
     if ($this->contributionIsIncomplete) {
-      $template = CRM_Core_Smarty::singleton();
+      $template = \CRM_Core_Smarty::singleton();
       $template->assign('is_pay_later', 1);
     }
     \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('contribution', 'sendconfirmation', $this->getReceiptParams());
@@ -399,7 +401,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
         // Strings and files don't need any validation
         elseif ($dt !== 'String' && $dt !== 'Memo' && $dt !== 'File'
-          && CRM_Utils_Type::escape($element['#value'], $dt, FALSE) === NULL) {
+          && \CRM_Utils_Type::escape($element['#value'], $dt, FALSE) === NULL) {
           // Allow data type names to be translated
           switch ($dt) {
             case 'Int':
@@ -783,7 +785,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     if (!empty($this->enabled[$fid . 'cs'])) {
       $cs = $this->submissionValue($this->enabled[$fid . 'cs']);
       $life = !empty($cs[0]) ? intval(24 * $cs[0]) : 'inf';
-      $cs = CRM_Contact_BAO_Contact_Utils::generateChecksum($cid, NULL, $life);
+      $cs = \CRM_Contact_BAO_Contact_Utils::generateChecksum($cid, NULL, $life);
       $this->submissionValue($this->enabled[$fid . 'cs'], $cs);
     }
   }
@@ -1509,8 +1511,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
               }
               if ($mail) {
                 // Include attachments while sending a copy of activity.
-                $attachments = CRM_Core_BAO_File::getEntityFile('civicrm_activity', $this->ent['act'][1]);
-                CRM_Case_BAO_Case::sendActivityCopy(NULL, $result['id'], $mail, $attachments, NULL);
+                $attachments = \CRM_Core_BAO_File::getEntityFile('civicrm_activity', $this->ent['act'][1]);
+                \CRM_Case_BAO_Case::sendActivityCopy(NULL, $result['id'], $mail, $attachments, NULL);
               }
             }
           }
@@ -1681,7 +1683,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     // Calculate totals
     $this->totalContribution = 0;
-    $taxRates = CRM_Core_PseudoConstant::getTaxRates();
+    $taxRates = \CRM_Core_PseudoConstant::getTaxRates();
     foreach ($this->line_items as &$line_item) {
       // Sales Tax integration
       if (!empty($line_item['financial_type_id'])) {
@@ -1738,13 +1740,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params = $card_errors = [];
     $payment_processor_id = NestedArray::getValue($this->data, ['contribution', '1', 'contribution', '1', 'payment_processor_id']);
 
-    $processor = Civi\Payment\System::singleton()->getById($payment_processor_id);
+    $processor = \Civi\Payment\System::singleton()->getById($payment_processor_id);
     $billingAddressFieldsMetadata = [];
     if (method_exists($processor, 'getBillingAddressFieldsMetadata')) {
       // getBillingAddressFieldsMetadata did not exist before 4.7
       $billingAddressFieldsMetadata = $processor->getBillingAddressFieldsMetadata();
     }
-    $fields = CRM_Utils_Array::crmArrayMerge($processor->getPaymentFormFieldsMetadata(), $billingAddressFieldsMetadata);
+    $fields = \CRM_Utils_Array::crmArrayMerge($processor->getPaymentFormFieldsMetadata(), $billingAddressFieldsMetadata);
 
     $request = \Drupal::request();
     foreach ($request->request->all() as $field => $value) {
@@ -1760,12 +1762,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     // 4.6 compatibility - some processors (eg. authorizeNet / Paypal require that "year" and "month" are set in params.
     if (isset($params['credit_card_exp_date'])) {
-      $params['year'] = CRM_Core_Payment_Form::getCreditCardExpirationYear($params);
-      $params['month'] = CRM_Core_Payment_Form::getCreditCardExpirationMonth($params);
+      $params['year'] = \CRM_Core_Payment_Form::getCreditCardExpirationYear($params);
+      $params['month'] = \CRM_Core_Payment_Form::getCreditCardExpirationMonth($params);
     }
 
     // Validate billing details
-    CRM_Core_Payment_Form::validatePaymentInstrument($payment_processor_id, $params, $card_errors, NULL);
+    \CRM_Core_Payment_Form::validatePaymentInstrument($payment_processor_id, $params, $card_errors, NULL);
     foreach ($card_errors as $field => $msg) {
       $this->form_state->setErrorByName($field, $msg);
       $valid = FALSE;
@@ -1981,7 +1983,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     //Fix IPN payments marked as paid by cheque
     if (empty($params['payment_instrument_id'])) {
       if (!empty($params['payment_processor_id'])) {
-        $defaultPaymentInstrument = CRM_Core_OptionGroup::values('payment_instrument', FALSE, FALSE, FALSE, 'AND is_default = 1');
+        $defaultPaymentInstrument = \CRM_Core_OptionGroup::values('payment_instrument', FALSE, FALSE, FALSE, 'AND is_default = 1');
         $params['payment_instrument_id'] = key($defaultPaymentInstrument);
       }
     }
@@ -2039,7 +2041,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     catch (\Civi\Payment\Exception\PaymentProcessorException $e) {
       drupal_set_message(ts('Payment approval failed with message: ') . $e->getMessage(),'error');
-      CRM_Utils_System::redirect($this->getIpnRedirectUrl('cancel'));
+      \CRM_Utils_System::redirect($this->getIpnRedirectUrl('cancel'));
     }
 
   }
@@ -2213,7 +2215,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       ));
     }
 
-    $contributionResult = CRM_Contribute_BAO_Contribution::getValues(array('id' => $id), CRM_Core_DAO::$_nullArray, CRM_Core_DAO::$_nullArray);
+    $contributionResult = \CRM_Contribute_BAO_Contribution::getValues(array('id' => $id), \CRM_Core_DAO::$_nullArray, \CRM_Core_DAO::$_nullArray);
 
     // Save line-items
     foreach ($this->line_items as &$item) {
@@ -2253,12 +2255,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
       $lineItemRecord = json_decode(json_encode($item), FALSE);
       // Add financial_item and entity_financial_trxn
-      // hence that we call CRM_Financial_BAO_FinancialItem::add() twice,
+      // hence that we call \CRM_Financial_BAO_FinancialItem::add() twice,
       // once to create the line item 'total amount' financial_item record and the 2nd
       // one to create the line item 'tax amount' financial_item  record.
-      CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult);
+      \CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult);
       if (!empty($lineItemRecord->tax_amount)) {
-        CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult, TRUE);
+        \CRM_Financial_BAO_FinancialItem::add($lineItemRecord, $contributionResult, TRUE);
       }
 
       // Create participant/membership payment records
@@ -2283,7 +2285,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     foreach ((array) wf_crm_aval($this->data[$ent], "$n:{$ent}upload:1") as $num => $file_id) {
       if ($file_id) {
         list(, $i) = explode('_', $num);
-        $dao = new CRM_Core_DAO_EntityFile();
+        $dao = new \CRM_Core_DAO_EntityFile();
         if (!empty($attachments[$i])) {
           $dao->id = $attachments[$i]['id'];
         }
@@ -2398,7 +2400,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
           // Implode data that will be stored as a string
           if ($table !== 'other' && $name !== 'event_id' && $name !== 'relationship_type_id' && $table !== 'contact' && $dataType != 'ContactReference' && strpos($name, 'tag') !== 0) {
-            $val = CRM_Utils_Array::implodePadded($val);
+            $val = \CRM_Utils_Array::implodePadded($val);
           }
         }
         elseif ($name === 'image_URL') {
@@ -2598,7 +2600,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   public function setLoggingContact() {
     if (!empty($this->ent['contact'][1]['id']) && \Drupal::currentUser()->isAnonymous()) {
-      CRM_Core_DAO::executeQuery('SET @civicrm_user_id = %1', array(1 => array($this->ent['contact'][1]['id'], 'Integer')));
+      \CRM_Core_DAO::executeQuery('SET @civicrm_user_id = %1', array(1 => array($this->ent['contact'][1]['id'], 'Integer')));
     }
   }
 

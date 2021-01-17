@@ -12,3 +12,6 @@ services:
     class: Drupal\webform_civicrm\ContactComponent
   webform_civicrm.utils:
     class: Drupal\webform_civicrm\Utils
+  webform_civicrm.webform_ajax:
+    class: Drupal\webform_civicrm\WebformAjax
+    arguments: ['@request_stack']

@@ -8,8 +8,6 @@ use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
-include_once __DIR__ . '/../../includes/wf_crm_webform_ajax.inc';
-
 class AjaxController implements ContainerInjectionInterface {
 
   protected $requestStack;
@@ -49,7 +47,7 @@ class AjaxController implements ContainerInjectionInterface {
     }
     else {
       $this->civicrm->initialize();
-      $processor = new \wf_crm_webform_ajax($this->requestStack);
+      $processor = \Drupal::service('webform_civicrm.webform_ajax');
       return new JsonResponse($processor->contactAjax($key, $input));
     }
   }

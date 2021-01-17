@@ -43,25 +43,6 @@ function webform_civicrm_library_info_alter(array &$libraries, $extension) {
 }
 
 /**
- * Implements hook_menu().
- *
- * @return array
- */
-function webform_civicrm_menu() {
-  /*
-  $items = array();
-  $items['webform-civicrm/js/%'] = array(
-    'page callback' => 'wf_crm_ajax',
-    'file' => 'includes/wf_crm_webform_ajax.inc',
-    'access callback' => TRUE,
-    'page arguments' => array(2),
-    'type' => MENU_CALLBACK,
-  );
-  return $items;
-  */
-}
-
-/**
  * Implements hook_form_alter().
  */
 function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
@@ -116,9 +97,8 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
  * @param string $str
  */
 function webform_civicrm_webform_autocomplete_options_alter(&$results, $node, $cid, $str) {
-  \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/wf_crm_webform_ajax');
   $utils = \Drupal::service('webform_civicrm.utils');
-  if (wf_crm_webform_ajax::autocompleteAccess($node, $cid)) {
+  if (\Drupal::service('webform_civicrm.webform_ajax')->autocompleteAccess($node, $cid)) {
     $key = $utils->wf_crm_explode_key($node->webform['components'][$cid]['form_key']);
   }
   if (isset($key) && substr($key[5], 0, 7) == 'custom_') {
