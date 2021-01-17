@@ -675,20 +675,6 @@ class Utils implements UtilsInterface {
   }
 
   /**
-   * Adjust Metadata for Transact action.
-   *
-   * The metadata is used for setting defaults, documentation & validation.
-   *
-   * @param array $params
-   *   Array of parameters determined by getfields.
-   */
-  function _wf_civicrm_api3_contribution_transact_spec(&$params) {
-    $fields = civicrm_api3('Contribution', 'getfields', ['action' => 'create']);
-    $params = array_merge($params, $fields['values']);
-    $params['receive_date']['api.default'] = 'now';
-  }
-
-  /**
    * Process a transaction and record it against the contact.
    *
    * @deprecated
@@ -700,30 +686,74 @@ class Utils implements UtilsInterface {
    *   contribution of created or updated record (or a civicrm error)
    */
   function wf_civicrm_api3_contribution_transact($params) {
-    // CRM_Core_Error::deprecatedFunctionWarning('The contibution.transact api is unsupported & known to have issues. Please see the section at the bottom of https://docs.civicrm.org/dev/en/latest/financial/OrderAPI/ for getting off it');
-    // Set some params specific to payment processing
-    // @todo - fix this function - none of the results checked by civicrm_error would ever be an array with
-    // 'is_error' set
-    // also trxn_id is not saved.
-    // but since there is no test it's not desirable to jump in & make the obvious changes.
-    $params['payment_processor_mode'] = empty($params['is_test']) ? 'live' : 'test';
-    $params['amount'] = $params['total_amount'];
-    if (!isset($params['net_amount'])) {
-      $params['net_amount'] = $params['amount'];
+    // Start with the same parameters as Contribution.transact.
+    $params['contribution_status_id'] = 'Pending';
+    if (!isset($params['invoice_id']) && !isset($params['invoiceID'])) {
+      // Set an invoice_id here if you have not already done so.
+      // Potentially Order api should do this https://lab.civicrm.org/dev/financial/issues/78
+      $params['invoice_id'] = md5(uniqid(rand(), TRUE));
     }
-    if (!isset($params['invoiceID']) && isset($params['invoice_id'])) {
+    if (isset($params['invoice_id']) && !isset($params['invoiceID'])) {
+      // This would be required prior to https://lab.civicrm.org/dev/financial/issues/77
       $params['invoiceID'] = $params['invoice_id'];
     }
+    elseif (!isset($params['invoice_id']) && isset($params['invoiceID'])) {
+      $params['invoice_id'] = $params['invoiceID'];
+    }
 
-    // Some payment processors expect a unique invoice_id - generate one if not supplied
-    $params['invoice_id'] = \CRM_Utils_Array::value('invoice_id', $params, md5(uniqid(rand(), TRUE)));
+    $order = civicrm_api3('Order', 'create', $params);
+    try {
+      // Use the Payment Processor to attempt to take the actual payment. You may
+      // pass in other params here, too.
+      $propertyBag = new \Civi\Payment\PropertyBag();
+      $propertyBag->mergeLegacyInputParams($params);
+      $propertyBag->setContributionID($order['id']);
+      // @fixme: Class \Civi\Payment\CRM_Utils_Money not found (fixed in 5.28 via https://github.com/civicrm/civicrm-core/pull/17505
+      //   But note we still return a localized format
+      // $propertyBag->setAmount($params['total_amount']);
 
-    $paymentProcessor = \CRM_Financial_BAO_PaymentProcessor::getPayment($params['payment_processor'], $params['payment_processor_mode']);
-    $paymentProcessor['object']->doPayment($params);
+      // We need the payment params as an array to pass to PaymentProcessor.Pay API3.
+      // If https://github.com/civicrm/civicrm-core/pull/17507 was merged we wouldn't need this hack
+      //   using ReflectionClass to access the array.
+      $reflectionClass = new \ReflectionClass($propertyBag);
+      $reflectionProperty = $reflectionClass->getProperty('props');
+      $reflectionProperty->setAccessible(TRUE);
+      $payParams = $reflectionProperty->getValue($propertyBag)['default'];
 
-    $params['payment_instrument_id'] = $paymentProcessor['object']->getPaymentInstrumentID();
+      // propertyBag has 'contributionID', we need 'contribution_id'.
+      $payParams['contribution_id'] = $propertyBag->getContributionID();
+      // propertyBag has 'currency', iATS uses `currencyID` until https://github.com/iATSPayments/com.iatspayments.civicrm/pull/350 is merged
+      $payParams['currencyID'] = $propertyBag->getCurrency();
+      $payParams['amount'] = $params['total_amount'];
+      $payResult = reset(civicrm_api3('PaymentProcessor', 'pay', $payParams)['values']);
 
-    return civicrm_api3('Contribution', 'create', $params);
+      // webform_civicrm sends out receipts using Contribution.send_confirmation API if the contribution page is has is_email_receipt = TRUE.
+      // We allow this to be overridden here but default to FALSE.
+      $params['is_email_receipt'] = $params['is_email_receipt'] ?? FALSE;
+
+      // Assuming the payment was taken, record it which will mark the Contribution
+      // as Completed and update related entities.
+      civicrm_api3('Payment', 'create', [
+        'contribution_id' => $order['id'],
+        'total_amount' => $payParams['amount'],
+        'payment_instrument_id' => $order['values'][$order['id']]['payment_instrument_id'],
+        // If there is a processor, provide it:
+        'payment_processor_id' => $payParams['payment_processor_id'],
+        'is_send_contribution_notification' => $params['is_email_receipt'],
+        'trxn_id' => $payResult['trxn_id'] ?? NULL,
+      ]);
+    }
+    catch (\Exception $e) {
+      return ['error_message' => $e->getMessage()];
+    }
+
+    $contribution = civicrm_api3('Contribution', 'getsingle', ['id' => $order['id']]);
+    // Transact API works a bit differently because we are actually adding the payment and updating the contribution status.
+    // A "normal" transaction (eg. using doPayment() or just PaymentProcessor.pay) would not update the contribution and would
+    // rely on the caller to do so. The caller relies on the `payment_status_id` (Pending or Completed) to know whether the payment
+    // was successful or not.
+    $contribution['payment_status_id'] = $contribution['contribution_status_id'];
+    return $contribution;
   }
 
   /**
