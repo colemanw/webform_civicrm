@@ -357,7 +357,13 @@ class Utils implements UtilsInterface {
         $r['type_a'] = strtolower(wf_crm_aval($r, 'contact_type_a'));
         $r['type_b'] = strtolower(wf_crm_aval($r, 'contact_type_b'));
         $r['sub_type_a'] = wf_crm_aval($r, 'contact_sub_type_a');
+        if (!is_null($r['sub_type_a'])) {
+          $r['sub_type_a'] = strtolower($r['sub_type_a']);
+        }
         $r['sub_type_b'] = wf_crm_aval($r, 'contact_sub_type_b');
+        if (!is_null($r['sub_type_b'])) {
+          $r['sub_type_b'] = strtolower($r['sub_type_b']);
+        }
         $types[$r['id']] = $r;
       }
     }
