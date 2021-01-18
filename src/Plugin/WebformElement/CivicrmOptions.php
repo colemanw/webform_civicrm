@@ -178,7 +178,7 @@ class CivicrmOptions extends WebformElementBase {
     if (!$as_list) {
       $element['#type'] = $is_multiple ? 'checkboxes' : 'radios';
     }
-    else if ($is_multiple) {
+    if ($is_multiple) {
       $element['#multiple'] = TRUE;
     }
 
