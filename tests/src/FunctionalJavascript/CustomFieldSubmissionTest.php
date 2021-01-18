@@ -143,7 +143,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalLogout();
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->htmlOutput();
-    $this->assertPageNoErrorMessages();
+    // $this->assertPageNoErrorMessages();
 
     $this->assertSession()->waitForField('First Name');
 
@@ -171,9 +171,30 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
       'entity_id' => 3,
     ]);
     $this->assertEquals(3, $api_result['count']);
-    throw new \Exception(var_export($api_result, TRUE));
+    // throw new \Exception(var_export($api_result, TRUE));
     $this->assertEquals('Lorem Ipsum', $api_result['values'][0]['latest']);
     $this->assertEquals('2020-12-12 10:20:00', $api_result['values'][1]['latest']);
+    // Check the checkbox values
+    // Red = 1; Green = 2;
+    $this->assertEquals(1, $api_result['values'][2]['latest']['0']);
+    $this->assertEquals(2, $api_result['values'][2]['latest']['1']);
+
+    $result = civicrm_api3('OptionValue', 'get', [
+      'option_group_id' => "checkboxes_1",
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(2, $result['count']);
+
+    foreach ($result['values'] as $value) {
+      if ($value['value'] == $api_result['values'][2]['latest']['0']) {
+        $first_colour = $value['name'];
+      } elseif ($value['value'] == $api_result['values'][2]['latest']['1']) {
+        $second_colour = $value['name'];
+      }
+    }
+
+    $this->assertEquals('Red', $first_colour);
+    $this->assertEquals('Green', $second_colour);
   }
 
 }
