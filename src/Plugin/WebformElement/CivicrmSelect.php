@@ -134,7 +134,7 @@ class CivicrmSelect extends WebformElementBase {
       '#type' => 'civicrm_select_options',
       '#live_options' => $element_properties['civicrm_live_options'],
       '#default_option' => $element_properties['default_option'],
-      '#form_key' => $this->configuration['#form_key']
+      '#form_key' => $this->configuration['#form_key'] ?? $element_properties['form_key'],
     ];
 
     return $form;
