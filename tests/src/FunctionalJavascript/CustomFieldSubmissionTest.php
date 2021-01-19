@@ -143,6 +143,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalLogout();
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->htmlOutput();
+    // ToDo: hunt down this notice
     // $this->assertPageNoErrorMessages();
 
     $this->assertSession()->waitForField('First Name');
