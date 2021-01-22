@@ -11,7 +11,7 @@ use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
  *
  * @group webform_civicrm
  */
-final class ContributionPageTest extends WebformCivicrmTestBase {
+final class ContributionDummyTest extends WebformCivicrmTestBase {
 
   private function createPaymentProcessor() {
     $params = [
@@ -27,35 +27,6 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
       'class_name' => 'Payment_Dummy',
       'billing_mode' => 1,
       'is_recur' => 1,
-      'payment_instrument_id' => 'Credit Card',
-    ];
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $result = $utils->wf_civicrm_api('payment_processor', 'create', $params);
-    $this->assertEquals(0, $result['is_error']);
-    $this->assertEquals(1, $result['count']);
-    return current($result['values']);
-  }
-
-  private function createiATSPaymentProcessor() {
-    // Download installs and enables!
-    $result = civicrm_api3('Extension', 'download', [
-      'key' => "com.iatspayments.civicrm",
-    ]);
-   $params = [
-      'domain_id' => 1,
-      'name' => 'iATS Credit Card - TE4188',
-      'payment_processor_type_id' => 'iATS Payments Credit Card',
-      'financial_account_id' => 12,
-      'is_test' => FALSE,
-      'is_active' => 1,
-      'user_name' => 'TE4188',
-      'password' => 'abcde01',
-      'url_site' => 'https://www.iatspayments.com/NetGate/ProcessLinkv2.asmx?WSDL',
-      'url_recur' => 'https://www.iatspayments.com/NetGate/ProcessLinkv2.asmx?WSDL',
-      'class_name' => 'Payment_iATSService',
-      'is_recur' => 1,
-      'sequential' => 1,
-      'payment_type' => 1,
       'payment_instrument_id' => 'Credit Card',
     ];
     $utils = \Drupal::service('webform_civicrm.utils');
@@ -94,8 +65,7 @@ final class ContributionPageTest extends WebformCivicrmTestBase {
   }
 
   public function testSubmitContribution() {
-    // ToDo: call createiATSPaymentProcessor()
-    $payment_processor = $this->createiATSPaymentProcessor();
+    $payment_processor = $this->createPaymentProcessor();
 
     $financialAccount = $this->setupSalesTax(2, $accountParams = []);
 
