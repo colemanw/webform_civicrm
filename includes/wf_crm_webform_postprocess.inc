@@ -1532,7 +1532,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       list($set, $type) = explode('_', $fid, 2);
       if ($set == $entityType && isset($field['table']) && $field['table'] == 'tag') {
         $field_name = 'civicrm_' . $n . '_' . $entityType. '_1_' . $fid;
-        if (isset($this->enabled[$field_name]) && isset($this->data[$entityType][$n])) {
+        if ((isset($params['tag']) || isset($this->enabled[$field_name])) && isset($this->data[$entityType][$n])) {
           $add = wf_crm_aval($this->data[$entityType][$n], $entityType . ":1:$type", array());
           $remove = $this->getExposedOptions($field_name, $add);
           $this->addOrRemoveMultivaluedData('tag', $entityType, $entityId, $add, $remove);
