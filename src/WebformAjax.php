@@ -5,15 +5,19 @@
  * Front-end form ajax handler.
  */
 
+namespace Drupal\webform_civicrm;
+
 use Drupal\Component\Utility\Xss;
-use Drupal\node\Entity\Node;
 use Drupal\webform\Entity\Webform;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
-include_once __DIR__ . '/wf_crm_webform_base.inc';
+include_once __DIR__ . '/../includes/wf_crm_webform_base.inc';
 
-class wf_crm_webform_ajax extends wf_crm_webform_base {
+/**
+ * Class WebformAjax
+ */
+class WebformAjax extends wf_crm_webform_base implements WebformAjaxInterface {
 
   private $requestStack;
 
@@ -39,7 +43,6 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
   function contactAjax($webformId, $fid) {
 
     $contactComponent = \Drupal::service('webform_civicrm.contact_component');
-    $utils = \Drupal::service('webform_civicrm.utils');
 
     if (empty($this->getParameter('str')) && (empty($this->getParameter('load')) || empty($this->getParameter('cid')))) {
       throw new AccessDeniedHttpException('Invalid parameters.');
@@ -52,7 +55,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
     $this->settings = $webform->getHandler('webform_civicrm')->getConfiguration()['settings'];
     $this->data = $this->settings['data'];
     $element = $webform->getElement($fid);
-    if (!self::autocompleteAccess($webform, $fid)) {
+    if (!$this->autocompleteAccess($webform, $fid)) {
      throw new AccessDeniedHttpException('Access not allowed');
     }
 
@@ -96,7 +99,8 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
       }
       // Fetch entire contact to populate form via ajax
       if ($this->getParameter('load') == 'full') {
-        $sp = CRM_Core_DAO::VALUE_SEPARATOR;
+        $sp = \CRM_Core_DAO::VALUE_SEPARATOR;
+        $utils = \Drupal::service('webform_civicrm.utils');
         $this->enabled = $utils->wf_crm_enabled_fields($webform);
         list(, $c, ) = explode('_', $element['#form_key'], 3);
         $this->ent['contact'][$c]['id'] = (int) $_GET['cid'];
@@ -175,7 +179,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
    *
    * @return bool
    */
-  public static function autocompleteAccess($webform, $fid) {
+  public function autocompleteAccess($webform, $fid) {
     $user =  \Drupal::currentUser() ;
     if (!$fid || empty($webform->getHandler('webform_civicrm'))) {
       return FALSE;
