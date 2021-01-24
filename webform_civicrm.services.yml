@@ -17,3 +17,5 @@ services:
     arguments: ['@request_stack']
   webform_civicrm.preprocess:
     class: Drupal\webform_civicrm\WebformCivicrmPreProcess
+  webform_civicrm.postprocess:
+    class: Drupal\webform_civicrm\WebformCivicrmPostProcess

@@ -12,7 +12,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 // Include legacy files for their procedural functions.
 // @todo convert required functions into injectable services.
 include_once __DIR__ . '/../../../includes/wf_crm_webform_base.inc';
-include_once __DIR__ . '/../../../includes/wf_crm_webform_postprocess.inc';
 
 /**
  * CiviCRM Webform Handler plugin.
@@ -131,7 +130,7 @@ class CivicrmWebformHandler extends WebformHandlerBase {
    */
   public function validateForm(array &$form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
     $this->civicrm->initialize();
-    $processor = \Drupal\webform_civicrm\wf_crm_webform_postprocess::singleton($webform_submission->getWebform());
+    $processor = \Drupal::service('webform_civicrm.postprocess')->initialize($webform_submission->getWebform());
     $processor->validate($form, $form_state, $webform_submission);
   }
 
@@ -140,7 +139,7 @@ class CivicrmWebformHandler extends WebformHandlerBase {
    */
   public function preSave(WebformSubmissionInterface $webform_submission) {
     $this->civicrm->initialize();
-    $processor = \Drupal\webform_civicrm\wf_crm_webform_postprocess::singleton($webform_submission->getWebform());
+    $processor = \Drupal::service('webform_civicrm.postprocess')->initialize($webform_submission->getWebform());
     $processor->preSave($webform_submission);
   }
 
@@ -149,7 +148,7 @@ class CivicrmWebformHandler extends WebformHandlerBase {
    */
   public function postSave(WebformSubmissionInterface $webform_submission, $update = TRUE) {
     $this->civicrm->initialize();
-    $processor = \Drupal\webform_civicrm\wf_crm_webform_postprocess::singleton($webform_submission->getWebform());
+    $processor = \Drupal::service('webform_civicrm.postprocess')->initialize($webform_submission->getWebform());
     $processor->postSave($webform_submission);
   }
 

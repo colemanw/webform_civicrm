@@ -15,9 +15,10 @@ use Drupal\user\Entity\User;
 use Drupal\webform\WebformInterface;
 use Drupal\webform\WebformSubmissionInterface;
 
-include_once __DIR__ . '/wf_crm_webform_base.inc';
+include_once __DIR__ . '/../includes/wf_crm_webform_base.inc';
 
-class wf_crm_webform_postprocess extends wf_crm_webform_base {
+
+class WebformCivicrmPostProcess extends wf_crm_webform_base implements WebformCivicrmPostProcessInterface {
   // Variables used during validation
 
   /**
@@ -52,15 +53,22 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private $all_sets;
   private $shared_address = array();
 
-  // Cache an instance of this object
-  // @see self::singleton()
-  static $singleton;
+  /**
+   * Static cache.
+   *
+   * @var bool
+   */
+  protected $initialized = FALSE;
 
   const
     BILLING_MODE_LIVE = 1,
     BILLING_MODE_MIXED = 3;
 
-  function __construct(WebformInterface $webform) {
+  function initialize(WebformInterface $webform) {
+    if ($this->initialized) {
+      return $this;
+    }
+
     $this->node = $webform;
 
     $handler_collection = $webform->getHandlers('webform_civicrm');
@@ -73,22 +81,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $this->enabled = $utils->wf_crm_enabled_fields($webform);
     $this->all_fields = $utils->wf_crm_get_fields();
     $this->all_sets = $utils->wf_crm_get_fields('sets');
-  }
 
-  /**
-   * This is first called during form validation. We create an instance of this object and stash it in a static variable.
-   * It is destroyed and rebuilt between each page submission, but after (successful) validation of the final page,
-   * this cache allows the object instance to persist throughout (final) validate, preSave and postSave operations.
-   *
-   * @param \Drupal\webform\WebformInterface $webform
-   *
-   * @return wf_crm_webform_postprocess
-   */
-  public static function singleton(WebformInterface $webform) {
-    if (!self::$singleton) {
-      self::$singleton = new wf_crm_webform_postprocess($webform);
-    }
-    return self::$singleton;
+    $this->initialized = TRUE;
+    return $this;
   }
 
   /**
