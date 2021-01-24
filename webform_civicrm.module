@@ -54,24 +54,11 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
   /*
   // Alter back-end webform component edit forms
   if ($form_id == 'webform_component_edit_form') {
-    if (substr($form['form_key']['#default_value'], 0, 7) == 'civicrm') {
-      form_load_include($form_state, 'inc', 'webform_civicrm', 'includes/wf_crm_admin_component');
-      $admin_form = new wf_crm_admin_component($form, $form_state);
-      $admin_form->alterForm();
-    }
     if ($form['type']['#value'] == 'pagebreak') {
       form_load_include($form_state, 'inc', 'webform_civicrm', 'includes/wf_crm_admin_component');
       $admin_form = new wf_crm_admin_component($form, $form_state);
       $admin_form->adjustPageBreak();
     }
-  }
-
-  // Alter front-end of webforms
-  elseif (strpos($form_id, 'webform_client_form_') !== FALSE
-    && !empty($form['#node']->webform_civicrm)) {
-    form_load_include($form_state, 'inc', 'webform_civicrm', 'includes/wf_crm_webform_preprocess');
-    $processor = new wf_crm_webform_preprocess($form, $form_state);
-    $processor->alterForm();
   }
 
   // Validation for webform components tab

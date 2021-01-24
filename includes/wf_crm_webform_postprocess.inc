@@ -14,7 +14,6 @@ use Drupal\Core\Render\Element;
 use Drupal\user\Entity\User;
 use Drupal\webform\WebformInterface;
 use Drupal\webform\WebformSubmissionInterface;
-use Drupal\webform_civicrm\Utils;
 
 include_once __DIR__ . '/wf_crm_webform_base.inc';
 

@@ -17,7 +17,8 @@ use Drupal\Core\Url;
 use Drupal\webform\Plugin\WebformHandlerInterface;
 use Drupal\webform_civicrm\Plugin\WebformElement\CivicrmContact;
 
-class wf_crm_webform_preprocess extends wf_crm_webform_base {
+class WebformCivicrmPreProcess extends wf_crm_webform_base implements WebformCivicrmPreProcessInterface {
+
   private $form;
   private $form_state;
   private $info = array();
@@ -25,7 +26,14 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
   private $all_sets;
   private $handler;
 
-  function __construct(&$form, FormStateInterface $form_state, WebformHandlerInterface $handler) {
+  /**
+   * Initialize form variables.
+   *
+   * @param $form
+   * @param $form_state
+   * @param $handler
+   */
+  function initialize(&$form, FormStateInterface $form_state, WebformHandlerInterface $handler) {
     $utils = \Drupal::service('webform_civicrm.utils');
     $this->handler = $handler;
     $this->form = &$form;
@@ -38,6 +46,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     $this->all_sets = $utils->wf_crm_get_fields('sets');
     $this->enabled = $utils->wf_crm_enabled_fields($handler->getWebform());
     $this->line_items = $form_state->get(['civicrm', 'line_items']) ?: [];
+    return $this;
   }
 
   /**

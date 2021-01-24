@@ -12,7 +12,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 // Include legacy files for their procedural functions.
 // @todo convert required functions into injectable services.
 include_once __DIR__ . '/../../../includes/wf_crm_webform_base.inc';
-include_once __DIR__ . '/../../../includes/wf_crm_webform_preprocess.inc';
 include_once __DIR__ . '/../../../includes/wf_crm_webform_postprocess.inc';
 
 /**
@@ -116,7 +115,7 @@ class CivicrmWebformHandler extends WebformHandlerBase {
     $this->civicrm->initialize();
     $settings = $this->configuration;
     $data = $settings['data'];
-    $processor = new \Drupal\webform_civicrm\wf_crm_webform_preprocess($form, $form_state, $this);
+    $processor = \Drupal::service('webform_civicrm.preprocess')->initialize($form, $form_state, $this);
     $processor->alterForm();
   }
 
