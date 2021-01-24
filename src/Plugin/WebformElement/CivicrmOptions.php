@@ -124,7 +124,7 @@ class CivicrmOptions extends WebformElementBase {
       '#type' => 'civicrm_select_options',
       '#live_options' => $element_properties['civicrm_live_options'],
       '#default_option' => $element_properties['default_option'],
-      '#form_key' => $this->configuration['#form_key']
+      '#form_key' => $this->configuration['#form_key'] ?? $element_properties['form_key'],
     ];
 
     return $form;
@@ -178,7 +178,7 @@ class CivicrmOptions extends WebformElementBase {
     if (!$as_list) {
       $element['#type'] = $is_multiple ? 'checkboxes' : 'radios';
     }
-    else if ($is_multiple) {
+    if ($is_multiple) {
       $element['#multiple'] = TRUE;
     }
 
