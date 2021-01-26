@@ -16,8 +16,10 @@ use Drupal\Core\Render\Markup;
 use Drupal\Core\Url;
 use Drupal\webform\Plugin\WebformHandlerInterface;
 use Drupal\webform_civicrm\Plugin\WebformElement\CivicrmContact;
+use Drupal\webform_civicrm\WebformCivicrmBase;
 
-class WebformCivicrmPreProcess extends wf_crm_webform_base implements WebformCivicrmPreProcessInterface {
+
+class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivicrmPreProcessInterface {
 
   private $form;
   private $form_state;

@@ -1,4 +1,5 @@
 <?php
+
 namespace Drupal\webform_civicrm;
 
 /**
@@ -9,13 +10,13 @@ namespace Drupal\webform_civicrm;
 use Drupal\File\Entity\File;
 
 /**
- * Class wf_crm_webform_base
+ * Class WebformCivicrmBase
  *
  * @property array $payment_processor
  * @property number $tax_rate
  * @property number $civicrm_version
  */
-abstract class wf_crm_webform_base {
+abstract class WebformCivicrmBase {
 
   /**
    * @var \Drupal\webform\WebformInterface

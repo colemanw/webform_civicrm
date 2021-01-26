@@ -11,13 +11,12 @@ use Drupal\Component\Utility\Xss;
 use Drupal\webform\Entity\Webform;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-
-include_once __DIR__ . '/../includes/wf_crm_webform_base.inc';
+use Drupal\webform_civicrm\WebformCivicrmBase;
 
 /**
  * Class WebformAjax
  */
-class WebformAjax extends wf_crm_webform_base implements WebformAjaxInterface {
+class WebformAjax extends WebformCivicrmBase implements WebformAjaxInterface {
 
   private $requestStack;
 

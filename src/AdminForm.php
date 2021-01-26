@@ -380,8 +380,8 @@ class AdminForm implements AdminFormInterface {
             '#prefix' => '<div class="multivalue-fieldset-create-mode">',
             '#suffix' => '</div>',
             '#options' => array(
-              \wf_crm_webform_base::MULTIVALUE_FIELDSET_MODE_CREATE_OR_EDIT => t('Create/ Edit'),
-              \wf_crm_webform_base::MULTIVALUE_FIELDSET_MODE_CREATE_ONLY => t('Create Only')
+              WebformCivicrmBase::MULTIVALUE_FIELDSET_MODE_CREATE_OR_EDIT => t('Create/ Edit'),
+              WebformCivicrmBase::MULTIVALUE_FIELDSET_MODE_CREATE_ONLY => t('Create Only')
             ),
             '#title' => t('Create mode'),
             '#weight' => -1,
