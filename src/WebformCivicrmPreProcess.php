@@ -581,7 +581,7 @@ class WebformCivicrmPreProcess extends wf_crm_webform_base implements WebformCiv
     // Support hidden contribution field
     $fid = 'civicrm_1_contribution_1_contribution_total_amount';
     if (!$this->line_items && isset($this->enabled[$fid])) {
-      $elements = $this->node->getElementsDecoded();
+      $elements = $this->node->getElementsDecodedAndFlattened();
       $field = $elements[$this->enabled[$fid]];
       if ($field['#type'] === 'hidden') {
         $this->line_items[] = [
