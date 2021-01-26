@@ -9,10 +9,6 @@ use Drupal\webform\WebformInterface;
 use Drupal\webform\WebformSubmissionInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
-// Include legacy files for their procedural functions.
-// @todo convert required functions into injectable services.
-include_once __DIR__ . '/../../../includes/wf_crm_webform_base.inc';
-
 /**
  * CiviCRM Webform Handler plugin.
  *

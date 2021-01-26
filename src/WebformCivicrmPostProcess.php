@@ -14,11 +14,10 @@ use Drupal\Core\Render\Element;
 use Drupal\user\Entity\User;
 use Drupal\webform\WebformInterface;
 use Drupal\webform\WebformSubmissionInterface;
+use Drupal\webform_civicrm\WebformCivicrmBase;
 
-include_once __DIR__ . '/../includes/wf_crm_webform_base.inc';
 
-
-class WebformCivicrmPostProcess extends wf_crm_webform_base implements WebformCivicrmPostProcessInterface {
+class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCivicrmPostProcessInterface {
   // Variables used during validation
 
   /**
