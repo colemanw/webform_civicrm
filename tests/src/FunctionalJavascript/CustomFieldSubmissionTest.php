@@ -136,7 +136,6 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
 
     // static
-    $this->getSession()->getPage()->checkField('Static Options');
     $this->getSession()->getPage()->selectFieldOption('Static Options', 1);
 
     $this->getSession()->getPage()->uncheckField('properties[extra][aslist]');
