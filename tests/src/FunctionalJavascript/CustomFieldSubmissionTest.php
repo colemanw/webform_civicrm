@@ -135,11 +135,13 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
-    // static
+    // Static
     $this->getSession()->getPage()->selectFieldOption('Static Options', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->uncheckField('properties[extra][aslist]');
     $this->assertSession()->checkboxNotChecked('properties[extra][aslist]');
     $this->htmlOutput();
+
     $this->getSession()->getPage()->pressButton('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
