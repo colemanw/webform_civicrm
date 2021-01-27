@@ -2355,7 +2355,7 @@ class AdminForm implements AdminFormInterface {
       $enabled = $utils->wf_crm_enabled_fields($webform, NULL, TRUE);
       $updated = array();
       // Handle update & delete of existing components
-      $elements = $webform->getElementsDecoded();
+      $elements = $webform->getElementsDecodedAndFlattened();
       foreach ($elements as $component_key => $component) {
         if (substr($component['#form_key'], 0 - strlen($field_name)) === $field_name) {
           if ($pieces = $utils->wf_crm_explode_key($component['#form_key'])) {

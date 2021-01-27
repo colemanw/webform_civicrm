@@ -152,7 +152,7 @@ class CivicrmWebformHandler extends WebformHandlerBase {
    * {@inheritdoc}
    */
   public function deleteHandler() {
-    $elements = array_filter($this->webform->getElementsDecoded(), function (array $element) {
+    $elements = array_filter($this->webform->getElementsDecodedAndFlattened(), function (array $element) {
       return strpos($element['#form_key'], 'civicrm_') !== 0;
     });
     $this->webform->setElements($elements);
