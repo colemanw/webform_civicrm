@@ -13,29 +13,6 @@ use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
  */
 final class ContributionDummyTest extends WebformCivicrmTestBase {
 
-  private function createPaymentProcessor() {
-    $params = [
-      'domain_id' => 1,
-      'name' => 'Dummy',
-      'payment_processor_type_id' => 'Dummy',
-      'is_active' => 1,
-      'is_default' => 1,
-      'is_test' => 0,
-      'user_name' => 'foo',
-      'url_site' => 'http://dummy.com',
-      'url_recur' => 'http://dummy.com',
-      'class_name' => 'Payment_Dummy',
-      'billing_mode' => 1,
-      'is_recur' => 1,
-      'payment_instrument_id' => 'Credit Card',
-    ];
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $result = $utils->wf_civicrm_api('payment_processor', 'create', $params);
-    $this->assertEquals(0, $result['is_error']);
-    $this->assertEquals(1, $result['count']);
-    return current($result['values']);
-  }
-
   private function setupSalesTax(int $financialTypeId, $accountParams = []) {
     $params = array_merge([
       'name' => 'Sales tax account ' . substr(sha1(rand()), 0, 4),
