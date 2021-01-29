@@ -251,6 +251,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(2, $result['count']);
 
+    $first_colour = [];
     foreach ($result['values'] as $value) {
       if ($value['value'] == $api_result['values'][2]['latest']['0']) {
         $first_colour = $value['name'];
