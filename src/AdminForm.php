@@ -1287,7 +1287,7 @@ class AdminForm implements AdminFormInterface {
       '#type' => 'checkbox',
       '#title' => t('Create Fieldsets'),
       '#default_value' => (bool) $this->settings['create_fieldsets'],
-      '#description' => t('Create a fieldset around each contact, activity, etc. Provides visual organization of your form. Also allows the contact clone feature to work.'),
+      '#description' => t('Create a fieldset around each contact, activity, etc. Provides visual organization of your form.'),
     );
     $this->form['options']['confirm_subscription'] = array(
       '#type' => 'checkbox',
@@ -1644,8 +1644,9 @@ class AdminForm implements AdminFormInterface {
           'civicrm_' . $c . '_contact_1_contact_first_name' => 'create_civicrm_webform_element',
           'civicrm_' . $c . '_contact_1_contact_last_name' => 'create_civicrm_webform_element',
         ];
-        $link = [':link' => 'href="https://docs.civicrm.org/sysadmin/en/latest/integration/drupal/webform/#cloning-a-contact" target="_blank"'];
-        \Drupal::messenger()->addStatus(t('Tip: Consider using the clone feature to add multiple similar contacts. (<a :link>more info</a>)', $link));
+        // ToDo: investigate how to re-instate this feature
+        // $link = [':link' => 'href="https://docs.civicrm.org/sysadmin/en/latest/integration/drupal/webform/#cloning-a-contact" target="_blank"'];
+        // \Drupal::messenger()->addStatus(t('Tip: Consider using the clone feature to add multiple similar contacts. (<a :link>more info</a>)', $link));
       }
     }
     // Store meta settings, i.e. number of email for contact 1
