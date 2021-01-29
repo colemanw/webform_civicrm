@@ -207,7 +207,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
 
     // ToDo: hunt down this notice
-    // $this->assertPageNoErrorMessages();
+    $this->assertPageNoErrorMessages();
 
     $this->assertSession()->waitForField('First Name');
 
