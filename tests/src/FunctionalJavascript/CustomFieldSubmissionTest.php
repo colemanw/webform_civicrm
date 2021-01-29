@@ -13,6 +13,7 @@ use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
 final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
   private function createCustomFields() {
+    // Create Set of Custom Fields
     $params = [
       'title' => "Custom",
       'extends' => 'Individual',
@@ -23,6 +24,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals(1, $result['count']);
     $customgroup_id = $result['id'];
 
+    // Add Field of type Text
     $params = [
       'custom_group_id' => $customgroup_id,
       'label' => 'Text',
@@ -34,6 +36,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
 
+    // Add Field of type Data/Time
     $result = civicrm_api3('CustomField', 'create', [
       'custom_group_id' => "Custom",
       'label' => "DateTime",
@@ -46,6 +49,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
 
+    // Add OptionGroup for Checkboxes element
     $result = civicrm_api3('OptionGroup', 'create', [
       'name' => "checkboxes_1",
       'title' => "Checkboxes",
@@ -54,8 +58,8 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     ]);
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
-    $optiongroup_id = $result['id'];
 
+    // Add First OptionValue to OptionGroup for Checkboxes element
     $result = civicrm_api3('OptionValue', 'create', [
       'option_group_id' => "checkboxes_1",
       'name' => "Red",
@@ -68,6 +72,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
 
+    // Add Second OptionValue to OptionGroup for Checkboxes element
     $result = civicrm_api3('OptionValue', 'create', [
       'option_group_id' => "checkboxes_1",
       'name' => "Green",
@@ -80,12 +85,61 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
 
+    // Add Field of type Checkboxes
     $result = civicrm_api3('CustomField', 'create', [
       'custom_group_id' => "Custom",
       'label' => "Checkboxes",
       'html_type' => "CheckBox",
       'data_type' => "String",
       'option_group_id' => "checkboxes_1",
+      'is_active' => 1,
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+
+    // Add OptionGroup for Select element
+    $result = civicrm_api3('OptionGroup', 'create', [
+      'name' => "list_1",
+      'title' => "Select",
+      'data_type' => "String",
+      'is_active' => 1,
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+
+    // Add First OptionValue to OptionGroup for Select element
+    $result = civicrm_api3('OptionValue', 'create', [
+      'option_group_id' => "list_1",
+      'name' => "Option A",
+      'label' => "Option A",
+      'value' => 'OptionA',
+      'is_default' => 0,
+      'weight' => 1,
+      'is_active' => 1,
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+
+    // Add Second OptionValue to OptionGroup for Select element
+    $result = civicrm_api3('OptionValue', 'create', [
+      'option_group_id' => "list_1",
+      'name' => "Option B",
+      'label' => "Option B",
+      'value' => 'OptionB',
+      'is_default' => 0,
+      'weight' => 1,
+      'is_active' => 1,
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+
+    // Add Field of type Select
+    $result = civicrm_api3('CustomField', 'create', [
+      'custom_group_id' => "Custom",
+      'label' => "List",
+      'html_type' => "Select",
+      'data_type' => "String",
+      'option_group_id' => "list_1",
       'is_active' => 1,
     ]);
     $this->assertEquals(0, $result['is_error']);
@@ -116,11 +170,13 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField("civicrm_1_contact_1_cg1_custom_2");
     $this->getSession()->getPage()->checkField("civicrm_1_contact_1_cg1_custom_2_timepart");
     $this->getSession()->getPage()->checkField("civicrm_1_contact_1_cg1_custom_3");
+    $this->getSession()->getPage()->checkField("civicrm_1_contact_1_cg1_custom_4");
 
     $this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_1");
     $this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_2");
     $this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_2_timepart");
     $this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_3");
+    $this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_4");
 
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
@@ -135,9 +191,10 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
-    // Static
     $this->getSession()->getPage()->selectFieldOption('Static Options', 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
+    // ToDo this should work if switch to Static Options worked
+    // $this->getSession()->getPage()->fillField('properties[options][options][civicrm_option_1][label]', 'Red - Recommended');
     $this->getSession()->getPage()->uncheckField('properties[extra][aslist]');
     $this->assertSession()->checkboxNotChecked('properties[extra][aslist]');
     $this->htmlOutput();
@@ -148,6 +205,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalLogout();
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->htmlOutput();
+
     // ToDo: hunt down this notice
     // $this->assertPageNoErrorMessages();
 
@@ -176,7 +234,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
       'sequential' => 1,
       'entity_id' => 3,
     ]);
-    $this->assertEquals(3, $api_result['count']);
+    $this->assertEquals(4, $api_result['count']);
     // throw new \Exception(var_export($api_result, TRUE));
     $this->assertEquals('Lorem Ipsum', $api_result['values'][0]['latest']);
     $this->assertEquals('2020-12-12 10:20:00', $api_result['values'][1]['latest']);
@@ -198,9 +256,12 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
         $second_colour = $value['name'];
       }
     }
-
     $this->assertEquals('Red', $first_colour);
     $this->assertEquals('Green', $second_colour);
+
+    // For the Select List - the default is OptionA - Check that it's stored properly in CiviCRM:
+    $this->assertEquals('OptionA', $api_result['values'][3]['latest']);
+    //throw new \Exception(var_export($api_result, TRUE));
   }
 
 }
