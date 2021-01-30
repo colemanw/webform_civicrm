@@ -192,17 +192,8 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
 
     $this->getSession()->getPage()->selectFieldOption("properties[civicrm_live_options]", 0);
-
-    // $radio_buttons = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-properties-civicrm-live-options"]');
-    // $radio_button_one = $this->assertSession()->elementExists('css', 'input:checked');
-    // $radio_button_two = $this->assertSession()->elementExists('css', 'input:not(:checked)');
-    // $radio_button_two->click();
-    
     $this->assertSession()->assertWaitOnAjaxRequest();
-
-    // ToDo this should work if switch to Static Options worked
     $this->assertSession()->waitForField('properties[options][options][civicrm_option_1][label]');
-
     $this->getSession()->getPage()->fillField('properties[options][options][civicrm_option_1][label]', 'Red - Recommended');
     $this->getSession()->getPage()->uncheckField('properties[extra][aslist]');
     $this->assertSession()->checkboxNotChecked('properties[extra][aslist]');
@@ -232,6 +223,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $driver->executeScript("document.getElementById('edit-civicrm-1-contact-1-cg1-custom-2-timepart').setAttribute('value', '10:20:00')");
 
     // Only check one Checkbox -> Red
+    $this->assertSession()->pageTextContains('Red - Recommended');
     $this->getSession()->getPage()->checkField('Red');
 
     $this->getSession()->getPage()->pressButton('Submit');
