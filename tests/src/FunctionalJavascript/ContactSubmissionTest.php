@@ -10,6 +10,63 @@ use Drupal\Core\Url;
  * @group webform_civicrm
  */
 final class ContactSubmissionTest extends WebformCivicrmTestBase {
+
+  /**
+   * Test contact submission using static widget.
+   */
+  public function testStaticContactElement() {
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $params = [
+      'contact_type' => 'Individual',
+      'first_name' => substr(sha1(rand()), 0, 7),
+      'last_name' => substr(sha1(rand()), 0, 7),
+    ];
+    $contact = $utils->wf_civicrm_api('contact', 'create', $params);
+
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+
+    // The label has a <div> in it which can cause weird failures here.
+    $this->assertSession()->waitForText('Enable CiviCRM Processing');
+    $this->assertSession()->waitForField('nid');
+    $this->htmlOutput();
+    $this->getSession()->getPage()->checkField('nid');
+    $this->getSession()->getPage()->selectFieldOption('1_contact_type', 'individual');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $this->getSession()->getPage()->pressButton('Save Settings');
+    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $contact['id']]]));
+    $this->assertPageNoErrorMessages();
+
+    //Check if no autocomplete is present on the page.
+    $this->assertSession()->elementNotExists('css', '.token-input-list');
+
+    //Check if name fields are pre populated with existing values.
+    $this->assertSession()->fieldValueEquals('First Name', $params['first_name']);
+    $this->assertSession()->fieldValueEquals('Last Name', $params['last_name']);
+
+    //Update the name to some other value.
+    $this->getSession()->getPage()->fillField('First Name', 'Frederick');
+    $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
+    //Verify if the modified value is updated for the contact.
+    $contact_result = $utils->wf_civicrm_api('contact', 'get', [
+      'sequential' => 1,
+      'id' => $contact['id'],
+    ]);
+    $result_debug = var_export($contact_result, TRUE);
+
+    $this->assertArrayHasKey('count', $contact_result, $result_debug);
+    $this->assertEquals(1, $contact_result['count'], $result_debug);
+    $this->assertEquals('Frederick', $contact_result['values'][0]['first_name'], $result_debug);
+    $this->assertEquals('Pabst', $contact_result['values'][0]['last_name'], $result_debug);
+  }
   /**
    * Test submitting a contact.
    *

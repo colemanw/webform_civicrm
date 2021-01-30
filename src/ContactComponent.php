@@ -39,17 +39,6 @@ class ContactComponent implements ContactComponentInterface {
   }
 
   /**
-   * Theme function.
-   * Format the output of data for this component.
-   */
-  function theme_display_civicrm_contact($variables) {
-    $element = $variables['element'];
-    $prefix = $element['#format'] == 'html' ? '' : $element['#field_prefix'];
-    $suffix = $element['#format'] == 'html' ? '' : $element['#field_suffix'];
-    return $element['#value'] !== '' ? ($prefix . $element['#value'] . $suffix) : ' ';
-  }
-
-  /**
    * Implements _webform_table_component().
    */
   function _webform_table_civicrm_contact($component, $value) {
@@ -352,51 +341,6 @@ class ContactComponent implements ContactComponentInterface {
     return $params;
   }
 
-  /**
-   * Theme the wrapper for a static contact element
-   * Includes normal webform theme wrappers plus a tokeninput-style name field
-   */
-  function theme_static_contact_element($vars) {
-    $element = $vars['element'];
-    $component = $element['#webform_component'];
-
-    // All elements using this for display only are given the "display" type.
-    $type = wf_crm_aval($element, '#format') == 'html' ? 'display' : 'civicrm_contact';
-
-    // Convert the parents array into a string, excluding the "submitted" wrapper.
-    $nested_level = $element['#parents'][0] == 'submitted' ? 1 : 0;
-    $parents = str_replace('_', '-', implode('--', array_slice($element['#parents'], $nested_level)));
-
-    $wrapper_classes = array(
-      'form-item',
-      'webform-component',
-      'webform-component-' . $type,
-      'static',
-      'webform-component--' . $parents,
-    );
-
-    if ($component['extra']['title_display'] === 'inline') {
-      $wrapper_classes[] = 'webform-container-inline';
-    }
-
-    $output = '<div class="' . implode(' ', $wrapper_classes) . '">' . "\n";
-
-    // Display static value in addition to hidden field
-    if ($type == 'civicrm_contact' && !empty($element['#attributes']['data-civicrm-name'])) {
-
-      if ($component['extra']['title_display'] != 'none') {
-        $output .= theme('form_element_label', array('element' => $element));
-      }
-
-      $output .= '<ul class="token-input-list"><li class="token-input-token"><p>' . $element['#attributes']['data-civicrm-name'] . "</p></li></ul>\n";
-
-      if (!empty($component['extra']['description'])) {
-        $output .= ' <div class="description">' . filter_xss($element['#description']) . "</div>\n";
-      }
-    }
-
-    return $output . $element['#children'] . "\n</div>\n";
-  }
 
   /**
    * Validation callback

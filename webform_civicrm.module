@@ -120,24 +120,6 @@ function webform_civicrm_theme() {
 }
 
 /**
- * Implements hook_webform_component_info().
- *
- * @return array
- */
-function webform_civicrm_webform_component_info() {
-  return array(
-    'civicrm_contact' => array(
-      'label' => t('CiviCRM Contact'),
-      'description' => t('Choose existing contact.'),
-      'features' => array(
-        'email_name' => TRUE,
-      ),
-      'file' => 'includes/contact_component.inc',
-    ),
-  );
-}
-
-/**
  * Implements hook_webform_submission_render_alter().
  * Add display name to title while viewing a submission.
  */

@@ -562,7 +562,6 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
             }
           }
           if ($name == 'existing') {
-            \Drupal::ModuleHandler()->loadInclude('webform_civicrm', 'inc', 'includes/contact_component');
             CivicrmContact::wf_crm_fill_contact_value($this->node, $component, $element, $this->ent);
           }
         }

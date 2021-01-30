@@ -98,15 +98,7 @@ class CivicrmContact extends WebformElementBase {
     $element['#attached']['drupalSettings']['webform_civicrm'][$element['#form_key']] = [
       'hiddenFields' => [],
     ];
-    $element['#theme'] = 'webform_civicrm_contact';
     $element['#type'] = $element['#widget'] === 'autocomplete' ? 'textfield' : $element['#widget'];
-    list(, $c, ) = explode('_', $element['#form_key'], 3);
-    $element['#attributes']['data-civicrm-contact'] = $c;
-    $element['#attributes']['data-form-id'] = $webform_submission ? $webform_submission->getWebform()->id() : NULL;
-    $element['#attributes']['data-hide-method'] = $this->getElementProperty($element, 'hide_method');
-    $element['#attributes']['data-no-hide-blank'] = (int) $this->getElementProperty($element, 'no_hide_blank');
-
-
     $cid = $this->getElementProperty($element, 'default_value');
     if ($element['#type'] === 'hidden') {
       // User may not change this value for hidden fields
@@ -114,7 +106,13 @@ class CivicrmContact extends WebformElementBase {
       if (empty($element['#show_hidden_contact'])) {
         return;
       }
+      $element['#attributes']['show-hidden-contact'] = 1;
     }
+    list(, $c, ) = explode('_', $element['#form_key'], 3);
+    $element['#attributes']['data-civicrm-contact'] = $c;
+    $element['#attributes']['data-form-id'] = $webform_submission ? $webform_submission->getWebform()->id() : NULL;
+    $element['#attributes']['data-hide-method'] = $this->getElementProperty($element, 'hide_method');
+    $element['#attributes']['data-no-hide-blank'] = (int) $this->getElementProperty($element, 'no_hide_blank');
     if (!empty($cid)) {
       $webform = $webform_submission->getWebform();
       $contactComponent = \Drupal::service('webform_civicrm.contact_component');
@@ -489,7 +487,8 @@ class CivicrmContact extends WebformElementBase {
     $cid = wf_crm_aval($element, '#default_value', '');
     $contactComponent = \Drupal::service('webform_civicrm.contact_component');
     if ($element['#type'] == 'hidden') {
-      if (!isset($component['#show_hidden_contact']) || !$component['#show_hidden_contact']) {
+      $element['#value'] = $cid;
+      if (empty($element['#show_hidden_contact'])) {
         return;
       }
     }

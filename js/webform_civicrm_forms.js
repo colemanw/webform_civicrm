@@ -52,6 +52,7 @@ var wfCivi = (function ($, D, drupalSettings) {
     var cid = $field.val(),
       prep = null,
       hideOrDisable = $field.attr('data-hide-method'),
+      showHiddenContact = $field.attr('show-hidden-contact') == '1',
       showEmpty = $field.attr('data-no-hide-blank') == '1';
 
     function getCallbackPath() {
@@ -88,6 +89,9 @@ var wfCivi = (function ($, D, drupalSettings) {
         tokenInputSettings.queryParam = 'str';
         tokenInputSettings.tokenLimit = 1;
         tokenInputSettings.prePopulate = prep;
+        if (showHiddenContact) {
+          tokenInputSettings.deleteText = '';
+        }
         $field.tokenInput(getCallbackPath, tokenInputSettings);
       }
     }
