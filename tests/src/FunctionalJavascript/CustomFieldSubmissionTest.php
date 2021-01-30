@@ -193,7 +193,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->selectFieldOption("properties[civicrm_live_options]", 0);
     $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->getSession()->wait(1000);
+    $this->getSession()->wait(60000);
     $this->assertSession()->waitForField('properties[options][options][civicrm_option_1][label]');
     $this->getSession()->getPage()->fillField('properties[options][options][civicrm_option_1][label]', 'Red - Recommended');
     $this->getSession()->getPage()->uncheckField('properties[extra][aslist]');
