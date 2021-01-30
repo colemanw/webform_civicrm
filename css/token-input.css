@@ -41,7 +41,7 @@ form li.token-input-token {
     height: 1%;
     margin: 3px;
     padding: 3px 5px;
-    background-color: #d0efa0;
+    background-color: #82c459;
     color: #000;
     font-weight: bold;
     cursor: default;
@@ -65,7 +65,7 @@ form li.token-input-token span {
 }
 
 form li.token-input-selected-token {
-    background-color: #08844e;
+    background-color: #82c459;
     color: #fff;
 }
 
@@ -118,7 +118,7 @@ div.token-input-dropdown ul li em {
 }
 
 div.token-input-dropdown ul li.token-input-selected-dropdown-item {
-    background-color: #d0efa0;
+    background-color: #82c459;
 }
 
 form.contact-loading,
