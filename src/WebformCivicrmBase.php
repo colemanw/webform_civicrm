@@ -522,7 +522,7 @@ abstract class WebformCivicrmBase {
 
     if ($field && $field['#type'] == 'hidden') {
       // Fetch live options
-      $exposed = $utils->wf_crm_field_options($field, 'live_options', $this->data);
+      $exposed = $utils->wf_crm_field_options($field, 'civicrm_live_options', $this->data);
       foreach ($exclude as $i) {
         unset($exposed[$i]);
       }
@@ -539,7 +539,7 @@ abstract class WebformCivicrmBase {
       }
       // Fetch live options
       else {
-        $exposed = $utils->wf_crm_field_options(['form_key' => $field['#form_key']], 'live_options', $this->data);
+        $exposed = $utils->wf_crm_field_options(['form_key' => $field['#form_key']], 'civicrm_live_options', $this->data);
       }
       foreach ($exclude as $i) {
         unset($exposed[$i]);

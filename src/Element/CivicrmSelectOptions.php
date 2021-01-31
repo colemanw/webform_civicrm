@@ -16,7 +16,7 @@ class CivicrmSelectOptions extends FormElement {
       '#input' => TRUE,
       '#label' => t('option'),
       '#labels' => t('options'),
-      '#live_options' => TRUE,
+      '#civicrm_live_options' => TRUE,
       '#default_option' => NULL,
       '#form_key' => NULL,
       '#process' => [
@@ -68,13 +68,13 @@ class CivicrmSelectOptions extends FormElement {
         'enabled' => [
           'data' => [
             '#markup' => 'Enabled',
-            '#access' => !$element['#live_options'],
+            '#access' => !$element['#civicrm_live_options'],
           ]
         ],
         'label' => [
           'data' => [
             '#markup' => 'Label',
-            '#access' => !$element['#live_options'],
+            '#access' => !$element['#civicrm_live_options'],
           ]
         ],
         'default' => [
@@ -85,7 +85,7 @@ class CivicrmSelectOptions extends FormElement {
         'weight' => [
           'data' => [
             '#markup' => 'Weight',
-            '#access' => !$element['#live_options'],
+            '#access' => !$element['#civicrm_live_options'],
           ]
         ],
       ],
@@ -99,7 +99,7 @@ class CivicrmSelectOptions extends FormElement {
       ],
     ];
 
-    if ($element['#live_options']) {
+    if ($element['#civicrm_live_options']) {
       $element['options']['#tabledrag'] = [];
     }
 
@@ -108,7 +108,7 @@ class CivicrmSelectOptions extends FormElement {
     $field_options = static::getFieldOptions($element['#form_key']);
 
     // Sort the field options by the current options.
-    if (!$element['#live_options']) {
+    if (!$element['#civicrm_live_options']) {
       uasort($field_options, function ($a, $b) use ($current_options) {
         $current_options = array_flip($current_options);
         $weight_values = array_flip(array_values(array_flip($current_options)));
@@ -142,14 +142,14 @@ class CivicrmSelectOptions extends FormElement {
         '#title' => t('Enable @item', ['@item' => $option]),
         '#title_display' => 'invisible',
         '#default_value' => !empty($current_options[$key]),
-        '#access' => !$element['#live_options'],
+        '#access' => !$element['#civicrm_live_options'],
       ];
       $element['options'][$row_key]['label'] = [
         '#type' => 'textfield',
         '#title' => t('Label for @item', ['@item' => $option]),
         '#title_display' => 'invisible',
         '#default_value' => !empty($current_options[$key]) ?  $current_options[$key] : $option,
-        '#access' => !$element['#live_options'],
+        '#access' => !$element['#civicrm_live_options'],
       ];
       $element['options'][$row_key]['default_option'] = [
         '#type' => 'radio',
@@ -166,7 +166,7 @@ class CivicrmSelectOptions extends FormElement {
         // @todo support these values.
         '#default_value' => $weight,
         '#attributes' => ['class' => ['weight']],
-        '#access' => !$element['#live_options'],
+        '#access' => !$element['#civicrm_live_options'],
       ];
       $weight++;
     }
@@ -178,7 +178,7 @@ class CivicrmSelectOptions extends FormElement {
    * Validates webform options element.
    */
   public static function validateSelectOptions(&$element, FormStateInterface $form_state, &$complete_form) {
-    if ($element['#live_options']) {
+    if ($element['#civicrm_live_options']) {
       $options_value = self::getFieldOptions($element['#form_key']);
     }
     else {

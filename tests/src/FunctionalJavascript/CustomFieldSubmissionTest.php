@@ -124,6 +124,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    $this->assertPageNoErrorMessages();
 
     // Change the Checkbox -> no Listbox (that should probably be the default)
     $this->drupalGet($this->webform->toUrl('edit-form'));
@@ -143,8 +144,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalLogout();
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->htmlOutput();
-    // ToDo: hunt down this notice
-    // $this->assertPageNoErrorMessages();
+    $this->assertPageNoErrorMessages();
 
     $this->assertSession()->waitForField('First Name');
 
