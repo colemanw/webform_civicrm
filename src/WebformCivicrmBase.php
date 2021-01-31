@@ -530,7 +530,11 @@ abstract class WebformCivicrmBase {
     }
 
     if ($field && $field['#type'] == 'civicrm_options') {
-      return $field['#options'] ?? [];
+	  $exposed = $field['#options'];
+	    foreach ($exclude as $i) {
+		  unset($exposed[$i]);
+	    }	  
+	  return $exposed;
     }
     if ($field && $field['#type'] == 'select') {
       // Fetch static options
