@@ -64,8 +64,9 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->fieldValueEquals('Last Name', 'van der Weijden');
 
     $this->getSession()->getPage()->checkField('Volunteer');
+    $this->assertSession()->checkboxChecked("Volunteer");
     $this->htmlOutput();
-    
+
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
