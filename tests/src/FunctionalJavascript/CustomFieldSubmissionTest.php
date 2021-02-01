@@ -47,6 +47,27 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals(1, $result['count']);
 
     $result = civicrm_api3('OptionGroup', 'create', [
+      'name' => "radio_1",
+      'title' => "Label for custom radio field",
+      'data_type' => "String",
+      'is_active' => 1,
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+
+    $result = civicrm_api3('OptionValue', 'create', [
+      'option_group_id' => "radio_1",
+      'name' => "Yes",
+      'label' => "Yes",
+      'value' => 1,
+      'is_default' => 0,
+      'weight' => 1,
+      'is_active' => 1,
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+
+    $result = civicrm_api3('OptionGroup', 'create', [
       'name' => "checkboxes_1",
       'title' => "Checkboxes",
       'data_type' => "String",
@@ -90,6 +111,17 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     ]);
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
+
+    $result = civicrm_api3('CustomField', 'create', [
+      'custom_group_id' => "Custom",
+      'label' => "Label for custom radio field",
+      'html_type' => "Radio",
+      'data_type' => "String",
+      'option_group_id' => "radio_1",
+      'is_active' => 1,
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
   }
 
   /**
@@ -116,37 +148,33 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField("civicrm_1_contact_1_cg1_custom_2");
     $this->getSession()->getPage()->checkField("civicrm_1_contact_1_cg1_custom_2_timepart");
     $this->getSession()->getPage()->checkField("civicrm_1_contact_1_cg1_custom_3");
+    $this->getSession()->getPage()->checkField("civicrm_1_contact_1_cg1_custom_4");
 
     $this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_1");
     $this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_2");
     $this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_2_timepart");
     $this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_3");
+    $this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_4");
 
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    $this->assertPageNoErrorMessages();
 
     // Change the Checkbox -> no Listbox (that should probably be the default)
     $this->drupalGet($this->webform->toUrl('edit-form'));
     $this->assertSession()->waitForField('Checkboxes');
     $this->htmlOutput();
 
-    $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-3-operations"] a.webform-ajax-link');
-    $checkbox_edit_button->click();
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->htmlOutput();
-
-    $this->getSession()->getPage()->uncheckField('properties[extra][aslist]');
-    $this->assertSession()->checkboxNotChecked('properties[extra][aslist]');
-    $this->getSession()->getPage()->pressButton('Save');
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->enableCheckboxOnElement('edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-3-operations');
+    $this->enableCheckboxOnElement('edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-4-operations');
 
     $this->drupalLogout();
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->htmlOutput();
-    // ToDo: hunt down this notice
-    // $this->assertPageNoErrorMessages();
+    $this->assertPageNoErrorMessages();
 
     $this->assertSession()->waitForField('First Name');
+    $this->assertSession()->pageTextContains('Label for custom radio field');
 
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
@@ -161,6 +189,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->checkField('Red');
     $this->getSession()->getPage()->checkField('Green');
+    $this->getSession()->getPage()->checkField('Yes');
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
@@ -171,7 +200,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
       'sequential' => 1,
       'entity_id' => 3,
     ]);
-    $this->assertEquals(3, $api_result['count']);
+    $this->assertEquals(4, $api_result['count']);
     // throw new \Exception(var_export($api_result, TRUE));
     $this->assertEquals('Lorem Ipsum', $api_result['values'][0]['latest']);
     $this->assertEquals('2020-12-12 10:20:00', $api_result['values'][1]['latest']);

@@ -122,7 +122,7 @@ class CivicrmOptions extends WebformElementBase {
 
     $form['options']['options'] = [
       '#type' => 'civicrm_select_options',
-      '#live_options' => $element_properties['civicrm_live_options'],
+      '#civicrm_live_options' => $element_properties['civicrm_live_options'],
       '#default_option' => $element_properties['default_option'],
       '#form_key' => $this->configuration['#form_key'] ?? $element_properties['form_key'],
     ];
@@ -135,10 +135,12 @@ class CivicrmOptions extends WebformElementBase {
    */
   public function getConfigurationFormProperties(array &$form, FormStateInterface $form_state) {
     $properties = parent::getConfigurationFormProperties($form, $form_state);
-    // Get additional properties off of the options element.
-    $select_options = $form['properties']['options']['options'];
-    $properties['#default_option'] = $select_options['#default_option'];
-    $properties['#default_value'] = $select_options['#default_option'];
+    if (!empty($form['properties'])) {
+      // Get additional properties off of the options element.
+      $select_options = $form['properties']['options']['options'];
+      $properties['#default_option'] = $select_options['#default_option'];
+      $properties['#default_value'] = $select_options['#default_option'];
+    }
     return $properties;
   }
 
@@ -176,22 +178,17 @@ class CivicrmOptions extends WebformElementBase {
 
     $element['#type'] = 'select';
     if (!$as_list) {
-      $element['#type'] = $is_multiple ? 'checkboxes' : 'radios';
+      $element['#type'] = 'radios';
+      // A single static radio should be shown as a checkbox
+      if ($is_multiple || (!$use_live_options && count($element['#options']) === 1)) {
+        $element['#type'] = 'checkboxes';
+        $element['#default_value'] = empty($element['#default_value']) ? [] : (array) $element['#default_value'];
+      }
     }
     if ($is_multiple) {
       $element['#multiple'] = TRUE;
     }
 
-    // A single static radio should be shown as a checkbox
-    if (!$use_live_options && !$as_list && count($element['#options']) === 1) {
-      $element['#type'] = 'checkbox';
-      // Reset the element label, the checkbox label, to be the first option's value.
-      $element['#title'] = reset($element['#options']);
-      $element['#return_value'] = key($element['#options']);
-      // Remove the options array to prevent invalid validation.
-      // @see \Drupal\Core\Form\FormValidator::performRequiredValidation
-      unset($element['#options']);
-    }
     parent::prepare($element, $webform_submission);
   }
 

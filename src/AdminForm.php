@@ -1764,13 +1764,13 @@ class AdminForm implements AdminFormInterface {
     if ($button === 'edit-delete' || ($button === 'edit-disable' && $this->settings['nid'])) {
       foreach ($delete_me as $id) {
         $field = $this->webform->getElementDecoded($id);
-        unset($enabled[$field['form_key']]);
+        unset($enabled[$field['#form_key']]);
         ++$deleted;
         if ($button === 'edit-delete') {
           $this->webform->deleteElement($field['#form_key']);
         }
         else {
-          $field['form_key'] = 'disabled' . substr($field['form_key'], 7);
+          $field['#form_key'] = 'disabled' . substr($field['#form_key'], 7);
           $this->webform->setElementProperties($field['#form_key'], $field);
         }
       }

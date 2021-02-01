@@ -130,6 +130,21 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   }
 
   /**
+   * Modify settings so the element displays as a checkbox.
+   */
+  protected function enableCheckboxOnElement($selector) {
+    $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="' . $selector . '"] a.webform-ajax-link');
+    $checkbox_edit_button->click();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+
+    $this->getSession()->getPage()->uncheckField('properties[extra][aslist]');
+    $this->assertSession()->checkboxNotChecked('properties[extra][aslist]');
+    $this->getSession()->getPage()->pressButton('Save');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+  }
+
+  /**
    * Create Payment Processor.
    */
   protected function createPaymentProcessor() {
