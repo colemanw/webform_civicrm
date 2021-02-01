@@ -12,6 +12,110 @@ use Drupal\Core\Url;
 final class ContactSubmissionTest extends WebformCivicrmTestBase {
 
   /**
+   * Create 5 contacts and a group.
+   * Add 4 contacts to the group.
+   * $this->contacts is an array of contacts created.
+   * $this->group holds the group information.
+   */
+  public function createGroupWithContacts() {
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $this->group = civicrm_api3('Group', 'create', [
+      'title' => substr(sha1(rand()), 0, 7),
+    ]);
+    $this->contacts = [];
+    foreach ([1, 2, 3, 4, 5] as $k) {
+      $this->contacts[$k] = [
+        'contact_type' => 'Individual',
+        'first_name' => substr(sha1(rand()), 0, 7),
+        'last_name' => substr(sha1(rand()), 0, 7),
+      ];
+      $contact = $utils->wf_civicrm_api('contact', 'create', $this->contacts[$k]);
+      $this->contacts[$k]['id'] = $contact['id'];
+
+      //Add all contacts to group except the last contact.
+      if ($k != 5) {
+        $utils->wf_civicrm_api('GroupContact', 'create', [
+          'group_id' => $this->group['id'],
+          'contact_id' => $this->contacts[$k]['id'],
+        ]);
+      }
+    }
+  }
+
+  /**
+   * Test select contact widget for existingcontact element.
+   */
+  public function testSelectContactElement() {
+    //create sample contacts.
+    $this->createGroupWithContacts();
+
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+
+    $this->enableCivicrmOnWebform();
+    $this->saveCiviCRMSettings();
+
+    //Edit contact element and enable select widget.
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+    $contactElementEdit = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations"] a.webform-ajax-link');
+    $contactElementEdit->click();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
+
+    $this->assertSession()->waitForField('properties[widget]');
+    $this->getSession()->getPage()->selectFieldOption('Form Widget', 'Select List');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-filters"]')->click();
+
+    //Filter on group.
+    $this->getSession()->getPage()->selectFieldOption('Groups', $this->group['id']);
+    $this->getSession()->getPage()->pressButton('Save');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->pageTextContains('Existing Contact has been updated');
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    // $this->assertPageNoErrorMessages();
+
+    //Check if no autocomplete is present on the page.
+    $this->assertSession()->elementNotExists('css', '.token-input-list');
+    //Asset if select element is rendered for contact element.
+    $this->assertSession()->elementExists('css', 'select#edit-civicrm-1-contact-1-contact-existing');
+
+    //Check if expected contacts are loaded in the select element.
+    $loadedContacts = $this->getOptions('Existing Contact');
+    foreach ($this->contacts as $k => $value) {
+      if ($k == 5) {
+        $this->assertArrayNotHasKey($value['id'], $loadedContacts, 'Unexpected contact loaded on the select element.');
+      }
+      else {
+        $this->assertArrayHasKey($value['id'], $loadedContacts, 'Expected contact not loaded on the select element.');
+      }
+    }
+    $this->getSession()->getPage()->selectFieldOption('Existing Contact', $this->contacts[1]['id']);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->fillField('First Name', 'Frederick');
+    $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
+    //Verify if the modified value is updated for the contact.
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $contact_result = $utils->wf_civicrm_api('contact', 'get', [
+      'sequential' => 1,
+      'id' => $this->contacts[1]['id'],
+    ]);
+    $result_debug = var_export($contact_result, TRUE);
+
+    $this->assertEquals(1, $contact_result['count'], $result_debug);
+    $this->assertEquals('Frederick', $contact_result['values'][0]['first_name'], $result_debug);
+    $this->assertEquals('Pabst', $contact_result['values'][0]['last_name'], $result_debug);
+  }
+
+  /**
    * Test contact submission using static widget.
    */
   public function testStaticContactElement() {
@@ -29,15 +133,8 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     ]));
 
     // The label has a <div> in it which can cause weird failures here.
-    $this->assertSession()->waitForText('Enable CiviCRM Processing');
-    $this->assertSession()->waitForField('nid');
-    $this->htmlOutput();
-    $this->getSession()->getPage()->checkField('nid');
-    $this->getSession()->getPage()->selectFieldOption('1_contact_type', 'individual');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-
-    $this->getSession()->getPage()->pressButton('Save Settings');
-    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    $this->enableCivicrmOnWebform();
+    $this->saveCiviCRMSettings();
 
     $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $contact['id']]]));
     $this->assertPageNoErrorMessages();

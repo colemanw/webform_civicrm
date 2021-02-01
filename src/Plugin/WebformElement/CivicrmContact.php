@@ -100,6 +100,7 @@ class CivicrmContact extends WebformElementBase {
     ];
     $element['#type'] = $element['#widget'] === 'autocomplete' ? 'textfield' : $element['#widget'];
     $cid = $this->getElementProperty($element, 'default_value');
+    list(, $c, ) = explode('_', $element['#form_key'], 3);
     if ($element['#type'] === 'hidden') {
       // User may not change this value for hidden fields
       $element['#value'] = $cid;
@@ -108,7 +109,10 @@ class CivicrmContact extends WebformElementBase {
       }
       $element['#attributes']['show-hidden-contact'] = 1;
     }
-    list(, $c, ) = explode('_', $element['#form_key'], 3);
+    elseif ($element['#type'] === 'select') {
+      $element['#options'] = [];
+      $element['#attributes']['data-is-select'] = 1;
+    }
     $element['#attributes']['data-civicrm-contact'] = $c;
     $element['#attributes']['data-form-id'] = $webform_submission ? $webform_submission->getWebform()->id() : NULL;
     $element['#attributes']['data-hide-method'] = $this->getElementProperty($element, 'hide_method');
@@ -511,11 +515,11 @@ class CivicrmContact extends WebformElementBase {
     }
     // Set options list for select elements. We do this here so we have access to entity ids.
     if (is_array($ids) && $element['#type'] == 'select') {
-      $filters = $contactComponent->wf_crm_search_filters($node, $component);
-      $element['#options'] = $contactComponent->wf_crm_contact_search($node, $component, $filters, wf_crm_aval($ids, 'contact', []));
+      $filters = $contactComponent->wf_crm_search_filters($node, $element);
+      $element['#options'] = $contactComponent->wf_crm_contact_search($node, $element, $filters, wf_crm_aval($ids, 'contact', []));
       // Display empty option unless there are no results
-      if (!$component['#allow_create'] || count($element['#options']) > 1) {
-        $element['#empty_option'] = Xss::filter($component[$element['#options'] ? 'search_prompt' : 'none_prompt']);
+      if (!$element['#allow_create'] || count($element['#options']) > 1) {
+        $element['#empty_option'] = Xss::filter($element[$element['#options'] ? '#search_prompt' : '#none_prompt']);
       }
     }
   }

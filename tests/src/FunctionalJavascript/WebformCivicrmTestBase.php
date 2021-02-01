@@ -170,4 +170,24 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     return current($result['values']);
   }
 
+  /**
+   * Enables civicrm on the webform.
+   */
+  public function enableCivicrmOnWebform() {
+    $this->assertSession()->waitForText('Enable CiviCRM Processing');
+    $this->assertSession()->waitForField('nid');
+    $this->htmlOutput();
+    $this->getSession()->getPage()->checkField('nid');
+    $this->getSession()->getPage()->selectFieldOption('1_contact_type', 'individual');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+  }
+
+  /**
+   * Save the settings configured on the civicrm tab.
+   */
+  public function saveCiviCRMSettings() {
+    $this->getSession()->getPage()->pressButton('Save Settings');
+    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+  }
+
 }

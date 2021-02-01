@@ -3,6 +3,7 @@
 namespace Drupal\webform_civicrm;
 
 use Drupal\Component\Utility\Html;
+use Drupal\Component\Utility\Xss;
 
 /**
  * Class ContactComponent
@@ -68,8 +69,8 @@ class ContactComponent implements ContactComponentInterface {
    *
    * @param \Drupal\webform\WebformInterface $node
    *   Node object
-   * @param array $component
-   *   Webform component
+   * @param array $element
+   *   Webform element
    * @param array $params
    *   Contact get params (filters)
    * @param array $contacts
@@ -79,14 +80,14 @@ class ContactComponent implements ContactComponentInterface {
    *
    * @return array
    */
-  function wf_crm_contact_search($node, $component, $params, $contacts, $str = NULL) {
+  function wf_crm_contact_search($node, $element, $params, $contacts, $str = NULL) {
   //  TODO in Drupal8 now node is a webform - maybe we could check here if it has  CiviCRM handler
   //  if (empty($node->webform_civicrm)) {
   //    return array();
   //  }
     $limit = $str ? 12 : 500;
     $ret = array();
-    $display_fields = array_values($component['#results_display']);
+    $display_fields = array_values($element['#results_display']);
     $search_field = 'display_name';
     $sort_field = 'sort_name';
     // Search and sort based on the selected display field
@@ -129,15 +130,15 @@ class ContactComponent implements ContactComponentInterface {
           $ret[] = array('id' => $contact['id'], 'name' => $name);
         }
       }
-      if (count($ret) < $limit && $component['extra']['allow_create']) {
+      if (count($ret) < $limit && $element['#allow_create']) {
         // HTML hack to get prompt to show up different than search results
-        $ret[] = array('id' => "-$str", 'name' => '<em><i>' . filter_xss($component['extra']['none_prompt']) . '</i></em>');
+        $ret[] = array('id' => "-$str", 'name' => '<em><i>' . Xss::filter($element['#none_prompt']) . '</i></em>');
       }
     }
     // Select results
     else {
-      if ($component['extra']['allow_create']) {
-        $ret['-'] = filter_xss($component['extra']['none_prompt']);
+      if ($element['#allow_create']) {
+        $ret['-'] = Xss::filter($element['#none_prompt']);
       }
       foreach (wf_crm_aval($result, 'values', array()) as $contact) {
         // Select lists will be escaped by FAPI
@@ -148,11 +149,11 @@ class ContactComponent implements ContactComponentInterface {
       // If we get exactly $limit results, there are probably more - warn that the list is truncated
       if (wf_crm_aval($result, 'count') >= $limit) {
         \Drupal::logger('webform_civicrm')->warning(
-          'Maximum contacts exceeded, list truncated on the webform "@title". The webform_civicrm "@field" field cannot display more than @limit contacts because it is a select list. Recommend switching to autocomplete widget in component settings.',
-          array('@limit' => $limit, '@field' => $component['#title'], '@title' => $node->label()));
+          'Maximum contacts exceeded, list truncated on the webform "@title". The webform_civicrm "@field" field cannot display more than @limit contacts because it is a select list. Recommend switching to autocomplete widget in element settings.',
+          array('@limit' => $limit, '@field' => $element['#title'], '@title' => $node->label()));
         if ($node->access('update') && \Drupal::currentUser()->hasPermission('access CiviCRM')) {
           $warning_message = \Drupal\Core\Render\Markup::create('<strong>' . t('Maximum contacts exceeded, list truncated.') .'</strong><br>' .
-          t('The field "@field" cannot show more than @limit contacts because it is a select list. Recommend switching to autocomplete widget.', ['@limit' => $limit, '@field' => $component['#title']]));
+          t('The field "@field" cannot show more than @limit contacts because it is a select list. Recommend switching to autocomplete widget.', ['@limit' => $limit, '@field' => $element['#title']]));
           \Drupal::messenger()->addMessage($warning_message);
         }
       }

@@ -5,16 +5,20 @@
         var toHide = []
         var field = $(el)
         var autocompleteUrl = D.url('webform-civicrm/js/' + field.data('form-id') + '/' + field.data('civicrm-field-key'));
-        wfCivi.existingInit(
-          field,
-          field.data('civicrm-contact'),
-          field.data('form-id'),
-          autocompleteUrl,
-          toHide, {
-          hintText: "- Choose existing -",
-          noResultsText: "+ Create new +",
-          searchingText: "Searching..."
-        });
+        var isSelect = field.data('is-select');
+        if (!isSelect) {
+          wfCivi.existingInit(
+            field,
+            field.data('civicrm-contact'),
+            field.data('form-id'),
+            autocompleteUrl,
+            toHide, {
+            hintText: "- Choose existing -",
+            noResultsText: "+ Create new +",
+            searchingText: "Searching..."
+          });
+        }
+
         field.change(function () {
           wfCivi.existingSelect(
             field.data('civicrm-contact'),
