@@ -140,28 +140,10 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
 
     $this->getSession()->getPage()->uncheckField('properties[extra][aslist]');
     $this->assertSession()->checkboxNotChecked('properties[extra][aslist]');
-    $this->getSession()->getPage()->pressButton('Save');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
-  }
-
-  /**
-   * Modify settings so the element displays Static Option.
-   */
-  protected function enableStaticOptionOnElement($selector) {
-    $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="' . $selector . '"] a.webform-ajax-link');
-    $checkbox_edit_button->click();
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->htmlOutput();
-
-    $this->getSession()->getPage()->selectFieldOption("properties[civicrm_live_options]", 0);
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertSession()->waitForField('properties[options][options][civicrm_option_1][label]');
-    $this->getSession()->getPage()->fillField('properties[options][options][civicrm_option_1][label]', 'Red - Recommended');
 
     $this->getSession()->getPage()->pressButton('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->htmlOutput();
   }
 
   /**
