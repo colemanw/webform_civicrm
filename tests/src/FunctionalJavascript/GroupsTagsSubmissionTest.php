@@ -46,9 +46,11 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
     $this->assertPageNoErrorMessages();
-    $this->htmlOutput();
 
     // Ensure the Tags render like checkboxes by deselecting List ->
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+    $this->assertSession()->waitForField('Checkboxes');
+    $this->htmlOutput();
     $this->enableCheckboxOnElement('edit-webform-ui-elements-civicrm-1-contact-1-other-tag-operations');
 
     $this->drupalGet($this->webform->toUrl('canonical'));
