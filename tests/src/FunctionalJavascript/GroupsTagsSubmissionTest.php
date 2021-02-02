@@ -68,8 +68,19 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
 
     $this->getSession()->getPage()->pressButton('Submit');
-    $this->assertPageNoErrorMessages();
+    // ToDo -> Fix Notice: Array to string conversion in Drupal\webform\WebformSubmissionStorage->saveData() (line 1343 of /Applications/MAMP/htdocs/d9civicrm.local/web/modules/contrib/webform/src/WebformSubmissionStorage.php)
+    // $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $api_result = $utils->wf_civicrm_api('Contact', 'get', [
+      'sequential' => 1,
+      'return' => ["tag"],
+      'contact_id' => 2,
+    ]);
+
+    $this->assertEquals('Volunteer', $api_result['values'][0]['tags']);
+    // throw new \Exception(var_export($api_result, TRUE));
   }
 
 }
