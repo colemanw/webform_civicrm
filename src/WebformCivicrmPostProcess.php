@@ -910,7 +910,19 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         $field_name = 'civicrm_' . $c . '_contact_1_' . $fid;
         if (!empty($contact['other'][1][$type]) || isset($this->enabled[$field_name])) {
           $add = wf_crm_aval($contact, "other:1:$type", array());
+          // ToDo - $add in D7WFC only contains the option(s) selected so unset everything else b/c addOrRemoveMultivaluedData is expecting that
+          foreach ($this->getExposedOptions($field_name) as $k => $v) {
+            if ($add[$k] === 0) {
+              unset($add[$k]);
+            }
+          }
           $remove = empty($this->existing_contacts[$c]) ? array() : $this->getExposedOptions($field_name, $add);
+          // ToDo - $remove should only return the options not selected b/c addOrRemoveMultivaluedData is expecting that
+          foreach ($this->getExposedOptions($field_name) as $k => $v) {
+            if (array_key_exists($k, $add)) {
+              unset($remove[$k]);
+            }
+          }
           $this->addOrRemoveMultivaluedData($field['table'], 'contact', $cid, $add, $remove);
         }
       }
