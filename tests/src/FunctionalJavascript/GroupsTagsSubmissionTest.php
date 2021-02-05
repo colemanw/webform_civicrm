@@ -80,6 +80,15 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     ]);
 
     $this->assertEquals('Volunteer', $api_result['values'][0]['tags']);
+
+    // Ok let's go back to the Webform and see it is loading the previously selected Tag properly
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->waitForField('Volunteer');
+    $this->assertSession()->checkboxChecked("Volunteer");
+    $this->assertSession()->checkboxNotChecked("Company");
+
+
     // throw new \Exception(var_export($api_result, TRUE));
   }
 
