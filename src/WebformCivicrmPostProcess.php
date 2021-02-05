@@ -2395,6 +2395,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
             }
           }
 
+          if ($table == 'other' && in_array($name, ['group', 'tag'])) {
+            $val = array_filter($val);
+          }
+
           // Implode data that will be stored as a string
           if ($table !== 'other' && $name !== 'event_id' && $name !== 'relationship_type_id' && $table !== 'contact' && $dataType != 'ContactReference' && strpos($name, 'tag') !== 0) {
             $val = \CRM_Utils_Array::implodePadded($val);
