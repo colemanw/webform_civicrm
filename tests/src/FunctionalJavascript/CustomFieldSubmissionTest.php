@@ -258,6 +258,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField('Yes');
 
     $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     // Note: custom fields are on contact_id=3 (1=default org; 2=the drupal user)
