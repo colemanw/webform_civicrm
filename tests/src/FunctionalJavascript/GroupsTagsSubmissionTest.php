@@ -68,8 +68,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
 
     $this->getSession()->getPage()->pressButton('Submit');
-    // ToDo -> Fix Notice: Array to string conversion in Drupal\webform\WebformSubmissionStorage->saveData() (line 1343 of /Applications/MAMP/htdocs/d9civicrm.local/web/modules/contrib/webform/src/WebformSubmissionStorage.php)
-    // $this->assertPageNoErrorMessages();
+    $this->assertPageNoErrorMessages();
     $this->htmlOutput();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
@@ -94,8 +93,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->checkboxNotChecked('Volunteer');
     $this->htmlOutput();
     $this->getSession()->getPage()->pressButton('Submit');
-    // ToDo -> Fix Notice: Array to string conversion in Drupal\webform\WebformSubmissionStorage->saveData() (line 1343 of /Applications/MAMP/htdocs/d9civicrm.local/web/modules/contrib/webform/src/WebformSubmissionStorage.php)
-    // $this->assertPageNoErrorMessages();
+    $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     $utils = \Drupal::service('webform_civicrm.utils');
