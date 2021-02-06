@@ -1619,7 +1619,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         'qty' => 1,
         'unit_price' => $this->getData($fid),
         'financial_type_id' => wf_crm_aval($this->data, 'contribution:1:contribution:1:financial_type_id'),
-        'label' => wf_crm_aval($this->node->getElementsDecodedAndFlattened(), $this->enabled[$fid] . ':title', t('Contribution')),
+        'label' => wf_crm_aval($this->node->getElementsDecodedAndFlattened(), $this->enabled[$fid] . ':#title', t('Contribution')),
         'element' => 'civicrm_1_contribution_1',
         'entity_table' => 'civicrm_contribution',
       );
@@ -1634,7 +1634,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
             'qty' => 1,
             'unit_price' => $lineitem['line_total'],
             'financial_type_id' => $lineitem['financial_type_id'],
-            'label' => wf_crm_aval($this->node->getElementsDecodedAndFlattened(), $this->enabled[$fid] . ':title', t('Line item')),
+            'label' => wf_crm_aval($this->node->getElementsDecodedAndFlattened(), $this->enabled[$fid] . ':#title', t('Line Item')),
             'element' => "civicrm_1_lineitem_{$n}",
             'entity_table' => 'civicrm_contribution',
           );
