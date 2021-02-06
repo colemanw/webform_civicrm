@@ -1121,7 +1121,7 @@ class AdminForm implements AdminFormInterface {
       $fs = "contribution_sets_lineitem_{$n}_fieldset";
       $this->form['contribution']['sets']['lineitem'][$fs] = array(
         '#type' => 'fieldset',
-        '#title' => t('Line item !num', array('!num' => $n)),
+        '#title' => t('Line item %num', array('%num' => $n)),
         '#attributes' => array('id' => $fs, 'class' => array('web-civi-checkbox-set')),
         'js_select' => $this->addToggle($fs),
       );
