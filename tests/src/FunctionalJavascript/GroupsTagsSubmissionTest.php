@@ -98,7 +98,16 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     // $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $api_result = $utils->wf_civicrm_api('Contact', 'get', [
+      'sequential' => 1,
+      'return' => ["tag"],
+      'contact_id' => 2,
+    ]);
+
     // throw new \Exception(var_export($api_result, TRUE));
+    $this->assertNotEquals('Volunteer', $api_result['values'][0]['tags']);
+
   }
 
 }
