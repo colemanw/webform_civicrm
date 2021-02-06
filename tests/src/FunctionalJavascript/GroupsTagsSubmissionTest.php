@@ -86,12 +86,12 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
     $this->assertSession()->waitForField('Volunteer');
-    $this->assertSession()->checkboxChecked("Volunteer");
-    $this->assertSession()->checkboxNotChecked("Company");
+    $this->assertSession()->checkboxChecked('Volunteer');
+    $this->assertSession()->checkboxNotChecked('Company');
 
-    // Ok switch!
+    // Ok clear the Tag:
     $this->getSession()->getPage()->uncheckField('Volunteer');
-    $this->getSession()->getPage()->checkField('Company');
+    $this->assertSession()->checkboxNotChecked('Volunteer');
     $this->htmlOutput();
     $this->getSession()->getPage()->pressButton('Submit');
     // ToDo -> Fix Notice: Array to string conversion in Drupal\webform\WebformSubmissionStorage->saveData() (line 1343 of /Applications/MAMP/htdocs/d9civicrm.local/web/modules/contrib/webform/src/WebformSubmissionStorage.php)
