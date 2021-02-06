@@ -516,7 +516,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
             $this->form_state->setErrorByName($eid, format_plural($event['available_places'],
               'Sorry, you tried to register !count people for %event but there is only 1 space remaining.',
               'Sorry, you tried to register !count people for %event but there are only @count spaces remaining.',
-              array('%event' => $event['title'], '!count' => $event['count'])));
+              array('%event' => $event['title'], '@count' => $event['count'])));
           }
         }
       }
@@ -1020,7 +1020,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     if (!empty($remove) && $data_type == 'group') {
       $display_name = $utils->wf_civicrm_api('contact', 'get', array('contact_id' => $id, 'return.display_name' => 1));
       $display_name = wf_crm_aval($display_name, "values:$id:display_name", t('Contact'));
-      \Drupal::messenger()->addStatus(t('%contact has been removed from !group.', array('%contact' => $display_name, '!group' => '<em>' . implode('</em> ' . t('and') . ' <em>', $remove) . '</em>')));
+      \Drupal::messenger()->addStatus(t('%contact has been removed from @group.', array('%contact' => $display_name, '@group' => '<em>' . implode('</em> ' . t('and') . ' <em>', $remove) . '</em>')));
     }
   }
 
@@ -1159,7 +1159,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         }
         foreach ($remove as $eid => $title) {
           $utils->wf_civicrm_api('participant', 'create', array('status_id' => "Cancelled", 'id' => $existing[$eid]));
-          \Drupal::messenger()->addStatus(t('Registration cancelled for !event', array('!event' => $title)));
+          \Drupal::messenger()->addStatus(t('Registration cancelled for @event', array('@event' => $title)));
         }
       }
     }
