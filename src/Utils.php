@@ -474,6 +474,7 @@ class Utils implements UtilsInterface {
               continue;
             }
             if ($submission) {
+              \Drupal::messenger()->addStatus(t('c = @c', array('@c' => $c['#title'])));
               $enabled[$key] = wf_crm_aval($submission, $c['#form_key'], NULL, TRUE);
             }
             else {
