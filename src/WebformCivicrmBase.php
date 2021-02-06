@@ -536,12 +536,10 @@ abstract class WebformCivicrmBase {
       // Fetch static options
       if (empty($field['#extra']['civicrm_live_options'])) {
         $exposed = $utils->wf_crm_str2array($field['#extra']['items']);
-        $test = 1;
       }
       // Fetch live options
       else {
         $exposed = $utils->wf_crm_field_options(['form_key' => $field['#form_key']], 'civicrm_live_options', $this->data);
-        $test = 1;
       }
       foreach ($exclude as $i) {
         unset($exposed[$i]);
