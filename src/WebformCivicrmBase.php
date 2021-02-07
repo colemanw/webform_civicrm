@@ -229,6 +229,7 @@ abstract class WebformCivicrmBase {
   protected function findContact($component) {
     $contactComponent = \Drupal::service('webform_civicrm.contact_component');
     $utils = \Drupal::service('webform_civicrm.utils');
+    $component['#form_key'] = $component['#form_key'] ?? $component['#webform_key'];
 
     list(, $c,) = explode('_', $component['#form_key'], 3);
     $filters = $contactComponent->wf_crm_search_filters($this->node, $component);
@@ -249,7 +250,7 @@ abstract class WebformCivicrmBase {
         }
       }
     }
-    if (empty($this->ent['contact'][$c]['id'])) {
+    if (empty($this->ent['contact'][$c]['id']) && !empty($component['#default'])) {
       $found = array();
       switch ($component['#default']) {
         case 'user':
@@ -279,7 +280,7 @@ abstract class WebformCivicrmBase {
         $dupes_allowed = TRUE;
       }
       else {
-        $dupes_allowed = $component['#dupes_allowed'];
+        $dupes_allowed = $component['#dupes_allowed'] ?? 0;
       }
       foreach ($found as $cid) {
         // Don't pick the same contact twice unless explicitly told to do so
