@@ -177,6 +177,7 @@ class ContactComponent implements ContactComponentInterface {
     $utils = \Drupal::service('webform_civicrm.utils');
     // Create new contact doesn't require lookup
     $cid = (string) $cid;
+    $component['#form_key'] = $component['#form_key'] ?? $component['#webform_key'];
     list(, $c, ) = explode('_', $component['#form_key'], 3);
     if (!empty($component['#none_prompt']) && !empty($component['#allow_create']) && $cid && strpos($cid, '-') === 0) {
       return Html::escape($component['#none_prompt']);

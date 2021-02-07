@@ -79,6 +79,7 @@ class CivicrmContact extends WebformElementBase {
    */
   public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
     \Drupal::service('civicrm')->initialize();
+    $element['#form_key'] = $element['#form_key'] ?? $element['#webform_key'];
     // Webform removes values which equal their defaults but does not populate
     // they keys.
     $ensure_keys_have_values = [
@@ -399,17 +400,17 @@ class CivicrmContact extends WebformElementBase {
       // Fill relationship data for defaults and filters
       $all_relationship_types = array_fill(1, $c - 1, array());
       for ($i = 1; $i < $c; ++$i) {
-        $form['defaults']['default_relationship_to']['#options'][$i] = $form['filters']['relationship']['filter_relationship_contact']['#options'][$i] = $utils->wf_crm_contact_label($i, $data, 'plain');
+        $form['contact_defaults']['default_relationship_to']['#options'][$i] = $form['filters']['relationship']['filter_relationship_contact']['#options'][$i] = $utils->wf_crm_contact_label($i, $data, 'plain');
         $rtypes = $utils->wf_crm_get_contact_relationship_types($contact_type, $data['contact'][$i]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$i]['contact'][1]['contact_sub_type']);
         foreach ($rtypes as $k => $v) {
           $all_relationship_types[$i][] = ['key' => $k, 'value' => $v . ' ' . $utils->wf_crm_contact_label($i, $data, 'plain')];
-          $form['defaults']['default_relationship']['#options'][$k] = $form['filters']['relationship']['filter_relationship_types']['#options'][$k] = $v . ' ' . $utils->wf_crm_contact_label($i, $data, 'plain');
+          $form['contact_defaults']['default_relationship']['#options'][$k] = $form['filters']['relationship']['filter_relationship_types']['#options'][$k] = $v . ' ' . $utils->wf_crm_contact_label($i, $data, 'plain');
         }
         if (!$rtypes) {
           $all_relationship_types[$i][] = ['key' => '', 'value' => '- ' . t('No relationship types defined for @a to @b', ['@a' => $contact_types[$contact_type], '@b' => $contact_types[$data['contact'][$i]['contact'][1]['contact_type']]]) . ' -'];
         }
       }
-      $form['filters']['relationship']['filter_relationship_types']['#attributes']['data-reltypes'] = json_encode($all_relationship_types);
+      $form['contact_defaults']['default_relationship']['#attributes']['data-reltypes'] = $form['filters']['relationship']['filter_relationship_types']['#attributes']['data-reltypes'] = json_encode($all_relationship_types);
     }
     $form['filters']['check_permissions'] = array(
       '#type' => 'checkbox',

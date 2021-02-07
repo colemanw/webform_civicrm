@@ -23,7 +23,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->assertEquals(1, $result['count']);
   }
 
-  private function createRelationship() {
+  private function createRelationshipType() {
     $params = [
       'name_a_b' => "School is",
       'name_b_a' => "Student of",
@@ -43,7 +43,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
   public function testSubmitWebform() {
 
     $this->createContactSubtype();
-    $this->createRelationship();
+    $this->createRelationshipType();
 
     $this->drupalLogin($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
@@ -72,6 +72,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
+    $this->getSession()->getPage()->checkField("civicrm_2_contact_1_contact_existing");
     $this->getSession()->getPage()->checkField("civicrm_2_contact_1_contact_organization_name");
     $this->assertSession()->checkboxChecked("civicrm_2_contact_1_contact_organization_name");
     $this->getSession()->getPage()->selectFieldOption('contact_2_number_of_relationship', 'Yes');
@@ -103,10 +104,10 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
       'sequential' => 1,
       'contact_id' => 3,
     ]);
-    $contact = reset($api_result['values']);
-    $this->assertEquals('Frederick', $contact['first_name']);
-    $this->assertEquals('Pabst', $contact['last_name']);
-    $this->assertEquals('Student', implode($contact['contact_sub_type']));
+    $student = reset($api_result['values']);
+    $this->assertEquals('Frederick', $student['first_name']);
+    $this->assertEquals('Pabst', $student['last_name']);
+    $this->assertEquals('Student', implode($student['contact_sub_type']));
 
     // Check that the relationship is created:
     $api_result = $utils->wf_civicrm_api('Relationship', 'get', [
@@ -135,6 +136,32 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     // throw new \Exception(var_export($relationshipType, TRUE));
 
     $this->assertEquals('Student of', $relationshipType['label_b_a']);
+
+    $this->drupalLogin($this->adminUser);
+    //Edit contact element and enable select widget.
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+
+    $contactElementEdit = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-2-contact-1-contact-existing-operations"] a.webform-ajax-link');
+    $contactElementEdit->click();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-contact-defaults"]')->click();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption('Set default contact from', 'Relationship to...');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $loadedRelationshipTypes = $this->getOptions('Specify Relationship(s)');
+    $type = array_search('School is Contact 1', $loadedRelationshipTypes);
+    $this->getSession()->getPage()->selectFieldOption('Specify Relationship(s)', $type);
+    $this->getSession()->getPage()->pressButton('Save');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $student['contact_id']]]));
+    $this->assertPageNoErrorMessages();
+
+    //Check if School name is pre populated.
+    $this->assertSession()->fieldValueEquals('Organization Name', 'Western Canada High');
+
   }
 
 }

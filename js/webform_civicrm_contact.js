@@ -38,7 +38,7 @@
       function changeDefault() {
         var val = $(this).val().replace(/_/g, '-');
 
-        $('[data-drupal-selector=edit-defaults] > div > .form-item', context).not('.form-item-properties-default, .form-item-properties-allow-url-autofill').each(function() {
+        $('[data-drupal-selector=edit-contact-defaults] > div > .form-item', context).not('.form-item-properties-default, .form-item-properties-allow-url-autofill').each(function() {
           if (val.length && $(this).is('[class*=form-item-properties-default-'+val+']')) {
             $(this).removeAttr('style');
           }
@@ -58,7 +58,7 @@
 
       function changeDefaultRelationTo() {
         var c = $(this).val(),
-        types = $('[data-drupal-selector=edit-properties-filter-relationship-types]').data('reltypes')[c],
+        types = $('[data-drupal-selector=edit-properties-default-relationship]').data('reltypes')[c],
         placeholder = types.length ? false : '- ' + Drupal.ts('No relationship types available for these contact types') + ' -';
 
         CRM.utils.setOptions('[data-drupal-selector=edit-properties-default-relationship]', types, placeholder);
