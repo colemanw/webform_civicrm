@@ -214,22 +214,5 @@ class CivicrmOptions extends WebformElementBase {
     $element = NestedArray::getValue($form, array_slice($radio['#array_parents'], 0, -2));
     return $element;
   }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function hasMultipleWrapper() {
-    return FALSE;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function hasMultipleValues(array $element) {
-    if (!empty($element['#extra']['multiple']) || (!empty($element['#options']) && count($element['#options']) === 1)) {
-      return TRUE;
-    }
-    return FALSE;
-  }
-
+  
 }
