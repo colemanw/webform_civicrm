@@ -214,5 +214,5 @@ class CivicrmOptions extends WebformElementBase {
     $element = NestedArray::getValue($form, array_slice($radio['#array_parents'], 0, -2));
     return $element;
   }
-  
+
 }
