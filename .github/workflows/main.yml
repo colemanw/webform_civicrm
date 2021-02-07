@@ -66,14 +66,13 @@ jobs:
           COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages}:${{ matrix.civicrm }} --no-suggest --prefer-dist
       # For some reason drupal/webform:5.x installs even if it is drupal:^9.0
       - name: Ensure Webform ^6.0
-        if: matrix.drupal == '^9.0'
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:^6.0@beta' --no-suggest
+          COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:6.x-dev@dev' --no-suggest
       - name: Install webform_civicrm
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require  drupal/webform_civicrm *@dev
+          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/webform_civicrm *@dev
       - uses: nanasess/setup-chromedriver@master
       - name: Run chromedriver
         run: chromedriver &
