@@ -12,6 +12,6 @@
   },
   "require": {
       "civicrm/civicrm-drupal-8": "~5.0",
-      "drupal/webform": "^5.0 || ^6.0"
+      "drupal/webform": "^6.0"
   }
 }
