@@ -225,10 +225,16 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
     $this->getSession()->getPage()->selectFieldOption("properties[civicrm_live_options]", 0);
     $this->assertSession()->assertWaitOnAjaxRequest();
-    // $this->assertSession()->waitForField('properties[options][options][civicrm_option_1][label]');
-    // $this->getSession()->getPage()->fillField('properties[options][options][civicrm_option_1][label]', 'Red - Recommended');
+    $this->getSession()->getPage()->pressButton('Save');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-3-operations"] a.webform-ajax-link');
+    $checkbox_edit_button->click();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->waitForField('properties[options][options][civicrm_option_1][label]');
+    $this->getSession()->getPage()->fillField('properties[options][options][civicrm_option_1][label]', 'Red - Recommended');
     $this->htmlOutput();
-    $this->createScreenshot($this->htmlOutputDirectory . '/test1.png');
+    $this->createScreenshot($this->htmlOutputDirectory . '/test2.png');
 
     $this->drupalLogout();
     $this->drupalGet($this->webform->toUrl('canonical'));

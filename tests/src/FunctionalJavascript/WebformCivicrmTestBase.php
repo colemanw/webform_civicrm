@@ -140,7 +140,6 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
 
     $this->getSession()->getPage()->uncheckField('properties[extra][aslist]');
     $this->assertSession()->checkboxNotChecked('properties[extra][aslist]');
-    $this->htmlOutput();
 
     $this->getSession()->getPage()->pressButton('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();
