@@ -1977,13 +1977,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $params = $this->contributionParams();
     $params['contribution_status_id'] = 'Pending';
     $params['is_pay_later'] = $this->contributionIsPayLater;
-    //Fix IPN payments marked as paid by cheque
-    if (empty($params['payment_instrument_id'])) {
-      if (!empty($params['payment_processor_id'])) {
-        $defaultPaymentInstrument = \CRM_Core_OptionGroup::values('payment_instrument', FALSE, FALSE, FALSE, 'AND is_default = 1');
-        $params['payment_instrument_id'] = key($defaultPaymentInstrument);
-      }
-    }
 
     $numInstallments = wf_crm_aval($params, 'installments', NULL, TRUE);
     $frequencyInterval = wf_crm_aval($params, 'frequency_unit');
@@ -2147,6 +2140,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         'is_test' => 1,
         'domain_id' => $domain,
       ));
+    }
+    if (empty($params['payment_instrument_id'])) {
+      $params['payment_instrument_id'] = $this->getPaymentInstrument($params['payment_processor_id']);
     }
 
     // doPayment requries payment_processor and payment_processor_mode fields.
@@ -2698,4 +2694,15 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
 
     return $values;
   }
+
+  /**
+   * Retrieve payment instrument.
+   *
+   * @param int $paymentProcessorId
+   */
+  private function getPaymentInstrument($paymentProcessorId) {
+    $processor = \Civi\Payment\System::singleton()->getById($paymentProcessorId);
+    return $processor->getPaymentInstrumentID();
+  }
+
 }
