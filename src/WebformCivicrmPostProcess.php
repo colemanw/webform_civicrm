@@ -2141,7 +2141,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         'domain_id' => $domain,
       ));
     }
-    if (empty($params['payment_instrument_id'])) {
+    if (empty($params['payment_instrument_id']) && !empty($params['payment_processor_id'])) {
       $params['payment_instrument_id'] = $this->getPaymentInstrument($params['payment_processor_id']);
     }
 
