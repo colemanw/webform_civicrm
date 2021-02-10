@@ -179,10 +179,16 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     // Also retrieve tax_amount (have to ask for it to be returned):
     $api_result = $utils->wf_civicrm_api('contribution', 'get', [
       'sequential' => 1,
-      'return' => 'tax_amount',
+      'return' => ['tax_amount', 'payment_instrument_id'],
     ]);
     $contribution = reset($api_result['values']);
+    $creditCardID = $utils->wf_civicrm_api('OptionValue', 'getvalue', [
+      'return' => "value",
+      'label' => "Credit Card",
+      'option_group_id' => "payment_instrument",
+    ]);
     $this->assertEquals('1.48', $contribution['tax_amount']);
+    $this->assertEquals($creditCardID, $contribution['payment_instrument_id']);
     $tax_total_amount = $contribution['tax_amount'];
 
     $api_result = $utils->wf_civicrm_api('line_item', 'get', [
