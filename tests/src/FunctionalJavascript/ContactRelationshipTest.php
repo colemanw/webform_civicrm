@@ -163,7 +163,6 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->assertSession()->fieldValueEquals('Organization Name', 'Western Canada High');
 
     // NEXT - Ok adding on -> Back to the CiviCRM Settings and now making it a - User Select -
-    $this->enableCheckboxOnElement('edit-webform-ui-elements-civicrm-2-contact-1-relationship-relationship-type-id-operations');
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -175,6 +174,8 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
     $this->assertPageNoErrorMessages();
     // Onto the Build Tab
+    $this->createScreenshot($this->htmlOutputDirectory . '/relationship_build.png');
+    $this->enableCheckboxOnElement('edit-webform-ui-elements-civicrm-2-contact-1-relationship-relationship-type-id-operations');
     $contactElementEdit = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-2-contact-1-relationship-relationship-type-id-operations"] a.webform-ajax-link');
     $contactElementEdit->click();
     $this->assertSession()->assertWaitOnAjaxRequest();
