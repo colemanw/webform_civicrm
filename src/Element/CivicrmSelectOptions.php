@@ -9,6 +9,7 @@ use Drupal\Core\Render\Element\FormElement;
  * @FormElement("civicrm_select_options")
  */
 class CivicrmSelectOptions extends FormElement {
+
   public function getInfo() {
     $class = get_class($this);
     return [
