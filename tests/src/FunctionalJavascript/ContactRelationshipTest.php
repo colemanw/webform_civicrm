@@ -138,7 +138,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->assertEquals('Student of', $relationshipType['label_b_a']);
 
     $this->drupalLogin($this->adminUser);
-    //Edit contact element and enable select widget.
+    // Edit Contact Element and enable select widget.
     $this->drupalGet($this->webform->toUrl('edit-form'));
 
     $contactElementEdit = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-2-contact-1-contact-existing-operations"] a.webform-ajax-link');
@@ -159,9 +159,38 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $student['contact_id']]]));
     $this->assertPageNoErrorMessages();
 
-    //Check if School name is pre populated.
+    // Check if School name is pre-populated.
     $this->assertSession()->fieldValueEquals('Organization Name', 'Western Canada High');
 
+    // NEXT - Ok adding on -> Back to the CiviCRM Settings and now making it a - User Select -
+    $this->enableCheckboxOnElement('edit-webform-ui-elements-civicrm-2-contact-1-relationship-relationship-type-id-operations');
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    // The label has a <div> in it which can cause weird failures here.
+    $this->assertSession()->waitForText('Enable CiviCRM Processing');
+    $this->getSession()->getPage()->clickLink('2. Contact 2');
+    $this->getSession()->getPage()->selectFieldOption('civicrm_2_contact_1_relationship_relationship_type_id[]', '- User Select -');
+    $this->getSession()->getPage()->pressButton('Save Settings');
+    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    $this->assertPageNoErrorMessages();
+    // Onto the Build Tab
+    $contactElementEdit = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-2-contact-1-relationship-relationship-type-id-operations"] a.webform-ajax-link');
+    $contactElementEdit->click();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption("properties[civicrm_live_options]", 0);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->pressButton('Save');
+    $this->createScreenshot($this->htmlOutputDirectory . '/relationship_user_select.png');
+    // View and Submit!
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->waitForField('School is');
+    $this->getSession()->getPage()->checkField('School is');
+    $this->assertSession()->checkboxChecked('School is');
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
   }
 
 }
