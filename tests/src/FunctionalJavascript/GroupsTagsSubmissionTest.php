@@ -49,7 +49,6 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
 
     // Ensure the Tags render like checkboxes by deselecting List ->
     $this->drupalGet($this->webform->toUrl('edit-form'));
-    $this->assertSession()->waitForField('Checkboxes');
     $this->htmlOutput();
     $this->enableCheckboxOnElement('edit-webform-ui-elements-civicrm-1-contact-1-other-tag-operations');
 
@@ -66,10 +65,11 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField('Volunteer');
     $this->assertSession()->checkboxChecked("Volunteer");
     $this->htmlOutput();
-
+    $this->createScreenshot($this->htmlOutputDirectory . '/webform.png');
     $this->getSession()->getPage()->pressButton('Submit');
     // ToDo: Fix Notice on GitHub tests Notice: Undefined index: #form_key in Drupal\webform_civicrm\Utils->wf_crm_enabled_fields() (line 477 of /home/runner/work/webform_civicrm/webform_civicrm/src/Utils.php).
-    // $this->assertPageNoErrorMessages();
+    $this->createScreenshot($this->htmlOutputDirectory . '/submitted.png');
+    $this->assertPageNoErrorMessages();
     $this->htmlOutput();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
