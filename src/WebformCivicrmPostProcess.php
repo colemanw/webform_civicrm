@@ -912,7 +912,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           $add = wf_crm_aval($contact, "other:1:$type", array());
           // ToDo - $add should only contain the option(s) selected so unset everything else b/c addOrRemoveMultivaluedData is expecting that and we need this to handle TagSets - this is essentially a fail-safe
           foreach ($this->getExposedOptions($field_name) as $k => $v) {
-            if ($add[$k] === 0) {
+            if (array_key_exists($k, $add) && $add[$k] === 0) {
               unset($add[$k]);
             }
           }
