@@ -87,6 +87,7 @@ final class ContactRelationshipTestAdd extends WebformCivicrmTestBase {
     // View and Submit!
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
+    $this->getSession()->getPage()->fillField('Organization Name', 'Western Canada High');
     $this->getSession()->getPage()->selectFieldOption('Relationship to Contact 1 Relationship Type(s)', 'School is');
     $this->createScreenshot($this->htmlOutputDirectory . '/relationship_user_select.png');
     $this->getSession()->getPage()->pressButton('Submit');
