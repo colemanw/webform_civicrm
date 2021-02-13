@@ -152,13 +152,17 @@ class CivicrmOptions extends WebformElementBase {
     $as_list = !empty($element['#extra']['aslist']);
     $is_multiple = !empty($element['#extra']['multiple']);
     $use_live_options = !empty($element['#civicrm_live_options']);
+    $data = [];
+    if ($webform_submission) {
+      $data = $webform_submission->getWebform()->getHandler('webform_civicrm')->getConfiguration()['settings']['data'] ?? [];
+    }
 
     if (empty($element['#options'])) {
-      $element['#options'] = $this->getFieldOptions($element);
+      $element['#options'] = $this->getFieldOptions($element, $data);
     }
 
     if ($use_live_options) {
-      $new = $this->getFieldOptions($element);
+      $new = $this->getFieldOptions($element, $data);
       $old = $element['#options'];
 
       // If an item doesn't exist, we add it. If it's changed, we update it.
@@ -192,20 +196,9 @@ class CivicrmOptions extends WebformElementBase {
     parent::prepare($element, $webform_submission);
   }
 
-  protected function getFieldOptions($element) {
+  protected function getFieldOptions($element, $data = []) {
     \Drupal::getContainer()->get('civicrm')->initialize();
     $field_options = \Drupal::service('webform_civicrm.field_options');
-    $data = [];
-    if (!empty($this->webform) && is_object($this->webform)) {
-      $webform_id = $this->webform->get('id');
-      if (!empty($webform_id)) {
-        $webform = \Drupal::entityTypeManager()->getStorage('webform')->load($webform_id);
-        $handler_collection = $webform->getHandlers('webform_civicrm');
-        $handler = $handler_collection->get('webform_civicrm');
-        $settings = $handler->getConfiguration()['settings'];
-        $data = $settings['data'];
-      }
-    }
     return $field_options->get(['form_key' => $element['#form_key']], 'create', $data);
   }
 

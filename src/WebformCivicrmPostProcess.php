@@ -147,6 +147,21 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   }
 
   /**
+   * Modify data in webform submission.
+   *
+   * @param \Drupal\webform\WebformSubmissionInterface $webform_submission
+   */
+  protected function modifyWebformSubmissionData(WebformSubmissionInterface $webform_submission) {
+    $data = $webform_submission->getData();
+    foreach ($data as $field_key => $val) {
+      if (substr($field_key, -20) === 'relationship_type_id' && is_array($val)) {
+        $data[$field_key] = array_values($val);
+      }
+    }
+    $webform_submission->setData($data);
+  }
+
+  /**
    * Process webform submission when it is about to be saved. Called by the following hook:
    *
    * @see webform_civicrm_webform_submission_presave
@@ -156,6 +171,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   public function preSave(WebformSubmissionInterface $webform_submission) {
     $this->submission = $webform_submission;
     $this->data = $this->settings['data'];
+    $this->modifyWebformSubmissionData($webform_submission);
     // Check for existing submission
     // $this->setUpdateParam();
     // Fill $this->id from existing contacts
@@ -912,7 +928,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           $add = wf_crm_aval($contact, "other:1:$type", array());
           // ToDo - $add should only contain the option(s) selected so unset everything else b/c addOrRemoveMultivaluedData is expecting that and we need this to handle TagSets - this is essentially a fail-safe
           foreach ($this->getExposedOptions($field_name) as $k => $v) {
-            if ($add[$k] === 0) {
+            if (isset($add[$k]) && $add[$k] === 0) {
               unset($add[$k]);
             }
           }

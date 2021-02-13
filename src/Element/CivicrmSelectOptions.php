@@ -46,23 +46,13 @@ class CivicrmSelectOptions extends FormElement {
     }
   }
 
-  protected static function getFieldOptions($form_key, $webform_id = NULL) {
+  protected static function getFieldOptions($form_key, $data = []) {
     \Drupal::getContainer()->get('civicrm')->initialize();
     $field_options = \Drupal::service('webform_civicrm.field_options');
-    $data = [];
-    if (!empty($webform_id)) {
-      $webform = \Drupal::entityTypeManager()->getStorage('webform')->load($webform_id);
-      $handler_collection = $webform->getHandlers('webform_civicrm');
-      $handler = $handler_collection->get('webform_civicrm');
-      $settings = $handler->getConfiguration()['settings'];
-      $data = $settings['data'];
-    }
     return $field_options->get(['form_key' => $form_key], 'create', $data);
   }
 
   public static function processSelectOptions(&$element, FormStateInterface $form_state, &$complete_form) {
-    $build_info = $form_state->getBuildInfo();
-    $webform_id = !empty($build_info['args'][0]) ? $build_info['args'][0]->id() : NULL;
     $element['#tree'] = TRUE;
     // Add validate callback that extracts the associative array of options.
     $element += ['#element_validate' => []];
@@ -115,7 +105,9 @@ class CivicrmSelectOptions extends FormElement {
 
     $current_options = $element['#default_value'];
     $weight = 0;
-    $field_options = static::getFieldOptions($element['#form_key'], $webform_id);
+    $webform = $form_state->getFormObject()->getWebform();
+    $data = $webform->getHandler('webform_civicrm')->getConfiguration()['settings']['data'] ?? [];
+    $field_options = static::getFieldOptions($element['#form_key'], $data);
 
     // Sort the field options by the current options.
     if (!$element['#civicrm_live_options']) {
@@ -189,9 +181,9 @@ class CivicrmSelectOptions extends FormElement {
    */
   public static function validateSelectOptions(&$element, FormStateInterface $form_state, &$complete_form) {
     if ($element['#civicrm_live_options']) {
-      $build_info = $form_state->getBuildInfo();
-      $webform_id = !empty($build_info['args'][0]) ? $build_info['args'][0]->id() : NULL;
-      $options_value = self::getFieldOptions($element['#form_key'], $webform_id);
+      $webform = $form_state->getFormObject()->getWebform();
+      $data = $webform->getHandler('webform_civicrm')->getConfiguration()['settings']['data'] ?? [];
+      $options_value = self::getFieldOptions($element['#form_key'], $data);
     }
     else {
       $raw_values = $form_state->getValue($element['options']['#parents']);
