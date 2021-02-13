@@ -9,7 +9,7 @@ use Drupal\Core\Url;
 *
 * @group webform_civicrm
 */
-final class ContactRelationshipTestAdd extends WebformCivicrmTestBase {
+final class ContactRelationshipAddTest extends WebformCivicrmTestBase {
 
   private function createContactSubtype() {
     $params = [
