@@ -46,10 +46,10 @@ class CivicrmSelectOptions extends FormElement {
     }
   }
 
-  protected static function getFieldOptions($form_key) {
+  protected static function getFieldOptions($form_key, $data = []) {
     \Drupal::getContainer()->get('civicrm')->initialize();
     $field_options = \Drupal::service('webform_civicrm.field_options');
-    return $field_options->get(['form_key' => $form_key], 'create', []);
+    return $field_options->get(['form_key' => $form_key], 'create', $data);
   }
 
   public static function processSelectOptions(&$element, FormStateInterface $form_state, &$complete_form) {
@@ -105,7 +105,9 @@ class CivicrmSelectOptions extends FormElement {
 
     $current_options = $element['#default_value'];
     $weight = 0;
-    $field_options = static::getFieldOptions($element['#form_key']);
+    $webform = $form_state->getFormObject()->getWebform();
+    $data = $webform->getHandler('webform_civicrm')->getConfiguration()['settings']['data'] ?? [];
+    $field_options = static::getFieldOptions($element['#form_key'], $data);
 
     // Sort the field options by the current options.
     if (!$element['#civicrm_live_options']) {
@@ -179,7 +181,9 @@ class CivicrmSelectOptions extends FormElement {
    */
   public static function validateSelectOptions(&$element, FormStateInterface $form_state, &$complete_form) {
     if ($element['#civicrm_live_options']) {
-      $options_value = self::getFieldOptions($element['#form_key']);
+      $webform = $form_state->getFormObject()->getWebform();
+      $data = $webform->getHandler('webform_civicrm')->getConfiguration()['settings']['data'] ?? [];
+      $options_value = self::getFieldOptions($element['#form_key'], $data);
     }
     else {
       $raw_values = $form_state->getValue($element['options']['#parents']);
