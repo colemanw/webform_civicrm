@@ -88,7 +88,7 @@ final class ContactRelationshipTestAdd extends WebformCivicrmTestBase {
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
     $this->getSession()->getPage()->selectFieldOption('Relationship to Contact 1 Relationship Type(s)', 'School is');
-    // $this->createScreenshot($this->htmlOutputDirectory . '/relationship_user_select.png');
+    $this->createScreenshot($this->htmlOutputDirectory . '/relationship_user_select.png');
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
