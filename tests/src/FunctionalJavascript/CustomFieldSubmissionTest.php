@@ -179,7 +179,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     $this->createCustomFields();
 
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLogin($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -219,15 +219,15 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->enableCheckboxOnElement('edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-4-operations');
 
     // ToDo: Enable Static Option and Edit Label
-    // $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-3-operations"] a.webform-ajax-link');
-    // $checkbox_edit_button->click();
-    // $this->assertSession()->assertWaitOnAjaxRequest();
-    // $this->htmlOutput();
-    // $this->getSession()->getPage()->selectFieldOption("properties[civicrm_live_options]", 0);
-    // $this->assertSession()->assertWaitOnAjaxRequest();
-    // $this->assertSession()->waitForField('properties[options][options][civicrm_option_1][label]');
-    // $this->getSession()->getPage()->fillField('properties[options][options][civicrm_option_1][label]', 'Red - Recommended');
-    // $this->htmlOutput();
+    $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-3-operations"] a.webform-ajax-link');
+    $checkbox_edit_button->click();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->selectFieldOption("properties[civicrm_live_options]", 0);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->waitForField('properties[options][options][civicrm_option_1][label]');
+    $this->getSession()->getPage()->fillField('properties[options][options][civicrm_option_1][label]', 'Red - Recommended');
+    $this->htmlOutput();
 
     $this->drupalLogout();
     $this->drupalGet($this->webform->toUrl('canonical'));
@@ -237,8 +237,12 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->waitForField('First Name');
     $this->assertSession()->pageTextContains('Label for custom radio field');
 
-    $this->getSession()->getPage()->fillField('First Name', 'Frederick');
-    $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
+    $params = [
+      'first_name' => 'Frederick',
+      'last_name' => 'Pabst',
+    ];
+    $this->getSession()->getPage()->fillField('First Name', $params['first_name']);
+    $this->getSession()->getPage()->fillField('Last Name', $params['last_name']);
 
     $this->getSession()->getPage()->fillField('Text', 'Lorem Ipsum');
 
@@ -255,13 +259,15 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField('Yes');
 
     $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     // Note: custom fields are on contact_id=3 (1=default org; 2=the drupal user)
     $utils = \Drupal::service('webform_civicrm.utils');
+    $contactID = $utils->wf_civicrm_api('Contact', 'get', $params)['id'];
     $api_result = $utils->wf_civicrm_api('CustomValue', 'get', [
       'sequential' => 1,
-      'entity_id' => 3,
+      'entity_id' => $contactID,
     ]);
     $this->assertEquals(5, $api_result['count']);
     // throw new \Exception(var_export($api_result, TRUE));
