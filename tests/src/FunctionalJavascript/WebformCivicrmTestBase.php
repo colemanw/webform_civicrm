@@ -56,7 +56,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     // the duration of these tests.
     \Drupal::service('theme_installer')->install(['webform_test_bartik', 'seven']);
     $this->config('system.theme')
-      ->set('default', 'webform_test_bartik')
+      ->set('default', 'bartik')
       ->set('admin', 'seven')
       ->save();
 
