@@ -51,16 +51,38 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
    */
   protected function setUp() {
     parent::setUp();
+
+    // Make sure we are using distinct default and administrative themes for
+    // the duration of these tests.
+    \Drupal::service('theme_installer')->install(['webform_test_bartik', 'seven']);
+    $this->config('system.theme')
+      ->set('default', 'webform_test_bartik')
+      ->set('admin', 'seven')
+      ->save();
+
     $this->adminUser = $this->createUser([
-      'access content',
-      'administer CiviCRM',
       'access CiviCRM',
+      'access all custom data',
+      'access uploaded files',
+      'administer CiviCRM',
+      'edit all contacts',
+      'profile create',
+      'profile edit',
+      'profile view',
+      'view all activities',
+      'make online contributions',
+      'register for events',
+      'view event info',
+      'view event participants',
+      'access CiviMail subscribe/unsubscribe pages',
+      'access content',
       'access administration pages',
+      'access any webform configuration',
       'access webform overview',
       'administer webform',
-      'edit all contacts',
-      'view all activities',
+      'administer webform submission',
     ]);
+
     $this->webform = $this->createWebform([
       'id' => 'civicrm_webform_test',
       'title' => 'CiviCRM Webform Test',
