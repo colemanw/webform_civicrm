@@ -228,6 +228,8 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->waitForField('properties[options][options][civicrm_option_1][label]');
     $this->getSession()->getPage()->fillField('properties[options][options][civicrm_option_1][label]', 'Red - Recommended');
     $this->htmlOutput();
+    $this->createScreenshot($this->htmlOutputDirectory . '/afterlabelchange.png');
+    $this->getSession()->getPage()->pressButton('Save');
 
     $this->drupalLogout();
     $this->drupalGet($this->webform->toUrl('canonical'));
@@ -253,8 +255,8 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $driver->executeScript("document.getElementById('edit-civicrm-1-contact-1-cg1-custom-2-timepart').setAttribute('value', '10:20:00')");
 
     // Only check one Checkbox -> Red
-    $this->assertSession()->pageTextContains('Red');
-    $this->getSession()->getPage()->checkField('Red');
+    $this->assertSession()->pageTextContains('Red - Recommended');
+    $this->getSession()->getPage()->checkField('Red - Recommended');
 
     $this->getSession()->getPage()->checkField('Yes');
 
