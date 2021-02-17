@@ -1963,6 +1963,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $paymentProcessor->setSuccessUrl($this->getIpnRedirectUrl('success'));
       $paymentProcessor->setCancelUrl($this->getIpnRedirectUrl('cancel'));
     }
+    
+    $params['webform_redirect_cancel'] = $this->getIpnRedirectUrl('cancel');
+    $params['webform_redirect_success'] = $this->getIpnRedirectUrl('success');
 
     if (method_exists($paymentProcessor, 'doTransferCheckout')) {
       //Paypal Express checkout
