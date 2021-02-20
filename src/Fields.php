@@ -116,7 +116,8 @@ class Fields implements FieldsInterface {
       $fields['contact_contact_sub_type'] = array(
         'name' => t('Type of @contact'),
         'type' => 'select',
-        'extra' => array('multiple' => 1, 'civicrm_live_options' => 1),
+        'extra' => array('multiple' => 1),
+        'civicrm_live_options' => 1,
         'expose_list' => TRUE,
       );
       $fields['contact_existing'] = array(
@@ -285,7 +286,7 @@ class Fields implements FieldsInterface {
       $fields['address_country_id'] = array(
         'name' => t('Country'),
         'type' => 'select',
-        'extra' => array('civicrm_live_options' => 1),
+        'civicrm_live_options' => 1,
         'value' => $utils->wf_crm_get_civi_setting('defaultContactCountry', 1228),
       );
       $fields['address_state_province_id'] = array(
@@ -367,7 +368,8 @@ class Fields implements FieldsInterface {
       $fields['other_group'] = array(
         'name' => t('Group(s)'),
         'type' => 'select',
-        'extra' => array('multiple' => 1, 'civicrm_live_options' => 1),
+        'civicrm_live_options' => 1,
+        'extra' => array('multiple' => 1),
         'table' => 'group',
         'expose_list' => TRUE,
       );
@@ -535,7 +537,8 @@ class Fields implements FieldsInterface {
           $fields[$entity . '_tag' . ($pid ? "_$pid" : '')] = [
             'name' => $name,
             'type' => 'select',
-            'extra' => ['multiple' => 1, 'civicrm_live_options' => 1],
+            'civicrm_live_options' => 1,
+            'extra' => ['multiple' => 1],
             'table' => 'tag',
             'expose_list' => TRUE,
           ];
@@ -545,8 +548,8 @@ class Fields implements FieldsInterface {
         'name' => t('Relationship Type(s)'),
         'type' => 'select',
         'expose_list' => TRUE,
+        'civicrm_live_options' => 1,
         'extra' => array(
-          'civicrm_live_options' => 1,
           'multiple' => 1,
         ),
       );
@@ -593,9 +596,9 @@ class Fields implements FieldsInterface {
           'name' => 'Payment Processor',
           'type' => 'select',
           'expose_list' => TRUE,
+          'civicrm_live_options' => TRUE,
           'extra' => [
             'aslist' => 0,
-            'civicrm_live_options' => TRUE,
             'required' => TRUE
           ],
           'exposed_empty_option' => 'Pay Later',
@@ -661,7 +664,7 @@ class Fields implements FieldsInterface {
           'name' => t('Financial Type'),
           'type' => 'select',
           'expose_list' => TRUE,
-          'extra' => array('civicrm_live_options' => 1),
+          'civicrm_live_options' => TRUE,
           'value' => 1,
           'default' => 1,
           'set' => 'line_items',
@@ -697,7 +700,8 @@ class Fields implements FieldsInterface {
         $fields['participant_event_id'] = array(
           'name' => t('Event(s)'),
           'type' => 'select',
-          'extra' => array('multiple' => 1, 'civicrm_live_options' => 1),
+          'civicrm_live_options' => TRUE,
+          'extra' => array('multiple' => 1),
           'expose_list' => TRUE,
         );
         $fields['participant_role_id'] = array(
@@ -797,14 +801,14 @@ class Fields implements FieldsInterface {
           'type' => 'select',
           'expose_list' => TRUE,
           'empty_option' => t('None'),
-          'extra' => array('civicrm_live_options' => 1),
+          'civicrm_live_options' => TRUE,
         );
         foreach (array_intersect(array('activity', 'membership', 'participant', 'contribution'), array_keys($sets)) as $ent) {
           $fields[$ent . '_campaign_id'] = array(
             'name' => t('Campaign'),
             'type' => 'select',
             'expose_list' => TRUE,
-            'extra' => array('civicrm_live_options' => 1),
+            'civicrm_live_options' => TRUE,
             'empty_option' => t('None'),
           );
         }
@@ -821,7 +825,7 @@ class Fields implements FieldsInterface {
           'name' => t('Grant Type'),
           'type' => 'select',
           'expose_list' => TRUE,
-          'extra' => array('civicrm_live_options' => 1),
+          'civicrm_live_options' => TRUE,
         );
         $fields['grant_status_id'] = array(
           'name' => t('Grant Status'),
@@ -991,7 +995,7 @@ class Fields implements FieldsInterface {
           $fields[$id]['empty_option'] = t('None');
         }
         elseif ($fields[$id]['data_type'] !== 'Boolean' && $fields[$id]['type'] == 'select') {
-          $fields[$id]['extra']['civicrm_live_options'] = 1;
+          $fields[$id]['civicrm_live_options'] = 1;
         }
         elseif ($fields[$id]['type'] == 'textarea') {
           $fields[$id]['extra']['cols'] = $custom_field['note_columns'] ?? 60;

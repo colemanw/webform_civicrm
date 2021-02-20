@@ -40,7 +40,7 @@ if (typeof jQuery.fn.prop !== 'function') {
       }
     });
   }
-  
+
   D.behaviors.webform_civicrmOptions = {
     attach: function (context) {
       $('input.civicrm-enabled', context).once('wf-civi').change(function() {
@@ -65,9 +65,9 @@ if (typeof jQuery.fn.prop !== 'function') {
         }
         $('input.civicrm-enabled').change();
       });
-      
+
       var defaultName = 'civicrm_options_fieldset[civicrm_defaults]';
-      
+
       var multiple = $('input[name="extra[multiple]"]');
       if (multiple.is(':checkbox')) {
         multiple.once('wf-civi').change(function() {
@@ -78,27 +78,6 @@ if (typeof jQuery.fn.prop !== 'function') {
       else if (multiple.attr('value') !== '1') {
         defaultBoxes('radio', defaultName);
       }
-      
-      $('a.tabledrag-handle, a.tabledrag-toggle-weight').not('.live-options-hide a').wrap('<div class="live-options-hide" />');
-      
-      $('input[name="extra[civicrm_live_options]"]').once('wf-civi').change(function() {
-        if ($(this).is(':checked')) {
-          switch ($(this).attr('value')) {
-            case "0":
-              $('.live-options-hide').show();
-              $('.live-options-show').hide();
-              $('.tabledrag-hide.visible').removeClass('visible').show();
-              break;
-            case "1":
-              $('.live-options-hide').hide();
-              $('.live-options-show').show();
-              $('.tabledrag-hide:visible').addClass('visible').hide();
-              $('input.civicrm-enabled, input.select-all-civi-options').prop('checked', true);
-              $('input.civicrm-enabled').change();
-              break;
-          }
-        }
-      }).change();
     }
   };
 })(jQuery, Drupal);

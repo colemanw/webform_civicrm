@@ -480,7 +480,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
           // Provide live options from the Civi DB
           if (!empty($element['#civicrm_live_options']) && isset($element['#options'])) {
             $params = [
-              'extra' => wf_crm_aval($field, 'extra', []) + $element['#extra'],
+              'extra' => wf_crm_aval($field, 'extra', []) + wf_crm_aval($element, '#extra', []),
               'form_key' => $element['#webform_key'],
             ];
             $new = $utils->wf_crm_field_options($params, 'live_options', $this->data);

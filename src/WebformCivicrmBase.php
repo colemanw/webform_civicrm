@@ -144,7 +144,7 @@ abstract class WebformCivicrmBase {
             }
             // Hack for gender as textfield. More general solution needed for all pseudoconsant fields
             $gender_field = $this->node->getElement("civicrm_{$c}_contact_1_contact_gender_id");
-            if ($gender_field && $gender_field['type'] == 'textfield') {
+            if ($gender_field && $gender_field['#type'] == 'textfield') {
               $result[1]['gender_id'] = wf_crm_aval($result[1], 'gender');
             }
           }
@@ -535,7 +535,7 @@ abstract class WebformCivicrmBase {
     }
     if ($field && $field['#type'] == 'select') {
       // Fetch static options
-      if (empty($field['#extra']['civicrm_live_options'])) {
+      if (empty($field['civicrm_live_options'])) {
         $exposed = $utils->wf_crm_str2array($field['#extra']['items']);
       }
       // Fetch live options
