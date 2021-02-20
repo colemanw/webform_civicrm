@@ -201,4 +201,38 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
   }
 
+  /**
+   * Return UF Match record.
+   *
+   * @param int $cid
+   */
+  protected function getUFMatchRecord($cid = NULL) {
+    $utils = \Drupal::service('webform_civicrm.utils');
+    return $utils->wf_civicrm_api('UFMatch', 'getsingle', [
+      'sequential' => 1,
+      'contact_id' => $cid ?? "user_contact_id",
+    ]);
+  }
+
+  /**
+   * Fill Contact Autocomplete widget.
+   *
+   * @param string $id
+   * @param string $value
+   */
+  protected function fillContactAutocomplete($id, $value) {
+    $page = $this->getSession()->getPage();
+    $driver = $this->getSession()->getDriver()->getWebDriverSession();
+    $elementXpath = $page->findField($id)->getXpath();
+
+    $element = $this->assertSession()->elementExists('css', "#" . $id);
+    $element->click();
+    $driver->element('xpath', $elementXpath)->postValue(['value' => [$value]]);
+
+    $this->assertSession()->waitForElementVisible('xpath', '//li[contains(@class, "token-input-dropdown")][1]');
+    $this->createScreenshot($this->htmlOutputDirectory . '/autocomplete.png');
+
+    $page->find('xpath', '//li[contains(@class, "token-input-dropdown")][1]')->click();
+  }
+
 }
