@@ -11,24 +11,9 @@ use Drupal\Core\Url;
  */
 final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
 
-  private function addcontactinfo() {
-    // contact_id = 2 -> is the Drupal user
-    $params = [
-      'contact_id' => 2,
-      'first_name' => 'Maarten',
-      'last_name' => 'van der Weijden',
-    ];
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $result = $utils->wf_civicrm_api('Contact', 'create', $params);
-    $this->assertEquals(0, $result['is_error']);
-    $this->assertEquals(1, $result['count']);
-  }
-
   public function testSubmitWebform() {
 
-    $this->addcontactinfo();
-
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLogin($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -37,6 +22,19 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->waitForField('nid');
     $this->getSession()->getPage()->checkField('nid');
     $this->assertSession()->assertWaitOnAjaxRequest();
+
+    // Scenario: admin user is configuring the form - for some admin to data enter volunteer contacts
+    $this->getSession()->getPage()->uncheckField('Existing Contact');
+    $this->assertSession()->checkboxNotChecked('Existing Contact');
+    $this->assertSession()->checkboxChecked('First Name');
+    $this->assertSession()->checkboxChecked('Last Name');
+
+    // Enable Email address
+    // The Default Unsupervised Matching Rule in CiviCRM is: Email so we need to get it on the webform:
+    $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_email', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->checkboxChecked("civicrm_1_contact_1_email_email");
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contact_1_email_location_type_id', 'Main');
 
     // Enable Tags and Groups Fields and then set Tag(s) to -User Select-
     $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_other', 'Yes');
@@ -57,57 +55,28 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->assertPageNoErrorMessages();
 
     $this->assertSession()->waitForField('First Name');
-
-    // The Default Existing Contact Element behaviour is: load logged in User
-    // The test here is to check if the fields on the form populate with Contact details belonging to the logged in User:
-    $this->assertSession()->fieldValueEquals('First Name', 'Maarten');
-    $this->assertSession()->fieldValueEquals('Last Name', 'van der Weijden');
+    $this->getSession()->getPage()->fillField('First Name', 'Frederick');
+    $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
+    $this->getSession()->getPage()->fillField('Email', 'frederick@pabst.io');
 
     $this->getSession()->getPage()->checkField('Volunteer');
     $this->assertSession()->checkboxChecked("Volunteer");
     $this->htmlOutput();
 
     $this->getSession()->getPage()->pressButton('Submit');
-    // ToDo: Fix Notice on GitHub tests Notice: Undefined index: #form_key in Drupal\webform_civicrm\Utils->wf_crm_enabled_fields() (line 477 of /home/runner/work/webform_civicrm/webform_civicrm/src/Utils.php).
-    // $this->assertPageNoErrorMessages();
-    $this->htmlOutput();
-    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
-
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $api_result = $utils->wf_civicrm_api('Contact', 'get', [
-      'sequential' => 1,
-      'return' => ["tag"],
-      'contact_id' => 2,
-    ]);
-
-    $this->assertEquals('Volunteer', $api_result['values'][0]['tags']);
-
-    // Ok let's go back to the Webform and see it is loading the previously selected Tag properly
-    $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
-    $this->assertSession()->waitForField('Volunteer');
-    $this->assertSession()->checkboxChecked('Volunteer');
-    $this->assertSession()->checkboxNotChecked('Company');
-
-    // Ok clear the Tag:
-    $this->getSession()->getPage()->uncheckField('Volunteer');
-    $this->assertSession()->checkboxNotChecked('Volunteer');
     $this->htmlOutput();
-    $this->getSession()->getPage()->pressButton('Submit');
-    // ToDo: Fix Notice on GitHub tests Notice: Undefined index: #form_key in Drupal\webform_civicrm\Utils->wf_crm_enabled_fields() (line 477 of /home/runner/work/webform_civicrm/webform_civicrm/src/Utils.php).
-    // $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     $utils = \Drupal::service('webform_civicrm.utils');
     $api_result = $utils->wf_civicrm_api('Contact', 'get', [
       'sequential' => 1,
       'return' => ["tag"],
-      'contact_id' => 2,
+      'contact_id' => 4,
     ]);
 
     // throw new \Exception(var_export($api_result, TRUE));
-    $this->assertNotEquals('Volunteer', $api_result['values'][0]['tags']);
-
+    $this->assertEquals('Volunteer', $api_result['values'][0]['tags']);
   }
 
 }
