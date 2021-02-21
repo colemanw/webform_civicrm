@@ -12,6 +12,7 @@ use Drupal\Core\Url;
 final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
 
   public function testSubmitWebform() {
+    $utils = \Drupal::service('webform_civicrm.utils');
 
     $this->drupalLogin($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
@@ -49,14 +50,23 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalGet($this->webform->toUrl('edit-form'));
     $this->assertSession()->waitForField('Checkboxes');
     $this->htmlOutput();
-    $this->enableCheckboxOnElement('edit-webform-ui-elements-civicrm-1-contact-1-other-tag-operations');
+    $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contact-1-other-tag-operations');
 
+    //Create another tag and confirm if it loads fine on the webform.
+    $tagID = $utils->wf_civicrm_api('Tag', 'create', [
+      'name' => "Tag" . substr(sha1(rand()), 0, 4),
+    ])['id'];
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
+    $this->assertSession()->elementExists('css', "#edit-civicrm-1-contact-1-other-tag-{$tagID}");
 
     $this->assertSession()->waitForField('First Name');
-    $this->getSession()->getPage()->fillField('First Name', 'Frederick');
-    $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
+    $params = [
+      'first_name' => 'Frederick',
+      'last_name' => 'Pabst',
+    ];
+    $this->getSession()->getPage()->fillField('First Name', $params['first_name']);
+    $this->getSession()->getPage()->fillField('Last Name', $params['last_name']);
     $this->getSession()->getPage()->fillField('Email', 'frederick@pabst.io');
 
     $this->getSession()->getPage()->checkField('Volunteer');
@@ -68,11 +78,11 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
-    $utils = \Drupal::service('webform_civicrm.utils');
+    $contactID = $utils->wf_civicrm_api('Contact', 'get', $params)['id'];
     $api_result = $utils->wf_civicrm_api('Contact', 'get', [
       'sequential' => 1,
       'return' => ["tag"],
-      'contact_id' => 4,
+      'contact_id' => $contactID,
     ]);
 
     // throw new \Exception(var_export($api_result, TRUE));

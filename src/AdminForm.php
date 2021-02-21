@@ -1448,7 +1448,6 @@ class AdminForm implements AdminFormInterface {
       '#title' => str_replace('#', '', $field['name']),
       '#attributes' => wf_crm_aval($field, 'attributes'),
     );
-
     // Create dropdown list
     if (!empty($field['expose_list'])) {
       $field['form_key'] = $fid;
@@ -1470,6 +1469,7 @@ class AdminForm implements AdminFormInterface {
         '#type' => 'select',
         '#options' => $options,
         '#multiple' => !empty($field['extra']['multiple']),
+        '#civicrm_live_options' => !empty($field['civicrm_live_options']),
         '#default_value' => !empty($field['empty_option']) ? 0 : NULL,
       );
       if (isset($field['empty_option'])) {

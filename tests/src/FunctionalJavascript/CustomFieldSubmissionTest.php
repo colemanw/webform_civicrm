@@ -206,17 +206,15 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_4");
     $this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_5");
 
-    $this->getSession()->getPage()->pressButton('Save Settings');
-    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
-    $this->assertPageNoErrorMessages();
+    $this->saveCiviCRMSettings();
 
     // Change the Checkbox -> no Listbox (that should probably be the default)
     $this->drupalGet($this->webform->toUrl('edit-form'));
     $this->assertSession()->waitForField('Checkboxes');
     $this->htmlOutput();
 
-    $this->enableCheckboxOnElement('edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-3-operations');
-    $this->enableCheckboxOnElement('edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-4-operations');
+    $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-3-operations');
+    $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-4-operations', FALSE, TRUE);
 
     // ToDo: Enable Static Option and Edit Label
     $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-3-operations"] a.webform-ajax-link');
@@ -230,6 +228,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
     $this->createScreenshot($this->htmlOutputDirectory . '/afterlabelchange.png');
     $this->getSession()->getPage()->pressButton('Save');
+    $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->drupalLogout();
     $this->drupalGet($this->webform->toUrl('canonical'));

@@ -147,18 +147,33 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   }
 
   /**
-   * Modify settings so the element displays as a checkbox.
+   * Modify settings so the element displays as a checkbox
+   *
+   * @param string $selector
+   * @param bool $multiple
+   * @param bool $enableStatic
+   *   TRUE if static radio option should be enabled.
    */
-  protected function enableCheckboxOnElement($selector) {
+  protected function editCivicrmOptionElement($selector, $multiple = TRUE, $enableStatic = FALSE) {
     $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="' . $selector . '"] a.webform-ajax-link');
     $checkbox_edit_button->click();
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
+    if ($enableStatic) {
+      $this->getSession()->getPage()->selectFieldOption("properties[civicrm_live_options]", 0);
+      $this->assertSession()->assertWaitOnAjaxRequest();
+      $this->assertSession()->waitForField('properties[options][options][civicrm_option_1][enabled]');
+    }
     $this->getSession()->getPage()->uncheckField('properties[extra][aslist]');
     $this->assertSession()->checkboxNotChecked('properties[extra][aslist]');
     $this->htmlOutput();
 
+    if ($multiple) {
+      $this->getSession()->getPage()->checkField('properties[extra][multiple]');
+      $this->assertSession()->checkboxChecked('properties[extra][multiple]');
+      $this->htmlOutput();
+    }
     $this->getSession()->getPage()->pressButton('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();
   }
@@ -206,6 +221,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   public function saveCiviCRMSettings() {
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    $this->assertPageNoErrorMessages();
   }
 
   /**
