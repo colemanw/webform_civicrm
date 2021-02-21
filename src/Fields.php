@@ -996,6 +996,10 @@ class Fields implements FieldsInterface {
         }
         elseif ($fields[$id]['data_type'] !== 'Boolean' && $fields[$id]['type'] == 'select') {
           $fields[$id]['civicrm_live_options'] = 1;
+          $fields[$id]['extra']['aslist'] = 1;
+          if (in_array($custom_field['html_type'], ['Radio', 'CheckBox'])) {
+            $fields[$id]['extra']['aslist'] = 0;
+          }
         }
         elseif ($fields[$id]['type'] == 'textarea') {
           $fields[$id]['extra']['cols'] = $custom_field['note_columns'] ?? 60;
