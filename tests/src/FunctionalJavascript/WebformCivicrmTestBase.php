@@ -51,6 +51,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
    */
   protected function setUp() {
     parent::setUp();
+    $this->utils = \Drupal::service('webform_civicrm.utils');
 
     // Make sure we are using distinct default and administrative themes for
     // the duration of these tests.
@@ -73,6 +74,12 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->webform = $this->createWebform([
       'id' => 'civicrm_webform_test',
       'title' => 'CiviCRM Webform Test',
+    ]);
+    //Create civi contact for rootUser.
+    $this->utils->wf_civicrm_api('UFMatch', 'create', [
+      'uf_id' => $this->rootUser->id(),
+      'uf_name' => $this->rootUser->getAccountName(),
+      'contact_id' => $this->createIndividual()['id'],
     ]);
   }
 
@@ -233,6 +240,18 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->createScreenshot($this->htmlOutputDirectory . '/autocomplete.png');
 
     $page->find('xpath', '//li[contains(@class, "token-input-dropdown")][1]')->click();
+  }
+
+  /**
+   * Create test contact of type individual.
+   */
+  protected function createIndividual() {
+    $params = [
+      'contact_type' => 'Individual',
+      'first_name' => substr(sha1(rand()), 0, 7),
+      'last_name' => substr(sha1(rand()), 0, 7),
+    ];
+    return current($this->utils->wf_civicrm_api('contact', 'create', $params)['values']);
   }
 
 }
