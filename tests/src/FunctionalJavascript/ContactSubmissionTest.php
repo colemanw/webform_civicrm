@@ -170,7 +170,6 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->waitForElementVisible('css', '[data-drupal-selector="edit-properties-search-prompt"]');
     $this->getSession()->getPage()->fillField('Search Prompt', '- Select Contact -');
 
-
     $this->getSession()->getPage()->pressButton('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertSession()->pageTextContains('Existing Contact has been updated');
@@ -181,7 +180,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     //Check if autocomplete is present on the page.
     $this->assertSession()->elementExists('css', '.token-input-list');
 
-    $currentUserUF = $this->getUFMatchRecord();
+    $currentUserUF = $this->getUFMatchRecord($this->rootUser->id());
     $currentUserDisplayName = $this->utils->wf_civicrm_api('contact', 'getvalue', [
       'id' => $currentUserUF['contact_id'],
       'return' => "display_name",

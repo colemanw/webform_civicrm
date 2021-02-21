@@ -71,12 +71,11 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $utils = \Drupal::service('webform_civicrm.utils');
     $api_result = $utils->wf_civicrm_api('Contact', 'get', [
       'sequential' => 1,
-      'contact_id' => 3,
+      'first_name' => 'Frederick',
+      'last_name' => 'Pabst',
     ]);
+    $this->assertEquals(1, $api_result['count']);
     $contact = reset($api_result['values']);
-
-    $this->assertEquals('Frederick', $contact['first_name']);
-    $this->assertEquals('Pabst', $contact['last_name']);
     $this->assertEquals('Student', implode($contact['contact_sub_type']));
 
     $api_result = $utils->wf_civicrm_api('Email', 'get', [

@@ -102,17 +102,17 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $utils = \Drupal::service('webform_civicrm.utils');
     $api_result = $utils->wf_civicrm_api('Contact', 'get', [
       'sequential' => 1,
-      'contact_id' => 3,
+      'first_name' => 'Frederick',
+      'last_name' => 'Pabst',
     ]);
+    $this->assertEquals(1, $api_result['count']);
     $student = reset($api_result['values']);
-    $this->assertEquals('Frederick', $student['first_name']);
-    $this->assertEquals('Pabst', $student['last_name']);
     $this->assertEquals('Student', implode($student['contact_sub_type']));
 
     // Check that the relationship is created:
     $api_result = $utils->wf_civicrm_api('Relationship', 'get', [
       'sequential' => 1,
-      'contact_id_b' => 3,
+      'contact_id_b' => $student['contact_id'],
     ]);
     $relationship = reset($api_result['values']);
     // throw new \Exception(var_export($relationship, TRUE));

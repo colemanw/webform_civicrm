@@ -75,11 +75,12 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       'id' => 'civicrm_webform_test',
       'title' => 'CiviCRM Webform Test',
     ]);
+    $this->rootUserCid = $this->createIndividual()['id'];
     //Create civi contact for rootUser.
     $this->utils->wf_civicrm_api('UFMatch', 'create', [
       'uf_id' => $this->rootUser->id(),
       'uf_name' => $this->rootUser->getAccountName(),
-      'contact_id' => $this->createIndividual()['id'],
+      'contact_id' => $this->rootUserCid,
     ]);
   }
 
@@ -181,8 +182,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       'is_recur' => 1,
       'payment_instrument_id' => 'Credit Card',
     ];
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $result = $utils->wf_civicrm_api('payment_processor', 'create', $params);
+    $result = $this->utils->wf_civicrm_api('payment_processor', 'create', $params);
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
     return current($result['values']);
@@ -211,13 +211,11 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   /**
    * Return UF Match record.
    *
-   * @param int $cid
+   * @param int $ufID
    */
-  protected function getUFMatchRecord($cid = NULL) {
-    $utils = \Drupal::service('webform_civicrm.utils');
-    return $utils->wf_civicrm_api('UFMatch', 'getsingle', [
-      'sequential' => 1,
-      'contact_id' => $cid ?? "user_contact_id",
+  protected function getUFMatchRecord($ufID) {
+    return $this->utils->wf_civicrm_api('UFMatch', 'getsingle', [
+      'uf_id' => $ufID,
     ]);
   }
 
