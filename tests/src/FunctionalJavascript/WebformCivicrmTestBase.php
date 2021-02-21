@@ -51,6 +51,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
    */
   protected function setUp() {
     parent::setUp();
+    $this->utils = \Drupal::service('webform_civicrm.utils');
 
     // Make sure we are using distinct default and administrative themes for
     // the duration of these tests.
@@ -73,6 +74,13 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->webform = $this->createWebform([
       'id' => 'civicrm_webform_test',
       'title' => 'CiviCRM Webform Test',
+    ]);
+    $this->rootUserCid = $this->createIndividual()['id'];
+    //Create civi contact for rootUser.
+    $this->utils->wf_civicrm_api('UFMatch', 'create', [
+      'uf_id' => $this->rootUser->id(),
+      'uf_name' => $this->rootUser->getAccountName(),
+      'contact_id' => $this->rootUserCid,
     ]);
   }
 
@@ -174,8 +182,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       'is_recur' => 1,
       'payment_instrument_id' => 'Credit Card',
     ];
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $result = $utils->wf_civicrm_api('payment_processor', 'create', $params);
+    $result = $this->utils->wf_civicrm_api('payment_processor', 'create', $params);
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
     return current($result['values']);
@@ -199,6 +206,50 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   public function saveCiviCRMSettings() {
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+  }
+
+  /**
+   * Return UF Match record.
+   *
+   * @param int $ufID
+   */
+  protected function getUFMatchRecord($ufID) {
+    return $this->utils->wf_civicrm_api('UFMatch', 'getsingle', [
+      'uf_id' => $ufID,
+    ]);
+  }
+
+  /**
+   * Fill Contact Autocomplete widget.
+   *
+   * @param string $id
+   * @param string $value
+   */
+  protected function fillContactAutocomplete($id, $value) {
+    $page = $this->getSession()->getPage();
+    $driver = $this->getSession()->getDriver()->getWebDriverSession();
+    $elementXpath = $page->findField($id)->getXpath();
+
+    $element = $this->assertSession()->elementExists('css', "#" . $id);
+    $element->click();
+    $driver->element('xpath', $elementXpath)->postValue(['value' => [$value]]);
+
+    $this->assertSession()->waitForElementVisible('xpath', '//li[contains(@class, "token-input-dropdown")][1]');
+    $this->createScreenshot($this->htmlOutputDirectory . '/autocomplete.png');
+
+    $page->find('xpath', '//li[contains(@class, "token-input-dropdown")][1]')->click();
+  }
+
+  /**
+   * Create test contact of type individual.
+   */
+  protected function createIndividual() {
+    $params = [
+      'contact_type' => 'Individual',
+      'first_name' => substr(sha1(rand()), 0, 7),
+      'last_name' => substr(sha1(rand()), 0, 7),
+    ];
+    return current($this->utils->wf_civicrm_api('contact', 'create', $params)['values']);
   }
 
 }

@@ -18,7 +18,6 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
    * $this->group holds the group information.
    */
   public function createGroupWithContacts() {
-    $utils = \Drupal::service('webform_civicrm.utils');
     $this->group = civicrm_api3('Group', 'create', [
       'title' => substr(sha1(rand()), 0, 7),
     ]);
@@ -29,12 +28,12 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
         'first_name' => substr(sha1(rand()), 0, 7),
         'last_name' => substr(sha1(rand()), 0, 7),
       ];
-      $contact = $utils->wf_civicrm_api('contact', 'create', $this->contacts[$k]);
+      $contact = $this->utils->wf_civicrm_api('contact', 'create', $this->contacts[$k]);
       $this->contacts[$k]['id'] = $contact['id'];
 
       //Add all contacts to group except the last contact.
       if ($k != 5) {
-        $utils->wf_civicrm_api('GroupContact', 'create', [
+        $this->utils->wf_civicrm_api('GroupContact', 'create', [
           'group_id' => $this->group['id'],
           'contact_id' => $this->contacts[$k]['id'],
         ]);
@@ -49,7 +48,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     //create sample contacts.
     $this->createGroupWithContacts();
 
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLogin($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -69,16 +68,16 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->waitForField('properties[widget]');
     $this->getSession()->getPage()->selectFieldOption('Form Widget', 'Select List');
     $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-filters"]')->click();
 
     //Filter on group.
+    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-filters"]')->click();
     $this->getSession()->getPage()->selectFieldOption('Groups', $this->group['id']);
     $this->getSession()->getPage()->pressButton('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertSession()->pageTextContains('Existing Contact has been updated');
 
     $this->drupalGet($this->webform->toUrl('canonical'));
-    // $this->assertPageNoErrorMessages();
+    $this->assertPageNoErrorMessages();
 
     //Check if no autocomplete is present on the page.
     $this->assertSession()->elementNotExists('css', '.token-input-list');
@@ -103,8 +102,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     //Verify if the modified value is updated for the contact.
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $contact_result = $utils->wf_civicrm_api('contact', 'get', [
+    $contact_result = $this->utils->wf_civicrm_api('contact', 'get', [
       'sequential' => 1,
       'id' => $this->contacts[1]['id'],
     ]);
@@ -116,18 +114,11 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
   }
 
   /**
-   * Test contact submission using static widget.
+   * Test contact submission using static and autocomplete widget.
    */
-  public function testStaticContactElement() {
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $params = [
-      'contact_type' => 'Individual',
-      'first_name' => substr(sha1(rand()), 0, 7),
-      'last_name' => substr(sha1(rand()), 0, 7),
-    ];
-    $contact = $utils->wf_civicrm_api('contact', 'create', $params);
-
-    $this->drupalLogin($this->adminUser);
+  public function testStaticAndAutocompleteOnContactElement() {
+    $contact = $this->createIndividual();
+    $this->drupalLogin($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -143,8 +134,8 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->elementNotExists('css', '.token-input-list');
 
     //Check if name fields are pre populated with existing values.
-    $this->assertSession()->fieldValueEquals('First Name', $params['first_name']);
-    $this->assertSession()->fieldValueEquals('Last Name', $params['last_name']);
+    $this->assertSession()->fieldValueEquals('First Name', $contact['first_name']);
+    $this->assertSession()->fieldValueEquals('Last Name', $contact['last_name']);
 
     //Update the name to some other value.
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
@@ -153,7 +144,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     //Verify if the modified value is updated for the contact.
-    $contact_result = $utils->wf_civicrm_api('contact', 'get', [
+    $contact_result = $this->utils->wf_civicrm_api('contact', 'get', [
       'sequential' => 1,
       'id' => $contact['id'],
     ]);
@@ -163,6 +154,64 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals(1, $contact_result['count'], $result_debug);
     $this->assertEquals('Frederick', $contact_result['values'][0]['first_name'], $result_debug);
     $this->assertEquals('Pabst', $contact_result['values'][0]['last_name'], $result_debug);
+
+    //Enable Autocomplete on the contact Element.
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+    $contactElementEdit = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations"] a.webform-ajax-link');
+    $contactElementEdit->click();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
+
+    $this->assertSession()->waitForField('properties[widget]');
+    $this->getSession()->getPage()->selectFieldOption('Form Widget', 'Autocomplete');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->waitForElementVisible('css', '[data-drupal-selector="edit-properties-search-prompt"]');
+    $this->getSession()->getPage()->fillField('Search Prompt', '- Select Contact -');
+
+    $this->getSession()->getPage()->pressButton('Save');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->pageTextContains('Existing Contact has been updated');
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+
+    //Check if autocomplete is present on the page.
+    $this->assertSession()->elementExists('css', '.token-input-list');
+
+    $currentUserUF = $this->getUFMatchRecord($this->rootUser->id());
+    $currentUserDisplayName = $this->utils->wf_civicrm_api('contact', 'getvalue', [
+      'id' => $currentUserUF['contact_id'],
+      'return' => "display_name",
+    ]);
+    $this->assertSession()->elementTextContains('css', '.token-input-token', $currentUserDisplayName);
+    //Clear the existing selection.
+    $this->assertSession()->elementExists('css', '.token-input-delete-token')->click();
+
+    $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', $contact_result['values'][0]['first_name']);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $this->assertSession()->fieldValueEquals('First Name', $contact_result['values'][0]['first_name']);
+    $this->assertSession()->fieldValueEquals('Last Name', $contact_result['values'][0]['last_name']);
+
+    //Update the name to some other value.
+    $this->getSession()->getPage()->fillField('First Name', 'Frederick-Edited');
+    $this->getSession()->getPage()->fillField('Last Name', 'Pabst-Edited');
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
+    //Verify if the modified value is updated for the contact.
+    $contact_result2 = $this->utils->wf_civicrm_api('contact', 'get', [
+      'sequential' => 1,
+      'id' => $contact_result['id'],
+    ]);
+    $result_debug = var_export($contact_result2, TRUE);
+
+    $this->assertArrayHasKey('count', $contact_result2, $result_debug);
+    $this->assertEquals(1, $contact_result2['count'], $result_debug);
+    $this->assertEquals('Frederick-Edited', $contact_result2['values'][0]['first_name'], $result_debug);
+    $this->assertEquals('Pabst-Edited', $contact_result2['values'][0]['last_name'], $result_debug);
   }
   /**
    * Test submitting a contact.
@@ -230,8 +279,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     }
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $contact_result = $utils->wf_civicrm_api('contact', 'get', [
+    $contact_result = $this->utils->wf_civicrm_api('contact', 'get', [
       'sequential' => 1,
       'first_name' => $contact_values['contact']['first_name'],
       'last_name' => $contact_values['contact']['last_name'],
@@ -252,7 +300,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
 
     foreach ($configurable_contact_field_groups as $field_group => $field_value_key) {
       if (isset($contact_values[$field_group])) {
-        $api_result = $utils->wf_civicrm_api($field_group, 'get', [
+        $api_result = $this->utils->wf_civicrm_api($field_group, 'get', [
           'sequential' => 1,
           'contact_id' => $contact['contact_id'],
         ]);

@@ -14,7 +14,7 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
    * Test submitting an activity
    */
   public function testSubmitWebform() {
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLogin($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -68,7 +68,7 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
-    $api_result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('activity', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('activity', 'get', [
       'sequential' => 1,
     ]);
     $this->assertEquals(1, $api_result['count']);
@@ -80,19 +80,24 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->assertTrue(strtotime($today) -  strtotime($activity['activity_date_time']) < 60);
     $this->assertEquals(90, $activity['duration']);
 
-    $api_result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('ActivityContact', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('ActivityContact', 'get', [
       'sequential' => 1,
       'return' => ["contact_id"],
       'record_type_id' => "Activity Assignees",
-      'activity_id' => 1,
+      'activity_id' => $activity['id'],
     ]);
     $activityContact = reset($api_result['values']);
     // In this test: contact_id 1 = Default Organization; contact_id 2 = Drupal User; contact_id 3 = Frederick
-    $this->assertEquals(3, $activityContact['contact_id']);
+    $contact = $this->utils->wf_civicrm_api('Contact', 'get', [
+      'first_name' => 'Frederick',
+      'last_name' => 'Pabst',
+    ]);
+    $this->assertEquals(1, $contact['count']);
+    $this->assertEquals($contact['id'], $activityContact['contact_id']);
 
     // Ok now let's log back in and retrieve the Activity we just stored - so that we can update it.
     $this->drupalLogin($this->adminUser);
-    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => 3, 'aid' => $activity['id']]]));
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $contact['id'], 'aid' => $activity['id']]]));
     $this->assertPageNoErrorMessages();
 
     $this->assertSession()->waitForField('Activity Duration');
