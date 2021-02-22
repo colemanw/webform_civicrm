@@ -212,8 +212,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalGet($this->webform->toUrl('edit-form'));
     $this->assertSession()->waitForField('Checkboxes');
     $this->htmlOutput();
-
-    $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-3-operations');
+    //enable static option on radio field.
     $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-4-operations', FALSE, TRUE);
 
     // ToDo: Enable Static Option and Edit Label

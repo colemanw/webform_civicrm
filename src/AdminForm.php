@@ -2112,7 +2112,7 @@ class AdminForm implements AdminFormInterface {
       if ($options = $utils->wf_crm_field_options($field, 'component_insert', $settings['data'])) {
         $field['options'] = $options;
         $field['extra']['items'] = $utils->wf_crm_array2str($options);
-        $field['extra']['aslist'] = TRUE;
+        $field['extra']['aslist'] = $field['extra']['aslist'] ?? FALSE;
         $field['type'] = 'civicrm_options';
       }
     }
