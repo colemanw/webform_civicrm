@@ -22,14 +22,14 @@ abstract class WebformCivicrmBase {
    * @var \Drupal\webform\WebformInterface
    */
   protected $node;
-  protected $settings = array();
-  protected $enabled = array();
-  protected $data = array();
-  protected $ent = array();
-  protected $events = array();
-  protected $line_items = array();
-  protected $membership_types = array();
-  protected $loadedContacts = array();
+  protected $settings = [];
+  protected $enabled = [];
+  protected $data = [];
+  protected $ent = [];
+  protected $events = [];
+  protected $line_items = [];
+  protected $membership_types = [];
+  protected $loadedContacts = [];
 
   // No direct access - storage for variables fetched via __get
   private $_payment_processor;
@@ -52,7 +52,7 @@ abstract class WebformCivicrmBase {
       case 'payment_processor':
         $payment_processor_id = wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id');
         if ($payment_processor_id && !$this->_payment_processor) {
-          $this->_payment_processor = $utils->wf_civicrm_api('payment_processor', 'getsingle', array('id' => $payment_processor_id));
+          $this->_payment_processor = $utils->wf_civicrm_api('payment_processor', 'getsingle', ['id' => $payment_processor_id]);
         }
         return $this->_payment_processor;
 
@@ -90,11 +90,11 @@ abstract class WebformCivicrmBase {
    * @return array
    *   Contact data
    */
-  protected function loadContact($c, $exclude = array()) {
+  protected function loadContact($c, $exclude = []) {
     if (!empty($this->loadedContacts[$c])) {
       return $this->loadedContacts[$c];
     }
-    $info = array();
+    $info = [];
     $utils = \Drupal::service('webform_civicrm.utils');
     $cid = $this->ent['contact'][$c]['id'];
     if (!$cid) {
@@ -107,9 +107,9 @@ abstract class WebformCivicrmBase {
     $existing_component_plugin = $element_manager->getElementInstance($existing_contact_field);
     $element_exclude = $existing_component_plugin->getElementProperty($existing_contact_field, 'no_autofill');
     $exclude = array_merge($exclude, $element_exclude);
-    foreach (array_merge(array('contact'), $utils->wf_crm_location_fields()) as $ent) {
+    foreach (array_merge(['contact'], $utils->wf_crm_location_fields()) as $ent) {
       if ((!empty($contact['number_of_' . $ent]) && !in_array($ent, $exclude)) || $ent == 'contact') {
-        $params = array('contact_id' => $cid);
+        $params = ['contact_id' => $cid];
         if ($ent != 'contact' && $ent != 'website') {
           $params['options']['sort'] = 'is_primary DESC';
         }
@@ -120,7 +120,7 @@ abstract class WebformCivicrmBase {
         }
         if (!empty($result['values'])) {
           // Index array from 1 instead of 0
-          $result = array_merge(array(0), array_values($result['values']));
+          $result = array_merge([0], array_values($result['values']));
           unset($result[0]);
           if ($ent == 'contact') {
             // Exclude name fields
@@ -179,7 +179,7 @@ abstract class WebformCivicrmBase {
     }
     // Retrieve group and tag data
     if (!in_array('other', $exclude)) {
-      $api = array('tag' => 'entity_tag', 'group' => 'group_contact');
+      $api = ['tag' => 'entity_tag', 'group' => 'group_contact'];
       foreach (array_keys($this->enabled) as $fid) {
         // This way we support multiple tag fields (for tagsets)
         if (strpos($fid, $prefix . 'other') !== FALSE) {
@@ -187,7 +187,7 @@ abstract class WebformCivicrmBase {
           list(, , , , , $field) = explode('_', $fid, 6);
           // Cheap way to avoid fetching the same data twice from the api
           if (!is_array($api[$ent])) {
-            $api[$ent] = $utils->wf_civicrm_api($api[$ent], 'get', array('contact_id' => $cid));
+            $api[$ent] = $utils->wf_civicrm_api($api[$ent], 'get', ['contact_id' => $cid]);
           }
           foreach (wf_crm_aval($api[$ent], 'values') as $val) {
             $info['other'][1][$field][] = $val[$ent . '_id'];
@@ -199,7 +199,7 @@ abstract class WebformCivicrmBase {
     if (!in_array('relationship', $exclude) && !empty($contact['number_of_relationship'])) {
       $this->enabled = $utils->wf_crm_enabled_fields($this->node);
       for ($r = 1; $r <= $contact['number_of_relationship']; ++$r) {
-        $types = array();
+        $types = [];
         $prefix = "civicrm_{$c}_contact_{$r}_relationship_";
         if (!empty($this->ent['contact'][$r]['id'])) {
           if (!empty($contact['relationship'][$r]['relationship_type_id']) && $contact['relationship'][$r]['relationship_type_id'] != 'create_civicrm_webform_element') {
@@ -251,7 +251,7 @@ abstract class WebformCivicrmBase {
       }
     }
     if (empty($this->ent['contact'][$c]['id']) && !empty($component['#default'])) {
-      $found = array();
+      $found = [];
       switch ($component['#default']) {
         case 'user':
           $cid = $utils->wf_crm_user_cid();
@@ -270,7 +270,7 @@ abstract class WebformCivicrmBase {
           break;
         case 'auto':
           $component['#allow_create'] = FALSE;
-          $found = array_keys($contactComponent->wf_crm_contact_search($this->node, $component, $filters, wf_crm_aval($this->ent, 'contact', array())));
+          $found = array_keys($contactComponent->wf_crm_contact_search($this->node, $component, $filters, wf_crm_aval($this->ent, 'contact', [])));
           break;
       }
       if (isset($component['#randomize']) && $component['#randomize']) {
@@ -308,8 +308,8 @@ abstract class WebformCivicrmBase {
    * @param array $values
    * @return array $reorderedArray
    */
-  protected function reorderByLocationType($c, $ent, $values = array()){
-    $reorderedArray = array();
+  protected function reorderByLocationType($c, $ent, $values = []){
+    $reorderedArray = [];
 
     if (isset($this->settings['data']['contact'][$c][$ent])){
       // First pass
@@ -346,7 +346,7 @@ abstract class WebformCivicrmBase {
     foreach ($settingsArray[$ent] as $setting) {
       $valueFound = false;
       foreach($values as $key => $value){
-        if ((in_array($ent, array('address', 'email')) && $value['location_type_id'] == $setting['location_type_id'])
+        if ((in_array($ent, ['address', 'email']) && $value['location_type_id'] == $setting['location_type_id'])
           || (
              $value['location_type_id'] == $setting['location_type_id'] &&
              (!isset($setting[$ent.'_type_id']) || $value[$ent.'_type_id'] == $setting[$ent.'_type_id'])
@@ -369,7 +369,7 @@ abstract class WebformCivicrmBase {
       // always keep number of returned values equal to chosen settings
       // if value is not found then set an empty array
       if (!$valueFound){
-        $reorderedArray[] = array();
+        $reorderedArray[] = [];
       }
     }
     return $reorderedArray;
@@ -413,7 +413,7 @@ abstract class WebformCivicrmBase {
       // always keep number of returned values equal to chosen settings
       // if value is not found then set an empty array
       if (!$valueFound){
-        $reorderedArray[] = array();
+        $reorderedArray[] = [];
       }
     }
     return $reorderedArray;
@@ -443,7 +443,7 @@ abstract class WebformCivicrmBase {
    * @param array $settings
    * @return array $settings
    */
-  protected function add_user_select_field_placeholder($ent, $settings = array()){
+  protected function add_user_select_field_placeholder($ent, $settings = []){
     if ($settings['number_of_'.$ent] > count($settings[$ent])){
       for($i = 1; $i <= $settings['number_of_'.$ent]; $i++){
         if (!array_key_exists($i, $settings[$ent])){
@@ -517,7 +517,7 @@ abstract class WebformCivicrmBase {
    *
    * @return array
    */
-  protected function getExposedOptions($field_key, $exclude = array()) {
+  protected function getExposedOptions($field_key, $exclude = []) {
     $field = $this->getComponent($field_key);
     $utils = \Drupal::service('webform_civicrm.utils');
 
@@ -547,7 +547,7 @@ abstract class WebformCivicrmBase {
       }
       return $exposed;
     }
-    return array();
+    return [];
   }
 
   /**
@@ -578,21 +578,21 @@ abstract class WebformCivicrmBase {
       $domain = wf_crm_aval($domain, 'id', 1);
       $membership_types = array_keys($utils->wf_crm_apivalues('membershipType', 'get', ['is_active' => 1, 'domain_id' => $domain, 'return' => 'id']));
     }
-    $existing = $utils->wf_crm_apivalues('membership', 'get', array(
+    $existing = $utils->wf_crm_apivalues('membership', 'get', [
       'contact_id' => $cid,
       // Limit to only enabled membership types
-      'membership_type_id' => array('IN' => $membership_types),
+      'membership_type_id' => ['IN' => $membership_types],
       // skip membership through Inheritance.
       'owner_membership_id' => ['IS NULL' => 1],
-    ));
+    ]);
     if (!$existing) {
-      return array();
+      return [];
     }
     if (!$status_types) {
       $status_types = $utils->wf_crm_apivalues('membership_status', 'get');
     }
     // Attempt to order memberships by most recent and active
-    $active = $expired = array();
+    $active = $expired = [];
     foreach ($existing as $membership) {
       $membership['is_active'] = $status_types[$membership['status_id']]['is_current_member'];
       $membership['status'] = $status_types[$membership['status_id']]['label'];
@@ -692,7 +692,7 @@ abstract class WebformCivicrmBase {
   function findCaseForContact($cid, $filters) {
     $case = NULL;
     $utils = \Drupal::service('webform_civicrm.utils');
-    foreach ($utils->wf_crm_apivalues('case', 'get', array('client_id' => $cid)) as $item) {
+    foreach ($utils->wf_crm_apivalues('case', 'get', ['client_id' => $cid]) as $item) {
       if (empty($item['is_deleted'])) {
         $match = TRUE;
         foreach (array_filter($filters) as $filter => $value) {
@@ -733,7 +733,7 @@ abstract class WebformCivicrmBase {
       $credit_card_types = \CRM_Core_Payment_Form::getCreditCardCSSNames();
       \CRM_Core_Resources::singleton()
         ->addCoreResources()
-        ->addSetting(array('config' => array('creditCardTypes' => $credit_card_types)))
+        ->addSetting(['config' => ['creditCardTypes' => $credit_card_types]])
         ->addScriptFile('civicrm', 'templates/CRM/Core/BillingBlock.js', -10, 'html-header');
     }
     else {
@@ -754,10 +754,10 @@ abstract class WebformCivicrmBase {
       $config = \CRM_Core_Config::singleton();
       $path = \Drupal::service('file_system')->copy($file->getFileUri(), $config->customFileUploadDir);
       if ($path) {
-        $result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('file', 'create', array(
+        $result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('file', 'create', [
           'uri' => str_replace($config->customFileUploadDir, '', $path),
           'mime_type' => $file->getMimeType(),
-        ));
+        ]);
         return wf_crm_aval($result, 'id');
       }
     }
@@ -816,10 +816,10 @@ abstract class WebformCivicrmBase {
    */
   public function getAttachments($ent, $id) {
     $n = 1;
-    $attachments = array();
+    $attachments = [];
     $dao = \CRM_Core_DAO::executeQuery("SELECT * FROM civicrm_entity_file WHERE entity_table = 'civicrm_$ent' AND entity_id = $id");
     while ($dao->fetch()) {
-      $attachments[$n++] = array('id' => $dao->id, 'file_id' => $dao->file_id);
+      $attachments[$n++] = ['id' => $dao->id, 'file_id' => $dao->file_id];
     }
     return $attachments;
   }

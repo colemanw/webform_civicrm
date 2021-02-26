@@ -243,9 +243,9 @@ class AdminHelp implements AdminHelpInterface {
     return '<p>' .
       t('Allow events in "User Select" mode to be auto-filled from URL.') .
       '</p>'.'<br /><p>'.t('Example for "Register all":') .
-      '<br /><code>' . Url::fromUri("internal:/node", array('absolute' => TRUE))->toString() . '/{node.nid}?event1={event1.event_id},{event2.event_id}</code></p><br />'.
+      '<br /><code>' . Url::fromUri("internal:/node", ['absolute' => TRUE])->toString() . '/{node.nid}?event1={event1.event_id},{event2.event_id}</code></p><br />'.
       t('Example for "Register separately":') .
-      '<br /><code>' . Url::fromUri("internal:/node", array('absolute' => TRUE))->toString() .
+      '<br /><code>' . Url::fromUri("internal:/node", ['absolute' => TRUE])->toString() .
       '/{node.nid}?c1event1={event1.event_id},{event2.event_id}&amp;c2event1={event3.event_id}</code></p>';
   }
 
@@ -271,12 +271,12 @@ class AdminHelp implements AdminHelpInterface {
     return '<p>' .
       t('Controls how events are displayed. Date formats can be further configured in
         <a href=":link">CiviCRM Date Settings</a>',
-        array(
+        [
           ':link' => Url::fromUri(
               'internal:/civicrm/admin/setting/date',
-              array('query' => array('reset' => 1))
+              ['query' => ['reset' => 1]]
             )->toString()
-        )
+        ]
       ) .
       '</p><p>' .
       t('Note: End-date will automatically be omitted if it is the same as the start-date.') .
@@ -479,7 +479,7 @@ class AdminHelp implements AdminHelpInterface {
     }
     \Drupal::service('civicrm')->initialize();
     $help = '';
-    $info = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('custom_field', 'getsingle', array('id' => $id));
+    $info = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('custom_field', 'getsingle', ['id' => $id]);
     if (!empty($info['help_pre'])) {
       $help .= '<p>' . $info['help_pre'] . '</p>';
     }

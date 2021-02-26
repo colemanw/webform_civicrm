@@ -116,7 +116,7 @@ class WebformAjax extends WebformCivicrmBase implements WebformAjaxInterface {
           if ($i == $c && $ent == 'contact' && isset($contact[$table][$n][$field])) {
             $type = ($table == 'contact' && strpos($field, 'name')) ? 'name' : $table;
             // Exclude blank and hidden fields
-            if ($contact[$table][$n][$field] !== '' && $contact[$table][$n][$field] !== array() && !in_array($type, $to_hide)) {
+            if ($contact[$table][$n][$field] !== '' && $contact[$table][$n][$field] !== [] && !in_array($type, $to_hide)) {
               $dataType = wf_crm_aval($utils->wf_crm_get_field("{$table}_$field"), 'data_type');
               $val = ['val' => $contact[$table][$n][$field]];
               // Retrieve file info

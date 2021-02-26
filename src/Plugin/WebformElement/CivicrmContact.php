@@ -333,12 +333,12 @@ class CivicrmContact extends WebformElementBase {
       '#description' => $this->t('If the url contains e.g. %arg, it will be used to pre-populate this contact (takes precidence over other default values).', ['%arg' => "cid$c=123"]),
     ];
     if ($c > 1) {
-      $form['contact_defaults']['dupes_allowed'] = array(
+      $form['contact_defaults']['dupes_allowed'] = [
         '#type' => 'checkbox',
         '#title' => $this->t('Allow Duplicate Autofill'),
         '#default_value' => $element_properties['dupes_allowed'],
         '#description' => $this->t('Check this box to allow a contact to be selected even if they already autofilled a prior field on the form. (For example, if contact 1 was autofilled with Bob Smith, should this field also be allowed to select Bob Smith or should it pick a different contact?)'),
-      );
+      ];
     }
     $form['contact_defaults']['randomize'] = [
       '#type' => 'checkbox',
@@ -398,7 +398,7 @@ class CivicrmContact extends WebformElementBase {
         '#default_value' => $element_properties['filter_relationship_types'],
       ];
       // Fill relationship data for defaults and filters
-      $all_relationship_types = array_fill(1, $c - 1, array());
+      $all_relationship_types = array_fill(1, $c - 1, []);
       for ($i = 1; $i < $c; ++$i) {
         $form['contact_defaults']['default_relationship_to']['#options'][$i] = $form['filters']['relationship']['filter_relationship_contact']['#options'][$i] = $utils->wf_crm_contact_label($i, $data, 'plain');
         $rtypes = $utils->wf_crm_get_contact_relationship_types($contact_type, $data['contact'][$i]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$i]['contact'][1]['contact_sub_type']);
@@ -412,12 +412,12 @@ class CivicrmContact extends WebformElementBase {
       }
       $form['contact_defaults']['default_relationship']['#attributes']['data-reltypes'] = $form['filters']['relationship']['filter_relationship_types']['#attributes']['data-reltypes'] = json_encode($all_relationship_types);
     }
-    $form['filters']['check_permissions'] = array(
+    $form['filters']['check_permissions'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Enforce Permissions'),
       '#default_value' => $element_properties['filters']['check_permissions'],
       '#description' => $this->t('Only show contacts the acting user has permission to see in CiviCRM.') . '<br />' . $this->t('WARNING: Keeping this option enabled is highly recommended unless you are effectively controlling access by another method.'),
-    );
+    ];
 
 
     // Need to be hidden values so that they persist from configuration on the
@@ -440,23 +440,23 @@ class CivicrmContact extends WebformElementBase {
    * @return array
    */
   function wf_crm_results_display_options($contact_type) {
-    $options = array(
+    $options = [
       'display_name' => t("Display Name"),
       'sort_name' => t("Sort Name"),
-    );
+    ];
     if ($contact_type == 'individual') {
-      $options += array(
+      $options += [
         'first_name' => t("First Name"),
         'middle_name' => t("Middle Name"),
         'last_name' => t("Last Name"),
         'current_employer' => t("Current Employer"),
         'job_title' => t("Job Title"),
-      );
+      ];
     }
     else {
       $options[$contact_type . '_name'] = $contact_type == 'organization' ? t("Organization Name") : t("Household Name");
     }
-    $options += array(
+    $options += [
       'nick_name' => t("Nick Name"),
       'id' => t("Contact ID"),
       'external_identifier' => t("External ID"),
@@ -468,7 +468,7 @@ class CivicrmContact extends WebformElementBase {
       'country' => t("Country"),
       'postal_code' => t("Postal Code"),
       'phone' => t("Phone"),
-    );
+    ];
     return $options;
   }
 

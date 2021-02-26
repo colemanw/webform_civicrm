@@ -18,25 +18,25 @@ class ContactComponent implements ContactComponentInterface {
   function _webform_display_civicrm_contact($component, $value, $format = 'html') {
     $display = empty($value[0]) ? '' : \Drupal::service('webform_civicrm.utils')->wf_crm_display_name($value[0]);
     if ($format == 'html' && $display && user_access('access CiviCRM')) {
-      $display = l($display, 'civicrm/contact/view', array(
+      $display = l($display, 'civicrm/contact/view', [
         'alias' => TRUE,
-        'query' => array(
+        'query' => [
           'reset' => 1,
           'cid' => $value[0],
-        ),
-      ));
+        ],
+      ]);
     }
-    return array(
+    return [
       '#title' => $component['name'],
       '#weight' => $component['weight'],
       '#theme' => 'display_civicrm_contact',
-      '#theme_wrappers' => $format == 'html' ? array('webform_element') : array('webform_element_text'),
+      '#theme_wrappers' => $format == 'html' ? ['webform_element'] : ['webform_element_text'],
       '#field_prefix' => '',
       '#field_suffix' => '',
       '#format' => $format,
       '#value' => $display,
-      '#translatable' => array('title'),
-    );
+      '#translatable' => ['title'],
+    ];
   }
 
   /**
@@ -50,7 +50,7 @@ class ContactComponent implements ContactComponentInterface {
    * Implements _webform_csv_headers_component().
    */
   function _webform_csv_headers_civicrm_contact($component, $export_options) {
-    $header = array();
+    $header = [];
     $header[0] = '';
     $header[1] = '';
     $header[2] = $component['name'];
@@ -86,7 +86,7 @@ class ContactComponent implements ContactComponentInterface {
   //    return array();
   //  }
     $limit = $str ? 12 : 500;
-    $ret = array();
+    $ret = [];
     $display_fields = array_values($element['#results_display']);
     $search_field = 'display_name';
     $sort_field = 'sort_name';
@@ -94,17 +94,17 @@ class ContactComponent implements ContactComponentInterface {
     if (!in_array('display_name', $display_fields)) {
       $search_field = $sort_field = $display_fields[0];
     }
-    $params += array(
+    $params += [
       'rowCount' => $limit,
       'sort' => $sort_field,
       'return' => $display_fields,
-    );
+    ];
     if (!empty($params['relationship']['contact'])) {
       $c = $params['relationship']['contact'];
       $relations = NULL;
       if (!empty($contacts[$c]['id'])) {
         $relations = $this->wf_crm_find_relations($contacts[$c]['id'], wf_crm_aval($params['relationship'], 'types'));
-        $params['id'] = array('IN' => $relations);
+        $params['id'] = ['IN' => $relations];
       }
       if (!$relations) {
         return $ret;
@@ -114,25 +114,25 @@ class ContactComponent implements ContactComponentInterface {
     if ($str) {
       $str = str_replace(' ', '%', \CRM_Utils_Type::escape($str, 'String'));
       // The contact api takes a quirky format for display_name and sort_name
-      if (in_array($search_field, array('sort_name', 'display_name'))) {
+      if (in_array($search_field, ['sort_name', 'display_name'])) {
         $params[$search_field] = $str;
       }
       // Others use the standard convention
       else {
-        $params[$search_field] = array('LIKE' => "%$str%");
+        $params[$search_field] = ['LIKE' => "%$str%"];
       }
     }
     $result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('contact', 'get', $params);
     // Autocomplete results
     if ($str) {
-      foreach (wf_crm_aval($result, 'values', array()) as $contact) {
+      foreach (wf_crm_aval($result, 'values', []) as $contact) {
         if ($name = $this->wf_crm_format_contact($contact, $display_fields)) {
-          $ret[] = array('id' => $contact['id'], 'name' => $name);
+          $ret[] = ['id' => $contact['id'], 'name' => $name];
         }
       }
       if (count($ret) < $limit && $element['#allow_create']) {
         // HTML hack to get prompt to show up different than search results
-        $ret[] = array('id' => "-$str", 'name' => '<em><i>' . Xss::filter($element['#none_prompt']) . '</i></em>');
+        $ret[] = ['id' => "-$str", 'name' => '<em><i>' . Xss::filter($element['#none_prompt']) . '</i></em>'];
       }
     }
     // Select results
@@ -140,7 +140,7 @@ class ContactComponent implements ContactComponentInterface {
       if ($element['#allow_create']) {
         $ret['-'] = Xss::filter($element['#none_prompt']);
       }
-      foreach (wf_crm_aval($result, 'values', array()) as $contact) {
+      foreach (wf_crm_aval($result, 'values', []) as $contact) {
         // Select lists will be escaped by FAPI
         if ($name = $this->wf_crm_format_contact($contact, $display_fields, FALSE)) {
           $ret[$contact['id']] = $name;
@@ -150,7 +150,7 @@ class ContactComponent implements ContactComponentInterface {
       if (wf_crm_aval($result, 'count') >= $limit) {
         \Drupal::logger('webform_civicrm')->warning(
           'Maximum contacts exceeded, list truncated on the webform "@title". The webform_civicrm "@field" field cannot display more than @limit contacts because it is a select list. Recommend switching to autocomplete widget in element settings.',
-          array('@limit' => $limit, '@field' => $element['#title'], '@title' => $node->label()));
+          ['@limit' => $limit, '@field' => $element['#title'], '@title' => $node->label()]);
         if ($node->access('update') && \Drupal::currentUser()->hasPermission('access CiviCRM')) {
           $warning_message = \Drupal\Core\Render\Markup::create('<strong>' . t('Maximum contacts exceeded, list truncated.') .'</strong><br>' .
           t('The field "@field" cannot show more than @limit contacts because it is a select list. Recommend switching to autocomplete widget.', ['@limit' => $limit, '@field' => $element['#title']]));
@@ -222,7 +222,7 @@ class ContactComponent implements ContactComponentInterface {
     if (!$contact) {
       return FALSE;
     }
-    $display = array();
+    $display = [];
     foreach ($display_fields as $field) {
       if ($field && !empty($contact[$field])) {
         $display[] = $escape ? Html::escape($contact[$field]) : $contact[$field];
@@ -243,7 +243,7 @@ class ContactComponent implements ContactComponentInterface {
    *
    * @return array
    */
-  function wf_crm_find_relations($cid, $types = array(), $current = TRUE) {
+  function wf_crm_find_relations($cid, $types = [], $current = TRUE) {
     $utils = \Drupal::service('webform_civicrm.utils');
     $found = $allowed = $type_ids = [];
     $cid = (int) $cid;
@@ -352,7 +352,7 @@ class ContactComponent implements ContactComponentInterface {
    */
   function wf_crm_contact_component_required($element, &$form_state) {
     if (empty($element['#value'])) {
-      form_error($element, t('@name field is required.', array('@name' => $element['#title'])));
+      form_error($element, t('@name field is required.', ['@name' => $element['#title']]));
     }
   }
 
@@ -364,7 +364,7 @@ class ContactComponent implements ContactComponentInterface {
    * @return array
    */
   function wf_crm_get_defaults($node) {
-    $defaults = array();
+    $defaults = [];
     foreach ($node->webform['components'] as $comp) {
       if (!empty($comp['value'])) {
         $key = str_replace('_', '-', $comp['form_key']);

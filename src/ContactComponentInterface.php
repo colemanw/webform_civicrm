@@ -29,7 +29,7 @@ interface ContactComponentInterface {
    *
    * @return array
    */
-  function wf_crm_find_relations($cid, $types = array(), $current = TRUE);
+  function wf_crm_find_relations($cid, $types = [], $current = TRUE);
 
   /**
    * Load contact name if user has permission. Else return FALSE.

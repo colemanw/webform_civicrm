@@ -206,7 +206,7 @@ interface UtilsInterface {
    *  * 'plain': Do not escape (use when passing into an FAPI options list which does its own escaping)
    * @return string
    */
-  function wf_crm_contact_label($n, $data = array(), $html = 'escape');
+  function wf_crm_contact_label($n, $data = [], $html = 'escape');
 
   /**
    * Convert a | separated string into an array
@@ -260,7 +260,7 @@ interface UtilsInterface {
    * @return array
    *   Values from API call
    */
-  function wf_crm_apivalues($entity, $operation, $params = array(), $value = NULL);
+  function wf_crm_apivalues($entity, $operation, $params = [], $value = NULL);
 
   /**
    * Check if a name or email field exists for this contact.
