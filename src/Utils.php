@@ -283,7 +283,7 @@ class Utils implements UtilsInterface {
    *
    * @return array
    */
-  function wf_crm_get_surveys($act = array()) {
+  function wf_crm_get_surveys($act = []) {
     return $this->wf_crm_apivalues('survey', 'get', array_filter($act), 'title');
   }
 
@@ -292,13 +292,13 @@ class Utils implements UtilsInterface {
    * @return array
    */
   function wf_crm_get_campaign_activity_types() {
-    $ret = array();
+    $ret = [];
     if (array_key_exists('activity_survey_id', $this->wf_crm_get_fields())) {
-      $vals = $this->wf_crm_apivalues('option_value', 'get', array(
+      $vals = $this->wf_crm_apivalues('option_value', 'get', [
         'option_group_id' => 'activity_type',
         'is_active' => 1,
         'component_id' => 'CiviCampaign',
-      ));
+      ]);
       foreach ($vals as $val) {
         $ret[$val['value']] = $val['label'];
       }
@@ -313,10 +313,10 @@ class Utils implements UtilsInterface {
    * @return array
    */
   function wf_crm_get_contact_types() {
-    static $contact_types = array();
-    static $sub_types = array();
+    static $contact_types = [];
+    static $sub_types = [];
     if (!$contact_types) {
-      $data = $this->wf_crm_apivalues('contact_type', 'get', array('is_active' => 1));
+      $data = $this->wf_crm_apivalues('contact_type', 'get', ['is_active' => 1]);
       foreach ($data as $type) {
         if (empty($type['parent_id'])) {
           $contact_types[strtolower($type['name'])] = $type['label'];
@@ -325,7 +325,7 @@ class Utils implements UtilsInterface {
         $sub_types[strtolower($data[$type['parent_id']]['name'])][strtolower($type['name'])] = $type['label'];
       }
     }
-    return array($contact_types, $sub_types);
+    return [$contact_types, $sub_types];
   }
 
   /**
@@ -335,14 +335,14 @@ class Utils implements UtilsInterface {
    * @return array
    */
   function wf_crm_get_privacy_options() {
-    return array(
+    return [
       'do_not_email' => ts('Do not email'),
       'do_not_phone' => ts('Do not phone'),
       'do_not_mail' => ts('Do not mail'),
       'do_not_sms' => ts('Do not sms'),
       'do_not_trade' => ts('Do not trade'),
       'is_opt_out' => ts('NO BULK EMAILS (User Opt Out)'),
-    );
+    ];
   }
 
   /**
@@ -351,9 +351,9 @@ class Utils implements UtilsInterface {
    * @return array
    */
   function wf_crm_get_relationship_types() {
-    static $types = array();
+    static $types = [];
     if (!$types) {
-      foreach ($this->wf_crm_apivalues('relationship_type', 'get', array('is_active' => 1)) as $r) {
+      foreach ($this->wf_crm_apivalues('relationship_type', 'get', ['is_active' => 1]) as $r) {
         $r['type_a'] = strtolower(wf_crm_aval($r, 'contact_type_a'));
         $r['type_b'] = strtolower(wf_crm_aval($r, 'contact_type_b'));
         $r['sub_type_a'] = wf_crm_aval($r, 'contact_sub_type_a');
@@ -385,7 +385,7 @@ class Utils implements UtilsInterface {
    * @return array
    */
   function wf_crm_get_contact_relationship_types($type_a, $type_b, $sub_type_a, $sub_type_b) {
-    $ret = array();
+    $ret = [];
     foreach ($this->wf_crm_get_relationship_types() as $t) {
       $reciprocal = ($t['label_a_b'] != $t['label_b_a'] && $t['label_b_a'] || $t['type_a'] != $t['type_b']);
       if (($t['type_a'] == $type_a || !$t['type_a'])
@@ -440,7 +440,7 @@ class Utils implements UtilsInterface {
    * @return array of enabled fields
    */
   function wf_crm_enabled_fields(WebformInterface $webform, $submission = NULL, $show_all = FALSE) {
-    $enabled = array();
+    $enabled = [];
     $elements = $webform->getElementsDecodedAndFlattened();
     if (!empty($elements) || ($show_all)) {
       $handler_collection = $webform->getHandlers('webform_civicrm');
@@ -528,14 +528,14 @@ class Utils implements UtilsInterface {
     // Lookup current domain for multisite support
     static $domain = 0;
     if (!$domain) {
-      $domain = $this->wf_civicrm_api('domain', 'get', array('current_domain' => 1, 'return' => 'id'));
+      $domain = $this->wf_civicrm_api('domain', 'get', ['current_domain' => 1, 'return' => 'id']);
       $domain = wf_crm_aval($domain, 'id', 1);
     }
-    $result = $this->wf_crm_apivalues('uf_match', 'get', array(
+    $result = $this->wf_crm_apivalues('uf_match', 'get', [
       $type . '_id' => $id,
       'domain_id' => $domain,
       'sequential' => 1,
-    ));
+    ]);
     if ($result) {
       if (!empty($user_lookup)) {
         $current_user = $result[0]['contact_id'];
@@ -557,7 +557,7 @@ class Utils implements UtilsInterface {
       return '';
     }
     \Drupal::getContainer()->get('civicrm')->initialize();
-    $result = $this->wf_civicrm_api('contact', 'get', array('id' => $cid, 'return.display_name' => 1, 'is_deleted' => 0));
+    $result = $this->wf_civicrm_api('contact', 'get', ['id' => $cid, 'return.display_name' => 1, 'is_deleted' => 0]);
     return Html::escape(wf_crm_aval($result, "values:$cid:display_name", ''));
   }
 
@@ -570,10 +570,10 @@ class Utils implements UtilsInterface {
    *  * 'plain': Do not escape (use when passing into an FAPI options list which does its own escaping)
    * @return string
    */
-  function wf_crm_contact_label($n, $data = array(), $html = 'escape') {
+  function wf_crm_contact_label($n, $data = [], $html = 'escape') {
     $label = trim(wf_crm_aval($data, "contact:$n:contact:1:webform_label", ''));
     if (!$label) {
-      $label = t('Contact :num', array(':num' => $n));
+      $label = t('Contact :num', [':num' => $n]);
     }
     if ($html != 'plain') {
       $label = Html::escape($label);
@@ -593,7 +593,7 @@ class Utils implements UtilsInterface {
    * @return array of select options
    */
   function wf_crm_str2array($str) {
-    $ret = array();
+    $ret = [];
     if ($str) {
       foreach (explode("\n", trim($str)) as $row) {
         if ($row && $row[0] !== '<' && strpos($row, '|')) {
@@ -641,9 +641,9 @@ class Utils implements UtilsInterface {
       return [];
     }
 
-    $params += array(
+    $params += [
       'check_permissions' => FALSE,
-    );
+    ];
     if ($operation == 'transact') {
       $utils = \Drupal::service('webform_civicrm.utils');
       $result = $utils->wf_civicrm_api3_contribution_transact($params);
@@ -661,14 +661,14 @@ class Utils implements UtilsInterface {
       }
       \Drupal::logger('webform_civicrm')->error(
         'The CiviCRM "@function" API returned the error: "@msg" when called by function "@fn" on line @line of @file with parameters: "@params"',
-        array(
+        [
           '@function' => $entity . ' ' . $operation,
           '@msg' => $result['error_message'],
           '@fn' => $bt[$n+1]['function'],
           '@line' => $bt[$n]['line'],
           '@file' => array_pop($file),
           '@params' => print_r($params, TRUE),
-        )
+        ]
       );
     }
     return $result;
@@ -771,14 +771,14 @@ class Utils implements UtilsInterface {
    * @return array
    *   Values from API call
    */
-  function wf_crm_apivalues($entity, $operation, $params = array(), $value = NULL) {
+  function wf_crm_apivalues($entity, $operation, $params = [], $value = NULL) {
     if (is_numeric($params)) {
-      $params = array('id' => $params);
+      $params = ['id' => $params];
     }
-    $params += array('options' => array());
+    $params += ['options' => []];
     // Work around the api's default limit of 25
-    $params['options'] += array('limit' => 0);
-    $ret = wf_crm_aval($this->wf_civicrm_api($entity, $operation, $params), 'values', array());
+    $params['options'] += ['limit' => 0];
+    $ret = wf_crm_aval($this->wf_civicrm_api($entity, $operation, $params), 'values', []);
     if ($value) {
       foreach ($ret as &$values) {
         $values = wf_crm_aval($values, $value);
@@ -817,13 +817,13 @@ class Utils implements UtilsInterface {
    */
   function wf_crm_required_contact_fields($contact_type) {
     if ($contact_type == 'individual') {
-      return array(
-        array('table' => 'email', 'name' => 'email'),
-        array('table' => 'contact', 'name' => 'first_name'),
-        array('table' => 'contact', 'name' => 'last_name'),
-      );
+      return [
+        ['table' => 'email', 'name' => 'email'],
+        ['table' => 'contact', 'name' => 'first_name'],
+        ['table' => 'contact', 'name' => 'last_name'],
+      ];
     }
-    return array(array('table' => 'contact', 'name' => $contact_type . '_name'));
+    return [['table' => 'contact', 'name' => $contact_type . '_name']];
   }
 
   /**
@@ -832,7 +832,7 @@ class Utils implements UtilsInterface {
    * @return array
    */
   function wf_crm_location_fields() {
-    return array('address', 'email', 'phone', 'website', 'im');
+    return ['address', 'email', 'phone', 'website', 'im'];
   }
 
   /**
@@ -841,7 +841,7 @@ class Utils implements UtilsInterface {
    * @return array
    */
   function wf_crm_address_fields() {
-    $fields = array();
+    $fields = [];
     foreach (array_keys($this->wf_crm_get_fields()) as $key) {
       if (strpos($key, 'address') === 0) {
         $fields[] = substr($key, 8);
@@ -877,7 +877,7 @@ class Utils implements UtilsInterface {
    * @return array $sets
    */
   function wf_crm_get_empty_sets() {
-    $sets = array();
+    $sets = [];
 
     $sql = "SELECT cg.id, cg.title, cg.help_pre, cg.extends, SUM(cf.is_active) as custom_field_sum
             FROM civicrm_custom_group cg
@@ -911,23 +911,23 @@ class Utils implements UtilsInterface {
    * @return array
    */
   function wf_crm_custom_types_map_array() {
-    $custom_types = array(
-      'Select' => array('type' => 'select'),
-      'Multi-Select' => array('type' => 'select', 'extra' => array('multiple' => 1)),
-      'Radio' => array('type' => 'select', 'extra' => array('aslist' => 0)),
-      'CheckBox' => array('type' => 'select', 'extra' => array('multiple' => 1)),
-      'Text'  => array('type' => 'textfield'),
-      'TextArea' => array('type' => 'textarea'),
-      'RichTextEditor' => array('type' => \Drupal::moduleHandler()->moduleExists('webform_html_textarea') ? 'html_textarea' : 'textarea'),
-      'Select Date' => array('type' => 'date'),
-      'Link'  => array('type' => 'textfield'),
-      'Select Country' => array('type' => 'select'),
-      'Multi-Select Country' => array('type' => 'select', 'extra' => array('multiple' => 1)),
-      'Select State/Province' => array('type' => 'select'),
-      'Multi-Select State/Province' => array('type' => 'select', 'extra' => array('multiple' => 1)),
-      'Autocomplete-Select' => array('type' => \Drupal::moduleHandler()->moduleExists('webform_autocomplete') ? 'autocomplete' : 'select'),
-      'File' => array('type' => 'file'),
-    );
+    $custom_types = [
+      'Select' => ['type' => 'select'],
+      'Multi-Select' => ['type' => 'select', 'extra' => ['multiple' => 1]],
+      'Radio' => ['type' => 'select', 'extra' => ['aslist' => 0]],
+      'CheckBox' => ['type' => 'select', 'extra' => ['multiple' => 1]],
+      'Text'  => ['type' => 'textfield'],
+      'TextArea' => ['type' => 'textarea'],
+      'RichTextEditor' => ['type' => \Drupal::moduleHandler()->moduleExists('webform_html_textarea') ? 'html_textarea' : 'textarea'],
+      'Select Date' => ['type' => 'date'],
+      'Link'  => ['type' => 'textfield'],
+      'Select Country' => ['type' => 'select'],
+      'Multi-Select Country' => ['type' => 'select', 'extra' => ['multiple' => 1]],
+      'Select State/Province' => ['type' => 'select'],
+      'Multi-Select State/Province' => ['type' => 'select', 'extra' => ['multiple' => 1]],
+      'Autocomplete-Select' => ['type' => \Drupal::moduleHandler()->moduleExists('webform_autocomplete') ? 'autocomplete' : 'select'],
+      'File' => ['type' => 'file'],
+    ];
 
     return $custom_types;
   }
@@ -938,19 +938,19 @@ class Utils implements UtilsInterface {
    * @return mixed
    */
   function wf_crm_get_civi_setting($setting_name, $default_value = NULL) {
-    $aliases = array(
+    $aliases = [
       'defaultCurrencySymbol' => 'defaultCurrency',
-    );
-    $settings = $this->wf_civicrm_api('Setting', 'get', array(
+    ];
+    $settings = $this->wf_civicrm_api('Setting', 'get', [
       'sequential' => 1,
       'return' => str_replace(array_keys($aliases), array_values($aliases), $setting_name),
-    ));
+    ]);
     // Not a real setting, requires cross-lookup
     if ($setting_name == 'defaultCurrencySymbol') {
-      $currencies = $this->wf_crm_apivalues('Contribution', 'getoptions', array(
+      $currencies = $this->wf_crm_apivalues('Contribution', 'getoptions', [
         'field' => "currency",
         'context' => "abbreviate",
-      ));
+      ]);
       return wf_crm_aval($currencies, $settings['values'][0]['defaultCurrency'], $default_value);
     }
     $result = wf_crm_aval($settings, "values:0:$setting_name", $default_value);

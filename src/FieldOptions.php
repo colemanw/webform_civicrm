@@ -27,7 +27,7 @@ class FieldOptions implements FieldOptionsInterface {
 
       if ($name === 'contact_sub_type') {
         list($contact_types, $sub_types) = $utils->wf_crm_get_contact_types();
-        $ret = wf_crm_aval($sub_types, $data['contact'][$c]['contact'][1]['contact_type'], array());
+        $ret = wf_crm_aval($sub_types, $data['contact'][$c]['contact'][1]['contact_type'], []);
       }
       elseif ($name === 'relationship_type_id') {
         $ret = $utils->wf_crm_get_contact_relationship_types($data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][$n]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$n]['contact'][1]['contact_sub_type']);
@@ -64,17 +64,17 @@ class FieldOptions implements FieldOptionsInterface {
         $ret = $utils->wf_crm_get_tags($ent, wf_crm_aval($split, 1));
       }
       elseif (isset($field['table']) && $field['table'] === 'group') {
-        $ret = $utils->wf_crm_apivalues('group', 'get', array('is_hidden' => 0), 'title');
+        $ret = $utils->wf_crm_apivalues('group', 'get', ['is_hidden' => 0], 'title');
       }
       elseif ($name === 'survey_id') {
-        $ret = $utils->wf_crm_get_surveys(wf_crm_aval($data, "activity:$c:activity:1", array()));
+        $ret = $utils->wf_crm_get_surveys(wf_crm_aval($data, "activity:$c:activity:1", []));
       }
       elseif ($name == 'event_id') {
         $ret = $utils->wf_crm_get_events($data['reg_options'], $context);
       }
       elseif ($table == 'contribution' && $name == 'is_test') {
         // Getoptions would return 'yes' and 'no' - this is a bit more descriptive
-        $ret = array(0 => t('Live Transactions'), 1 => t('Test Mode'));
+        $ret = [0 => t('Live Transactions'), 1 => t('Test Mode')];
       }
       // Not a real field so can't call getoptions for this one
       elseif ($table == 'membership' && $name == 'num_terms') {
@@ -94,7 +94,7 @@ class FieldOptions implements FieldOptionsInterface {
       }
       // Aside from the above special cases, most lists can be fetched from api.getoptions
       else {
-        $params = array('field' => $name, 'context' => 'create');
+        $params = ['field' => $name, 'context' => 'create'];
         // Special case for contribution_recur fields
         if ($table == 'contribution' && strpos($name, 'frequency_') === 0) {
           $table = 'contribution_recur';
@@ -109,14 +109,14 @@ class FieldOptions implements FieldOptionsInterface {
         }
         else {
           // Pass data into api.getoptions for contextual filtering
-          $params += wf_crm_aval($data, "$ent:$c:$table:$n", array());
+          $params += wf_crm_aval($data, "$ent:$c:$table:$n", []);
         }
         $ret = $utils->wf_crm_apivalues($table, 'getoptions', $params);
 
         // Hack to format money data correctly
         if (!empty($field['data_type']) && $field['data_type'] === 'Money') {
           $old = $ret;
-          $ret = array();
+          $ret = [];
           foreach ($old as $key => $val) {
             $ret[number_format(str_replace(',', '', $key), 2, '.', '')] = $val;
           }
@@ -124,7 +124,7 @@ class FieldOptions implements FieldOptionsInterface {
       }
       // Remove options that were set behind the scenes on the admin form
       if ($context != 'config_form' && !empty($field['extra']['multiple']) && !empty($field['expose_list'])) {
-        foreach (wf_crm_aval($data, "$ent:$c:$table:$n:$name", array()) as $key => $val) {
+        foreach (wf_crm_aval($data, "$ent:$c:$table:$n:$name", []) as $key => $val) {
           unset($ret[$key]);
         }
       }
