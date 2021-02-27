@@ -153,8 +153,9 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
    * @param bool $multiple
    * @param bool $enableStatic
    *   TRUE if static radio option should be enabled.
+   * @param bool $default
    */
-  protected function editCivicrmOptionElement($selector, $multiple = TRUE, $enableStatic = FALSE) {
+  protected function editCivicrmOptionElement($selector, $multiple = TRUE, $enableStatic = FALSE, $default = NULL) {
     $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="' . $selector . '"] a.webform-ajax-link');
     $checkbox_edit_button->click();
     $this->assertSession()->assertWaitOnAjaxRequest();
@@ -164,6 +165,9 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       $this->getSession()->getPage()->selectFieldOption("properties[civicrm_live_options]", 0);
       $this->assertSession()->assertWaitOnAjaxRequest();
       $this->assertSession()->waitForField('properties[options][options][civicrm_option_1][enabled]');
+    }
+    if ($default) {
+      $this->getSession()->getPage()->selectFieldOption("properties[options][default]", $default);
     }
     $this->getSession()->getPage()->uncheckField('properties[extra][aslist]');
     $this->assertSession()->checkboxNotChecked('properties[extra][aslist]');
@@ -246,8 +250,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $driver = $this->getSession()->getDriver()->getWebDriverSession();
     $elementXpath = $page->findField($id)->getXpath();
 
-    $element = $this->assertSession()->elementExists('css', "#" . $id);
-    $element->click();
+    $this->assertSession()->elementExists('css', "#" . $id)->click();
     $driver->element('xpath', $elementXpath)->postValue(['value' => [$value]]);
 
     $this->assertSession()->waitForElementVisible('xpath', '//li[contains(@class, "token-input-dropdown")][1]');

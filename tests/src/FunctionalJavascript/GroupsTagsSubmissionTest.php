@@ -12,8 +12,6 @@ use Drupal\Core\Url;
 final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
 
   public function testSubmitWebform() {
-    $utils = \Drupal::service('webform_civicrm.utils');
-
     $this->drupalLogin($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
@@ -46,8 +44,24 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
     $this->assertPageNoErrorMessages();
 
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+    $this->assertSession()->waitForField('Checkboxes');
+    $this->htmlOutput();
+    $majorDonorTagID = $this->utils->wf_civicrm_api('Tag', 'get', [
+      'name' => "Major Donor",
+    ])['id'];
+    //Make Major Donor as the default option.
+    $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contact-1-other-tag-operations', TRUE, FALSE, $majorDonorTagID);
+    //Ensure default option is loaded.
+    $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-other-tag-operations"] a.webform-ajax-link');
+    $checkbox_edit_button->click();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    //Verify if default radio is selected.
+    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-properties-options-default"][value=' . $majorDonorTagID . ']')->isChecked();
+
     //Create another tag and confirm if it loads fine on the webform.
-    $tagID = $utils->wf_civicrm_api('Tag', 'create', [
+    $tagID = $this->utils->wf_civicrm_api('Tag', 'create', [
       'name' => "Tag" . substr(sha1(rand()), 0, 4),
     ])['id'];
     $this->drupalGet($this->webform->toUrl('canonical'));
@@ -72,15 +86,14 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
-    $contactID = $utils->wf_civicrm_api('Contact', 'get', $params)['id'];
-    $api_result = $utils->wf_civicrm_api('Contact', 'get', [
+    $contactID = $this->utils->wf_civicrm_api('Contact', 'get', $params)['id'];
+    $contactTags = explode(',', $this->utils->wf_civicrm_api('Contact', 'get', [
       'sequential' => 1,
       'return' => ["tag"],
       'contact_id' => $contactID,
-    ]);
-
-    // throw new \Exception(var_export($api_result, TRUE));
-    $this->assertEquals('Volunteer', $api_result['values'][0]['tags']);
+    ])['values'][0]['tags']);
+    $this->assertArrayHasKey('Major Donor', array_flip($contactTags));
+    $this->assertArrayHasKey('Volunteer', array_flip($contactTags));
   }
 
 }
