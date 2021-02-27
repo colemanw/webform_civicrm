@@ -4,5 +4,5 @@ description: 'Webform CiviCRM Integration'
 core_version_requirement: ^8.8 || ^9
 package: 'Custom'
 dependencies:
-  - drupal:webform (>= 6.0)
+  - drupal:webform
   - civicrm
