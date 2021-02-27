@@ -538,8 +538,8 @@ class AdminForm implements AdminFormInterface {
             }
             $wrap['case']["activity_{$n}_settings_case_type_id"]['#options'] = [
               t('- None -'),
-              t('This Webform') => $webform_cases,
-              t('Find by Case Type') => $case_types,
+              'This Webform' => $webform_cases,
+              'Find by Case Type' => $case_types,
             ];
           }
           $this->help($wrap['case']["activity_{$n}_settings_case_type_id"], 'file_on_case');
