@@ -1279,9 +1279,12 @@ class AdminForm implements AdminFormInterface {
       '#group' => 'webform_civicrm',
       '#title' => t('Additional Options'),
       '#attributes' => ['class' => ['civi-icon-prefs']],
-      '#description' => '<p>' .
-        t('To have this form auto-filled for anonymous users, enable the "Existing Contact" field for :contact and send the following link from CiviMail:', [':contact' => $utils->wf_crm_contact_label(1, $this->data, TRUE)]) .
-        '<br /><code>' . Url::fromRoute('entity.webform.canonical', ['webform' => $this->webform->id()], ['query' => ['cid1' => '']])->toString() . '{contact.contact_id}&amp;{contact.checksum}</code></p>',
+    ];
+    $this->form['options']['checksum_text'] = [
+      '#type' => 'item',
+      '#markup' => '<p>' .
+        t('To have this form auto-filled for anonymous users, enable the "Existing Contact" field for :contact and send the following link from CiviMail:', [':contact' => $utils->wf_crm_contact_label(1, $this->data, 'escape')]) .
+        '<br /><pre>' . Url::fromRoute('entity.webform.canonical', ['webform' => $this->webform->id()], ['query' => ['cid1' => ''], 'absolute' => TRUE])->toString() . '{contact.contact_id}&amp;{contact.checksum}</pre></p>',
     ];
     $this->form['options']['create_fieldsets'] = [
       '#type' => 'checkbox',
