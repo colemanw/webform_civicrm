@@ -122,8 +122,8 @@ class CivicrmSelectOptions extends FormElement {
           return 1;
         }
 
-        $a_weight = $weight_values[$a];
-        $b_weight = $weight_values[$b];
+        $a_weight = $weight_values[$a] ?? 0;
+        $b_weight = $weight_values[$b] ?? 0;
         if ($a_weight == $b_weight) {
           return 0;
         }
@@ -157,7 +157,7 @@ class CivicrmSelectOptions extends FormElement {
         '#type' => 'radio',
         '#title' => t('Mark @item as the default value', ['@item' => $option]),
         '#title_display' => 'invisible',
-        '#default_value' => $element['#default_option'] == $key,
+        '#default_value' => $element['#default_option'] == $key ? $key : 0,
         '#parents' => array_merge($element['#parents'], ['default']),
         '#return_value' => $key,
       ];
