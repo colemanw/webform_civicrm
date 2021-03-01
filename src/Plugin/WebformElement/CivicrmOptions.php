@@ -156,7 +156,7 @@ class CivicrmOptions extends WebformElementBase {
     $is_multiple = !empty($element['#extra']['multiple']);
     $use_live_options = !empty($element['#civicrm_live_options']);
     $data = [];
-    if ($webform_submission) {
+    if ($webform_submission && $webform_submission->getWebform()->getHandlers()->has('webform_civicrm')) {
       $data = $webform_submission->getWebform()->getHandler('webform_civicrm')->getConfiguration()['settings']['data'] ?? [];
     }
 
