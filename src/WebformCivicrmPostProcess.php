@@ -147,14 +147,17 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   }
 
   /**
-   * Modify data in webform submission.
+   * Modify data in webform submission. civicrm_options element's key is submitted to the delta
+   * column of webform_submission_data. Make sure it is not set to a string value.
    *
    * @param \Drupal\webform\WebformSubmissionInterface $webform_submission
    */
   protected function modifyWebformSubmissionData(WebformSubmissionInterface $webform_submission) {
     $data = $webform_submission->getData();
+    $webform = $webform_submission->getWebform();
     foreach ($data as $field_key => $val) {
-      if (substr($field_key, -20) === 'relationship_type_id' && is_array($val)) {
+      $element = $webform->getElement($field_key);
+      if ($element['#type'] == 'civicrm_options' && is_array($val) && count(array_filter(array_keys($val), 'is_string')) > 0) {
         $data[$field_key] = array_values($val);
       }
     }

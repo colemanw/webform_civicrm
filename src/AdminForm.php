@@ -1743,7 +1743,8 @@ class AdminForm implements AdminFormInterface {
         list(, $c, $ent, $n, $table, $name) = explode('_', $key, 6);
         $info = '';
         $element = $this->webform->getElement($id);
-        $info = '<em>' . $this->getSettings()["{$c}_webform_label"];
+        $label = $this->getSettings()["{$c}_webform_label"] ?? '';
+        $info = '<em>' . $label;
         if ($info && isset($this->sets[$table]['max_instances'])) {
           $info .= ' ' . $this->sets[$table]['label'] . ' ' . $n;
         }
@@ -1791,8 +1792,9 @@ class AdminForm implements AdminFormInterface {
           if (substr($key, -8) == 'fieldset') {
             list(, $c, $ent, $i) = explode('_', $key);
             if ($ent == 'contact' && $i == 1 && (!$this->settings['nid'] || $c > $this->settings['number_of_contacts'])) {
-              if (!_wf_crm_child_components($this->node->nid, $id)) {
-                webform_component_delete($this->node, $this->node->webform['components'][$id]);
+              $children = $this->webform->getElement($id)['#webform_children'] ?? [];
+              if (empty($children)) {
+                $this->webform->deleteElement($id);
               }
             }
           }
