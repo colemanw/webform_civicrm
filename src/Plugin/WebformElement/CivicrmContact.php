@@ -415,7 +415,7 @@ class CivicrmContact extends WebformElementBase {
     $form['filters']['check_permissions'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Enforce Permissions'),
-      '#default_value' => $element_properties['filters']['check_permissions'],
+      '#default_value' => $element_properties['check_permissions'],
       '#description' => $this->t('Only show contacts the acting user has permission to see in CiviCRM.') . '<br />' . $this->t('WARNING: Keeping this option enabled is highly recommended unless you are effectively controlling access by another method.'),
     ];
 

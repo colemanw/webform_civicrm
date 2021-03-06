@@ -316,16 +316,13 @@ var wfCiviAdmin = (function ($, D) {
         });
         return label.join('<br />') || Drupal.t('- None -');
       });
-      $('details#edit-options', context).once('wf-civi').drupalSetSummary(function (context) {
+      $('details#edit-additional-options', context).once('wf-civi').drupalSetSummary(function (context) {
         var label = '';
         $(':checked', context).each(function() {
           label = (label ? label + ', ' : '') + $.trim($(this).siblings('label').text());
         });
         return label || Drupal.t('- None -');
       });
-
-      // For some reason this tab doesn't jive.
-      document.getElementById('edit-membership').open = true;
 
       $('select[name=participant_reg_type]', context).once('wf-civi').change(function() {
         showHideParticipantOptions('fast');

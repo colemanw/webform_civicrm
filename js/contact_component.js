@@ -36,7 +36,7 @@ var wfCiviContact = (function ($, D) {
     attach: function (context) {
       $('#edit-extra-default', context).once('wf-civi').change(function() {
         var val = $(this).val().replace(/_/g, '-');
-        $('#edit-defaults > div > .form-item', context).not('.form-item-extra-default, .form-item-extra-allow-url-autofill').each(function() {
+        $('#edit-contact-defaults > div > .form-item', context).not('.form-item-extra-default, .form-item-extra-allow-url-autofill').each(function() {
           if ($(this).hasClass('form-item-extra-default-'+val)) {
             $(this).removeAttr('style');
           }
