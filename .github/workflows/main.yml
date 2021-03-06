@@ -12,11 +12,11 @@ jobs:
       matrix:
         include:
           - drupal: '^8.9'
-            civicrm: '~5.34'
+            civicrm: '~5.35'
           - drupal: '^8.9'
-            civicrm: '5.35.x-dev'
+            civicrm: '5.36.x-dev'
           - drupal: '^9.0'
-            civicrm: '5.35.x-dev'
+            civicrm: '5.36.x-dev'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
     services:
       mysql:
