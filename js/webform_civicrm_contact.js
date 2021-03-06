@@ -38,7 +38,7 @@
       function changeDefault() {
         var val = $(this).val().replace(/_/g, '-');
 
-        $('[data-drupal-selector=edit-contact-defaults] > div > .form-item', context).not('.form-item-properties-default, .form-item-properties-allow-url-autofill').each(function() {
+        $('[data-drupal-selector=edit-contact-defaults] > div > .form-item', context).not('[class$=properties-default], [class$=properties-allow-url-autofill]').each(function() {
           if (val.length && $(this).is('[class*=form-item-properties-default-'+val+']')) {
             $(this).removeAttr('style');
           }

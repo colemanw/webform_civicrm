@@ -1274,25 +1274,25 @@ class AdminForm implements AdminFormInterface {
    */
   private function buildOptionsTab() {
     $utils = \Drupal::service('webform_civicrm.utils');
-    $this->form['options'] = [
+    $this->form['additional_options'] = [
       '#type' => 'details',
       '#group' => 'webform_civicrm',
       '#title' => t('Additional Options'),
       '#attributes' => ['class' => ['civi-icon-prefs']],
     ];
-    $this->form['options']['checksum_text'] = [
+    $this->form['additional_options']['checksum_text'] = [
       '#type' => 'item',
       '#markup' => '<p>' .
         t('To have this form auto-filled for anonymous users, enable the "Existing Contact" field for :contact and send the following link from CiviMail:', [':contact' => $utils->wf_crm_contact_label(1, $this->data, 'escape')]) .
         '<br /><pre>' . Url::fromRoute('entity.webform.canonical', ['webform' => $this->webform->id()], ['query' => ['cid1' => ''], 'absolute' => TRUE])->toString() . '{contact.contact_id}&amp;{contact.checksum}</pre></p>',
     ];
-    $this->form['options']['create_fieldsets'] = [
+    $this->form['additional_options']['create_fieldsets'] = [
       '#type' => 'checkbox',
       '#title' => t('Create Fieldsets'),
       '#default_value' => (bool) $this->settings['create_fieldsets'],
       '#description' => t('Create a fieldset around each contact, activity, etc. Provides visual organization of your form.'),
     ];
-    $this->form['options']['confirm_subscription'] = [
+    $this->form['additional_options']['confirm_subscription'] = [
       '#type' => 'checkbox',
       '#title' => t('Confirm Subscriptions'),
       '#default_value' => (bool) $this->settings['confirm_subscription'],
@@ -1304,24 +1304,24 @@ class AdminForm implements AdminFormInterface {
         $ml = array_slice($ml, 0, 3);
         $ml[] = t('etc.');
       }
-      $this->form['options']['confirm_subscription']['#description'] .= implode(', ', $ml) . '</em>';
+      $this->form['additional_options']['confirm_subscription']['#description'] .= implode(', ', $ml) . '</em>';
     }
     else {
-      $this->form['options']['confirm_subscription']['#description'] .= t('none') . '</em>';
+      $this->form['additional_options']['confirm_subscription']['#description'] .= t('none') . '</em>';
     }
-    $this->form['options']['block_unknown_users'] = [
+    $this->form['additional_options']['block_unknown_users'] = [
       '#type' => 'checkbox',
       '#title' => t('Block Unknown Users'),
       '#default_value' => !empty($this->settings['block_unknown_users']),
       '#description' => t('Only allow users to see this form if they are logged in or following a personalized link from CiviMail.'),
     ];
-    $this->form['options']['create_new_relationship'] = [
+    $this->form['additional_options']['create_new_relationship'] = [
       '#type' => 'checkbox',
       '#title' => t('Create New Relationship'),
       '#default_value' => !empty($this->settings['create_new_relationship']),
       '#description' => t('If enabled, only Active relationships will load on the form, and will be updated on Submit. If there are no Active relationships then a new one will be created.'),
     ];
-    $this->form['options']['new_contact_source'] = [
+    $this->form['additional_options']['new_contact_source'] = [
       '#type' => 'textfield',
       '#title' => t('Source Label'),
       '#maxlength' => 255,
