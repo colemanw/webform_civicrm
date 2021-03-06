@@ -94,6 +94,11 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     ])['values'][0]['tags']);
     $this->assertArrayHasKey('Major Donor', array_flip($contactTags));
     $this->assertArrayHasKey('Volunteer', array_flip($contactTags));
+    //Ensure option labels are present on result page.
+    $this->drupalGet($this->webform->toUrl('results-submissions'));
+    $this->htmlOutput();
+    $this->assertSession()->pageTextContains('Major Donor');
+    $this->assertSession()->pageTextContains('Volunteer');
   }
 
 }
