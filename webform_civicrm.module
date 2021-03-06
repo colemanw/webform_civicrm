@@ -10,7 +10,6 @@ use Drupal\webform\Entity\Webform;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\webform\Entity\WebformSubmission;
-use Drupal\webform_civicrm\Utils;
 use Drupal\node\Entity\Node;
 
 /**
@@ -117,6 +116,34 @@ function webform_civicrm_theme() {
       'base hook' => 'input',
     ],
   ];
+}
+
+/**
+ * Implements hook_entity_load()
+ * Display labels for civicrm option element.
+ */
+function webform_civicrm_webform_submission_load($entities) {
+  $utils = \Drupal::service('webform_civicrm.utils');
+  foreach ($entities as $entity) {
+    $data = $entity->getData();
+    $webform = $entity->getWebform();
+    foreach ($data as $key => $val) {
+      $element = $webform->getElement($key);
+      if ($element['#type'] == 'civicrm_options' && !empty($val)) {
+        if (!empty($element['#webform_multiple'])) {
+          foreach ($val as $k => $v) {
+            if (isset($element['#options'][$v])) {
+              $data[$key][$k] = $element['#options'][$v];
+            }
+          }
+        }
+        elseif (isset($element['#options'][$val])) {
+          $data[$key] = $element['#options'][$val];
+        }
+      }
+    }
+    $entity->setData($data);
+  }
 }
 
 /**
