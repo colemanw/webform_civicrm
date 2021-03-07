@@ -41,12 +41,12 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField('nid');
     $this->getSession()->getPage()->clickLink('Memberships');
 
-    //Configure Membership tab.
+    // Configure Membership tab.
     $this->getSession()->getPage()->selectFieldOption('membership_1_number_of_membership', 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
-    //Configure Contribution tab and enable recurring.
+    // Configure Contribution tab and enable recurring.
     $this->getSession()->getPage()->clickLink('Contribution');
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
@@ -105,7 +105,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
-    //Assert if recur is attached to the created membership.
+    // Assert if recur is attached to the created membership.
     $utils = \Drupal::service('webform_civicrm.utils');
     $api_result = $utils->wf_civicrm_api('membership', 'get', [
       'sequential' => 1,
@@ -149,8 +149,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->pressButton('Submit');
 
-    // ToDo -> figure out what Error message it is! The submission itself works well.
-    // $this->assertPageNoErrorMessages();
+    $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     $api_result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('membership', 'get', [
