@@ -50,24 +50,24 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $majorDonorTagID = $this->utils->wf_civicrm_api('Tag', 'get', [
       'name' => "Major Donor",
     ])['id'];
-    //Make Major Donor as the default option.
+    // Make Major Donor as the default option.
     $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contact-1-other-tag-operations', TRUE, FALSE, $majorDonorTagID);
-    //Ensure default option is loaded.
+    // Ensure default option is loaded.
     $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-other-tag-operations"] a.webform-ajax-link');
     $checkbox_edit_button->click();
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
-    //Verify if default radio is selected.
+    // Verify if default radio is selected.
     $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-properties-options-default"][value=' . $majorDonorTagID . ']')->isChecked();
 
-    //Create another tag and confirm if it loads fine on the webform.
+    // Create another tag and confirm if it loads fine on the webform.
     $tagID = $this->utils->wf_civicrm_api('Tag', 'create', [
       'name' => "Tag" . substr(sha1(rand()), 0, 4),
     ])['id'];
+
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
     $this->assertSession()->elementExists('css', "#edit-civicrm-1-contact-1-other-tag-{$tagID}");
-
     $this->assertSession()->waitForField('First Name');
     $params = [
       'first_name' => 'Frederick',
@@ -83,7 +83,6 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertPageNoErrorMessages();
-    $this->htmlOutput();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     $contactID = $this->utils->wf_civicrm_api('Contact', 'get', $params)['id'];
@@ -94,11 +93,42 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     ])['values'][0]['tags']);
     $this->assertArrayHasKey('Major Donor', array_flip($contactTags));
     $this->assertArrayHasKey('Volunteer', array_flip($contactTags));
-    //Ensure option labels are present on result page.
+    // Ensure option labels are present on result page.
     $this->drupalGet($this->webform->toUrl('results-submissions'));
     $this->htmlOutput();
     $this->assertSession()->pageTextContains('Major Donor');
     $this->assertSession()->pageTextContains('Volunteer');
+
+    // Now let's reload the form and Uncheck Volunteer - then confirm it has been unchecked
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->getSession()->getPage()->checkField('Existing Contact');
+    $this->assertSession()->checkboxChecked('Existing Contact');
+    $this->getSession()->getPage()->pressButton('Save Settings');
+    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    $this->assertPageNoErrorMessages();
+
+    // Frederick is $contactID = 3
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $contactID]]));
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->waitForField('Volunteer');
+    $this->getSession()->getPage()->uncheckField('Volunteer');
+    $this->assertSession()->checkboxNotChecked('Volunteer');
+    $this->htmlOutput();
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
+    $contactID = $this->utils->wf_civicrm_api('Contact', 'get', $params)['id'];
+    $contactTags = explode(',', $this->utils->wf_civicrm_api('Contact', 'get', [
+      'sequential' => 1,
+      'return' => ["tag"],
+      'contact_id' => $contactID,
+    ])['values'][0]['tags']);
+    $this->assertArrayHasKey('Major Donor', array_flip($contactTags));
+    $this->assertArrayNotHasKey('Volunteer', array_flip($contactTags));
+    // throw new \Exception(var_export($contactTags, TRUE));
   }
 
 }
