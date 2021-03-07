@@ -1674,8 +1674,8 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
             $type = $membership_item['membership_type_id'];
             $price = $this->getMembershipTypeField($type, 'minimum_fee');
 
-            //if number of terms is set, regard membership fee field as price per term
-            //if you choose to set dates manually while membership fee field is enabled, take the membership fee as total cost of this membership
+            // if number of terms is set, regard membership fee field as price per term
+            // if you choose to set dates manually while membership fee field is enabled, take the membership fee as total cost of this membership
             if (isset($membership_item['fee_amount'])) {
               $price = $membership_item['fee_amount'];
               if (empty($membership_item['num_terms'])) {

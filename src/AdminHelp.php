@@ -308,8 +308,6 @@ class AdminHelp implements AdminHelpInterface {
   protected function membership_fee_amount() {
     return '<p>' .
       t('Price for this membership per term. If this field is enabled, the default minimum membership fee from CiviCRM membership type settings will not be loaded.') .
-      '</p><p>' .
-      t('Note that if this field is enabled, the default minimum membership fee from CiviCRM membership type settings will not be loaded.') .
       '</p>';
     $this->fee();
   }
