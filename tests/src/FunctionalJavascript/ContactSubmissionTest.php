@@ -159,6 +159,15 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
 
     //Enable Autocomplete on the contact Element.
     $this->drupalGet($this->webform->toUrl('edit-form'));
+    //Assert civicrm elements are not loaded on Add Element form.
+    $this->assertSession()->elementExists('css', '#webform-ui-add-element')->click();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->assertSession()->elementNotExists('css', '[data-drupal-selector="edit-elements-civicrm-contact"]');
+    $this->assertSession()->elementNotExists('css', '[data-drupal-selector="edit-elements-civicrm-options"]');
+    $this->assertSession()->elementNotExists('css', '[data-drupal-selector="edit-elements-civicrm-select"]');
+    $this->getSession()->getPage()->pressButton('Close');
+
     $contactElementEdit = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations"] a.webform-ajax-link');
     $contactElementEdit->click();
     $this->assertSession()->assertWaitOnAjaxRequest();
