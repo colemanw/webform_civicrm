@@ -2406,6 +2406,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           if (!empty($this->data[$ent][$c][$table][$n][$name]) && is_array($this->data[$ent][$c][$table][$n][$name])) {
             $val = array_unique(array_merge($val, $this->data[$ent][$c][$table][$n][$name]));
           }
+          if (substr($name, 0, 6) === 'custom' || ($table == 'other' && in_array($name, ['group', 'tag']))) {
+            $val = array_filter($val);
+          }
+
           // We need to handle items being de-selected too and provide an array to pass to Entity.create API
           // Extract a list of available items
           $exposedOptions = $this->getExposedOptions($field_key);
@@ -2415,11 +2419,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
               $customValue[] = $itemName;
             }
           }
-
-          if ($table == 'other' && in_array($name, ['group', 'tag'])) {
-            $val = array_filter($val);
-          }
-
           // Implode data that will be stored as a string
           if ($table !== 'other' && $name !== 'event_id' && $name !== 'relationship_type_id' && $table !== 'contact' && $dataType != 'ContactReference' && strpos($name, 'tag') !== 0) {
             $val = \CRM_Utils_Array::implodePadded($val);
