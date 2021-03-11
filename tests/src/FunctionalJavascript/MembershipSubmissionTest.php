@@ -46,6 +46,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_membership_1_membership_membership_type_id', '- User Select -');
     $this->htmlOutput();
+    $this->createScreenshot($this->htmlOutputDirectory . '/membership_page_settings.png');
 
     // Configure Contribution tab and enable recurring.
     $this->getSession()->getPage()->clickLink('Contribution');
