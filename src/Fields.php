@@ -731,7 +731,7 @@ class Fields implements FieldsInterface {
       if (isset($sets['membership'])) {
         $fields['membership_membership_type_id'] = [
           'name' => t('Membership Type'),
-          'type' => 'civicrm_select',
+          'type' => 'select',
           'expose_list' => TRUE,
           'civicrm_live_options' => 1,
         ];

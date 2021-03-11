@@ -44,6 +44,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     // Configure Membership tab.
     $this->getSession()->getPage()->selectFieldOption('membership_1_number_of_membership', 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption('Membership Type', '- User Select -');
     $this->htmlOutput();
 
     // Configure Contribution tab and enable recurring.
@@ -70,6 +71,9 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
+    $this->getSession()->getPage()->selectFieldOption('Membership Type', 'Basic');
+    $this->createScreenshot($this->htmlOutputDirectory . '/membership_page1.png');
+
     $this->getSession()->getPage()->pressButton('Next >');
 
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
@@ -87,6 +91,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Billing Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Street Address', '123 Milwaukee Ave');
     $this->getSession()->getPage()->fillField('City', 'Milwaukee');
+    $this->createScreenshot($this->htmlOutputDirectory . '/membership_page2.png');
 
     // Select2 is being difficult; unhide the country and state/province select.
     $driver = $this->getSession()->getDriver();
