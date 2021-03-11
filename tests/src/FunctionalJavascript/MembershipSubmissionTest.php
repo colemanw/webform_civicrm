@@ -60,6 +60,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('Frequency of Installments', 'year');
 
     $this->getSession()->getPage()->selectFieldOption('Payment Processor', $payment_processor['id']);
+    $this->createScreenshot($this->htmlOutputDirectory . '/membership_page_settings_before_save.png');
 
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
@@ -69,11 +70,12 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
+    $this->createScreenshot($this->htmlOutputDirectory . '/membership_page1.png');
+
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
     $this->getSession()->getPage()->selectFieldOption('Membership Type', 'Basic');
-    $this->createScreenshot($this->htmlOutputDirectory . '/membership_page1.png');
 
     $this->getSession()->getPage()->pressButton('Next >');
 
