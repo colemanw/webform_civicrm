@@ -79,7 +79,6 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     ]);
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
-    $optiongroup_id = $result['id'];
 
     $result = civicrm_api3('OptionValue', 'create', [
       'option_group_id' => "checkboxes_1",
@@ -261,7 +260,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
-    //Enable custom fields.
+    // Enable custom fields.
     foreach ($this->_customFields as $name => $id) {
       $this->getSession()->getPage()->checkField("civicrm_1_contact_1_cg1_custom_{$id}");
       $this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_{$id}");
@@ -272,14 +271,13 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     }
     $this->saveCiviCRMSettings();
 
-    // Change the Checkbox -> no Listbox (that should probably be the default)
+    // Change the Checkbox -> no Listbox (that is now the default - so this may not be required anymore)
     $this->drupalGet($this->webform->toUrl('edit-form'));
     $this->assertSession()->waitForField('Checkboxes');
     $this->htmlOutput();
-    //enable static option on radio field.
+    // Enable static option on radio field.
     $this->editCivicrmOptionElement("edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-{$this->_customFields['single_radio']}-operations", FALSE, TRUE);
 
-    // ToDo: Enable Static Option and Edit Label
     $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-' . $this->_customFields['color_checkboxes'] . '-operations"] a.webform-ajax-link');
     $checkbox_edit_button->click();
     $this->assertSession()->assertWaitOnAjaxRequest();
@@ -360,11 +358,11 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals('OptionA', $api_result['values'][$this->_customFields['select_list']]['latest']);
     $fruitVal = $api_result['values'][$this->_customFields['fruits']]['latest'];
 
+    // Check the fruit situation
     $this->assertCount(2, $fruitVal);
     $this->assertArrayHasKey('Apple', array_flip($fruitVal));
     $this->assertArrayHasKey('Orange', array_flip($fruitVal));
     $this->assertArrayNotHasKey('Mango', array_flip($fruitVal));
-
   }
 
 }
