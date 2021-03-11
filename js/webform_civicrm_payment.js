@@ -134,4 +134,6 @@ cj(function($) {
     $.extend(CRM.payment, payment);
   }
 
+  $('#edit-actions').detach().appendTo('.webform-submission-form');
+    
 });
