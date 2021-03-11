@@ -44,6 +44,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     //Configure Membership tab.
     $this->getSession()->getPage()->selectFieldOption('membership_1_number_of_membership', 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption('Membership Type', '- User Select -');
     $this->htmlOutput();
 
     //Configure Contribution tab and enable recurring.
@@ -70,6 +71,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
+    $this->getSession()->getPage()->selectFieldOption('Membership Type', 'Basic');
     $this->getSession()->getPage()->pressButton('Next >');
 
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
