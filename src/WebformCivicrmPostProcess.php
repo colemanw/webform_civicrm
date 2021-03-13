@@ -839,25 +839,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           if (isset($params['county_id']) && $params['county_id'] === '-') {
             $params['county_id'] = '';
           }
-          // Update drupal email address
-          if ($location == 'email' && !empty($params['email']) && $i == 1) {
-            $uid = $utils->wf_crm_user_cid($cid, 'contact');
-            if ($uid) {
-              $user = User::load($uid);
-              if ($params['email'] != $user->getEmail()) {
-                // Verify this email is unique before saving it to user
-                $value_taken = (bool) \Drupal::entityQuery($user->getEntityTypeId())
-                  ->condition('mail', $params['email'])
-                  ->range(0, 1)
-                  ->count()
-                  ->execute();
-                if (!$value_taken) {
-                  $user->setEmail($params['email']);
-                  $user->save();
-                }
-              }
-            }
-          }
           // Check if anything was changed, else skip the update
           if (!empty($existing[$i])) {
             $same = TRUE;
