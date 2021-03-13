@@ -44,7 +44,9 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     // Configure Membership tab.
     $this->getSession()->getPage()->selectFieldOption('membership_1_number_of_membership', 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_membership_1_membership_membership_type_id', '- User Select -');
     $this->htmlOutput();
+    // $this->createScreenshot($this->htmlOutputDirectory . '/membership_page_settings.png');
 
     // Configure Contribution tab and enable recurring.
     $this->getSession()->getPage()->clickLink('Contribution');
@@ -58,6 +60,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('Frequency of Installments', 'year');
 
     $this->getSession()->getPage()->selectFieldOption('Payment Processor', $payment_processor['id']);
+    // $this->createScreenshot($this->htmlOutputDirectory . '/membership_page_settings_before_save.png');
 
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
@@ -67,9 +70,13 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
+    // $this->createScreenshot($this->htmlOutputDirectory . '/membership_page1.png');
+
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_membership_1_membership_membership_type_id', '1');
+
     $this->getSession()->getPage()->pressButton('Next >');
 
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
@@ -87,6 +94,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Billing Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Street Address', '123 Milwaukee Ave');
     $this->getSession()->getPage()->fillField('City', 'Milwaukee');
+    // $this->createScreenshot($this->htmlOutputDirectory . '/membership_page2.png');
 
     // Select2 is being difficult; unhide the country and state/province select.
     $driver = $this->getSession()->getDriver();
@@ -113,10 +121,18 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     ]);
     $membership = reset($api_result['values']);
     $this->assertNotEmpty($membership['contribution_recur_id']);
+
+    // Let's make sure we have a Contribution by ensuring we have a Transaction ID
+    $api_result = $utils->wf_civicrm_api('contribution', 'get', [
+      'sequential' => 1,
+    ]);
+    $contribution = reset($api_result['values']);
+    $this->assertNotEmpty($contribution['trxn_id']);
+    $this->assertEquals('1.00', $contribution['total_amount']);
   }
 
   /**
-   * Test submitting a Membership
+   * Test submitting a Free Membership
    */
   public function testSubmitWebform() {
     $this->createMembershipType();

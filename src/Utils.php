@@ -579,7 +579,7 @@ class Utils implements UtilsInterface {
       $label = Html::escape($label);
     }
     if ($html == 'wrap') {
-      $label = Markup::create('<span class="contact-label number-' . $n . '">' . $label . '</span>');
+      $label = Markup::create($label);
     }
     return $label;
   }
