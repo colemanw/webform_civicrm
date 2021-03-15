@@ -2407,9 +2407,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
               $multivaluesCreateMode = $this->data['config']['create_mode'][$createModeKey] ?? NULL;
               $cgMaxInstance = $this->all_sets[$table]['max_instances'] ?? 1;
               // Is this a multi-value custom field?
+              $existingValue = NULL;
               if ($cgMaxInstance > 1) {
                 // For edit mode, update the keys to 'custom_<fieldID>_<existing_value_id>.
-                $existingValue = NULL;
                 if (empty($multivaluesCreateMode) && !empty($this->existing_contacts[$c])) {
                   $existingValue = $this->getCustomData($this->existing_contacts[$c], NULL, FALSE)[$table] ?? NULL;
                   if (!empty($existingValue) && is_array($existingValue)) {
