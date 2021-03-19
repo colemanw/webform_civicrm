@@ -139,7 +139,9 @@ class CivicrmOptions extends WebformElementBase {
       // Get additional properties off of the options element.
       $select_options = $form['properties']['options']['options'];
       $properties['#default_option'] = $select_options['#default_option'];
-      $properties['#default_value'] = $select_options['#default_option'];
+      if (empty($properties['#default_value'])) {
+        $properties['#default_value'] = $select_options['#default_option'];
+      }
     }
     if (!isset($properties['#civicrm_live_options'])) {
       $properties['#civicrm_live_options'] = $form_state->getValues()['civicrm_live_options'] ?? 0;
