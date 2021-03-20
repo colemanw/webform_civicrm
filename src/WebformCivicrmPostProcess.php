@@ -1488,16 +1488,16 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
             }
           }
         }
-        $result = $utils->wf_civicrm_api('activity', 'create', $params);
+        $activity = $utils->wf_civicrm_api('activity', 'create', $params);
         // Final processing if save was successful
-        if (!empty($result['id'])) {
+        if (!empty($activity['id'])) {
           // handle activity tags
-          $this->handleEntityTags('activity', $result['id'], $n, $params);
+          $this->handleEntityTags('activity', $activity['id'], $n, $params);
           // Store id
-          $this->ent['activity'][$n]['id'] = $result['id'];
+          $this->ent['activity'][$n]['id'] = $activity['id'];
           // Save attachments
           if (isset($data['activityupload'])) {
-            $this->processAttachments('activity', $n, $result['id'], empty($params['id']));
+            $this->processAttachments('activity', $n, $activity['id'], empty($params['id']));
           }
           if (!empty($params['assignee_contact_id'])) {
             if ($utils->wf_crm_get_civi_setting('activity_assignee_notification')) {
@@ -1513,8 +1513,8 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
               }
               if ($mail) {
                 // Include attachments while sending a copy of activity.
-                $attachments = \CRM_Core_BAO_File::getEntityFile('civicrm_activity', $this->ent['act'][1]);
-                \CRM_Case_BAO_Case::sendActivityCopy(NULL, $result['id'], $mail, $attachments, NULL);
+                $attachments = \CRM_Core_BAO_File::getEntityFile('civicrm_activity', $activity['id']);
+                \CRM_Case_BAO_Case::sendActivityCopy(NULL, $activity['id'], $mail, $attachments, NULL);
               }
             }
           }
