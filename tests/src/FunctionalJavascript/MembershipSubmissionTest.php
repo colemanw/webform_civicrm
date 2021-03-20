@@ -148,11 +148,50 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->clickLink('Memberships');
 
     $this->getSession()->getPage()->selectFieldOption('membership_1_number_of_membership', 1);
+    // Make it a - User Select -
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
+    $this->getSession()->getPage()->selectFieldOption("edit-civicrm-1-membership-1-membership-membership-type-id", 'create_civicrm_webform_element');
+    $this->htmlOutput();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+
+    $membershipElementEdit = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-membership-1-membership-membership-type-id-operations"] a.webform-ajax-link');
+    $membershipElementEdit->click();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+
+    $advanced_tab = 'tabby-toggle_webform-tab--advanced';
+    $advanced_tab = $this->assertSession()->elementExists('css', $advanced_tab . 'a.link');
+    $advanced_tab->click();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->fillField('Value', '[current-page:query:membership]');
+    $this->getSession()->getPage()->pressButton('Save');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $membershipElementEdit = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-membership-1-membership-membership-type-id-operations"] a.webform-ajax-link');
+    $membershipElementEdit->click();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+
+    $advanced_tab = 'tabby-toggle_webform-tab--advanced';
+    $advanced_tab = $this->assertSession()->elementExists('css', $advanced_tab . 'a.link');
+    $advanced_tab->click();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->waitForField('Value');
+    $this->assertSession()->fieldValueEquals('Value','[current-page:query:membership]');
+    $this->htmlOutput();
 
     $this->drupalLogout();
     $this->drupalGet($this->webform->toUrl('canonical'));
