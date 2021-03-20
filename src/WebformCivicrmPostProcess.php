@@ -2473,12 +2473,15 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
               $cgMaxInstance = $this->all_sets[$table]['max_instances'] ?? 1;
               // Is this a multi-value custom field?
               if ($cgMaxInstance > 1) {
+                $existingValue = NULL;
                 //For edit mode, update the keys to 'custom_<fieldID>_<existing_value_id>.
                 if (empty($multivaluesCreateMode) && !empty($this->existing_contacts[$c])) {
                   $existingValue = $this->getCustomData($this->existing_contacts[$c], NULL, FALSE)[$table] ?? NULL;
                   if (!empty($existingValue) && is_array($existingValue)) {
-                    $existingValue = array_slice($existingValue, $n -1, 1, TRUE);
-                    $name = "{$name}_" . key($existingValue);
+                    $existingValue = key(array_slice($existingValue, $n - 1, 1, TRUE));
+                    if (!empty($existingValue)) {
+                      $name = "{$name}_{$existingValue}";
+                    }
                   }
                 }
                 // If webform is configured to only "insert" new values,
