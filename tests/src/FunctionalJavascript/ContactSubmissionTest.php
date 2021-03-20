@@ -233,20 +233,14 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
-    // The label has a <div> in it which can cause weird failures here.
-    $this->assertSession()->waitForText('Enable CiviCRM Processing');
-    $this->assertSession()->waitForField('nid');
-    $this->getSession()->getPage()->checkField('nid');
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->enableCivicrmOnWebform();
 
     // Scenario: root user is configuring the form - so that the logged in Contact details appear
     $this->assertSession()->checkboxChecked('Existing Contact');
     $this->assertSession()->checkboxChecked('First Name');
     $this->assertSession()->checkboxChecked('Last Name');
 
-    $this->getSession()->getPage()->pressButton('Save Settings');
-    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
-    $this->assertPageNoErrorMessages();
+    $this->saveCiviCRMSettings();
 
     $this->drupalGet($this->webform->toUrl('edit-form'));
     $contactElementEdit = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations"] a.webform-ajax-link');
