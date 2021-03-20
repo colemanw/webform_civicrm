@@ -224,6 +224,59 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals('Frederick-Edited', $contact_result2['values'][0]['first_name'], $result_debug);
     $this->assertEquals('Pabst-Edited', $contact_result2['values'][0]['last_name'], $result_debug);
   }
+
+  /**
+   * Test Existing Contact Element configured as Current (logged-in) User
+   */
+  public function testStaticCurrentUser() {
+    $this->drupalLogin($this->rootUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+
+    // Scenario: root user is configuring the form - so that the logged in Contact details appear
+    $this->assertSession()->checkboxChecked('Existing Contact');
+    $this->assertSession()->checkboxChecked('First Name');
+    $this->assertSession()->checkboxChecked('Last Name');
+
+    $this->saveCiviCRMSettings();
+
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+    $contactElementEdit = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations"] a.webform-ajax-link');
+    $contactElementEdit->click();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
+
+    $this->assertSession()->waitForField('properties[widget]');
+    $this->getSession()->getPage()->selectFieldOption('Form Widget', 'Static');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption('Set default contact from', 'Current User');
+    $this->getSession()->getPage()->pressButton('Save');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->pageTextContains('Existing Contact has been updated');
+
+    $this->drupalLogout();
+    $this->drupalLogin($this->adminUser);
+
+    $currentUserUF = $this->getUFMatchRecord($this->adminUser->id());
+    // throw new \Exception(var_export($currentUserUF, TRUE));
+
+    $apiResult = $this->utils->wf_civicrm_api('contact', 'create', [
+      'id' => $currentUserUF['contact_id'],
+      'first_name' => "Admin",
+      'last_name' => "User",
+    ]);
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+
+    $this->assertSession()->waitForField('First Name');
+    $this->assertSession()->fieldValueEquals('First Name','Admin');
+    $this->assertSession()->fieldValueEquals('Last Name', 'User');
+  }
+
   /**
    * Test submitting a contact.
    *
