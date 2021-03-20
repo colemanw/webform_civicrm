@@ -148,11 +148,10 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->clickLink('Memberships');
 
     $this->getSession()->getPage()->selectFieldOption('membership_1_number_of_membership', 1);
-    // Make it a - User Select -
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
-    $this->getSession()->getPage()->selectFieldOption("edit-civicrm-1-membership-1-membership-membership-type-id", 'create_civicrm_webform_element');
+    $this->getSession()->getPage()->selectFieldOption("civicrm_1_membership_1_membership_membership_type_id", 'create_civicrm_webform_element');
     $this->htmlOutput();
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
