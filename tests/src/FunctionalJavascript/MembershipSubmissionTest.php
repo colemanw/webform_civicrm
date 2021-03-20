@@ -12,7 +12,7 @@ use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
  */
 final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
-  private function createMembershipType($amount = 0, $autoRenew = FALSE) {
+  private function createMembershipType($amount = 0, $autoRenew = FALSE, $name = 'Basic') {
     $result = civicrm_api3('MembershipType', 'create', [
       'member_of_contact_id' => 1,
       'financial_type_id' => "Member Dues",
@@ -20,7 +20,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
       'duration_interval' => 1,
       'period_type' => "rolling",
       'minimum_fee' => $amount,
-      'name' => "Basic",
+      'name' => $name,
       'auto_renew' => $autoRenew,
     ]);
     $this->assertEquals(0, $result['is_error']);
@@ -151,46 +151,8 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
-    $this->getSession()->getPage()->selectFieldOption("civicrm_1_membership_1_membership_membership_type_id", 'create_civicrm_webform_element');
-    $this->htmlOutput();
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->htmlOutput();
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->htmlOutput();
-
-    $membershipElementEdit = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-membership-1-membership-membership-type-id-operations"] a.webform-ajax-link');
-    $membershipElementEdit->click();
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->htmlOutput();
-    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->htmlOutput();
-
-    $advanced_tab = 'tabby-toggle_webform-tab--advanced';
-    $advanced_tab = $this->assertSession()->elementExists('css', $advanced_tab . 'a.link');
-    $advanced_tab->click();
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->getSession()->getPage()->fillField('Value', '[current-page:query:membership]');
-    $this->getSession()->getPage()->pressButton('Save');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-
-    $membershipElementEdit = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-membership-1-membership-membership-type-id-operations"] a.webform-ajax-link');
-    $membershipElementEdit->click();
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->htmlOutput();
-    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->htmlOutput();
-
-    $advanced_tab = 'tabby-toggle_webform-tab--advanced';
-    $advanced_tab = $this->assertSession()->elementExists('css', $advanced_tab . 'a.link');
-    $advanced_tab->click();
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertSession()->waitForField('Value');
-    $this->assertSession()->fieldValueEquals('Value','[current-page:query:membership]');
-    $this->htmlOutput();
 
     $this->drupalLogout();
     $this->drupalGet($this->webform->toUrl('canonical'));
@@ -222,6 +184,73 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals($today,  $membership['start_date']);
 
     $this->assertEquals(date('Y-m-d', strtotime($today. ' +364 days')),  $membership['end_date']);
+  }
+
+  /**
+   * Test submitting a Membership using query params
+   */
+  public function testSubmitMembershipQueryParams() {
+    $this->createMembershipType(1, TRUE, 'Basic');
+    $this->createMembershipType(1, TRUE, 'Basic Plus');
+
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+
+    // Configure Membership tab.
+    $this->getSession()->getPage()->clickLink('Memberships');
+    $this->getSession()->getPage()->selectFieldOption('membership_1_number_of_membership', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_membership_1_membership_membership_type_id', '- User Select -');
+    $this->htmlOutput();
+
+    $this->saveCiviCRMSettings();
+
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+    $this->assertSession()->waitForField('CiviCRM Options');
+
+    // Add the Default -> [current-page:query:membership]
+    $membershipElementEdit = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-membership-1-membership-membership-type-id-operations"] a.webform-ajax-link');
+    $membershipElementEdit->click();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->checkField('properties[extra][aslist]');
+    $this->assertSession()->checkboxChecked('properties[extra][aslist]');
+
+    $this->createScreenshot($this->htmlOutputDirectory . '/advanced_tab.png');
+    $this->htmlOutput();
+
+    $advanced_tab = 'tabby-toggle_webform-tab--advanced';
+    $advanced_tab = $this->assertSession()->elementExists('css', $advanced_tab . ' a.link');
+    $advanced_tab->click();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->fillField('Default value', '[current-page:query:membership]');
+    $this->getSession()->getPage()->pressButton('Save');
+
+    $this->drupalLogout();
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['membership' => 2]]));
+    $this->assertPageNoErrorMessages();
+
+    $this->assertSession()->waitForField('First Name');
+    $this->getSession()->getPage()->fillField('First Name', 'Frederick');
+    $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
+    $this->assertSession()->pageTextContains('Basic Plus');
+    $this->getSession()->getPage()->pressButton('Submit');
+
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
+    $api_result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('membership', 'get', [
+      'sequential' => 1,
+    ]);
+    $this->assertEquals(1, $api_result['count']);
+    $membership = reset($api_result['values']);
+
+    $this->assertEquals('Basic Plus', $membership['membership_name']);
+    $this->assertEquals('1', $membership['status_id']);
+
+    // throw new \Exception(var_export($today, TRUE));
   }
 
 }
