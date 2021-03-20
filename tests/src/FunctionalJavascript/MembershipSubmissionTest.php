@@ -193,7 +193,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->createMembershipType(1, TRUE, 'Basic');
     $this->createMembershipType(1, TRUE, 'Basic Plus');
 
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLogin($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -232,7 +232,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['membership' => 2]]));
     $this->htmlOutput();
     // ToDo ->
-    // $this->assertPageNoErrorMessages();
+    $this->assertPageNoErrorMessages();
 
     $this->assertSession()->waitForField('First Name');
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
@@ -241,7 +241,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->pressButton('Submit');
     $this->htmlOutput();
     // ToDo ->
-    // $this->assertPageNoErrorMessages();
+    $this->assertPageNoErrorMessages();
 
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
