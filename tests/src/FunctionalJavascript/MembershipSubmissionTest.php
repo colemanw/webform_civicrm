@@ -223,8 +223,9 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->clickLink('Advanced');
     $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertSession()->waitForField('Default value');
-    $this->createScreenshot($this->htmlOutputDirectory . '/in_advanced_tab.png');
+    $this->htmlOutput();
+    $fieldset = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-default"]');
+    $fieldset->click();
     $this->getSession()->getPage()->fillField('Default value', '[current-page:query:membership]');
     $this->getSession()->getPage()->pressButton('Save');
 
@@ -239,6 +240,8 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->pressButton('Submit');
 
     $this->assertPageNoErrorMessages();
+    $this->createScreenshot($this->htmlOutputDirectory . '/a_post_submission_screenshot.png');
+
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     $api_result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('membership', 'get', [
