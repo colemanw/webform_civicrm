@@ -218,13 +218,13 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField('properties[extra][aslist]');
     $this->assertSession()->checkboxChecked('properties[extra][aslist]');
 
-    $this->createScreenshot($this->htmlOutputDirectory . '/advanced_tab.png');
+    // $this->createScreenshot($this->htmlOutputDirectory . '/advanced_tab.png');
     $this->htmlOutput();
 
-    $advanced_tab = 'tabby-toggle_webform-tab--advanced';
-    $advanced_tab = $this->assertSession()->elementExists('css', $advanced_tab . ' a.link');
-    $advanced_tab->click();
+    $this->getSession()->getPage()->clickLink('Advanced');
     $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->waitForField('Default value');
+    $this->createScreenshot($this->htmlOutputDirectory . '/in_advanced_tab.png');
     $this->getSession()->getPage()->fillField('Default value', '[current-page:query:membership]');
     $this->getSession()->getPage()->pressButton('Save');
 
