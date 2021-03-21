@@ -112,6 +112,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->pressButton('Submit');
     $this->htmlOutput();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+    $this->assertPageNoErrorMessages();
 
     // Assert if recur is attached to the created membership.
     $utils = \Drupal::service('webform_civicrm.utils');

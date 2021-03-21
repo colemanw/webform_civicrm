@@ -1951,8 +1951,8 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         'id' => $resultRecur['id'],
         'currency' => $contributionParams['currency'],
         'next_sched_contribution_date' => date("Y-m-d H:i:s", strtotime('+' . $contributionRecurParams['frequency_interval'] . ' ' . $contributionRecurParams['frequency_unit'])),
-        'invoice_id' => $result['values'][$result['id']]['invoice_id'],
-        'payment_instrument_id' => $result['values'][$result['id']]['payment_instrument_id'],
+        'invoice_id' => $result['invoice_id'],
+        'payment_instrument_id' => $result['payment_instrument_id'],
       ]);
     }
     return $result;
