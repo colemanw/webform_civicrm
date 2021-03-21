@@ -258,6 +258,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->createScreenshot($this->htmlOutputDirectory . '/autocomplete.png');
 
     $page->find('xpath', '//li[contains(@class, "token-input-dropdown")][1]')->click();
+    $this->assertSession()->assertWaitOnAjaxRequest();
   }
 
   /**
@@ -270,6 +271,23 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       'last_name' => substr(sha1(rand()), 0, 7),
     ];
     return current($this->utils->wf_civicrm_api('contact', 'create', $params)['values']);
+  }
+
+  /**
+   * Enable Component in CiviCRM.
+   *
+   * @param string $componentName
+   */
+  protected function enableComponent($componentName) {
+    $enabledComponents = $this->utils->wf_crm_get_civi_setting('enable_components');
+    if (in_array($componentName, $enabledComponents)) {
+      // component is already enabled
+      return;
+    }
+    $enabledComponents[] = $componentName;
+    $this->utils->wf_civicrm_api('Setting', 'create', [
+      'enable_components' => $enabledComponents,
+    ]);
   }
 
 }

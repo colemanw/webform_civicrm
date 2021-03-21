@@ -45,6 +45,12 @@ abstract class CiviCrmTestBase extends WebDriverTestBase {
         unset($tables[$table]);
       }
     }
+
+    // Drop case views if present. These are removed in the civi version 5.37.alpha1 https://github.com/civicrm/civicrm-core/pull/19642
+    // so these stmts wont be needed after few days when our test setup is configured to run on civi > 5.37.alpha1.
+    $civicrm_test_conn->query('DROP VIEW IF EXISTS civicrm_view_case_activity_recent;')->execute();
+    $civicrm_test_conn->query('DROP VIEW IF EXISTS civicrm_view_case_activity_upcoming;')->execute();
+
     $civicrm_test_conn->query('SET FOREIGN_KEY_CHECKS = 1;')->execute();
   }
 

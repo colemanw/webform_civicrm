@@ -1313,6 +1313,16 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     foreach (wf_crm_aval($this->data, 'case', []) as $n => $data) {
       if (is_array($data) && !empty($data['case'][1]['client_id'])) {
         $params = $data['case'][1];
+        //Check if webform is set to update the existing case on contact.
+        if (!empty($this->data['case'][$n]['existing_case_status']) && empty($this->ent['case'][$n]['id']) && !empty($this->ent['contact'][$n]['id'])) {
+          $existingCase = $this->findCaseForContact($this->ent['contact'][$n]['id'], [
+            'case_type_id' => wf_crm_aval($this->data['case'][$n], 'case:1:case_type_id'),
+            'status_id' => $this->data['case'][$n]['existing_case_status']
+          ]);
+          if (!empty($existingCase['id'])) {
+            $this->ent['case'][$n]['id'] = $existingCase['id'];
+          }
+        }
         // Set some defaults in create mode
         // Create duplicate case based on existing case if 'duplicate_case' checkbox is checked
         if (empty($this->ent['case'][$n]['id']) || !empty($this->data['case'][$n]['duplicate_case'])) {
