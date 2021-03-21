@@ -16,6 +16,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     'webform',
     'webform_ui',
     'webform_civicrm',
+    'token',
   ];
 
   /**

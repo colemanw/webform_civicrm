@@ -77,7 +77,9 @@ class CivicrmSelect extends WebformElementBase {
       }
       $element['#options'] = $new;
     }
-    $element['#default_value'] = $element['#default_option'];
+    if (isset($element['#default_option'])) {
+      $element['#default_value'] = $element['#default_option'];
+    }
   }
 
   protected function getFieldOptions($element) {
