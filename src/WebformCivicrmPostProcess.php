@@ -1947,13 +1947,20 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
 
     // If transaction was successful - Update the Recurring Series - currency must be resubmitted or else it will re-default to USD; invoice_id is that of the initiating Contribution
     if (empty($result['error_message'])) {
-      $resultUpdateRecur = $utils->wf_civicrm_api('ContributionRecur', 'create', [
+      $recurParams = [
         'id' => $resultRecur['id'],
         'currency' => $contributionParams['currency'],
         'next_sched_contribution_date' => date("Y-m-d H:i:s", strtotime('+' . $contributionRecurParams['frequency_interval'] . ' ' . $contributionRecurParams['frequency_unit'])),
-        'invoice_id' => $result['invoice_id'],
-        'payment_instrument_id' => $result['payment_instrument_id'],
-      ]);
+       ];
+      if ($APIAction == 'transact') {
+        // Now that we include Transact within webform_civicrm module it comes back flattened:
+        $recurParams['invoice_id'] = $result['invoice_id'];
+        $recurParams['payment_instrument_id'] = $result['payment_instrument_id'];
+      } else {
+        $recurParams['invoice_id'] = $result['values'][$result['id']]['invoice_id'];
+        $recurParams['payment_instrument_id'] = $result['values'][$result['id']]['payment_instrument_id'];
+      }
+      $utils->wf_civicrm_api('ContributionRecur', 'create', $recurParams);
     }
     return $result;
   }
