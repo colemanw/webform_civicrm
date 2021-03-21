@@ -12,6 +12,8 @@ jobs:
       matrix:
         include:
           - drupal: '^8.9'
+            civicrm: '~5.33'
+          - drupal: '^8.9'
             civicrm: '~5.35'
           - drupal: '^8.9'
             civicrm: '5.36.x-dev'
