@@ -2416,6 +2416,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                     $existingValue = key(array_slice($existingValue, $n - 1, 1, TRUE));
                     if (!empty($existingValue)) {
                       $name = "{$name}_{$existingValue}";
+                    }
                   }
                 }
                 // If webform is configured to only "insert" new values,
