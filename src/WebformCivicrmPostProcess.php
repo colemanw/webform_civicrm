@@ -2338,16 +2338,16 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           $this->data[$ent][$c][$table][$n][$name] = [];
           foreach ($val as $v) {
             if (is_numeric($v) && !empty($this->ent['contact'][$v]['id'])) {
-              $table = $customOnly ? $ent : $table;
-              $this->data[$ent][$c][$table][$n][$name][] = $this->ent['contact'][$v]['id'];
+              $tableName = $customOnly ? $ent : $table;
+              $this->data[$ent][$c][$tableName][$n][$name][] = $this->ent['contact'][$v]['id'];
             }
           }
         }
         else {
           unset($this->data[$ent][$c][$table][$n][$name]);
           if (!empty($this->ent['contact'][$val]['id'])) {
-            $table = $customOnly ? $ent : $table;
-            $this->data[$ent][$c][$table][$n][$name] = $this->ent['contact'][$val]['id'];
+            $tableName = $customOnly ? $ent : $table;
+            $this->data[$ent][$c][$tableName][$n][$name] = $this->ent['contact'][$val]['id'];
           }
         }
       }
