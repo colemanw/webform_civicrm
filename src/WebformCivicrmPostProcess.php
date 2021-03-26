@@ -2345,6 +2345,14 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         }
         else {
           unset($this->data[$ent][$c][$table][$n][$name]);
+          $createModeKey = 'civicrm_' . $c . '_contact_' . $n . '_' . $table . '_createmode';
+          $multivaluesCreateMode = $this->data['config']['create_mode'][$createModeKey] ?? NULL;
+          $cgMaxInstance = $this->all_sets[$table]['max_instances'] ?? 1;
+          if ($cgMaxInstance > 1) {
+            // Retrieve name for multi value custom fields.
+            $name = $this->getNameForMultiValueFields($multivaluesCreateMode, $name, $table, $c, $n);
+            $n = $c;
+          }
           if (!empty($this->ent['contact'][$val]['id'])) {
             $tableName = $customOnly ? $ent : $table;
             $this->data[$ent][$c][$tableName][$n][$name] = $this->ent['contact'][$val]['id'];
@@ -2483,22 +2491,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
               $cgMaxInstance = $this->all_sets[$table]['max_instances'] ?? 1;
               // Is this a multi-value custom field?
               if ($cgMaxInstance > 1) {
-                $existingValue = NULL;
-                //For edit mode, update the keys to 'custom_<fieldID>_<existing_value_id>.
-                if (empty($multivaluesCreateMode) && !empty($this->existing_contacts[$c])) {
-                  $existingValue = $this->getCustomData($this->existing_contacts[$c], NULL, FALSE)[$table] ?? NULL;
-                  if (!empty($existingValue) && is_array($existingValue)) {
-                    $existingValue = key(array_slice($existingValue, $n - 1, 1, TRUE));
-                    if (!empty($existingValue)) {
-                      $name = "{$name}_{$existingValue}";
-                    }
-                  }
-                }
-                // If webform is configured to only "insert" new values,
-                // modify the params in the format of custom_<fieldID>_-1, custom_<fieldID>_-2, etc.
-                if (empty($existingValue)) {
-                  $name = "{$name}_-{$n}";
-                }
+                $name = $this->getNameForMultiValueFields($multivaluesCreateMode, $name, $table, $c, $n);
                 $n = $c;
               }
             }
@@ -2712,6 +2705,41 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     }
 
     return $reorderedArray;
+  }
+
+  /**
+   * Retrieve name for multi-value custom fields.
+   *
+   * For edit mode, update the $name key to 'custom_<fieldID>_<existing_value_id>.
+   *
+   * If webform is configured to only "insert" new values,
+   * modify the params in the format of custom_<fieldID>_-1, custom_<fieldID>_-2, etc.
+   *
+   * @param bool $multivaluesCreateMode
+   * @param string $name
+   * @param string $table
+   * @param int $c
+   * @param int $n
+   *
+   * @return $name
+   */
+  private function getNameForMultiValueFields($multivaluesCreateMode, $name, $table, $c, $n): string {
+    $existingValue = NULL;
+    if (empty($multivaluesCreateMode) && !empty($this->existing_contacts[$c])) {
+      $existingValue = $this->getCustomData($this->existing_contacts[$c], NULL, FALSE)[$table] ?? NULL;
+      if (!empty($existingValue) && is_array($existingValue)) {
+        $existingValue = key(array_slice($existingValue, $n - 1, 1, TRUE));
+        if (!empty($existingValue)) {
+          return "{$name}_{$existingValue}";
+        }
+      }
+    }
+
+    // No existing value found, insert a new value.
+    if (empty($existingValue)) {
+      return "{$name}_-{$n}";
+    }
+    return $name;
   }
 
   private function unsetEmptyValueIndexes($values, $entity) {
