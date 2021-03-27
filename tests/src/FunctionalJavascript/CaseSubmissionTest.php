@@ -37,25 +37,7 @@ final class CaseSubmissionTest extends WebformCivicrmTestBase {
     //Edit contact element and remove default section.
     $this->drupalGet($this->webform->toUrl('edit-form'));
 
-    $contactElementEdit = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations"] a.webform-ajax-link');
-    $contactElementEdit->click();
-    $this->htmlOutput();
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
-
-    $this->assertSession()->waitForField('properties[widget]');
-    $this->getSession()->getPage()->selectFieldOption('Form Widget', 'Autocomplete');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertSession()->waitForElementVisible('css', '[data-drupal-selector="edit-properties-search-prompt"]');
-    $this->getSession()->getPage()->fillField('Search Prompt', '- Select Contact -');
-
-    $this->htmlOutput();
-    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-contact-defaults"]')->click();
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->getSession()->getPage()->selectFieldOption('Set default contact from', '- None -');
-    $this->getSession()->getPage()->uncheckField('properties[allow_url_autofill]');
-    $this->getSession()->getPage()->pressButton('Save');
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->editContactElement('edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations', 'Autocomplete', '- None -');
 
     $caseSubject = "Test Case" . substr(sha1(rand()), 0, 7);
     $this->submitCaseAndVerifyResult($caseSubject);
