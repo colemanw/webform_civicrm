@@ -241,6 +241,44 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   }
 
   /**
+   * Edit contact element on the build form.
+   *
+   * @param string $selector
+   * @param string $widget
+   * @param string $default
+   * @param bool $removeDefaultURL
+   */
+  protected function editContactElement($selector, $widget, $default = NULL, $removeDefaultURL = FALSE) {
+    $contactElementEdit = $this->assertSession()->elementExists('css', "[data-drupal-selector='{$selector}'] a.webform-ajax-link");
+    $contactElementEdit->click();
+    $this->htmlOutput();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
+
+    $this->assertSession()->waitForField('properties[widget]');
+    $this->getSession()->getPage()->selectFieldOption('Form Widget', $widget);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    if ($widget == 'Autocomplete') {
+      $this->assertSession()->waitForElementVisible('css', '[data-drupal-selector="edit-properties-search-prompt"]');
+      $this->getSession()->getPage()->fillField('Search Prompt', '- Select Contact -');
+    }
+    $this->htmlOutput();
+
+    if ($default) {
+      $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-contact-defaults"]')->click();
+      $this->assertSession()->assertWaitOnAjaxRequest();
+      $this->getSession()->getPage()->selectFieldOption('Set default contact from', $default);
+    }
+
+    if ($removeDefaultURL) {
+      $this->getSession()->getPage()->uncheckField('properties[allow_url_autofill]');
+    }
+
+    $this->getSession()->getPage()->pressButton('Save');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+  }
+
+  /**
    * Fill Contact Autocomplete widget.
    *
    * @param string $id

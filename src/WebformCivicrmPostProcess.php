@@ -11,7 +11,6 @@ use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
-use Drupal\user\Entity\User;
 use Drupal\webform\WebformInterface;
 use Drupal\webform\WebformSubmissionInterface;
 use Drupal\webform_civicrm\WebformCivicrmBase;
@@ -233,6 +232,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       $cid = $this->ent['contact'][$c]['id'];
       if (!$cid) {
         continue;
+      }
+      if (!empty($contact['update_contact_ref'])) {
+        $this->saveContactRefs($contact, $cid);
       }
       $this->saveCurrentEmployer($contact, $cid);
 
@@ -2322,6 +2324,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     static $c = '';
     static $table = '';
     static $n = '';
+    $customName = NULL;
     if ($values === NULL) {
       $values = $this->data;
     }
@@ -2330,7 +2333,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       if ($depth < 4 && is_array($val)) {
         $this->fillContactRefs($customOnly, $val, $depth + 1);
       }
-      elseif ($depth == 4 && $val && wf_crm_aval($this->all_fields, "{$table}_$name:data_type") == 'ContactReference') {
+      elseif ($depth == 4 && $val && wf_crm_aval($this->all_fields, "{$table}_{$name}:data_type") == 'ContactReference') {
         if ($customOnly && substr($name, 0, 6) != 'custom') {
           return;
         }
@@ -2344,18 +2347,22 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           }
         }
         else {
-          unset($this->data[$ent][$c][$table][$n][$name]);
           $createModeKey = 'civicrm_' . $c . '_contact_' . $n . '_' . $table . '_createmode';
           $multivaluesCreateMode = $this->data['config']['create_mode'][$createModeKey] ?? NULL;
           $cgMaxInstance = $this->all_sets[$table]['max_instances'] ?? 1;
-          if ($cgMaxInstance > 1) {
+          if (substr($name, 0, 6) == 'custom' && $cgMaxInstance > 1) {
             // Retrieve name for multi value custom fields.
-            $name = $this->getNameForMultiValueFields($multivaluesCreateMode, $name, $table, $c, $n);
+            $customName = $this->getNameForMultiValueFields($multivaluesCreateMode, $name, $table, $c, $n);
             $n = $c;
           }
           if (!empty($this->ent['contact'][$val]['id'])) {
-            $tableName = $customOnly ? $ent : $table;
-            $this->data[$ent][$c][$tableName][$n][$name] = $this->ent['contact'][$val]['id'];
+            unset($this->data[$ent][$c][$table][$n][$name]);
+            $tableName = substr($name, 0, 6) == 'custom' ? $ent : $table;
+            $fld = $customName ?? $name;
+            $this->data[$ent][$c][$tableName][$n][$fld] = $this->ent['contact'][$val]['id'];
+          }
+          elseif (substr($name, 0, 6) == 'custom') {
+            $this->data[$ent][$c]['update_contact_ref'][] = $name;
           }
         }
       }
@@ -2721,7 +2728,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    * @param int $c
    * @param int $n
    *
-   * @return $name
+   * @return string $name
    */
   private function getNameForMultiValueFields($multivaluesCreateMode, $name, $table, $c, $n): string {
     $existingValue = NULL;
@@ -2740,6 +2747,31 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       return "{$name}_-{$n}";
     }
     return $name;
+  }
+
+  /**
+   * Save custom contact reference created
+   * during the current submission of the webform.
+   *
+   * @param array $params
+   * @param int $cid
+   */
+  private function saveContactRefs($params, $cid): void {
+    $updateParams = [
+      'id' => $cid,
+    ];
+    foreach ($params['update_contact_ref'] as $refKey) {
+      foreach ($params['contact'] as $contactParams) {
+        foreach ($contactParams as $key => $value) {
+          if (strpos($key, $refKey) === 0 && !isset($updateParams[$key])) {
+            $updateParams[$key] = $value;
+          }
+        }
+      }
+    }
+    if (count($updateParams) > 1) {
+      \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('contact', 'create', $updateParams);
+    }
   }
 
   private function unsetEmptyValueIndexes($values, $entity) {
