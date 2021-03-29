@@ -184,3 +184,51 @@ function webform_civicrm_update_8001() {
     }
   }
 }
+
+/**
+ * Remove timepart field from
+ * all the webforms.
+ */
+function webform_civicrm_update_8002() {
+  \Drupal::service('civicrm')->initialize();
+  $webforms = Webform::loadMultiple();
+  foreach ($webforms as $webform) {
+    $handler = $webform->getHandlers('webform_civicrm');
+    $config = $handler->getConfiguration();
+    if (empty($config['webform_civicrm'])) {
+      continue;
+    }
+    $settings = &$config['webform_civicrm']['settings'];
+    foreach ($settings as $key => $val) {
+      if (substr($key, -9) == '_timepart') {
+        $dateKey = str_replace('_timepart', '', $key);
+        $dateElement = $webform->getElement($dateKey);
+        $timeElement = $webform->getElement($key);
+        if ($dateElement['#type'] == 'date') {
+          $dateElement['#type'] = 'datetime';
+          $dateElement['#date_time_step'] = '60';
+          $dateElement['#date_date_min'] = !empty($dateElement['#extra']['start_date']) ? $dateElement['#extra']['start_date'] : '-50 years';
+          $dateElement['#date_date_max'] = !empty($dateElement['#extra']['end_date']) ? $dateElement['#extra']['end_date'] : '+50 years';
+          unset($dateElement['#extra']);
+          if (!empty($timeElement['#extra']['hourformat']) && $timeElement['#extra']['hourformat'] == '24-hour') {
+            $dateElement['#date_time_element'] = 'timepicker';
+            $dateElement['#date_time_placeholder'] = 'hh:mm';
+            $dateElement['#date_time_format'] = 'H:i';
+          }
+          if (!empty($dateElement['#admin_title'])) {
+            $dateElement['#admin_title'] = str_replace(' - date', '', $dateElement['#admin_title']);
+          }
+          if (!empty($dateElement['#title'])) {
+            $dateElement['#title'] = str_replace(' - date', '', $dateElement['#title']);
+          }
+          unset($dateElement['#webform_plugin_id']);
+          unset($settings[$key]);
+          $webform->setElementProperties($dateKey, $dateElement);
+          $webform->deleteElement($key);
+        }
+      }
+    }
+    $handler->setConfiguration($config);
+    $webform->save();
+  }
+}

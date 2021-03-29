@@ -59,7 +59,6 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_details");
     $this->getSession()->getPage()->uncheckField('activity_1_settings_details[view_link]');
     $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_activity_date_time");
-    $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_activity_date_time_timepart");
     $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_duration");
 
     $multiple = FALSE;
@@ -75,7 +74,6 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->checkboxChecked("civicrm_1_activity_1_activity_subject");
     $this->assertSession()->checkboxChecked("civicrm_1_activity_1_activity_details");
     $this->assertSession()->checkboxChecked("civicrm_1_activity_1_activity_activity_date_time");
-    $this->assertSession()->checkboxChecked("civicrm_1_activity_1_activity_activity_date_time_timepart");
     $this->assertSession()->checkboxChecked("civicrm_1_activity_1_activity_duration");
 
     $this->saveCiviCRMSettings();
