@@ -264,10 +264,6 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     foreach ($this->_customFields as $name => $id) {
       $this->getSession()->getPage()->checkField("civicrm_1_contact_1_cg1_custom_{$id}");
       $this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_{$id}");
-      if ($name == 'DateTime') {
-        $this->getSession()->getPage()->checkField("civicrm_1_contact_1_cg1_custom_{$id}_timepart");
-        $this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_{$id}_timepart");
-      }
     }
     $this->saveCiviCRMSettings();
 
@@ -308,11 +304,8 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->fillField('Text', 'Lorem Ipsum');
 
-    // ToDo - Could not figure out how to use $this->getSession()->getPage()->fillField so using javascript instead
-    $driver = $this->getSession()->getDriver();
-    assert($driver instanceof DrupalSelenium2Driver);
-    $driver->executeScript("document.getElementById('edit-civicrm-1-contact-1-cg1-custom-2').setAttribute('value', '2020-12-12')");
-    $driver->executeScript("document.getElementById('edit-civicrm-1-contact-1-cg1-custom-2-timepart').setAttribute('value', '10:20:00')");
+    $this->getSession()->getPage()->fillField('civicrm_1_contact_1_cg1_custom_2[date]', '12-12-2020');
+    $this->getSession()->getPage()->fillField('civicrm_1_contact_1_cg1_custom_2[time]', '10:20:00');
 
     // Only check one Checkbox -> Red
     $this->assertSession()->pageTextContains('Red - Recommended');

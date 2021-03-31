@@ -17,6 +17,7 @@ use Drupal\Core\Url;
 use Drupal\webform\Plugin\WebformHandlerInterface;
 use Drupal\webform_civicrm\Plugin\WebformElement\CivicrmContact;
 use Drupal\webform_civicrm\WebformCivicrmBase;
+use Drupal\Core\Datetime\DrupalDateTime;
 
 
 class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivicrmPreProcessInterface {
@@ -459,10 +460,6 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
       $utils = \Drupal::service('webform_civicrm.utils');
       if (!empty($element['#webform']) && $pieces = $utils->wf_crm_explode_key($eid)) {
         list( , $c, $ent, $n, $table, $name) = $pieces;
-        // Separate out time fields
-        if (substr($name, -8) === 'timepart') {
-          $name = str_replace('_timepart', '', $name);
-        }
         if ($field = wf_crm_aval($this->all_fields, $table . '_' . $name)) {
           $component = [
             'cid' => '@todo what is the CID?'
@@ -551,14 +548,18 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
             elseif ($element['#type'] == 'value') {
               $element['#value'] = $val;
             }
+            elseif ($element['#type'] == 'datetime') {
+              if (!empty($val)) {
+                $element['#default_value'] = DrupalDateTime::createFromTimestamp(strtotime($val));
+              }
+            }
+            elseif ($element['#type'] == 'date') {
+              // Must pass date only
+              $element['#default_value'] = substr($val, 0, 10);
+            }
             // Set default value
             else {
-              if ($element['#type'] === 'date') {
-                // Must pass date only
-                $element['#default_value'] = substr($val, 0, 10);
-              } else {
-                $element['#default_value'] = $val;
-              }
+              $element['#default_value'] = $val;
             }
           }
           if ($name == 'existing') {

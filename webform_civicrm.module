@@ -42,6 +42,25 @@ function webform_civicrm_library_info_alter(array &$libraries, $extension) {
 }
 
 /**
+ * Implements hook_element_info_alter().
+ */
+function webform_civicrm_element_info_alter(array &$types) {
+  $types['datetime']['#process'][] = 'webform_civicrm_datetime_set_format';
+}
+
+/**
+ * Remove seconds from the HTML5 datetime widget.
+ */
+function webform_civicrm_datetime_set_format($element) {
+  if (!empty($element['#date_time_element']) && $element['#date_time_element'] == 'time' && !empty($element['time']['#value'])) {
+    $parts = explode(':', $element['time']['#value']);
+    $parts = array_splice($parts, 0, 2);
+    $element['time']['#value'] = implode(':', $parts);
+  }
+  return $element;
+}
+
+/**
  * Implements hook_form_alter().
  */
 function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {

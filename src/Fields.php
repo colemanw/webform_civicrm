@@ -425,14 +425,9 @@ class Fields implements FieldsInterface {
       ];
       $fields['activity_activity_date_time'] = [
         'name' => t('Activity # Date'),
-        'type' => 'date',
+        'type' => 'datetime',
         'default_value' => 'now',
-      ];
-      $fields['activity_activity_date_time_timepart'] = [
-        'name' => t('Activity # Time'),
-        /*This must be set to webform_time in order to appear on the build tab as Type = Time; later we'll convert the type to glue it to the date*/
-        'type' => 'webform_time',
-        'default_value' => 'now',
+        'date_time_step' => 60,
       ];
       $fields['activity_duration'] = [
         'name' => t('Activity # Duration'),
@@ -978,16 +973,17 @@ class Fields implements FieldsInterface {
         }
 
         if ($fields[$id]['type'] == 'date') {
-          $fields[$id]['extra']['start_date'] = (!empty($custom_field['start_date_years']) ? '-' . $custom_field['start_date_years'] : '-50') . ' years';
-          $fields[$id]['extra']['end_date'] = (!empty($custom_field['end_date_years']) ? '+' . $custom_field['end_date_years'] : '+50') . ' years';
+          $fields[$id]['date_date_min'] = (!empty($custom_field['start_date_years']) ? '-' . $custom_field['start_date_years'] : '-50') . ' years';
+          $fields[$id]['date_date_max'] = (!empty($custom_field['end_date_years']) ? '+' . $custom_field['end_date_years'] : '+50') . ' years';
           // Add "time" component for datetime fields
           if (!empty($custom_field['time_format'])) {
-            $fields[$id]['name'] .= ' - ' . t('date');
-            $fields[$id . '_timepart'] = [
-              'name' => $custom_field['label'] . ' - ' . t('time'),
-              'type' => 'webform_time',
-              'extra' => ['hourformat' => $custom_field['time_format'] == 1 ? '12-hour' : '24-hour'],
-            ];
+            $fields[$id]['type'] = 'datetime';
+            $fields[$id]['date_time_step'] = 60;
+            if ($custom_field['time_format'] == 2) {
+              $fields[$id]['date_time_element'] = 'timepicker';
+              $fields[$id]['date_time_placeholder'] = 'hh:mm';
+              $fields[$id]['date_time_format'] = 'H:i';
+            }
           }
         }
         elseif ($fields[$id]['data_type'] == 'ContactReference') {

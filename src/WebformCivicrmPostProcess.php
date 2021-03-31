@@ -2478,13 +2478,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           $options = $utils->wf_crm_field_options($component, '', $this->data);
           $val = array_search($val, $options);
         }
-        // Fudge together date and time fields
-        if (($field['type'] === 'time' || $field['type'] === 'webform_time') && substr($name, -8) === 'timepart') {
-          $name = str_replace('_timepart', '', $name);
-          // Add date (default to today)
-          $date = wf_crm_aval($this->data, "$ent:$c:$table:$n:$name", date('Ymd'));
-          $val = $date . str_replace(':', '', $val);
-        }
 
         // Only known contacts are allowed to empty a field
         if (($val !== '' && $val !== NULL && $val !== []) || !empty($this->existing_contacts[$c])) {
