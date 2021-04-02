@@ -156,6 +156,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->fillField('Postal Code', '53177');
     $this->getSession()->getPage()->pressButton('Submit');
+    $this->createScreenshot($this->htmlOutputDirectory . '/iats_webform.png');
     $this->htmlOutput();
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
