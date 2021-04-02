@@ -70,7 +70,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     return \CRM_Financial_BAO_FinancialTypeAccount::add($entityParams);
   }
 
-  public function testSubmitContribution() {
+  /*public function testSubmitContribution() {
     $payment_processor = $this->createiATSPaymentProcessor();
 
     $financialAccount = $this->setupSalesTax(2, $accountParams = []);
@@ -209,6 +209,6 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $sum_tax_amount = $api_result['values'][2]['tax_amount'];
     $this->assertEquals($tax_total_amount, $sum_tax_amount);
     $this->assertEquals($contribution_total_amount, $sum_line_total + $sum_tax_amount);
-  }
+  }*/
 
 }
