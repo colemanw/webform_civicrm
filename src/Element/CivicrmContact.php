@@ -2,11 +2,11 @@
 
 namespace Drupal\webform_civicrm\Element;
 
-use Drupal\webform\Plugin\WebformElementBase;
+use Drupal\Core\Render\Element\Textfield;
 
 /**
  * @FormElement("civicrm_contact")
  */
-class CivicrmContact extends WebformElementBase {
+class CivicrmContact extends Textfield {
 
 }
