@@ -13,7 +13,10 @@ use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
  */
 final class ContributionIatsTest extends WebformCivicrmTestBase {
 
-  private function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp() {
     parent::setUp();
 
     // Download installs and enables!
