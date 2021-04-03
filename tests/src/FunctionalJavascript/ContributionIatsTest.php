@@ -13,7 +13,9 @@ use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
  */
 /*final class ContributionIatsTest extends WebformCivicrmTestBase {
 
-  private function createiATSPaymentProcessor() {
+  private function setUp() {
+    parent::setUp();
+
     // Download installs and enables!
     $result = civicrm_api3('Extension', 'download', [
       'key' => "com.iatspayments.civicrm",
@@ -39,7 +41,7 @@ use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
     $result = $utils->wf_civicrm_api('payment_processor', 'create', $params);
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
-    return current($result['values']);
+    $this->payment_processor = current($result['values']);
   }
 
   private function setupSalesTax(int $financialTypeId, $accountParams = []) {
@@ -71,8 +73,6 @@ use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
   }
 
   public function testSubmitContribution() {
-    $payment_processor = $this->createiATSPaymentProcessor();
-
     $financialAccount = $this->setupSalesTax(2, $accountParams = []);
 
     $this->drupalLogin($this->adminUser);
@@ -93,12 +93,8 @@ use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
     $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
     $this->getSession()->getPage()->selectFieldOption('Financial Type', 1);
 
-    $el = $this->getSession()->getPage()->findField('Payment Processor');
-    $opts = $el->findAll('css', 'option');
-    $this->assertCount(3, $opts, 'Payment processor values: ' . implode(', ', array_map(static function(NodeElement $el) {
-      return $el->getValue();
-    }, $opts)));
-    $this->getSession()->getPage()->selectFieldOption('Payment Processor', $payment_processor['id']);
+    $this->assertCount(3, $this->getOptions('Payment Processor'));
+    $this->getSession()->getPage()->selectFieldOption('Payment Processor', $this->payment_processor['id']);
 
     $this->getSession()->getPage()->selectFieldOption('lineitem_1_number_of_lineitem', 2);
     $this->assertSession()->assertWaitOnAjaxRequest();
