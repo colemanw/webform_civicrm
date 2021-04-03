@@ -1820,17 +1820,17 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         $contact['contact'][1]['middle_name'] = $this->billing_params['middle_name'];
       }
       $contact['contact'][1] += [
-        'first_name' => $this->billing_params['first_name'],
-        'last_name' => $this->billing_params['last_name'],
+        'first_name' => $this->billing_params['first_name'] ?? NULL,
+        'last_name' => $this->billing_params['last_name'] ?? NULL,
       ];
       $cid = $this->findDuplicateContact($contact);
     }
     $address = [
-      'street_address' => $this->billing_params['street_address'],
-      'city' => $this->billing_params['city'],
-      'country_id' => $this->billing_params['country_id'],
+      'street_address' => $this->billing_params['street_address'] ?? NULL,
+      'city' => $this->billing_params['city'] ?? NULL,
+      'country_id' => $this->billing_params['country_id'] ?? NULL,
       'state_province_id' => wf_crm_aval($this->billing_params, 'state_province_id'),
-      'postal_code' => $this->billing_params['postal_code'],
+      'postal_code' => $this->billing_params['postal_code'] ?? NULL,
       'location_type_id' => 'Billing',
     ];
     $email = [
