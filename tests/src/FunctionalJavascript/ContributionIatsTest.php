@@ -46,7 +46,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $result = $utils->wf_civicrm_api('payment_processor', 'create', $params);
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
-    $this->payment_processor = current($result['values']);
+    $this->payment_processor_legacy = current($result['values']);
 
     // 1st Pay
     $params = [
@@ -70,7 +70,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $result = $utils->wf_civicrm_api('payment_processor', 'create', $params);
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
-    $this->payment_processor = current($result['values']);
+    $this->payment_processor_faps = current($result['values']);
 
     drupal_flush_all_caches();
   }
@@ -104,7 +104,72 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
   }
 
   public function testSubmit1stPayContribution() {
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
 
+    $this->getSession()->getPage()->clickLink('Contribution');
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->pageTextContains('You must enable an email field for Contact 1 in order to process transactions.');
+    $this->getSession()->getPage()->pressButton('Enable It');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->checkField('Contribution Amount');
+    $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
+    $this->getSession()->getPage()->selectFieldOption('Financial Type', 'Donation');
+    // throw new \Exception(var_export($this->getOptions('Payment Processor'), TRUE));
+    $this->assertCount(4, $this->getOptions('Payment Processor'));
+    $this->getSession()->getPage()->selectFieldOption('Payment Processor',  $this->payment_processor_faps['id']);
+
+    $this->saveCiviCRMSettings();
+
+    // Setup contact information wizard page.
+    $this->configureContactInformationWizardPage();
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+    $edit = [
+      'First Name' => 'Frederick',
+      'Last Name' => 'Pabst',
+      'Email' => 'fred@example.com',
+    ];
+    $this->postSubmission($this->webform, $edit, 'Next >');
+    $this->getSession()->getPage()->fillField('Contribution Amount', '10.00');
+    $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
+    $this->htmlOutput();
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '10.00');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $this->filliATSCryptogram();
+  }
+
+  /**
+   * Fill values for the iATS Cryptogram.
+   */
+  private function filliATSCryptogram() {
+    $this->htmlOutput();
+    $this->createScreenshot($this->htmlOutputDirectory . '/faps_cryptogram.png');
+
+    $expYear = date('y') + 1;
+    // Wait for the credit card form to load in.
+    $cryptogram = $this->assertSession()->waitForElementVisible('xpath', '//div[contains(@id, "firstpay-iframe")]/div/iframe');
+    $this->assertNotEmpty($cryptogram);
+    $this->getSession()->switchToIFrame($cryptogram->getAttribute('name'));
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $this->assertSession()->waitForElementVisible('css', 'input[name="text-card-number"]');
+    $this->getSession()->getPage()->fillField('text-card-number', '4222222222222220');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->fillField('text-cvv', '123');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->fillField('select-expiration-month', '11 / ');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->fillField('select-expiration-year', $expYear);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    // $this->getSession()->switchToIFrame();
   }
 
 /*public function testSubmitContribution() {
@@ -130,7 +195,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
 
   $this->assertCount(3, $this->getOptions('Payment Processor'));
   // ToDo - KG
-  $this->getSession()->getPage()->selectFieldOption('Payment Processor', $this->payment_processor['id']);
+  $this->getSession()->getPage()->selectFieldOption('Payment Processor',  $this->payment_processor_legacy['id']);
 
   $this->getSession()->getPage()->selectFieldOption('lineitem_1_number_of_lineitem', 2);
   $this->assertSession()->assertWaitOnAjaxRequest();
