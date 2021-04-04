@@ -530,22 +530,9 @@ abstract class WebformCivicrmBase {
       return $exposed;
     }
 
-    if ($field && $field['#type'] == 'civicrm_options') {
-      return $field['#options'] ? array_diff_key($field['#options'], $exclude) : [];
-    }
-    if ($field && $field['#type'] == 'select') {
-      // Fetch static options
-      if (empty($field['civicrm_live_options'])) {
-        $exposed = $utils->wf_crm_str2array($field['#extra']['items']);
-      }
-      // Fetch live options
-      else {
-        $exposed = $utils->wf_crm_field_options(['form_key' => $field['#form_key']], 'civicrm_live_options', $this->data);
-      }
-      foreach ($exclude as $i) {
-        unset($exposed[$i]);
-      }
-      return $exposed;
+    $supportedTypes = ['civicrm_options', 'checkboxes', 'radios', 'select'];
+    if (isset($field['#options']) && in_array($field['#type'], $supportedTypes)) {
+      return array_diff_key($field['#options'], array_flip($exclude));
     }
     return [];
   }
