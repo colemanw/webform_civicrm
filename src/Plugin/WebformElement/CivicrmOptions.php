@@ -5,7 +5,7 @@ namespace Drupal\webform_civicrm\Plugin\WebformElement;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Markup;
-use Drupal\webform\Plugin\WebformElementBase;
+use Drupal\webform\Plugin\WebformElement\OptionsBase;
 use Drupal\webform\WebformSubmissionInterface;
 
 /**
@@ -23,7 +23,7 @@ use Drupal\webform\WebformSubmissionInterface;
  * @see \Drupal\webform\Plugin\WebformElementInterface
  * @see \Drupal\webform\Annotation\WebformElement
  */
-class CivicrmOptions extends WebformElementBase {
+class CivicrmOptions extends OptionsBase {
 
   /**
    * {@inheritdoc}
@@ -235,10 +235,34 @@ class CivicrmOptions extends WebformElementBase {
    * {@inheritdoc}
    */
   public function hasMultipleValues(array $element) {
-    if (!empty($element['#extra']['multiple']) || (!empty($element['#options']) && count($element['#options']) === 1)) {
+    if (!empty($element['#extra']['multiple']) ||
+      (empty($element['#civicrm_live_options']) && !empty($element['#options']) && count($element['#options']) === 1)) {
       return TRUE;
     }
     return FALSE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getRelatedTypes(array $element) {
+    $types = [];
+    $has_multiple_values = $this->hasMultipleValues($element);
+
+    $supportedTypes = ['checkboxes', 'radios', 'select'];
+    $elements = $this->elementManager->getInstances();
+    foreach ($elements as $element_name => $element_instance) {
+      if (!in_array($element_name, $supportedTypes)) {
+        continue;
+      }
+      if ($has_multiple_values !== $element_instance->hasMultipleValues($element)) {
+        continue;
+      }
+      $types[$element_name] = $element_instance->getPluginLabel();
+    }
+
+    asort($types);
+    return $types;
   }
 
 }

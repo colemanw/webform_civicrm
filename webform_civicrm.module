@@ -71,7 +71,7 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
   //Do not load civicrm elements on the "Add element" form.
   if ($form_id == 'webform_ui_element_type_select_form') {
     foreach ($form as $k => $fieldset) {
-      if (!empty($fieldset['#title']) && strtolower($fieldset['#title']) == 'civicrm') {
+      if (is_array($fieldset) && !empty($fieldset['#title']) && strtolower($fieldset['#title']) == 'civicrm') {
         unset($form[$k]);
         return;
       }

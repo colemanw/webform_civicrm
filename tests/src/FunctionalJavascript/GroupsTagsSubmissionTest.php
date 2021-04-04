@@ -11,16 +11,24 @@ use Drupal\Core\Url;
  */
 final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
 
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp() {
+    parent::setUp();
+    foreach (['GroupA', 'GroupB', 'GroupC'] as $group) {
+      $this->groups[$group] = $this->utils->wf_civicrm_api('Group', 'create', [
+        'title' => $group,
+      ])['id'];
+    }
+  }
+
   public function testSubmitWebform() {
     $this->drupalLogin($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
-    // The label has a <div> in it which can cause weird failures here.
-    $this->assertSession()->waitForText('Enable CiviCRM Processing');
-    $this->assertSession()->waitForField('nid');
-    $this->getSession()->getPage()->checkField('nid');
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->enableCivicrmOnWebform();
 
     // Scenario: admin user is configuring the form - for some admin to data enter volunteer contacts
     $this->getSession()->getPage()->uncheckField('Existing Contact');
@@ -38,15 +46,18 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     // Enable Tags and Groups Fields and then set Tag(s) to -User Select-
     $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_other', 'Yes');
     $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption("civicrm_1_contact_1_other_group[]", 'create_civicrm_webform_element');
     $this->getSession()->getPage()->selectFieldOption("civicrm_1_contact_1_other_tag[]", 'create_civicrm_webform_element');
     $this->htmlOutput();
-    $this->getSession()->getPage()->pressButton('Save Settings');
-    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
-    $this->assertPageNoErrorMessages();
+    $this->saveCiviCRMSettings();
 
     $this->drupalGet($this->webform->toUrl('edit-form'));
-    $this->assertSession()->waitForField('Checkboxes');
+    $this->assertSession()->waitForField('Group(s)');
     $this->htmlOutput();
+
+    //Change type of group field to checkbox.
+    $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contact-1-other-group-operations', FALSE, FALSE, NULL, 'checkboxes');
+
     $majorDonorTagID = $this->utils->wf_civicrm_api('Tag', 'get', [
       'name' => "Major Donor",
     ])['id'];
@@ -77,6 +88,10 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Last Name', $params['last_name']);
     $this->getSession()->getPage()->fillField('Email', 'frederick@pabst.io');
 
+    $this->getSession()->getPage()->checkField('GroupB');
+    $this->assertSession()->checkboxChecked("GroupB");
+    $this->getSession()->getPage()->checkField('GroupC');
+    $this->assertSession()->checkboxChecked("GroupC");
     $this->getSession()->getPage()->checkField('Volunteer');
     $this->assertSession()->checkboxChecked("Volunteer");
     $this->htmlOutput();
@@ -86,18 +101,26 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     $contactID = $this->utils->wf_civicrm_api('Contact', 'get', $params)['id'];
-    $contactTags = explode(',', $this->utils->wf_civicrm_api('Contact', 'get', [
+    $contact = $this->utils->wf_civicrm_api('Contact', 'get', [
       'sequential' => 1,
-      'return' => ["tag"],
+      'return' => ["tag", "group"],
       'contact_id' => $contactID,
-    ])['values'][0]['tags']);
-    $this->assertArrayHasKey('Major Donor', array_flip($contactTags));
-    $this->assertArrayHasKey('Volunteer', array_flip($contactTags));
+    ])['values'][0];
+    $contactTags = explode(',', $contact['tags']);
+    $contactGroups = explode(',', $contact['groups']);
+
+    $this->assertTrue(in_array($this->groups['GroupB'], $contactGroups));
+    $this->assertTrue(in_array($this->groups['GroupC'], $contactGroups));
+    $this->assertTrue(in_array('Major Donor', $contactTags));
+    $this->assertTrue(in_array('Volunteer', $contactTags));
+
     // Ensure option labels are present on result page.
     $this->drupalGet($this->webform->toUrl('results-submissions'));
     $this->htmlOutput();
     $this->assertSession()->pageTextContains('Major Donor');
     $this->assertSession()->pageTextContains('Volunteer');
+    $this->assertSession()->pageTextContains('GroupB');
+    $this->assertSession()->pageTextContains('GroupC');
 
     // Now let's reload the form and Uncheck Volunteer - then confirm it has been unchecked
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
@@ -113,6 +136,11 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $contactID]]));
     $this->assertPageNoErrorMessages();
     $this->assertSession()->waitForField('Volunteer');
+    $this->getSession()->getPage()->checkField('GroupA');
+    $this->assertSession()->checkboxChecked("GroupA");
+    $this->getSession()->getPage()->uncheckField('GroupB');
+    $this->assertSession()->checkboxNotChecked('GroupB');
+
     $this->getSession()->getPage()->uncheckField('Volunteer');
     $this->assertSession()->checkboxNotChecked('Volunteer');
     $this->htmlOutput();
@@ -121,14 +149,23 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     $contactID = $this->utils->wf_civicrm_api('Contact', 'get', $params)['id'];
-    $contactTags = explode(',', $this->utils->wf_civicrm_api('Contact', 'get', [
+    $contactVal = $this->utils->wf_civicrm_api('Contact', 'get', [
       'sequential' => 1,
-      'return' => ["tag"],
+      'return' => ["tag", "group"],
       'contact_id' => $contactID,
-    ])['values'][0]['tags']);
-    $this->assertArrayHasKey('Major Donor', array_flip($contactTags));
-    $this->assertArrayNotHasKey('Volunteer', array_flip($contactTags));
-    // throw new \Exception(var_export($contactTags, TRUE));
+    ]);
+    $contact = $this->utils->wf_civicrm_api('Contact', 'get', [
+      'sequential' => 1,
+      'return' => ["tag", "group"],
+      'contact_id' => $contactID,
+    ])['values'][0];
+    $contactTags = explode(',', $contact['tags']);
+    $contactGroups = explode(',', $contact['groups']);
+    $this->assertTrue(in_array('Major Donor', $contactTags));
+    $this->assertFalse(in_array('Volunteer', $contactTags));
+
+    $this->assertTrue(in_array($this->groups['GroupA'], $contactGroups));
+    $this->assertFalse(in_array($this->groups['GroupB'], $contactGroups));
   }
 
 }

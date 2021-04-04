@@ -155,12 +155,21 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
    * @param bool $enableStatic
    *   TRUE if static radio option should be enabled.
    * @param bool $default
+   * @param string $type
+   *  possible values - checkboxes, radios, select, civicrm-options
    */
-  protected function editCivicrmOptionElement($selector, $multiple = TRUE, $enableStatic = FALSE, $default = NULL) {
+  protected function editCivicrmOptionElement($selector, $multiple = TRUE, $enableStatic = FALSE, $default = NULL, $type = NULL) {
     $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="' . $selector . '"] a.webform-ajax-link');
     $checkbox_edit_button->click();
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
+    if ($type) {
+      $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-change-type"]')->click();
+      $this->assertSession()->assertWaitOnAjaxRequest();
+      $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector='edit-elements-{$type}-operation']")->click();
+      $this->assertSession()->assertWaitOnAjaxRequest();
+      $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector='edit-cancel']");
+    }
 
     if ($enableStatic) {
       $this->getSession()->getPage()->selectFieldOption("properties[civicrm_live_options]", 0);
@@ -170,10 +179,11 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     if ($default) {
       $this->getSession()->getPage()->selectFieldOption("properties[options][default]", $default);
     }
-    $this->getSession()->getPage()->uncheckField('properties[extra][aslist]');
-    $this->assertSession()->checkboxNotChecked('properties[extra][aslist]');
-    $this->htmlOutput();
-
+    if (!$type || $type == 'civicrm-options') {
+      $this->getSession()->getPage()->uncheckField('properties[extra][aslist]');
+      $this->assertSession()->checkboxNotChecked('properties[extra][aslist]');
+      $this->htmlOutput();
+    }
     if ($multiple) {
       $this->getSession()->getPage()->checkField('properties[extra][multiple]');
       $this->assertSession()->checkboxChecked('properties[extra][multiple]');
