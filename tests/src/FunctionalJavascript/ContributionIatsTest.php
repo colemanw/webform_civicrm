@@ -150,11 +150,15 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
    */
   private function filliATSCryptogram() {
     $this->htmlOutput();
-    $this->createScreenshot($this->htmlOutputDirectory . '/faps_cryptogram.png');
+    // $this->createScreenshot($this->htmlOutputDirectory . '/faps_cryptogram.png');
 
     $expYear = date('y') + 1;
     // Wait for the credit card form to load in.
-    $cryptogram = $this->assertSession()->waitForElementVisible('xpath', '//div[contains(@id, "firstpay-iframe")]/div/iframe');
+
+    $cryptogram = $this->assertSession()->waitForElementVisible('xpath', '//div[contains(@id, "firstpay-iframe")]/iframe');
+
+    $this->assertSession()->waitForElementVisible('css','text-card-number');
+
     $this->assertNotEmpty($cryptogram);
     $this->getSession()->switchToIFrame($cryptogram->getAttribute('name'));
     $this->assertSession()->assertWaitOnAjaxRequest();
@@ -164,7 +168,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->fillField('text-cvv', '123');
     $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->getSession()->getPage()->fillField('select-expiration-month', '11 / ');
+    $this->getSession()->getPage()->fillField('select-expiration-month', '11');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->fillField('select-expiration-year', $expYear);
     $this->assertSession()->assertWaitOnAjaxRequest();
