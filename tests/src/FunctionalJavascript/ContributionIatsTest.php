@@ -247,14 +247,14 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
-    $this->getSession()->getPage()->fillField('Line Item Amount', '20.00');
-    $this->getSession()->getPage()->fillField('Line Item Amount 2', '29.50');
+    $this->getSession()->getPage()->fillField('Line Item Amount', '1.75');
+    $this->getSession()->getPage()->fillField('Line Item Amount 2', '5.00');
 
     $this->getSession()->getPage()->pressButton('Next >');
-    $this->getSession()->getPage()->fillField('Contribution Amount', '10.00');
+    $this->getSession()->getPage()->fillField('Contribution Amount', '3.00');
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->htmlOutput();
-    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '60.98');
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '10.00');
 
     // Wait for the credit card form to load in.
     $this->assertSession()->waitForField('credit_card_number');
@@ -300,7 +300,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->assertContains(':', $contribution['trxn_id']);
     $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
     $this->assertEquals('Donation', $contribution['financial_type']);
-    $this->assertEquals('60.98', $contribution['total_amount']);
+    $this->assertEquals('10.00', $contribution['total_amount']);
     $contribution_total_amount = $contribution['total_amount'];
     $this->assertEquals('Completed', $contribution['contribution_status']);
     $this->assertEquals('USD', $contribution['currency']);
@@ -316,7 +316,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
       'label' => "Credit Card",
       'option_group_id' => "payment_instrument",
     ]);
-    $this->assertEquals('1.48', $contribution['tax_amount']);
+    $this->assertEquals('0.25', $contribution['tax_amount']);
     $this->assertEquals($creditCardID, $contribution['payment_instrument_id']);
     $tax_total_amount = $contribution['tax_amount'];
 
@@ -324,15 +324,16 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
       'sequential' => 1,
     ]);
 
-    $this->assertEquals('10.00', $api_result['values'][0]['line_total']);
+    // throw new \Exception(var_export($api_result, TRUE));
+
+    $this->assertEquals('3.00', $api_result['values'][0]['line_total']);
     $this->assertEquals('1', $api_result['values'][0]['financial_type_id']);
-    $this->assertEquals('20.00', $api_result['values'][1]['line_total']);
+    $this->assertEquals('1.75', $api_result['values'][1]['line_total']);
     $this->assertEquals('1', $api_result['values'][1]['financial_type_id']);
-    $this->assertEquals('29.50', $api_result['values'][2]['line_total']);
-    $this->assertEquals('1.48', $api_result['values'][2]['tax_amount']);
+    $this->assertEquals('5.00', $api_result['values'][2]['line_total']);
+    $this->assertEquals('0.25', $api_result['values'][2]['tax_amount']);
     $this->assertEquals('2', $api_result['values'][2]['financial_type_id']);
 
-    // throw new \Exception(var_export($api_result, TRUE));
     $sum_line_total = $api_result['values'][0]['line_total'] + $api_result['values'][1]['line_total'] + $api_result['values'][2]['line_total'];
     $sum_tax_amount = $api_result['values'][2]['tax_amount'];
     $this->assertEquals($tax_total_amount, $sum_tax_amount);
