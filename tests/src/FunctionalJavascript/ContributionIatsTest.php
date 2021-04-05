@@ -143,6 +143,16 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->filliATSCryptogram();
+
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    // $this->assertPageNoErrorMessages();
+    $this->createScreenshot($this->htmlOutputDirectory . '/iatsfaps_cryptogram.png');
+    $this->htmlOutput();
+
+    $this->assertSession()->waitForElementVisible('css', '.webform-confirmation');
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+    $this->assertPageNoErrorMessages();
   }
 
   /**
@@ -150,17 +160,14 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
    */
   private function filliATSCryptogram() {
     $this->htmlOutput();
-    // $this->createScreenshot($this->htmlOutputDirectory . '/faps_cryptogram.png');
-
     $expYear = date('y') + 1;
     // Wait for the credit card form to load in.
 
-    $cryptogram = $this->assertSession()->waitForElementVisible('xpath', '//div[contains(@id, "firstpay-iframe")]/iframe');
+    $this->getSession()->wait(5000);
+    $this->getSession()->wait(5000);
+    $this->getSession()->wait(5000);
 
-    $this->assertSession()->waitForElementVisible('css','text-card-number');
-
-    $this->assertNotEmpty($cryptogram);
-    $this->getSession()->switchToIFrame($cryptogram->getAttribute('name'));
+    $this->getSession()->switchToIFrame('firstpay-iframe');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->assertSession()->waitForElementVisible('css', 'input[name="text-card-number"]');
@@ -173,7 +180,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('select-expiration-year', $expYear);
     $this->assertSession()->assertWaitOnAjaxRequest();
 
-    // $this->getSession()->switchToIFrame();
+    $this->getSession()->switchToIFrame();
   }
 
 /*public function testSubmitContribution() {
