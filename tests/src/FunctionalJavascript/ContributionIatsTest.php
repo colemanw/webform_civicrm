@@ -144,6 +144,15 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
 
     $this->filliATSCryptogram();
 
+    $this->getSession()->getPage()->fillField('Billing First Name', 'Frederick');
+    $this->getSession()->getPage()->fillField('Billing Last Name', 'Pabst');
+    $this->getSession()->getPage()->fillField('Street Address', '123 Milwaukee Ave');
+    $this->getSession()->getPage()->fillField('City', 'Calgary');
+    $this->getSession()->getPage()->fillField('Country', 'Canada');
+    $this->getSession()->getPage()->fillField('Postal Code', 'T2N 1N4');
+    $this->getSession()->getPage()->fillField('State/Province', 'Alberta');
+
+
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertSession()->assertWaitOnAjaxRequest();
     // $this->assertPageNoErrorMessages();
@@ -164,11 +173,11 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     // Wait for the credit card form to load in.
 
     $this->getSession()->wait(5000);
-    $this->getSession()->wait(5000);
-    $this->getSession()->wait(5000);
 
     $this->getSession()->switchToIFrame('firstpay-iframe');
     $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $this->getSession()->getPage()->fillField('Cryptogram', 'cryptogram');
 
     $this->assertSession()->waitForElementVisible('css', 'input[name="text-card-number"]');
     $this->getSession()->getPage()->fillField('text-card-number', '4222222222222220');
