@@ -165,8 +165,8 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertSession()->assertWaitOnAjaxRequest();
-    // $this->assertPageNoErrorMessages();
-    $this->createScreenshot($this->htmlOutputDirectory . 'iatsfaps_cryptogram.png');
+    $this->assertPageNoErrorMessages();
+    $this->createScreenshot($this->htmlOutputDirectory . 'faps169.png');
     $this->htmlOutput();
 
     $this->assertSession()->waitForElementVisible('css', '.webform-confirmation');
@@ -198,6 +198,8 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->fillField('select-expiration-year', $expYear);
     $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $this->getSession()->wait(5000);
 
     $this->getSession()->switchToIFrame();
   }
@@ -284,7 +286,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->pressButton('Submit');
     // throw new \Exception(var_export($this->htmlOutputDirectory, TRUE));
 
-    $this->createScreenshot($this->htmlOutputDirectory . '/errord8535.png');
+    $this->createScreenshot($this->htmlOutputDirectory . '/legacy289.png');
     $this->htmlOutput();
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
