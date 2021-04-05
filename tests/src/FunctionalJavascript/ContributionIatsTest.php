@@ -147,16 +147,26 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Billing First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Billing Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Street Address', '123 Milwaukee Ave');
-    $this->getSession()->getPage()->fillField('City', 'Calgary');
-    $this->getSession()->getPage()->fillField('Country', 'Canada');
-    $this->getSession()->getPage()->fillField('Postal Code', 'T2N 1N4');
-    $this->getSession()->getPage()->fillField('State/Province', 'Alberta');
+    $this->getSession()->getPage()->fillField('City', 'Milwaukee');
 
+    // Select2 is being difficult; unhide the country and state/province select.
+    $driver = $this->getSession()->getDriver();
+    assert($driver instanceof DrupalSelenium2Driver);
+    $driver->executeScript("document.getElementById('billing_country_id-5').style.display = 'block';");
+    $driver->executeScript("document.getElementById('billing_state_province_id-5').style.display = 'block';");
+
+    $this->getSession()->getPage()->fillField('billing_country_id-5', '1228');
+    // Wait for select2's AJAX request.
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->wait(1000, 'document.getElementById("billing_state_province_id-5").options.length > 1');
+    $this->getSession()->getPage()->fillField('billing_state_province_id-5', '1048');
+
+    $this->getSession()->getPage()->fillField('Postal Code', '53177');
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertSession()->assertWaitOnAjaxRequest();
     // $this->assertPageNoErrorMessages();
-    $this->createScreenshot($this->htmlOutputDirectory . '/iatsfaps_cryptogram.png');
+    $this->createScreenshot($this->htmlOutputDirectory . 'iatsfaps_cryptogram.png');
     $this->htmlOutput();
 
     $this->assertSession()->waitForElementVisible('css', '.webform-confirmation');
@@ -177,7 +187,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->switchToIFrame('firstpay-iframe');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
-    $this->getSession()->getPage()->fillField('Cryptogram', 'cryptogram');
+    // $this->getSession()->getPage()->fillField('Cryptogram', 'cryptogram');
 
     $this->assertSession()->waitForElementVisible('css', 'input[name="text-card-number"]');
     $this->getSession()->getPage()->fillField('text-card-number', '4222222222222220');
@@ -272,7 +282,9 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->fillField('Postal Code', '53177');
     $this->getSession()->getPage()->pressButton('Submit');
-    $this->createScreenshot($this->htmlOutputDirectory . '/iats_webform.png');
+    // throw new \Exception(var_export($this->htmlOutputDirectory, TRUE));
+
+    $this->createScreenshot($this->htmlOutputDirectory . 'iats_webform.png');
     $this->htmlOutput();
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
