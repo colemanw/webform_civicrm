@@ -284,7 +284,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->pressButton('Submit');
     // throw new \Exception(var_export($this->htmlOutputDirectory, TRUE));
 
-    $this->createScreenshot($this->htmlOutputDirectory . 'iats_webform.png');
+    $this->createScreenshot($this->htmlOutputDirectory . '/iats_webform.png');
     $this->htmlOutput();
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
