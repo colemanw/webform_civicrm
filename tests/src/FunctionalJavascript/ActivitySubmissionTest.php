@@ -127,7 +127,7 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     // CiviCRM Activity Type 1 -> Meeting (default)
     $this->assertEquals('1', $activity['activity_type_id']);
     $today = date('Y-m-d H:i:s');
-    $this->assertTrue(strtotime($today) -  strtotime($activity['activity_date_time']) < 60);
+    $this->assertTrue(strtotime($today) -  strtotime($activity['activity_date_time']) < 120);
     $this->assertEquals(90, $activity['duration']);
 
     $api_result = $this->utils->wf_civicrm_api('ActivityContact', 'get', [
@@ -169,7 +169,7 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     // Everything else should have remained the same:
     $this->assertEquals('Awesome Activity', $activity['subject']);
     $this->assertEquals('1', $activity['activity_type_id']);
-    $this->assertTrue(strtotime($today) -  strtotime($activity['activity_date_time']) < 60);
+    $this->assertTrue(strtotime($today) -  strtotime($activity['activity_date_time']) < 120);
   }
 
 }
