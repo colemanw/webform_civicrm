@@ -261,7 +261,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertNotEmpty($contribution['trxn_id']);
     $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
     $this->assertEquals('Donation', $contribution['financial_type']);
-    $this->assertEquals('1200', $contribution['total_amount']);
+    $this->assertEquals('1200.00', $contribution['total_amount']);
     $contribution_total_amount = $contribution['total_amount'];
     $this->assertEquals('Completed', $contribution['contribution_status']);
     $this->assertEquals('USD', $contribution['currency']);
