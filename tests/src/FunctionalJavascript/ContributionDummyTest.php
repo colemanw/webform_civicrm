@@ -174,4 +174,107 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertEquals($contribution_total_amount, $sum_line_total + $sum_tax_amount);
   }
 
+  public function testOverThousand() {
+    $payment_processor = $this->createPaymentProcessor();
+
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    // The label has a <div> in it which can cause weird failures here.
+    $this->assertSession()->waitForText('Enable CiviCRM Processing');
+    $this->assertSession()->waitForField('nid');
+    $this->getSession()->getPage()->checkField('nid');
+    $this->getSession()->getPage()->clickLink('Contribution');
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->pageTextContains('You must enable an email field for Contact 1 in order to process transactions.');
+    $this->getSession()->getPage()->pressButton('Enable It');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->checkField('Contribution Amount');
+    $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
+    $this->getSession()->getPage()->selectFieldOption('Financial Type', 1);
+
+    $el = $this->getSession()->getPage()->findField('Payment Processor');
+    $opts = $el->findAll('css', 'option');
+    $this->assertCount(3, $opts, 'Payment processor values: ' . implode(', ', array_map(static function(NodeElement $el) {
+        return $el->getValue();
+      }, $opts)));
+    $this->getSession()->getPage()->selectFieldOption('Payment Processor', $payment_processor['id']);
+    $this->htmlOutput();
+
+    $this->getSession()->getPage()->pressButton('Save Settings');
+    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+
+    // Setup contact information wizard page.
+    $this->configureContactInformationWizardPage();
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+    $this->getSession()->getPage()->fillField('First Name', 'Frederick');
+    $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
+    $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
+
+    $this->getSession()->getPage()->pressButton('Next >');
+    $this->getSession()->getPage()->fillField('Contribution Amount', '1200.00');
+    $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
+    $this->htmlOutput();
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '1,200');
+
+    // Wait for the credit card form to load in.
+    $this->assertSession()->waitForField('credit_card_number');
+    $this->getSession()->getPage()->fillField('Card Number', '4222222222222220');
+    $this->getSession()->getPage()->fillField('Security Code', '123');
+    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[M]', '11');
+    $this_year = date('Y');
+    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[Y]', $this_year + 1);
+    $this->getSession()->getPage()->fillField('Billing First Name', 'Frederick');
+    $this->getSession()->getPage()->fillField('Billing Last Name', 'Pabst');
+    $this->getSession()->getPage()->fillField('Street Address', '123 Milwaukee Ave');
+    $this->getSession()->getPage()->fillField('City', 'Milwaukee');
+
+    // Select2 is being difficult; unhide the country and state/province select.
+    $driver = $this->getSession()->getDriver();
+    assert($driver instanceof DrupalSelenium2Driver);
+    $driver->executeScript("document.getElementById('billing_country_id-5').style.display = 'block';");
+    $driver->executeScript("document.getElementById('billing_state_province_id-5').style.display = 'block';");
+
+    $this->getSession()->getPage()->fillField('billing_country_id-5', '1228');
+    // Wait for select2's AJAX request.
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->wait(1000, 'document.getElementById("billing_state_province_id-5").options.length > 1');
+    $this->getSession()->getPage()->fillField('billing_state_province_id-5', '1048');
+
+    $this->getSession()->getPage()->fillField('Postal Code', '53177');
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->htmlOutput();
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $api_result = $utils->wf_civicrm_api('contribution', 'get', [
+      'sequential' => 1,
+    ]);
+
+    $this->assertEquals(1, $api_result['count']);
+    $contribution = reset($api_result['values']);
+    $this->assertNotEmpty($contribution['trxn_id']);
+    $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
+    $this->assertEquals('Donation', $contribution['financial_type']);
+    $this->assertEquals('1200', $contribution['total_amount']);
+    $contribution_total_amount = $contribution['total_amount'];
+    $this->assertEquals('Completed', $contribution['contribution_status']);
+    $this->assertEquals('USD', $contribution['currency']);
+
+    $api_result = $utils->wf_civicrm_api('line_item', 'get', [
+      'sequential' => 1,
+    ]);
+
+    $this->assertEquals('1.00', $api_result['values'][0]['qty']);
+    $this->assertEquals('1200.00', $api_result['values'][0]['unit_price']);
+    $this->assertEquals('1200.00', $api_result['values'][0]['line_total']);
+    $this->assertEquals('1', $api_result['values'][0]['financial_type_id']);
+
+    //throw new \Exception(var_export($api_result, TRUE));
+  }
 }
