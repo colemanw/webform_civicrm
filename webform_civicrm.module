@@ -249,7 +249,7 @@ function webform_civicrm_civicrm_postSave_civicrm_custom_field($dao) {
  *
  * Handles delete of a custom field.
  *
- * TODO: In theory, this could also handle save, and we don't need to impliment the above hook.
+ * TODO: In theory, this could also handle save, and we don't need to implement the above hook.
  * However, this hook dosen't support CustomField in CiviCRM < 4.7.14 (or LTS < 4.6.24).
  *
  * @param string $op
