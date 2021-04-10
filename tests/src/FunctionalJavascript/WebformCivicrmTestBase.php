@@ -187,8 +187,12 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     if ($multiple) {
       $this->getSession()->getPage()->checkField('properties[extra][multiple]');
       $this->assertSession()->checkboxChecked('properties[extra][multiple]');
-      $this->htmlOutput();
     }
+    elseif (!$type || $type == 'civicrm-options') {
+      $this->getSession()->getPage()->uncheckField('properties[extra][multiple]');
+      $this->assertSession()->checkboxNotChecked('properties[extra][multiple]');
+    }
+    $this->htmlOutput();
     $this->getSession()->getPage()->pressButton('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();
   }

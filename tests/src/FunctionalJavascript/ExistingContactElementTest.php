@@ -33,15 +33,8 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
       'webform' => $this->webform->id(),
     ]));
     // The label has a <div> in it which can cause weird failures here.
-    $this->assertSession()->waitForText('Enable CiviCRM Processing');
-    $this->assertSession()->waitForField('nid');
-    $this->getSession()->getPage()->checkField('nid');
-
-    $this->assertSession()->assertWaitOnAjaxRequest();
-
-    $this->getSession()->getPage()->pressButton('Save Settings');
-    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
-    $this->assertPageNoErrorMessages();
+    $this->enableCivicrmOnWebform();
+    $this->saveCiviCRMSettings();
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();

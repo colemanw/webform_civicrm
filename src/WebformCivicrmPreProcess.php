@@ -518,7 +518,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
             if ($element['#type'] != 'checkboxes' && $element['#type'] != 'date'
               && empty($element['#multiple']) && is_array($val)) {
               // If there's more than one value for a non-multi field, pick the most appropriate
-              if (!empty($element['#options'])) {
+              if (!empty($element['#options']) && !empty(array_filter($val))) {
                 foreach ($element['#options'] as $k => $v) {
                   if (in_array($k, $val)) {
                     $val = $k;
