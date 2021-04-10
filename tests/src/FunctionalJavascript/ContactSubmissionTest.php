@@ -239,31 +239,22 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->checkboxChecked('Existing Contact');
     $this->assertSession()->checkboxChecked('First Name');
     $this->assertSession()->checkboxChecked('Last Name');
+    $this->getSession()->getPage()->checkField('Preferred Communication Method(s)');
+    $this->assertSession()->checkboxChecked('Preferred Communication Method(s)');
 
     $this->saveCiviCRMSettings();
 
     $this->drupalGet($this->webform->toUrl('edit-form'));
-    $contactElementEdit = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations"] a.webform-ajax-link');
-    $contactElementEdit->click();
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->htmlOutput();
-    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
-
-    $this->assertSession()->waitForField('properties[widget]');
-    $this->getSession()->getPage()->selectFieldOption('Form Widget', 'Static');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->getSession()->getPage()->selectFieldOption('Set default contact from', 'Current User');
-    $this->getSession()->getPage()->pressButton('Save');
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->editContactElement('edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations', 'Static', 'Current User');
     $this->assertSession()->pageTextContains('Existing Contact has been updated');
+    $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contact-1-contact-preferred-communication-method-operations', FALSE);
 
     $this->drupalLogout();
     $this->drupalLogin($this->adminUser);
 
     $currentUserUF = $this->getUFMatchRecord($this->adminUser->id());
-    // throw new \Exception(var_export($currentUserUF, TRUE));
 
-    $apiResult = $this->utils->wf_civicrm_api('contact', 'create', [
+    $this->utils->wf_civicrm_api('contact', 'create', [
       'id' => $currentUserUF['contact_id'],
       'first_name' => "Admin",
       'last_name' => "User",
@@ -275,6 +266,9 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->waitForField('First Name');
     $this->assertSession()->fieldValueEquals('First Name','Admin');
     $this->assertSession()->fieldValueEquals('Last Name', 'User');
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+    $this->assertPageNoErrorMessages();
   }
 
   /**
