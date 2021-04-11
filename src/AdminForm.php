@@ -1106,6 +1106,40 @@ class AdminForm implements AdminFormInterface {
       '#required' => TRUE,
     ];
 
+    // Billing Address
+    $n = wf_crm_aval($this->data, "billing:number_number_of_billing", 0);
+    $this->form['contribution']['sets']["billing_1_number_of_billing"] = [
+      '#type' => 'select',
+      '#title' => t('Enable Billing Address?'),
+      '#default_value' => $n,
+      '#options' => [t('No'), t('Yes')],
+      '#prefix' => '<div class="number-of">',
+      '#suffix' => '</div>',
+      '#description' => t('Enable this section if you want billing address to be sent to the payment processor.'),
+    ];
+    $this->addAjaxItem("contribution:sets", "billing_1_number_of_billing", "billing");
+
+    if ($n) {
+      // Add contribution fields
+      foreach ($this->sets as $sid => $set) {
+        if ($sid == 'billing_1_number_of_billing') {
+          $fs = "contribution_sets_billing_{$n}_fieldset";
+          $this->form['contribution']['sets']['billing'][$fs] = [
+            '#type' => 'fieldset',
+            '#title' => t('Billing Address'),
+            '#attributes' => ['id' => $fs, 'class' => ['web-civi-checkbox-set']],
+            'js_select' => $this->addToggle($fs),
+          ];
+          if (isset($set['fields'])) {
+            foreach ($set['fields'] as $fid => $field) {
+              $fid = "civicrm_1_contribution_1_$fid";
+              $this->form['contribution']['sets']['billing'][$fs][$fid] = $this->addItem($fid, $field);
+            }
+          }
+        }
+      }
+    }
+
     // LineItem
     $num = wf_crm_aval($this->data, "lineitem:number_number_of_lineitem", 0);
     $this->form['contribution']['sets']["lineitem_1_number_of_lineitem"] = [
@@ -1660,7 +1694,7 @@ class AdminForm implements AdminFormInterface {
           $this->data[$ent][$c][$key] = $val;
         }
         // Standalone entities keep their own count independent of contacts
-        elseif ($ent == 'grant' || $ent == 'activity' || $ent == 'case' || $ent == 'lineitem' || $ent == 'receipt') {
+        elseif (in_array($ent, ['grant', 'activity', 'case', 'lineitem', 'receipt', 'billing'])) {
           $this->data[$ent]["number_$key"] = $val;
         }
       }

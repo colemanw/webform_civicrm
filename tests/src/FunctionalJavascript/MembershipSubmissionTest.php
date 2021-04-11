@@ -99,14 +99,14 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     // Select2 is being difficult; unhide the country and state/province select.
     $driver = $this->getSession()->getDriver();
     assert($driver instanceof DrupalSelenium2Driver);
-    $driver->executeScript("document.getElementById('billing_country_id-5').style.display = 'block';");
-    $driver->executeScript("document.getElementById('billing_state_province_id-5').style.display = 'block';");
+    $driver->executeScript("document.getElementById('edit-civicrm-1-contribution-1-contribution-billing-address-country-id').style.display = 'block';");
+    $driver->executeScript("document.getElementById('edit-civicrm-1-contribution-1-contribution-billing-address-state-province-id').style.display = 'block';");
 
-    $this->getSession()->getPage()->fillField('billing_country_id-5', '1228');
+    $this->getSession()->getPage()->fillField('edit-civicrm-1-contribution-1-contribution-billing-address-country-id', '1228');
     // Wait for select2's AJAX request.
     $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->getSession()->wait(1000, 'document.getElementById("billing_state_province_id-5").options.length > 1');
-    $this->getSession()->getPage()->fillField('billing_state_province_id-5', '1048');
+    $this->getSession()->wait(1000, 'document.getElementById("edit-civicrm-1-contribution-1-contribution-billing-address-state-province-id").options.length > 1');
+    $this->getSession()->getPage()->fillField('edit-civicrm-1-contribution-1-contribution-billing-address-state-province-id', '1048');
 
     $this->getSession()->getPage()->fillField('Postal Code', '53177');
     $this->getSession()->getPage()->pressButton('Submit');

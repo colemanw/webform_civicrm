@@ -287,7 +287,8 @@ class Fields implements FieldsInterface {
         'name' => t('Country'),
         'type' => 'select',
         'civicrm_live_options' => 1,
-        'value' => $utils->wf_crm_get_civi_setting('defaultContactCountry', 1228),
+        'extra' => ['aslist' => 1],
+        'default_value' => $utils->wf_crm_get_civi_setting('defaultContactCountry', 1228),
       ];
       $fields['address_state_province_id'] = [
         'name' => t('State/Province'),
@@ -581,6 +582,16 @@ class Fields implements FieldsInterface {
         'type' => 'textarea',
       ];
       if (isset($sets['contribution'])) {
+        $fields['contribution_enable_contribution'] = [
+          'name' => ts('Enable Contribution?'),
+          'type' => 'hidden',
+          'expose_list' => TRUE,
+          'empty_option' => 'None',
+          'extra' => [
+            'hidden_type' => 'hidden',
+          ],
+          'parent' => 'contribution_pagebreak',
+        ];
         // @todo moved in order since we can't pass `weight`.
         $fields['contribution_total_amount'] = [
             'name' => 'Contribution Amount',
@@ -606,16 +617,6 @@ class Fields implements FieldsInterface {
           'expose_list' => TRUE,
           'value' => 0,
           'weight' => 9996,
-        ];
-        $fields['contribution_enable_contribution'] = [
-          'name' => ts('Enable Contribution?'),
-          'type' => 'hidden',
-          'expose_list' => TRUE,
-          'empty_option' => 'None',
-          'extra' => [
-            'hidden_type' => 'hidden',
-          ],
-          'parent' => 'contribution_pagebreak',
         ];
         $fields['contribution_note'] = [
           'name' => t('Contribution Note'),
@@ -689,6 +690,51 @@ class Fields implements FieldsInterface {
           'min' => '0',
           'step' => '1',
           'set' => 'contributionRecur',
+        ];
+        $sets['billing_1_number_of_billing'] = ['entity_type' => 'contribution', 'label' => t('Billing Address')];
+        $billingFields = [
+          'first_name' => t('Billing First Name'),
+          'middle_name' => t('Billing Middle Name'),
+          'last_name' => t('Billing Last Name'),
+          'street_address' => t('Street Address'),
+          'postal_code' => t('Postal Code'),
+          'city' => t('City'),
+        ];
+        foreach ($billingFields as $key => $label) {
+          $width = 60;
+          if ($key == 'city') {
+            $width = 20;
+          }
+          if ($key == 'postal_code') {
+            $width = 7;
+          }
+          $fields["contribution_billing_address_{$key}"] = [
+            'name' => $label,
+            'type' => 'textfield',
+            'extra' => ['width' => $width],
+            'set' => 'billing_1_number_of_billing',
+            'parent' => 'contribution_pagebreak',
+          ];
+        }
+        $fields['contribution_billing_address_country_id'] = [
+          'name' => t('Country'),
+          'type' => 'select',
+          'civicrm_live_options' => 1,
+          'extra' => ['aslist' => 1],
+          'default_value' => $utils->wf_crm_get_civi_setting('defaultContactCountry', 1228),
+          'set' => 'billing_1_number_of_billing',
+          'parent' => 'contribution_pagebreak',
+        ];
+        $fields['contribution_billing_address_state_province_id'] = [
+          'name' => t('State/Province'),
+          'type' => 'textfield',
+          'extra' => [
+            'maxlength' => 5,
+            'width' => 4,
+          ],
+          'data_type' => 'state_province_abbr',
+          'set' => 'billing_1_number_of_billing',
+          'parent' => 'contribution_pagebreak',
         ];
       }
       if (isset($sets['participant'])) {

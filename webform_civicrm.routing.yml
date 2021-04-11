@@ -12,7 +12,7 @@ entity.webform.civicrm:
     _permission: 'access CiviCRM'
 
 webform_civicrm.ajax:
-  path: webform-civicrm/js/{key}/{input}
+  path: webform-civicrm/js/{key}/{input}/{isBilling}
   defaults:
     _controller: 'Drupal\webform_civicrm\Controller\AjaxController::handle'
     input: ''

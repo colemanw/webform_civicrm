@@ -40,10 +40,10 @@ class AjaxController implements ContainerInjectionInterface {
    * @param string $operation
    *   The operation to perform: stateProvince or county
    */
-  public function handle($key, $input = '') {
+  public function handle($key, $input = '', $isBilling = FALSE) {
     if ($key === 'stateProvince' || $key === 'county') {
       $this->civicrm->initialize();
-      return $this->$key($input);
+      return $this->$key($input, $isBilling);
     }
     else {
       $this->civicrm->initialize();
@@ -52,30 +52,31 @@ class AjaxController implements ContainerInjectionInterface {
     }
   }
 
-    protected function stateProvince($input) {
-        if (!$input || ((int) $input != $input && $input != 'default')) {
-            $data = ['' => t('- first choose a country')];
-        }
-        else {
-            $data = \Drupal::service('webform_civicrm.utils')->wf_crm_get_states($input);
-        }
-
-        // @todo use Drupal's cacheable response?
-        return new JsonResponse($data);
+  protected function stateProvince($input, $isBilling = FALSE) {
+    if (!$input || ((int) $input != $input && $input != 'default')) {
+      $data = ['' => t('- first choose a country')];
+    }
+    else {
+      $data = \Drupal::service('webform_civicrm.utils')->wf_crm_get_states($input, $isBilling);
     }
 
-    protected function county($input) {
-        $data = [];
-        $utils = \Drupal::service('webform_civicrm.utils');
-        if (strpos($input, '-') !== FALSE) {
-            list($state, $country) = explode('-', $input);
-            $params = [
-              'field' => 'county_id',
-              'state_province_id' => $utils->wf_crm_state_abbr($state, 'id', $country)
-            ];
-            $data = $utils->wf_crm_apivalues('address', 'getoptions', $params);
-        }
-        // @todo use Drupal's cacheable response?
-        return new JsonResponse($data);
+    // @todo use Drupal's cacheable response?
+    return new JsonResponse($data);
+  }
+
+  protected function county($input, $isBilling = FALSE) {
+    $data = [];
+    $utils = \Drupal::service('webform_civicrm.utils');
+    if (strpos($input, '-') !== FALSE) {
+      list($state, $country) = explode('-', $input);
+      $params = [
+        'field' => 'county_id',
+        'state_province_id' => $utils->wf_crm_state_abbr($state, 'id', $country)
+      ];
+      $data = $utils->wf_crm_apivalues('address', 'getoptions', $params);
     }
+    // @todo use Drupal's cacheable response?
+    return new JsonResponse($data);
+  }
+
 }
