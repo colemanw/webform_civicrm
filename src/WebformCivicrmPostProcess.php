@@ -1773,7 +1773,8 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $fields = \CRM_Utils_Array::crmArrayMerge($processor->getPaymentFormFieldsMetadata(), $billingAddressFieldsMetadata);
 
     $request = \Drupal::request();
-    foreach ($request->request->all() as $field => $value) {
+    $form_values = array_merge($request->request->all(), $this->form_state->getValues());
+    foreach ($form_values as $field => $value) {
       if (empty($value) && isset($fields[$field]) && $fields[$field]['is_required'] !== FALSE) {
         $this->form_state->setErrorByName($field, t(':name field is required.', [':name' => $fields[$field]['title']]));
         $valid = FALSE;

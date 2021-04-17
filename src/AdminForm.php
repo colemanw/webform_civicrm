@@ -39,7 +39,7 @@ class AdminForm implements AdminFormInterface {
   /**
    * @var array
    */
-  public static $fieldset_entities = ['contact', 'activity', 'case', 'grant'];
+  public static $fieldset_entities = ['contact', 'billing_1_number_of_billing', 'activity', 'case', 'grant'];
 
   /**
    * Initialize and set form variables.
@@ -2168,6 +2168,9 @@ class AdminForm implements AdminFormInterface {
     if ($field['type'] == 'hidden' && !empty($field['expose_list']) && !empty($settings[$field['form_key']])) {
       $field['value'] = $settings[$field['form_key']];
     }
+    if (!empty($field['set']) && $field['set'] == 'billing_1_number_of_billing') {
+      $ent = 'billing_1_number_of_billing';
+    }
     // Create fieldsets for multivalued entities
     if (empty($enabled[$field['form_key']]) && ($ent !== 'contribution' &&
       ($ent !== 'participant' || wf_crm_aval($settings['data'], 'participant_reg_type') === 'separate'))
@@ -2228,6 +2231,9 @@ class AdminForm implements AdminFormInterface {
         // 'weight' => $c,
       ];
       $sets = $utils->wf_crm_get_fields('sets');
+      if ($type == 'billing_1_number_of_billing') {
+        $new_set['parent'] = 'contribution_pagebreak';
+      }
       if (isset($isCustom, $customGroupKey)) {
         $new_set['title'] = $sets[$customGroupKey]['label'];
         // @todo We cannot define a default weight.
