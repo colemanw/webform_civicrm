@@ -9,6 +9,7 @@ namespace Drupal\webform_civicrm;
 
 use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\NestedArray;
+use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
 use Drupal\webform\WebformInterface;
@@ -103,7 +104,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     foreach ($errors as $key => $error) {
       $pieces = $utils->wf_crm_explode_key(substr($key, strrpos($key, '][') + 2));
       if ($pieces) {
-        list( , $c, $ent, $n, $table, $name) = $pieces;
+        [ , $c, $ent, $n, $table, $name] = $pieces;
         if ($this->isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name)) {
           $this->unsetError($key);
         }
@@ -171,20 +172,22 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    * @param \Drupal\webform\WebformSubmissionInterface $webform_submission
    */
   public function preSave(WebformSubmissionInterface $webform_submission) {
+    $this->form_state = new FormState();
+    $this->form_state->setFormState($webform_submission->getRawData());
     $this->submission = $webform_submission;
     $this->data = $this->settings['data'];
     $this->modifyWebformSubmissionData($webform_submission);
     // Check for existing submission
     // $this->setUpdateParam();
     // Fill $this->id from existing contacts
-    $this->getExistingContactIds();
+    $this->getExistingContactIds($webform_submission);
 
     // While saving a draft, just skip to postSave and write the record
     if ($this->submission->isDraft()) {
       return;
     }
 
-    $this->fillDataFromSubmission();
+    $this->fillDataFromSubmission($webform_submission);
     //Fill Custom Contact reference fields.
     $this->fillContactRefs(TRUE);
 
@@ -238,7 +241,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       }
       $this->saveCurrentEmployer($contact, $cid);
 
-      $this->fillHiddenContactFields($cid, $c);
+      $this->fillHiddenContactFields($cid, $c, $webform_submission);
 
       $this->saveContactLocation($contact, $cid, $c);
 
@@ -273,7 +276,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    * Process webform submission after it is has been saved. Called by the following hooks:
    * @see webform_civicrm_webform_submission_insert
    * @see webform_civicrm_webform_submission_update
-   * @param stdClass $submission
+   * @param \stdClass $submission
    */
   public function postSave(WebformSubmissionInterface $webform_submission) {
     $this->submission = $webform_submission;
@@ -363,7 +366,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $record = [
       'sid' => $this->submission->id(),
       'contact_id' => '-',
-      'civicrm_data' => $data,
+      'civicrm_data' => serialize($data),
     ];
     foreach ($this->ent['contact'] as $contact) {
       $record['contact_id'] .= $contact['id'] . '-';
@@ -470,7 +473,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       // @todo this duplicates a lot in \wf_crm_webform_preprocess::populateEvents
       foreach (wf_crm_aval($par, 'participant', []) as $n => $p) {
         foreach (array_filter(wf_crm_aval($p, 'event_id', [])) as $id_and_type) {
-          list($eid) = explode('-', $id_and_type);
+          [$eid] = explode('-', $id_and_type);
           if (is_numeric($eid)) {
             $this->events[$eid]['ended'] = TRUE;
             $this->events[$eid]['title'] = t('this event');
@@ -593,11 +596,11 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   /**
    * Fetch contact ids from "existing contact" fields
    */
-  private function getExistingContactIds() {
+  private function getExistingContactIds($webform_submission = NULL) {
     foreach ($this->enabled as $field_key => $fid) {
       if (substr($field_key, -8) === 'existing') {
-        list(, $c, ) = explode('_', $field_key, 3);
-        $cid = wf_crm_aval($this->submissionValue($fid), 0);
+        [, $c, ] = explode('_', $field_key, 3);
+        $cid = wf_crm_aval($this->submissionValue($fid, NULL, $webform_submission), 0);
         $this->ent['contact'][$c]['id'] = $this->verifyExistingContact($cid, $field_key);
         if ($this->ent['contact'][$c]['id']) {
           $this->existing_contacts[$c] = $cid;
@@ -732,7 +735,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $fetch = $multi = [];
     foreach ($this->all_fields as $fid => $field) {
       if (!empty($field['extra']['multiple']) && substr($fid, 0, 7) == 'contact') {
-        list(, $name) = explode('_', $fid, 2);
+        [, $name] = explode('_', $fid, 2);
         if ($name != 'privacy' && isset($params[$name])) {
           $fetch["return.$name"] = 1;
           $multi[] = $name;
@@ -778,29 +781,29 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    * @param int $c
    * @param int $cid
    */
-  private function fillHiddenContactFields($cid, $c) {
+  private function fillHiddenContactFields($cid, $c, $webform_submission = NULL) {
     $utils = \Drupal::service('webform_civicrm.utils');
     $fid = 'civicrm_' . $c . '_contact_1_contact_';
     if (!empty($this->enabled[$fid . 'contact_id'])) {
-      $this->submissionValue($this->enabled[$fid . 'contact_id'], $cid);
+      $this->submissionValue($this->enabled[$fid . 'contact_id'], $cid, $webform_submission);
     }
     if (!empty($this->enabled[$fid . 'user_id'])) {
       $user_id = $utils->wf_crm_user_cid($cid, 'contact');
       $user_id = $user_id ? $user_id : '';
-      $this->submissionValue($this->enabled[$fid . 'user_id'], $user_id);
+      $this->submissionValue($this->enabled[$fid . 'user_id'], $user_id, $webform_submission);
     }
     if (!empty($this->enabled[$fid . 'existing'])) {
-      $this->submissionValue($this->enabled[$fid . 'existing'], $cid);
+      $this->submissionValue($this->enabled[$fid . 'existing'], $cid, $webform_submission);
     }
     if (!empty($this->enabled[$fid . 'external_identifier']) && !empty($this->existing_contacts[$c])) {
       $exid = $utils->wf_civicrm_api('contact', 'get', ['contact_id' => $cid, 'return.external_identifier' => 1]);
-      $this->submissionValue($this->enabled[$fid . 'external_identifier'], wf_crm_aval($exid, "values:$cid:external_identifier"));
+      $this->submissionValue($this->enabled[$fid . 'external_identifier'], wf_crm_aval($exid, "values:$cid:external_identifier"), $webform_submission);
     }
     if (!empty($this->enabled[$fid . 'cs'])) {
-      $cs = $this->submissionValue($this->enabled[$fid . 'cs']);
+      $cs = $this->submissionValue($this->enabled[$fid . 'cs'], NULL, $webform_submission);
       $life = !empty($cs[0]) ? intval(24 * $cs[0]) : 'inf';
       $cs = \CRM_Contact_BAO_Contact_Utils::generateChecksum($cid, NULL, $life);
-      $this->submissionValue($this->enabled[$fid . 'cs'], $cs);
+      $this->submissionValue($this->enabled[$fid . 'cs'], $cs, $webform_submission);
     }
   }
 
@@ -907,7 +910,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   private function saveGroupsAndTags($contact, $cid, $c) {
     // Process groups & tags
     foreach ($this->all_fields as $fid => $field) {
-      list($set, $type) = explode('_', $fid, 2);
+      [$set, $type] = explode('_', $fid, 2);
       if ($set == 'other') {
         $field_name = 'civicrm_' . $c . '_contact_1_' . $fid;
         if (!empty($contact['other'][1][$type]) || isset($this->enabled[$field_name])) {
@@ -1045,12 +1048,12 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   private function processRelationship($params, $cid1, $cid2) {
     $utils = \Drupal::service('webform_civicrm.utils');
     if (!empty($params['relationship_type_id']) && $cid2 && $cid1 != $cid2) {
-      list($type, $side) = explode('_', $params['relationship_type_id']);
+      [$type, $side] = explode('_', $params['relationship_type_id']);
       $existing = $this->getRelationship([$params['relationship_type_id']], $cid1, $cid2);
       $perm = wf_crm_aval($params, 'relationship_permission');
       // Swap contacts if this is an inverse relationship
       if ($side == 'b' || ($existing && $existing['contact_id_a'] != $cid1)) {
-        list($cid1, $cid2) = [$cid2, $cid1];
+        [$cid1, $cid2] = [$cid2, $cid1];
         if ($perm == 1 || $perm == 2) {
           $perm = $perm == 1 ? 2 : 1;
         }
@@ -1098,7 +1101,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         if (empty($this->data['reg_options']['disable_unregister'])) {
           if (empty($params['status_id'])) {
             foreach ($this->getExposedOptions($fid) as $eid => $title) {
-              list($eid) = explode('-', $eid);
+              [$eid] = explode('-', $eid);
               if (isset($existing[$eid])) {
                 $remove[$eid] = $title;
               }
@@ -1115,7 +1118,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           $this->events = (array) $params['event_id'];
           foreach ($this->events as $i => $id_and_type) {
             if (!empty($id_and_type)) {
-              list($eid) = explode('-', $id_and_type);
+              [$eid] = explode('-', $id_and_type);
               $params['event_id'] = $eid;
               unset($remove[$eid], $params['registered_by_id'], $params['id'], $params['source']);
               // Is existing participant?
@@ -1545,7 +1548,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    */
   public function handleEntityTags($entityType, $entityId, $n, $params) {
     foreach ($this->all_fields as $fid => $field) {
-      list($set, $type) = explode('_', $fid, 2);
+      [$set, $type] = explode('_', $fid, 2);
       if ($set == $entityType && isset($field['table']) && $field['table'] == 'tag') {
         $field_name = 'civicrm_' . $n . '_' . $entityType. '_1_' . $fid;
         if ((isset($params['tag']) || isset($this->enabled[$field_name])) && isset($this->data[$entityType][$n])) {
@@ -2302,7 +2305,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $attachments = $new ? [] : $this->getAttachments($ent, $id);
     foreach ((array) wf_crm_aval($this->data[$ent], "$n:{$ent}upload:1") as $num => $file_id) {
       if ($file_id) {
-        list(, $i) = explode('_', $num);
+        [, $i] = explode('_', $num);
         $dao = new \CRM_Core_DAO_EntityFile();
         if (!empty($attachments[$i])) {
           $dao->id = $attachments[$i]['id'];
@@ -2379,22 +2382,22 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   /**
    * Fill data array with submitted form values
    */
-  private function fillDataFromSubmission() {
+  private function fillDataFromSubmission($webform_submission = NULL) {
     $utils = \Drupal::service('webform_civicrm.utils');
     foreach ($this->enabled as $field_key => $fid) {
-      $val = (array) $this->submissionValue($fid);
+      $val = (array) $this->submissionValue($fid, NULL, $webform_submission);
       $customValue = NULL;
       // If value is null then it was hidden by a webform conditional rule - skip it
       if ($val !== NULL && $val !== [NULL]) {
-        list( , $c, $ent, $n, $table, $name) = explode('_', $field_key, 6);
+        [ , $c, $ent, $n, $table, $name] = explode('_', $field_key, 6);
         // The following are not strictly CiviCRM fields, so ignore
         if (in_array($name, ['existing', 'fieldset', 'createmode'])) {
           continue;
         }
         // Check to see if configured to ignore hidden field value(s)
-        if ($this->isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name, TRUE)) {
+        if ($this->isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name, TRUE, $webform_submission)) {
           // Also remove the value from the webform submission
-          $this->submissionValue($fid, [NULL]);
+          $this->submissionValue($fid, [NULL], $webform_submission);
           continue;
         }
         $field = $this->all_fields[$table . '_' . $name];
@@ -2520,10 +2523,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    *   Checks if 'Submit Disabled' setting should be considered
    * @return bool
    */
-  private function isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name, $checkSubmitDisabledSetting = FALSE) {
+  private function isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name, $checkSubmitDisabledSetting = FALSE, $webform_submission = NULL) {
     if ($ent === 'contact' && isset($this->enabled["civicrm_{$c}_contact_1_contact_existing"])) {
       $component = $this->node->getElement("civicrm_{$c}_contact_1_contact_existing");
-      $existing_contact_val = $this->submissionValue($component['#form_key']);
+      $existing_contact_val = $this->submissionValue($component['#form_key'], NULL, $webform_submission);
       // Fields are hidden if value is empty (no selection) or a numeric contact id
       if (!$existing_contact_val[0] || is_numeric($existing_contact_val[0])) {
         $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
@@ -2602,10 +2605,12 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    *
    * @return array|null field value if found
    */
-  protected function submissionValue($fid, $value = NULL) {
-    $form_object = $this->form_state->getFormObject();
-    /** @var \Drupal\webform\WebformSubmissionInterface $webform_submission */
-    $webform_submission = $form_object->getEntity();
+  protected function submissionValue($fid, $value = NULL, $webform_submission = NULL) {
+    if ($webform_submission == NULL) {
+      $form_object = $this->form_state->getFormObject();
+      /** @var \Drupal\webform\WebformSubmissionInterface $webform_submission */
+      $webform_submission = $form_object->getEntity();
+    }
     $data = $webform_submission->getData();
 
     if (!isset($data[$fid])) {
