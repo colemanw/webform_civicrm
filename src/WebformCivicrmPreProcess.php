@@ -160,7 +160,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
           $this->loadMemberships($c, $contact['id']);
         }
         if ($c == 1 && !empty($this->data['billing']['number_number_of_billing'])) {
-          $this->loadBillingAddress($contact['id']);
+          $this->info['contribution'][1]['contribution'][1] = $this->loadBillingAddress($contact['id']);
         }
       }
       // Load events from url if enabled, this will override loadParticipants
@@ -406,36 +406,6 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
         $this->info['participant'][$c]['participant'][$e]['event_id'] = $event_ids;
       }
     }
-  }
-
-  /**
-   * Load Billing Address for contact.
-   */
-  private function loadBillingAddress($cid) {
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $billingFields = ["street_address", "city", "postal_code", "country_id", "state_province_id"];
-    $billingAddress = $utils->wf_civicrm_api('Address', 'get', [
-      'contact_id' => $cid,
-      'location_type_id' => 'Billing',
-      'return' => $billingFields,
-      'options' => [
-        'limit' => 1,
-        'sort' => 'is_primary DESC',
-      ],
-    ]);
-    if (!empty($billingAddress['values'])) {
-      $address = array_pop($billingAddress['values']);
-      foreach ($address as $key => $value) {
-        if (in_array($key, $billingFields)) {
-          $address['billing_address_' . $key] = $value;
-        }
-        unset($address[$key]);
-      }
-    }
-    foreach (['first_name', 'middle_name', 'last_name'] as $name) {
-      $address["billing_address_{$name}"] = $this->info['contact'][1]['contact'][1][$name] ?? NULL;
-    }
-    $this->info['contribution'][1]['contribution'][1] = $address;
   }
 
   /**

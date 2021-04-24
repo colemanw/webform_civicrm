@@ -16,6 +16,7 @@ webform_civicrm.ajax:
   defaults:
     _controller: 'Drupal\webform_civicrm\Controller\AjaxController::handle'
     input: ''
+    isBilling: ''
   requirements:
     _access: 'TRUE'
     _format: 'json'

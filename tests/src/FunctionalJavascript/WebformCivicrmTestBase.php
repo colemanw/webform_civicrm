@@ -114,6 +114,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     // Move up twice to be the top-most element.
     $this->sendKeyPress($contact_information_page_row_handle, 38);
     $this->sendKeyPress($contact_information_page_row_handle, 38);
+    $this->sendKeyPress($contact_information_page_row_handle, 38);
     $contact_information_page_row_handle->blur();
     $contact_fieldset_row_handle = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-fieldset-fieldset"] a.tabledrag-handle');
     $this->sendKeyPress($contact_fieldset_row_handle, 39);

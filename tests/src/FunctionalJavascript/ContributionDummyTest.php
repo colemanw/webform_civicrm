@@ -71,6 +71,13 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     }, $opts)));
     $this->getSession()->getPage()->selectFieldOption('Payment Processor', $payment_processor['id']);
 
+    $this->getSession()->getPage()->selectFieldOption('Enable Billing Address?', 'Yes');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+
+    $this->assertSession()->checkboxChecked("Billing First Name");
+    $this->assertSession()->checkboxChecked("Billing Last Name");
+
     $this->getSession()->getPage()->selectFieldOption('lineitem_1_number_of_lineitem', 2);
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();

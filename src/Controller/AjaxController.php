@@ -41,12 +41,14 @@ class AjaxController implements ContainerInjectionInterface {
    *   The operation to perform: stateProvince or county
    */
   public function handle($key, $input = '', $isBilling = FALSE) {
-    if ($key === 'stateProvince' || $key === 'county') {
-      $this->civicrm->initialize();
-      return $this->$key($input, $isBilling);
+    $this->civicrm->initialize();
+    if ($key === 'stateProvince') {
+      return $this->stateProvince($input, $isBilling);
+    }
+    elseif ($key === 'county') {
+      return $this->county($input);
     }
     else {
-      $this->civicrm->initialize();
       $processor = \Drupal::service('webform_civicrm.webform_ajax');
       return new JsonResponse($processor->contactAjax($key, $input));
     }
@@ -64,7 +66,7 @@ class AjaxController implements ContainerInjectionInterface {
     return new JsonResponse($data);
   }
 
-  protected function county($input, $isBilling = FALSE) {
+  protected function county($input) {
     $data = [];
     $utils = \Drupal::service('webform_civicrm.utils');
     if (strpos($input, '-') !== FALSE) {

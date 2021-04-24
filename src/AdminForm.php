@@ -167,9 +167,16 @@ class AdminForm implements AdminFormInterface {
         'website' => 'url',
         'im' => 'name',
         'address' => ['street_address', 'city', 'state_province_id', 'postal_code'],
+        'billing' => ['first_name', 'last_name', 'street_address', 'city', 'postal_code', 'state_province_id', 'country_id'],
       ];
       foreach ($defaults as $ent => $fields) {
         if (strpos($_POST['_triggering_element_name'], "_number_of_$ent")) {
+          if ($ent == 'billing') {
+            foreach ((array) $fields as $field) {
+              $this->settings["civicrm_1_contribution_1_contribution_{$ent}_address_{$field}"] = 1;
+            }
+            continue;
+          }
           list(, $c) = explode('_', $_POST['_triggering_element_name']);
           for ($n = 1; $n <= $this->data['contact'][$c]["number_of_$ent"]; ++$n) {
             foreach ((array) $fields as $field) {

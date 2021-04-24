@@ -79,6 +79,36 @@ abstract class WebformCivicrmBase {
   }
 
   /**
+   * Load Billing Address for contact.
+   */
+  protected function loadBillingAddress($cid) {
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $billingFields = ["street_address", "city", "postal_code", "country_id", "state_province_id"];
+    $billingAddress = $utils->wf_civicrm_api('Address', 'get', [
+      'contact_id' => $cid,
+      'location_type_id' => 'Billing',
+      'return' => $billingFields,
+      'options' => [
+        'limit' => 1,
+        'sort' => 'is_primary DESC',
+      ],
+    ]);
+    if (!empty($billingAddress['values'])) {
+      $address = array_pop($billingAddress['values']);
+      foreach ($address as $key => $value) {
+        if (in_array($key, $billingFields)) {
+          $address['billing_address_' . $key] = $value;
+        }
+        unset($address[$key]);
+      }
+    }
+    foreach (['first_name', 'middle_name', 'last_name'] as $name) {
+      $address["billing_address_{$name}"] = $this->loadedContacts[1]['contact'][1][$name] ?? NULL;
+    }
+    return $address;
+  }
+
+  /**
    * Fetch all relevant data for a given contact
    * Used to load contacts for pre-filling a webform, and also to fill in a contact via ajax
    *
