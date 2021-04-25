@@ -43,6 +43,11 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   // Variables used during submission processing
 
   /**
+   * @var \Drupal\Core\Database\Connection
+   */
+  private $database;
+
+  /**
    * @var \Drupal\webform\WebformSubmissionInterface
    */
   private $submission;
@@ -73,6 +78,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $instance_ids = $handler_collection->getInstanceIds();
     $handler = $handler_collection->get(reset($instance_ids));
     $utils = \Drupal::service('webform_civicrm.utils');
+    $this->database = \Drupal::database();
 
     $this->settings = $handler->getConfiguration()['settings'];
     $this->data = $this->settings['data'];
@@ -297,7 +303,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     }
     // Write record; we do this when creating, updating, or saving a draft of a webform submission.
     $record = $this->formatSubmission();
-    // drupal_write_record('webform_civicrm_submissions', $record, $this->update);
+    $this->database->merge('webform_civicrm_submissions')
+      ->key('sid', $record['sid'])
+      ->fields($record)
+      ->execute();
 
     // Calling an IPN payment processor will result in a redirect so this happens after everything else
     if ($this->contributionIsIncomplete && !$this->contributionIsPayLater && !empty($this->ent['contribution'][1]['id']) && !$this->submission->isDraft()) {
@@ -363,7 +372,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $record = [
       'sid' => $this->submission->id(),
       'contact_id' => '-',
-      'civicrm_data' => $data,
+      'civicrm_data' => serialize($data),
     ];
     foreach ($this->ent['contact'] as $contact) {
       $record['contact_id'] .= $contact['id'] . '-';
