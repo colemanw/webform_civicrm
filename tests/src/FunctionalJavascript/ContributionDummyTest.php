@@ -71,13 +71,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     }, $opts)));
     $this->getSession()->getPage()->selectFieldOption('Payment Processor', $payment_processor['id']);
 
-    $this->getSession()->getPage()->selectFieldOption('Enable Billing Address?', 'Yes');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->htmlOutput();
-
-    $this->assertSession()->checkboxChecked("Billing First Name");
-    $this->assertSession()->checkboxChecked("Billing Last Name");
-
+    $this->enableBillingSection();
     $this->getSession()->getPage()->selectFieldOption('lineitem_1_number_of_lineitem', 2);
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
@@ -115,24 +109,17 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[M]', '11');
     $this_year = date('Y');
     $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[Y]', $this_year + 1);
-    $this->getSession()->getPage()->fillField('Billing First Name', 'Frederick');
-    $this->getSession()->getPage()->fillField('Billing Last Name', 'Pabst');
-    $this->getSession()->getPage()->fillField('Street Address', '123 Milwaukee Ave');
-    $this->getSession()->getPage()->fillField('City', 'Milwaukee');
+    $billingValues = [
+      'first_name' => 'Frederick',
+      'last_name' => 'Pabst',
+      'street_address' => '123 Milwaukee Ave',
+      'city' => 'Milwaukee',
+      'country' => '1228',
+      'state_province' => '1048',
+      'postal_code' => '53177',
+    ];
+    $this->fillBillingFields($billingValues);
 
-    // Select2 is being difficult; unhide the country and state/province select.
-    $driver = $this->getSession()->getDriver();
-    assert($driver instanceof DrupalSelenium2Driver);
-    $driver->executeScript("document.getElementById('edit-civicrm-1-contribution-1-contribution-billing-address-country-id').style.display = 'block';");
-    $driver->executeScript("document.getElementById('edit-civicrm-1-contribution-1-contribution-billing-address-state-province-id').style.display = 'block';");
-
-    $this->getSession()->getPage()->fillField('edit-civicrm-1-contribution-1-contribution-billing-address-country-id', '1228');
-    // Wait for select2's AJAX request.
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->getSession()->wait(1000, 'document.getElementById("edit-civicrm-1-contribution-1-contribution-billing-address-state-province-id").options.length > 1');
-    $this->getSession()->getPage()->fillField('edit-civicrm-1-contribution-1-contribution-billing-address-state-province-id', '1048');
-
-    $this->getSession()->getPage()->fillField('Postal Code', '53177');
     $this->getSession()->getPage()->pressButton('Submit');
     $this->htmlOutput();
     $this->assertPageNoErrorMessages();
@@ -210,6 +197,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('Payment Processor', $payment_processor['id']);
     $this->htmlOutput();
 
+    $this->enableBillingSection();
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
 
@@ -235,24 +223,16 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[M]', '11');
     $this_year = date('Y');
     $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[Y]', $this_year + 1);
-    $this->getSession()->getPage()->fillField('Billing First Name', 'Frederick');
-    $this->getSession()->getPage()->fillField('Billing Last Name', 'Pabst');
-    $this->getSession()->getPage()->fillField('Street Address', '123 Milwaukee Ave');
-    $this->getSession()->getPage()->fillField('City', 'Milwaukee');
-
-    // Select2 is being difficult; unhide the country and state/province select.
-    $driver = $this->getSession()->getDriver();
-    assert($driver instanceof DrupalSelenium2Driver);
-    $driver->executeScript("document.getElementById('edit-civicrm-1-contribution-1-contribution-billing-address-country-id').style.display = 'block';");
-    $driver->executeScript("document.getElementById('edit-civicrm-1-contribution-1-contribution-billing-address-state-province-id').style.display = 'block';");
-
-    $this->getSession()->getPage()->fillField('edit-civicrm-1-contribution-1-contribution-billing-address-country-id', '1228');
-    // Wait for select2's AJAX request.
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->getSession()->wait(1000, 'document.getElementById("edit-civicrm-1-contribution-1-contribution-billing-address-state-province-id").options.length > 1');
-    $this->getSession()->getPage()->fillField('edit-civicrm-1-contribution-1-contribution-billing-address-state-province-id', '1048');
-
-    $this->getSession()->getPage()->fillField('Postal Code', '53177');
+    $billingValues = [
+      'first_name' => 'Frederick',
+      'last_name' => 'Pabst',
+      'street_address' => '123 Milwaukee Ave',
+      'city' => 'Milwaukee',
+      'country' => '1228',
+      'state_province' => '1048',
+      'postal_code' => '53177',
+    ];
+    $this->fillBillingFields($billingValues);
     $this->getSession()->getPage()->pressButton('Submit');
     $this->htmlOutput();
     $this->assertPageNoErrorMessages();
