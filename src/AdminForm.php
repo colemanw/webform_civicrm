@@ -2340,20 +2340,31 @@ class AdminForm implements AdminFormInterface {
   public static function handleDynamicCustomField($op, $fid, $gid) {
     $utils = \Drupal::service('webform_civicrm.utils');
     $sets = $utils->wf_crm_get_fields('sets');
-    // @todo Start using webform_civicrm_forms to track enabled webforms.
+    $field_name = $element = "cg{$gid}_custom_$fid";
+    if ($op === 'create' || $op === 'enable') {
+      $element = "cg{$gid}_custom_";
+    }
+    // Retrieve all webforms with this custom group.
+    $webforms = \Drupal::entityQuery('webform')
+      ->condition('handlers.webform_civicrm.status', 1)
+      ->condition('elements', $element, 'CONTAINS')
+      ->execute();
     /** @var \Drupal\webform\WebformInterface[] $webforms */
-    $webforms = Webform::loadMultiple();
-    foreach ($webforms as $webform) {
-      $handler_collection = $webform->getHandlers('webform_civicrm');
-
-      if (!$handler_collection->has('webform_civicrm')) {
+    foreach ($webforms as $webformID) {
+      $webform = Webform::load($webformID);
+      $settings = $webform->getHandler('webform_civicrm')->getConfiguration()['settings'] ?? [];
+      // Check if the webform has a dynamic custom group.
+      $hasDynamicCG = FALSE;
+      foreach ($settings as $key => $value) {
+        if (strpos($key, "settings_dynamic_custom_cg{$gid}") !== FALSE && !empty($value)) {
+          $hasDynamicCG = TRUE;
+          break;
+        }
+      }
+      if (!$hasDynamicCG) {
         continue;
       }
-      $handler = $handler_collection->get('webform_civicrm');
-      $settings = $handler->getConfiguration()['settings'];
       $data = $settings['data'];
-
-      $field_name = "cg{$gid}_custom_$fid";
       $field_info = $utils->wf_crm_get_field($field_name);
       // $field_info contains old data, so re-fetch
       $fieldConfigs = $utils->wf_civicrm_api('CustomField', 'getsingle', ['id' => $fid]);
@@ -2393,13 +2404,6 @@ class AdminForm implements AdminFormInterface {
             $new = $field_info;
             $new['nid'] = $webform->id();
             $new['form_key'] = "civicrm_{$c}_{$ent}_1_$field_name";
-            $new['weight'] = 0;
-            foreach ($elements as $component) {
-              if (strpos($component['form_key'], "civicrm_{$c}_{$ent}_1_cg{$gid}_custom_") === 0 && $component['weight'] >= $new['weight']) {
-                // @todo cannot set weight.
-                // $new['weight'] = $component['weight'] + 1;
-              }
-            }
             if ($op === 'enable') {
               $new['title'] = $fieldConfigs['label'];
               $new['required'] = $fieldConfigs['is_required'];
