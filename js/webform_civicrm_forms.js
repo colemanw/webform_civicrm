@@ -29,7 +29,7 @@ var wfCivi = (function ($, D, drupalSettings) {
         }
         names.organization = names.household = names.first + (names.last ? ' ' : '') + names.last;
         for (i in names) {
-          $(':input[name$="civicrm_'+num+'_contact_1_contact_'+i+'_name]"]', formClass).val(names[i]);
+          $(':input[name$="civicrm_'+num+'_contact_1_contact_'+i+'_name"]', formClass).val(names[i]);
         }
       }
       return;
