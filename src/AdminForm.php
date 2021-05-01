@@ -1955,41 +1955,50 @@ class AdminForm implements AdminFormInterface {
       $handler_configuration['settings'] = $this->settings;
       $handler->setConfiguration($handler_configuration);
 
-      $webform_element_manager = \Drupal::getContainer()->get('plugin.manager.webform.element');
-      foreach ($enabled as $enabled_key => $enabled_element) {
-        if (!is_array($enabled_element)) {
-          // If this is a string, it is not a new element. However, this
-          // probably needs to be revisited.
-          continue;
-        }
-        // Webform uses YAML dump, which dies on FormattableMarkup.
-        $enabled_element = array_map([$this, 'stringifyFormattableMarkup'], $enabled_element);
-        $element_plugin = $webform_element_manager->getElementInstance([
-          '#type' => $enabled_element['type'],
-        ]);
-
-        $stub_form = [];
-        $stub_form_state = new FormState();
-        $stub_form_state->set('default_properties', $element_plugin->getDefaultProperties());
-        if (!isset($enabled_element['title']) && isset($enabled_element['name'])) {
-          $enabled_element['title'] = $enabled_element['name'];
-        }
-        unset($enabled_element['name']);
-        $stub_form_state->setValues($enabled_element);
-        $properties = $element_plugin->getConfigurationFormProperties($stub_form, $stub_form_state);
-
-        $parent_key = '';
-        if (isset($enabled_element['parent'])) {
-          $parent_key = $enabled_element['parent'];
-        }
-        $this->webform->setElementProperties($enabled_key, $properties, $parent_key);
-      }
+      $this->addEnabledElements($enabled);
       // Update existing contact fields
       foreach ($existing as $fid => $id) {
         if (substr($fid, -8) === 'existing') {
           $stop = null;
         }
       }
+    }
+  }
+
+  /**
+   * Add enabled elements to the webform.
+   *
+   * @param array $enabled
+   */
+  public function addEnabledElements($enabled) {
+    $webform_element_manager = \Drupal::getContainer()->get('plugin.manager.webform.element');
+    foreach ($enabled as $enabled_key => $enabled_element) {
+      if (!is_array($enabled_element)) {
+        // If this is a string, it is not a new element. However, this
+        // probably needs to be revisited.
+        continue;
+      }
+      // Webform uses YAML dump, which dies on FormattableMarkup.
+      $enabled_element = array_map([$this, 'stringifyFormattableMarkup'], $enabled_element);
+      $element_plugin = $webform_element_manager->getElementInstance([
+        '#type' => $enabled_element['type'],
+      ]);
+
+      $stub_form = [];
+      $stub_form_state = new FormState();
+      $stub_form_state->set('default_properties', $element_plugin->getDefaultProperties());
+      if (!isset($enabled_element['title']) && isset($enabled_element['name'])) {
+        $enabled_element['title'] = $enabled_element['name'];
+      }
+      unset($enabled_element['name']);
+      $stub_form_state->setValues($enabled_element);
+      $properties = $element_plugin->getConfigurationFormProperties($stub_form, $stub_form_state);
+
+      $parent_key = '';
+      if (isset($enabled_element['parent'])) {
+        $parent_key = $enabled_element['parent'];
+      }
+      $this->webform->setElementProperties($enabled_key, $properties, $parent_key);
     }
   }
 
