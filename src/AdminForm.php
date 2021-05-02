@@ -1946,6 +1946,9 @@ class AdminForm implements AdminFormInterface {
           }
         }
       }
+      if (isset($enabled['contribution_pagebreak'])) {
+        $this->setParentOnElements($enabled);
+      }
 
       \Drupal::messenger()->addStatus(
         \Drupal::translation()->formatPlural(count($created), 'Added one field to the form', 'Added @count fields to the form')
@@ -1956,6 +1959,7 @@ class AdminForm implements AdminFormInterface {
       $handler->setConfiguration($handler_configuration);
 
       $this->addEnabledElements($enabled);
+      $this->sortPaging();
       // Update existing contact fields
       foreach ($existing as $fid => $id) {
         if (substr($fid, -8) === 'existing') {
@@ -1999,6 +2003,56 @@ class AdminForm implements AdminFormInterface {
         $parent_key = $enabled_element['parent'];
       }
       $this->webform->setElementProperties($enabled_key, $properties, $parent_key);
+    }
+  }
+
+  /**
+   * Fix paging on the webform.
+   */
+  protected function sortPaging() {
+    $elements = $this->webform->getElementsInitialized();
+    if (!isset($elements['contact_pagebreak'])) {
+      return;
+    }
+
+    //Move contact page to top.
+    if (key($elements) != 'contact_pagebreak') {
+      $elements = array_merge([
+        'contact_pagebreak' => $elements['contact_pagebreak']
+      ], $elements);
+    }
+    foreach ($elements as $key => &$element) {
+      if (strpos($key, 'civicrm') !== 0
+        || isset($element['#parent']) || isset($element['#webform_parent_key'])
+        || empty($element['#type']) || $element['#type'] == 'webform_wizard_page') {
+        continue;
+      }
+      $page = (strpos($key, '_contribution_') !== FALSE) ? 'contribution_pagebreak' : 'contact_pagebreak';
+      $elements[$page][$key] = $element;
+      unset($elements[$key]);
+    }
+    $this->webform->setElements($elements);
+    $this->webform->save();
+  }
+
+  /**
+   * Set parents for all elements in the webform.
+   */
+  protected function setParentOnElements(&$enabled) {
+    if (!isset($enabled['contact_pagebreak'])) {
+      $enabled = array_merge([
+        'contact_pagebreak' => [
+          'type' => 'webform_wizard_page',
+          'form_key' => 'contact_pagebreak',
+          'title' => (string) t('Contact Information'),
+        ]
+      ], $enabled);
+    }
+    foreach ($enabled as $key => &$element) {
+      if (!is_array($element) || isset($element['parent']) || strpos($key, 'pagebreak') !== FALSE) {
+        continue;
+      }
+      $element['parent'] = (strpos($key, '_contribution_') !== FALSE) ? 'contribution_pagebreak' : 'contact_pagebreak';
     }
   }
 
@@ -2196,14 +2250,11 @@ class AdminForm implements AdminFormInterface {
     }
     // Create page break for contribution
     if ($name === 'enable_contribution') {
-      // @todo properly inject a page break.
-      // there needs to be a root page and nested elements.
       $enabled['contribution_pagebreak'] = [
         'type' => 'webform_wizard_page',
         'form_key' => 'contribution_pagebreak',
         'title' => (string) t('Payment'),
       ];
-      self::addPageBreak($field);
       unset($enabled[$field['form_key']]);
       return;
     }
@@ -2271,33 +2322,6 @@ class AdminForm implements AdminFormInterface {
       $enabled[$sid] = $new_set;
     }
     return $sid;
-  }
-
-  /**
-   * Create a page-break before the contribution-page field
-   * @param $field
-   */
-  public static function addPageBreak($field) {
-    // @todo properly inject a page break.
-    $stop = null;
-    /*
-    $node = node_load($field['nid']);
-    // Check if it already exists
-    foreach (wf_crm_aval($node->webform, 'components', array()) as $component) {
-      if ($component['form_key'] == 'contribution_pagebreak') {
-        return;
-      }
-    }
-    $pagebreak = array(
-      'nid' => $field['nid'],
-      'form_key' => 'contribution_pagebreak',
-      'type' => 'pagebreak',
-      'name' => t('Payment'),
-      'weight' => $field['weight'] - 9,
-    );
-    $pagebreak += webform_component_invoke('pagebreak', 'defaults');
-    webform_component_insert($pagebreak);
-    */
   }
 
   /**

@@ -95,35 +95,6 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   }
 
   /**
-   * Configures contact information fieldset into its own wizard page.
-   */
-  protected function configureContactInformationWizardPage() {
-    $this->drupalGet($this->webform->toUrl('edit-form'));
-
-    // Add the "Contact information" wizard page.
-    $this->getSession()->getPage()->clickLink('Add page');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $element_form = $this->getSession()->getPage()->findById('webform-ui-element-form-ajax');
-    $element_form->fillField('Title', 'Contact information');
-    $this->assertSession()->waitForElementVisible('css', '.machine-name-value');
-    $element_form->pressButton('Save');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertSession()->pageTextContains('Contact information has been created.');
-    $this->getSession()->wait(2000);
-
-    // Put contact elements into new page.
-    $contact_information_page_row_handle = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-contact-information"] a.tabledrag-handle');
-    // Move up twice to be the top-most element.
-    $this->sendKeyPress($contact_information_page_row_handle, 38);
-    $this->sendKeyPress($contact_information_page_row_handle, 38);
-    $this->sendKeyPress($contact_information_page_row_handle, 38);
-    $contact_fieldset_row_handle = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-fieldset-fieldset"] a.tabledrag-handle');
-    $this->sendKeyPress($contact_fieldset_row_handle, 39);
-    $this->getSession()->getPage()->pressButton('Save elements');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-  }
-
-  /**
    * Send a key press to an element.
    *
    * @var \Behat\Mink\Element\NodeElement $element

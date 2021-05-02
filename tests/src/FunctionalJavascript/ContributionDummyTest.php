@@ -85,9 +85,6 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
 
-    // Setup contact information wizard page.
-    $this->configureContactInformationWizardPage();
-
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
@@ -200,9 +197,6 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->enableBillingSection();
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
-
-    // Setup contact information wizard page.
-    $this->configureContactInformationWizardPage();
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();

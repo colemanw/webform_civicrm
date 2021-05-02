@@ -66,9 +66,6 @@ final class EventTest extends WebformCivicrmTestBase {
     $this->saveCiviCRMSettings();
     $this->assertSession()->assertWaitOnAjaxRequest();
 
-    // Setup contact information wizard page.
-    $this->configureContactInformationWizardPage();
-
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
     $edit = [
