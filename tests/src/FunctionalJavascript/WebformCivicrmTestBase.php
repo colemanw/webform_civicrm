@@ -86,12 +86,35 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   }
 
   /**
+   * Create custom group.
+   */
+  protected function createCustomGroup($params = []) {
+    $params = array_merge([
+      'title' => "Custom",
+      'extends' => 'Individual',
+    ], $params);
+    return $this->utils->wf_civicrm_api('CustomGroup', 'create', $params);
+  }
+
+  /**
    * {@inheritdoc}
    */
   protected function initFrontPage() {
     parent::initFrontPage();
     // Fix hidden columns on build page.
     $this->getSession()->resizeWindow(1440, 900);
+  }
+
+  protected function configureContributionTab() {
+    //Configure Contribution tab.
+    $this->getSession()->getPage()->clickLink('Contribution');
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->pageTextContains('You must enable an email field for Contact 1 in order to process transactions.');
+    $this->getSession()->getPage()->pressButton('Enable It');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
+    $this->getSession()->getPage()->selectFieldOption('Financial Type', 1);
   }
 
   /**

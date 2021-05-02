@@ -13,11 +13,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
   private function createCustomFields() {
     $this->_customFields = [];
-    $params = [
-      'title' => "Custom",
-      'extends' => 'Individual',
-    ];
-    $result = $this->utils->wf_civicrm_api('CustomGroup', 'create', $params);
+    $result = $this->createCustomGroup();
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
     $customgroup_id = $result['id'];
