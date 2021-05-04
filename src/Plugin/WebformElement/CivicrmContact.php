@@ -116,6 +116,7 @@ class CivicrmContact extends WebformElementBase {
     }
     $element['#attributes']['data-civicrm-contact'] = $c;
     $element['#attributes']['data-form-id'] = $webform_submission ? $webform_submission->getWebform()->id() : NULL;
+    $element['#attributes']['data-hide-fields'] = implode(', ', $this->getElementProperty($element, 'hide_fields'));
     $element['#attributes']['data-hide-method'] = $this->getElementProperty($element, 'hide_method');
     $element['#attributes']['data-no-hide-blank'] = (int) $this->getElementProperty($element, 'no_hide_blank');
     if (!empty($cid)) {
@@ -135,8 +136,8 @@ class CivicrmContact extends WebformElementBase {
         }
       }
     }
-    if (empty($cid) && $element['#type'] === 'hidden' && isset($element['none_prompt'])) {
-      $element['#attributes']['data-civicrm-name'] = Xss::filter($element['none_prompt']);
+    if (empty($cid) && $element['#type'] === 'hidden' && isset($element['#none_prompt'])) {
+      $element['#attributes']['data-civicrm-name'] = Xss::filter($element['#none_prompt']);
     }
     parent::prepare($element, $webform_submission);
   }
@@ -231,8 +232,7 @@ class CivicrmContact extends WebformElementBase {
       '#title' => $this->t('Skip Autofilling of'),
       '#description' => $this->t('Which fields should <em>not</em> be autofilled for this contact?'),
       '#default_value' => $element_properties['no_autofill'],
-      // @todo fix this to add support for wf_crm_contact_fields.
-      '#options' => ['' => '- ' . $this->t('None') . ' -'],
+      '#options' => ['' => '- ' . $this->t('None') . ' -'] + $this->wf_crm_contact_fields($webform, $c),
     ];
     $form['field_handling']['hide_fields'] = [
       '#type' => 'select',
@@ -240,8 +240,7 @@ class CivicrmContact extends WebformElementBase {
       '#title' => $this->t('Fields to Lock'),
       '#description' => $this->t('Prevent editing by disabling or hiding fields when a contact already exists.'),
       '#default_value' => $element_properties['hide_fields'],
-      // @todo fix this to add support for wf_crm_contact_fields.
-      '#options' => ['' => '- ' . $this->t('None') . ' -'],
+      '#options' => ['' => '- ' . $this->t('None') . ' -'] + $this->wf_crm_contact_fields($webform, $c),
     ];
     $form['field_handling']['hide_method'] = [
       '#type' => 'select',
@@ -250,7 +249,7 @@ class CivicrmContact extends WebformElementBase {
       '#options' => ['hide' => $this->t('Hidden'), 'disable' => $this->t('Disabled')],
       '#states' => [
         'visible' => [
-          'select[name="properties[hide_fields][]"]' => ['value' => ''],
+          'select[name="properties[hide_fields][]"]' => ['!value' => ''],
         ],
       ],
     ];
@@ -260,7 +259,7 @@ class CivicrmContact extends WebformElementBase {
       '#default_value' => $element_properties['no_hide_blank'],
       '#states' => [
         'visible' => [
-          'select[name="properties[hide_fields][]"]' => ['value' => ''],
+          'select[name="properties[hide_fields][]"]' => ['!value' => ''],
         ],
       ],
     ];
@@ -271,7 +270,7 @@ class CivicrmContact extends WebformElementBase {
       '#default_value' => $element_properties['submit_disabled'],
       '#states' => [
         'visible' => [
-          'select[name="properties[hide_fields][]"]' => ['value' => ''],
+          'select[name="properties[hide_fields][]"]' => ['!value' => ''],
         ],
       ],
     ];
@@ -434,6 +433,38 @@ class CivicrmContact extends WebformElementBase {
   }
 
   /**
+   * Find exposed field groups for a contact
+   *
+   * @param $webform
+   * @param $con
+   *   Contact #
+   *
+   * @return array
+   */
+  function wf_crm_contact_fields($webform, $con) {
+    $ret = [];
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $sets = $utils->wf_crm_get_fields('sets');
+    $sets['name'] = ['label' => t('Name')];
+    $elements = $webform->getElementsDecodedAndFlattened();
+    foreach ($elements as $f) {
+      if ($pieces = $utils->wf_crm_explode_key($f['#form_key'])) {
+        list( , $c, $ent, , $table, $field) = $pieces;
+        if ($ent == 'contact' && $c == $con && isset($sets[$table])) {
+          // Separate name from other contact fields
+          if ($table == 'contact' && strpos($field, 'name')) {
+            $table = 'name';
+          }
+          if ($field != 'existing') {
+            $ret[$table] = $sets[$table]['label'];
+          }
+        }
+      }
+    }
+    return $ret;
+  }
+
+  /**
    * Returns a list of fields that can be shown in an "Existing Contact" field display
    * In the future we could use api.getfields for this, but that also returns a lot of stuff we don't want
    *
@@ -488,7 +519,7 @@ class CivicrmContact extends WebformElementBase {
    * @param array $ids
    *   Known entity ids
    */
-  public static function wf_crm_fill_contact_value(WebformInterface $node, array $component, array &$element, array $ids = NULL) {
+  public static function wf_crm_fill_contact_value(WebformInterface $node, array &$element, array $ids = NULL) {
     $cid = wf_crm_aval($element, '#default_value', '');
     $contactComponent = \Drupal::service('webform_civicrm.contact_component');
     if ($element['#type'] == 'hidden') {
@@ -511,8 +542,13 @@ class CivicrmContact extends WebformElementBase {
         }
       }
     }
-    if (empty($cid) && $element['#type'] == 'hidden' && $element['none_prompt']) {
-      $element['#attributes']['data-civicrm-name'] = Html::escape($element['none_prompt']);
+    if ($element['#type'] == 'hidden') {
+      $element['#theme'] = 'webform_civicrm_contact';
+      $element['#attributes']['title'] = $element['#title'];
+      $element['#attributes']['cid'] = $cid;
+      if (empty($cid) && $element['#none_prompt']) {
+        $element['#attributes']['data-civicrm-name'] = Html::escape($element['#none_prompt']);
+      }
     }
     // Set options list for select elements. We do this here so we have access to entity ids.
     if (is_array($ids) && $element['#type'] == 'select') {

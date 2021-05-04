@@ -12,8 +12,20 @@
  * @ingroup themeable
  */
 #}
-<ul class="token-input-list">
-  <li class="token-input-input-token">
-    <input{{ attributes }} />{{ children }}
-  </li>
-</ul>
+{% if attributes['type'] == 'hidden' and attributes['title'] %}
+  <b>{{ attributes['title'] }}</b>
+{% endif %}
+
+{# Static contact widget with no contact id loaded on the webform. #}
+{% if attributes['cid'] is empty %}
+  <ul class="token-input-list">
+    <li class="token-input-token">
+      {% if attributes['value'] is empty and attributes['type'] == 'hidden' and attributes['data-civicrm-name'] %}
+        <p>{{attributes['data-civicrm-name']}}</p>
+      {% endif %}
+      <input{{ attributes }} />{{ children }}
+    </li>
+  </ul>
+{% else %}
+  <input{{ attributes }} />{{ children }}
+{% endif %}
