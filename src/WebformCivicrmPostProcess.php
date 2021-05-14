@@ -2375,7 +2375,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
             unset($this->data[$ent][$c][$table][$n][$name]);
             $tableName = substr($name, 0, 6) == 'custom' ? $ent : $table;
             $fld = $customName ?? $name;
-            $this->data[$ent][$c][$tableName][$n][$fld] = $this->ent['contact'][$val]['id'];
+            $this->data[$ent][$c][$tableName][1][$fld] = $this->ent['contact'][$val]['id'];
           }
           elseif (substr($name, 0, 6) == 'custom') {
             $this->data[$ent][$c]['update_contact_ref'][] = $name;
@@ -2511,7 +2511,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
                 $n = $c;
               }
             }
-            $this->data[$ent][$c][$ent][$n][$name] = $customValue ?? $val;
+            $this->data[$ent][$c][$ent][1][$name] = $customValue ?? $val;
           }
         }
       }
