@@ -18,7 +18,7 @@ jobs:
           - drupal: '^9.1'
             civicrm: '~5.36'
           - drupal: '^9.1'
-            civicrm: '5.37.x-dev'
+            civicrm: '5.38.x-dev'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
     services:
       mysql:
