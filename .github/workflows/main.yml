@@ -18,7 +18,7 @@ jobs:
           - drupal: '^9.1'
             civicrm: '~5.36'
           - drupal: '^9.1'
-            civicrm: '5.37.x-dev'
+            civicrm: '5.38.x-dev'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
     services:
       mysql:
@@ -65,6 +65,7 @@ jobs:
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
+          COMPOSER_MEMORY_LIMIT=-1 composer require 'scssphp/scssphp:~1.4.0'
           COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages}:${{ matrix.civicrm }} --no-suggest --prefer-dist
       # For some reason drupal/webform:5.x installs even if it is drupal:^9.0
       - name: Ensure Webform ^6.0
