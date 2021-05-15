@@ -1857,6 +1857,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     ];
     if (!$cid) {
       $cid = $this->createContact($contact);
+      $this->billing_contact = $cid;
     }
     else {
       foreach (['address', 'email'] as $loc) {
@@ -2750,6 +2751,11 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    * @return string $name
    */
   private function getNameForMultiValueFields($multivaluesCreateMode, $name, $table, $c, $n): string {
+    // Multi value fields are already saved while creating the billing contact.
+    if ($c == 1 && !empty($this->billing_contact)) {
+      return '';
+    }
+
     $existingValue = NULL;
     if (empty($multivaluesCreateMode) && !empty($this->existing_contacts[$c])) {
       $existingValue = $this->getCustomData($this->existing_contacts[$c], NULL, FALSE)[$table] ?? NULL;
