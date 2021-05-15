@@ -99,14 +99,14 @@ var wfCiviAdmin = (function ($, D) {
   // Change relationship options on-the-fly when contact types are altered
   function relationshipOptions() {
     var types = contactTypes();
-    $('select[id$=relationship-relationship-type-id]').each(function() {
+    $('select[data-drupal-selector$=relationship-relationship-type-id]').each(function() {
       var selected_option = $(this).val();
       var id = $(this).attr('id').split('-');
       var contact_a = types[id[2]];
       var contact_b = types[id[4]];
-      $('option', this).not('[value="0"],[value="create_civicrm_webform_element"]').remove();
-      for (var i in D.settings.webform_civicrm.rTypes) {
-        var t = D.settings.webform_civicrm.rTypes[i];
+      $('option', this).not('[value=""],[value="create_civicrm_webform_element"]').remove();
+      for (var i in drupalSettings.webform_civicrm.rTypes) {
+        var t = drupalSettings.webform_civicrm.rTypes[i];
         var reciprocal = (t['label_a_b'] != t['label_b_a'] && t['label_b_a'] || t['type_a'] != t['type_b']);
         if ( (t['type_a'] == contact_a['type'] || !t['type_a'])
           && (t['type_b'] == contact_b['type'] || !t['type_b'])
