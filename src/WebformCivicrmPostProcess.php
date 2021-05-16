@@ -1797,7 +1797,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     }
 
     // Validate billing details
-    \CRM_Core_Payment_Form::validatePaymentInstrument($payment_processor_id, $params, $card_errors, NULL);
+    if (!empty($this->data['billing']['number_number_of_billing'])) {
+      \CRM_Core_Payment_Form::validatePaymentInstrument($payment_processor_id, $params, $card_errors, NULL);
+    }
     foreach ($card_errors as $field => $msg) {
       $this->form_state->setErrorByName($field, $msg);
       $valid = FALSE;
