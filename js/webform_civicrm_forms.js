@@ -277,11 +277,12 @@ var wfCivi = (function ($, D, drupalSettings) {
   function populateStates(stateSelect, countryId) {
     // What is webformProp?
     // $(stateSelect).webformProp('disabled', true);
-    if (stateProvinceCache[countryId]) {
+    var is_billing = stateSelect.attr('name').indexOf("billing_address") >= 0;
+    if (!is_billing && stateProvinceCache[countryId]) {
       fillOptions(stateSelect, stateProvinceCache[countryId]);
     }
     else {
-      $.getJSON(setting.callbackPath+'/stateProvince/'+countryId, function(data) {
+      $.getJSON(setting.callbackPath+'/stateProvince/' + countryId + '/' + is_billing, function(data) {
         fillOptions(stateSelect, data);
         stateProvinceCache[countryId] = data;
       });

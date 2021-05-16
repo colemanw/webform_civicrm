@@ -108,16 +108,17 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->assertSession()->waitForElementVisible('css', '.machine-name-value');
     $element_form->pressButton('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->pageTextContains('Contact information has been created.');
+    $this->getSession()->wait(2000);
 
     // Put contact elements into new page.
     $contact_information_page_row_handle = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-contact-information"] a.tabledrag-handle');
     // Move up twice to be the top-most element.
     $this->sendKeyPress($contact_information_page_row_handle, 38);
     $this->sendKeyPress($contact_information_page_row_handle, 38);
-    $contact_information_page_row_handle->blur();
+    $this->sendKeyPress($contact_information_page_row_handle, 38);
     $contact_fieldset_row_handle = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-fieldset-fieldset"] a.tabledrag-handle');
     $this->sendKeyPress($contact_fieldset_row_handle, 39);
-    $contact_fieldset_row_handle->blur();
     $this->getSession()->getPage()->pressButton('Save elements');
     $this->assertSession()->assertWaitOnAjaxRequest();
   }
@@ -135,6 +136,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   protected function sendKeyPress(NodeElement $element, $char, $modifier = '') {
     $element->keyDown($char, $modifier);
     $element->keyUp($char, $modifier);
+    $element->blur();
   }
 
   /**
@@ -340,6 +342,41 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->utils->wf_civicrm_api('Setting', 'create', [
       'enable_components' => $enabledComponents,
     ]);
+  }
+
+  /**
+   * Enable Billing Section on the contribution tab.
+   */
+  protected function enableBillingSection() {
+    $this->getSession()->getPage()->selectFieldOption('Enable Billing Address?', 'Yes');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->assertSession()->checkboxChecked("Billing First Name");
+    $this->assertSession()->checkboxNotChecked("Billing Middle Name");
+    $this->assertSession()->checkboxChecked("Billing Last Name");
+    $this->assertSession()->checkboxChecked("Street Address");
+    $this->assertSession()->checkboxChecked("Postal Code");
+    $this->assertSession()->checkboxChecked("City");
+    $this->assertSession()->checkboxChecked("Country");
+    $this->assertSession()->checkboxChecked("State/Province");
+  }
+
+  /**
+   * Insert values in billing fields.
+   *
+   * @param array $params
+   */
+  protected function fillBillingFields($params) {
+    $this->getSession()->getPage()->fillField('Billing First Name', $params['first_name']);
+    $this->getSession()->getPage()->fillField('Billing Last Name', $params['last_name']);
+    $this->getSession()->getPage()->fillField('Street Address', $params['street_address']);
+    $this->getSession()->getPage()->fillField('City', $params['city']);
+
+    $this->getSession()->getPage()->selectFieldOption('Country', $params['country']);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption('State/Province', $params['state_province']);
+
+    $this->getSession()->getPage()->fillField('Postal Code', $params['postal_code']);
   }
 
 }

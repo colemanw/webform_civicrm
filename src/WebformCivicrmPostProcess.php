@@ -416,7 +416,8 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           else {
             $country_id = (int) $utils->wf_crm_get_civi_setting('defaultContactCountry', 1228);
           }
-          $states = $utils->wf_crm_get_states($country_id);
+          $isBilling = (strpos($element['#name'], 'billing_address_') !== false) ?? FALSE;
+          $states = $utils->wf_crm_get_states($country_id, $isBilling);
           if ($states && !array_key_exists(strtoupper($element['#value']), $states)) {
             $countries = $utils->wf_crm_apivalues('address', 'getoptions', ['field' => 'country_id']);
             $this->form_state->setError($element, t('Mismatch: "@state" is not a state/province of %country. Please enter a valid state/province abbreviation for %field.', ['@state' => $element['#value'], '%country' => $countries[$country_id], '%field' => $element['#title']]));
@@ -1772,14 +1773,20 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $fields = \CRM_Utils_Array::crmArrayMerge($processor->getPaymentFormFieldsMetadata(), $billingAddressFieldsMetadata);
 
     $request = \Drupal::request();
-    foreach ($request->request->all() as $field => $value) {
+    $form_values = array_merge($request->request->all(), $this->form_state->getValues());
+    foreach ($form_values as $field => $value) {
       if (empty($value) && isset($fields[$field]) && $fields[$field]['is_required'] !== FALSE) {
         $this->form_state->setErrorByName($field, t(':name field is required.', [':name' => $fields[$field]['title']]));
         $valid = FALSE;
       }
-      if (!empty($value) && array_key_exists($field, $fields)) {
-        $name = str_replace('billing_', '', str_replace('-5', '', $field));
-        $params[$name] = $params[$field] = $_POST[$field];
+      if (!empty($value) && (array_key_exists($field, $fields) || strpos($field, 'billing_address_') !== false)) {
+        $name = str_replace('civicrm_1_contribution_1_contribution_billing_address_', '', $field);
+        $params[$name] = $value;
+        foreach (["billing_{$name}", "billing_{$name}-5"] as $billingName) {
+          if (isset($fields[$billingName])) {
+            $params[$billingName] = $value;
+          }
+        }
       }
     }
 
@@ -1790,7 +1797,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     }
 
     // Validate billing details
-    \CRM_Core_Payment_Form::validatePaymentInstrument($payment_processor_id, $params, $card_errors, NULL);
+    if (!empty($this->data['billing']['number_number_of_billing'])) {
+      \CRM_Core_Payment_Form::validatePaymentInstrument($payment_processor_id, $params, $card_errors, NULL);
+    }
     foreach ($card_errors as $field => $msg) {
       $this->form_state->setErrorByName($field, $msg);
       $valid = FALSE;

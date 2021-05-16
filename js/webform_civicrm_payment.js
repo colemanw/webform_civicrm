@@ -35,6 +35,7 @@ cj(function($) {
               $(this).closest('form').find('input.webform-submit.button-primary').click();
             })
           }
+          $('fieldset.billing_name_address-group').remove();
         }
       });
     }
@@ -42,6 +43,7 @@ cj(function($) {
       $('#billing-payment-block').html('');
     }
   }
+  $('fieldset.billing_name_address-group').remove();
   $processorFields.on('change', function() {
     setting.billingSubmission || (setting.billingSubmission = {});
     $('#billing-payment-block').find('input:visible, select').each(function() {
@@ -135,5 +137,5 @@ cj(function($) {
   }
 
   $('.webform-submission-form #edit-actions').detach().appendTo('.webform-submission-form');
-    
+
 });

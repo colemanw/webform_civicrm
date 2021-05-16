@@ -99,6 +99,10 @@ class FieldOptions implements FieldOptionsInterface {
         if ($table == 'contribution' && strpos($name, 'frequency_') === 0) {
           $table = 'contribution_recur';
         }
+        if ($table == 'contribution' && strpos($name, 'billing_address_') === 0) {
+          $table = 'address';
+          $params['field'] = str_replace('billing_address_', '', $params['field']);
+        }
         // Use the Contribution table to pull up financial type id-s
         if ($table == 'membership' && $name == 'financial_type_id') {
           $table = 'contribution';

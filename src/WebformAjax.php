@@ -142,6 +142,15 @@ class WebformAjax extends WebformCivicrmBase implements WebformAjaxInterface {
               }
             }
           }
+          elseif ($i == 1 && strpos($field, 'billing_address_') !== false && isset($contact['contact'][$n]['contact_id'])) {
+            $billingAddress = $this->loadBillingAddress($contact['contact'][$n]['contact_id']);
+            if (isset($billingAddress[$field])) {
+              $data[] = [
+                'val' => $billingAddress[$field],
+                'fid' => $fid,
+              ];
+            }
+          }
           // Populate related contacts
           elseif ($i > $c && $field == 'existing') {
             $related_component = $this->getComponent($fid);

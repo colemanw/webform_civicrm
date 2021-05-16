@@ -5,9 +5,8 @@
  * Webform CiviCRM module's install, uninstall and upgrade code.
  */
 
-use Drupal\webform_civicrm\Utils;
-use Drupal\node\Entity\Node;
 use Drupal\webform\Entity\Webform;
+use Drupal\Core\Form\FormState;
 
 /**
  * Implements hook_requirements().
@@ -228,6 +227,77 @@ function webform_civicrm_update_8002() {
         }
       }
     }
+    $handler->setConfiguration($config);
+    $webform->save();
+  }
+}
+
+/**
+ * Add Billing fields to the webforms
+ */
+function webform_civicrm_update_8003() {
+  \Drupal::service('civicrm')->initialize();
+  $utils = \Drupal::service('webform_civicrm.utils');
+  $fields = \Drupal::service('webform_civicrm.fields');
+  $fieldOptions = \Drupal::service('webform_civicrm.field_options');
+  $adminForm = \Drupal::service('webform_civicrm.admin_form');
+  $billingFields = ['first_name', 'middle_name', 'last_name', 'street_address', 'postal_code', 'city', 'country_id', 'state_province_id'];
+
+  $ppFormKey = 'civicrm_1_contribution_1_contribution_payment_processor_id';
+  $webforms = Webform::loadMultiple();
+  foreach ($webforms as $webform) {
+    $handler = $webform->getHandlers('webform_civicrm');
+    $config = $handler->getConfiguration();
+    $settings = &$config['webform_civicrm']['settings'] ?? [];
+    $data = $settings['data'] ?? [];
+    $element = $webform->getElement($ppFormKey);
+    $options = [];
+    if (!empty($element)) {
+      $options = $element['#options'] ?? [];
+      if (!empty($element['#civicrm_live_options']) && empty($options)) {
+        $options = $fieldOptions->get(['form_key' => $ppFormKey], 'create', $data);
+      }
+    }
+    if (empty($options) && is_numeric($data['contribution'][1]['contribution'][1]['payment_processor_id'])) {
+      $options[$data['contribution'][1]['contribution'][1]['payment_processor_id']] = '';
+    }
+    if (empty($options)) {
+      continue;
+    }
+    //If any of the payment processor allow billing fields, enable billing on the form.
+    $addBilling = FALSE;
+    foreach ($options as $ppID => $ppName) {
+      $processor = civicrm_api3('PaymentProcessor', 'get', [
+        'id' => $ppID,
+        'billing_mode' => ['IN' => [1, 3]],
+      ]);
+      if (!empty($processor['count'])) {
+        $addBilling = TRUE;
+        break;
+      }
+    }
+    if (!$addBilling || isset($settings['billing_1_number_of_billing'])) {
+      continue;
+    }
+    $enabled = $utils->wf_crm_enabled_fields($webform, NULL, TRUE);
+    $settings['billing_1_number_of_billing'] = 1;
+    $settings['data']['billing']['number_number_of_billing'] = 1;
+    //Fill required keys in settings.
+    foreach ($billingFields as $fld) {
+      $key = "civicrm_1_contribution_1_contribution_billing_address_{$fld}";
+      $settings[$key] = 'create_civicrm_webform_element';
+    }
+    //Insert components in the webform.
+    foreach ($billingFields as $fld) {
+      $field = $fields->get()["contribution_billing_address_{$fld}"] ?? '';
+      $field['form_key'] = "civicrm_1_contribution_1_contribution_billing_address_{$fld}";
+      $adminForm::insertComponent($field, $enabled, $settings, TRUE);
+    }
+    $stub_form = [];
+    $stub_form_state = new FormState();
+    $adminForm->initialize($stub_form, $stub_form_state, $webform);
+    $adminForm->addEnabledElements($enabled);
+
     $handler->setConfiguration($config);
     $webform->save();
   }

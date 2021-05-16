@@ -39,7 +39,7 @@ class AdminForm implements AdminFormInterface {
   /**
    * @var array
    */
-  public static $fieldset_entities = ['contact', 'activity', 'case', 'grant'];
+  public static $fieldset_entities = ['contact', 'billing_1_number_of_billing', 'activity', 'case', 'grant'];
 
   /**
    * Initialize and set form variables.
@@ -167,9 +167,16 @@ class AdminForm implements AdminFormInterface {
         'website' => 'url',
         'im' => 'name',
         'address' => ['street_address', 'city', 'state_province_id', 'postal_code'],
+        'billing' => ['first_name', 'last_name', 'street_address', 'city', 'postal_code', 'state_province_id', 'country_id'],
       ];
       foreach ($defaults as $ent => $fields) {
         if (strpos($_POST['_triggering_element_name'], "_number_of_$ent")) {
+          if ($ent == 'billing') {
+            foreach ((array) $fields as $field) {
+              $this->settings["civicrm_1_contribution_1_contribution_{$ent}_address_{$field}"] = 1;
+            }
+            continue;
+          }
           list(, $c) = explode('_', $_POST['_triggering_element_name']);
           for ($n = 1; $n <= $this->data['contact'][$c]["number_of_$ent"]; ++$n) {
             foreach ((array) $fields as $field) {
@@ -1106,6 +1113,40 @@ class AdminForm implements AdminFormInterface {
       '#required' => TRUE,
     ];
 
+    // Billing Address
+    $n = wf_crm_aval($this->data, "billing:number_number_of_billing", 0);
+    $this->form['contribution']['sets']["billing_1_number_of_billing"] = [
+      '#type' => 'select',
+      '#title' => t('Enable Billing Address?'),
+      '#default_value' => $n,
+      '#options' => [t('No'), t('Yes')],
+      '#prefix' => '<div class="number-of">',
+      '#suffix' => '</div>',
+      '#description' => t('Enable this section if you want billing address to be sent to the payment processor.'),
+    ];
+    $this->addAjaxItem("contribution:sets", "billing_1_number_of_billing", "billing");
+
+    if ($n) {
+      // Add contribution fields
+      foreach ($this->sets as $sid => $set) {
+        if ($sid == 'billing_1_number_of_billing') {
+          $fs = "contribution_sets_billing_{$n}_fieldset";
+          $this->form['contribution']['sets']['billing'][$fs] = [
+            '#type' => 'fieldset',
+            '#title' => t('Billing Address'),
+            '#attributes' => ['id' => $fs, 'class' => ['web-civi-checkbox-set']],
+            'js_select' => $this->addToggle($fs),
+          ];
+          if (isset($set['fields'])) {
+            foreach ($set['fields'] as $fid => $field) {
+              $fid = "civicrm_1_contribution_1_$fid";
+              $this->form['contribution']['sets']['billing'][$fs][$fid] = $this->addItem($fid, $field);
+            }
+          }
+        }
+      }
+    }
+
     // LineItem
     $num = wf_crm_aval($this->data, "lineitem:number_number_of_lineitem", 0);
     $this->form['contribution']['sets']["lineitem_1_number_of_lineitem"] = [
@@ -1660,7 +1701,7 @@ class AdminForm implements AdminFormInterface {
           $this->data[$ent][$c][$key] = $val;
         }
         // Standalone entities keep their own count independent of contacts
-        elseif ($ent == 'grant' || $ent == 'activity' || $ent == 'case' || $ent == 'lineitem' || $ent == 'receipt') {
+        elseif (in_array($ent, ['grant', 'activity', 'case', 'lineitem', 'receipt', 'billing'])) {
           $this->data[$ent]["number_$key"] = $val;
         }
       }
@@ -1914,41 +1955,50 @@ class AdminForm implements AdminFormInterface {
       $handler_configuration['settings'] = $this->settings;
       $handler->setConfiguration($handler_configuration);
 
-      $webform_element_manager = \Drupal::getContainer()->get('plugin.manager.webform.element');
-      foreach ($enabled as $enabled_key => $enabled_element) {
-        if (!is_array($enabled_element)) {
-          // If this is a string, it is not a new element. However, this
-          // probably needs to be revisited.
-          continue;
-        }
-        // Webform uses YAML dump, which dies on FormattableMarkup.
-        $enabled_element = array_map([$this, 'stringifyFormattableMarkup'], $enabled_element);
-        $element_plugin = $webform_element_manager->getElementInstance([
-          '#type' => $enabled_element['type'],
-        ]);
-
-        $stub_form = [];
-        $stub_form_state = new FormState();
-        $stub_form_state->set('default_properties', $element_plugin->getDefaultProperties());
-        if (!isset($enabled_element['title']) && isset($enabled_element['name'])) {
-          $enabled_element['title'] = $enabled_element['name'];
-        }
-        unset($enabled_element['name']);
-        $stub_form_state->setValues($enabled_element);
-        $properties = $element_plugin->getConfigurationFormProperties($stub_form, $stub_form_state);
-
-        $parent_key = '';
-        if (isset($enabled_element['parent'])) {
-          $parent_key = $enabled_element['parent'];
-        }
-        $this->webform->setElementProperties($enabled_key, $properties, $parent_key);
-      }
+      $this->addEnabledElements($enabled);
       // Update existing contact fields
       foreach ($existing as $fid => $id) {
         if (substr($fid, -8) === 'existing') {
           $stop = null;
         }
       }
+    }
+  }
+
+  /**
+   * Add enabled elements to the webform.
+   *
+   * @param array $enabled
+   */
+  public function addEnabledElements($enabled) {
+    $webform_element_manager = \Drupal::getContainer()->get('plugin.manager.webform.element');
+    foreach ($enabled as $enabled_key => $enabled_element) {
+      if (!is_array($enabled_element)) {
+        // If this is a string, it is not a new element. However, this
+        // probably needs to be revisited.
+        continue;
+      }
+      // Webform uses YAML dump, which dies on FormattableMarkup.
+      $enabled_element = array_map([$this, 'stringifyFormattableMarkup'], $enabled_element);
+      $element_plugin = $webform_element_manager->getElementInstance([
+        '#type' => $enabled_element['type'],
+      ]);
+
+      $stub_form = [];
+      $stub_form_state = new FormState();
+      $stub_form_state->set('default_properties', $element_plugin->getDefaultProperties());
+      if (!isset($enabled_element['title']) && isset($enabled_element['name'])) {
+        $enabled_element['title'] = $enabled_element['name'];
+      }
+      unset($enabled_element['name']);
+      $stub_form_state->setValues($enabled_element);
+      $properties = $element_plugin->getConfigurationFormProperties($stub_form, $stub_form_state);
+
+      $parent_key = '';
+      if (isset($enabled_element['parent'])) {
+        $parent_key = $enabled_element['parent'];
+      }
+      $this->webform->setElementProperties($enabled_key, $properties, $parent_key);
     }
   }
 
@@ -2134,6 +2184,9 @@ class AdminForm implements AdminFormInterface {
     if ($field['type'] == 'hidden' && !empty($field['expose_list']) && !empty($settings[$field['form_key']])) {
       $field['value'] = $settings[$field['form_key']];
     }
+    if (!empty($field['set']) && $field['set'] == 'billing_1_number_of_billing') {
+      $ent = 'billing_1_number_of_billing';
+    }
     // Create fieldsets for multivalued entities
     if (empty($enabled[$field['form_key']]) && ($ent !== 'contribution' &&
       ($ent !== 'participant' || wf_crm_aval($settings['data'], 'participant_reg_type') === 'separate'))
@@ -2194,6 +2247,9 @@ class AdminForm implements AdminFormInterface {
         // 'weight' => $c,
       ];
       $sets = $utils->wf_crm_get_fields('sets');
+      if ($type == 'billing_1_number_of_billing') {
+        $new_set['parent'] = 'contribution_pagebreak';
+      }
       if (isset($isCustom, $customGroupKey)) {
         $new_set['title'] = $sets[$customGroupKey]['label'];
         // @todo We cannot define a default weight.

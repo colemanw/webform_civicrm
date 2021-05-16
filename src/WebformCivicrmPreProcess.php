@@ -159,6 +159,9 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
         if (!empty($this->data['membership'][$c]['number_of_membership'])) {
           $this->loadMemberships($c, $contact['id']);
         }
+        if ($c == 1 && !empty($this->data['billing']['number_number_of_billing'])) {
+          $this->info['contribution'][1]['contribution'][1] = $this->loadBillingAddress($contact['id']);
+        }
       }
       // Load events from url if enabled, this will override loadParticipants
       if (!empty($this->data['reg_options']['allow_url_load'])) {
@@ -205,11 +208,12 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
     $utils = \Drupal::service('webform_civicrm.utils');
 
     $default_country = $utils->wf_crm_get_civi_setting('defaultContactCountry', 1228);
+    $billingAddress = wf_crm_aval($this->data, "billing:number_number_of_billing", FALSE);
     // Variables to push to the client-side
     $js_vars = [];
     // JS Cache eliminates the need for most ajax state/province callbacks
     foreach ($this->data['contact'] as $c) {
-      if (!empty($c['number_of_address'])) {
+      if (!empty($c['number_of_address']) || !empty($billingAddress)) {
         $js_vars += [
           'defaultCountry' => $default_country,
           'defaultStates' => $utils->wf_crm_get_states($default_country),

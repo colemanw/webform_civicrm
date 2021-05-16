@@ -63,8 +63,9 @@ class Utils implements UtilsInterface {
   /**
    * Get list of states, keyed by abbreviation rather than ID.
    * @param null|int|string $param
+   * @param bool $isBilling
    */
-  public function wf_crm_get_states($param = NULL) {
+  public function wf_crm_get_states($param = NULL, $isBilling = FALSE) {
     $ret = [];
     if (!$param || $param == 'default') {
       $settings = $this->wf_civicrm_api('Setting', 'get', [
@@ -92,7 +93,8 @@ class Utils implements UtilsInterface {
       'country_id' => ['IN' => $param],
     ]);
     foreach ($states as $state) {
-      $ret[strtoupper($state['abbreviation'])] = $state['name'];
+      $key = $isBilling ? 'id' : 'abbreviation';
+      $ret[strtoupper($state[$key])] = $state['name'];
     }
     // Localize the state/province names if in an non-en_US locale
     $tsLocale = \CRM_Utils_System::getUFLocale();
