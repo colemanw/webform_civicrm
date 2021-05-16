@@ -95,11 +95,80 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
     $this->_customFields['consultant'] = $result['id'];
   }
 
+  public function testAnonymousSubmitWithContribution() {
+    $payment_processor = $this->createPaymentProcessor();
+
+    $this->_totalMV = 1;
+    $this->createMultiValueCustomFields();
+    $this->drupalLogin($this->rootUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+    $this->enableCustomFields(1, TRUE);
+    $this->htmlOutput();
+
+    //Configure Contribution tab.
+    $this->configureContributionTab();
+    $this->getSession()->getPage()->checkField('Contribution Amount');
+    $this->assertSession()->checkboxChecked('Contribution Amount');
+
+    $this->getSession()->getPage()->selectFieldOption('Payment Processor', $payment_processor['id']);
+
+    $this->saveCiviCRMSettings();
+
+    $this->drupalLogout();
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->htmlOutput();
+    $this->assertPageNoErrorMessages();
+
+    $params = [
+      'First Name' => 'Anonymous' . substr(sha1(rand()), 0, 4),
+      'Last Name' => 'Contact' . substr(sha1(rand()), 0, 4),
+      'Email' => 'anonymous' . substr(sha1(rand()), 0, 4) . "@example.com",
+      'Month' => 'January',
+      'civicrm_1_contact_1_cg1_custom_2' => 200,
+    ];
+    $this->submitWebform($params, 'Next >');
+    $this->htmlOutput();
+    $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
+    $this->getSession()->getPage()->fillField('Contribution Amount', 20);
+
+    // Wait for the credit card form to load in.
+    $this->assertSession()->waitForField('credit_card_number');
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '20.00');
+
+    $this->getSession()->getPage()->fillField('Card Number', '4222222222222220');
+    $this->getSession()->getPage()->fillField('Security Code', '123');
+    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[M]', '11');
+    $this_year = date('Y');
+    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[Y]', $this_year + 1);
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->htmlOutput();
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
+
+    $cid = $this->utils->wf_civicrm_api('Contact', 'getsingle', [
+      'first_name' => $params['First Name'],
+      'last_name' => $params['Last Name'],
+    ])['contact_id'];
+
+    $customValues = $this->utils->wf_civicrm_api('CustomValue', 'get', [
+      'entity_id' => $cid,
+    ])['values'];
+    //Assert only 1 multivalue record is created.
+    unset($customValues[$this->_customFields['month']]['latest'], $customValues[$this->_customFields['data']]['latest']);
+    $monthValueCount = array_count_values($customValues[$this->_customFields['month']]);
+    $dataValueCount = array_count_values($customValues[$this->_customFields['data']]);
+    $this->assertEquals($monthValueCount["January"], 1);
+    $this->assertEquals($dataValueCount["200"], 1);
+  }
+
   /**
    * Test submitting Custom Fields
    */
   public function testSubmitWebform() {
-    $totalMV = 5;
+    $this->_totalMV = 5;
     $this->createMultiValueCustomFields();
     $this->drupalLogin($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
@@ -108,41 +177,30 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
 
     $this->enableCivicrmOnWebform();
 
-    $this->getSession()->getPage()->selectFieldOption("number_of_contacts", $totalMV);
+    $this->getSession()->getPage()->selectFieldOption("number_of_contacts", $this->_totalMV);
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
-    $this->getSession()->getPage()->selectFieldOption("contact_1_number_of_cg{$this->_cgID}", $totalMV);
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->htmlOutput();
-
-    // Enable custom fields.
-    foreach ($this->_customFields as $id) {
-      for ($i = 1; $i <= $totalMV; $i++) {
-        $fldName = "civicrm_1_contact_{$i}_cg{$this->_cgID}_custom_{$id}";
-        if ($id == $this->_customFields['consultant']) {
-          $this->getSession()->getPage()->selectFieldOption($fldName, "Contact {$i}");
-        }
-        else {
-          $this->getSession()->getPage()->checkField($fldName);
-          $this->assertSession()->checkboxChecked($fldName);
-        }
-      }
-    }
+    $this->enableCustomFields(1);
     $this->htmlOutput();
 
     $this->getSession()->getPage()->clickLink('Contact 2');
+    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->checkField('civicrm_2_contact_1_contact_existing');
     $this->assertSession()->checkboxChecked('civicrm_2_contact_1_contact_existing');
+    $this->enableCustomFields(2);
 
     $this->getSession()->getPage()->clickLink('Contact 3');
+    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->checkField('civicrm_3_contact_1_contact_existing');
     $this->assertSession()->checkboxChecked('civicrm_3_contact_1_contact_existing');
+    $this->enableCustomFields(3);
 
     $this->saveCiviCRMSettings();
 
     $this->drupalGet($this->webform->toUrl('edit-form'));
     $this->editContactElement('edit-webform-ui-elements-civicrm-2-contact-1-contact-existing-operations', 'Autocomplete', '- None -');
+    $this->drupalGet($this->webform->toUrl('edit-form'));
     $this->editContactElement('edit-webform-ui-elements-civicrm-3-contact-1-contact-existing-operations', 'Autocomplete', '- None -');
 
     //Create 2 contacts to fill on the webform.
@@ -154,22 +212,24 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
     $this->assertPageNoErrorMessages();
 
     //Enter values for the custom fields and save.
-    $params = [
-      'Month' => 'Jan',
-      'Month 2' => 'Feb',
-      'Month 3' => 'March',
-      'Month 4' => 'April',
-      'Month 5' => 'May',
-    ];
+    $months = ['Jan', 'Feb', 'March', 'April', 'May'];
     $data = [100, 200];
-    for ($i = 1; $i <= $totalMV; $i++) {
-      $params["civicrm_1_contact_{$i}_cg1_custom_2"] = $data[array_rand($data)];
-      $params["civicrm_{$i}_contact_1_contact_first_name"] = substr(sha1(rand()), 0, 7);
-      $params["civicrm_{$i}_contact_1_contact_last_name"] = substr(sha1(rand()), 0, 7);
+    $params = [];
+    for ($c = 1; $c <= $this->_totalMV; $c++) {
+      if ($c < 4) {
+        for ($i = 1; $i <= $this->_totalMV; $i++) {
+          $params["civicrm_{$c}_contact_{$i}_cg1_custom_1"] = $months[array_rand($months)];
+          $params["civicrm_{$c}_contact_{$i}_cg1_custom_2"] = $data[array_rand($data)];
+        }
+      }
+      else {
+        $params["civicrm_{$c}_contact_1_contact_first_name"] = substr(sha1(rand()), 0, 7);
+        $params["civicrm_{$c}_contact_1_contact_last_name"] = substr(sha1(rand()), 0, 7);
+      }
     }
     $this->submitWebform($params);
 
-    $this->verifyCustomValues($params, $totalMV);
+    $this->verifyCustomValues($params);
 
     //Visit the webform again.
     $this->drupalGet($this->webform->toUrl('canonical'));
@@ -178,32 +238,63 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
 
     // Verify if field values are loaded on the webform.
     foreach ($params as $key => $val) {
-      if (strpos($key, 'Month') !== false) {
-        $this->assertSession()->fieldValueEquals('Month', 'Jan');
-      }
-      elseif (strpos($key, 'custom_') !== false) {
-        $this->assertSession()->elementExists('css', '[name="' . $key . '"][value=' . $val . ']')->isChecked();
+      if (strpos($key, 'civicrm_1_contact') !== false) {
+        if (strpos($key, 'custom_1') !== false) {
+          $this->assertSession()->fieldValueEquals($key, $val);
+        }
+        elseif (strpos($key, 'custom_2') !== false) {
+          $this->assertSession()->elementExists('css', '[name="' . $key . '"][value=' . $val . ']')->isChecked();
+        }
       }
     }
 
     //Update values for the custom fields and save.
-    $params = [
-      'Month' => 'JanEdited',
-      'Month 2' => 'FebEdited',
-      'Month 3' => 'MarchEdited',
-      'Month 4' => 'AprilEdited',
-      'Month 5' => 'MayEdited',
-    ];
+    $months = ['JanEdited', 'FebEdited', 'MarchEdited', 'AprilEdited', 'MayEdited'];
     $data = [100, 200];
-    for ($i = 1; $i <= $totalMV; $i++) {
-      $params["civicrm_1_contact_{$i}_cg1_custom_2"] = $data[array_rand($data)];
-      $params["civicrm_{$i}_contact_1_contact_first_name"] = substr(sha1(rand()), 0, 7);
-      $params["civicrm_{$i}_contact_1_contact_last_name"] = substr(sha1(rand()), 0, 7);
+    $params = [];
+    for ($c = 1; $c <= $this->_totalMV; $c++) {
+      if ($c < 4) {
+        for ($i = 1; $i <= $this->_totalMV; $i++) {
+          $params["civicrm_{$c}_contact_{$i}_cg1_custom_1"] = $months[array_rand($months)];
+          $params["civicrm_{$c}_contact_{$i}_cg1_custom_2"] = $data[array_rand($data)];
+        }
+      }
+      else {
+        $params["civicrm_{$c}_contact_1_contact_first_name"] = substr(sha1(rand()), 0, 7);
+        $params["civicrm_{$c}_contact_1_contact_last_name"] = substr(sha1(rand()), 0, 7);
+      }
     }
     $this->submitWebform($params);
 
     // Check if updated values are stored on the contact.
-    $this->verifyCustomValues($params, $totalMV);
+    $this->verifyCustomValues($params);
+  }
+
+  /**
+   * Enable Custom Fields
+   */
+  private function enableCustomFields($c, $createOnly = FALSE) {
+    $this->getSession()->getPage()->selectFieldOption("contact_{$c}_number_of_cg{$this->_cgID}", $this->_totalMV);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+
+    // Enable custom fields.
+    foreach ($this->_customFields as $id) {
+      for ($i = 1; $i <= $this->_totalMV; $i++) {
+        if ($createOnly) {
+          $this->getSession()->getPage()->selectFieldOption("civicrm_{$c}_contact_{$i}_cg{$this->_cgID}_createmode", "Create Only");
+        }
+
+        $fldName = "civicrm_{$c}_contact_{$i}_cg{$this->_cgID}_custom_{$id}";
+        if ($id == $this->_customFields['consultant']) {
+          $this->getSession()->getPage()->selectFieldOption($fldName, "Contact {$i}");
+        }
+        else {
+          $this->getSession()->getPage()->checkField($fldName);
+          $this->assertSession()->checkboxChecked($fldName);
+        }
+      }
+    }
   }
 
   /**
@@ -211,25 +302,30 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
    *
    * @param array $params
    */
-  private function submitWebform($params) {
+  private function submitWebform($params, $submit = 'Submit') {
+    if (!empty($this->_contact1)) {
+      $this->fillContactAutocomplete('token-input-edit-civicrm-2-contact-1-contact-existing', $this->_contact1['first_name']);
+      $this->fillContactAutocomplete('token-input-edit-civicrm-3-contact-1-contact-existing', $this->_contact2['first_name']);
+    }
+
     foreach ($params as $key => $val) {
       $this->getSession()->getPage()->fillField($key, $val);
-      if (strpos($key, 'custom_') !== false) {
+      if (strpos($key, 'custom_2') !== false) {
         $this->getSession()->getPage()->selectFieldOption($key, $val);
       }
     }
-    $this->fillContactAutocomplete('token-input-edit-civicrm-2-contact-1-contact-existing', $this->_contact1['first_name']);
-    $this->fillContactAutocomplete('token-input-edit-civicrm-3-contact-1-contact-existing', $this->_contact2['first_name']);
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->getSession()->getPage()->pressButton($submit);
     $this->assertPageNoErrorMessages();
-    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+    if ($submit == 'Submit') {
+      $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+    }
   }
 
   /**
    * Verify stored values.
    */
-  private function verifyCustomValues($params, $totalMV) {
+  private function verifyCustomValues($params) {
     $customValues = $this->utils->wf_civicrm_api('CustomValue', 'get', [
       'entity_id' => $this->rootUserCid,
     ])['values'];
@@ -237,30 +333,49 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
     $dataValues = $customValues[$this->_customFields['data']];
     $contactRefValues = $customValues[$this->_customFields['consultant']];
     // Assert if submitted params are present in the custom values.
-    $this->assertEquals($params['Month'], $monthValues[1]);
     $this->assertTrue(in_array($this->_contact1['id'], $contactRefValues));
     $this->assertTrue(in_array($this->_contact2['id'], $contactRefValues));
 
-    for ($i = 1; $i <= $totalMV; $i++) {
-      if ($i != 1) {
-        $this->assertEquals($params["Month {$i}"], $monthValues[$i]);
-      }
-      $this->assertEquals($params["civicrm_1_contact_{$i}_cg1_custom_2"], $dataValues[$i]);
-
+    for ($c = 1; $c <= $this->_totalMV; $c++) {
       $contact = current($this->utils->wf_civicrm_api('Contact', 'get', [
-        'id' => $contactRefValues[$i],
+        'id' => $contactRefValues[$c],
       ])['values']);
-      if ($i == 2) {
-        $this->assertEquals($this->_contact1["first_name"], $contact['first_name']);
-        $this->assertEquals($this->_contact1["last_name"], $contact['last_name']);
-      }
-      elseif ($i == 3) {
-        $this->assertEquals($this->_contact2["first_name"], $contact['first_name']);
-        $this->assertEquals($this->_contact2["last_name"], $contact['last_name']);
+
+      //We have entered multi value fields for only first 3 contacts.
+      if ($c < 4) {
+        for ($i = 1; $i <= $this->_totalMV; $i++) {
+          if ($c == 2) {
+            $cid = $this->_contact1['id'];
+            $this->assertEquals($this->_contact1["first_name"], $contact['first_name']);
+            $this->assertEquals($this->_contact1["last_name"], $contact['last_name']);
+          }
+          elseif ($c == 3) {
+            $cid = $this->_contact2['id'];
+            $this->assertEquals($this->_contact2["first_name"], $contact['first_name']);
+            $this->assertEquals($this->_contact2["last_name"], $contact['last_name']);
+          }
+          $key = $i;
+          if (!empty($cid)) {
+            //Assert custom values stored on 2nd and 3rd contact.
+            $customValues = $this->utils->wf_civicrm_api('CustomValue', 'get', [
+              'entity_id' => $cid,
+            ])['values'];
+            $monthValues = $customValues[$this->_customFields['month']];
+            $dataValues = $customValues[$this->_customFields['data']];
+            unset($monthValues['entity_id'], $monthValues['latest'], $monthValues['id']);
+            $monthValues = array_values($monthValues);
+
+            unset($dataValues['entity_id'], $dataValues['latest'], $dataValues['id']);
+            $dataValues = array_values($dataValues);
+            $key--;
+          }
+          $this->assertEquals($params["civicrm_{$c}_contact_{$i}_cg1_custom_1"], $monthValues[$key]);
+          $this->assertEquals($params["civicrm_{$c}_contact_{$i}_cg1_custom_2"], $dataValues[$key]);
+        }
       }
       else {
-        $this->assertEquals($params["civicrm_{$i}_contact_1_contact_first_name"], $contact['first_name']);
-        $this->assertEquals($params["civicrm_{$i}_contact_1_contact_last_name"], $contact['last_name']);
+        $this->assertEquals($params["civicrm_{$c}_contact_1_contact_first_name"], $contact['first_name']);
+        $this->assertEquals($params["civicrm_{$c}_contact_1_contact_last_name"], $contact['last_name']);
       }
     }
   }
