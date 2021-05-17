@@ -72,9 +72,6 @@ final class StripeTest extends WebformCivicrmTestBase {
 
     $this->saveCiviCRMSettings();
 
-    // Setup contact information wizard page.
-    $this->configureContactInformationWizardPage();
-
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
     $edit = [

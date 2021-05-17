@@ -126,9 +126,6 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
 
     $this->saveCiviCRMSettings();
 
-    // Setup contact information wizard page.
-    $this->configureContactInformationWizardPage();
-
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
     $edit = [
@@ -233,9 +230,6 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
-
-    // Setup contact information wizard page.
-    $this->configureContactInformationWizardPage();
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
