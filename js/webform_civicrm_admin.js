@@ -522,7 +522,7 @@ var wfCiviAdmin = (function ($, D) {
       function billingMessages() {
         var $pageSelect = $('[name=civicrm_1_contribution_1_contribution_enable_contribution]');
         // Warning about contribution page with no email
-        if ($pageSelect.val() !== '0' && ($('[name=civicrm_1_contact_1_email_email]:checked').length < 1 || $('[name=contact_1_number_of_email]').val() == '0')) {
+        if ($pageSelect.val() !== '0' && ($('[name^=civicrm_1_contact_][name$=_email_email]:checked').length < 1 || $('[name=contact_1_number_of_email]').val() == '0')) {
           var msg = Drupal.t('You must enable an email field for :contact in order to process transactions.', {':contact': getContactLabel(1)});
           if (!$('.wf-crm-billing-email-alert').length) {
             $pageSelect.after('<div class="messages error wf-crm-billing-email-alert">' + msg + ' <button>' + Drupal.t('Enable It') + '</button></div>');
@@ -547,7 +547,7 @@ var wfCiviAdmin = (function ($, D) {
           $('#edit-participant').prepend('<div class="wf-crm-paid-entities-info messages status">' + Drupal.t('Configure the Contribution settings to enable paid events.') + '</div>');
         }
       }
-      $('[name=civicrm_1_contribution_1_contribution_enable_contribution], [name=civicrm_1_contact_1_email_email]', context).once('email-alert').change(billingMessages);
+      $('[name=civicrm_1_contribution_1_contribution_enable_contribution], [name^=civicrm_1_contact_][name$=_email_email]', context).once('email-alert').change(billingMessages);
       billingMessages();
 
       // Handlers for submit-limit & tracking-mode mini-forms
