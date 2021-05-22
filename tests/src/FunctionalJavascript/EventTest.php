@@ -12,13 +12,13 @@ use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
  */
 final class EventTest extends WebformCivicrmTestBase {
 
-  private function createEvent() {
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $ft = $utils->wf_civicrm_api('FinancialType', 'get', [
+  protected function setup() {
+    parent::setUp();
+    $ft = $this->utils->wf_civicrm_api('FinancialType', 'get', [
       'return' => ["id"],
       'name' => "Event Fee",
     ]);
-    $event = $utils->wf_civicrm_api('Event', 'create', [
+    $event = $this->utils->wf_civicrm_api('Event', 'create', [
       'event_type_id' => "Conference",
       'title' => "Test Event" . substr(sha1(rand()), 0, 4),
       'start_date' => date('Y-m-d'),
@@ -26,11 +26,124 @@ final class EventTest extends WebformCivicrmTestBase {
     ]);
     $this->assertEquals(0, $event['is_error']);
     $this->assertEquals(1, $event['count']);
-    return reset($event['values']);
+    $this->_event = reset($event['values']);
   }
 
+  protected function createCustomFields() {
+    $this->cg = $this->createCustomGroup([
+      'title' => 'Participant CG',
+      'extends' => 'Participant',
+    ]);
+
+    //Add text custom field.
+    $params = [
+      'custom_group_id' => $this->cg['id'],
+      'label' => 'Text',
+      'name' => 'text',
+      'data_type' => 'String',
+      'html_type' => 'Text',
+      'is_active' => 1,
+    ];
+    $result = $this->utils->wf_civicrm_api('CustomField', 'create', $params);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+    $this->_customFields['text'] = $result['id'];
+
+    //Add contact reference field.
+    $params = [
+      'custom_group_id' => $this->cg['id'],
+      'label' => 'Participant Contact Ref',
+      'name' => 'participant_contact_ref',
+      'data_type' => 'ContactReference',
+      'html_type' => 'Autocomplete-Select',
+      'is_active' => 1,
+    ];
+    $this->_customFields['participant_contact_ref'] = $this->utils->wf_civicrm_api('CustomField', 'create', $params);
+    $this->assertEquals(0, $this->_customFields['participant_contact_ref']['is_error']);
+    $this->assertEquals(1, $this->_customFields['participant_contact_ref']['count']);
+  }
+
+  /**
+   * Test contact reference field for participants.
+   */
+  function testParticipantContactReference() {
+    $this->createCustomFields();
+
+    $this->drupalLogin($this->rootUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+    $this->getSession()->getPage()->selectFieldOption('Number of Contacts', 2);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    //Configure Event tab.
+    $this->getSession()->getPage()->clickLink('Event Registration');
+    $this->getSession()->getPage()->selectFieldOption('participant_reg_type', 'all');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->selectFieldOption('participant_1_number_of_participant', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_participant_1_participant_event_id[]', 'Test Event');
+    $this->getSession()->getPage()->checkField('Participant Fee');
+    $this->getSession()->getPage()->checkField('Text');
+    $this->getSession()->getPage()->selectFieldOption('Participant Contact Ref', '- User Select -');
+
+    $this->configureContributionTab();
+    $this->getSession()->getPage()->selectFieldOption('Payment Processor', 'Pay Later');
+
+    $this->saveCiviCRMSettings();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->htmlOutput();
+
+    $this->assertPageNoErrorMessages();
+    $params = [
+      'civicrm_1_contact_1_contact_first_name' => 'Frederick',
+      'civicrm_1_contact_1_contact_last_name' => 'Pabst',
+      'civicrm_1_contact_1_email_email' => 'fred@example.com',
+      'civicrm_2_contact_1_contact_first_name' => 'Mark',
+      'civicrm_2_contact_1_contact_last_name' => 'Smith',
+      'Participant Fee' => 20,
+      'Text' => 'Foo',
+    ];
+    foreach ($params as $key => $val) {
+      $this->getSession()->getPage()->fillField($key, $val);
+    }
+    $refName = 'civicrm_1_participant_1_cg' . $this->cg['id'] . '_custom_' . $this->_customFields['participant_contact_ref']['id'];
+    $this->getSession()->getPage()->selectFieldOption($refName, 2);
+    $this->getSession()->getPage()->pressButton('Next >');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertPageNoErrorMessages();
+    $this->htmlOutput();
+
+    $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
+    $this->htmlOutput();
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '40.00');
+
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertPageNoErrorMessages();
+    $this->htmlOutput();
+
+    $contactRef = $this->utils->wf_civicrm_api('Contact', 'get', [
+      'first_name' => 'Mark',
+      'last_name' => 'Smith',
+    ]);
+    $participant = current($this->utils->wf_civicrm_api('Participant', 'get', [
+      'contact_id' => $this->rootUserCid
+    ])['values']);
+    $customKey = 'custom_' . $this->_customFields['participant_contact_ref']['id'];
+    $this->assertEquals('Smith, Mark', $participant[$customKey]);
+    $this->assertEquals($contactRef['id'], $participant["{$customKey}_id"]);
+  }
+
+  /**
+   * Event Participant submission.
+   */
   function testSubmitEventParticipant() {
-    $event = $this->createEvent();
     $payment_processor = $this->createPaymentProcessor();
 
     $this->drupalLogin($this->adminUser);
@@ -51,20 +164,12 @@ final class EventTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField('Participant Fee');
 
     //Configure Contribution tab.
-    $this->getSession()->getPage()->clickLink('Contribution');
-    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertSession()->pageTextContains('You must enable an email field for Contact 1 in order to process transactions.');
-    $this->getSession()->getPage()->pressButton('Enable It');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
-    $this->getSession()->getPage()->selectFieldOption('Financial Type', 1);
+    $this->configureContributionTab();
 
     $this->getSession()->getPage()->selectFieldOption('Payment Processor', $payment_processor['id']);
     $this->enableBillingSection();
 
     $this->saveCiviCRMSettings();
-    $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
@@ -108,7 +213,7 @@ final class EventTest extends WebformCivicrmTestBase {
     ]);
     $this->assertEquals(0, $api_result['is_error']);
     $this->assertEquals(1, $api_result['count']);
-    $this->assertEquals($event['id'], $api_result['values'][0]['event_id']);
+    $this->assertEquals($this->_event['id'], $api_result['values'][0]['event_id']);
   }
 
 }
