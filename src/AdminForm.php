@@ -1847,124 +1847,122 @@ class AdminForm implements AdminFormInterface {
     }
 
     // CiviCRM enabled
-    else {
-      $this->rebuildData();
-      if (!$this->settings['toggle_message']) {
-        $this->settings['message'] = '';
+    $this->rebuildData();
+    if (!$this->settings['toggle_message']) {
+      $this->settings['message'] = '';
+    }
+    // Index disabled components
+    $disabled = [];
+    // @todo there is no disabled?
+    /*
+    foreach (wf_crm_aval($this->node->webform, 'components', array()) as $field) {
+      if (substr($field['form_key'], 0, 9) === 'disabled_') {
+        $field['form_key'] = 'civicrm' . substr($field['form_key'], 8);
+        $disabled[$field['form_key']] = $field;
       }
-      // Index disabled components
-      $disabled = [];
-      // @todo there is no disabled?
-      /*
-      foreach (wf_crm_aval($this->node->webform, 'components', array()) as $field) {
-        if (substr($field['form_key'], 0, 9) === 'disabled_') {
-          $field['form_key'] = 'civicrm' . substr($field['form_key'], 8);
-          $disabled[$field['form_key']] = $field;
-        }
-      }*/
+    }*/
 
-      $i = 0;
-      $created = [];
-      foreach ($this->settings as $key => $val) {
-        if (strpos($key, 'civicrm') === 0) {
-          ++$i;
-          $field = $utils->wf_crm_get_field($key);
-          if (!isset($enabled[$key])) {
-            $val = (array) $val;
-            if (in_array('create_civicrm_webform_element', $val, TRUE) || (!empty($val[0]) && $field['type'] == 'hidden')) {
-              // Restore disabled component
-              if (isset($disabled[$key])) {
-                webform_component_update($disabled[$key]);
-                $enabled[$key] = $disabled[$key]['cid'];
-                \Drupal::messenger()->addStatus(t('Re-enabled field: %name', ['%name' => $disabled[$key]['name']]));
-              }
-              // Create new component
-              else {
-                $field += [
-                  // 'nid' => $nid,
-                  'form_key' => $key,
-                  // @note: specifying the weight gets it rejected by the Webform UI.
-                  // 'weight' => $i,
-                ];
-                // Cannot use isNewFieldset effectively.
-                $previous_data = $handler_configuration['settings'];
-                list(, $c, $ent) =  $utils->wf_crm_explode_key($key);
-                $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
-                $create = !isset($previous_data['data'][$type][$c]);
-                /*
-    list(, $c, $ent) =  wf_crm_explode_key($field_key);
-    $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
-    return !isset($this->node->webform_civicrm['data'][$type][$c]);
-                 */
-                // @todo Properly handle fieldset creation.
-                // self::insertComponent($field, $enabled, $this->settings, !isset($previous_data['data'][$type][$c]));
-                self::insertComponent($field, $enabled, $this->settings, TRUE);
-                $created[] = $field['name'];
-                if (isset($field['civicrm_condition'])) {
-                  $this->addConditionalRule($field, $enabled);
-                }
+    $i = 0;
+    $created = [];
+    foreach ($this->settings as $key => $val) {
+      if (strpos($key, 'civicrm') === 0) {
+        ++$i;
+        $field = $utils->wf_crm_get_field($key);
+        if (!isset($enabled[$key])) {
+          $val = (array) $val;
+          if (in_array('create_civicrm_webform_element', $val, TRUE) || (!empty($val[0]) && $field['type'] == 'hidden')) {
+            // Restore disabled component
+            if (isset($disabled[$key])) {
+              webform_component_update($disabled[$key]);
+              $enabled[$key] = $disabled[$key]['cid'];
+              \Drupal::messenger()->addStatus(t('Re-enabled field: %name', ['%name' => $disabled[$key]['name']]));
+            }
+            // Create new component
+            else {
+              $field += [
+                // 'nid' => $nid,
+                'form_key' => $key,
+                // @note: specifying the weight gets it rejected by the Webform UI.
+                // 'weight' => $i,
+              ];
+              // Cannot use isNewFieldset effectively.
+              $previous_data = $handler_configuration['settings'];
+              list(, $c, $ent) =  $utils->wf_crm_explode_key($key);
+              $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
+              $create = !isset($previous_data['data'][$type][$c]);
+              /*
+  list(, $c, $ent) =  wf_crm_explode_key($field_key);
+  $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
+  return !isset($this->node->webform_civicrm['data'][$type][$c]);
+               */
+              // @todo Properly handle fieldset creation.
+              // self::insertComponent($field, $enabled, $this->settings, !isset($previous_data['data'][$type][$c]));
+              self::insertComponent($field, $enabled, $this->settings, TRUE);
+              $created[] = $field['name'];
+              if (isset($field['civicrm_condition'])) {
+                $this->addConditionalRule($field, $enabled);
               }
             }
           }
-          elseif ($field['type'] === 'hidden' && !empty($field['expose_list'])) {
-            $elements = $this->webform->getElementsDecodedAndFlattened();
-            $component = $elements[$enabled[$key]];
-            $component = WebformArrayHelper::removePrefix($component);
-            $component['value'] = $val;
-            $enabled[$key] = $component;
-          }
-          elseif (substr($key, -11) === '_createmode') {
-            // Update webform's settings with 'Create mode' value for custom group.
-            $this->settings['data']['config']['create_mode'][$key] = $val;
-          }
-          else {
-            // Try to "update" options for existing fields via ::insertComponent
-            // Always insert fieldsets, as there are checks to see if the
-            // fieldset already exists.
-            if (!isset($field)) {
-              $field = [];
-            }
-            $field += ['form_key' => $key];
-            self::insertComponent($field, $enabled, $this->settings);
-          }
         }
-        // add empty fieldsets for custom civicrm sets with no fields, if "add dynamically" is checked
-        elseif (strpos($key, 'settings_dynamic_custom') && $val == 1) {
-          $emptySets = $utils->wf_crm_get_empty_sets();
-          list($ent, $n, , , ,$cgId) = explode('_', $key, 6);
-          $fieldsetKey = "civicrm_{$n}_{$ent}_1_{$cgId}_fieldset";
-          if (array_key_exists($cgId, $emptySets) && !isset($existing[$fieldsetKey])) {
-            $fieldset = [
-              // 'nid' => $nid,
-              'pid' => 0,
-              'form_key' => $fieldsetKey,
-              'name' => $emptySets[$cgId]['label'],
-              'type' => 'fieldset',
-              'weight' => $i,
-            ];
-            webform_component_insert($fieldset);
+        elseif ($field['type'] === 'hidden' && !empty($field['expose_list'])) {
+          $elements = $this->webform->getElementsDecodedAndFlattened();
+          $component = $elements[$enabled[$key]];
+          $component = WebformArrayHelper::removePrefix($component);
+          $component['value'] = $val;
+          $enabled[$key] = $component;
+        }
+        elseif (substr($key, -11) === '_createmode') {
+          // Update webform's settings with 'Create mode' value for custom group.
+          $this->settings['data']['config']['create_mode'][$key] = $val;
+        }
+        else {
+          // Try to "update" options for existing fields via ::insertComponent
+          // Always insert fieldsets, as there are checks to see if the
+          // fieldset already exists.
+          if (!isset($field)) {
+            $field = [];
           }
+          $field += ['form_key' => $key];
+          self::insertComponent($field, $enabled, $this->settings);
         }
       }
-      if (isset($enabled['contribution_pagebreak'])) {
-        $this->setParentOnElements($enabled);
-      }
-
-      \Drupal::messenger()->addStatus(
-        \Drupal::translation()->formatPlural(count($created), 'Added one field to the form', 'Added @count fields to the form')
-      );
-
-      // Create record
-      $handler_configuration['settings'] = $this->settings;
-      $handler->setConfiguration($handler_configuration);
-
-      $this->addEnabledElements($enabled);
-      $this->sortPaging();
-      // Update existing contact fields
-      foreach ($existing as $fid => $id) {
-        if (substr($fid, -8) === 'existing') {
-          $stop = null;
+      // add empty fieldsets for custom civicrm sets with no fields, if "add dynamically" is checked
+      elseif (strpos($key, 'settings_dynamic_custom') && $val == 1) {
+        $emptySets = $utils->wf_crm_get_empty_sets();
+        list($ent, $n, , , ,$cgId) = explode('_', $key, 6);
+        $fieldsetKey = "civicrm_{$n}_{$ent}_1_{$cgId}_fieldset";
+        if (array_key_exists($cgId, $emptySets) && !isset($existing[$fieldsetKey])) {
+          $fieldset = [
+            // 'nid' => $nid,
+            'pid' => 0,
+            'form_key' => $fieldsetKey,
+            'name' => $emptySets[$cgId]['label'],
+            'type' => 'fieldset',
+            'weight' => $i,
+          ];
+          webform_component_insert($fieldset);
         }
+      }
+    }
+    if (isset($enabled['contribution_pagebreak'])) {
+      $this->setParentOnElements($enabled);
+    }
+
+    \Drupal::messenger()->addStatus(
+      \Drupal::translation()->formatPlural(count($created), 'Added one field to the form', 'Added @count fields to the form')
+    );
+
+    // Create record
+    $handler_configuration['settings'] = $this->settings;
+    $handler->setConfiguration($handler_configuration);
+
+    $this->addEnabledElements($enabled);
+    $this->sortPaging();
+    // Update existing contact fields
+    foreach ($existing as $fid => $id) {
+      if (substr($fid, -8) === 'existing') {
+        $stop = null;
       }
     }
   }
