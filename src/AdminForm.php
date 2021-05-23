@@ -1114,7 +1114,7 @@ class AdminForm implements AdminFormInterface {
     ];
 
     // Billing Address
-    $n = wf_crm_aval($this->data, "billing:number_number_of_billing", 0);
+    $n = wf_crm_aval($this->data, "billing:number_number_of_billing");
     $this->form['contribution']['sets']["billing_1_number_of_billing"] = [
       '#type' => 'select',
       '#title' => t('Enable Billing Address?'),
@@ -1714,6 +1714,14 @@ class AdminForm implements AdminFormInterface {
         }
       }
     }
+    // Enable billing address by default when contribution is enabled.
+    if ($this->settings['civicrm_1_contribution_1_contribution_enable_contribution'] && empty($this->data['billing'])) {
+      $this->data['billing'] = ['number_number_of_billing' => 1];
+      $billingFields = ['first_name', 'last_name', 'street_address', 'city', 'postal_code', 'state_province_id', 'country_id'];
+      foreach ($billingFields as $field) {
+        $this->settings["civicrm_1_contribution_1_contribution_billing_address_{$field}"] = 1;
+      }
+    }
     // Defaults when adding an activity
     for ($i=1; $i <= $this->settings['activity_number_of_activity']; ++$i) {
       if (!isset($this->settings["activity_{$i}_settings_existing_activity_status"])) {
@@ -2021,7 +2029,7 @@ class AdminForm implements AdminFormInterface {
     }
     foreach ($elements as $key => &$element) {
       if (strpos($key, 'civicrm') !== 0
-        || isset($element['#parent']) || isset($element['#webform_parent_key'])
+        || isset($element['#parent']) || !empty($element['#webform_parent_key'])
         || empty($element['#type']) || $element['#type'] == 'webform_wizard_page') {
         continue;
       }
