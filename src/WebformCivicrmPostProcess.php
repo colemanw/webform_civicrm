@@ -2375,16 +2375,17 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           $createModeKey = 'civicrm_' . $c . '_contact_' . $n . '_' . $table . '_createmode';
           $multivaluesCreateMode = $this->data['config']['create_mode'][$createModeKey] ?? NULL;
           $cgMaxInstance = $this->all_sets[$table]['max_instances'] ?? 1;
+          $key = $n;
           if (substr($name, 0, 6) == 'custom' && $cgMaxInstance > 1) {
             // Retrieve name for multi value custom fields.
             $customName = $this->getNameForMultiValueFields($multivaluesCreateMode, $name, $table, $c, $n);
-            $n = $c;
+            $key = 1;
           }
           if (!empty($this->ent['contact'][$val]['id'])) {
             unset($this->data[$ent][$c][$table][$n][$name]);
             $tableName = substr($name, 0, 6) == 'custom' ? $ent : $table;
             $fld = $customName ?? $name;
-            $this->data[$ent][$c][$tableName][$n][$fld] = $this->ent['contact'][$val]['id'];
+            $this->data[$ent][$c][$tableName][$key][$fld] = $this->ent['contact'][$val]['id'];
           }
           elseif (substr($name, 0, 6) == 'custom') {
             $this->data[$ent][$c]['update_contact_ref'][] = $name;
@@ -2517,7 +2518,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
               // Is this a multi-value custom field?
               if ($cgMaxInstance > 1) {
                 $name = $this->getNameForMultiValueFields($multivaluesCreateMode, $name, $table, $c, $n);
-                $n = $c;
+                $n = 1;
               }
             }
             $this->data[$ent][$c][$ent][$n][$name] = $customValue ?? $val;
@@ -2778,10 +2779,20 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $updateParams = [
       'id' => $cid,
     ];
+    $skipKeys = [];
     foreach ($params['update_contact_ref'] as $refKey) {
       foreach ($params['contact'] as $contactParams) {
         foreach ($contactParams as $key => $value) {
-          if (strpos($key, $refKey) === 0 && !isset($updateParams[$key])) {
+          if (strpos($key, "{$refKey}_") === 0 && !isset($updateParams[$key]) && !in_array($key, $skipKeys)) {
+            //If this is an edit to an existing record, remove any matching keys that was previously set to 'create' new records.
+            if (strpos($key, "{$refKey}_-") !== 0) {
+              foreach ($updateParams as $k => $v) {
+                if (strpos($k, "{$refKey}_-") === 0) {
+                  $skipKeys[] = $k;
+                  unset($updateParams[$k]);
+                }
+              }
+            }
             $updateParams[$key] = $value;
           }
         }
