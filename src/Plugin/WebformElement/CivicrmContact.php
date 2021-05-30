@@ -519,12 +519,10 @@ class CivicrmContact extends WebformElementBase {
       $filters = $contactComponent->wf_crm_search_filters($node, $element);
       $element['#options'] = $contactComponent->wf_crm_contact_search($node, $element, $filters, wf_crm_aval($ids, 'contact', []));
       // Display empty option unless there are no results
-      if (!$element['#allow_create'] || count($element['#options']) > 1) {
+      if (empty($element['#allow_create']) || count($element['#options']) > 1) {
         $element['#empty_option'] = Xss::filter($element[$element['#options'] ? '#search_prompt' : '#none_prompt']);
       }
     }
   }
-
-
 
 }

@@ -312,12 +312,23 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   /**
    * Create test contact of type individual.
    */
-  protected function createIndividual() {
-    $params = [
+  protected function createIndividual($params = []) {
+    $params = array_merge([
       'contact_type' => 'Individual',
       'first_name' => substr(sha1(rand()), 0, 7),
       'last_name' => substr(sha1(rand()), 0, 7),
-    ];
+    ], $params);
+    return current($this->utils->wf_civicrm_api('contact', 'create', $params)['values']);
+  }
+
+  /**
+   * Create test contact of type individual.
+   */
+  protected function createHousehold($params = []) {
+    $params = array_merge([
+      'contact_type' => 'Household',
+      'household_name' => substr(sha1(rand()), 0, 7),
+    ], $params);
     return current($this->utils->wf_civicrm_api('contact', 'create', $params)['values']);
   }
 

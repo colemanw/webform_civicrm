@@ -165,6 +165,63 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
   }
 
   /**
+   * Submit webform with 3 contact reference fields.
+   */
+  public function testContactRefSubmission() {
+    $this->_totalMV = 5;
+    $this->createMultiValueCustomFields();
+    $this->drupalLogin($this->rootUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+
+    $this->enableCivicrmOnWebform();
+
+    $this->getSession()->getPage()->selectFieldOption("number_of_contacts", $this->_totalMV);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+
+    $this->enableCustomFields(1);
+    $this->htmlOutput();
+    foreach ([2, 3, 4, 5] as $c) {
+      $this->getSession()->getPage()->clickLink("Contact {$c}");
+      $this->assertSession()->assertWaitOnAjaxRequest();
+      $this->getSession()->getPage()->selectFieldOption("{$c}_contact_type", 'Household');
+      $this->assertSession()->assertWaitOnAjaxRequest();
+      $this->getSession()->getPage()->checkField("civicrm_{$c}_contact_1_contact_existing");
+      $this->assertSession()->checkboxChecked("civicrm_{$c}_contact_1_contact_existing");
+    }
+    $this->saveCiviCRMSettings();
+
+    $this->_hh = [];
+    foreach ([2, 3, 4, 5] as $c) {
+      // Create 4 households to select on the ref fields while submitting the webform.
+      $params = ['household_name' => "HH{$c}"];
+      $this->_hh[$c] = $this->createHousehold($params);
+      $this->drupalGet($this->webform->toUrl('edit-form'));
+      $this->editContactElement("edit-webform-ui-elements-civicrm-{$c}-contact-1-contact-existing-operations", 'Select', '- None -');
+    }
+    $this->htmlOutput();
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->htmlOutput();
+    $this->assertPageNoErrorMessages();
+
+    //Submit only 3 multi-value fields. Contact 1 is default to current user.
+    $this->getSession()->getPage()->selectFieldOption('civicrm_2_contact_1_contact_existing', $this->_hh[2]['id']);
+    $this->getSession()->getPage()->selectFieldOption('civicrm_3_contact_1_contact_existing', $this->_hh[3]['id']);
+    $params = [];
+    $params['civicrm_1_contact_1_cg1_custom_1'] = 'Jan';
+    $params['civicrm_1_contact_1_cg1_custom_2'] = 100;
+    $params['civicrm_1_contact_2_cg1_custom_1'] = 'Feb';
+    $params['civicrm_1_contact_2_cg1_custom_2'] = 200;
+    $params['civicrm_1_contact_3_cg1_custom_1'] = 'March';
+    $params['civicrm_1_contact_3_cg1_custom_2'] = 200;
+    $this->submitWebform($params);
+    $this->verifyCustomValues($params);
+  }
+
+  /**
    * Test submitting Custom Fields
    */
   public function testSubmitWebform() {
@@ -332,6 +389,36 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
     $monthValues = $customValues[$this->_customFields['month']];
     $dataValues = $customValues[$this->_customFields['data']];
     $contactRefValues = $customValues[$this->_customFields['consultant']];
+    //Assert Household Data submission
+    if (!empty($this->_hh)) {
+      unset($monthValues['entity_id'], $monthValues['latest'], $monthValues['id']);
+      //Ensure 5 custom field value is created, with only 3 having the values.
+      $this->assertEquals(count($monthValues), 5);
+      $this->assertEquals($monthValues[1], 'Jan');
+      $this->assertEquals($monthValues[2], 'Feb');
+      $this->assertEquals($monthValues[3], 'March');
+      $this->assertEmpty($monthValues[4]);
+      $this->assertEmpty($monthValues[5]);
+
+      unset($dataValues['entity_id'], $dataValues['latest'], $dataValues['id']);
+      //Ensure 5 custom field value is created, with only 3 having the values.
+      $this->assertEquals(count($dataValues), 5);
+      $this->assertEquals($dataValues[1], 100);
+      $this->assertEquals($dataValues[2], 200);
+      $this->assertEquals($dataValues[3], 200);
+      $this->assertEmpty($dataValues[4]);
+      $this->assertEmpty($dataValues[5]);
+
+      unset($contactRefValues['entity_id'], $contactRefValues['latest'], $contactRefValues['id']);
+      //Ensure 5 custom field value is created, with only 3 having the values.
+      $this->assertEquals(count($contactRefValues), 5);
+      $this->assertEquals($contactRefValues[1], $this->rootUserCid);
+      $this->assertEquals($contactRefValues[2], $this->_hh[2]['id']);
+      $this->assertEquals($contactRefValues[3], $this->_hh[3]['id']);
+      $this->assertEmpty($contactRefValues[4]);
+      $this->assertEmpty($contactRefValues[5]);
+      return;
+    }
     // Assert if submitted params are present in the custom values.
     $this->assertTrue(in_array($this->_contact1['id'], $contactRefValues));
     $this->assertTrue(in_array($this->_contact2['id'], $contactRefValues));
