@@ -920,7 +920,7 @@ class Utils implements UtilsInterface {
       'CheckBox' => ['type' => 'select', 'extra' => ['multiple' => 1]],
       'Text'  => ['type' => 'textfield'],
       'TextArea' => ['type' => 'textarea'],
-      'RichTextEditor' => ['type' => \Drupal::moduleHandler()->moduleExists('webform_html_textarea') ? 'html_textarea' : 'textarea'],
+      'RichTextEditor' => ['type' => 'text_format'],
       'Select Date' => ['type' => 'date'],
       'Link'  => ['type' => 'textfield'],
       'Select Country' => ['type' => 'select'],
