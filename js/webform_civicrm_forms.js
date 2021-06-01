@@ -293,8 +293,8 @@ var wfCivi = (function ($, D, drupalSettings) {
     var
       stateSelect = $(this),
       key = parseName(stateSelect.attr('name')),
-      countryId = stateSelect.parents('form').find('.civicrm-enabled[name*="['+(key.replace('state_province', 'country'))+']"]').val(),
-      countySelect = stateSelect.parents('form').find('.civicrm-enabled[name*="['+(key.replace('state_province','county' ))+']"]'),
+      countryId = stateSelect.parents('form').find('.civicrm-enabled[name*="'+(key.replace('state_province', 'country'))+'"]').val(),
+      countySelect = stateSelect.parents('form').find('.civicrm-enabled[name*="'+(key.replace('state_province','county' ))+'"]'),
       stateVal = stateSelect.val();
     if (countySelect.length) {
       if (!stateVal) {
