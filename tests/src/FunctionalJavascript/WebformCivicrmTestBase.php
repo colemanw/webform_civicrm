@@ -105,7 +105,10 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->getSession()->resizeWindow(1440, 900);
   }
 
-  protected function configureContributionTab() {
+  /**
+   * Enable contribution on the webform.
+   */
+  protected function configureContributionTab($disableReceipt = FALSE) {
     //Configure Contribution tab.
     $this->getSession()->getPage()->clickLink('Contribution');
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
@@ -115,6 +118,11 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
     $this->getSession()->getPage()->selectFieldOption('Financial Type', 1);
+
+    if ($disableReceipt) {
+      $this->getSession()->getPage()->selectFieldOption('Enable Billing Address?', 'No');
+      $this->assertSession()->assertWaitOnAjaxRequest();
+    }
   }
 
   /**

@@ -109,7 +109,7 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
 
     //Configure Contribution tab.
-    $this->configureContributionTab();
+    $this->configureContributionTab(TRUE);
     $this->getSession()->getPage()->checkField('Contribution Amount');
     $this->assertSession()->checkboxChecked('Contribution Amount');
 
@@ -152,6 +152,12 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
       'first_name' => $params['First Name'],
       'last_name' => $params['Last Name'],
     ])['contact_id'];
+
+    // Ensure contribution is created on the contact.
+    $contribution = $this->utils->wf_civicrm_api('Contribution', 'getsingle', [
+      'contact_id' => $cid,
+    ]);
+    $this->assertEquals($contribution["total_amount"], '20.00');
 
     $customValues = $this->utils->wf_civicrm_api('CustomValue', 'get', [
       'entity_id' => $cid,
