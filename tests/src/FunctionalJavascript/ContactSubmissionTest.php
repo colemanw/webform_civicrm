@@ -107,8 +107,12 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     }
     $this->getSession()->getPage()->selectFieldOption('Existing Contact', $this->contacts[1]['id']);
     $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->getSession()->getPage()->fillField('First Name', 'Frederick');
-    $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
+    $params = [
+      'first_name' => 'Frederick' . substr(sha1(rand()), 0, 7),
+      'last_name' => 'Pabst' . substr(sha1(rand()), 0, 7),
+    ];
+    $this->getSession()->getPage()->fillField('First Name', $params['first_name']);
+    $this->getSession()->getPage()->fillField('Last Name', $params['last_name']);
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
@@ -120,8 +124,8 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $result_debug = var_export($contact_result, TRUE);
 
     $this->assertEquals(1, $contact_result['count'], $result_debug);
-    $this->assertEquals('Frederick', $contact_result['values'][0]['first_name'], $result_debug);
-    $this->assertEquals('Pabst', $contact_result['values'][0]['last_name'], $result_debug);
+    $this->assertEquals($params['first_name'], $contact_result['values'][0]['first_name'], $result_debug);
+    $this->assertEquals($params['last_name'], $contact_result['values'][0]['last_name'], $result_debug);
   }
 
   /**
@@ -151,8 +155,12 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->fieldValueEquals('Last Name', $contact['last_name']);
 
     //Update the name to some other value.
-    $this->getSession()->getPage()->fillField('First Name', 'Frederick');
-    $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
+    $params = [
+      'first_name' => 'Frederick' . substr(sha1(rand()), 0, 7),
+      'last_name' => 'Pabst' . substr(sha1(rand()), 0, 7),
+    ];
+    $this->getSession()->getPage()->fillField('First Name', $params['first_name']);
+    $this->getSession()->getPage()->fillField('Last Name', $params['last_name']);
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
@@ -165,8 +173,8 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
 
     $this->assertArrayHasKey('count', $contact_result, $result_debug);
     $this->assertEquals(1, $contact_result['count'], $result_debug);
-    $this->assertEquals('Frederick', $contact_result['values'][0]['first_name'], $result_debug);
-    $this->assertEquals('Pabst', $contact_result['values'][0]['last_name'], $result_debug);
+    $this->assertEquals($params['first_name'], $contact_result['values'][0]['first_name'], $result_debug);
+    $this->assertEquals($params['last_name'], $contact_result['values'][0]['last_name'], $result_debug);
 
     //Enable Autocomplete on the contact Element.
     $this->drupalGet($this->webform->toUrl('edit-form'));
