@@ -4,6 +4,7 @@ namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Behat\Mink\Element\NodeElement;
 use Drupal\Tests\webform\Traits\WebformBrowserTestTrait;
+use Behat\Mink\Exception\ElementNotFoundException;
 
 abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
 
@@ -145,6 +146,40 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->assertCount(0, $error_messages, implode(', ', array_map(static function(NodeElement $el) {
       return $el->getValue();
     }, $error_messages)));
+  }
+
+  /**
+   * Copy of TraversableElement::fillField, but it replaces the existing value on the element rather than appending to it.
+   *
+   * Fills in field (input, textarea, select) with specified locator.
+   *
+   * @param string $locator input id, name or label
+   * @param string $value   value
+   *
+   * @throws ElementNotFoundException
+   *
+   * @see NodeElement::setValue
+   */
+  public function addFieldValue($locator, $value) {
+    $field = $this->getSession()->getPage()->findField($locator);
+    if (null === $field) {
+      throw new ElementNotFoundException($this->getDriver(), 'form field', 'id|name|label|value|placeholder', $locator);
+    }
+    $field->doubleClick();
+    $field->setValue($value);
+  }
+
+  /**
+   * Assert populated values on the field.
+   * fieldValueEquals() fails for populated values on chromedriver > 91
+   *
+   * @param $id
+   * @param $value
+   */
+  public function assertFieldValue($id, $value) {
+    $driver = $this->getSession()->getDriver();
+    $fieldVal = $driver->evaluateScript("document.getElementById('{$id}').value;");
+    $this->assertEquals($fieldVal, $value);
   }
 
   /**

@@ -57,8 +57,8 @@ final class CaseSubmissionTest extends WebformCivicrmTestBase {
 
     $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', $this->_caseContact['first_name']);
 
-    $this->assertSession()->fieldValueEquals('First Name', $this->_caseContact['first_name']);
-    $this->assertSession()->fieldValueEquals('Last Name', $this->_caseContact['last_name']);
+    $this->assertFieldValue('edit-civicrm-1-contact-1-contact-first-name', $this->_caseContact['first_name']);
+    $this->assertFieldValue('edit-civicrm-1-contact-1-contact-last-name', $this->_caseContact['last_name']);
 
     $this->getSession()->getPage()->fillField('Case Subject', $caseSubject);
     $this->getSession()->getPage()->pressButton('Submit');
