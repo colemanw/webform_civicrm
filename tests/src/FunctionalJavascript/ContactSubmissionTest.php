@@ -145,24 +145,20 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $contact['id']]]));
     $this->assertPageNoErrorMessages();
 
-    //Check if no autocomplete is present on the page.
+    // Check if no autocomplete is present on the page.
     $this->assertSession()->elementNotExists('css', '.token-input-list');
 
-    //Check if name fields are pre populated with existing values.
+    // Check if name fields are pre populated with existing values.
     $this->assertSession()->fieldValueEquals('First Name', $contact['first_name']);
     $this->assertSession()->fieldValueEquals('Last Name', $contact['last_name']);
 
-    //Update the name to some other value.
-    $params = [
-      'first_name' => 'Frederick' . substr(sha1(rand()), 0, 7),
-      'last_name' => 'Pabst' . substr(sha1(rand()), 0, 7),
-    ];
-    $this->addFieldValue('First Name', $params['first_name']);
-    $this->addFieldValue('Last Name', $params['last_name']);
+    // Update the name to some other value.
+    $this->addFieldValue('First Name', 'Alanis');
+    $this->addFieldValue('Last Name', 'Morissette');
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
-    //Verify if the modified value is updated for the contact.
+    // Verify if the modified value is updated for the contact.
     $contact_result = $this->utils->wf_civicrm_api('contact', 'get', [
       'sequential' => 1,
       'id' => $contact['id'],
@@ -171,12 +167,12 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
 
     $this->assertArrayHasKey('count', $contact_result, $result_debug);
     $this->assertEquals(1, $contact_result['count'], $result_debug);
-    $this->assertEquals($params['first_name'], $contact_result['values'][0]['first_name'], $result_debug);
-    $this->assertEquals($params['last_name'], $contact_result['values'][0]['last_name'], $result_debug);
+    $this->assertEquals('Alanis', $contact_result['values'][0]['first_name'], $result_debug);
+    $this->assertEquals('Morissette', $contact_result['values'][0]['last_name'], $result_debug);
 
-    //Enable Autocomplete on the contact Element.
+    // Enable Autocomplete on the contact Element.
     $this->drupalGet($this->webform->toUrl('edit-form'));
-    //Assert civicrm elements are not loaded on Add Element form.
+    // Assert CiviCRM elements are not loaded on Add Element form.
     $this->assertSession()->elementExists('css', '#webform-ui-add-element')->click();
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
@@ -205,7 +201,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
 
-    //Check if autocomplete is present on the page.
+    // Check if autocomplete is present on the page.
     $this->assertSession()->elementExists('css', '.token-input-list');
 
     $currentUserUF = $this->getUFMatchRecord($this->rootUser->id());
@@ -214,7 +210,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
       'return' => "display_name",
     ]);
     $this->assertSession()->elementTextContains('css', '.token-input-token', $currentUserDisplayName);
-    //Clear the existing selection.
+    // Clear the existing selection.
     $this->assertSession()->elementExists('css', '.token-input-delete-token')->click();
 
     $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', $contact_result['values'][0]['first_name']);
@@ -223,13 +219,13 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertFieldValue('edit-civicrm-1-contact-1-contact-first-name', $contact_result['values'][0]['first_name']);
     $this->assertFieldValue('edit-civicrm-1-contact-1-contact-last-name', $contact_result['values'][0]['last_name']);
 
-    //Update the name to some other value.
+    // Update the name to some other value.
     $this->addFieldValue('First Name', 'Frederick-Edited');
     $this->addFieldValue('Last Name', 'Pabst-Edited');
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
-    //Verify if the modified value is updated for the contact.
+    // Verify if the modified value is updated for the contact.
     $contact_result2 = $this->utils->wf_civicrm_api('contact', 'get', [
       'sequential' => 1,
       'id' => $contact_result['id'],
