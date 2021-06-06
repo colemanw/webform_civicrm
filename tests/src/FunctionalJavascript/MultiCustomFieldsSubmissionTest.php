@@ -123,12 +123,13 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
     $this->assertPageNoErrorMessages();
 
     $params = [
-      'First Name' => 'Justin',
-      'Last Name' => 'Bieber',
-      'Email' => 'justinbieber@example.com',
+      'First Name' => 'The',
+      'Last Name' => 'Weeknd',
+      'Email' => 'theweeknd@example.com',
       'Month' => 'January',
       'civicrm_1_contact_1_cg1_custom_2' => 200,
     ];
+
     $this->submitWebform($params, 'Next >');
     $this->htmlOutput();
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
@@ -372,7 +373,7 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
     }
 
     foreach ($params as $key => $val) {
-      $this->getSession()->getPage()->replaceFieldValue($key, $val);
+      $this->getSession()->getPage()->addFieldValue($key, $val);
       if (strpos($key, 'custom_2') !== false) {
         $this->getSession()->getPage()->selectFieldOption($key, $val);
       }
