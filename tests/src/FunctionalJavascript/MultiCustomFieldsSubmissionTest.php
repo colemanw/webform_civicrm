@@ -372,7 +372,7 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
     }
 
     foreach ($params as $key => $val) {
-      $this->getSession()->getPage()->fillField($key, $val);
+      $this->getSession()->getPage()->replaceFieldValue($key, $val);
       if (strpos($key, 'custom_2') !== false) {
         $this->getSession()->getPage()->selectFieldOption($key, $val);
       }
