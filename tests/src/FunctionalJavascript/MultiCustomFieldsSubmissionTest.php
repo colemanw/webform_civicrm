@@ -139,6 +139,17 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->waitForField('credit_card_number');
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '20.00');
 
+    $billingValues = [
+      'first_name' => 'The',
+      'last_name' => 'Weeknd',
+      'street_address' => '123 Juno Nominee',
+      'city' => 'Milwaukee',
+      'country' => '1228',
+      'state_province' => '1048',
+      'postal_code' => '12345',
+    ];
+    $this->fillBillingFields($billingValues);
+
     $this->getSession()->getPage()->fillField('Card Number', '4222222222222220');
     $this->getSession()->getPage()->fillField('Security Code', '123');
     $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[M]', '11');
@@ -147,7 +158,6 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->pressButton('Submit');
     $this->htmlOutput();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
-
 
     $cid = $this->utils->wf_civicrm_api('Contact', 'getsingle', [
       'first_name' => $params['First Name'],
