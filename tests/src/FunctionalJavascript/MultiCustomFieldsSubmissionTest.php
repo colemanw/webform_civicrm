@@ -123,9 +123,9 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
     $this->assertPageNoErrorMessages();
 
     $params = [
-      'First Name' => 'Anonymous' . substr(sha1(rand()), 0, 4),
-      'Last Name' => 'Contact' . substr(sha1(rand()), 0, 4),
-      'Email' => 'anonymous' . substr(sha1(rand()), 0, 4) . "@example.com",
+      'First Name' => 'Justin',
+      'Last Name' => 'Bieber',
+      'Email' => 'justinbieber@example.com',
       'Month' => 'January',
       'civicrm_1_contact_1_cg1_custom_2' => 200,
     ];
@@ -162,7 +162,7 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
     $customValues = $this->utils->wf_civicrm_api('CustomValue', 'get', [
       'entity_id' => $cid,
     ])['values'];
-    //Assert only 1 multivalue record is created.
+    // Assert only 1 multivalue record is created.
     unset($customValues[$this->_customFields['month']]['latest'], $customValues[$this->_customFields['data']]['latest']);
     $monthValueCount = array_count_values($customValues[$this->_customFields['month']]);
     $dataValueCount = array_count_values($customValues[$this->_customFields['data']]);
