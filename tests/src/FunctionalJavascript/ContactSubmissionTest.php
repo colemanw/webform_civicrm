@@ -56,7 +56,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
    * Test select contact widget for existingcontact element.
    */
   public function testSelectContactElement() {
-    //create sample contacts.
+    // Create sample contacts.
     $this->createGroupWithContacts();
 
     $this->drupalLogin($this->rootUser);
@@ -67,7 +67,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->enableCivicrmOnWebform();
     $this->saveCiviCRMSettings();
 
-    //Edit contact element and enable select widget.
+    // Edit contact element and enable select widget.
     $this->drupalGet($this->webform->toUrl('edit-form'));
     $contactElementEdit = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations"] a.webform-ajax-link');
     $contactElementEdit->click();
@@ -80,7 +80,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('Form Widget', 'Select List');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
-    //Filter on group.
+    // Filter on group.
     $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-filters"]')->click();
     $this->getSession()->getPage()->selectFieldOption('Groups', $this->group['id']);
     $this->getSession()->getPage()->pressButton('Save');
@@ -90,12 +90,12 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
 
-    //Check if no autocomplete is present on the page.
+    // Check if no autocomplete is present on the page.
     $this->assertSession()->elementNotExists('css', '.token-input-list');
-    //Asset if select element is rendered for contact element.
+    // Asset if select element is rendered for contact element.
     $this->assertSession()->elementExists('css', 'select#edit-civicrm-1-contact-1-contact-existing');
 
-    //Check if expected contacts are loaded in the select element.
+    // Check if expected contacts are loaded in the select element.
     $loadedContacts = $this->getOptions('Existing Contact');
     foreach ($this->contacts as $k => $value) {
       if ($k == 5) {
@@ -107,17 +107,14 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     }
     $this->getSession()->getPage()->selectFieldOption('Existing Contact', $this->contacts[1]['id']);
     $this->assertSession()->assertWaitOnAjaxRequest();
-    $params = [
-      'first_name' => 'Frederick' . substr(sha1(rand()), 0, 7),
-      'last_name' => 'Pabst' . substr(sha1(rand()), 0, 7),
-    ];
 
-    $this->addFieldValue('First Name', $params['first_name']);
-    $this->addFieldValue('Last Name', $params['last_name']);
+    // Check if we can replace/overwrite the currently loaded values for First Name and Last Name
+    $this->addFieldValue('First Name', 'Jann');
+    $this->addFieldValue('Last Name', 'Arden');
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
-    //Verify if the modified value is updated for the contact.
+    // Verify if the modified value is updated for the contact.
     $contact_result = $this->utils->wf_civicrm_api('contact', 'get', [
       'sequential' => 1,
       'id' => $this->contacts[1]['id'],
@@ -125,8 +122,8 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $result_debug = var_export($contact_result, TRUE);
 
     $this->assertEquals(1, $contact_result['count'], $result_debug);
-    $this->assertEquals($params['first_name'], $contact_result['values'][0]['first_name'], $result_debug);
-    $this->assertEquals($params['last_name'], $contact_result['values'][0]['last_name'], $result_debug);
+    $this->assertEquals('Jann', $contact_result['values'][0]['first_name'], $result_debug);
+    $this->assertEquals('Arden', $contact_result['values'][0]['last_name'], $result_debug);
   }
 
   /**
