@@ -118,7 +118,7 @@ cj(function($) {
     updateLineItem(lineKey, amount, label);
   }
 
-  $('.civicrm-enabled.contribution-line-item:not(".form-radios")')
+  $('.civicrm-enabled.contribution-line-item:not(".form-radios, .form-checkboxes")')
     .each(calculateLineItemAmount)
     .on('change keyup', calculateLineItemAmount)
     .each(function() {
