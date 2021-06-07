@@ -137,7 +137,7 @@ class ContactComponent implements ContactComponentInterface {
     }
     // Select results
     else {
-      if ($element['#allow_create']) {
+      if (!empty($element['#allow_create'])) {
         $ret['-'] = Xss::filter($element['#none_prompt']);
       }
       foreach (wf_crm_aval($result, 'values', []) as $contact) {
