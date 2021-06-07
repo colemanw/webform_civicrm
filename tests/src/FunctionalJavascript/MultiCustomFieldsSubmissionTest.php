@@ -142,11 +142,11 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
     $billingValues = [
       'first_name' => 'The',
       'last_name' => 'Weeknd',
-      'street_address' => '123 Juno Nominee',
-      'city' => 'Milwaukee',
+      'street_address' => 'Raymond James Stadium',
+      'city' => 'Tampa',
       'country' => '1228',
-      'state_province' => '1048',
-      'postal_code' => '12345',
+      'state_province' => '1008',
+      'postal_code' => '33607',
     ];
     $this->fillBillingFields($billingValues);
 
