@@ -503,8 +503,10 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
             $element['#options'] = $new;
           }
           // If the user has already entered a value for this field, don't change it
+          $input_values = $this->form_state->getValues();
+          $key = $element['#webform_key'];
           if (isset($this->info[$ent][$c][$table][$n][$name])
-            && !(isset($component['cid']) && isset($submitted[$component['cid']]))) {
+            && (!isset($input_values[$key]) || empty($input_values[$key]))) {
             $val = $this->info[$ent][$c][$table][$n][$name];
 
             if ($ent === 'contact') {
