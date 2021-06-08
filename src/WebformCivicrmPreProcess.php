@@ -186,7 +186,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
     $this->form_state->set(['civicrm', 'ent'], $this->ent);
     // Set default values and other attributes for CiviCRM form elements
     // Passing $submitted helps avoid overwriting values that have been entered on a multi-step form
-    $submitted = $this->form_state->getValue('submitted', []);
+    $submitted = $this->form_state->getValues();
     $this->fillForm($this->form, $submitted);
 
     $enable_contribution = wf_crm_aval($this->data, 'contribution:1:contribution:1:enable_contribution');
@@ -503,10 +503,9 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
             $element['#options'] = $new;
           }
           // If the user has already entered a value for this field, don't change it
-          $input_values = $this->form_state->getValues();
           $key = $element['#webform_key'];
           if (isset($this->info[$ent][$c][$table][$n][$name])
-            && (!isset($input_values[$key]) || empty($input_values[$key]))) {
+            && (!isset($submitted[$key]) || empty($submitted[$key]))) {
             $val = $this->info[$ent][$c][$table][$n][$name];
 
             if ($ent === 'contact') {
