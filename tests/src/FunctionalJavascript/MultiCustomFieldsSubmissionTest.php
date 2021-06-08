@@ -216,7 +216,12 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
       $params = ['household_name' => "HH{$c}"];
       $this->_hh[$c] = $this->createHousehold($params);
       $this->drupalGet($this->webform->toUrl('edit-form'));
-      $this->editContactElement("edit-webform-ui-elements-civicrm-{$c}-contact-1-contact-existing-operations", 'Select', '- None -');
+      $editContact = [
+        'selector' => "edit-webform-ui-elements-civicrm-{$c}-contact-1-contact-existing-operations",
+        'widget' => 'Select',
+        'default' => '- None -',
+      ];
+      $this->editContactElement($editContact);
     }
     $this->htmlOutput();
 
@@ -273,9 +278,20 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
     $this->saveCiviCRMSettings();
 
     $this->drupalGet($this->webform->toUrl('edit-form'));
-    $this->editContactElement('edit-webform-ui-elements-civicrm-2-contact-1-contact-existing-operations', 'Autocomplete', '- None -');
+    $editContact = [
+      'selector' => 'edit-webform-ui-elements-civicrm-2-contact-1-contact-existing-operations',
+      'widget' => 'Autocomplete',
+      'default' => '- None -',
+    ];
+    $this->editContactElement($editContact);
+
     $this->drupalGet($this->webform->toUrl('edit-form'));
-    $this->editContactElement('edit-webform-ui-elements-civicrm-3-contact-1-contact-existing-operations', 'Autocomplete', '- None -');
+    $editContact = [
+      'selector' => 'edit-webform-ui-elements-civicrm-3-contact-1-contact-existing-operations',
+      'widget' => 'Autocomplete',
+      'default' => '- None -',
+    ];
+    $this->editContactElement($editContact);
 
     //Create 2 contacts to fill on the webform.
     $this->_contact1 = $this->createIndividual();

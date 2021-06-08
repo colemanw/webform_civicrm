@@ -292,34 +292,45 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   /**
    * Edit contact element on the build form.
    *
-   * @param string $selector
-   * @param string $widget
-   * @param string $default
-   * @param bool $removeDefaultURL
+   * @param array $params
    */
-  protected function editContactElement($selector, $widget, $default = NULL, $removeDefaultURL = FALSE) {
-    $contactElementEdit = $this->assertSession()->elementExists('css', "[data-drupal-selector='{$selector}'] a.webform-ajax-link");
+  protected function editContactElement($params) {
+    $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector=\"{$params['selector']}\"] a.webform-ajax-link");
+
+    $contactElementEdit = $this->assertSession()->elementExists('css', "[data-drupal-selector=\"{$params['selector']}\"] a.webform-ajax-link");
     $contactElementEdit->click();
     $this->htmlOutput();
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
+    if (!empty($params['title'])) {
+      $this->getSession()->getPage()->fillField('title', $params['title']);
+    }
 
     $this->assertSession()->waitForField('properties[widget]');
-    $this->getSession()->getPage()->selectFieldOption('Form Widget', $widget);
+    $this->getSession()->getPage()->selectFieldOption('Form Widget', $params['widget']);
     $this->assertSession()->assertWaitOnAjaxRequest();
-    if ($widget == 'Autocomplete') {
+    if ($params['widget'] == 'Autocomplete') {
       $this->assertSession()->waitForElementVisible('css', '[data-drupal-selector="edit-properties-search-prompt"]');
       $this->getSession()->getPage()->fillField('Search Prompt', '- Select Contact -');
     }
+    elseif ($params['widget'] == 'Static') {
+      $this->getSession()->getPage()->selectFieldOption('properties[show_hidden_contact]', 1);
+    }
     $this->htmlOutput();
 
-    if ($default) {
+    if (!empty($params['default'])) {
       $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-contact-defaults"]')->click();
       $this->assertSession()->assertWaitOnAjaxRequest();
-      $this->getSession()->getPage()->selectFieldOption('Set default contact from', $default);
+      $this->getSession()->getPage()->selectFieldOption('Set default contact from', $params['default']);
+
+      if ($params['default'] == 'relationship') {
+        $this->getSession()->getPage()->selectFieldOption('properties[default_relationship_to]', $params['default_relationship']['default_relationship_to']);
+        $this->assertSession()->assertWaitOnAjaxRequest();
+        $this->getSession()->getPage()->selectFieldOption('properties[default_relationship][]', $params['default_relationship']['default_relationship']);
+      }
     }
 
-    if ($removeDefaultURL) {
+    if (!empty($params['remove_default_url'])) {
       $this->getSession()->getPage()->uncheckField('properties[allow_url_autofill]');
     }
 

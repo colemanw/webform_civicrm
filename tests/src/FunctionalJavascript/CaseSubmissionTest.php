@@ -36,8 +36,12 @@ final class CaseSubmissionTest extends WebformCivicrmTestBase {
 
     //Edit contact element and remove default section.
     $this->drupalGet($this->webform->toUrl('edit-form'));
-
-    $this->editContactElement('edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations', 'Autocomplete', '- None -');
+    $editContact = [
+      'selector' => "edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations",
+      'widget' => 'Autocomplete',
+      'default' => '- None -',
+    ];
+    $this->editContactElement($editContact);
 
     $caseSubject = "Test Case" . substr(sha1(rand()), 0, 7);
     $this->submitCaseAndVerifyResult($caseSubject);
