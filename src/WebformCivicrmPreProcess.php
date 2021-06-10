@@ -567,7 +567,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
             }
           }
           if ($name == 'existing') {
-            CivicrmContact::wf_crm_fill_contact_value($this->node, $component, $element, $this->ent);
+            CivicrmContact::wf_crm_fill_contact_value($this->node, $element, $this->ent);
           }
         }
       }

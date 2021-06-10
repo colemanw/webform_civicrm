@@ -51,4 +51,106 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
   }
 
+
+  /**
+   * Verify if existing contact element is loaded as expected.
+   */
+  function testRenderingOfExistingContactElement() {
+    $this->addcontactinfo();
+    $childContact = [
+      'first_name' => 'Fred',
+      'last_name' => 'Pinto',
+    ];
+    $this->childContact = $this->createIndividual($childContact);
+    $this->utils->wf_civicrm_api('Relationship', 'create', [
+      'contact_id_a' => $this->childContact['id'],
+      'contact_id_b' => $this->rootUserCid,
+      'relationship_type_id' => "Child of",
+    ]);
+
+    $this->drupalLogin($this->rootUser);
+
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    // The label has a <div> in it which can cause weird failures here.
+    $this->enableCivicrmOnWebform();
+    $this->getSession()->getPage()->selectFieldOption("number_of_contacts", 4);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+
+    foreach ([2, 3, 4] as $c) {
+      $this->getSession()->getPage()->clickLink("Contact {$c}");
+      $this->assertSession()->assertWaitOnAjaxRequest();
+      //Make second contact as household contact.
+      if ($c == 2) {
+        $this->getSession()->getPage()->selectFieldOption("{$c}_contact_type", 'Household');
+        $this->assertSession()->assertWaitOnAjaxRequest();
+      }
+      $this->getSession()->getPage()->checkField("civicrm_{$c}_contact_1_contact_existing");
+      $this->assertSession()->checkboxChecked("civicrm_{$c}_contact_1_contact_existing");
+    }
+
+    $this->saveCiviCRMSettings();
+
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+    // Edit contact element 1.
+    $editContact = [
+      'title' => 'Primary Contact',
+      'selector' => 'edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations',
+      'widget' => 'Static',
+    ];
+    $this->editContactElement($editContact);
+
+    // Edit contact element 2.
+    $editContact = [
+      'selector' => 'edit-webform-ui-elements-civicrm-2-contact-1-contact-existing-operations',
+      'widget' => 'Static',
+    ];
+    $this->editContactElement($editContact);
+
+    // Edit contact element 3.
+    $editContact = [
+      'selector' => 'edit-webform-ui-elements-civicrm-3-contact-1-contact-existing-operations',
+      'widget' => 'Autocomplete',
+    ];
+    $this->editContactElement($editContact);
+
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+
+    // Edit contact element 4.
+    $editContact = [
+      'selector' => 'edit-webform-ui-elements-civicrm-4-contact-1-contact-existing-operations',
+      'widget' => 'Static',
+      'default' => 'relationship',
+      'default_relationship' => [
+        'default_relationship_to' => 'Contact 3',
+        'default_relationship' => 'Child of Contact 3',
+      ],
+    ];
+    $this->editContactElement($editContact);
+
+    // Visit the webform.
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+    $this->htmlOutput();
+
+    // Check if static title is displayed.
+    $this->assertSession()->pageTextContains('Primary Contact');
+
+    // Check if "None Found" text is present in the static element.
+    $this->assertSession()->elementTextContains('css', '[id="edit-civicrm-2-contact-1-fieldset-fieldset"]', '- None Found -');
+
+    // Check if c4 contains the text for "create new".
+    $this->assertSession()->elementTextContains('css', '[id="edit-civicrm-4-contact-1-fieldset-fieldset"]', '+ Create new +');
+
+    // Enter contact 3.
+    $this->fillContactAutocomplete('token-input-edit-civicrm-3-contact-1-contact-existing', 'Maarten');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    // Check if related contact is loaded on c4.
+    $this->htmlOutput();
+    $this->assertSession()->elementTextContains('css', '[id="edit-civicrm-4-contact-1-fieldset-fieldset"]', 'Fred Pinto');
+  }
+
 }

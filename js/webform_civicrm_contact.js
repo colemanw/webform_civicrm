@@ -2,8 +2,11 @@
   D.behaviors.webform_civicrm_contact = {
     attach: function (context) {
       $('[data-civicrm-contact]', context).once('webform_civicrm_contact').each(function (i, el) {
-        var toHide = []
-        var field = $(el)
+        var field = $(el);
+        var toHide = [];
+        if (field.data('hide-fields')) {
+          toHide = field.data('hide-fields').split(', ');
+        }
         var autocompleteUrl = D.url('webform-civicrm/js/' + field.data('form-id') + '/' + field.data('civicrm-field-key'));
         var isSelect = field.data('is-select');
         if (!isSelect) {

@@ -258,7 +258,12 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->saveCiviCRMSettings();
 
     $this->drupalGet($this->webform->toUrl('edit-form'));
-    $this->editContactElement('edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations', 'Static', 'Current User');
+    $editContact = [
+      'selector' => 'edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations',
+      'widget' => 'Static',
+      'default' => 'Current User',
+    ];
+    $this->editContactElement($editContact);
     $this->assertSession()->pageTextContains('Existing Contact has been updated');
     $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contact-1-contact-preferred-communication-method-operations', FALSE);
 

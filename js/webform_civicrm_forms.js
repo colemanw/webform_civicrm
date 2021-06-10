@@ -171,12 +171,11 @@ var wfCivi = (function ($, D, drupalSettings) {
         var type = (n[6] === 'name') ? 'name' : n[4];
         if ($.inArray(type, toHide) >= 0) {
           var fn = (op === 'hide' && (!showEmpty || !isFormItemBlank($el))) ? 'hide' : 'show';
-          // What is webformProp?
-          // $(':input', $el).webformProp('disabled', fn === 'hide');
-          // $(':input', $el).webformProp('readonly', fn === 'hide');
+          $(':input', $el).prop('disabled', fn === 'hide');
+          $(':input', $el).prop('readonly', fn === 'hide');
           $('select.civicrm-enabled[name*="_address_state_province_id"]').each(function() {
-            // $(this).webformProp('disabled', fn === 'hide');
-            // $(this).webformProp('readonly', fn === 'hide');
+            $(this).prop('disabled', fn === 'hide');
+            $(this).prop('readonly', fn === 'hide');
           });
           if (hideOrDisable === 'hide') {
             $el[fn](speed, function() {$el[fn];});
@@ -234,7 +233,7 @@ var wfCivi = (function ($, D, drupalSettings) {
             $el.tokenInput('clear').tokenInput('add', {id: val, name: this.display});
           }
           else if ($el.is('[type=hidden]')) {
-            $el.siblings('.token-input-list').find('p').text(this.display);
+            $el.parents('.token-input-list').find('p').text(this.display);
           }
           $el.val(val).trigger('change', 'webform_civicrm:autofill');
         }
@@ -255,8 +254,7 @@ var wfCivi = (function ($, D, drupalSettings) {
           // Checkboxes & radios
           else {
             $.each($.makeArray(val), function(k, v) {
-              // What is webformProp?
-              // $(':input[value="'+v+'"]', $wrapper).webformProp('checked', true).trigger('change', 'webform_civicrm:autofill');
+              $(':input[value="'+v+'"]', $wrapper).prop('checked', true).trigger('change', 'webform_civicrm:autofill');
             });
           }
         }
@@ -275,8 +273,7 @@ var wfCivi = (function ($, D, drupalSettings) {
   }
 
   function populateStates(stateSelect, countryId) {
-    // What is webformProp?
-    // $(stateSelect).webformProp('disabled', true);
+    $(stateSelect).prop('disabled', true);
     var is_billing = stateSelect.attr('name').indexOf("billing_address") >= 0;
     if (!is_billing && stateProvinceCache[countryId]) {
       fillOptions(stateSelect, stateProvinceCache[countryId]);
@@ -338,8 +335,7 @@ var wfCivi = (function ($, D, drupalSettings) {
     var fields = $(item).parents('form.webform-submission-form').find('[name*="['+(name.replace('master_id', ''))+'"]').not('[name*=location_type_id]').not('[name*=master_id]').not('[type="hidden"]');
     if (action === 'hide') {
       fields.parent().hide(speed, function() {$(this).css('display', 'none');});
-      // What is webformProp?
-      // fields.webformProp('disabled', true);
+      fields.prop('disabled', true);
     }
     else {
       fields.removeAttr('disabled');
@@ -418,9 +414,8 @@ var wfCivi = (function ($, D, drupalSettings) {
         populateStates($el, countryVal);
 
         if (readOnly) {
-          // What is webformProp?
-          // $el.webformProp('readonly', true);
-          // $el.webformProp('disabled', true);
+          $el.prop('readonly', true);
+          $el.prop('disabled', true);
         }
       });
 

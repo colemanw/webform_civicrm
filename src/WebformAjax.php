@@ -154,7 +154,7 @@ class WebformAjax extends WebformCivicrmBase implements WebformAjaxInterface {
           // Populate related contacts
           elseif ($i > $c && $field == 'existing') {
             $related_component = $this->getComponent($fid);
-            if (wf_crm_aval($related_component['extra'], 'default') == 'relationship') {
+            if (isset($related_component['#default']) && $related_component['#default'] == 'relationship') {
               $old_related_cid = wf_crm_aval($this->ent, "contact:$i:id");
               // Don't be fooled by old data
               $related_component['extra']['allow_url_autofill'] = FALSE;
