@@ -1787,8 +1787,14 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     if ($cid) {
       $address['contact_id'] = $email['contact_id'] = $this->ent['contact'][1]['id'] = $cid;
-      wf_civicrm_api('address', 'create', $address);
-      wf_civicrm_api('email', 'create', $email);
+      // Ignore Address if all fields NULL, apart from Contact Id and Location Type Id.
+      if (count(array_filter($address)) > 2) {
+        wf_civicrm_api('address', 'create', $address);
+      }
+      // Ditto for Email
+      if (isset($email['email'])) {
+        wf_civicrm_api('email', 'create', $email);
+      }
     }
     return $cid;
   }
