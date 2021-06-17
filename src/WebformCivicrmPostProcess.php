@@ -409,18 +409,20 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         $dt = $element['#civicrm_data_type'];
         // Validate state/prov abbreviation
         if ($dt === 'state_province_abbr') {
-          $ckey = str_replace('state_province', 'country', $key);
-          if (!empty($this->crmValues[$ckey]) && is_numeric($this->crmValues[$ckey])) {
-            $country_id = $this->crmValues[$ckey];
-          }
-          else {
-            $country_id = (int) $utils->wf_crm_get_civi_setting('defaultContactCountry', 1228);
-          }
-          $isBilling = (strpos($element['#name'], 'billing_address_') !== false) ?? FALSE;
-          $states = $utils->wf_crm_get_states($country_id, $isBilling);
-          if ($states && !array_key_exists(strtoupper($element['#value']), $states)) {
-            $countries = $utils->wf_crm_apivalues('address', 'getoptions', ['field' => 'country_id']);
-            $this->form_state->setError($element, t('Mismatch: "@state" is not a state/province of %country. Please enter a valid state/province abbreviation for %field.', ['@state' => $element['#value'], '%country' => $countries[$country_id], '%field' => $element['#title']]));
+          if (!empty($this->crmValues[$key])) {
+            $ckey = str_replace('state_province', 'country', $key);
+            if (!empty($this->crmValues[$ckey]) && is_numeric($this->crmValues[$ckey])) {
+              $country_id = $this->crmValues[$ckey];
+            }
+            else {
+              $country_id = (int) $utils->wf_crm_get_civi_setting('defaultContactCountry', 1228);
+            }
+            $isBilling = (strpos($element['#name'], 'billing_address_') !== false) ?? FALSE;
+            $states = $utils->wf_crm_get_states($country_id, $isBilling);
+            if ($states && !array_key_exists(strtoupper($element['#value']), $states)) {
+              $countries = $utils->wf_crm_apivalues('address', 'getoptions', ['field' => 'country_id']);
+              $this->form_state->setError($element, t('Mismatch: "@state" is not a state/province of %country. Please enter a valid state/province abbreviation for %field.', ['@state' => $element['#value'], '%country' => $countries[$country_id], '%field' => $element['#title']]));
+            }
           }
         }
         // Strings and files don't need any validation
