@@ -85,14 +85,13 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
       }
     }
     // Early return if the form (or page) was already submitted
-    /*
     $triggering_element = $this->form_state->getTriggeringElement();
-    if ($triggering_element && $triggering_element['#id'] == 'edit-previous'
-      || (empty($this->form_state->isRebuilding()) && empty($this->form['#submission']->is_draft))
+    if ($triggering_element && $triggering_element['#id'] == 'edit-wizard-prev'
+      || (empty($this->form_state->isRebuilding()) && !empty($this->form_state->getValues()) && empty($this->form['#submission']->is_draft))
       // When resuming from a draft
       || (!empty($this->form['#submission']->is_draft) && empty($this->form_state->getUserInput()))
     ) {
-      $this->fillForm($this->form['submitted']);
+      $this->fillForm($this->form, $this->form_state->getValues());
       return;
     }
     // If this is an edit op, use the original IDs and return
@@ -103,10 +102,10 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
           $this->info['contact'][$c]['contact'][1]['existing'] = wf_crm_aval($contact, 'id', 0);
         }
       }
-      $this->fillForm($this->form['submitted']);
+      $this->fillForm($this->form);
       return;
     }
-    */
+
     // Search for existing contacts
     $counts_count = count($this->data['contact']);
     for ($c = 1; $c <= $counts_count; ++$c) {
@@ -186,8 +185,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
     $this->form_state->set(['civicrm', 'ent'], $this->ent);
     // Set default values and other attributes for CiviCRM form elements
     // Passing $submitted helps avoid overwriting values that have been entered on a multi-step form
-    $submitted = $this->form_state->getValues();
-    $this->fillForm($this->form, $submitted);
+    $this->fillForm($this->form, $this->form_state->getValues());
 
     $enable_contribution = wf_crm_aval($this->data, 'contribution:1:contribution:1:enable_contribution');
     if ($enable_contribution && $this->form_state->get('current_page') === 'contribution_pagebreak' && empty($this->form['payment_section'])) {
@@ -465,9 +463,6 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
       if (!empty($element['#webform']) && $pieces = $utils->wf_crm_explode_key($eid)) {
         list( , $c, $ent, $n, $table, $name) = $pieces;
         if ($field = wf_crm_aval($this->all_fields, $table . '_' . $name)) {
-          $component = [
-            'cid' => '@todo what is the CID?'
-          ];
           $element['#attributes']['class'][] = 'civicrm-enabled';
           if ($element['#type'] == 'webform_radios_other') {
             $element['other']['#attributes']['class'][] = 'civicrm-enabled';
@@ -506,9 +501,8 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
             $element['#options'] = $new;
           }
           // If the user has already entered a value for this field, don't change it
-          $key = $element['#webform_key'];
           if (isset($this->info[$ent][$c][$table][$n][$name])
-            && !isset($submitted[$key])) {
+            && !(isset($element['#form_key']) && isset($submitted[$element['#form_key']]))) {
             $val = $this->info[$ent][$c][$table][$n][$name];
 
             if ($ent === 'contact') {
@@ -539,7 +533,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
               }
             }
             if ($element['#type'] == 'autocomplete' && is_string($val) && strlen($val)) {
-              $options = $utils->wf_crm_field_options($component, '', $this->data);
+              $options = $utils->wf_crm_field_options($element, '', $this->data);
               $val = wf_crm_aval($options, $val);
             }
             // Contact image & custom file fields
