@@ -1362,6 +1362,12 @@ class AdminForm implements AdminFormInterface {
       '#default_value' => !empty($this->settings['create_new_relationship']),
       '#description' => t('If enabled, only Active relationships will load on the form, and will be updated on Submit. If there are no Active relationships then a new one will be created.'),
     ];
+    $this->form['additional_options']['disable_contact_paging'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Disable Contact Paging'),
+      '#default_value' => !empty($this->settings['disable_contact_paging']),
+      '#description' => t('If enabled, contact page break will not be added on saving the form.'),
+    ];
     $this->form['additional_options']['new_contact_source'] = [
       '#type' => 'textfield',
       '#title' => t('Source Label'),
@@ -1953,7 +1959,7 @@ class AdminForm implements AdminFormInterface {
         }
       }
     }
-    if (isset($enabled['contribution_pagebreak'])) {
+    if (isset($enabled['contribution_pagebreak']) && empty($this->settings['disable_contact_paging'])) {
       $this->setParentOnElements($enabled);
     }
 

@@ -41,6 +41,56 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     return \CRM_Financial_BAO_FinancialTypeAccount::add($entityParams);
   }
 
+  /**
+   * Test One-page donation
+   */
+  public function testOnePageDonation() {
+    $payment_processor = $this->createPaymentProcessor();
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+
+    $this->configureContributionTab(FALSE, $payment_processor['id']);
+    $this->getSession()->getPage()->checkField("Contribution Amount");
+    $this->assertSession()->checkboxChecked("Contribution Amount");
+
+    $this->getSession()->getPage()->clickLink('Additional Options');
+    $this->getSession()->getPage()->checkField("Disable Contact Paging");
+    $this->assertSession()->checkboxChecked("Disable Contact Paging");
+
+    $this->saveCiviCRMSettings();
+
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+    $this->assertSession()->pageTextNotContains('contact_pagebreak');
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+    $this->getSession()->getPage()->fillField('First Name', 'Frederick');
+    $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
+    $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
+
+    $this->getSession()->getPage()->fillField('Contribution Amount', '10.00');
+    $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
+    $this->htmlOutput();
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '10.00');
+
+    $this->fillCardAndSubmit();
+
+    $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
+      'sequential' => 1,
+    ]);
+    $this->assertEquals(1, $api_result['count']);
+    $contribution = reset($api_result['values']);
+    $this->assertNotEmpty($contribution['trxn_id']);
+    $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
+    $this->assertEquals('Donation', $contribution['financial_type']);
+    $this->assertEquals('10.00', $contribution['total_amount']);
+    $this->assertEquals('Completed', $contribution['contribution_status']);
+    $this->assertEquals('USD', $contribution['currency']);
+  }
+
   public function testSubmitContribution() {
     $payment_processor = $this->createPaymentProcessor();
 
@@ -50,26 +100,16 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
-    // The label has a <div> in it which can cause weird failures here.
-    $this->assertSession()->waitForText('Enable CiviCRM Processing');
-    $this->assertSession()->waitForField('nid');
-    $this->getSession()->getPage()->checkField('nid');
-    $this->getSession()->getPage()->clickLink('Contribution');
-    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertSession()->pageTextContains('You must enable an email field for Contact 1 in order to process transactions.');
-    $this->getSession()->getPage()->pressButton('Enable It');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->getSession()->getPage()->checkField('Contribution Amount');
-    $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
-    $this->getSession()->getPage()->selectFieldOption('Financial Type', 1);
+    $this->enableCivicrmOnWebform();
 
+    $this->configureContributionTab(FALSE, $payment_processor['id']);
+    $this->getSession()->getPage()->checkField("Contribution Amount");
+    $this->assertSession()->checkboxChecked("Contribution Amount");
     $el = $this->getSession()->getPage()->findField('Payment Processor');
     $opts = $el->findAll('css', 'option');
     $this->assertCount(3, $opts, 'Payment processor values: ' . implode(', ', array_map(static function(NodeElement $el) {
-      return $el->getValue();
-    }, $opts)));
-    $this->getSession()->getPage()->selectFieldOption('Payment Processor', $payment_processor['id']);
+        return $el->getValue();
+      }, $opts)));
 
     $this->enableBillingSection();
     $this->getSession()->getPage()->selectFieldOption('lineitem_1_number_of_lineitem', 2);
@@ -82,8 +122,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     // Set the Financial Type for the second line item to Member Dues (which has Sales Tax on it).
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_lineitem_2_contribution_financial_type_id', 2);
 
-    $this->getSession()->getPage()->pressButton('Save Settings');
-    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    $this->saveCiviCRMSettings();
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
@@ -99,31 +138,9 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '60.98');
 
-    // Wait for the credit card form to load in.
-    $this->assertSession()->waitForField('credit_card_number');
-    $this->getSession()->getPage()->fillField('Card Number', '4222222222222220');
-    $this->getSession()->getPage()->fillField('Security Code', '123');
-    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[M]', '11');
-    $this_year = date('Y');
-    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[Y]', $this_year + 1);
-    $billingValues = [
-      'first_name' => 'Frederick',
-      'last_name' => 'Pabst',
-      'street_address' => '123 Milwaukee Ave',
-      'city' => 'Milwaukee',
-      'country' => '1228',
-      'state_province' => '1048',
-      'postal_code' => '53177',
-    ];
-    $this->fillBillingFields($billingValues);
+    $this->fillCardAndSubmit();
 
-    $this->getSession()->getPage()->pressButton('Submit');
-    $this->htmlOutput();
-    $this->assertPageNoErrorMessages();
-    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
-
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $api_result = $utils->wf_civicrm_api('contribution', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
       'sequential' => 1,
     ]);
 
@@ -138,7 +155,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertEquals('USD', $contribution['currency']);
 
     // Also retrieve tax_amount (have to ask for it to be returned):
-    $api_result = $utils->wf_civicrm_api('contribution', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
       'sequential' => 1,
       'return' => 'tax_amount',
     ]);
@@ -146,7 +163,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertEquals('1.48', $contribution['tax_amount']);
     $tax_total_amount = $contribution['tax_amount'];
 
-    $api_result = $utils->wf_civicrm_api('line_item', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('line_item', 'get', [
       'sequential' => 1,
     ]);
 
@@ -176,27 +193,17 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertSession()->waitForText('Enable CiviCRM Processing');
     $this->assertSession()->waitForField('nid');
     $this->getSession()->getPage()->checkField('nid');
-    $this->getSession()->getPage()->clickLink('Contribution');
-    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertSession()->pageTextContains('You must enable an email field for Contact 1 in order to process transactions.');
-    $this->getSession()->getPage()->pressButton('Enable It');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->getSession()->getPage()->checkField('Contribution Amount');
-    $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
-    $this->getSession()->getPage()->selectFieldOption('Financial Type', 1);
 
+    $this->configureContributionTab(FALSE, $payment_processor['id']);
+    $this->getSession()->getPage()->checkField('Contribution Amount');
     $el = $this->getSession()->getPage()->findField('Payment Processor');
     $opts = $el->findAll('css', 'option');
     $this->assertCount(3, $opts, 'Payment processor values: ' . implode(', ', array_map(static function(NodeElement $el) {
         return $el->getValue();
       }, $opts)));
-    $this->getSession()->getPage()->selectFieldOption('Payment Processor', $payment_processor['id']);
-    $this->htmlOutput();
 
     $this->enableBillingSection();
-    $this->getSession()->getPage()->pressButton('Save Settings');
-    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    $this->saveCiviCRMSettings();
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
@@ -210,6 +217,36 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '1,200');
 
+    $this->fillCardAndSubmit();
+
+    $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
+      'sequential' => 1,
+    ]);
+
+    $this->assertEquals(1, $api_result['count']);
+    $contribution = reset($api_result['values']);
+    $this->assertNotEmpty($contribution['trxn_id']);
+    $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
+    $this->assertEquals('Donation', $contribution['financial_type']);
+    $this->assertEquals('1200.00', $contribution['total_amount']);
+    $contribution_total_amount = $contribution['total_amount'];
+    $this->assertEquals('Completed', $contribution['contribution_status']);
+    $this->assertEquals('USD', $contribution['currency']);
+
+    $api_result = $this->utils->wf_civicrm_api('line_item', 'get', [
+      'sequential' => 1,
+    ]);
+
+    $this->assertEquals('1.00', $api_result['values'][0]['qty']);
+    $this->assertEquals('1200.00', $api_result['values'][0]['unit_price']);
+    $this->assertEquals('1200.00', $api_result['values'][0]['line_total']);
+    $this->assertEquals('1', $api_result['values'][0]['financial_type_id']);
+  }
+
+  /**
+   * Fill Card Details and submit.
+   */
+  public function fillCardAndSubmit() {
     // Wait for the credit card form to load in.
     $this->assertSession()->waitForField('credit_card_number');
     $this->getSession()->getPage()->fillField('Card Number', '4222222222222220');
@@ -227,35 +264,11 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
       'postal_code' => '53177',
     ];
     $this->fillBillingFields($billingValues);
+
     $this->getSession()->getPage()->pressButton('Submit');
     $this->htmlOutput();
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
-
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $api_result = $utils->wf_civicrm_api('contribution', 'get', [
-      'sequential' => 1,
-    ]);
-
-    $this->assertEquals(1, $api_result['count']);
-    $contribution = reset($api_result['values']);
-    $this->assertNotEmpty($contribution['trxn_id']);
-    $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
-    $this->assertEquals('Donation', $contribution['financial_type']);
-    $this->assertEquals('1200.00', $contribution['total_amount']);
-    $contribution_total_amount = $contribution['total_amount'];
-    $this->assertEquals('Completed', $contribution['contribution_status']);
-    $this->assertEquals('USD', $contribution['currency']);
-
-    $api_result = $utils->wf_civicrm_api('line_item', 'get', [
-      'sequential' => 1,
-    ]);
-
-    $this->assertEquals('1.00', $api_result['values'][0]['qty']);
-    $this->assertEquals('1200.00', $api_result['values'][0]['unit_price']);
-    $this->assertEquals('1200.00', $api_result['values'][0]['line_total']);
-    $this->assertEquals('1', $api_result['values'][0]['financial_type_id']);
-
-    //throw new \Exception(var_export($api_result, TRUE));
   }
+
 }
