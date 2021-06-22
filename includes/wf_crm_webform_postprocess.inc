@@ -590,7 +590,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $m = $contact['address'][1]['master_id'];
         // If master address is exposed to the form, use it
         if (!empty($this->data['contact'][$m]['address'][1])) {
-          $contact['address'][1] = $this->data['contact']['address'][1];
+          $contact['address'][1] = $this->data['contact'][$m]['address'][1];
         }
         // Else look up the master contact's address
         elseif (!empty($this->existing_contacts[$m])) {
