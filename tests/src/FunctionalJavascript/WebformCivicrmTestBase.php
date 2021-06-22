@@ -299,7 +299,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
 
     $contactElementEdit = $this->assertSession()->elementExists('css', "[data-drupal-selector=\"{$params['selector']}\"] a.webform-ajax-link");
     $contactElementEdit->click();
-    $this->htmlOutput();
+    // $this->htmlOutput();
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
     if (!empty($params['title'])) {
