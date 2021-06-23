@@ -469,6 +469,9 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
             'cid' => '@todo what is the CID?'
           ];
           $element['#attributes']['class'][] = 'civicrm-enabled';
+          if ($element['#type'] == 'webform_radios_other') {
+            $element['other']['#attributes']['class'][] = 'civicrm-enabled';
+          }
           $dt = NULL;
           if (!empty($field['data_type'])) {
             $dt = $element['#civicrm_data_type'] = $field['data_type'];

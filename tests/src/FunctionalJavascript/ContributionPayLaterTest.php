@@ -36,6 +36,11 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->changeTypeOfAmountElement('radios');
     $this->submitWebform('radios');
     $this->verifyResult();
+
+    // Change widget of Amount element to radio + other.
+    $this->changeTypeOfAmountElement('webform_radios_other');
+    $this->submitWebform('webform_radios_other');
+    $this->verifyResult();
   }
 
   /**
@@ -55,6 +60,11 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
 
     if ($amountType == 'radios') {
       $this->getSession()->getPage()->selectFieldOption("civicrm_1_contribution_1_contribution_total_amount", 30);
+    }
+    elseif ($amountType == 'webform_radios_other') {
+      $this->getSession()->getPage()->selectFieldOption("civicrm_1_contribution_1_contribution_total_amount[radios]", '_other_');
+      $this->assertSession()->waitForField('civicrm_1_contribution_1_contribution_total_amount[other]');
+      $this->getSession()->getPage()->fillField('civicrm_1_contribution_1_contribution_total_amount[other]', '30');
     }
     else {
       $this->getSession()->getPage()->checkField('10');
