@@ -146,6 +146,10 @@ class CivicrmOptions extends OptionsBase {
     if (!isset($properties['#civicrm_live_options'])) {
       $properties['#civicrm_live_options'] = $form_state->getValues()['civicrm_live_options'] ?? 0;
     }
+    // Make sure options are available on the element.
+    if (!isset($properties['#options'])) {
+      $properties['#options'] = $this->getFieldOptions($properties);
+    }
     return $properties;
   }
 

@@ -2229,11 +2229,12 @@ class AdminForm implements AdminFormInterface {
     }
     // Retrieve option list
     if ($field['type'] === 'select') {
+      //To-do: Make this as a default type in src/Fields.php.
+      $field['type'] = 'civicrm_options';
       if ($options = $utils->wf_crm_field_options($field, 'component_insert', $settings['data'])) {
         $field['options'] = $options;
         $field['extra']['items'] = $utils->wf_crm_array2str($options);
         $field['extra']['aslist'] = $field['extra']['aslist'] ?? FALSE;
-        $field['type'] = 'civicrm_options';
       }
     }
     if ($field['type'] === 'civicrm_contact') {
