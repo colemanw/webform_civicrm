@@ -294,14 +294,16 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
    *
    * @param array $params
    */
-  protected function editContactElement($params) {
+  protected function editContactElement($params, $openWidget = TRUE) {
     $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector=\"{$params['selector']}\"] a.webform-ajax-link");
 
     $contactElementEdit = $this->assertSession()->elementExists('css', "[data-drupal-selector=\"{$params['selector']}\"] a.webform-ajax-link");
     $contactElementEdit->click();
     $this->htmlOutput();
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
+    if ($openWidget) {
+      $this->assertSession()->waitForElementVisible('css', '[data-drupal-selector="edit-form"]');
+      $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
+    }
     if (!empty($params['title'])) {
       $this->getSession()->getPage()->fillField('title', $params['title']);
     }

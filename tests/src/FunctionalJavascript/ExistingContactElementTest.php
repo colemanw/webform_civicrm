@@ -107,14 +107,14 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
       'selector' => 'edit-webform-ui-elements-civicrm-2-contact-1-contact-existing-operations',
       'widget' => 'Static',
     ];
-    $this->editContactElement($editContact);
+    $this->editContactElement($editContact, FALSE);
 
     // Edit contact element 3.
     $editContact = [
       'selector' => 'edit-webform-ui-elements-civicrm-3-contact-1-contact-existing-operations',
       'widget' => 'Autocomplete',
     ];
-    $this->editContactElement($editContact);
+    $this->editContactElement($editContact, FALSE);
 
     $this->drupalGet($this->webform->toUrl('edit-form'));
 
@@ -128,7 +128,7 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
         'default_relationship' => 'Child of Contact 3',
       ],
     ];
-    $this->editContactElement($editContact);
+    $this->editContactElement($editContact, FALSE);
 
     // Visit the webform.
     $this->drupalGet($this->webform->toUrl('canonical'));
