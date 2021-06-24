@@ -196,20 +196,17 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   protected function editCivicrmOptionElement($selector, $multiple = TRUE, $enableStatic = FALSE, $default = NULL, $type = NULL) {
     $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="' . $selector . '"] a.webform-ajax-link');
     $checkbox_edit_button->click();
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->waitForElementVisible('css', '[data-drupal-selector="edit-change-type"]', 3000);
     $this->htmlOutput();
     if ($type) {
       $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-change-type"]')->click();
-      $this->assertSession()->assertWaitOnAjaxRequest();
-      $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector='edit-elements-{$type}-operation']")->click();
-      $this->assertSession()->assertWaitOnAjaxRequest();
-      $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector='edit-cancel']");
+      $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector='edit-elements-{$type}-operation']", 3000)->click();
+      $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector='edit-cancel']", 3000);
     }
 
     if ($enableStatic) {
       $this->getSession()->getPage()->selectFieldOption("properties[civicrm_live_options]", 0);
-      $this->assertSession()->assertWaitOnAjaxRequest();
-      $this->assertSession()->waitForField('properties[options][options][civicrm_option_1][enabled]');
+      $this->assertSession()->waitForField('properties[options][options][civicrm_option_1][enabled]', 3000);
     }
     if ($default) {
       $this->getSession()->getPage()->selectFieldOption("properties[options][default]", $default);
@@ -229,7 +226,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     }
     $this->htmlOutput();
     $this->getSession()->getPage()->pressButton('Save');
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->assertWaitOnAjaxRequest(5000);
   }
 
   /**
