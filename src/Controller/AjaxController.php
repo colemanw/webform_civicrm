@@ -43,6 +43,7 @@ class AjaxController implements ContainerInjectionInterface {
   public function handle($key, $input = '', $isBilling = FALSE) {
     $this->civicrm->initialize();
     if ($key === 'stateProvince') {
+      $isBilling = ($isBilling === 'false') ? FALSE : $isBilling;
       return $this->stateProvince($input, $isBilling);
     }
     elseif ($key === 'county') {

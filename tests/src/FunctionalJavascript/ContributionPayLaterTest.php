@@ -20,6 +20,12 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     ]));
     $this->enableCivicrmOnWebform();
 
+    //Enable Address fields.
+    $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_address', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->checkField('Country');
+    $this->assertSession()->checkboxChecked('Country');
+
     $this->configureContributionTab(TRUE, 'Pay Later');
     $this->getSession()->getPage()->checkField('Contribution Amount');
 
@@ -54,9 +60,13 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
+    $this->getSession()->getPage()->selectFieldOption("Country", 'United Kingdom');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption('State/Province', 'Newport');
 
     $this->getSession()->getPage()->pressButton('Next >');
     $this->assertSession()->waitForField('civicrm_1_contribution_1_contribution_total_amount');
+    $this->assertPageNoErrorMessages();
 
     if ($amountType == 'radios') {
       $this->getSession()->getPage()->selectFieldOption("civicrm_1_contribution_1_contribution_total_amount", 30);
@@ -94,6 +104,18 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->utils->wf_civicrm_api('contribution', 'delete', [
       'id' => $contribution['id'],
     ]);
+
+    $address = $this->utils->wf_civicrm_api('Address', 'get', [
+      'sequential' => 1,
+    ])['values'][0];
+    $country = $this->utils->wf_civicrm_api('Country', 'get', [
+      'name' => "United Kingdom",
+    ]);
+    $state = $this->utils->wf_civicrm_api('StateProvince', 'get', [
+      'name' => "Newport",
+    ]);
+    $this->assertEquals($country['id'], $address['country_id']);
+    $this->assertEquals($state['id'], $address['state_province_id']);
   }
 
   /**
