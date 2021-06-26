@@ -52,7 +52,6 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->saveCiviCRMSettings();
 
     $this->drupalGet($this->webform->toUrl('edit-form'));
-    $this->assertSession()->waitForField('Group(s)');
     $this->htmlOutput();
 
     //Change type of group field to checkbox.
@@ -66,7 +65,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     // Ensure default option is loaded.
     $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-other-tag-operations"] a.webform-ajax-link');
     $checkbox_edit_button->click();
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->waitForField('properties[options][default]', 3000);
     $this->htmlOutput();
     // Verify if default radio is selected.
     $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-properties-options-default"][value=' . $majorDonorTagID . ']')->isChecked();
