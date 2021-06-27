@@ -494,11 +494,15 @@ abstract class WebformCivicrmBase {
    *   Contact id
    * @param $cid2
    *   Contact id
+   * @param $active_only
+   *   if TRUE - only active relationships are returned.
    * @return array
    */
-  protected function getRelationship($r_types, $cid1, $cid2) {
+  protected function getRelationship($r_types, $cid1, $cid2, $active_only = FALSE) {
     $found = [];
-    $active_only = !empty($this->settings['create_new_relationship']);
+    if (!$active_only) {
+      $active_only = !empty($this->settings['create_new_relationship']);
+    }
     $utils = \Drupal::service('webform_civicrm.utils');
 
     if ($r_types && $cid1 && $cid2) {

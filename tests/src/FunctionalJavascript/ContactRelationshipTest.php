@@ -17,8 +17,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
       'is_active' => 1,
       'parent_id' => "Individual",
     ];
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $result = $utils->wf_civicrm_api('ContactType', 'create', $params);
+    $result = $this->utils->wf_civicrm_api('ContactType', 'create', $params);
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
   }
@@ -31,10 +30,128 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
       'contact_type_b' => "Individual",
       'contact_sub_type_b' => "Student",
     ];
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $result = $utils->wf_civicrm_api('\'RelationshipType', 'create', $params);
+    $result = $this->utils->wf_civicrm_api('\'RelationshipType', 'create', $params);
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
+  }
+
+  /**
+   * Test removal of relationships.
+   */
+  public function testRelationshipRemoval() {
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+
+    $this->enableCivicrmOnWebform();
+
+    $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 2);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+
+    $this->getSession()->getPage()->clickLink('2. Contact 2');
+    $this->getSession()->getPage()->checkField("civicrm_2_contact_1_contact_existing");
+
+    $this->getSession()->getPage()->selectFieldOption('contact_2_number_of_relationship', 'Yes');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->selectFieldOption('civicrm_2_contact_1_relationship_relationship_type_id[]', 'create_civicrm_webform_element');
+
+    $this->saveCiviCRMSettings();
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+
+    $this->getSession()->getPage()->fillField('civicrm_1_contact_1_contact_first_name', 'Frederick');
+    $this->getSession()->getPage()->fillField('civicrm_1_contact_1_contact_last_name', 'Pabst');
+
+    $this->getSession()->getPage()->fillField('civicrm_2_contact_1_contact_first_name', 'Mark');
+    $this->getSession()->getPage()->fillField('civicrm_2_contact_1_contact_last_name', 'Anthony');
+
+    $this->getSession()->getPage()->checkField("Child of");
+    $this->getSession()->getPage()->checkField("Partner of");
+
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
+    //Assert if relationship was created.
+    $contact1 = $this->utils->wf_civicrm_api('Contact', 'get', [
+      'sequential' => 1,
+      'first_name' => 'Frederick',
+      'last_name' => 'Pabst',
+    ]);
+    $this->assertEquals(1, $contact1['count']);
+
+    $contact2 = $this->utils->wf_civicrm_api('Contact', 'get', [
+      'sequential' => 1,
+      'first_name' => 'Mark',
+      'last_name' => 'Anthony',
+    ]);
+    $this->assertEquals(1, $contact2['count']);
+
+    $contact1 = reset($contact1['values']);
+    $contact2 = reset($contact2['values']);
+
+    $relationships = $this->utils->wf_civicrm_api('Relationship', 'get', [
+      'sequential' => 1,
+      'contact_id_b' => $contact1['contact_id'],
+      'is_active' => 1,
+    ]);
+
+    //Check only 2 relationships are created b/w the contacts.
+    $this->assertEquals(2, $relationships['count']);
+    $relationships = $relationships['values'];
+    $partnerTypeID = $this->utils->wf_civicrm_api('RelationshipType', 'getvalue', [
+      'return' => "id",
+      'name_a_b' => "Partner of",
+    ]);
+    $childTypeID = $this->utils->wf_civicrm_api('RelationshipType', 'getvalue', [
+      'return' => "id",
+      'name_a_b' => "Child of",
+    ]);
+    $contactRelTypes = array_column($relationships, 'relationship_type_id');
+
+    $this->assertEquals($contact2['id'], $relationships[0]['contact_id_a']);
+    $this->assertEquals($contact2['id'], $relationships[1]['contact_id_a']);
+    $this->assertTrue(in_array($childTypeID, $contactRelTypes));
+    $this->assertTrue(in_array($partnerTypeID, $contactRelTypes));
+
+    // Visit the webform with cid2 id in the url.
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $contact1['id'], 'cid2' => $contact2['id']]]));
+    $this->assertSession()->waitForField('First Name');
+    $this->createScreenshot($this->htmlOutputDirectory . '/relationship_selection.png');
+
+    //Make sure the checkbox are enabled by default.
+    $this->assertSession()->checkboxChecked("Child of");
+    $this->assertSession()->checkboxChecked("Partner of");
+
+    // Remove Partner of relationship with the contact.
+    $this->getSession()->getPage()->uncheckField("Partner of");
+
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
+    $relationships = $this->utils->wf_civicrm_api('Relationship', 'get', [
+      'sequential' => 1,
+      'contact_id_b' => $contact1['contact_id'],
+      'options' => ['sort' => "is_active DESC"],
+    ]);
+
+    $this->assertEquals(2, $relationships['count']);
+    $relationships = $relationships['values'];
+
+    $this->assertEquals($contact2['id'], $relationships[0]['contact_id_a']);
+    $this->assertEquals($childTypeID, $relationships[0]['relationship_type_id']);
+    $this->assertEquals(1, $relationships[0]['is_active']);
+
+    // Check if Partner relationship is expired.
+    $this->assertEquals($contact2['id'], $relationships[1]['contact_id_a']);
+    $this->assertEquals($partnerTypeID, $relationships[1]['relationship_type_id']);
+    $this->assertEquals(0, $relationships[1]['is_active']);
+
   }
 
   /**
@@ -50,13 +167,8 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
       'webform' => $this->webform->id(),
     ]));
     // The label has a <div> in it which can cause weird failures here.
-    $this->assertSession()->waitForText('Enable CiviCRM Processing');
-    $this->assertSession()->waitForField('nid');
-    $this->getSession()->getPage()->checkField('nid');
-    $this->htmlOutput();
+    $this->enableCivicrmOnWebform();
 
-    $this->assertSession()->waitForText('Number of Contacts');
-    $this->assertSession()->waitForField('number_of_contacts');
     $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 2);
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
@@ -80,9 +192,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
     $this->getSession()->getPage()->selectFieldOption('civicrm_2_contact_1_relationship_relationship_type_id[]', 'School is');
 
-    $this->getSession()->getPage()->pressButton('Save Settings');
-    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
-    $this->assertPageNoErrorMessages();
+    $this->saveCiviCRMSettings();
 
     $this->drupalLogout();
     $this->drupalGet($this->webform->toUrl('canonical'));
@@ -99,8 +209,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     // Note: Frederick is contact_id=3 (1=default org; 2=the drupal user) and Western Canada High tis contact_id=4
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $api_result = $utils->wf_civicrm_api('Contact', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('Contact', 'get', [
       'sequential' => 1,
       'first_name' => 'Frederick',
       'last_name' => 'Pabst',
@@ -110,7 +219,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->assertEquals('Student', implode($student['contact_sub_type']));
 
     // Check that the relationship is created:
-    $api_result = $utils->wf_civicrm_api('Relationship', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('Relationship', 'get', [
       'sequential' => 1,
       'contact_id_b' => $student['contact_id'],
     ]);
@@ -118,7 +227,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     // throw new \Exception(var_export($relationship, TRUE));
 
     // This is the school:
-    $api_result = $utils->wf_civicrm_api('Contact', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('Contact', 'get', [
       'sequential' => 1,
       'contact_id' => $relationship['contact_id_a'],
     ]);
@@ -126,7 +235,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->assertEquals('Western Canada High', $contact['organization_name']);
 
     // This is the relationship type:
-    $api_result = $utils->wf_civicrm_api('RelationshipType', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('RelationshipType', 'get', [
       'sequential' => 1,
       'id' =>  $relationship['relationship_type_id'],
     ]);

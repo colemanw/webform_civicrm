@@ -250,15 +250,8 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
 
       $this->saveGroupsAndTags($contact, $cid, $c);
 
-      // Process relationships
-      foreach (wf_crm_aval($contact, 'relationship', []) as $n => $params) {
-        $relationship_type_id = wf_crm_aval($params, 'relationship_type_id');
-        if ($relationship_type_id) {
-          foreach ((array) $relationship_type_id as $params['relationship_type_id']) {
-            $this->processRelationship($params, $cid, $this->ent['contact'][$n]['id']);
-          }
-        }
-      }
+      $this->saveRelationships($contact, $cid, $c);
+
       // Process event participation
       if (isset($this->all_sets['participant']) && !empty($this->data['participant_reg_type'])) {
         $this->processParticipants($c, $cid);
@@ -1039,6 +1032,57 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       $display_name = $utils->wf_civicrm_api('contact', 'get', ['contact_id' => $id, 'return.display_name' => 1]);
       $display_name = wf_crm_aval($display_name, "values:$id:display_name", t('Contact'));
       \Drupal::messenger()->addStatus(t('%contact has been removed from @group.', ['%contact' => $display_name, '@group' => '<em>' . implode('</em> ' . t('and') . ' <em>', $remove) . '</em>']));
+    }
+  }
+
+  /**
+   * Save relationships for a contact
+   *
+   * @param array $contact
+   * @param int $cid
+   * @param int $c
+   */
+  private function saveRelationships($contact, $cid, $c) {
+    // Process relationships
+    foreach (wf_crm_aval($contact, 'relationship', []) as $n => $params) {
+      $relationship_type_id = (array) wf_crm_aval($params, 'relationship_type_id');
+
+      // Expire un-selected relationships.
+      $field_key = "civicrm_{$c}_contact_{$n}_relationship_relationship_type_id";
+      $remove = array_keys($this->getExposedOptions($field_key, (array) $params['relationship_type_id']));
+      if (!empty($remove)) {
+        $this->expireRelationship($remove, $cid, $this->ent['contact'][$n]['id']);
+      }
+
+      // Create new relationships.
+      if (!empty($relationship_type_id)) {
+        foreach ($relationship_type_id as $params['relationship_type_id']) {
+          $this->processRelationship($params, $cid, $this->ent['contact'][$n]['id']);
+        }
+      }
+    }
+  }
+
+  /**
+   * End relationship for a pair of contacts
+   *
+   * @param $type
+   * @param $cid1
+   * @param $cid2
+   */
+  private function expireRelationship($removeTypes, $cid1, $cid2) {
+    $utils = \Drupal::service('webform_civicrm.utils');
+    foreach ($removeTypes as $type) {
+      $existing = $this->getRelationship([$type], $cid1, $cid2, TRUE);
+      if (empty($existing['id'])) {
+        continue;
+      }
+      $params = [
+        'id' => $existing['id'],
+        'end_date' => 'now',
+        'is_active' => 0,
+      ];
+      $utils->wf_civicrm_api('relationship', 'create', $params);
     }
   }
 
