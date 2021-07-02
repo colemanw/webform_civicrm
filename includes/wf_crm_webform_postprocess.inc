@@ -2456,8 +2456,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     if ($ent == 'contact' && isset($this->enabled["civicrm_{$c}_contact_1_contact_existing"])) {
       $component = $this->getComponent("civicrm_{$c}_contact_1_contact_existing");
       $existing_contact_val = $this->submissionValue($component['cid']);
-      // Fields are hidden if value is empty (no selection) or a numeric contact id
-      if (!$existing_contact_val[0] || is_numeric($existing_contact_val[0])) {
+      // Fields are hidden if there is a numeric contact id
+      if (is_numeric($existing_contact_val[0])) {
         $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
         if (in_array($type, $component['extra']['hide_fields'])) {
           // Check to see if configured to Submit disabled field value(s)
