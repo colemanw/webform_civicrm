@@ -312,6 +312,16 @@ class AdminHelp implements AdminHelpInterface {
     $this->fee();
   }
 
+  protected function relationship_relationship_type_id() {
+    return '<p>' .
+      t('Click the + button to select more than one option.') .
+      '</p><p>' .
+      t('You may set options here and/or add this element to the webform ("User Select"). Options chosen here will be applied automatically and will not appear on the form.') .
+      '</p><p>' .
+      t('If relationship types are added as "-User Select-", un-selected options from the webform will expire the existing relationship on the contact.') .
+      '</p>';
+  }
+
   protected function multiselect_options() {
     return '<p>' .
       t('Click the + button to select more than one option.') .
