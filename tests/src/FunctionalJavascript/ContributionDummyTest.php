@@ -4,7 +4,6 @@ namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Behat\Mink\Element\NodeElement;
 use Drupal\Core\Url;
-use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
 
 /**
  * Tests submitting a Webform with CiviCRM: Contribution with Line Items and Sales Tax
@@ -94,13 +93,20 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
   public function testSubmitContribution() {
     $payment_processor = $this->createPaymentProcessor();
 
-    $financialAccount = $this->setupSalesTax(2, $accountParams = []);
+    $this->setupSalesTax(2, $accountParams = []);
+    $this->cid2 = $this->createIndividual(['first_name' => 'Mark', 'last_name' => 'Cooper']);
 
     $this->drupalLogin($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
     $this->enableCivicrmOnWebform();
+
+    $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 2);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->clickLink('2. Contact 2');
+    $this->getSession()->getPage()->checkField("civicrm_2_contact_1_contact_existing");
 
     $this->configureContributionTab(FALSE, $payment_processor['id']);
     $this->getSession()->getPage()->checkField("Contribution Amount");
@@ -124,7 +130,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
 
     $this->saveCiviCRMSettings();
 
-    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->drupalGet($this->webform->toUrl('canonical',  ['query' => ['cid2' => $this->cid2['id']]]));
     $this->assertPageNoErrorMessages();
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
@@ -132,7 +138,19 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Line Item Amount', '20.00');
     $this->getSession()->getPage()->fillField('Line Item Amount 2', '29.50');
 
+    $this->assertFieldValue('edit-civicrm-2-contact-1-contact-first-name', 'Mark');
+    $this->assertFieldValue('edit-civicrm-2-contact-1-contact-last-name', 'Cooper');
+    $this->addFieldValue('civicrm_2_contact_1_contact_first_name', 'MarkUpdated');
+    $this->addFieldValue('civicrm_2_contact_1_contact_last_name', 'CooperUpdated');
     $this->getSession()->getPage()->pressButton('Next >');
+
+    $this->assertSession()->waitForField('edit-wizard-prev');
+    $this->getSession()->getPage()->pressButton('edit-wizard-prev');
+    $this->assertSession()->waitForField('edit-civicrm-2-contact-1-contact-first-name');
+    $this->assertFieldValue('edit-civicrm-2-contact-1-contact-first-name', 'MarkUpdated');
+    $this->assertFieldValue('edit-civicrm-2-contact-1-contact-last-name', 'CooperUpdated');
+    $this->getSession()->getPage()->pressButton('Next >');
+
     $this->getSession()->getPage()->fillField('Contribution Amount', '10.00');
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->htmlOutput();
@@ -222,21 +240,18 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
       'sequential' => 1,
     ]);
-
     $this->assertEquals(1, $api_result['count']);
     $contribution = reset($api_result['values']);
     $this->assertNotEmpty($contribution['trxn_id']);
     $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
     $this->assertEquals('Donation', $contribution['financial_type']);
     $this->assertEquals('1200.00', $contribution['total_amount']);
-    $contribution_total_amount = $contribution['total_amount'];
     $this->assertEquals('Completed', $contribution['contribution_status']);
     $this->assertEquals('USD', $contribution['currency']);
 
     $api_result = $this->utils->wf_civicrm_api('line_item', 'get', [
       'sequential' => 1,
     ]);
-
     $this->assertEquals('1.00', $api_result['values'][0]['qty']);
     $this->assertEquals('1200.00', $api_result['values'][0]['unit_price']);
     $this->assertEquals('1200.00', $api_result['values'][0]['line_total']);
