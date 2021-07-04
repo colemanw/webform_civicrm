@@ -12,6 +12,8 @@ var wfCivi = (function ($, D, drupalSettings) {
 
   pub.existingSelect = function (num, nid, path, toHide, hideOrDisable, showEmpty, cid, fetch, defaults) {
     var formClass = getFormClass(nid);
+    var defaults = $(formClass).data('form-defaults') || {};
+
     if (cid.charAt(0) === '-') {
       resetFields(num, nid, true, 'show', toHide, hideOrDisable, showEmpty, 500, defaults);
       // Fill name fields with name typed
@@ -149,7 +151,7 @@ var wfCivi = (function ($, D, drupalSettings) {
             $('select.civicrm-processed', this).val(setting.defaultCountry).trigger('change', 'webform_civicrm:reset');
           }
           //Set default value if it is specified in component settings.
-          else if ($el.hasClass('webform-component-date') && typeof defaults != "undefined" && defaults.hasOwnProperty(name)) {
+          else if ($el.hasClass('form-date') && typeof defaults != "undefined" && defaults.hasOwnProperty(name)) {
             var date = defaults[name].split('-');
             $el.find('select.year, input.year').val(+date[0]);
             $el.find('select.month').val(+date[1]);

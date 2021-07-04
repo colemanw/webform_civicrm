@@ -356,22 +356,4 @@ class ContactComponent implements ContactComponentInterface {
     }
   }
 
-  /**
-   * Returns a default value for a component.
-   *
-   * @param object $node
-   *
-   * @return array
-   */
-  function wf_crm_get_defaults($node) {
-    $defaults = [];
-    foreach ($node->webform['components'] as $comp) {
-      if (!empty($comp['value'])) {
-        $key = str_replace('_', '-', $comp['form_key']);
-        $defaults[$key] = $comp['type'] == 'date' ? date('Y-m-d', strtotime($comp['value'])) : $comp['value'];
-      }
-    }
-    return $defaults;
-  }
-
 }

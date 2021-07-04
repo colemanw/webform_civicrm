@@ -853,4 +853,23 @@ abstract class WebformCivicrmBase {
     return \CRM_Core_Key::get('CRM_Contribute_Controller_Contribution', TRUE);
   }
 
+  /**
+   * Returns a default value for a component.
+   *
+   * @param object $node
+   *
+   * @return array
+   */
+  function getDefaults() {
+    $defaults = [];
+    $elements = $this->node->getElementsDecodedAndFlattened();
+    foreach ($elements as $comp) {
+      if (!empty($comp['#default_value'])) {
+        $key = str_replace('_', '-', $comp['#form_key']);
+        $defaults[$key] = $comp['#type'] == 'date' ? date('Y-m-d', strtotime($comp['#default_value'])) : $comp['#default_value'];
+      }
+    }
+    return $defaults;
+  }
+
 }
