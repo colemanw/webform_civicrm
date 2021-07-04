@@ -117,9 +117,10 @@ class WebformCiviCRMSettingsForm extends FormBase {
     $handler->setConfiguration($handler_configuration);
 
     $admin_form->postProcess();
-    $webform->save();
-
-    $this->messenger()->addMessage('Saved CiviCRM settings');
+    if (empty($admin_form->confirmPage)) {
+      $webform->save();
+      $this->messenger()->addMessage('Saved CiviCRM settings');
+    }
   }
 
   /**

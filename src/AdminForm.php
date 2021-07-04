@@ -1813,6 +1813,7 @@ class AdminForm implements AdminFormInterface {
       $this->form_state->set('msg', $msg);
       $this->form_state->set('vals', $this->settings);
       $this->form_state->setRebuild(TRUE);
+      $this->confirmPage = TRUE;
       return;
     }
 
