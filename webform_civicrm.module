@@ -1075,3 +1075,21 @@ function webform_civicrm_civicrm_pre($op, $objectName, $id, &$params) {
     }
   }
 }
+
+/**
+ * Implements hook_civicrm_alterPaymentProcessorParams().
+ *
+ * Legacy handling for paypal.
+ * We use it to override the return url so that the user gets redirected to the right place from paypal.
+ *
+ * Required by (at least) 'Paypal - Website Payments Standard' and 'Redsys'
+ * 
+ */
+function webform_civicrm_civicrm_alterPaymentProcessorParams($paymentObj, $rawParams, &$cookedParams) {
+  if (!empty($rawParams['webform_redirect_cancel']) && !empty($rawParams['webform_redirect_success'])
+    && !empty($cookedParams['return']) && !empty($cookedParams['cancel_return'])
+  ) {
+    $cookedParams['return'] = $rawParams['webform_redirect_success'];
+    $cookedParams['cancel_return'] = $rawParams['webform_redirect_cancel'];
+  }
+}

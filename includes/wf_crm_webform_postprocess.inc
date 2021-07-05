@@ -1977,6 +1977,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $paymentProcessor->setCancelUrl($this->getIpnRedirectUrl('cancel'));
     }
 
+    // Required by (at least) 'Paypal - Website Payments Standard' and 'Redsys'
+    $params['webform_redirect_cancel'] = $this->getIpnRedirectUrl('cancel');
+    $params['webform_redirect_success'] = $this->getIpnRedirectUrl('success');
+
     if (method_exists($paymentProcessor, 'doTransferCheckout')) {
       //Paypal Express checkout
       if(wf_crm_aval($_POST, 'credit_card_number') == 'express'){
