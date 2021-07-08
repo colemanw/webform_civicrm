@@ -268,10 +268,14 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
 
   /**
    * Save the settings configured on the civicrm tab.
+   *
+   * @param boolean $fieldDeleted
    */
-  public function saveCiviCRMSettings() {
+  public function saveCiviCRMSettings($fieldDeleted = FALSE) {
     $this->getSession()->getPage()->pressButton('Save Settings');
-    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    if (!$fieldDeleted) {
+      $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    }
     $this->assertPageNoErrorMessages();
   }
 
@@ -356,6 +360,23 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
 
     $page->find('xpath', '//li[contains(@class, "token-input-dropdown")][1]')->click();
     $this->assertSession()->assertWaitOnAjaxRequest();
+  }
+
+  /**
+   * Asserts that a select option in the current page is checked.
+   *
+   * @param string $id
+   *   ID of select field to assert.
+   * @param string $option
+   *   Option to assert.
+   * @param string $message
+   *   (optional) A message to display with the assertion. Do not translate
+   *   messages with t(). If left blank, a default message will be displayed.
+   */
+  protected function assertOptionSelected($id, $option, $message = NULL) {
+    $option_field = $this->assertSession()->optionExists($id, $option);
+    $message = $message ?: "Option $option for field $id is selected.";
+    $this->assertTrue($option_field->hasAttribute('selected'), $message);
   }
 
   /**
