@@ -24,7 +24,7 @@ class AdminHelp implements AdminHelpInterface {
       '<li>' . t('Enable fields for one or more contacts.') . '</li>' .
       '<li>' . t('Arrange and configure those fields on the "Webform" tab.') . '</li>' .
       '<li>' . t('Click the blue help icons to learn more.') . '</li>' .
-      '<li><a href="https://docs.civicrm.org/sysadmin/en/latest/integration/drupal/webform/" target="_blank">' . t('Read the instructions.') . '</a></li>' .
+      '<li><a href="https://docs.civicrm.org/webform-civicrm/en/latest/" target="_blank">' . t('Read the instructions.') . '</a></li>' .
       '</ul>';
   }
 
