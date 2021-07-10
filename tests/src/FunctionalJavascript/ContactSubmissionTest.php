@@ -138,7 +138,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
 
     // The label has a <div> in it which can cause weird failures here.
     $this->enableCivicrmOnWebform();
-    $this->getSession()->getPage()->clickLink('Additional Options');
+    $this->getSession()->getPage()->clickLink('Additional Settings');
     $this->assertSession()->elementTextContains('css', '#edit-checksum-text', 'To have this form auto-filled for anonymous users, enable the "Existing Contact" field for Contact 1 and send the following link from CiviMail');
     $this->saveCiviCRMSettings();
 

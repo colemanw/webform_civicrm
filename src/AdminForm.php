@@ -1318,7 +1318,7 @@ class AdminForm implements AdminFormInterface {
     $this->form['additional_options'] = [
       '#type' => 'details',
       '#group' => 'webform_civicrm',
-      '#title' => t('Additional Options'),
+      '#title' => t('Additional Settings'),
       '#attributes' => ['class' => ['civi-icon-prefs']],
     ];
     $this->form['additional_options']['checksum_text'] = [

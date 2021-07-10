@@ -55,7 +55,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField("Contribution Amount");
     $this->assertSession()->checkboxChecked("Contribution Amount");
 
-    $this->getSession()->getPage()->clickLink('Additional Options');
+    $this->getSession()->getPage()->clickLink('Additional Settings');
     $this->getSession()->getPage()->checkField("Disable Contact Paging");
     $this->assertSession()->checkboxChecked("Disable Contact Paging");
 
