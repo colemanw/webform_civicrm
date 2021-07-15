@@ -88,7 +88,12 @@ class FieldOptions implements FieldOptionsInterface {
         $paymentProcessors = $utils->wf_crm_apivalues('PaymentProcessor', 'get', ['is_test' => $params['is_test'] ?? 0, 'is_active' => 1]);
         $paymentProcessors[0]['name'] = $field['exposed_empty_option'];
         foreach ($paymentProcessors as $paymentProcessorID => $paymentProcessor) {
-          $ret[$paymentProcessorID] = $paymentProcessor['title'] ?? $paymentProcessor['name'];
+          if ($context === 'config_form') {
+            $ret[$paymentProcessorID] = $paymentProcessor['name'];
+          }
+          else {
+            $ret[$paymentProcessorID] = $paymentProcessor['title'] ?? $paymentProcessor['name'];
+          }
         }
         return $ret;
       }
