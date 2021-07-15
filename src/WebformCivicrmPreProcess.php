@@ -84,6 +84,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
         $this->form['#attributes']['data-civicrm-ids'] = Json::encode($cid_data);
       }
     }
+    $this->form['#attributes']['data-form-defaults'] = Json::encode($this->getDefaults());
     // Early return if the form (or page) was already submitted
     $triggering_element = $this->form_state->getTriggeringElement();
     if ($triggering_element && $triggering_element['#id'] == 'edit-wizard-prev'

@@ -87,6 +87,10 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
         $this->getSession()->getPage()->selectFieldOption("{$c}_contact_type", 'Household');
         $this->assertSession()->assertWaitOnAjaxRequest();
       }
+      elseif ($c == 3) {
+        $this->getSession()->getPage()->checkField("edit-civicrm-{$c}-contact-1-contact-job-title");
+        $this->assertSession()->checkboxChecked("edit-civicrm-{$c}-contact-1-contact-job-title");
+      }
       $this->getSession()->getPage()->checkField("civicrm_{$c}_contact_1_contact_existing");
       $this->assertSession()->checkboxChecked("civicrm_{$c}_contact_1_contact_existing");
     }
@@ -117,7 +121,18 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
     $this->editContactElement($editContact, FALSE);
 
     $this->drupalGet($this->webform->toUrl('edit-form'));
+    // Set a default value for Job title.
+    $this->assertSession()->elementExists('css', "[data-drupal-selector='edit-webform-ui-elements-civicrm-3-contact-1-contact-job-title-operations'] a.webform-ajax-link")->click();
+    $this->assertSession()->waitForElementVisible('xpath', '//a[contains(@id, "--advanced")]');
+    $this->assertSession()->elementExists('xpath', '//a[contains(@id, "--advanced")]')->click();
+    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-default"]')->click();
 
+    $this->getSession()->getPage()->fillField('properties[default_value]', 'Accountant');
+    $this->getSession()->getPage()->pressButton('Save');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->pageTextContains('Job Title has been updated');
+
+    $this->drupalGet($this->webform->toUrl('edit-form'));
     // Edit contact element 4.
     $editContact = [
       'selector' => 'edit-webform-ui-elements-civicrm-4-contact-1-contact-existing-operations',
@@ -147,6 +162,7 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
     // Enter contact 3.
     $this->fillContactAutocomplete('token-input-edit-civicrm-3-contact-1-contact-existing', 'Maarten');
     $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertFieldValue('edit-civicrm-3-contact-1-contact-job-title', 'Accountant');
 
     // Check if related contact is loaded on c4.
     $this->htmlOutput();
