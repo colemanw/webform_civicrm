@@ -78,6 +78,9 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
     ]));
     // The label has a <div> in it which can cause weird failures here.
     $this->enableCivicrmOnWebform();
+    $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_email', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
     $this->getSession()->getPage()->selectFieldOption("number_of_contacts", 4);
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
@@ -106,6 +109,8 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
       'title' => 'Primary Contact',
       'selector' => 'edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations',
       'widget' => 'Static',
+      'description' => 'Description of the static contact element.',
+      'hide_fields' => 'Email',
     ];
     $this->editContactElement($editContact);
 
@@ -155,6 +160,9 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
 
     // Check if static title is displayed.
     $this->assertSession()->pageTextContains('Primary Contact');
+    $this->assertSession()->pageTextContains('Description of the static contact element');
+    //Make sure email field is not loaded.
+    $this->assertFalse($this->getSession()->getDriver()->isVisible($this->cssSelectToXpath('.form-type-email')));
 
     // Check if "None Found" text is present in the static element.
     $this->assertSession()->elementTextContains('css', '[id="edit-civicrm-2-contact-1-fieldset-fieldset"]', '- None Found -');
