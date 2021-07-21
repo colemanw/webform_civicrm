@@ -67,7 +67,9 @@ class CivicrmSelectOptions extends FormElement {
         ],
         'enabled' => [
           'data' => [
-            '#markup' => 'Enabled',
+              '#type' => 'checkbox',
+              '#checked' => 'checked',
+            '#title' => "<b> ENABLED </b>",
             '#access' => !$element['#civicrm_live_options'],
           ]
         ],
