@@ -85,6 +85,9 @@ var wfCivi = (function ($, D, drupalSettings) {
           });
         }
       }
+      if ($field.is('[type=hidden]') && !showHiddenContact) {
+        return;
+      }
       if (tokenInputSettings) {
         tokenInputSettings.queryParam = 'str';
         tokenInputSettings.tokenLimit = 1;

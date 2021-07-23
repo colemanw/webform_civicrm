@@ -11,6 +11,7 @@ use Drupal\webform\Entity\Webform;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\webform\Entity\WebformSubmission;
 use Drupal\node\Entity\Node;
+use Drupal\Core\Template\Attribute;
 
 /**
  * The versions of CiviCRM and WebForm. Min is >=.  Max is <. FALSE = no MAX
@@ -523,6 +524,30 @@ function _webform_civicrm_status() {
   }
 
   return $status;
+}
+
+/**
+ * Implements hook_preprocess_webform_civicrm_contact().
+ *
+ * @param array $variables
+ */
+function webform_civicrm_preprocess_webform_civicrm_contact(&$variables) {
+  $element = &$variables['element'] ?? NULL;
+
+  if (!empty($element['#description'])) {
+    $variables['description']['content'] = $element['#description'];
+    $variables['description_display'] = $element['#description_display'];
+
+    if (empty($variables['description']['attributes'])) {
+      $variables['description']['attributes'] = new Attribute();
+    }
+    $variables['description']['attributes']->addClass('description');
+  }
+
+  if (!empty($element['#_title_display']) && $element['#_title_display'] == 'inline') {
+    $variables['title_attributes'] = new Attribute();
+    $variables['title_attributes']->addClass('webform-element--title-inline');
+  }
 }
 
 /**

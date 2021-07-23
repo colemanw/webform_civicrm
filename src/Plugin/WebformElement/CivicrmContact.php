@@ -100,8 +100,13 @@ class CivicrmContact extends WebformElementBase {
       'hiddenFields' => [],
     ];
     $element['#type'] = $element['#widget'] === 'autocomplete' ? 'textfield' : $element['#widget'];
+    $element['#attributes']['data-hide-fields'] = implode(', ', $this->getElementProperty($element, 'hide_fields'));
+    $element['#attributes']['data-hide-method'] = $this->getElementProperty($element, 'hide_method');
+    $element['#attributes']['data-no-hide-blank'] = (int) $this->getElementProperty($element, 'no_hide_blank');
     $cid = $this->getElementProperty($element, 'default_value');
     list(, $c, ) = explode('_', $element['#form_key'], 3);
+    $element['#attributes']['data-civicrm-contact'] = $c;
+    $element['#attributes']['data-form-id'] = $webform_submission ? $webform_submission->getWebform()->id() : NULL;
     if ($element['#type'] === 'hidden') {
       // User may not change this value for hidden fields
       $element['#value'] = $cid;
@@ -114,11 +119,8 @@ class CivicrmContact extends WebformElementBase {
       $element['#options'] = [];
       $element['#attributes']['data-is-select'] = 1;
     }
-    $element['#attributes']['data-civicrm-contact'] = $c;
-    $element['#attributes']['data-form-id'] = $webform_submission ? $webform_submission->getWebform()->id() : NULL;
-    $element['#attributes']['data-hide-fields'] = implode(', ', $this->getElementProperty($element, 'hide_fields'));
-    $element['#attributes']['data-hide-method'] = $this->getElementProperty($element, 'hide_method');
-    $element['#attributes']['data-no-hide-blank'] = (int) $this->getElementProperty($element, 'no_hide_blank');
+    $element['#attributes']['data-search-prompt'] = $this->getElementProperty($element, 'search_prompt') ?? '- Choose existing -';
+    $element['#attributes']['data-none-prompt'] = $this->getElementProperty($element, 'none_prompt') ?? '+ Create new +';
     if (!empty($cid)) {
       $webform = $webform_submission->getWebform();
       $contactComponent = \Drupal::service('webform_civicrm.contact_component');
