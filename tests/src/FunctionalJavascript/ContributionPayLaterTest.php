@@ -98,6 +98,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '30.00');
     $this->getSession()->getPage()->fillField('Donation Custom Field', 'Donation for xyz');
+    $this->createScreenshot($this->htmlOutputDirectory . '/donation.png');
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertPageNoErrorMessages();
