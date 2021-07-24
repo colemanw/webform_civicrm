@@ -98,7 +98,6 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '30.00');
     $this->getSession()->getPage()->fillField('Donation Custom Field', 'Donation for xyz');
-    $this->createScreenshot($this->htmlOutputDirectory . '/donation.png');
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertPageNoErrorMessages();
@@ -152,17 +151,16 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
    * Check submission results.
    */
   private function verifyResult() {
-    $cfName = "custom_{$this->_customFields['Donation']['id']}";
-    $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
-      'return' => ["contribution_source", $cfName, "total_amount", "contribution_status_id", "currency", "id"],
-      'sequential' => 1,
-    ]);
+    $cfName = $this->_customGroup['Donation']['name'] . '.' . $this->_customFields['Donation']['name'];
+    $contribution = \Civi\Api4\Contribution::get()
+      ->addSelect('source', 'total_amount', 'contribution_status_id:label', 'currency', $cfName)
+      ->setLimit(1)
+      ->execute()
+      ->first();
 
-    $this->assertEquals(1, $api_result['count']);
-    $contribution = reset($api_result['values']);
-    $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
+    $this->assertEquals($this->webform->label(), $contribution['source']);
     $this->assertEquals('30.00', $contribution['total_amount']);
-    $this->assertEquals('Pending', $contribution['contribution_status']);
+    $this->assertEquals('Pending', $contribution['contribution_status_id:label']);
     $this->assertEquals('USD', $contribution['currency']);
     // Check if financial custom field value is pushed to civi.
     $this->assertEquals('Donation for xyz', $contribution[$cfName]);
