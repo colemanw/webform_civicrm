@@ -2673,7 +2673,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $data = $webform_submission->getData();
 
     if (!isset($data[$fid])) {
-      return NULL;
+      return [NULL];
     }
 
     // Expects an array.
