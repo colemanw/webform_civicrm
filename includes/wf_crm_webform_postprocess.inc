@@ -1967,8 +1967,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $contact = wf_civicrm_api('contact', 'getsingle', ['id' => $this->ent['contact'][1]['id']]);
     $params += $contact;
     $params['contributionID'] = $params['id'] = $this->ent['contribution'][1]['id'];
-    // Generate a fake qfKey in case payment processor redirects to contribution thank-you page
-    $params['qfKey'] = $this->getQfKey();
 
     $params['contactID'] = $params['contact_id'];
     $params['currency'] = $params['currencyID'] = $this->contribution_page['currency'];
