@@ -66,6 +66,56 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
 
+    // Add Radio options for empty submission.
+    $result = civicrm_api3('OptionGroup', 'create', [
+      'name' => "test_radio_2",
+      'title' => "Test Radio 2",
+      'data_type' => "String",
+      'is_active' => 1,
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+
+    $result = civicrm_api3('OptionValue', 'create', [
+      'option_group_id' => "test_radio_2",
+      'name' => "radiooptionone",
+      'label' => "Radio Option One",
+      'value' => 1,
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+
+    $result = civicrm_api3('OptionValue', 'create', [
+      'option_group_id' => "test_radio_2",
+      'name' => "radiooptiontwo",
+      'label' => "Radio Option Two",
+      'value' => 2,
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+
+    $result = civicrm_api3('OptionValue', 'create', [
+      'option_group_id' => "test_radio_2",
+      'name' => "radiooptionthree",
+      'label' => "Radio Option Three",
+      'value' => 3,
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+
+    $result = civicrm_api3('CustomField', 'create', [
+      'custom_group_id' => "Custom",
+      'label' => "Custom Radio Field test for empty submission",
+      'name' => 'test_radio_2',
+      'html_type' => "Radio",
+      'data_type' => "String",
+      'option_group_id' => "test_radio_2",
+      'is_active' => 1,
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+    $this->_customFields['test_radio_2'] = $result['id'];
+
     $result = civicrm_api3('OptionGroup', 'create', [
       'name' => "checkboxes_1",
       'title' => "Checkboxes",
