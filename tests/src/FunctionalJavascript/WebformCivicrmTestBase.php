@@ -295,6 +295,19 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
    * Edit contact element on the build form.
    *
    * @param array $params
+   *   Example Usage -
+   *    $params = [
+   *     'selector' => 'edit-webform-ui-elements-civicrm-4-contact-1-contact-existing-operations',
+   *     'widget' => 'Static',
+   *     'default' => 'relationship',
+   *     'filter' => [
+   *        'group' => group_id,
+   *      ],
+   *     'default_relationship' => [
+   *       'default_relationship_to' => 'Contact 3',
+   *       'default_relationship' => 'Child of Contact 3',
+   *     ],
+   *   ];
    */
   protected function editContactElement($params, $openWidget = TRUE) {
     $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector=\"{$params['selector']}\"] a.webform-ajax-link");
@@ -310,15 +323,17 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       $this->getSession()->getPage()->fillField('title', $params['title']);
     }
 
-    $this->assertSession()->waitForField('properties[widget]');
-    $this->getSession()->getPage()->selectFieldOption('Form Widget', $params['widget']);
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    if ($params['widget'] == 'Autocomplete') {
-      $this->assertSession()->waitForElementVisible('css', '[data-drupal-selector="edit-properties-search-prompt"]');
-      $this->getSession()->getPage()->fillField('Search Prompt', '- Select Contact -');
-    }
-    elseif ($params['widget'] == 'Static') {
+    $this->assertSession()->waitForElementVisible('xpath', '//select[@name="properties[widget]"]');
+    if ($params['widget'] == 'Static') {
       $this->getSession()->getPage()->selectFieldOption('properties[show_hidden_contact]', 1);
+    }
+    else {
+      $this->getSession()->getPage()->selectFieldOption('Form Widget', $params['widget']);
+      $this->assertSession()->assertWaitOnAjaxRequest();
+      if ($params['widget'] == 'Autocomplete') {
+        $this->assertSession()->waitForElementVisible('css', '[data-drupal-selector="edit-properties-search-prompt"]');
+        $this->getSession()->getPage()->fillField('Search Prompt', '- Select Contact -');
+      }
     }
     $this->htmlOutput();
 
@@ -331,6 +346,14 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
         $this->getSession()->getPage()->selectFieldOption('properties[default_relationship_to]', $params['default_relationship']['default_relationship_to']);
         $this->assertSession()->assertWaitOnAjaxRequest();
         $this->getSession()->getPage()->selectFieldOption('properties[default_relationship][]', $params['default_relationship']['default_relationship']);
+      }
+    }
+
+    // Apply contact filter.
+    if (!empty($params['filter'])) {
+      if (!empty($params['filter']['group'])) {
+        $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-filters"]')->click();
+        $this->getSession()->getPage()->selectFieldOption('Groups', $params['filter']['group']);
       }
     }
 
