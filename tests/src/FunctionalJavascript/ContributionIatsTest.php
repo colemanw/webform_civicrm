@@ -161,6 +161,8 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->assertSession()->waitForElementVisible('css', '.webform-confirmation');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
     $this->assertPageNoErrorMessages();
+
+    // ToDo: load the Contribution and check the values
   }
 
   /**
