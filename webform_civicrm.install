@@ -44,102 +44,102 @@ function webform_civicrm_requirements($phase) {
  * Implements hook_schema().
  */
 function webform_civicrm_schema() {
-  $schema = array();
-  $schema['webform_civicrm_forms'] = array(
+  $schema = [];
+  $schema['webform_civicrm_forms'] = [
     'description' => 'CiviCRM settings for individual Webform nodes.',
-    'fields' => array(
-      'nid' => array(
+    'fields' => [
+      'nid' => [
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
         'description' => 'Webform Node ID',
-      ),
-      'data' => array(
+      ],
+      'data' => [
         'type' => 'text',
         'serialize' => TRUE,
         'description' => 'Array of entity data for this webform',
-      ),
-      'prefix_known' => array(
+      ],
+      'prefix_known' => [
         'description' => 'Form prefix for known users.',
         'type' => 'text',
         'not null' => TRUE,
-      ),
-      'prefix_unknown' => array(
+      ],
+      'prefix_unknown' => [
         'description' => 'Form prefix for unknown users.',
         'type' => 'text',
         'not null' => TRUE,
-      ),
-      'message' => array(
+      ],
+      'message' => [
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
         'default' => '',
         'description' => 'Message to show to known users',
-      ),
-      'confirm_subscription' => array(
+      ],
+      'confirm_subscription' => [
         'description' => 'Send confirmation for mailing list subscriptions.',
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
         'default' => 0,
-      ),
-      'block_unknown_users' => array(
+      ],
+      'block_unknown_users' => [
         'description' => 'Only allow known contacts to use form.',
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
         'default' => 0,
-      ),
-      'create_new_relationship' => array(
+      ],
+      'create_new_relationship' => [
         'description' => 'Create new relationship if duplicate record exists and is expired or inactive.',
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
         'default' => 0,
-      ),
-      'create_fieldsets' => array(
+      ],
+      'create_fieldsets' => [
         'description' => 'Add fieldsets around contacts.',
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
         'default' => 0,
-      ),
-      'new_contact_source' => array(
+      ],
+      'new_contact_source' => [
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
         'default' => '',
         'description' => 'Source label for newly created contacts',
-      ),
-    ),
-    'primary key' => array('nid'),
-  );
-  $schema['webform_civicrm_submissions'] = array(
+      ],
+    ],
+    'primary key' => ['nid'],
+  ];
+  $schema['webform_civicrm_submissions'] = [
     'description' => 'Link between form submissions and CiviCRM data.',
-    'fields' => array(
-      'sid' => array(
+    'fields' => [
+      'sid' => [
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
         'description' => 'Webform Submission ID',
-      ),
-      'contact_id' => array(
+      ],
+      'contact_id' => [
         'type' => 'varchar',
         'length' => 2000,
         'not null' => TRUE,
         'default' => '',
         'description' => 'CiviCRM contact ids from this submission',
-      ),
-      'civicrm_data' => array(
+      ],
+      'civicrm_data' => [
         'type' => 'text',
         'serialize' => TRUE,
         'description' => 'Array of entity ids for this submission',
-      ),
-    ),
-    'primary key' => array('sid'),
-  );
+      ],
+    ],
+    'primary key' => ['sid'],
+  ];
   return $schema;
 }
 
