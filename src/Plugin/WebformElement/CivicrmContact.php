@@ -9,6 +9,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\webform\Plugin\WebformElementBase;
 use Drupal\webform\WebformInterface;
 use Drupal\webform\WebformSubmissionInterface;
+use Drupal\Core\Url;
 
 /**
  * Provides a 'textfield' element.
@@ -559,6 +560,32 @@ class CivicrmContact extends WebformElementBase {
         $element['#empty_option'] = Xss::filter($element[$element['#options'] ? '#search_prompt' : '#none_prompt']);
       }
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function formatHtmlItem(array $element, WebformSubmissionInterface $webform_submission, array $options = []) {
+    $value = parent::formatHtmlItem($element, $webform_submission, $options);
+    $format = $this->getItemFormat($element);
+    $cid = $value['#plain_text'] ?? NULL;
+
+    if ($format === 'raw' || empty($cid) || !is_numeric($cid)) {
+      return $value;
+    }
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $contact = $utils->wf_crm_apivalues('contact', 'get', ['id' => $cid], 'display_name');
+    if (!empty($contact[$cid])) {
+      if (empty($options['email']) && \Drupal::currentUser()->hasPermission('access CiviCRM')) {
+        unset($value['#plain_text']);
+        $cidURL = Url::fromUri('internal:/civicrm/contact/view', ['query' => ['reset' => 1, 'cid' => $cid]])->toString();
+        $value['#markup'] = t('<a href=":link">@name</a>', [':link' => $cidURL, '@name' => $contact[$cid]]);
+      }
+      else {
+        $value['#plain_text'] = $contact[$cid];
+      }
+    }
+    return $value;
   }
 
 }
