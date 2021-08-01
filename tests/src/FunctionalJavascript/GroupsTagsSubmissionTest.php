@@ -116,6 +116,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     // Ensure option labels are present on result page.
     $this->drupalGet($this->webform->toUrl('results-submissions'));
     $this->htmlOutput();
+    $this->assertSession()->pageTextContains('Frederick Pabst');
     $this->assertSession()->pageTextContains('Major Donor');
     $this->assertSession()->pageTextContains('Volunteer');
     $this->assertSession()->pageTextContains('GroupB');
