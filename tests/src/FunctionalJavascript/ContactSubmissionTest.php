@@ -67,25 +67,16 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->enableCivicrmOnWebform();
     $this->saveCiviCRMSettings();
 
-    // Edit contact element and enable select widget.
     $this->drupalGet($this->webform->toUrl('edit-form'));
-    $contactElementEdit = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations"] a.webform-ajax-link');
-    $contactElementEdit->click();
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->htmlOutput();
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
-
-    $this->assertSession()->waitForField('properties[widget]');
-    $this->getSession()->getPage()->selectFieldOption('Form Widget', 'Select List');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-
-    // Filter on group.
-    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-filters"]')->click();
-    $this->getSession()->getPage()->selectFieldOption('Groups', $this->group['id']);
-    $this->getSession()->getPage()->pressButton('Save');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertSession()->pageTextContains('Existing Contact has been updated');
+    // Edit contact element and enable select widget.
+    $editContact = [
+      'selector' => 'edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations',
+      'widget' => 'Select List',
+      'filter' => [
+        'group' => $this->group['id'],
+      ],
+    ];
+    $this->editContactElement($editContact);
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
