@@ -12,8 +12,11 @@ use Drupal\webform\Entity\Webform;
  */
 final class ContributionPayLaterTest extends WebformCivicrmTestBase {
 
-
   public function testSubmitContribution() {
+    $this->createFinancialCustomGroup();
+    $this->createFinancialCustomGroup('Donation');
+    $this->createFinancialCustomGroup('Member Dues');
+
     $this->drupalLogin($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
@@ -28,6 +31,16 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
 
     $this->configureContributionTab(TRUE, 'Pay Later');
     $this->getSession()->getPage()->checkField('Contribution Amount');
+
+    // Change financial type to Member Dues and confirm if its custom field is loaded.
+    $this->getSession()->getPage()->selectFieldOption('Financial Type', 'Member Dues');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->verifyFTCustomSet('Member Dues');
+
+    $this->getSession()->getPage()->selectFieldOption('Financial Type', 'Donation');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->verifyFTCustomSet('Donation');
+    $this->getSession()->getPage()->checkField($this->_customFields['Donation']['label']);
 
     $this->saveCiviCRMSettings();
     $this->drupalGet($this->webform->toUrl('edit-form'));
@@ -84,23 +97,73 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->htmlOutput();
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '30.00');
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->getSession()->getPage()->fillField('Donation Custom Field', 'Donation for xyz');
 
+    $this->getSession()->getPage()->pressButton('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
   }
 
-  private function verifyResult() {
-    $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
-      'sequential' => 1,
-    ]);
+  /**
+   * Create custom sets for financial type.
+   *
+   * @param string $ftName
+   */
+  public function createFinancialCustomGroup($ftName = NULL) {
+    $params = [
+      'title' => "{$ftName} Custom Group",
+      'extends' => "Contribution",
+    ];
+    if ($ftName) {
+      $ftId = civicrm_api3('FinancialType', 'get', [
+        'return' => ["id"],
+        'name' => $ftName,
+      ])['id'];
+      $params['extends_entity_column_value'] = $ftId;
+    }
+    $key = $ftName ?? 'all';
+    $this->_customGroup[$key] = reset($this->createCustomGroup($params)['values']);
 
-    $this->assertEquals(1, $api_result['count']);
-    $contribution = reset($api_result['values']);
-    $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
+    // Add custom field.
+    $params = [
+      'custom_group_id' => $this->_customGroup[$key]['id'],
+      'label' => "{$ftName} Custom Field",
+      'data_type' => 'String',
+      'html_type' => 'Text',
+    ];
+    $cf = $this->utils->wf_civicrm_api('CustomField', 'create', $params);
+    $this->assertEquals(0, $cf['is_error']);
+    $this->assertEquals(1, $cf['count']);
+    $this->_customFields[$key] = reset($cf['values']);
+  }
+
+  /**
+   * Confirm custom sets are loaded as per financial type.
+   *
+   * @param string $ftName
+   */
+  public function verifyFTCustomSet($ftName) {
+    $this->assertSession()->elementTextContains('css', '[id="civicrm-ajax-contribution-sets-custom"]', $this->_customGroup[$ftName]['title']);
+    $this->assertSession()->elementTextContains('css', '[id="civicrm-ajax-contribution-sets-custom"]', $this->_customGroup['all']['title']);
+  }
+
+  /**
+   * Check submission results.
+   */
+  private function verifyResult() {
+    $cfName = $this->_customGroup['Donation']['name'] . '.' . $this->_customFields['Donation']['name'];
+    $contribution = \Civi\Api4\Contribution::get()
+      ->addSelect('source', 'total_amount', 'contribution_status_id:label', 'currency', $cfName)
+      ->setLimit(1)
+      ->execute()
+      ->first();
+
+    $this->assertEquals($this->webform->label(), $contribution['source']);
     $this->assertEquals('30.00', $contribution['total_amount']);
-    $this->assertEquals('Pending', $contribution['contribution_status']);
+    $this->assertEquals('Pending', $contribution['contribution_status_id:label']);
     $this->assertEquals('USD', $contribution['currency']);
+    // Check if financial custom field value is pushed to civi.
+    $this->assertEquals('Donation for xyz', $contribution[$cfName]);
     $this->utils->wf_civicrm_api('contribution', 'delete', [
       'id' => $contribution['id'],
     ]);

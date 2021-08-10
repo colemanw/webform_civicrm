@@ -43,12 +43,35 @@ final class SaveSettingsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('Activity Type', 'Meeting');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
-    $this->saveCiviCRMSettings();
+    $this->saveCiviCRMSettings(TRUE);
     $this->assertSession()->waitForField('edit-delete');
 
     $this->assertSession()->pageTextContains('These existing fields are no longer needed for CiviCRM processing based on your new form settings');
     $this->assertSession()->pageTextContains('Contact 1 Activity 1: Activity Type');
+    $this->assertSession()->pageTextNotContains('Saved CiviCRM settings');
+
+    // Cancel this action.
+    $this->getSession()->getPage()->pressButton('edit-cancel');
     $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->waitForField('nid');
+    $this->htmlOutput();
+
+    // Ensure the action was cancelled and activity type is still - User Select -
+    $this->assertSession()->pageTextContains('Cancelled');
+    $this->assertOptionSelected('edit-civicrm-1-activity-1-activity-activity-type-id', '- User Select -');
+    $this->assertOptionSelected('number_of_contacts', 1);
+
+    // Repeat the step and delete activity type element from the page.
+    $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 2);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+
+    $this->getSession()->getPage()->clickLink('Activities');
+    $this->getSession()->getPage()->selectFieldOption('Activity Type', 'Meeting');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $this->saveCiviCRMSettings(TRUE);
+    $this->assertSession()->waitForField('edit-delete');
 
     $this->getSession()->getPage()->pressButton('edit-delete');
     $this->assertSession()->assertWaitOnAjaxRequest();

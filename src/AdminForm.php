@@ -1074,20 +1074,37 @@ class AdminForm implements AdminFormInterface {
     }
     // Make sure webform is set-up to prevent credit card abuse.
     $this->checkSubmissionLimit();
+    $financialType = wf_crm_aval($this->data, 'contribution:1:contribution:1:financial_type_id');
     // Add contribution fields
     foreach ($this->sets as $sid => $set) {
-      if ($set['entity_type'] == 'contribution' && (empty($set['sub_types']))) {
-        $this->form['contribution']['sets'][$sid] = [
-          '#type' => 'fieldset',
-          '#title' => $set['label'],
-          '#attributes' => ['id' => $sid, 'class' => ['web-civi-checkbox-set']],
-          'js_select' => $this->addToggle($sid),
-        ];
-        $this->addDynamicCustomSetting($this->form['contribution']['sets'][$sid], $sid, 'contribution', 1);
+      if ($set['entity_type'] == 'contribution' && (empty($set['sub_types']) || in_array($financialType, $set['sub_types']) )) {
+        //Build custom fields as per financial type selected.
+        if (strpos($sid, 'cg') === 0) {
+          $this->form['contribution']['sets']['custom'][$sid] = [
+            '#type' => 'fieldset',
+            '#title' => $set['label'],
+            '#attributes' => ['id' => $sid, 'class' => ['web-civi-checkbox-set']],
+            'js_select' => $this->addToggle($sid),
+          ];
+          $this->addDynamicCustomSetting($this->form['contribution']['sets']['custom'][$sid], $sid, 'contribution', 1);
+        }
+        else {
+          $this->form['contribution']['sets'][$sid] = [
+            '#type' => 'fieldset',
+            '#title' => $set['label'],
+            '#attributes' => ['id' => $sid, 'class' => ['web-civi-checkbox-set']],
+            'js_select' => $this->addToggle($sid),
+          ];
+        }
         if (isset($set['fields'])) {
           foreach ($set['fields'] as $fid => $field) {
             $fid = "civicrm_1_contribution_1_$fid";
-            $this->form['contribution']['sets'][$sid][$fid] = $this->addItem($fid, $field);
+            if (strpos($sid, 'cg') === 0) {
+              $this->form['contribution']['sets']['custom'][$sid][$fid] = $this->addItem($fid, $field);
+            }
+            else {
+              $this->form['contribution']['sets'][$sid][$fid] = $this->addItem($fid, $field);
+            }
           }
         }
       }
@@ -1099,10 +1116,11 @@ class AdminForm implements AdminFormInterface {
     $this->form['contribution']['sets']['contribution']['civicrm_1_contribution_1_contribution_financial_type_id'] = [
       '#type' => 'select',
       '#title' => t('Financial Type'),
-      '#default_value' => wf_crm_aval($this->data, 'contribution:1:contribution:1:financial_type_id'),
+      '#default_value' => $financialType,
       '#options' => $ft_options,
       '#required' => TRUE,
     ];
+    $this->addAjaxItem("contribution:sets:contribution", "civicrm_1_contribution_1_contribution_financial_type_id", "..:custom");
 
     //Add Currency.
     $this->form['contribution']['sets']['contribution']['contribution_1_settings_currency'] = [
@@ -1126,6 +1144,10 @@ class AdminForm implements AdminFormInterface {
     ];
     $this->addAjaxItem("contribution:sets", "billing_1_number_of_billing", "billing");
 
+    //Move custom key after billing section.
+    $customFields = $this->form['contribution']['sets']['custom'];
+    unset($this->form['contribution']['sets']['custom']);
+    $this->form['contribution']['sets']['custom'] = $customFields;
     if ($n) {
       // Add contribution fields
       foreach ($this->sets as $sid => $set) {
@@ -1813,6 +1835,7 @@ class AdminForm implements AdminFormInterface {
       $this->form_state->set('msg', $msg);
       $this->form_state->set('vals', $this->settings);
       $this->form_state->setRebuild(TRUE);
+      $this->confirmPage = TRUE;
       return;
     }
 
