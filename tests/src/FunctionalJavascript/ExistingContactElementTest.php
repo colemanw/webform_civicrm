@@ -3,6 +3,7 @@
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Drupal\Core\Url;
+use Drupal\Core\Test\AssertMailTrait;
 
 /**
  * Tests submitting a Webform with CiviCRM: existing contact element.
@@ -10,6 +11,8 @@ use Drupal\Core\Url;
  * @group webform_civicrm
  */
 final class ExistingContactElementTest extends WebformCivicrmTestBase {
+
+  use AssertMailTrait;
 
   private function addcontactinfo() {
     $currentUserUF = $this->getUFMatchRecord($this->rootUser->id());
@@ -167,6 +170,78 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
     // Check if related contact is loaded on c4.
     $this->htmlOutput();
     $this->assertSession()->elementTextContains('css', '[id="edit-civicrm-4-contact-1-fieldset-fieldset"]', 'Fred Pinto');
+  }
+
+  /**
+   * Test Tokens in Email.
+   */
+  public function testTokensInEmail() {
+    //Create 2 meeting activities for the contact.
+    $actID1 = $this->utils->wf_civicrm_api('Activity', 'create', [
+      'source_contact_id' => $this->rootUserCid,
+      'activity_type_id' => "Meeting",
+      'target_id' => $this->rootUserCid,
+    ])['id'];
+    $actID2 = $this->utils->wf_civicrm_api('Activity', 'create', [
+      'source_contact_id' => $this->rootUserCid,
+      'activity_type_id' => "Meeting",
+      'target_id' => $this->rootUserCid,
+    ])['id'];
+
+    $this->drupalLogin($this->rootUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+
+    // Enable Email address
+    $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_email', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->checkboxChecked("civicrm_1_contact_1_email_email");
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contact_1_email_location_type_id', 'Main');
+
+    $this->getSession()->getPage()->clickLink('Activities');
+    $this->getSession()->getPage()->selectFieldOption('activity_number_of_activity', 2);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+
+    $this->saveCiviCRMSettings();
+
+    $email = [
+      'to_mail' => '[webform_submission:values:civicrm_1_contact_1_email_email:raw]',
+      'body' => 'Existing Contact - [webform_submission:values:civicrm_1_contact_1_contact_existing]. Activity 1 ID - [webform_submission:activity-id:1]. Activity 2 ID - [webform_submission:activity-id:2]. Webform CiviCRM Contacts IDs - [webform_submission:contact-id:1]. Webform CiviCRM Contacts Links - [webform_submission:contact-link:1].',
+    ];
+    $this->addEmailHandler($email);
+    $this->drupalGet($this->webform->toUrl('handlers'));
+    $civicrm_handler = $this->assertSession()->elementExists('css', '[data-webform-key="webform_civicrm"] a.tabledrag-handle');
+    // Move up to be the top-most handler.
+    $this->sendKeyPress($civicrm_handler, 38);
+    $this->getSession()->getPage()->pressButton('Save handlers');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['activity1' => $actID1, 'activity2' => $actID2]]));
+    $this->getSession()->getPage()->fillField('First Name', 'Frederick');
+    $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
+    $this->getSession()->getPage()->fillField('Email', 'frederick@pabst.io');
+
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+    $sent_email = $this->getMails();
+
+    $cidURL = Url::fromUri('internal:/civicrm/contact/view', [
+      'absolute' => TRUE,
+      'query' => ['reset' => 1, 'cid' => $this->rootUserCid]
+    ])->toString();
+    // Check if email was sent to contact 1.
+    $this->assertStringContainsString('frederick@pabst.io', $sent_email[0]['to']);
+
+    // Verify tokens are rendered correctly.
+    $this->assertStringContainsString('Existing Contact - Frederick Pabst.', $sent_email[0]['body']);
+    $this->assertStringContainsString("Activity 1 ID - {$actID1}", $sent_email[0]['body']);
+    $this->assertStringContainsString("Activity 2 ID - {$actID2}", $sent_email[0]['body']);
+    $this->assertStringContainsString("Webform CiviCRM Contacts IDs - {$this->rootUserCid}", $sent_email[0]['body']);
+    $this->assertStringContainsString($cidURL, $sent_email[0]['body']);
   }
 
 }
