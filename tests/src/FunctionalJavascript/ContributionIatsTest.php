@@ -161,6 +161,22 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->assertSession()->waitForElementVisible('css', '.webform-confirmation');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
     $this->assertPageNoErrorMessages();
+
+    // ToDo: load the Contribution and check the values
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $api_result = $utils->wf_civicrm_api('contribution', 'get', [
+      'sequential' => 1,
+    ]);
+
+    $this->assertEquals(1, $api_result['count']);
+    $contribution = reset($api_result['values']);
+    $this->assertNotEmpty($contribution['trxn_id']);
+    $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
+    $this->assertEquals('Donation', $contribution['financial_type']);
+    $this->assertEquals('10.00', $contribution['total_amount']);
+    $contribution_total_amount = $contribution['total_amount'];
+    $this->assertEquals('Completed', $contribution['contribution_status']);
+    $this->assertEquals('USD', $contribution['currency']);
   }
 
   /**
