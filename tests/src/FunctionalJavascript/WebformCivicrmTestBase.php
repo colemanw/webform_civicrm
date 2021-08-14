@@ -318,9 +318,16 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     if ($openWidget) {
       $this->assertSession()->waitForElementVisible('css', '[data-drupal-selector="edit-form"]');
       $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
+      $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-field-handling"]')->click();
     }
     if (!empty($params['title'])) {
       $this->getSession()->getPage()->fillField('title', $params['title']);
+    }
+    if (!empty($params['description'])) {
+      $this->fillCKEditor('properties[description][value]', $params['description']);
+    }
+    if (!empty($params['hide_fields'])) {
+      $this->getSession()->getPage()->selectFieldOption('properties[hide_fields][]', $params['hide_fields']);
     }
 
     $this->assertSession()->waitForElementVisible('xpath', '//select[@name="properties[widget]"]');
