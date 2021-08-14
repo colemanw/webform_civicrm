@@ -56,6 +56,10 @@ if (typeof jQuery.fn.prop !== 'function') {
         }
       }).change();
 
+     //Currently we are looking at using #tableSelect thus, we are commenting out 'select-all-civi-options' code for now
+     //until we are certain that we can remove it.
+      
+      /**
       $('input.select-all-civi-options').once('wf-civi').change(function() {
         if ($(this).is(':checked') ) {
           $('input.civicrm-enabled, input.select-all-civi-options').prop('checked', true);
@@ -64,7 +68,8 @@ if (typeof jQuery.fn.prop !== 'function') {
           $('input.civicrm-enabled, input.select-all-civi-options, input.select-all-civi-defaults').prop('checked', false);
         }
         $('input.civicrm-enabled').change();
-      });
+      }); 
+      */
 
       var defaultName = 'civicrm_options_fieldset[civicrm_defaults]';
 
