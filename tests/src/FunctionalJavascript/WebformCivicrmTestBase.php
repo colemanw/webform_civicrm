@@ -394,24 +394,6 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   }
 
   /**
-   * Fill CKEditor field.
-   *
-   * @param string $locator
-   * @param string $value
-   */
-  public function fillCKEditor($locator, $value) {
-    $el = $this->getSession()->getPage()->findField($locator);
-    if (empty($el)) {
-      throw new ExpectationException('Could not find WYSIWYG with locator: ' . $locator, $this->getSession());
-    }
-    $fieldId = $el->getAttribute('id');
-    if (empty($fieldId)) {
-      throw new Exception('Could not find an id for field with locator: ' . $locator);
-    }
-    $this->getSession()->executeScript("CKEDITOR.instances[\"$fieldId\"].setData(\"$value\");");
-  }
-
-  /**
    * Asserts that a select option in the current page is checked.
    *
    * @param string $id
