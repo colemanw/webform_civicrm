@@ -39,7 +39,7 @@ class CivicrmSelectOptions extends FormElement {
       // return static::convertOptionsToValues($options, $element['#options_description']);
     }
     elseif (is_array($input) && isset($input['options'])) {
-       return $input['options'];
+      return $input['options'];
     }
     else {
       return $element['#default_value'];
@@ -60,16 +60,14 @@ class CivicrmSelectOptions extends FormElement {
 
     $element['options'] = [
       '#type' => 'table',
-      '#tableselect' => FALSE,
+      '#tableselect' => TRUE,
       '#header' => [
         'item' => [
           'data' => ['#markup' => 'Item',]
         ],
         'enabled' => [
           'data' => [
-              '#type' => 'checkbox',
-              '#checked' => 'checked',
-            '#title' => "<b> ENABLED </b>",
+            '#markup' => 'Enabled',
             '#access' => !$element['#civicrm_live_options'],
           ]
         ],
