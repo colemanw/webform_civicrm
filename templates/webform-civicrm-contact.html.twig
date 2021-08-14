@@ -6,14 +6,25 @@
  * Available variables:
  * - attributes: A list of HTML attributes for the input element.
  * - children: Optional additional rendered elements.
+ * - description.
+ * - description_display.
+ * - title.
+ * - title_display.
  *
  * @see template_preprocess_input()
  *
  * @ingroup themeable
  */
 #}
+<div{{ title_attributes }}>
 {% if attributes['type'] == 'hidden' and attributes['title'] %}
-  <b>{{ attributes['title'] }}</b>
+  <label><b>{{ attributes['title'] }}</b></label>
+{% endif %}
+
+{% if description_display == 'before' and description.content %}
+  <div{{ description.attributes }}>
+    {{ description.content }}
+  </div>
 {% endif %}
 
 {# Static contact widget with no contact id loaded on the webform. #}
@@ -29,3 +40,11 @@
 {% else %}
   <input{{ attributes }} />{{ children }}
 {% endif %}
+
+{% if description_display == 'after' and description.content %}
+  <div{{ description.attributes }}>
+    {{ description.content }}
+  </div>
+{% endif %}
+
+</div>
