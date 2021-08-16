@@ -940,7 +940,7 @@ function webform_civicrm_civicrm_pre($op, $objectName, $id, &$params) {
       // run only if this field already exist in db to make sure we donot run it for create op
       if ($result['count'] == 1) {
         $admin_form = \Drupal::service('webform_civicrm.admin_form');
-        $previousStatus = $result['values'][0]['is_active'];
+        $previousStatus = $result['values'][0]['is_active'] ?? 0;
         $customGroupId = $result['values'][0]['custom_group_id'];
         if ($statusToSet == FALSE && $previousStatus == TRUE) {
           $opName = 'disable';

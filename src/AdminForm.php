@@ -2522,8 +2522,9 @@ class AdminForm implements AdminFormInterface {
             $new['form_key'] = "civicrm_{$c}_{$ent}_1_$field_name";
             if ($op === 'enable') {
               $new['title'] = $fieldConfigs['label'];
-              $new['required'] = $fieldConfigs['is_required'];
-              $new['value'] = implode(',', $utils->wf_crm_explode_multivalue_str($fieldConfigs['default_value']));
+              $new['required'] = $fieldConfigs['is_required'] ?? FALSE;
+              $defaultValue = $fieldConfigs['default_value'] ?? NULL;
+              $new['value'] = implode(',', $utils->wf_crm_explode_multivalue_str($defaultValue));
               $new['data_type'] = $fieldConfigs['data_type'];
 
               $custom_types = $utils->wf_crm_custom_types_map_array();
