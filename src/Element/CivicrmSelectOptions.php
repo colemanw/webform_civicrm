@@ -101,6 +101,7 @@ class CivicrmSelectOptions extends FormElement {
 
     if ($element['#civicrm_live_options']) {
       $element['options']['#tabledrag'] = [];
+      $element['options']['#tableselect'] = FALSE;
     }
 
     $current_options = $element['#default_value'];
