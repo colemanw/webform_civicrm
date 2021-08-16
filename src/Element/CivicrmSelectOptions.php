@@ -174,7 +174,7 @@ class CivicrmSelectOptions extends FormElement {
       ];
       $weight++;
     }
-
+    $element['#attached']['library'][] = 'webform_civicrm/civicrmoptions';
     return $element;
   }
 
