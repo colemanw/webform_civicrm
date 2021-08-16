@@ -97,6 +97,7 @@ class CivicrmSelectOptions extends FormElement {
           'group' => 'weight',
         ],
       ],
+      '#value_callback' => [get_called_class(), 'valueCallback'],
     ];
 
     if ($element['#civicrm_live_options']) {
