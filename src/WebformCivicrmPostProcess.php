@@ -2667,10 +2667,15 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    * @return array|null field value if found
    */
   protected function submissionValue($fid, $value = NULL) {
-    $form_object = $this->form_state->getFormObject();
-    /** @var \Drupal\webform\WebformSubmissionInterface $webform_submission */
-    $webform_submission = $form_object->getEntity();
-    $data = $webform_submission->getData();
+    if (!empty($this->form_state)) {
+      $form_object = $this->form_state->getFormObject();
+      /** @var \Drupal\webform\WebformSubmissionInterface $webform_submission */
+      $webform_submission = $form_object->getEntity();
+      $data = $webform_submission->getData();
+    }
+    else {
+      $data = $this->submission->getData();
+    }
 
     if (!isset($data[$fid])) {
       return [NULL];

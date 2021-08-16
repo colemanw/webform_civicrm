@@ -90,7 +90,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
     if ($triggering_element && $triggering_element['#id'] == 'edit-wizard-prev'
       || (empty($this->form_state->isRebuilding()) && !empty($this->form_state->getValues()) && empty($this->form['#submission']->is_draft))
       // When resuming from a draft
-      || (!empty($this->form['#submission']->is_draft) && empty($this->form_state->getUserInput()))
+      || (!empty($this->form_state->getFormObject()->getEntity()->isDraft()) && empty($this->form_state->getUserInput()))
     ) {
       $this->fillForm($this->form, $this->form_state->getValues());
       return;
