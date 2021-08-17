@@ -32,3 +32,8 @@ civicrm_contact:
     js/webform_civicrm_contact.js: {}
   dependencies:
     - webform_civicrm/forms
+
+civicrmoptions:
+  css:
+    component:
+      css/webform_civicrm_options.css: {}
