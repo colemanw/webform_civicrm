@@ -39,7 +39,7 @@ class CivicrmSelectOptions extends FormElement {
       // return static::convertOptionsToValues($options, $element['#options_description']);
     }
     elseif (is_array($input) && isset($input['options'])) {
-       return $input['options'];
+      return $input['options'];
     }
     else {
       return $element['#default_value'];
@@ -60,7 +60,7 @@ class CivicrmSelectOptions extends FormElement {
 
     $element['options'] = [
       '#type' => 'table',
-      '#tableselect' => FALSE,
+      '#tableselect' => TRUE,
       '#header' => [
         'item' => [
           'data' => ['#markup' => 'Item',]
@@ -97,10 +97,12 @@ class CivicrmSelectOptions extends FormElement {
           'group' => 'weight',
         ],
       ],
+      '#value_callback' => [get_called_class(), 'valueCallback'],
     ];
 
     if ($element['#civicrm_live_options']) {
       $element['options']['#tabledrag'] = [];
+      $element['options']['#tableselect'] = FALSE;
     }
 
     $current_options = $element['#default_value'];
@@ -172,7 +174,7 @@ class CivicrmSelectOptions extends FormElement {
       ];
       $weight++;
     }
-
+    $element['#attached']['library'][] = 'webform_civicrm/civicrmoptions';
     return $element;
   }
 

@@ -318,9 +318,16 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     if ($openWidget) {
       $this->assertSession()->waitForElementVisible('css', '[data-drupal-selector="edit-form"]');
       $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
+      $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-field-handling"]')->click();
     }
     if (!empty($params['title'])) {
       $this->getSession()->getPage()->fillField('title', $params['title']);
+    }
+    if (!empty($params['description'])) {
+      $this->fillCKEditor('properties[description][value]', $params['description']);
+    }
+    if (!empty($params['hide_fields'])) {
+      $this->getSession()->getPage()->selectFieldOption('properties[hide_fields][]', $params['hide_fields']);
     }
 
     $this->assertSession()->waitForElementVisible('xpath', '//select[@name="properties[widget]"]');
@@ -476,6 +483,42 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('State/Province', $params['state_province']);
 
     $this->getSession()->getPage()->fillField('Postal Code', $params['postal_code']);
+  }
+
+  /**
+   * Fill CKEditor field.
+   *
+   * @param string $locator
+   * @param string $value
+   */
+  public function fillCKEditor($locator, $value) {
+    $el = $this->getSession()->getPage()->findField($locator);
+    if (empty($el)) {
+      throw new ExpectationException('Could not find WYSIWYG with locator: ' . $locator, $this->getSession());
+    }
+    $fieldId = $el->getAttribute('id');
+    if (empty($fieldId)) {
+      throw new Exception('Could not find an id for field with locator: ' . $locator);
+    }
+    $this->getSession()->executeScript("CKEDITOR.instances[\"$fieldId\"].setData(\"$value\");");
+  }
+
+  /**
+   * Add email handler
+   *
+   * @param array $params
+   */
+  protected function addEmailHandler($params) {
+    $this->drupalGet("admin/structure/webform/manage/civicrm_webform_test/handlers/add/email");
+    if (!empty($params['to_mail'])) {
+      $this->getSession()->getPage()->selectFieldOption('settings[to_mail][select]', $params['to_mail']);
+    }
+
+    $this->getSession()->getPage()->selectFieldOption('edit-settings-body', '_other_');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->fillCKEditor('settings[body_custom_html][value]', $params['body']);
+    $this->getSession()->getPage()->pressButton('Save');
+    $this->assertSession()->assertWaitOnAjaxRequest();
   }
 
 }

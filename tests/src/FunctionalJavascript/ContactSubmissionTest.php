@@ -230,6 +230,36 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
   }
 
   /**
+   * Test Draft Submission.
+   */
+  public function testDraftSubmission() {
+    $this->drupalLogin($this->rootUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+    $this->getSession()->getPage()->checkField('Nickname');
+    $this->saveCiviCRMSettings();
+    $this->drupalGet($this->webform->toUrl('settings-submissions'));
+    $this->htmlOutput();
+    $this->getSession()->getPage()->selectFieldOption("draft", 'authenticated');
+    $this->getSession()->getPage()->pressButton('Save');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+    $this->getSession()->getPage()->fillField('Nickname', 'Nick');
+
+    $this->getSession()->getPage()->pressButton('Save Draft');
+    $this->assertSession()->pageTextContains('Submission saved. You may return to this form later and it will restore the current values.');
+    $this->assertPageNoErrorMessages();
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertSession()->pageTextContains('A partially-completed form was found. Please complete the remaining portions.');
+    $this->assertSession()->fieldValueEquals('Nickname', 'Nick');
+  }
+
+  /**
    * Test Existing Contact Element configured as Current (logged-in) User
    */
   public function testStaticCurrentUser() {

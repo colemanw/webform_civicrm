@@ -9,6 +9,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\webform\Plugin\WebformElementBase;
 use Drupal\webform\WebformInterface;
 use Drupal\webform\WebformSubmissionInterface;
+use Drupal\Core\Url;
 
 /**
  * Provides a 'textfield' element.
@@ -100,8 +101,13 @@ class CivicrmContact extends WebformElementBase {
       'hiddenFields' => [],
     ];
     $element['#type'] = $element['#widget'] === 'autocomplete' ? 'textfield' : $element['#widget'];
+    $element['#attributes']['data-hide-fields'] = implode(', ', $this->getElementProperty($element, 'hide_fields'));
+    $element['#attributes']['data-hide-method'] = $this->getElementProperty($element, 'hide_method');
+    $element['#attributes']['data-no-hide-blank'] = (int) $this->getElementProperty($element, 'no_hide_blank');
     $cid = $this->getElementProperty($element, 'default_value');
     list(, $c, ) = explode('_', $element['#form_key'], 3);
+    $element['#attributes']['data-civicrm-contact'] = $c;
+    $element['#attributes']['data-form-id'] = $webform_submission ? $webform_submission->getWebform()->id() : NULL;
     if ($element['#type'] === 'hidden') {
       // User may not change this value for hidden fields
       $element['#value'] = $cid;
@@ -114,11 +120,8 @@ class CivicrmContact extends WebformElementBase {
       $element['#options'] = [];
       $element['#attributes']['data-is-select'] = 1;
     }
-    $element['#attributes']['data-civicrm-contact'] = $c;
-    $element['#attributes']['data-form-id'] = $webform_submission ? $webform_submission->getWebform()->id() : NULL;
-    $element['#attributes']['data-hide-fields'] = implode(', ', $this->getElementProperty($element, 'hide_fields'));
-    $element['#attributes']['data-hide-method'] = $this->getElementProperty($element, 'hide_method');
-    $element['#attributes']['data-no-hide-blank'] = (int) $this->getElementProperty($element, 'no_hide_blank');
+    $element['#attributes']['data-search-prompt'] = $this->getElementProperty($element, 'search_prompt') ?? '- Choose existing -';
+    $element['#attributes']['data-none-prompt'] = $this->getElementProperty($element, 'none_prompt') ?? '+ Create new +';
     if (!empty($cid)) {
       $webform = $webform_submission->getWebform();
       $contactComponent = \Drupal::service('webform_civicrm.contact_component');
@@ -559,6 +562,32 @@ class CivicrmContact extends WebformElementBase {
         $element['#empty_option'] = Xss::filter($element[$element['#options'] ? '#search_prompt' : '#none_prompt']);
       }
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function formatHtmlItem(array $element, WebformSubmissionInterface $webform_submission, array $options = []) {
+    $value = parent::formatHtmlItem($element, $webform_submission, $options);
+    $format = $this->getItemFormat($element);
+    $cid = $value['#plain_text'] ?? NULL;
+
+    if ($format === 'raw' || empty($cid) || !is_numeric($cid)) {
+      return $value;
+    }
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $contact = $utils->wf_crm_apivalues('contact', 'get', ['id' => $cid], 'display_name');
+    if (!empty($contact[$cid])) {
+      if (empty($options['email']) && \Drupal::currentUser()->hasPermission('access CiviCRM')) {
+        unset($value['#plain_text']);
+        $cidURL = Url::fromUri('internal:/civicrm/contact/view', ['query' => ['reset' => 1, 'cid' => $cid]])->toString();
+        $value['#markup'] = t('<a href=":link">@name</a>', [':link' => $cidURL, '@name' => $contact[$cid]]);
+      }
+      else {
+        $value['#plain_text'] = $contact[$cid];
+      }
+    }
+    return $value;
   }
 
 }

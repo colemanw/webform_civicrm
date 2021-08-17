@@ -11,6 +11,8 @@ use Drupal\webform\Entity\Webform;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\webform\Entity\WebformSubmission;
 use Drupal\node\Entity\Node;
+use Drupal\Core\Template\Attribute;
+use Drupal\Core\Url;
 
 /**
  * The versions of CiviCRM and WebForm. Min is >=.  Max is <. FALSE = no MAX
@@ -151,27 +153,67 @@ function webform_civicrm_theme() {
  * Display labels for civicrm option element.
  */
 function webform_civicrm_webform_submission_load($entities) {
-  $utils = \Drupal::service('webform_civicrm.utils');
   foreach ($entities as $entity) {
-    $data = $entity->getData();
-    $webform = $entity->getWebform();
-    foreach ($data as $key => $val) {
-      $element = $webform->getElement($key);
-      if ($element['#type'] == 'civicrm_options' && !empty($val)) {
-        if (!empty($element['#webform_multiple'])) {
-          foreach ($val as $k => $v) {
-            if (isset($element['#options'][$v])) {
-              $data[$key][$k] = $element['#options'][$v];
-            }
+    $data = _fillCiviCRMData($entity->getData(), $entity);
+    $entity->setData($data);
+  }
+}
+
+/**
+ * Fill civicrm data to the submission object.
+ *
+ * @param array $data
+ * @param object $webformSubmission
+ */
+function _fillCiviCRMData($data, $webformSubmission) {
+  if (!empty($data['civicrm'])) {
+    return $data;
+  }
+
+  $utils = \Drupal::service('webform_civicrm.utils');
+  $webform = $webformSubmission->getWebform();
+  foreach ($data as $key => $val) {
+    $element = $webform->getElement($key);
+    if (!empty($val) && $element['#type'] == 'civicrm_options') {
+      if (!empty($element['#webform_multiple'])) {
+        foreach ($val as $k => $v) {
+          if (isset($element['#options'][$v])) {
+            $data[$key][$k] = $element['#options'][$v];
           }
         }
-        elseif (isset($element['#options'][$val])) {
-          $data[$key] = $element['#options'][$val];
+      }
+      elseif (isset($element['#options'][$val])) {
+        $data[$key] = $element['#options'][$val];
+      }
+    }
+  }
+
+  $contacts = [];
+  $query = \Drupal::database()->select('webform_civicrm_submissions', 'wcs')
+    ->fields('wcs', ['contact_id', 'civicrm_data'])
+    ->condition('sid', $webformSubmission->id(), '=');
+  $results = $query->execute();
+  while ($content = $results->fetchAssoc()) {
+    $civicrm_data = unserialize($content['civicrm_data']) + ['contact' => []];
+    if ($content['contact_id']) {
+      foreach (explode('-', trim($content['contact_id'], '-')) as $c => $cid) {
+        $civicrm_data['contact'][$c + 1]['id'] = $cid;
+        $civicrm_data['contact'][$c + 1]['display_name'] = '';
+        if ($c == 0 && $cid) {
+          $contacts[$cid] = '';
         }
       }
     }
-    $entity->setData($data);
+    $data['civicrm'] = $civicrm_data;
   }
+  if ($contacts) {
+    // Retrieve contact names and add to submission objects
+    $contacts = $utils->wf_crm_apivalues('contact', 'get', ['id' => ['IN' => array_keys($contacts)]], 'display_name') + $contacts;
+    if (!empty($data['civicrm']['contact'][1]['id'])) {
+      $data['civicrm']['contact'][1]['display_name'] = $contacts[$data['civicrm']['contact'][1]['id']];
+    }
+  }
+  return $data;
 }
 
 /**
@@ -238,7 +280,7 @@ function webform_civicrm_civicrm_postSave_civicrm_custom_field($dao) {
   if (empty($dao->custom_group_id)) {
     $dao->find(TRUE);
   }
-  if ($dao->is_active) {
+  if ($dao->is_active == 1) {
     $admin_form = \Drupal::service('webform_civicrm.admin_form');
     $admin_form::handleDynamicCustomField('create', $dao->id, $dao->custom_group_id);
   }
@@ -526,47 +568,71 @@ function _webform_civicrm_status() {
 }
 
 /**
+ * Implements hook_preprocess_webform_civicrm_contact().
+ *
+ * @param array $variables
+ */
+function webform_civicrm_preprocess_webform_civicrm_contact(&$variables) {
+  $element = &$variables['element'] ?? NULL;
+
+  if (!empty($element['#description'])) {
+    $variables['description']['content'] = $element['#description'];
+    $variables['description_display'] = $element['#description_display'];
+
+    if (empty($variables['description']['attributes'])) {
+      $variables['description']['attributes'] = new Attribute();
+    }
+    $variables['description']['attributes']->addClass('description');
+  }
+
+  if (!empty($element['#_title_display']) && $element['#_title_display'] == 'inline') {
+    $variables['title_attributes'] = new Attribute();
+    $variables['title_attributes']->addClass('webform-element--title-inline');
+  }
+}
+
+/**
  * Implements hook_token_info().
  */
 function webform_civicrm_token_info() {
   $info = [];
-  $info['tokens']['submission']['contact-id'] = [
+  $info['contact-id'] = [
     'name' => t('Webform CiviCRM Contacts IDs'),
     'description' => t('The IDs of Contacts that got created after submitting the webform. Replace the "?" with the contact number starting from 1'),
     'dynamic' => TRUE,
   ];
 
-  $info['tokens']['submission']['contact-link'] = [
+  $info['contact-link'] = [
     'name' => t('Webform CiviCRM Contacts Links'),
     'description' => t('The links to Contacts that got created after submitting the webform. Replace the "?" with the contact number starting from 1'),
     'dynamic' => TRUE,
   ];
 
-  $info['tokens']['submission']['activity-id'] = [
+  $info['activity-id'] = [
     'name' => t('Webform CiviCRM Activity IDs'),
     'description' => t('The IDs of activities that got created after submitting the webform. Replace the "?" with the activity number starting from 1'),
     'dynamic' => TRUE,
   ];
 
-  $info['tokens']['submission']['activity-link'] = [
+  $info['activity-link'] = [
     'name' => t('Webform CiviCRM Activity Links'),
     'description' => t('The links to activities that got created after submitting the webform. Replace the "?" with the activity number starting from 1'),
     'dynamic' => TRUE,
   ];
 
-  $info['tokens']['submission']['case-id'] = [
+  $info['case-id'] = [
     'name' => t('Webform CiviCRM Case IDs'),
     'description' => t('The IDs of cases that got created after submitting the webform. Replace the "?" with the case number starting from 1'),
     'dynamic' => TRUE,
   ];
 
-  $info['tokens']['submission']['case-link'] = [
+  $info['case-link'] = [
     'name' => t('Webform CiviCRM Case Links'),
     'description' => t('The links to cases that got created after submitting the webform. Replace the "?" with the case number starting from 1'),
     'dynamic' => TRUE,
   ];
 
-  return $info;
+  return ['tokens' => ['webform_submission' => $info]];
 }
 
 /**
@@ -579,7 +645,8 @@ function webform_civicrm_tokens($type, $tokens = '', array $data = [], array $op
   }
 
   $replacedTokens = [];
-  $webformSubmissionData = $data['webform-submission'];
+  $webformSubmissionData = $data['webform_submission']->getData();
+  $webformSubmissionData = _fillCiviCRMData($webformSubmissionData, $data['webform_submission']);
 
   $contactIdsReplacedTokens = _webform_civicrm_replaceContactIdTokens($tokens, $webformSubmissionData);
   $replacedTokens = array_merge($replacedTokens, $contactIdsReplacedTokens);
@@ -613,9 +680,8 @@ function webform_civicrm_tokens($type, $tokens = '', array $data = [], array $op
  */
 function _webform_civicrm_isWebformSubmission($tokenType, $webformData) {
   return (
-    $tokenType === 'submission' &&
-    !empty($webformData['webform-submission']) &&
-    \Drupal::state()->get('webform_token_access')
+    $tokenType === 'webform_submission' &&
+    !empty($webformData['webform_submission'])
   );
 }
 
@@ -633,15 +699,15 @@ function _webform_civicrm_isWebformSubmission($tokenType, $webformData) {
 function _webform_civicrm_replaceContactIdTokens($tokens, $webformSubmissionData) {
   $replacedTokens = [];
 
-  $tokenValues = token_find_with_prefix($tokens, 'contact-id');
+  $tokenValues = \Drupal::token()->findWithPrefix($tokens, 'contact-id');
   if (!$tokenValues) {
     return $replacedTokens;
   }
 
   foreach ($tokenValues as $entityID => $tokenName) {
     $tokenNewValue = '';
-    if (!empty($webformSubmissionData->civicrm['contact'][$entityID]['id'])) {
-      $contactID = $webformSubmissionData->civicrm['contact'][$entityID]['id'];
+    if (!empty($webformSubmissionData['civicrm']['contact'][$entityID]['id'])) {
+      $contactID = $webformSubmissionData['civicrm']['contact'][$entityID]['id'];
       $tokenNewValue = $contactID;
     }
     $replacedTokens[$tokenName] = $tokenNewValue;
@@ -664,16 +730,19 @@ function _webform_civicrm_replaceContactIdTokens($tokens, $webformSubmissionData
 function _webform_civicrm_replaceContactLinkTokens($tokens, $webformSubmissionData) {
   $replacedTokens = [];
 
-  $tokenValues = token_find_with_prefix($tokens, 'contact-link');
+  $tokenValues = \Drupal::token()->findWithPrefix($tokens, 'contact-link');
   if (!$tokenValues) {
     return $replacedTokens;
   }
 
   foreach ($tokenValues as $entityID => $tokenName) {
     $tokenNewValue = '';
-    if (!empty($webformSubmissionData->civicrm['contact'][$entityID]['id'])) {
-      $contactID = $webformSubmissionData->civicrm['contact'][$entityID]['id'];
-      $tokenNewValue = url("/civicrm/contact/view?reset=1&cid={$contactID}", ['absolute' => TRUE]);
+    if (!empty($webformSubmissionData['civicrm']['contact'][$entityID]['id'])) {
+      $contactID = $webformSubmissionData['civicrm']['contact'][$entityID]['id'];
+      $tokenNewValue = Url::fromUri('internal:/civicrm/contact/view', [
+        'absolute' => TRUE,
+        'query' => ['reset' => 1, 'cid' => $contactID]
+      ])->toString();
     }
     $replacedTokens[$tokenName] = $tokenNewValue;
   }
@@ -695,15 +764,15 @@ function _webform_civicrm_replaceContactLinkTokens($tokens, $webformSubmissionDa
 function _webform_civicrm_replaceActivityIdTokens($tokens, $webformSubmissionData) {
   $replacedTokens = [];
 
-  $tokenValues = token_find_with_prefix($tokens, 'activity-id');
+  $tokenValues = \Drupal::token()->findWithPrefix($tokens, 'activity-id');
   if (!$tokenValues) {
     return $replacedTokens;
   }
 
   foreach ($tokenValues as $entityID => $tokenName) {
     $tokenNewValue = '';
-    if (!empty($webformSubmissionData->civicrm['activity'][$entityID]['id'])) {
-      $activityId = $webformSubmissionData->civicrm['activity'][$entityID]['id'];
+    if (!empty($webformSubmissionData['civicrm']['activity'][$entityID]['id'])) {
+      $activityId = $webformSubmissionData['civicrm']['activity'][$entityID]['id'];
       $tokenNewValue = $activityId;
     }
     $replacedTokens[$tokenName] = $tokenNewValue;
@@ -726,16 +795,19 @@ function _webform_civicrm_replaceActivityIdTokens($tokens, $webformSubmissionDat
 function _webform_civicrm_replaceActivityLinkTokens($tokens, $webformSubmissionData) {
   $replacedTokens = [];
 
-  $tokenValues = token_find_with_prefix($tokens, 'activity-link');
+  $tokenValues = \Drupal::token()->findWithPrefix($tokens, 'activity-link');
   if (!$tokenValues) {
     return $replacedTokens;
   }
 
   foreach ($tokenValues as $entityID => $tokenName) {
     $tokenNewValue = '';
-    if (!empty($webformSubmissionData->civicrm['activity'][$entityID]['id'])) {
-      $activityId = $webformSubmissionData->civicrm['activity'][$entityID]['id'];
-      $tokenNewValue = url("/civicrm/activity?action=view&reset=1&id={$activityId}", ['absolute' => TRUE]);
+    if (!empty($webformSubmissionData['civicrm']['activity'][$entityID]['id'])) {
+      $activityId = $webformSubmissionData['civicrm']['activity'][$entityID]['id'];
+      $tokenNewValue = Url::fromUri('internal:/civicrm/activity', [
+        'absolute' => TRUE,
+        'query' => ['action' => 'view', 'reset' => 1, 'id' => $activityId]
+      ])->toString();
     }
     $replacedTokens[$tokenName] = $tokenNewValue;
   }
@@ -757,15 +829,15 @@ function _webform_civicrm_replaceActivityLinkTokens($tokens, $webformSubmissionD
 function _webform_civicrm_replaceCaseIdTokens($tokens, $webformSubmissionData) {
   $replacedTokens = [];
 
-  $tokenValues = token_find_with_prefix($tokens, 'case-id');
+  $tokenValues = \Drupal::token()->findWithPrefix($tokens, 'case-id');
   if (!$tokenValues) {
     return $replacedTokens;
   }
 
   foreach ($tokenValues as $entityID => $tokenName) {
     $tokenNewValue = '';
-    if (!empty($webformSubmissionData->civicrm['case'][$entityID]['id'])) {
-      $tokenNewValue = $webformSubmissionData->civicrm['case'][$entityID]['id'];
+    if (!empty($webformSubmissionData['civicrm']['case'][$entityID]['id'])) {
+      $tokenNewValue = $webformSubmissionData['civicrm']['case'][$entityID]['id'];
     }
     $replacedTokens[$tokenName] = $tokenNewValue;
   }
@@ -787,17 +859,25 @@ function _webform_civicrm_replaceCaseIdTokens($tokens, $webformSubmissionData) {
 function _webform_civicrm_replaceCaseLinkTokens($tokens, $webformSubmissionData) {
   $replacedTokens = [];
 
-  $tokenValues = token_find_with_prefix($tokens, 'case-link');
+  $tokenValues = \Drupal::token()->findWithPrefix($tokens, 'case-link');
   if (!$tokenValues) {
     return $replacedTokens;
   }
 
   foreach ($tokenValues as $entityID => $tokenName) {
     $tokenNewValue = '';
-    if (!empty($webformSubmissionData->civicrm['case'][$entityID]['id'])) {
-      $caseID = $webformSubmissionData->civicrm['case'][$entityID]['id'];
+    if (!empty($webformSubmissionData['civicrm']['case'][$entityID]['id'])) {
+      $caseID = $webformSubmissionData['civicrm']['case'][$entityID]['id'];
       $caseContactID = _webform_civicrm_getCaseContactID($caseID);
-      $tokenNewValue = url("/civicrm/contact/view/case?reset=1&id={$caseID}&cid={$caseContactID}&action=view", ['absolute' => TRUE]);
+      $tokenNewValue = Url::fromUri('internal:/civicrm/contact/view/case', [
+        'absolute' => TRUE,
+        'query' => [
+          'reset' => 1,
+          'id' => $caseID,
+          'cid' => $caseContactID,
+          'action' => 'view',
+        ]
+      ])->toString();
     }
     $replacedTokens[$tokenName] = $tokenNewValue;
   }

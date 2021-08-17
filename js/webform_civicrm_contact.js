@@ -16,8 +16,8 @@
             field.data('form-id'),
             autocompleteUrl,
             toHide, {
-            hintText: "- Choose existing -",
-            noResultsText: "+ Create new +",
+            hintText: field.data('search-prompt'),
+            noResultsText: field.data('none-prompt'),
             searchingText: "Searching..."
           });
         }
