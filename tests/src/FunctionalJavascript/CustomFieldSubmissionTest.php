@@ -20,7 +20,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     $params = [
       'custom_group_id' => $customgroup_id,
-      'label' => 'Text',
+      'label' => 'Label for Custom Text field',
       'name' => 'text',
       'data_type' => 'String',
       'html_type' => 'Text',
@@ -33,7 +33,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     $result = civicrm_api3('CustomField', 'create', [
       'custom_group_id' => "Custom",
-      'label' => "DateTime",
+      'label' => "Label for Custom DateTime field",
       'name' => 'date_time',
       'data_type' => "Date",
       'html_type' => "Select Date",
@@ -47,7 +47,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     $result = civicrm_api3('OptionGroup', 'create', [
       'name' => "radio_1",
-      'title' => "Label for custom radio field",
+      'title' => "Label for Custom radio field",
       'data_type' => "String",
       'is_active' => 1,
     ]);
@@ -105,7 +105,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     $result = civicrm_api3('CustomField', 'create', [
       'custom_group_id' => "Custom",
-      'label' => "Custom Radio Field test for empty submission",
+      'label' => "Label for Custom EmptyRadio field",
       'name' => 'test_radio_2',
       'html_type' => "Radio",
       'data_type' => "String",
@@ -151,7 +151,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     $result = civicrm_api3('CustomField', 'create', [
       'custom_group_id' => "Custom",
-      'label' => "Checkboxes",
+      'label' => "Label for Custom Checkbox field",
       'name' => 'color_checkboxes',
       'html_type' => "CheckBox",
       'data_type' => "String",
@@ -210,7 +210,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     $result = civicrm_api3('CustomField', 'create', [
       'custom_group_id' => "Custom",
-      'label' => "Fruits",
+      'label' => "Label for Custom Fruit Checkbox field",
       'name' => 'fruits',
       'html_type' => "CheckBox",
       'data_type' => "String",
@@ -223,7 +223,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     $result = civicrm_api3('CustomField', 'create', [
       'custom_group_id' => "Custom",
-      'label' => "Label for custom radio field",
+      'label' => "Label for Custom Radio field",
       'name' => 'single_radio',
       'html_type' => "Radio",
       'data_type' => "String",
@@ -273,7 +273,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     // Add Field of type Select
     $result = civicrm_api3('CustomField', 'create', [
       'custom_group_id' => "Custom",
-      'label' => "List",
+      'label' => "Label for Custom List field",
       'name' => 'select_list',
       'html_type' => "Select",
       'data_type' => "String",
@@ -283,6 +283,71 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
     $this->_customFields['select_list'] = $result['id'];
+  }
+
+  /**
+   * Test dynamic custom fields.
+   */
+  public function testDynamicCustomFields() {
+    drupal_flush_all_caches();
+    $this->createCustomFields();
+    $this->drupalLogin($this->rootUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+
+    $this->enableCivicrmOnWebform();
+
+    $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_cg1', 'Yes');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->checkField("contact_1_settings_dynamic_custom_cg1");
+    $this->assertSession()->checkboxChecked("contact_1_settings_dynamic_custom_cg1");
+
+    $this->saveCiviCRMSettings();
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->htmlOutput();
+    $this->assertPageNoErrorMessages();
+
+    $customFieldLabels = [
+      'Label for Custom Text field',
+      'Label for Custom DateTime field',
+      'Label for Custom EmptyRadio field',
+      'Label for Custom Checkbox field',
+      'Label for Custom Fruit Checkbox field',
+      'Label for Custom Radio field',
+      'Label for Custom List field',
+    ];
+    foreach ($customFieldLabels as $label) {
+      $this->assertSession()->pageTextContains($label);
+    }
+    //Disable Custom field.
+    $fieldURL = Url::fromUri('internal:/civicrm/admin/custom/group/field/update', [
+      'absolute' => TRUE,
+      'query' => ['reset' => 1, 'action' => 'update', 'gid' => 1, 'id' => $this->_customFields['color_checkboxes']]
+    ])->toString();
+    $this->drupalGet($fieldURL);
+    $this->getSession()->getPage()->uncheckField('Active?');
+    $this->getSession()->getPage()->pressButton('Save');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    //Reload the webform page - the custom field should be removed.
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->htmlOutput();
+    $this->assertPageNoErrorMessages();
+
+    // Verify if the custom field is removed from the page.
+    $this->assertSession()->pageTextNotContains('Label for Custom Checkbox field');
+
+    //Re-enable the field.
+    $this->drupalGet($fieldURL);
+    $this->getSession()->getPage()->checkField('Active?');
+    $this->getSession()->getPage()->pressButton('Save');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    // Verify if the custom field is back on the page.
+    $this->assertSession()->pageTextContains('Label for Custom Checkbox field');
   }
 
   /**
@@ -297,9 +362,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
       'webform' => $this->webform->id(),
     ]));
     // The label has a <div> in it which can cause weird failures here.
-    $this->assertSession()->waitForText('Enable CiviCRM Processing');
-    $this->assertSession()->waitForField('nid');
-    $this->getSession()->getPage()->checkField('nid');
+    $this->enableCivicrmOnWebform();
 
     $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_cg1', 'Yes');
     $this->assertSession()->assertWaitOnAjaxRequest();
