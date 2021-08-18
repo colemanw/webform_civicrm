@@ -427,7 +427,7 @@ class AdminForm implements AdminFormInterface {
       }
     }
   }
-fa-id-badge
+
   /**
    * Configure messages
    */
