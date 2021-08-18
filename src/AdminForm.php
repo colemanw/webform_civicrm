@@ -1371,7 +1371,6 @@ fa-id-badge
       }
       $this->form['additional_options']['confirm_subscription']['#description'] .= implode(', ', $ml) . '</em>';
     }
-
     else {
       $this->form['additional_options']['confirm_subscription']['#description'] .= t('none') . '</em>';
     }
