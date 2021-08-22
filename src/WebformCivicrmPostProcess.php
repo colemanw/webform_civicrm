@@ -1939,6 +1939,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       $result = $this->contributionRecur($contributionParams);
     }
     else {
+      $contributionParams['line_items'] = $this->getLineItemForOrderApi();
       $result = $utils->wf_civicrm_api('contribution', 'transact', $contributionParams);
     }
 
@@ -1952,6 +1953,19 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       return;
     }
     $this->ent['contribution'][1]['id'] = $result['id'];
+  }
+
+  /**
+   * Format line item params as expected by the order api.
+   */
+  private function getLineItemForOrderApi() {
+    $lineItems = [];
+    foreach ($this->line_items as $k => $line) {
+      $lineItems[] = [
+        'line_item' => [$k => $line],
+      ];
+    }
+    return $lineItems;
   }
 
   /**
