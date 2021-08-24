@@ -36,7 +36,7 @@ jobs:
             php-version: 7.3
             extensions: dom, curl, libxml, mbstring, zip, pdo, mysql, pdo_mysql, bcmath, soap, intl, gd, exif, iconv
             coverage: none
-            tools: composer:v1
+            tools: composer:v2
       - name: Get composer cache directory
         id: composercache
         run: echo "::set-output name=dir::$(composer config cache-files-dir)"
@@ -61,16 +61,16 @@ jobs:
           composer config preferred-install dist
           composer config repositories.0 path $GITHUB_WORKSPACE
           composer config repositories.1 composer https://packages.drupal.org/8
-          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:${{ matrix.drupal }} --no-suggest
+          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:${{ matrix.drupal }}
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages}:${{ matrix.civicrm }} --no-suggest --prefer-dist
+          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages}:${{ matrix.civicrm }} --prefer-dist
       # For some reason drupal/webform:5.x installs even if it is drupal:^9.0
       - name: Ensure Webform ^6.0
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:6.x-dev@dev' --no-suggest
+          COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:6.x-dev@dev'
       - name: Install webform_civicrm
         run: |
           cd ~/drupal
