@@ -1034,7 +1034,7 @@ class AdminForm implements AdminFormInterface {
           'js_select' => $this->addToggle($fs),
         ];
         foreach ($this->sets as $sid => $set) {
-          if ($set['entity_type'] == 'membership') {
+          if ($set['entity_type'] == 'membership' && !empty($set['fields'])) {
             foreach ($set['fields'] as $fid => $field) {
               $fid = "civicrm_{$c}_membership_{$n}_$fid";
               $this->form['membership'][$c]['membership'][$fs][$fid] = $this->addItem($fid, $field);
