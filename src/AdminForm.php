@@ -253,7 +253,9 @@ class AdminForm implements AdminFormInterface {
     $this->form['contact_' . $n] = [
       '#type' => 'details',
       '#title' => $n . '. ' . $utils->wf_crm_contact_label($n, $this->data),
-      '#description' => $n > 1 ? NULL : t('Primary contact. Usually assumed to be the person filling out the form.') . '<br />' . t('Enable the "Existing Contact" field to autofill with the current user (or another contact).'),
+      '#markup' => $n > 1 ? NULL : t('<hr/>' . 'Primary contact. Usually assumed to be the person filling out the form.') . '<br />'
+        . t('Enable the "Existing Contact" field to autofill with the current user (or another contact).' . '<br />'
+          . 'Address, Phone, Email, Custom fields for Contacts can also be added to the webform.'. '<hr/>' ),
       '#group' => 'webform_civicrm',
       '#attributes' => ['class' => ['contact-icon-' . $c['contact'][1]['contact_type']]],
     ];
@@ -434,11 +436,10 @@ class AdminForm implements AdminFormInterface {
   private function buildMessageTabs() {
     $utils = \Drupal::service('webform_civicrm.utils');
     $tokens = '<strong>' . t('Tokens for :contact', [':contact' => $utils->wf_crm_contact_label(1, $this->data, TRUE)]) . ':</strong> [' . implode('], [', $utils->wf_crm_get_fields('tokens')) . '].';
-
     $this->form['prefix'] = [
       '#type' => 'details',
       '#title' => t('Introduction Text'),
-      '#description' => t('This text will appear at the top of the form. You may configure separate messages for known contacts (logged in users, or users following a hashed link from civimail) and unknown (anonymous) users.'),
+      '#markup' => t('<hr/>' . 'This text will appear at the top of the form. You may configure separate messages for known contacts (logged in users, or users following a link with a checksum token from civimail) and unknown (anonymous) users.' . '<hr/>'),
       '#group' => 'webform_civicrm',
       '#attributes' => ['class' => ['civi-icon-text']],
     ];
@@ -457,7 +458,7 @@ class AdminForm implements AdminFormInterface {
     $this->form['st_message'] = [
       '#type' => 'details',
       '#title' => t('"Not You?" Message'),
-      '#description' => t('Prompt for users who are logged in as, or following a hashed link for, someone else.'),
+      '#markup' => t('<hr/>' . 'If you’re logged in as, or following the link with a checksum token for someone else, a prompt to confirm identity will appear.' . '<hr/>'),
       '#group' => 'webform_civicrm',
       '#attributes' => ['class' => ['civi-icon-message']],
     ];
@@ -1054,7 +1055,7 @@ class AdminForm implements AdminFormInterface {
       '#type' => 'details',
       '#title' => t('Contribution'),
       '#group' => 'webform_civicrm',
-      '#description' => t('In order to process live transactions for events, memberships, or contributions, select a contribution page and its billing fields will be included on the webform.'),
+      '#markup' => t('<hr/>' . 'In order to process live transactions for events, memberships, or donations. Enable Contribution -> Yes & configure all required contribution settings. Note that in this section you can also Enable Receipt.' . '<hr/>'),
       '#attributes' => ['class' => ['civi-icon-contribution']],
     ];
     $fid = 'civicrm_1_contribution_1_contribution_enable_contribution';
