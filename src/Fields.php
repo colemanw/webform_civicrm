@@ -481,12 +481,12 @@ class Fields implements FieldsInterface {
         $fields['case_start_date'] = [
           'name' => t('Case # Start Date'),
           'type' => 'date',
-          'value' => 'now',
+          'default_value' => 'now',
         ];
         $fields['case_end_date'] = [
           'name' => t('Case # End Date'),
           'type' => 'date',
-          'value' => 'now',
+          'default_value' => 'now',
         ];
         $fields['case_details'] = [
           'name' => t('Case # Details'),
