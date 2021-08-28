@@ -329,6 +329,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     ])->toString();
     $this->drupalGet($fieldURL);
     $this->getSession()->getPage()->uncheckField('Active?');
+    $this->createScreenshot($this->htmlOutputDirectory . '/custom_field.png');
     $this->getSession()->getPage()->pressButton('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
