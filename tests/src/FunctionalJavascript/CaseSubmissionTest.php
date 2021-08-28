@@ -31,6 +31,7 @@ final class CaseSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('Update Existing Case', 'Ongoing');
     $this->getSession()->getPage()->selectFieldOption('Case Type', 'Housing Support');
     $this->getSession()->getPage()->checkField('Case Subject');
+    $this->getSession()->getPage()->checkField('Case Start Date');
 
     $this->saveCiviCRMSettings();
 
@@ -73,6 +74,7 @@ final class CaseSubmissionTest extends WebformCivicrmTestBase {
     ]);
     $this->assertEquals(1, $case_result['count']);
     $this->assertEquals($caseSubject, $case_result['values'][0]['subject']);
+    $this->assertEquals(date('Y-m-d'), $case_result['values'][0]['start_date']);
   }
 
 }
