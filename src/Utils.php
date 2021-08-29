@@ -646,13 +646,7 @@ class Utils implements UtilsInterface {
     $params += [
       'check_permissions' => FALSE,
     ];
-    if ($operation == 'transact') {
-      $utils = \Drupal::service('webform_civicrm.utils');
-      $result = $utils->wf_civicrm_api3_contribution_transact($params);
-    }
-    else {
-      $result = civicrm_api3($entity, $operation, $params);
-    }
+    $result = civicrm_api3($entity, $operation, $params);
     // I guess we want silent errors for getoptions b/c we check it for failure separately
     if (!empty($result['is_error']) && $operation != 'getoptions') {
       $bt = debug_backtrace();
@@ -679,17 +673,13 @@ class Utils implements UtilsInterface {
   /**
    * Process a transaction and record it against the contact.
    *
-   * @deprecated
-   *
    * @param array $params
    *   Input parameters.
    *
    * @return array
    *   contribution of created or updated record (or a civicrm error)
    */
-  function wf_civicrm_api3_contribution_transact($params) {
-    // Start with the same parameters as Contribution.transact.
-    $params['contribution_status_id'] = 'Pending';
+  function processPayment($params) {
     if (!isset($params['invoice_id']) && !isset($params['invoiceID'])) {
       // Set an invoice_id here if you have not already done so.
       // Potentially Order api should do this https://lab.civicrm.org/dev/financial/issues/78
@@ -703,7 +693,7 @@ class Utils implements UtilsInterface {
       $params['invoice_id'] = $params['invoiceID'];
     }
 
-    $order = civicrm_api3('Order', 'create', $params);
+    $order = $this->wf_civicrm_api('Order', 'create', $params);
     try {
       // Use the Payment Processor to attempt to take the actual payment. You may
       // pass in other params here, too.

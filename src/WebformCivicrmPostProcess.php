@@ -1940,7 +1940,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     }
     else {
       $contributionParams['line_items'] = $this->getLineItemForOrderApi();
-      $result = $utils->wf_civicrm_api('contribution', 'transact', $contributionParams);
+      $result = $utils->processPayment($contributionParams);
     }
 
     if (empty($result['id'])) {
