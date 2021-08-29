@@ -1943,7 +1943,7 @@ class AdminForm implements AdminFormInterface {
             }
           }
         }
-        elseif ($field['type'] === 'hidden' && !empty($field['expose_list'])) {
+        elseif (is_array($field) && $field['type'] === 'hidden' && !empty($field['expose_list'])) {
           $elements = $this->webform->getElementsDecodedAndFlattened();
           $component = $elements[$enabled[$key]];
           $component = WebformArrayHelper::removePrefix($component);
