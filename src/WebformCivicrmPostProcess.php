@@ -2457,8 +2457,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         }
         // Check to see if configured to ignore hidden field value(s)
         if ($this->isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name, TRUE)) {
-          // Also remove the value from the webform submission
-          $this->submissionValue($fid, [NULL]);
           continue;
         }
         $field = $this->all_fields[$table . '_' . $name];
@@ -2582,6 +2580,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    * @param $name
    * @param $checkSubmitDisabledSetting
    *   Checks if 'Submit Disabled' setting should be considered
+   *
    * @return bool
    */
   private function isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name, $checkSubmitDisabledSetting = FALSE) {
@@ -2591,16 +2590,21 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       // Fields are hidden if value is empty (no selection) or a numeric contact id
       if (!$existing_contact_val[0] || is_numeric($existing_contact_val[0])) {
         $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
-        $component += ['hide_fields' => []];
-        if (in_array($type, $component['hide_fields'])) {
+        $component += ['#hide_fields' => []];
+        if (in_array($type, $component['#hide_fields'])) {
+          $value = wf_crm_aval($this->loadContact($c), "$table:$n:$name");
           // Check to see if configured to Submit disabled field value(s)
-          if ($checkSubmitDisabledSetting && $component['submit_disabled']) {
-            return FALSE;
+          if ($checkSubmitDisabledSetting && !empty($component['#submit_disabled']) && !empty($value)) {
+            $fieldKey = implode('_', ['civicrm', $c, $ent, $n, $table, $name]);
+            $data = $this->submission->getData();
+            if (isset($data[$fieldKey])) {
+              $data[$fieldKey] = $value;
+              $this->submission->setData($data);
+            }
           }
           // With the no_hide_blank setting we must load the contact to determine if the field was hidden
-          if (wf_crm_aval($component, 'no_hide_blank')) {
+          if (wf_crm_aval($component, '#no_hide_blank')) {
             // @todo this method doesn't exist?
-            $value = wf_crm_aval($this->loadContact($c), "$table:$n:$name");
             return !(!$value && !is_numeric($value));
           }
 
