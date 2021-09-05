@@ -1918,8 +1918,13 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     }
     if ($cid) {
       $address['contact_id'] = $email['contact_id'] = $this->ent['contact'][1]['id'] = $cid;
-      $utils->wf_civicrm_api('address', 'create', $address);
-      $utils->wf_civicrm_api('email', 'create', $email);
+      // Don't create a blank billing address.
+      if ($address['street_address'] || $address['city'] || $address['country_id'] || $address['state_province_id'] || $address['postal_code']) {
+        $utils->wf_civicrm_api('address', 'create', $address);
+      }
+      if ($email['email'] ?? FALSE) {
+        $utils->wf_civicrm_api('email', 'create', $email);
+      }
     }
     return $cid;
   }
