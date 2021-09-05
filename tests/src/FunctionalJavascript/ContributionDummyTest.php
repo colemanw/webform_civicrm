@@ -92,6 +92,8 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
 
   public function testSubmitContribution() {
     $payment_processor = $this->createPaymentProcessor();
+    $this->createMembershipType(100);
+    $this->createMembershipType(200, FALSE, 'Advanced');
 
     $this->setupSalesTax(2, $accountParams = []);
     $this->cid2 = $this->createIndividual(['first_name' => 'Mark', 'last_name' => 'Cooper']);
@@ -127,6 +129,16 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertSession()->checkboxChecked("civicrm_1_lineitem_2_contribution_line_total");
     // Set the Financial Type for the second line item to Member Dues (which has Sales Tax on it).
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_lineitem_2_contribution_financial_type_id', 2);
+    // Configure Membership tab.
+    $this->getSession()->getPage()->clickLink('Memberships');
+    $this->getSession()->getPage()->selectFieldOption('membership_1_number_of_membership', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_membership_1_membership_membership_type_id', 'Basic');
+    $this->htmlOutput();
+    $this->getSession()->getPage()->selectFieldOption('membership_2_number_of_membership', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption('civicrm_2_membership_1_membership_membership_type_id', 'Advanced');
+    $this->htmlOutput();
 
     $this->saveCiviCRMSettings();
 
@@ -154,9 +166,24 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Contribution Amount', '10.00');
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->htmlOutput();
-    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '60.98');
+
+    // Contribution Amount + Line1 + Line2 + Mem1 + Mem2
+    // Amounts = 10 + 20.00 + 29.50 + 100.00 + 200.00 = 359.5
+    // Taxes = 1.48 + 5 + 10 = 16.48
+    // Total = 359.5 + 16.48 = 375.98
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '375.98');
 
     $this->fillCardAndSubmit();
+
+    $membership = $this->utils->wf_civicrm_api('membership', 'get', [
+      'sequential' => 1,
+    ])['values'];
+    $adminCid = $this->getUFMatchRecord($this->adminUser->id())['contact_id'];
+    $this->assertEquals($adminCid, $membership[0]['contact_id']);
+    $this->assertEquals('Basic', $membership[0]['membership_name']);
+
+    $this->assertEquals($this->cid2['id'], $membership[1]['contact_id']);
+    $this->assertEquals('Advanced', $membership[1]['membership_name']);
 
     $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
       'sequential' => 1,
@@ -167,7 +194,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertNotEmpty($contribution['trxn_id']);
     $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
     $this->assertEquals('Donation', $contribution['financial_type']);
-    $this->assertEquals('60.98', $contribution['total_amount']);
+    $this->assertEquals('375.98', $contribution['total_amount']);
     $contribution_total_amount = $contribution['total_amount'];
     $this->assertEquals('Completed', $contribution['contribution_status']);
     $this->assertEquals('USD', $contribution['currency']);
@@ -178,24 +205,34 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
       'return' => 'tax_amount',
     ]);
     $contribution = reset($api_result['values']);
-    $this->assertEquals('1.48', $contribution['tax_amount']);
+    $this->assertEquals('16.48', $contribution['tax_amount']);
     $tax_total_amount = $contribution['tax_amount'];
 
     $api_result = $this->utils->wf_civicrm_api('line_item', 'get', [
       'sequential' => 1,
     ]);
 
-    $this->assertEquals('10.00', $api_result['values'][0]['line_total']);
-    $this->assertEquals('1', $api_result['values'][0]['financial_type_id']);
-    $this->assertEquals('20.00', $api_result['values'][1]['line_total']);
-    $this->assertEquals('1', $api_result['values'][1]['financial_type_id']);
-    $this->assertEquals('29.50', $api_result['values'][2]['line_total']);
-    $this->assertEquals('1.48', $api_result['values'][2]['tax_amount']);
-    $this->assertEquals('2', $api_result['values'][2]['financial_type_id']);
+    //Assert line item records.
+    $this->assertEquals('100.00', $api_result['values'][0]['line_total']);
+    $this->assertEquals('2', $api_result['values'][0]['financial_type_id']);
+    $this->assertEquals('5.00', $api_result['values'][0]['tax_amount']);
 
-    // throw new \Exception(var_export($api_result, TRUE));
-    $sum_line_total = $api_result['values'][0]['line_total'] + $api_result['values'][1]['line_total'] + $api_result['values'][2]['line_total'];
-    $sum_tax_amount = $api_result['values'][2]['tax_amount'];
+    $this->assertEquals('200.00', $api_result['values'][1]['line_total']);
+    $this->assertEquals('2', $api_result['values'][1]['financial_type_id']);
+    $this->assertEquals('10.00', $api_result['values'][1]['tax_amount']);
+
+    $this->assertEquals('10.00', $api_result['values'][2]['line_total']);
+    $this->assertEquals('1', $api_result['values'][2]['financial_type_id']);
+
+    $this->assertEquals('20.00', $api_result['values'][3]['line_total']);
+    $this->assertEquals('1', $api_result['values'][3]['financial_type_id']);
+
+    $this->assertEquals('29.50', $api_result['values'][4]['line_total']);
+    $this->assertEquals('1.48', $api_result['values'][4]['tax_amount']);
+    $this->assertEquals('2', $api_result['values'][4]['financial_type_id']);
+
+    $sum_line_total = array_sum(array_column($api_result['values'], 'line_total'));
+    $sum_tax_amount = array_sum(array_column($api_result['values'], 'tax_amount'));
     $this->assertEquals($tax_total_amount, $sum_tax_amount);
     $this->assertEquals($contribution_total_amount, $sum_line_total + $sum_tax_amount);
   }

@@ -12,21 +12,6 @@ use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
  */
 final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
-  private function createMembershipType($amount = 0, $autoRenew = FALSE, $name = 'Basic') {
-    $result = civicrm_api3('MembershipType', 'create', [
-      'member_of_contact_id' => 1,
-      'financial_type_id' => "Member Dues",
-      'duration_unit' => "year",
-      'duration_interval' => 1,
-      'period_type' => "rolling",
-      'minimum_fee' => $amount,
-      'name' => $name,
-      'auto_renew' => $autoRenew,
-    ]);
-    $this->assertEquals(0, $result['is_error']);
-    $this->assertEquals(1, $result['count']);
-  }
-
   function testSubmitMembershipAutoRenew() {
     $this->createMembershipType(1, TRUE);
     $payment_processor = $this->createPaymentProcessor();
