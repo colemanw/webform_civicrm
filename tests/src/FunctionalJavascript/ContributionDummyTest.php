@@ -92,10 +92,17 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
 
   public function testSubmitContribution() {
     $payment_processor = $this->createPaymentProcessor();
-    $this->createMembershipType(100);
+    $this->createMembershipType(100, FALSE, 'Basic');
     $this->createMembershipType(200, FALSE, 'Advanced');
 
+    // Attach Sales Tax to Financial Type 2 = Member Dues; Default value for Sales Tax Rate = 5%
     $this->setupSalesTax(2, $accountParams = []);
+
+    // Create Financial Type Product Purchase and Attach Sales Tax to it
+    $this->createFinancialType('Product Purchase');
+    $this->setupSalesTax(5, $accountParams = []);
+
+    // Create a second individual contact cid2
     $this->cid2 = $this->createIndividual(['first_name' => 'Mark', 'last_name' => 'Cooper']);
 
     $this->drupalLogin($this->adminUser);
@@ -127,8 +134,8 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertSession()->checkboxChecked("civicrm_1_lineitem_1_contribution_line_total");
     $this->getSession()->getPage()->checkField("civicrm_1_lineitem_2_contribution_line_total");
     $this->assertSession()->checkboxChecked("civicrm_1_lineitem_2_contribution_line_total");
-    // Set the Financial Type for the second line item to Member Dues (which has Sales Tax on it).
-    $this->getSession()->getPage()->selectFieldOption('civicrm_1_lineitem_2_contribution_financial_type_id', 2);
+    // Set the Financial Type for the second line item to Product Purchase (which has Sales Tax on it).
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_lineitem_2_contribution_financial_type_id', 5);
     // Configure Membership tab.
     $this->getSession()->getPage()->clickLink('Memberships');
     $this->getSession()->getPage()->selectFieldOption('membership_1_number_of_membership', 1);
@@ -212,7 +219,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
       'sequential' => 1,
     ]);
 
-    //Assert line item records.
+    // Assert line item records.
     $this->assertEquals('100.00', $api_result['values'][0]['line_total']);
     $this->assertEquals('2', $api_result['values'][0]['financial_type_id']);
     $this->assertEquals('5.00', $api_result['values'][0]['tax_amount']);
@@ -229,7 +236,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
 
     $this->assertEquals('29.50', $api_result['values'][4]['line_total']);
     $this->assertEquals('1.48', $api_result['values'][4]['tax_amount']);
-    $this->assertEquals('2', $api_result['values'][4]['financial_type_id']);
+    $this->assertEquals('5', $api_result['values'][4]['financial_type_id']);
 
     $sum_line_total = array_sum(array_column($api_result['values'], 'line_total'));
     $sum_tax_amount = array_sum(array_column($api_result['values'], 'tax_amount'));
