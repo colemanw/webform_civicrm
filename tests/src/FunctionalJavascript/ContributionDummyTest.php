@@ -179,7 +179,8 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     // Total = 359.5 + 16.48 = 375.98
 
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '375.98');
-    $this->createScreenshot($this->htmlOutputDirectory . '/lineitems12345.png');
+    $this->createScreenshot($this->htmlOutputDirectory . '/lineitem_tally.png');
+
     $this->htmlOutput();
 
     $this->fillCardAndSubmit();
