@@ -178,8 +178,9 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     // Amounts = 10 + 20.00 + 29.50 + 100.00 + 200.00 = 359.5
     // Taxes = 1.48 + 5 + 10 = 16.48
     // Total = 359.5 + 16.48 = 375.98
+
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '375.98');
-    $this->createScreenshot($this->htmlOutputDirectory . '/line_items.png');
+    $this->createScreenshot($this->htmlOutputDirectory . '/lineitems.png');
 
     $this->fillCardAndSubmit();
 
