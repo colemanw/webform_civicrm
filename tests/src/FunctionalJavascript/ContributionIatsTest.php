@@ -155,7 +155,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertPageNoErrorMessages();
-    $this->createScreenshot($this->htmlOutputDirectory . 'faps169.png');
+    // $this->createScreenshot($this->htmlOutputDirectory . 'faps169.png');
     $this->htmlOutput();
 
     $this->assertSession()->waitForElementVisible('css', '.webform-confirmation');

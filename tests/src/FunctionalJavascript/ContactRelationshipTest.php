@@ -121,7 +121,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     // Visit the webform with cid2 id in the url.
     $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $contact1['id'], 'cid2' => $contact2['id']]]));
     $this->assertSession()->waitForField('First Name');
-    $this->createScreenshot($this->htmlOutputDirectory . '/relationship_selection.png');
+    // $this->createScreenshot($this->htmlOutputDirectory . '/relationship_selection.png');
 
     //Make sure the checkbox are enabled by default.
     $this->assertSession()->checkboxChecked("Child of");

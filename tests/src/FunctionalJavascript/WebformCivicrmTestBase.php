@@ -106,6 +106,19 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   }
 
   /**
+   * Create Financial Type
+   */
+  protected function createFinancialType($name) {
+    $result = civicrm_api3('FinancialType', 'create', [
+      'name' => $name,
+      'is_active' => 1,
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+    return array_pop($result['values']);
+  }
+
+  /**
    * Create custom group.
    */
   protected function createCustomGroup($params = []) {
