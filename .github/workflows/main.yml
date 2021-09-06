@@ -103,3 +103,4 @@ jobs:
           name: phpunit_browser_output
           # For some reason Drupal prints here and not our specified BROWSERTEST_OUTPUT_DIRECTORY.
           path: '/home/runner/drupal/web/sites/simpletest/browser_output'
+	        retention-days: 7
