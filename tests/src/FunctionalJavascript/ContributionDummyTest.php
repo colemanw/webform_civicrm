@@ -172,7 +172,6 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->fillField('Contribution Amount', '10.00');
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
-    $this->htmlOutput();
 
     // Contribution Amount + Line1 + Line2 + Mem1 + Mem2
     // Amounts = 10 + 20.00 + 29.50 + 100.00 + 200.00 = 359.5
@@ -180,7 +179,8 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     // Total = 359.5 + 16.48 = 375.98
 
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '375.98');
-    $this->createScreenshot($this->htmlOutputDirectory . '/lineitems.png');
+    $this->createScreenshot($this->htmlOutputDirectory . '/lineitems12345.png');
+    $this->htmlOutput();
 
     $this->fillCardAndSubmit();
 
