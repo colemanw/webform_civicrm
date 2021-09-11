@@ -27,6 +27,67 @@ final class SaveSettingsTest extends WebformCivicrmTestBase {
   }
 
   /**
+   * Test contact paging
+   */
+  function testPaging() {
+    $this->addFieldsOnWebform();
+
+    // Assert no contact page break is added on the webform.
+    $elements = ['contact_pagebreak'];
+    $this->assertElementsOnBuildForm($elements, TRUE);
+
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->configureContributionTab();
+    $this->saveCiviCRMSettings(TRUE);
+
+    // Assert contact and contribution page break is added to the form.
+    $elements = ['contact_pagebreak', 'contribution_pagebreak'];
+    $this->assertElementsOnBuildForm($elements);
+
+    // Disable paging from settings page.
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->getSession()->getPage()->clickLink('Additional Settings');
+    $this->getSession()->getPage()->checkField('Disable Contact Paging');
+    $this->saveCiviCRMSettings(TRUE);
+
+    // Assert contact page break is removed from the webform.
+    $elements = ['contact_pagebreak'];
+    $this->assertElementsOnBuildForm($elements, TRUE);
+    // Ensure no webform parent is added to the source yaml.
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+    $this->getSession()->getPage()->clickLink('Source');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $this->assertSession()->pageTextNotContains('contact_pagebreak');
+    $this->assertSession()->pageTextNotContains('webform_parents');
+
+    // Contribution page break should still be present.
+    $elements = ['contribution_pagebreak'];
+    $this->assertElementsOnBuildForm($elements);
+
+    // Re-enable paging from settings page.
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->getSession()->getPage()->clickLink('Additional Settings');
+    $this->getSession()->getPage()->uncheckField('Disable Contact Paging');
+    $this->saveCiviCRMSettings(TRUE);
+
+    // Assert contact page break is re-added to the webform.
+    $elements = ['contact_pagebreak'];
+    $this->assertElementsOnBuildForm($elements);
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+    $this->getSession()->getPage()->clickLink('Source');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $this->assertSession()->pageTextContains('contact_pagebreak');
+  }
+
+  /**
    * Delete fields on the webform.
    */
   function testDeleteField() {
@@ -113,6 +174,9 @@ final class SaveSettingsTest extends WebformCivicrmTestBase {
 
   /**
    * Check if element is present or not on the webform build page.
+   *
+   * @param array $elements
+   * @param bool $negate
    */
   private function assertElementsOnBuildForm($elements, $negate = FALSE) {
     $this->drupalGet($this->webform->toUrl('edit-form'));
