@@ -727,6 +727,10 @@ class Utils implements UtilsInterface {
       // propertyBag has 'currency', iATS uses `currencyID` until https://github.com/iATSPayments/com.iatspayments.civicrm/pull/350 is merged
       $payParams['currencyID'] = $propertyBag->getCurrency();
       $payParams['amount'] = $params['total_amount'];
+      // For legacy purposes (if payment processor does not use propertyBag)
+      if (isset($payParams['isRecur'])) {
+        $payParams['is_recur'] = $payParams['isRecur'];
+      }
       $payResult = reset(civicrm_api3('PaymentProcessor', 'pay', $payParams)['values']);
 
       // webform_civicrm sends out receipts using Contribution.send_confirmation API if the contribution page is has is_email_receipt = TRUE.
