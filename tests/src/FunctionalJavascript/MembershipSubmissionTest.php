@@ -230,4 +230,123 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals('1', $membership['status_id']);
   }
 
+  /**
+   * Test submitting Membership with different Financial Types
+   * (5% and 13% Sales Tax - based on province)
+   */
+  public function testMembershipVaryingSalesTax() {
+    // Add Canada
+    \Civi::settings()->set('countryLimit', [1228, 1039]);
+    // Make it the default country
+    \Civi::settings()->set('defaultContactCountry', 1039);
+
+    // Create Financial Type and Attach Sales Tax to it
+    $this->createFinancialType('Member5');
+    $this->setupSalesTax(5, $accountParams = [], 5);
+    // Create Financial Type and Attach Sales Tax to it
+    $this->createFinancialType('Member13');
+    $this->setupSalesTax(6, $accountParams = [], 13);
+
+    $this->createMembershipType(100, FALSE, 'Basic', 'Member Dues');
+
+    $payment_processor = $this->createPaymentProcessor();
+
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+    // Enable Address fields.
+    $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_address', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    // Configure Contribution tab.
+    $this->configureContributionTab(FALSE, $payment_processor['id'], '2');
+    $this->htmlOutputDirectory = '/Applications/MAMP/htdocs/d9civicrm.local/web/sites/default/files/simpletest/';
+    $this->createScreenshot($this->htmlOutputDirectory . 'KG0.png');
+
+    // Configure Membership tab.
+    $this->getSession()->getPage()->clickLink('Memberships');
+    $this->getSession()->getPage()->selectFieldOption('membership_1_number_of_membership', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_membership_1_membership_membership_type_id', 'Basic');
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_membership_1_membership_financial_type_id', '- User Select -');
+    // $this->getSession()->getPage()->checkField('Membership Fee');
+
+    $this->htmlOutput();
+
+    $this->htmlOutputDirectory = '/Applications/MAMP/htdocs/d9civicrm.local/web/sites/default/files/simpletest/';
+    $this->createScreenshot($this->htmlOutputDirectory . 'KG1.png');
+
+    $this->getSession()->getPage()->pressButton('Save Settings');
+    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+
+    $this->drupalLogout();
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+
+    $this->assertSession()->waitForField('First Name');
+
+    $this->getSession()->getPage()->fillField('First Name', 'Albert');
+    $this->getSession()->getPage()->fillField('Last Name', 'Alberta');
+    $this->getSession()->getPage()->fillField('Street Address', '39 Street');
+    $this->getSession()->getPage()->fillField('City', 'Calgary');
+    $this->getSession()->getPage()->fillField('Postal Code', 'A0B 1C2');
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contact_1_address_state_province_id', 'AB');
+    $this->getSession()->getPage()->fillField('Email', 'alberta@example.com');
+
+    // Financial Type id for Member5 = 5
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_membership_1_membership_financial_type_id', '5');
+
+    $this->htmlOutputDirectory = '/Applications/MAMP/htdocs/d9civicrm.local/web/sites/default/files/simpletest/';
+    $this->createScreenshot($this->htmlOutputDirectory . 'KG2.png');
+
+    $this->getSession()->getPage()->pressButton('Next >');
+
+    $this->fillCardAndSubmit();
+
+    // KG
+    $this->htmlOutputDirectory = '/Applications/MAMP/htdocs/d9civicrm.local/web/sites/default/files/simpletest/';
+    $this->createScreenshot($this->htmlOutputDirectory . 'KG3.png');
+
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
+    // Ok let's check the results
+    $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
+      'sequential' => 1,
+    ]);
+    $this->assertEquals(1, $api_result['count']);
+    $contribution = reset($api_result['values']);
+    $this->assertNotEmpty($contribution['trxn_id']);
+    $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
+    $this->assertEquals('Member Dues', $contribution['financial_type']);
+    $this->assertEquals('105.00', $contribution['total_amount']);
+    $this->assertEquals('Completed', $contribution['contribution_status']);
+
+    // Also retrieve tax_amount (have to ask for it to be returned)
+    $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
+      'sequential' => 1,
+      'return' => 'tax_amount',
+    ]);
+    $contribution = reset($api_result['values']);
+    $this->assertEquals('5.00', $contribution['tax_amount']);
+    $tax_total_amount = $contribution['tax_amount'];
+
+    $api_result = $this->utils->wf_civicrm_api('line_item', 'get', [
+      'sequential' => 1,
+    ]);
+    $line_items = reset($api_result['values']);
+
+    // throw new \Exception(var_export($api_result, TRUE));
+
+    $this->assertEquals('1.00', $line_items['qty']);
+    $this->assertEquals('100.00', $line_items['unit_price']);
+    $this->assertEquals('100.00', $line_items['line_total']);
+    $this->assertEquals('5.00', $line_items['tax_amount']);
+    $this->assertEquals('5', $line_items['financial_type_id']);
+
+    // 'price_field_id' => '2',
+
+  }
 }
