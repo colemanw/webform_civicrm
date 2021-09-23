@@ -262,8 +262,6 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
     // Configure Contribution tab.
     $this->configureContributionTab(FALSE, $payment_processor['id'], '2');
-    $this->htmlOutputDirectory = '/Applications/MAMP/htdocs/d9civicrm.local/web/sites/default/files/simpletest/';
-    $this->createScreenshot($this->htmlOutputDirectory . 'KG0.png');
 
     // Configure Membership tab.
     $this->getSession()->getPage()->clickLink('Memberships');
@@ -274,9 +272,6 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     // $this->getSession()->getPage()->checkField('Membership Fee');
 
     $this->htmlOutput();
-
-    $this->htmlOutputDirectory = '/Applications/MAMP/htdocs/d9civicrm.local/web/sites/default/files/simpletest/';
-    $this->createScreenshot($this->htmlOutputDirectory . 'KG1.png');
 
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
@@ -298,16 +293,12 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     // Financial Type id for Member5 = 5
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_membership_1_membership_financial_type_id', '5');
 
-    $this->htmlOutputDirectory = '/Applications/MAMP/htdocs/d9civicrm.local/web/sites/default/files/simpletest/';
-    $this->createScreenshot($this->htmlOutputDirectory . 'KG2.png');
+    // $this->htmlOutputDirectory = '/Applications/MAMP/htdocs/d9civicrm.local/web/sites/default/files/simpletest/';
+    // $this->createScreenshot($this->htmlOutputDirectory . 'KG2.png');
 
     $this->getSession()->getPage()->pressButton('Next >');
 
     $this->fillCardAndSubmit();
-
-    // KG
-    $this->htmlOutputDirectory = '/Applications/MAMP/htdocs/d9civicrm.local/web/sites/default/files/simpletest/';
-    $this->createScreenshot($this->htmlOutputDirectory . 'KG3.png');
 
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
