@@ -278,11 +278,11 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
     $this->drupalLogout();
 
-    $this->PurchaseMembershipProvince('Alberta');
-    $this->PurchaseMembershipProvince('Ontario');
+    $this->purchaseMembershipProvince('Alberta');
+    $this->purchaseMembershipProvince('Ontario');
   }
 
-  public function PurchaseMembershipProvince($province){
+  public function purchaseMembershipProvince($province){
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
 
@@ -313,7 +313,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
     // KG - this is where I want my screenshots
     // $this->htmlOutputDirectory = '/Applications/MAMP/htdocs/d9civicrm.local/web/sites/default/files/simpletest/';
-    // $this->createScreenshot($this->htmlOutputDirectory . 'KG2.png');
+    // $this->createScreenshot($this->htmlOutputDirectory . 'KG.png');
 
     $this->getSession()->getPage()->pressButton('Next >');
 
@@ -327,7 +327,6 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
       'sequential' => 1,
     ]);
 
-    // throw new \Exception(var_export($contribution, TRUE));
     if ($province == 'Alberta') {
       $this->assertEquals(1, $api_result['count']);
       $contribution = reset($api_result['values']);
@@ -381,6 +380,5 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals($financial_type_id, $line_items['financial_type_id']);
 
     // ToDo -> this was assigned by CiviCRM Core 'price_field_id' => '2',
-
   }
 }
