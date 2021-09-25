@@ -240,10 +240,10 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     // Make it the default country
     \Civi::settings()->set('defaultContactCountry', 1039);
 
-    // Create Financial Type and Attach Sales Tax to it
+    // Create Financial Type and Attach Sales Tax to it - for Alberta GST = 5%
     $this->createFinancialType('Member5');
     $this->setupSalesTax(5, $accountParams = [], 5);
-    // Create Financial Type and Attach Sales Tax to it
+    // Create Financial Type and Attach Sales Tax to it - for Ontario HST = 13%
     $this->createFinancialType('Member13');
     $this->setupSalesTax(6, $accountParams = [], 13);
 
@@ -277,22 +277,41 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
 
     $this->drupalLogout();
+
+    $this->PurchaseMembershipProvince('Alberta');
+    $this->PurchaseMembershipProvince('Ontario');
+  }
+
+  public function PurchaseMembershipProvince($province){
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
 
+    if ($province == 'Alberta') {
+      $province_id = 'AB';
+      $financial_type_id = 5;
+      $expected_total_amount = 105;
+      $expected_tax_amount = 5;
+    }
+    elseif ($province == 'Ontario') {
+      $province_id = 'ON';
+      $financial_type_id = 6;
+      $expected_total_amount = 113;
+      $expected_tax_amount = 13;
+    }
+
     $this->assertSession()->waitForField('First Name');
 
-    $this->getSession()->getPage()->fillField('First Name', 'Albert');
-    $this->getSession()->getPage()->fillField('Last Name', 'Alberta');
+    $this->getSession()->getPage()->fillField('First Name', $province .'_first');
+    $this->getSession()->getPage()->fillField('Last Name', $province . '_last');
     $this->getSession()->getPage()->fillField('Street Address', '39 Street');
-    $this->getSession()->getPage()->fillField('City', 'Calgary');
+    $this->getSession()->getPage()->fillField('City', 'City');
     $this->getSession()->getPage()->fillField('Postal Code', 'A0B 1C2');
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contact_1_address_state_province_id', 'AB');
-    $this->getSession()->getPage()->fillField('Email', 'alberta@example.com');
+    $this->getSession()->getPage()->fillField('Email', $province . '@example.com');
 
-    // Financial Type id for Member5 = 5
-    $this->getSession()->getPage()->selectFieldOption('civicrm_1_membership_1_membership_financial_type_id', '5');
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_membership_1_membership_financial_type_id', $financial_type_id);
 
+    // KG - this is where I want my screenshots
     // $this->htmlOutputDirectory = '/Applications/MAMP/htdocs/d9civicrm.local/web/sites/default/files/simpletest/';
     // $this->createScreenshot($this->htmlOutputDirectory . 'KG2.png');
 
@@ -307,12 +326,21 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
       'sequential' => 1,
     ]);
-    $this->assertEquals(1, $api_result['count']);
-    $contribution = reset($api_result['values']);
+
+    // throw new \Exception(var_export($contribution, TRUE));
+    if ($province == 'Alberta') {
+      $this->assertEquals(1, $api_result['count']);
+      $contribution = reset($api_result['values']);
+    }
+    elseif ($province == 'Ontario') {
+      $this->assertEquals(2, $api_result['count']);
+      $contribution = next($api_result['values']);
+    }
+
     $this->assertNotEmpty($contribution['trxn_id']);
     $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
     $this->assertEquals('Member Dues', $contribution['financial_type']);
-    $this->assertEquals('105.00', $contribution['total_amount']);
+    $this->assertEquals($expected_total_amount, $contribution['total_amount']);
     $this->assertEquals('Completed', $contribution['contribution_status']);
 
     // Also retrieve tax_amount (have to ask for it to be returned)
@@ -320,24 +348,39 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
       'sequential' => 1,
       'return' => 'tax_amount',
     ]);
-    $contribution = reset($api_result['values']);
-    $this->assertEquals('5.00', $contribution['tax_amount']);
+
+    if ($province == 'Alberta') {
+      $this->assertEquals(1, $api_result['count']);
+      $contribution = reset($api_result['values']);
+    }
+    elseif ($province == 'Ontario') {
+      $this->assertEquals(2, $api_result['count']);
+      $contribution = next($api_result['values']);
+    }
+
+    $this->assertEquals($expected_tax_amount, $contribution['tax_amount']);
     $tax_total_amount = $contribution['tax_amount'];
 
     $api_result = $this->utils->wf_civicrm_api('line_item', 'get', [
       'sequential' => 1,
     ]);
-    $line_items = reset($api_result['values']);
 
-    // throw new \Exception(var_export($api_result, TRUE));
+    if ($province == 'Alberta') {
+      $this->assertEquals(1, $api_result['count']);
+      $line_items = reset($api_result['values']);
+    }
+    elseif ($province == 'Ontario') {
+      $this->assertEquals(2, $api_result['count']);
+      $line_items = next($api_result['values']);
+    }
 
     $this->assertEquals('1.00', $line_items['qty']);
     $this->assertEquals('100.00', $line_items['unit_price']);
     $this->assertEquals('100.00', $line_items['line_total']);
-    $this->assertEquals('5.00', $line_items['tax_amount']);
-    $this->assertEquals('5', $line_items['financial_type_id']);
+    $this->assertEquals($expected_tax_amount, $line_items['tax_amount']);
+    $this->assertEquals($financial_type_id, $line_items['financial_type_id']);
 
-    // 'price_field_id' => '2',
+    // ToDo -> this was assigned by CiviCRM Core 'price_field_id' => '2',
 
   }
 }
