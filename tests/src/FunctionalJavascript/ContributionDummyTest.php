@@ -12,34 +12,6 @@ use Drupal\Core\Url;
  */
 final class ContributionDummyTest extends WebformCivicrmTestBase {
 
-  private function setupSalesTax(int $financialTypeId, $accountParams = []) {
-    $params = array_merge([
-      'name' => 'Sales tax account ' . substr(sha1(rand()), 0, 4),
-      'financial_account_type_id' => key(\CRM_Core_PseudoConstant::accountOptionValues('financial_account_type', NULL, " AND v.name LIKE 'Liability' ")),
-      'is_tax' => 1,
-      'tax_rate' => 5,
-      'is_active' => 1,
-    ], $accountParams);
-    $account = \CRM_Financial_BAO_FinancialAccount::add($params);
-    $entityParams = [
-      'entity_table' => 'civicrm_financial_type',
-      'entity_id' => $financialTypeId,
-      'account_relationship' => key(\CRM_Core_PseudoConstant::accountOptionValues('account_relationship', NULL, " AND v.name LIKE 'Sales Tax Account is' ")),
-    ];
-
-    \Civi::$statics['CRM_Core_PseudoConstant']['taxRates'][$financialTypeId] = $params['tax_rate'];
-
-    $dao = new \CRM_Financial_DAO_EntityFinancialAccount();
-    $dao->copyValues($entityParams);
-    $dao->find();
-    if ($dao->fetch()) {
-      $entityParams['id'] = $dao->id;
-    }
-    $entityParams['financial_account_id'] = $account->id;
-
-    return \CRM_Financial_BAO_FinancialTypeAccount::add($entityParams);
-  }
-
   /**
    * Test One-page donation
    */
@@ -303,34 +275,6 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertEquals('1200.00', $api_result['values'][0]['unit_price']);
     $this->assertEquals('1200.00', $api_result['values'][0]['line_total']);
     $this->assertEquals('1', $api_result['values'][0]['financial_type_id']);
-  }
-
-  /**
-   * Fill Card Details and submit.
-   */
-  public function fillCardAndSubmit() {
-    // Wait for the credit card form to load in.
-    $this->assertSession()->waitForField('credit_card_number');
-    $this->getSession()->getPage()->fillField('Card Number', '4222222222222220');
-    $this->getSession()->getPage()->fillField('Security Code', '123');
-    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[M]', '11');
-    $this_year = date('Y');
-    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[Y]', $this_year + 1);
-    $billingValues = [
-      'first_name' => 'Frederick',
-      'last_name' => 'Pabst',
-      'street_address' => '123 Milwaukee Ave',
-      'city' => 'Milwaukee',
-      'country' => '1228',
-      'state_province' => '1048',
-      'postal_code' => '53177',
-    ];
-    $this->fillBillingFields($billingValues);
-
-    $this->getSession()->getPage()->pressButton('Submit');
-    $this->htmlOutput();
-    $this->assertPageNoErrorMessages();
-    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
   }
 
 }

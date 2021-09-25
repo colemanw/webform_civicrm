@@ -75,34 +75,6 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     drupal_flush_all_caches();
   }
 
-  private function setupSalesTax(int $financialTypeId, $accountParams = []) {
-    $params = array_merge([
-      'name' => 'Sales tax account ' . substr(sha1(rand()), 0, 4),
-      'financial_account_type_id' => key(\CRM_Core_PseudoConstant::accountOptionValues('financial_account_type', NULL, " AND v.name LIKE 'Liability' ")),
-      'is_tax' => 1,
-      'tax_rate' => 5,
-      'is_active' => 1,
-    ], $accountParams);
-    $account = \CRM_Financial_BAO_FinancialAccount::add($params);
-    $entityParams = [
-      'entity_table' => 'civicrm_financial_type',
-      'entity_id' => $financialTypeId,
-      'account_relationship' => key(\CRM_Core_PseudoConstant::accountOptionValues('account_relationship', NULL, " AND v.name LIKE 'Sales Tax Account is' ")),
-    ];
-
-    \Civi::$statics['CRM_Core_PseudoConstant']['taxRates'][$financialTypeId] = $params['tax_rate'];
-
-    $dao = new \CRM_Financial_DAO_EntityFinancialAccount();
-    $dao->copyValues($entityParams);
-    $dao->find();
-    if ($dao->fetch()) {
-      $entityParams['id'] = $dao->id;
-    }
-    $entityParams['financial_account_id'] = $account->id;
-
-    return \CRM_Financial_BAO_FinancialTypeAccount::add($entityParams);
-  }
-
   public function testSubmit1stPayContribution() {
     $this->drupalLogin($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
