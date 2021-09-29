@@ -2336,6 +2336,21 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       }
 
       // Save the line_item
+      // KG
+      // 'label' => 'Contribution Amount',
+      // 'label' => 'Membership Amount',
+      if ($item['entity_table'] == "civicrm_membership") {
+        // Use 'label' to look up the 'name' - of course!
+        $price_field_result = $this->utils->wf_civicrm_api('price_field', 'get', [
+          'sequential' => 1,
+          'label' => 'Membership Amount',
+          'return' => 'name',
+        ]);
+        $item['price_field_id'] = $price_field_result[0]['name'];
+      } else {
+        $item['price_field_id'] = 'contribution_amount';
+      }
+
       $line_result = $utils->wf_civicrm_api('line_item', 'create', $item);
       $item['id'] = $line_result['id'];
 

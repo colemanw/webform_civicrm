@@ -380,5 +380,12 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals($financial_type_id, $line_items['financial_type_id']);
 
     // ToDo -> this was assigned by CiviCRM Core 'price_field_id' => '2',
+    // throw new \Exception(var_export($line_items, TRUE));
+
+    //$result = civicrm_api3('PriceField', 'get', [
+    //  'sequential' => 1,
+    //]);
+    //throw new \Exception(var_export($result, TRUE));
+
   }
 }
