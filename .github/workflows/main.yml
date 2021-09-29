@@ -12,13 +12,13 @@ jobs:
       matrix:
         include:
           - drupal: '^8.9'
-            civicrm: '~5.33'
+            civicrm: '~5.35.0'
           - drupal: '^8.9'
-            civicrm: '~5.35'
-          - drupal: '^9.1'
-            civicrm: '~5.36'
-          - drupal: '^9.1'
-            civicrm: '5.39.x-dev'
+            civicrm: '~5.39.0'
+          - drupal: '~9.2.0'
+            civicrm: '5.42.x-dev'
+          - drupal: '~9.2.0'
+            civicrm: 'dev-master'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
     services:
       mysql:
@@ -62,6 +62,11 @@ jobs:
           composer config repositories.0 path $GITHUB_WORKSPACE
           composer config repositories.1 composer https://packages.drupal.org/8
           COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:${{ matrix.drupal }}
+      - name: Deal with https://lab.civicrm.org/dev/drupal/-/issues/164
+        # This is temporary until no longer testing anything less than 5.41. A more sophisticated way would be to make this conditional on civi version so that for 5.41+ it doesn't do this, giving a closer approximation to real installs for 5.41+, but as far as I know this is only used by compile-lib to make some bootstrap css files.
+        run: |
+          cd ~/drupal
+          COMPOSER_MEMORY_LIMIT=-1 composer require scssphp/scssphp:1.6.0
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
@@ -101,3 +106,4 @@ jobs:
           name: phpunit_browser_output
           # For some reason Drupal prints here and not our specified BROWSERTEST_OUTPUT_DIRECTORY.
           path: '/home/runner/drupal/web/sites/simpletest/browser_output'
+          retention-days: 7

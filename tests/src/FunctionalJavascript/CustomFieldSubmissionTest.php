@@ -329,7 +329,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     ])->toString();
     $this->drupalGet($fieldURL);
     $this->getSession()->getPage()->uncheckField('Active?');
-    $this->createScreenshot($this->htmlOutputDirectory . '/custom_field.png');
+    // $this->createScreenshot($this->htmlOutputDirectory . '/custom_field.png');
     $this->getSession()->getPage()->pressButton('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
@@ -392,7 +392,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->waitForField('properties[options][options][civicrm_option_1][label]');
     $this->getSession()->getPage()->fillField('properties[options][options][civicrm_option_1][label]', 'Red - Recommended');
     $this->htmlOutput();
-    $this->createScreenshot($this->htmlOutputDirectory . '/afterlabelchange.png');
+    // $this->createScreenshot($this->htmlOutputDirectory . '/afterlabelchange.png');
     $this->getSession()->getPage()->pressButton('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();
 

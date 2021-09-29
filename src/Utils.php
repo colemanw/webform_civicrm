@@ -121,16 +121,7 @@ class Utils implements UtilsInterface {
   function wf_crm_state_abbr($input, $ret = 'abbreviation', $country_id = NULL) {
     $params = ['sequential' => 1];
     if ($ret == 'id') {
-      if (is_numeric($input)) {
-        $state = $this->wf_civicrm_api('state_province', 'getsingle', [
-          'return' => 'abbreviation',
-          'id' => $input,
-        ]);
-        $params['abbreviation'] = $state['abbreviation'] ?? $input;
-      }
-      else {
-        $params['abbreviation'] = $input;
-      }
+      $params['abbreviation'] = $input;
       if (!$country_id || $country_id === 'default') {
         $country_id = (int) $this->wf_crm_get_civi_setting('defaultContactCountry', 1228);
       }

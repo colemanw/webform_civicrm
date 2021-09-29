@@ -257,7 +257,7 @@ class AdminForm implements AdminFormInterface {
         . t('Enable the "Existing Contact" field to autofill with the current user (or another contact).' . '<br />'
           . 'Address, Phone, Email, Custom fields for Contacts can also be added to the webform.'. '<hr/>' ),
       '#group' => 'webform_civicrm',
-      '#attributes' => ['class' => ['contact-icon-' . $c['contact'][1]['contact_type']]],
+      '#attributes' => ['class' => ['contact_icon_' . $c['contact'][1]['contact_type']]],
     ];
     $this->form['contact_' . $n][$n . '_contact_type'] = [
       '#type' => 'select',
@@ -441,7 +441,7 @@ class AdminForm implements AdminFormInterface {
       '#title' => t('Introduction Text'),
       '#markup' => t('<hr/>' . 'This text will appear at the top of the form. You may configure separate messages for known contacts (logged in users, or users following a link with a checksum token from civimail) and unknown (anonymous) users.' . '<hr/>'),
       '#group' => 'webform_civicrm',
-      '#attributes' => ['class' => ['civi-icon-text']],
+      '#attributes' => ['class' => ['civi_icon_fa-pencil-square-o']],
     ];
     $this->form['prefix']['prefix_known'] = [
       '#type' => 'textarea',
@@ -460,7 +460,7 @@ class AdminForm implements AdminFormInterface {
       '#title' => t('"Not You?" Message'),
       '#markup' => t('<hr/>' . 'If you’re logged in as, or following the link with a checksum token for someone else, a prompt to confirm identity will appear.' . '<hr/>'),
       '#group' => 'webform_civicrm',
-      '#attributes' => ['class' => ['civi-icon-message']],
+      '#attributes' => ['class' => ['civi_icon_fa-exclamation-triangle']],
     ];
     $this->form['st_message']['toggle_message'] = [
       '#type' => 'checkbox',
@@ -487,7 +487,7 @@ class AdminForm implements AdminFormInterface {
       '#type' => 'details',
       '#title' => t('Activities'),
       '#group' => 'webform_civicrm',
-      '#attributes' => ['class' => ['civi-icon-activity']],
+      '#attributes' => ['class' => ['civi_icon_fa-tasks']],
     ];
     $num_acts = wf_crm_aval($this->data, "activity:number_of_activity", 0);
     $this->form['activityTab']["activity_number_of_activity"] = [
@@ -664,7 +664,7 @@ class AdminForm implements AdminFormInterface {
       '#type' => 'details',
       '#title' => t('Cases'),
       '#group' => 'webform_civicrm',
-      '#attributes' => ['class' => ['civi-icon-case']],
+      '#attributes' => ['class' => ['civi_icon_fa-folder-open-o']],
     ];
     $this->form['caseTab']["case_number_of_case"] = [
       '#type' => 'select',
@@ -776,7 +776,7 @@ class AdminForm implements AdminFormInterface {
       '#type' => 'details',
       '#title' => t('Event Registration'),
       '#group' => 'webform_civicrm',
-      '#attributes' => ['class' => ['civi-icon-participant']],
+      '#attributes' => ['class' => ['civi_icon_fa-calendar']],
     ];
     $reg_type = wf_crm_aval($this->data, 'participant_reg_type');
     $this->form['participant']['participant_reg_type'] = [
@@ -1013,7 +1013,7 @@ class AdminForm implements AdminFormInterface {
       '#type' => 'details',
       '#title' => t('Memberships'),
       '#group' => 'webform_civicrm',
-      '#attributes' => ['class' => ['civi-icon-membership']],
+      '#attributes' => ['class' => ['civi_icon_fa-id-badge']],
     ];
     for ($c = 1, $cMax = count($this->data['contact']); $c <= $cMax; ++$c) {
       $num = wf_crm_aval($this->data, "membership:{$c}:number_of_membership", 0);
@@ -1056,7 +1056,7 @@ class AdminForm implements AdminFormInterface {
       '#title' => t('Contribution'),
       '#group' => 'webform_civicrm',
       '#markup' => t('<hr/>' . 'In order to process live transactions for events, memberships, or donations. Enable Contribution -> Yes & configure all required contribution settings. Note that in this section you can also Enable Receipt.' . '<hr/>'),
-      '#attributes' => ['class' => ['civi-icon-contribution']],
+      '#attributes' => ['class' => ['civi_icon_fa-credit-card']],
     ];
     $fid = 'civicrm_1_contribution_1_contribution_enable_contribution';
     $enable_contribution = wf_crm_aval($this->data, 'contribution:1:contribution:1:enable_contribution');
@@ -1278,7 +1278,7 @@ class AdminForm implements AdminFormInterface {
       '#type' => 'details',
       '#title' => t('Grants'),
       '#group' => 'webform_civicrm',
-      '#attributes' => ['class' => ['civi-icon-grant']],
+      '#attributes' => ['class' => ['civi_icon_fa-money']],
     ];
     $this->form['grantTab']["grant_number_of_grant"] = [
       '#type' => 'select',
@@ -1342,7 +1342,7 @@ class AdminForm implements AdminFormInterface {
       '#type' => 'details',
       '#group' => 'webform_civicrm',
       '#title' => t('Additional Settings'),
-      '#attributes' => ['class' => ['civi-icon-prefs']],
+      '#attributes' => ['class' => ['civi_icon_fa-plus-square-o']],
     ];
     $this->form['additional_options']['checksum_text'] = [
       '#type' => 'item',

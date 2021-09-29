@@ -46,6 +46,8 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->drupalGet($this->webform->toUrl('edit-form'));
     $this->assertPageNoErrorMessages();
 
+    $this->country = 'United Kingdom';
+    $this->state = 'Newport';
     // Change widget of Amount element to checkbox.
     $this->changeTypeOfAmountElement('checkboxes');
     $this->submitWebform('checkboxes');
@@ -56,6 +58,8 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->submitWebform('radios');
     $this->verifyResult();
 
+    $this->country = 'Malaysia';
+    $this->state = 'Selangor';
     // Change widget of Amount element to radio + other.
     $this->changeTypeOfAmountElement('webform_radios_other');
     $this->submitWebform('webform_radios_other');
@@ -73,9 +77,9 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
-    $this->getSession()->getPage()->selectFieldOption("Country", 'United Kingdom');
+    $this->getSession()->getPage()->selectFieldOption("Country", $this->country);
     $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->getSession()->getPage()->selectFieldOption('State/Province', 'Newport');
+    $this->getSession()->getPage()->selectFieldOption('State/Province', $this->state);
 
     $this->getSession()->getPage()->pressButton('Next >');
     $this->assertSession()->waitForField('civicrm_1_contribution_1_contribution_total_amount');
@@ -172,10 +176,10 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
       'sequential' => 1,
     ])['values'][0];
     $country = $this->utils->wf_civicrm_api('Country', 'get', [
-      'name' => "United Kingdom",
+      'name' => $this->country,
     ]);
     $state = $this->utils->wf_civicrm_api('StateProvince', 'get', [
-      'name' => "Newport",
+      'name' => $this->state,
     ]);
     $this->assertEquals($country['id'], $address['country_id']);
     $this->assertEquals($state['id'], $address['state_province_id']);

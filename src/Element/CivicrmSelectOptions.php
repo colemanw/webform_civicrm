@@ -159,7 +159,7 @@ class CivicrmSelectOptions extends FormElement {
         '#type' => 'radio',
         '#title' => t('Mark @item as the default value', ['@item' => $option]),
         '#title_display' => 'invisible',
-        '#default_value' => $element['#default_option'] == $key ? $key : 0,
+        '#default_value' => $element['#default_option'] == $key ? $key : '',
         '#parents' => array_merge($element['#parents'], ['default']),
         '#return_value' => $key,
       ];

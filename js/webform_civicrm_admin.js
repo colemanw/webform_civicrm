@@ -185,8 +185,8 @@ var wfCiviAdmin = (function ($, D) {
   function changeContactLabel() {
     var c = $(this).attr('name').split('_')[0];
     var label = getContactLabel(c);
-    $('.vertical-tabs-list li', '#wf-crm-configure-form').eq(c - 1).find('strong').html(c + '. ' + label);
-    $('select[data-type=ContactReference] option[value=' + c + '], select[name$=address_master_id] option[value=' + c + '], .contact-label.number-' + c, '#wf-crm-configure-form').html(label);
+    $('.vertical-tabs-list li', '#webform-civicrm-settings-form').eq(c - 1).find('strong').html(c + '. ' + label);
+    $('select[data-type=ContactReference] option[value=' + c + '], select[name$=address_master_id] option[value=' + c + '], .contact-label.number-' + c, '#webform-civicrm-settings-form').html(label);
     $('details#edit-membership').trigger('summaryUpdated');
   }
 
@@ -442,26 +442,42 @@ var wfCiviAdmin = (function ($, D) {
 
       // Loop through fieldsets and set icon in the tab.
       // We don't use the once() method because we need the i from the loop
-      $('#webform-civicrm-settings-form fieldset.vertical-tabs-pane').each(function(i) {
+      $('#webform-civicrm-settings-form details[class*="vertical-tabs"]').each(function(i) {
         if (!$(this).hasClass('wf-civi-icon-processed')) {
           var clas = $(this).attr('class').split(' ');
           var name = '';
           for (var c in clas) {
-            var cl = clas[c].split('-');
+            var cl = clas[c].split('_');
             if (cl[1] == 'icon') {
+              var icon_name = cl[2];
               if (cl[0] == 'contact') {
                 name = 'name="' + (i + 1) + '_contact_type"'
+                var type = $('select[name="' + (i + 1) + '_contact_type"', '#webform-civicrm-settings-form').val();
+                icon_name = getContactIcon(type);
               }
-              $('#webform-civicrm-settings-form .vertical-tab-button a').eq(i).prepend('<span class="civi-icon '+cl[2]+'" '+name+'> </span>');
+              $('#webform-civicrm-settings-form .vertical-tabs__menu-item a').eq(i).prepend('<i class="crm-i ' + icon_name + '" ' + name + '> </i>');
             }
           }
           $(this).addClass('wf-civi-icon-processed');
         }
       });
 
+      /**
+       * Get contact icon based on contact type.
+       */
+      function getContactIcon(type) {
+        if (type == 'organization') {
+          return 'fa-building';
+        }
+        if (type == 'household') {
+          return 'fa-home';
+        }
+        return 'fa-user';
+      }
+
       // Respond to contact type changing
       $('select[name$="_contact_type"]').once('contact-type').change(function() {
-        $('#webform-civicrm-settings-form .vertical-tab-button span[name="'+$(this).attr('name')+'"]').removeClass().addClass('civi-icon '+$(this).val());
+        $('#webform-civicrm-settings-form .vertical-tabs__menu-item i[name="' + $(this).attr('name') + '"]').removeClass().addClass('crm-i ' + getContactIcon($(this).val()));
         employerOptions();
       });
 

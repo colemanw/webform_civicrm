@@ -87,6 +87,66 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   }
 
   /**
+   * Create Membership Type
+   */
+  protected function createMembershipType($amount = 0, $autoRenew = FALSE, $name = 'Basic', $financialTypeId = 'Member Dues') {
+    $result = civicrm_api3('MembershipType', 'create', [
+      'member_of_contact_id' => 1,
+      'financial_type_id' => $financialTypeId,
+      'duration_unit' => "year",
+      'duration_interval' => 1,
+      'period_type' => "rolling",
+      'minimum_fee' => $amount,
+      'name' => $name,
+      'auto_renew' => $autoRenew,
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+    return array_pop($result['values']);
+  }
+
+  /**
+   * Create Financial Type
+   */
+  protected function createFinancialType($name) {
+    $result = civicrm_api3('FinancialType', 'create', [
+      'name' => $name,
+      'is_active' => 1,
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+    return array_pop($result['values']);
+  }
+
+  protected function setupSalesTax(int $financialTypeId, $accountParams = [], $tax_rate= 5) {
+    $params = array_merge([
+      'name' => 'Sales tax account ' . substr(sha1(rand()), 0, 4),
+      'financial_account_type_id' => key(\CRM_Core_PseudoConstant::accountOptionValues('financial_account_type', NULL, " AND v.name LIKE 'Liability' ")),
+      'is_tax' => 1,
+      'tax_rate' => $tax_rate,
+      'is_active' => 1,
+    ], $accountParams);
+    $account = \CRM_Financial_BAO_FinancialAccount::add($params);
+    $entityParams = [
+      'entity_table' => 'civicrm_financial_type',
+      'entity_id' => $financialTypeId,
+      'account_relationship' => key(\CRM_Core_PseudoConstant::accountOptionValues('account_relationship', NULL, " AND v.name LIKE 'Sales Tax Account is' ")),
+    ];
+
+    \Civi::$statics['CRM_Core_PseudoConstant']['taxRates'][$financialTypeId] = $params['tax_rate'];
+
+    $dao = new \CRM_Financial_DAO_EntityFinancialAccount();
+    $dao->copyValues($entityParams);
+    $dao->find();
+    if ($dao->fetch()) {
+      $entityParams['id'] = $dao->id;
+    }
+    $entityParams['financial_account_id'] = $account->id;
+
+    return \CRM_Financial_BAO_FinancialTypeAccount::add($entityParams);
+  }
+
+  /**
    * Create custom group.
    */
   protected function createCustomGroup($params = []) {
@@ -106,8 +166,8 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->getSession()->resizeWindow(1440, 900);
   }
 
-  protected function configureContributionTab($disableBilling = FALSE, $pp = NULL) {
-    //Configure Contribution tab.
+  protected function configureContributionTab($disableReceipt = FALSE, $pp = NULL, $financial_type_id = 1) {
+    // Configure Contribution tab.
     $this->getSession()->getPage()->clickLink('Contribution');
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
@@ -115,7 +175,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->getSession()->getPage()->pressButton('Enable It');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
-    $this->getSession()->getPage()->selectFieldOption('Financial Type', 1);
+    $this->getSession()->getPage()->selectFieldOption('Financial Type', $financial_type_id);
     $this->assertSession()->assertWaitOnAjaxRequest();
 
     if ($pp) {
@@ -488,6 +548,34 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('State/Province', $params['state_province']);
 
     $this->getSession()->getPage()->fillField('Postal Code', $params['postal_code']);
+  }
+
+  /**
+   * Fill Card Details and submit.
+   */
+  protected function fillCardAndSubmit() {
+    // Wait for the credit card form to load in.
+    $this->assertSession()->waitForField('credit_card_number');
+    $this->getSession()->getPage()->fillField('Card Number', '4222222222222220');
+    $this->getSession()->getPage()->fillField('Security Code', '123');
+    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[M]', '11');
+    $this_year = date('Y');
+    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[Y]', $this_year + 1);
+    $billingValues = [
+      'first_name' => 'Frederick',
+      'last_name' => 'Pabst',
+      'street_address' => '123 Milwaukee Ave',
+      'city' => 'Milwaukee',
+      'country' => '1228',
+      'state_province' => '1048',
+      'postal_code' => '53177',
+    ];
+    $this->fillBillingFields($billingValues);
+
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->htmlOutput();
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
   }
 
   /**
