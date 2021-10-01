@@ -1996,7 +1996,7 @@ class AdminForm implements AdminFormInterface {
     $handler->setConfiguration($handler_configuration);
 
     $this->addEnabledElements($enabled);
-    $this->sortPaging();
+    $this->setPaging();
     // Update existing contact fields
     foreach ($existing as $fid => $id) {
       if (substr($fid, -8) === 'existing') {
@@ -2045,27 +2045,56 @@ class AdminForm implements AdminFormInterface {
   /**
    * Fix paging on the webform.
    */
-  protected function sortPaging() {
-    $elements = $this->webform->getElementsInitialized();
+  protected function setPaging() {
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $elements = $this->webform->getElementsDecoded();
     if (!isset($elements['contact_pagebreak'])) {
       return;
     }
+    $children = $this->webform->getElement('contact_pagebreak')['#webform_children'] ?? [];
 
-    //Move contact page to top.
-    if (key($elements) != 'contact_pagebreak') {
-      $elements = array_merge([
-        'contact_pagebreak' => $elements['contact_pagebreak']
-      ], $elements);
-    }
-    foreach ($elements as $key => &$element) {
-      if (strpos($key, 'civicrm') !== 0
-        || isset($element['#parent']) || !empty($element['#webform_parent_key'])
-        || empty($element['#type']) || $element['#type'] == 'webform_wizard_page') {
-        continue;
+    if (!empty($this->settings['disable_contact_paging']) && is_array($children) && count($children) > 0) {
+      // Pop out contact_pagebreak children elements.
+      $newElements = [];
+      foreach ($elements as $key => $element) {
+        if ($key != 'contact_pagebreak') {
+          $newElements[$key] = $element;
+          continue;
+        }
+        foreach ($children as $child) {
+          if (is_string($child) && isset($elements['contact_pagebreak'][$child])) {
+            $newElements[$child] = $elements['contact_pagebreak'][$child];
+          }
+        }
       }
-      $page = (strpos($key, '_contribution_') !== FALSE) ? 'contribution_pagebreak' : 'contact_pagebreak';
-      $elements[$page][$key] = $element;
-      unset($elements[$key]);
+      $elements = $newElements;
+      $utils->remove_element($elements, 'contact_pagebreak');
+    }
+    else {
+      // Return if childrens are already added.
+      if (is_array($children) && count($children) > 0) {
+        return;
+      }
+      // Move contact_pagebreak element to required position.
+      $newElements = [];
+      foreach ($elements as $key => &$element) {
+        if ($key != 'contact_pagebreak') {
+          if (strpos($key, 'civicrm_1_contact') !== false && !isset($newElements['contact_pagebreak'])) {
+            $newElements['contact_pagebreak'] = $elements['contact_pagebreak'];
+          }
+          $newElements[$key] = $element;
+        }
+      }
+      $elements = $newElements;
+      foreach ($elements as $key => &$element) {
+        if ((strpos($key, 'civicrm_1_contact') === false)
+          || isset($element['#parent']) || !empty($element['#webform_parent_key'])
+          || empty($element['#type']) || $element['#type'] == 'webform_wizard_page') {
+          continue;
+        }
+        $elements['contact_pagebreak'][$key] = $element;
+        unset($elements[$key]);
+      }
     }
     $this->webform->setElements($elements);
     $this->webform->save();

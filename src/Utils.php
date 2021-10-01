@@ -957,4 +957,23 @@ class Utils implements UtilsInterface {
     return $result;
   }
 
+  /**
+   * Searches for all occurrence of form key in the array and
+   * unsets it from the webform element.
+   *
+   * @param array $elements
+   * @param string $form_key
+   */
+  function remove_element(&$elements, $form_key) {
+    unset($elements[$form_key]);
+    foreach ($elements as $k => &$value) {
+      if (is_array($value)) {
+        $this->remove_element($value, $form_key);
+      }
+      elseif ($value === $form_key) {
+        unset($elements[$k]);
+      }
+    }
+  }
+
 }
