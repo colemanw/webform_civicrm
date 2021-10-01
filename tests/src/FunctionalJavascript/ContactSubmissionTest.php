@@ -30,14 +30,14 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
    */
   public function createGroupWithContacts() {
     $this->group = civicrm_api3('Group', 'create', [
-      'title' => substr(sha1(rand()), 0, 7),
+      'title' => 'TestGroup',
     ]);
     $this->contacts = [];
     foreach ([1, 2, 3, 4, 5] as $k) {
       $this->contacts[$k] = [
         'contact_type' => 'Individual',
-        'first_name' => substr(sha1(rand()), 0, 7),
-        'last_name' => substr(sha1(rand()), 0, 7),
+        'first_name' => 'Fred' . $k, // will populate the name as Fred1, Fred2...
+        'last_name' => 'Pabst' . $k,
       ];
       $contact = $this->utils->wf_civicrm_api('contact', 'create', $this->contacts[$k]);
       $this->contacts[$k]['id'] = $contact['id'];
@@ -50,6 +50,49 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
         ]);
       }
     }
+  }
+
+  /**
+   * Test Autocomplete widget with group filter.
+   */
+  public function testAutocompleteWithGroupFilter() {
+    // Create sample contacts.
+    $this->createGroupWithContacts();
+    $this->drupalLogin($this->rootUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+
+    $this->enableCivicrmOnWebform();
+    $this->saveCiviCRMSettings();
+
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+
+    // Edit contact element and enable select widget.
+    $editContact = [
+      'selector' => 'edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations',
+      'widget' => 'Autocomplete',
+      'filter' => [
+        'group' => $this->group['id'],
+      ],
+    ];
+    $this->editContactElement($editContact);
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+
+    // First 4 contacts are in the group so they should be included in the autocomplete result.
+    foreach ([1, 2, 3, 4] as $k) {
+      $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', $this->contacts[$k]['first_name']);
+      $this->assertFieldValue('edit-civicrm-1-contact-1-contact-first-name', $this->contacts[$k]['first_name']);
+      $this->assertFieldValue('edit-civicrm-1-contact-1-contact-last-name', $this->contacts[$k]['last_name']);
+      $this->getSession()->getPage()->find('xpath', '//span[contains(@class, "token-input-delete-token")]')->click();;
+    }
+    // Contact 5 is not in the group. The search should fail.
+    $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', 'Fred5');
+    $this->assertSession()->elementTextContains('css', '[id="edit-civicrm-1-contact-1-fieldset-fieldset"]', '+ Create new +');
+    $this->assertFieldValue('edit-civicrm-1-contact-1-contact-first-name', 'Fred5');
+    $this->assertFieldValue('edit-civicrm-1-contact-1-contact-last-name', '');
   }
 
   /**
