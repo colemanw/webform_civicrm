@@ -1036,6 +1036,7 @@ function wf_crm_find_case_roles($contact_a, $case, $case_role) {
     'relationship_type_id' => $case_role,
     'contact_id_a' => $contact_a,
     'case_id' => $case,
+    'is_active' => 1,
   ];
   $result = wf_civicrm_api('Relationship', 'get', $params);
   if (isset($result['values'][0]['contact_id_b'])) {
