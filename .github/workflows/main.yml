@@ -11,13 +11,13 @@ jobs:
     strategy:
       matrix:
         include:
-          - drupal: '^8.9'
-            civicrm: '~5.35.0'
-          - drupal: '^8.9'
-            civicrm: '~5.39.0'
-          - drupal: '~9.2.0'
+          - drupal: '8.9.*'
+            civicrm: '5.35.*'
+          - drupal: '8.9.*'
+            civicrm: '5.39.*'
+          - drupal: '9.2.*'
             civicrm: '5.42.x-dev'
-          - drupal: '~9.2.0'
+          - drupal: '9.2.*'
             civicrm: 'dev-master'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
     services:
@@ -70,7 +70,7 @@ jobs:
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages}:${{ matrix.civicrm }} --prefer-dist
+          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} --prefer-dist
       # For some reason drupal/webform:5.x installs even if it is drupal:^9.0
       - name: Ensure Webform ^6.0
         run: |
@@ -79,7 +79,7 @@ jobs:
       - name: Install webform_civicrm
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/webform_civicrm *@dev
+          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/webform_civicrm:dev-5.x@dev
       - name: Install token
         run: |
           cd ~/drupal
