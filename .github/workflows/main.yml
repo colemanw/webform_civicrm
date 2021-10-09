@@ -70,7 +70,11 @@ jobs:
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} --prefer-dist
+          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages}:${{ matrix.civicrm }} --prefer-dist
+          # Todo remove the next 3 lines when drupal packagist gets updated with the new composer.json requirement and put drupal-8 back into the line above.
+          VERSION_TO_USE=${{ matrix.civicrm }}
+          if [ "$VERSION_TO_USE" = "dev-master" ]; then VERSION_TO_USE=5.42.*; fi
+          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-drupal-8:${VERSION_TO_USE} --prefer-dist
       # For some reason drupal/webform:5.x installs even if it is drupal:^9.0
       - name: Ensure Webform ^6.0
         run: |
