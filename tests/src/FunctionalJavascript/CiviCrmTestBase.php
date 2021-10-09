@@ -22,6 +22,7 @@ abstract class CiviCrmTestBase extends WebDriverTestBase {
    * {@inheritdoc}
    */
   protected function setUp() {
+    throw new \Exception('yes this is running');
     parent::setUp();
     $this->drupalPlaceBlock('page_title_block');
     $this->drupalPlaceBlock('local_tasks_block');
