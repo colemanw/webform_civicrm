@@ -62,10 +62,10 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->assertEquals('Basic', $membership['membership_name']);
     $this->assertEquals('5', $membership['status_id']);
 
-    //Assert if dates are empty.
-    $this->assertEmpty($membership['join_date'] ?? '');
-    $this->assertEmpty($membership['start_date'] ?? '');
-    $this->assertEmpty($membership['end_date'] ?? '');
+    // Assert if dates are not empty.
+    $this->assertNotEmpty($membership['join_date']);
+    $this->assertNotEmpty($membership['start_date']);
+    $this->assertNotEmpty($membership['end_date']);
   }
 
   public function testSubmitContribution() {
