@@ -9,6 +9,7 @@ jobs:
   phpunit:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - drupal: '8.9.*'
