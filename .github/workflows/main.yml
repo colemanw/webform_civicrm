@@ -59,7 +59,7 @@ jobs:
           composer config minimum-stability dev
           composer config prefer-stable true
           composer config preferred-install dist
-          composer config repositories.0 '{"type": "path", "url": "'${GITHUB_WORKSPACE}'", "options": {"symlink": false, "versions": {"drupal/webform_civicrm": "use-this"}}}'
+          composer config repositories.0 '{"type": "path", "url": "'${GITHUB_WORKSPACE}'", "options": {"symlink": false, "versions": {"drupal/webform_civicrm": "dev-master"}}}'
           composer config repositories.1 composer https://packages.drupal.org/8
           COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:${{ matrix.drupal }}
       - name: Deal with https://lab.civicrm.org/dev/drupal/-/issues/164
@@ -83,7 +83,7 @@ jobs:
       - name: Install webform_civicrm
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/webform_civicrm:use-this
+          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/webform_civicrm:dev-master
           cat web/modules/contrib/webform_civicrm/tests/src/FunctionalJavascript/CiviCrmTestBase.php
       - name: Install token
         run: |
