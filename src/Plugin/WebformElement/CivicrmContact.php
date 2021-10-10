@@ -84,11 +84,13 @@ class CivicrmContact extends WebformElementBase {
 
     // Avoid call to Drupal\Core\Render\Element\RenderElement::processGroup() as this module uses the
     // 'group' property key to filter the contacts loaded in the autocomplete field.
-    $element['#process'] = [
-      ['Drupal\Core\Render\Element\Textfield', 'processAutocomplete'],
-      ['Drupal\Core\Render\Element\Textfield', 'processAjaxForm'],
-      ['Drupal\Core\Render\Element\Textfield', 'processPattern'],
-    ];
+    if ($element['#widget'] === 'autocomplete') {
+      $element['#process'] = [
+        ['Drupal\Core\Render\Element\Textfield', 'processAutocomplete'],
+        ['Drupal\Core\Render\Element\Textfield', 'processAjaxForm'],
+        ['Drupal\Core\Render\Element\Textfield', 'processPattern'],
+      ];
+    }
     // Webform removes values which equal their defaults but does not populate
     // they keys.
     $ensure_keys_have_values = [
