@@ -77,7 +77,6 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     // Create a second individual contact cid2
     $this->cid2 = $this->createIndividual(['first_name' => 'Mark', 'last_name' => 'Cooper']);
 
-    $this->drupalLogout();
     $this->drupalLogin($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
