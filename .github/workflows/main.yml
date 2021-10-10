@@ -83,10 +83,8 @@ jobs:
       - name: Install webform_civicrm
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/webform_civicrm
-          cd web/modules/contrib
-          rm -rf webform_civicrm
-          cp -a $GITHUB_WORKSPACE .
+          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/webform_civicrm *@dev
+          cat web/modules/contrib/webform_civicrm/tests/src/FunctionalJavascript/CiviCrmTestBase.php
       - name: Install token
         run: |
           cd ~/drupal
