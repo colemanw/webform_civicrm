@@ -77,7 +77,8 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     // Create a second individual contact cid2
     $this->cid2 = $this->createIndividual(['first_name' => 'Mark', 'last_name' => 'Cooper']);
 
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLogout();
+    $this->drupalLogin($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -165,7 +166,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $membership = $this->utils->wf_civicrm_api('membership', 'get', [
       'sequential' => 1,
     ])['values'];
-    $adminCid = $this->getUFMatchRecord($this->adminUser->id())['contact_id'];
+    $adminCid = $this->getUFMatchRecord($this->rootUser->id())['contact_id'];
     // Error: /home/runner/work/webform_civicrm/webform_civicrm/tests/src/FunctionalJavascript/ContributionDummyTest.php:165
     $this->assertEquals($adminCid, $membership[0]['contact_id']);
     $this->assertEquals('Basic', $membership[0]['membership_name']);
