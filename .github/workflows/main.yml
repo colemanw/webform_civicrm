@@ -45,8 +45,6 @@ jobs:
             path: ${{ steps.composercache.outputs.dir }}
             key: ${{ runner.os }}-${{ matrix.drupal }}-composer-${{ hashFiles('**/composer.json') }}
             restore-keys: ${{ runner.os }}-composer-
-      - name: Check up on check out
-        run: cat $GITHUB_WORKSPACE/tests/src/FunctionalJavascript/CiviCrmTestBase.php
       - name: Setup problem matchers for PHPUnit
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
       # Notes
@@ -85,7 +83,8 @@ jobs:
       - name: Install webform_civicrm
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/webform_civicrm:dev-5.x@dev
+          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/webform_civicrm
+          cat web/modules/contrib/webform_civicrm/tests/src/FunctionalJavascript/CiviCrmTestBase.php
       - name: Install token
         run: |
           cd ~/drupal
