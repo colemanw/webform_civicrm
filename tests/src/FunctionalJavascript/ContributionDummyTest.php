@@ -166,7 +166,6 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
       'sequential' => 1,
     ])['values'];
     $adminCid = $this->getUFMatchRecord($this->rootUser->id())['contact_id'];
-    // Error: /home/runner/work/webform_civicrm/webform_civicrm/tests/src/FunctionalJavascript/ContributionDummyTest.php:165
     $this->assertEquals($adminCid, $membership[0]['contact_id']);
     $this->assertEquals('Basic', $membership[0]['membership_name']);
 
