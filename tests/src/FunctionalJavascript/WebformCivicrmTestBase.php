@@ -73,8 +73,13 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       'edit all contacts',
       'view all activities',
     ]);
+    // Retrieve CiviCRM version
+    $result = civicrm_api3('System', 'get', [
+      'sequential' => 1,
+    ]);
+    $CiviCRM_version = str_replace('.','_',$result['values']['version']);
     $this->webform = $this->createWebform([
-      'id' => 'civicrm_webform_test',
+      'id' => 'civicrm_webform_test' . $CiviCRM_version,
       'title' => 'CiviCRM Webform Test',
     ]);
     $this->rootUserCid = $this->createIndividual()['id'];
