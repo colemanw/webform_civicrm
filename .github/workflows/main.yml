@@ -59,8 +59,8 @@ jobs:
           composer config minimum-stability dev
           composer config prefer-stable true
           composer config preferred-install dist
-          composer config repositories.1 composer https://packages.drupal.org/8
-          composer config repositories.0 '{"type": "path", "url": "'${GITHUB_WORKSPACE}'", "options": {"symlink": false, "versions": {"drupal/webform_civicrm": "dev-master"}}}'
+          composer config repositories.0 composer https://packages.drupal.org/8
+          composer config repositories.1 '{"type": "path", "url": "'${GITHUB_WORKSPACE}'", "options": {"symlink": false, "versions": {"drupal/webform_civicrm": "dev-master"}}}'
           COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:${{ matrix.drupal }}
       - name: Deal with https://lab.civicrm.org/dev/drupal/-/issues/164
         # This is temporary until no longer testing anything less than 5.41. A more sophisticated way would be to make this conditional on civi version so that for 5.41+ it doesn't do this, giving a closer approximation to real installs for 5.41+, but as far as I know this is only used by compile-lib to make some bootstrap css files.
