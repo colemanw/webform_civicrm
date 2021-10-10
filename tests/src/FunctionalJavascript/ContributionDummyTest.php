@@ -77,7 +77,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     // Create a second individual contact cid2
     $this->cid2 = $this->createIndividual(['first_name' => 'Mark', 'last_name' => 'Cooper']);
 
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLogin($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -123,6 +123,11 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
 
     $this->drupalGet($this->webform->toUrl('canonical',  ['query' => ['cid2' => $this->cid2['id']]]));
     $this->assertPageNoErrorMessages();
+
+    $this->assertSession()->waitForField('First Name');
+    $filename = 'loaded_webform' . substr(sha1(rand()), 0, 7) .'.png';
+    $this->createScreenshot($this->htmlOutputDirectory . $filename);
+
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
@@ -151,7 +156,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     // Total = 359.5 + 16.48 = 375.98
 
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '375.98');
-    $this->createScreenshot($this->htmlOutputDirectory . '/lineitem_tally.png');
+    // $this->createScreenshot($this->htmlOutputDirectory . '/lineitem_tally.png');
 
     $this->htmlOutput();
 
@@ -160,7 +165,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $membership = $this->utils->wf_civicrm_api('membership', 'get', [
       'sequential' => 1,
     ])['values'];
-    $adminCid = $this->getUFMatchRecord($this->adminUser->id())['contact_id'];
+    $adminCid = $this->getUFMatchRecord($this->rootUser->id())['contact_id'];
     $this->assertEquals($adminCid, $membership[0]['contact_id']);
     $this->assertEquals('Basic', $membership[0]['membership_name']);
 

@@ -73,12 +73,17 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       'edit all contacts',
       'view all activities',
     ]);
+    // Retrieve CiviCRM version
+    $result = civicrm_api3('System', 'get', [
+      'sequential' => 1,
+    ]);
+    $CiviCRM_version = $result['values'][0]['version'];
     $this->webform = $this->createWebform([
       'id' => 'civicrm_webform_test',
-      'title' => 'CiviCRM Webform Test',
+      'title' => 'CiviCRM Webform Test.' . $CiviCRM_version,
     ]);
     $this->rootUserCid = $this->createIndividual()['id'];
-    //Create civi contact for rootUser.
+    // Create CiviCRM contact for rootUser.
     $this->utils->wf_civicrm_api('UFMatch', 'create', [
       'uf_id' => $this->rootUser->id(),
       'uf_name' => $this->rootUser->getAccountName(),
@@ -316,7 +321,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   }
 
   /**
-   * Enables civicrm on the webform.
+   * Enables CiviCRM on the webform.
    */
   public function enableCivicrmOnWebform() {
     $this->assertSession()->waitForText('Enable CiviCRM Processing');
@@ -571,6 +576,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->htmlOutput();
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
   }
 
   /**

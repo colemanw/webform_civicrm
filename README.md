@@ -1,7 +1,7 @@
 Webform CiviCRM
 ===============
 
-Webform CiviCRM is a powerful, flexible, user-friendly form builder for CiviCRM.
+Webform CiviCRM is a powerful, flexible, user-friendly form builder for CiviCRM!
 
 Installation & Getting Started
 ------------------------------
