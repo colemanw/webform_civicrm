@@ -123,7 +123,11 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
 
     $this->drupalGet($this->webform->toUrl('canonical',  ['query' => ['cid2' => $this->cid2['id']]]));
     $this->assertPageNoErrorMessages();
-    $this->createScreenshot($this->htmlOutputDirectory . 'loaded_webform.png');
+
+    $this->assertSession()->waitForField('First Name');
+    $filename = 'loaded_webform' . substr(sha1(rand()), 0, 7) .'.png';
+    $this->createScreenshot($this->htmlOutputDirectory . $filename);
+
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
@@ -152,7 +156,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     // Total = 359.5 + 16.48 = 375.98
 
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '375.98');
-    $this->createScreenshot($this->htmlOutputDirectory . '/lineitem_tally.png');
+    // $this->createScreenshot($this->htmlOutputDirectory . '/lineitem_tally.png');
 
     $this->htmlOutput();
 
@@ -162,6 +166,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
       'sequential' => 1,
     ])['values'];
     $adminCid = $this->getUFMatchRecord($this->adminUser->id())['contact_id'];
+    // Error: /home/runner/work/webform_civicrm/webform_civicrm/tests/src/FunctionalJavascript/ContributionDummyTest.php:165
     $this->assertEquals($adminCid, $membership[0]['contact_id']);
     $this->assertEquals('Basic', $membership[0]['membership_name']);
 
