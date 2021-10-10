@@ -330,7 +330,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalGet($fieldURL);
     $this->getSession()->getPage()->uncheckField('Active?');
     // $this->createScreenshot($this->htmlOutputDirectory . '/custom_field.png');
-    $this->getSession()->getPage()->pressButton('Save');
+    $this->getSession()->getPage()->pressButton('_qf_Field_done-bottom');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
     //Reload the webform page - the custom field should be removed.
@@ -344,7 +344,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     //Re-enable the field.
     $this->drupalGet($fieldURL);
     $this->getSession()->getPage()->checkField('Active?');
-    $this->getSession()->getPage()->pressButton('Save');
+    $this->getSession()->getPage()->pressButton('_qf_Field_done-bottom');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
     // Verify if the custom field is back on the page.
