@@ -59,8 +59,9 @@ jobs:
           composer config minimum-stability dev
           composer config prefer-stable true
           composer config preferred-install dist
-          composer config repositories.0 path $GITHUB_WORKSPACE
-          composer config repositories.1 composer https://packages.drupal.org/8
+          # Note in composer v2 the order is more important. We want the path one to have higher priority.
+          composer config repositories.0 composer https://packages.drupal.org/8
+          composer config repositories.1 path $GITHUB_WORKSPACE
           COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:${{ matrix.drupal }}
       - name: Deal with https://lab.civicrm.org/dev/drupal/-/issues/164
         # This is temporary until no longer testing anything less than 5.41. A more sophisticated way would be to make this conditional on civi version so that for 5.41+ it doesn't do this, giving a closer approximation to real installs for 5.41+, but as far as I know this is only used by compile-lib to make some bootstrap css files.
@@ -70,11 +71,7 @@ jobs:
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages}:${{ matrix.civicrm }} --prefer-dist
-          # Todo remove the next 3 lines when drupal packagist gets updated with the new composer.json requirement and put drupal-8 back into the line above.
-          VERSION_TO_USE=${{ matrix.civicrm }}
-          if [ "$VERSION_TO_USE" = "dev-master" ]; then VERSION_TO_USE=5.42.*; fi
-          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-drupal-8:${VERSION_TO_USE} --prefer-dist
+          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} --prefer-dist
       # For some reason drupal/webform:5.x installs even if it is drupal:^9.0
       - name: Ensure Webform ^6.0
         run: |
@@ -83,7 +80,8 @@ jobs:
       - name: Install webform_civicrm
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/webform_civicrm:dev-5.x@dev
+          # We used the github action `checkout` plugin at the start to check out the PR branch, and then set up a composer virtual `path` repo earlier when setting up composer config. So this should pull from that repo not the real one.
+          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/webform_civicrm
       - name: Install token
         run: |
           cd ~/drupal
