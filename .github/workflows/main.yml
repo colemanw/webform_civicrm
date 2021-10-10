@@ -84,7 +84,6 @@ jobs:
         run: |
           cd ~/drupal
           COMPOSER_MEMORY_LIMIT=-1 composer require drupal/webform_civicrm
-          cat web/modules/contrib/webform_civicrm/tests/src/FunctionalJavascript/CiviCrmTestBase.php
       - name: Install token
         run: |
           cd ~/drupal
