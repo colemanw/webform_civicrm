@@ -123,6 +123,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
 
     $this->drupalGet($this->webform->toUrl('canonical',  ['query' => ['cid2' => $this->cid2['id']]]));
     $this->assertPageNoErrorMessages();
+    $this->createScreenshot($this->htmlOutputDirectory . 'loaded_webform.png');
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
