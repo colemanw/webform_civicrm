@@ -340,8 +340,6 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
 
-    // KG - this is where I want my screenshots
-    $this->htmlOutputDirectory = '/Applications/MAMP/htdocs/d9civicrm.local/web/sites/default/files/simpletest/';
     $this->createScreenshot($this->htmlOutputDirectory . 'KG.png');
 
     $this->drupalGet($this->webform->toUrl('canonical'));
