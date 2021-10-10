@@ -46,7 +46,7 @@ jobs:
             key: ${{ runner.os }}-${{ matrix.drupal }}-composer-${{ hashFiles('**/composer.json') }}
             restore-keys: ${{ runner.os }}-composer-
       - name: Check up on check out
-        run: ls -al $GITHUB_WORKSPACE
+        run: cat $GITHUB_WORKSPACE/tests/src/FunctionalJavascript/CiviCrmTestBase.php
       - name: Setup problem matchers for PHPUnit
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
       # Notes
