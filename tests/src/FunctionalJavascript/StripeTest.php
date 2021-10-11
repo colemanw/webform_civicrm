@@ -159,6 +159,15 @@ final class StripeTest extends WebformCivicrmTestBase {
     $expectedFTIds = ['1', '1', '2'];
     $this->assertEquals($expectedFTIds, $financialTypeIds);
     $this->assertEquals($contribution['total_amount'], array_sum($lineTotals));
+
+    $priceFieldID = $utils->wf_civicrm_api('PriceField', 'get', [
+      'sequential' => 1,
+      'price_set_id' => 'default_contribution_amount',
+      'options' => ['limit' => 1],
+    ])['id'] ?? NULL;
+    foreach ($lineItems as $item) {
+      $this->assertEquals($priceFieldID, $item['price_field_id']);
+    }
   }
 
 }

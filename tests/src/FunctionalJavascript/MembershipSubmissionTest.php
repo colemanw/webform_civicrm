@@ -372,10 +372,16 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
       $this->assertEquals(2, $api_result['count']);
       $line_items = next($api_result['values']);
     }
+    $priceFieldID = $utils->wf_civicrm_api('PriceField', 'get', [
+      'sequential' => 1,
+      'price_set_id' => 'default_membership_type_amount',
+      'options' => ['limit' => 1],
+    ])['id'] ?? NULL;
 
     $this->assertEquals('1.00', $line_items['qty']);
     $this->assertEquals('100.00', $line_items['unit_price']);
     $this->assertEquals('100.00', $line_items['line_total']);
+    $this->assertEquals($priceFieldID, $line_items['price_field_id']);
     $this->assertEquals($expected_tax_amount, $line_items['tax_amount']);
     $this->assertEquals($financial_type_id, $line_items['financial_type_id']);
 

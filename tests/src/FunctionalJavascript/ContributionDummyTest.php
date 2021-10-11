@@ -195,6 +195,17 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertEquals('16.48', $contribution['tax_amount']);
     $tax_total_amount = $contribution['tax_amount'];
 
+    $contriPriceFieldID = $utils->wf_civicrm_api('PriceField', 'get', [
+      'sequential' => 1,
+      'price_set_id' => 'default_contribution_amount',
+      'options' => ['limit' => 1],
+    ])['id'] ?? NULL;
+    $membershipPriceFieldID = $utils->wf_civicrm_api('PriceField', 'get', [
+      'sequential' => 1,
+      'price_set_id' => 'default_membership_type_amount',
+      'options' => ['limit' => 1],
+    ])['id'] ?? NULL;
+
     $api_result = $this->utils->wf_civicrm_api('line_item', 'get', [
       'sequential' => 1,
     ]);
@@ -203,20 +214,25 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertEquals('100.00', $api_result['values'][0]['line_total']);
     $this->assertEquals('2', $api_result['values'][0]['financial_type_id']);
     $this->assertEquals('5.00', $api_result['values'][0]['tax_amount']);
+    $this->assertEquals($membershipPriceFieldID, $api_result['values'][0]['price_field_id']);
 
     $this->assertEquals('200.00', $api_result['values'][1]['line_total']);
     $this->assertEquals('2', $api_result['values'][1]['financial_type_id']);
     $this->assertEquals('10.00', $api_result['values'][1]['tax_amount']);
+    $this->assertEquals($membershipPriceFieldID, $api_result['values'][1]['price_field_id']);
 
     $this->assertEquals('10.00', $api_result['values'][2]['line_total']);
     $this->assertEquals('1', $api_result['values'][2]['financial_type_id']);
+    $this->assertEquals($contriPriceFieldID, $api_result['values'][2]['price_field_id']);
 
     $this->assertEquals('20.00', $api_result['values'][3]['line_total']);
     $this->assertEquals('1', $api_result['values'][3]['financial_type_id']);
+    $this->assertEquals($contriPriceFieldID, $api_result['values'][3]['price_field_id']);
 
     $this->assertEquals('29.50', $api_result['values'][4]['line_total']);
     $this->assertEquals('1.48', $api_result['values'][4]['tax_amount']);
     $this->assertEquals('5', $api_result['values'][4]['financial_type_id']);
+    $this->assertEquals($contriPriceFieldID, $api_result['values'][4]['price_field_id']);
 
     $sum_line_total = array_sum(array_column($api_result['values'], 'line_total'));
     $sum_tax_amount = array_sum(array_column($api_result['values'], 'tax_amount'));

@@ -289,17 +289,28 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->assertEquals($creditCardID, $contribution['payment_instrument_id']);
     $tax_total_amount = $contribution['tax_amount'];
 
+    $contriPriceFieldID = $utils->wf_civicrm_api('PriceField', 'get', [
+      'sequential' => 1,
+      'price_set_id' => 'default_contribution_amount',
+      'options' => ['limit' => 1],
+    ])['id'] ?? NULL;
+
     $api_result = $utils->wf_civicrm_api('line_item', 'get', [
       'sequential' => 1,
     ]);
 
     $this->assertEquals('3.00', $api_result['values'][0]['line_total']);
     $this->assertEquals('1', $api_result['values'][0]['financial_type_id']);
+    $this->assertEquals($contriPriceFieldID, $api_result['values'][0]['price_field_id']);
+
     $this->assertEquals('1.75', $api_result['values'][1]['line_total']);
     $this->assertEquals('1', $api_result['values'][1]['financial_type_id']);
+    $this->assertEquals($contriPriceFieldID, $api_result['values'][1]['price_field_id']);
+
     $this->assertEquals('5.00', $api_result['values'][2]['line_total']);
     $this->assertEquals('0.25', $api_result['values'][2]['tax_amount']);
     $this->assertEquals('2', $api_result['values'][2]['financial_type_id']);
+    $this->assertEquals($contriPriceFieldID, $api_result['values'][2]['price_field_id']);
 
     $sum_line_total = $api_result['values'][0]['line_total'] + $api_result['values'][1]['line_total'] + $api_result['values'][2]['line_total'];
     $sum_tax_amount = $api_result['values'][2]['tax_amount'];
