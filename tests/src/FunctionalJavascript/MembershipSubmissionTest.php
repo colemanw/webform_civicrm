@@ -235,6 +235,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
    * (5% and 13% Sales Tax - based on province)
    */
   public function testMembershipVaryingSalesTax() {
+    $utils = \Drupal::service('webform_civicrm.utils');
     // Add Canada
     \Civi::settings()->set('countryLimit', [1228, 1039]);
     // Make it the default country
