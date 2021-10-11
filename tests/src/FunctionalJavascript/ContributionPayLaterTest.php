@@ -13,7 +13,7 @@ use Drupal\webform\Entity\Webform;
 final class ContributionPayLaterTest extends WebformCivicrmTestBase {
 
   /**
-   * Test Membership submission using Pay Later option.
+   * Test Membership submission using the Pay Later option.
    */
   public function testSubmitPaylaterMembership() {
     $this->createMembershipType(20);
