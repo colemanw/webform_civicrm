@@ -42,7 +42,6 @@ final class StripeTest extends WebformCivicrmTestBase {
    * Verifies the payment with 1 contribution and 2 line item amounts.
    */
   public function testSubmitContribution() {
-    $utils = \Drupal::service('webform_civicrm.utils');
     $this->drupalLogin($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
@@ -132,6 +131,7 @@ final class StripeTest extends WebformCivicrmTestBase {
    * Verify Payment values.
    */
   private function verifyPaymentResult() {
+    $utils = \Drupal::service('webform_civicrm.utils');
     $api_result = $this->utils->wf_civicrm_api('contribution', 'get', []);
     $this->assertEquals(1, $api_result['count']);
     $contribution = reset($api_result['values']);
