@@ -282,7 +282,8 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->purchaseMembershipProvince('Ontario');
   }
 
-  public function purchaseMembershipProvince($province){
+  public function purchaseMembershipProvince($province) {
+    $utils = \Drupal::service('webform_civicrm.utils');
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
 

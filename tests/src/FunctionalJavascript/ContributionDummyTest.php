@@ -63,6 +63,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
   }
 
   public function testSubmitContribution() {
+    $utils = \Drupal::service('webform_civicrm.utils');
     $payment_processor = $this->createPaymentProcessor();
     $this->createMembershipType(100, FALSE, 'Basic');
     $this->createMembershipType(200, FALSE, 'Advanced');

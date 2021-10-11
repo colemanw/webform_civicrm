@@ -131,6 +131,7 @@ final class StripeTest extends WebformCivicrmTestBase {
    * Verify Payment values.
    */
   private function verifyPaymentResult() {
+    $utils = \Drupal::service('webform_civicrm.utils');
     $api_result = $this->utils->wf_civicrm_api('contribution', 'get', []);
     $this->assertEquals(1, $api_result['count']);
     $contribution = reset($api_result['values']);
