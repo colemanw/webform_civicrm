@@ -3,7 +3,7 @@ on:
   push:
   pull_request:
     branches:
-      - 8.x-5.x
+      - 6.x
 
 jobs:
   phpunit:
@@ -17,7 +17,7 @@ jobs:
           - drupal: '8.9.*'
             civicrm: '5.39.*'
           - drupal: '9.2.*'
-            civicrm: '5.42.x-dev'
+            civicrm: '5.43.x-dev'
           - drupal: '9.2.*'
             civicrm: 'dev-master'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
