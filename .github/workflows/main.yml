@@ -82,7 +82,7 @@ jobs:
         run: |
           cd ~/drupal
           # We used the github action `checkout` plugin at the start to check out the PR branch, and then set up a composer virtual `path` repo earlier when setting up composer config. So this should pull from that repo not the real one.
-          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/webform_civicrm
+          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/webform_civicrm:@dev
       - name: Install token
         run: |
           cd ~/drupal
