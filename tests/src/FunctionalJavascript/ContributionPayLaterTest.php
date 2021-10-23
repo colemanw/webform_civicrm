@@ -49,7 +49,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->country = 'United Kingdom';
     $this->state = 'Newport';
     // Change widget of Amount element to checkbox.
-    $this->changeTypeOfAmountElement('checkboxes');
+    $this->changeTypeOfAmountElement('checkboxes', TRUE);
     $this->submitWebform('checkboxes');
     $this->verifyResult();
 
@@ -61,7 +61,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->country = 'Malaysia';
     $this->state = 'Selangor';
     // Change widget of Amount element to radio + other.
-    $this->changeTypeOfAmountElement('webform_radios_other');
+    $this->changeTypeOfAmountElement('webform-radios-other');
     $this->submitWebform('webform_radios_other');
     $this->verifyResult();
   }
@@ -189,18 +189,39 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
    * Change contribution amount widget
    * to radio or checkbox.
    */
-  private function changeTypeOfAmountElement($type) {
-    $webform = Webform::load('civicrm_webform_test');
-    $elements = $webform->getElementsInitialized();
-    $elements['contribution_pagebreak']['civicrm_1_contribution_1_contribution_total_amount']['#type'] = $type;
-    $elements['contribution_pagebreak']['civicrm_1_contribution_1_contribution_total_amount']['#webform_plugin_id'] = $type;
-    $elements['contribution_pagebreak']['civicrm_1_contribution_1_contribution_total_amount']['#options'] = [
-      10 => 10,
-      20 => 20,
-      30 => 30,
-    ];
-    $webform->setElements($elements);
-    $webform->save();
+  private function changeTypeOfAmountElement($type, $changeTypeToOption = FALSE) {
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+    $this->assertPageNoErrorMessages();
+
+    if ($type == 'webform-radios-other' && !$changeTypeToOption) {
+      $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contribution-1-contribution-total-amount-operations', FALSE, FALSE, NULL, $type);
+      return;
+    }
+
+    $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contribution-1-contribution-total-amount-operations"] a.webform-ajax-link');
+    $checkbox_edit_button->click();
+    $this->assertSession()->waitForElementVisible('css', '[data-drupal-selector="edit-change-type"]', 3000);
+    $this->htmlOutput();
+
+    if ($changeTypeToOption) {
+      $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-change-type"]')->click();
+      $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector='edit-elements-civicrm-options-operation']", 3000)->click();
+      $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector='edit-cancel']", 3000);
+    }
+
+    $this->getSession()->getPage()->fillField('properties[options][custom][options][items][0][value]', 10);
+    $this->getSession()->getPage()->fillField('properties[options][custom][options][items][1][value]', 20);
+    $this->getSession()->getPage()->fillField('properties[options][custom][options][items][2][value]', 30);
+
+    if ($type == 'checkboxes') {
+      $this->getSession()->getPage()->checkField('properties[extra][multiple]');
+    }
+    else {
+      $this->getSession()->getPage()->uncheckField('properties[extra][multiple]');
+    }
+
+    $this->getSession()->getPage()->pressButton('Save');
+    $this->assertSession()->assertWaitOnAjaxRequest();
   }
 
 }

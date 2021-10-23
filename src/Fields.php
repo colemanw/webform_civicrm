@@ -87,7 +87,7 @@ class Fields implements FieldsInterface {
   protected function getMoneyDefaults(): array {
     $utils = \Drupal::service('webform_civicrm.utils');
     return [
-      'type' => 'number',
+      'type' => 'civicrm_number',
       'data_type' => 'Money',
       'extra' => [
         'field_prefix' => $utils->wf_crm_get_civi_setting('defaultCurrencySymbol', '$'),
@@ -432,7 +432,7 @@ class Fields implements FieldsInterface {
       ];
       $fields['activity_duration'] = [
         'name' => t('Activity # Duration'),
-        'type' => 'number',
+        'type' => 'civicrm_number',
         'field_suffix' =>  t('min.'),
         /*ToDo Figure out why setting min does not work!*/
         'min' => 0,
@@ -677,7 +677,7 @@ class Fields implements FieldsInterface {
         ];
         $fields['contribution_installments'] = [
           'name' => t('Number of Installments'),
-          'type' => 'number',
+          'type' => 'civicrm_number',
           'default_value' => '1',
           'min' => '0',
           'step' => '1',
@@ -685,7 +685,7 @@ class Fields implements FieldsInterface {
         ];
         $fields['contribution_frequency_interval'] = [
           'name' => t('Interval of Installments'),
-          'type' => 'number',
+          'type' => 'civicrm_number',
           'default_value' => '1',
           'min' => '0',
           'step' => '1',

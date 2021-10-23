@@ -2534,7 +2534,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           $val .= $time;
         }
         // The admin can change a number field to use checkbox/radio/select/grid widget and we'll sum the result
-        elseif ($field['type'] === 'number') {
+        elseif ($field['type'] === 'number' || $field['type'] === 'civicrm_number') {
           $sum = 0;
           foreach ((array) $val as $k => $v) {
             // Perform multiplication across grid elements
