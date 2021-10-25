@@ -507,6 +507,9 @@ class Fields implements FieldsInterface {
                     'data_type' => 'ContactReference',
                     'set' => 'caseRoles',
                     'empty_option' => t('None'),
+                    'extra' => [
+                      'multiple' => 1,
+                    ],
                   ];
                 }
                 $fields['case_role_' . $rel_type['id']]['case_types'][] = $case_type['id'];
