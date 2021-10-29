@@ -151,16 +151,19 @@ var wfCivi = (function ($, D, drupalSettings) {
       var n = name.split('-');
       if (n[0] === 'civicrm' && parseInt(n[1]) == num && n[2] === 'contact' && n[5] !== 'existing') {
         if (clear) {
+          var $wrapper = $(formClass +' div.form-item[class*="-'+(name.replace(/_/g, '-'))+'"]');
           // Reset country to default
           if (n[5] === 'country') {
             $('select.civicrm-processed', this).val(setting.defaultCountry).trigger('change', 'webform_civicrm:reset');
           }
           //Set default value if it is specified in component settings.
-          else if ($el.hasClass('form-date') && typeof defaults != "undefined" && defaults.hasOwnProperty(name)) {
-            var date = defaults[name].split('-');
-            $el.find('select.year, input.year').val(+date[0]);
-            $el.find('select.month').val(+date[1]);
-            $el.find('select.day').val(+date[2]);
+          else if ($wrapper.length && $wrapper.is('[class*="form-type-date"]')) {
+            if (typeof defaults != "undefined" && defaults.hasOwnProperty(name)) {
+              var date = defaults[name].split('-');
+              $(':input[id$="year"]', $wrapper).val(date[0]).trigger('change', 'webform_civicrm:autofill');
+              $(':input[id$="month"]', $wrapper).val(parseInt(date[1], 10)).trigger('change', 'webform_civicrm:autofill');
+              $(':input[id$="day"]', $wrapper).val(parseInt(date[2], 10)).trigger('change', 'webform_civicrm:autofill');
+            }
           }
           else {
             $(':input', this).not(':radio, :checkbox, :button, :submit, :file, .form-file').each(function() {
@@ -211,7 +214,12 @@ var wfCivi = (function ($, D, drupalSettings) {
       if (val.indexOf('-civicrm') > 0) {
         val = val.substring(val.lastIndexOf('-civicrm') + 1);
         if (val.indexOf('fieldset') < 0) {
-          name = val;
+          if (val.indexOf('custom-') != -1 && val.lastIndexOf('-year') != -5) {
+            name = val.replace('-year', '');
+          }
+          else {
+            name = val;
+          }
         }
       }
     });

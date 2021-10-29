@@ -86,7 +86,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
         $this->form['#attributes']['data-civicrm-ids'] = Json::encode($cid_data);
       }
     }
-    $this->form['#attributes']['data-form-defaults'] = Json::encode($this->getDefaults());
+    $this->form['#attributes']['data-form-defaults'] = Json::encode($this->getWebformDefaults());
     // Early return if the form (or page) was already submitted
     $triggering_element = $this->form_state->getTriggeringElement();
     if ($triggering_element && $triggering_element['#id'] == 'edit-wizard-prev'
@@ -553,7 +553,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
             elseif ($element['#type'] == 'value') {
               $element['#value'] = $val;
             }
-            elseif ($element['#type'] == 'datetime') {
+            elseif ($element['#type'] == 'datetime' || $element['#type'] == 'datelist') {
               if (!empty($val)) {
                 $element['#default_value'] = DrupalDateTime::createFromTimestamp(strtotime($val));
               }
