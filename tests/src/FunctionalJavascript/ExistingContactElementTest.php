@@ -130,15 +130,7 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
 
     $this->drupalGet($this->webform->toUrl('edit-form'));
     // Set a default value for Job title.
-    $this->assertSession()->elementExists('css', "[data-drupal-selector='edit-webform-ui-elements-civicrm-3-contact-1-contact-job-title-operations'] a.webform-ajax-link")->click();
-    $this->assertSession()->waitForElementVisible('xpath', '//a[contains(@id, "--advanced")]');
-    $this->assertSession()->elementExists('xpath', '//a[contains(@id, "--advanced")]')->click();
-    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-default"]')->click();
-
-    $this->getSession()->getPage()->fillField('properties[default_value]', 'Accountant');
-    $this->getSession()->getPage()->pressButton('Save');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertSession()->pageTextContains('Job Title has been updated');
+    $this->setDefaultValue('edit-webform-ui-elements-civicrm-3-contact-1-contact-job-title-operations', 'Accountant');
 
     $this->drupalGet($this->webform->toUrl('edit-form'));
     // Edit contact element 4.
@@ -178,6 +170,82 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
     // Check if related contact is loaded on c4.
     $this->htmlOutput();
     $this->assertSession()->elementTextContains('css', '[id="edit-civicrm-4-contact-1-fieldset-fieldset"]', 'Fred Pinto');
+  }
+
+  /**
+   * Test submission of hidden fields.
+   */
+  public function testHiddenField() {
+    $this->drupalLogin($this->rootUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+
+     // Enable Email address
+     $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_email', 1);
+     $this->assertSession()->assertWaitOnAjaxRequest();
+     $this->assertSession()->checkboxChecked("civicrm_1_contact_1_email_email");
+     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contact_1_email_location_type_id', 'Main');
+
+     $this->saveCiviCRMSettings();
+     $this->drupalGet($this->webform->toUrl('edit-form'));
+
+     // Edit contact element and hide email field.
+    $editContact = [
+      'selector' => 'edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations',
+      'widget' => 'Autocomplete',
+      'hide_fields' => 'Email',
+      'no_hide_blank' => TRUE,
+      'submit_disabled' => TRUE,
+      'default' => '- None -',
+    ];
+    $this->editContactElement($editContact);
+
+    $this->setDefaultValue('edit-webform-ui-elements-civicrm-1-contact-1-email-email-operations', 'email@example.com');
+
+    $contact = $this->createIndividual();
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', $contact['first_name']);
+
+    //Ensure email field is not visible.
+    $this->assertFalse($this->getSession()->getDriver()->isVisible($this->cssSelectToXpath('.form-type-email')));
+
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
+    $result = $this->utils->wf_civicrm_api('Contact', 'get', [
+      'first_name' => $contact['first_name'],
+      'last_name' => $contact['last_name'],
+      'email' => "email@example.com",
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+
+    //Update contact email to something else.
+    $this->utils->wf_civicrm_api('Email', 'create', [
+      'contact_id' => $contact['id'],
+      'email' => "updated_email@example.com",
+      'is_primary' => 1,
+    ]);
+
+    // Load the webform.
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', $contact['first_name']);
+    $this->getSession()->wait(5000);
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
+    // Ensure existing contact email is not overwritten.
+    $result = $this->utils->wf_civicrm_api('Contact', 'get', [
+      'first_name' => $contact['first_name'],
+      'last_name' => $contact['last_name'],
+      'email' => "updated_email@example.com",
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
   }
 
   /**

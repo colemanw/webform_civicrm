@@ -357,6 +357,21 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   }
 
   /**
+   * Set default value on webform element.
+   */
+  protected function setDefaultValue($selector, $value) {
+    $this->assertSession()->elementExists('css', "[data-drupal-selector='{$selector}'] a.webform-ajax-link")->click();
+    $this->htmlOutput();
+    $this->assertSession()->waitForElementVisible('xpath', '//a[contains(@id, "--advanced")]');
+    $this->assertSession()->elementExists('xpath', '//a[contains(@id, "--advanced")]')->click();
+    $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-default"]')->click();
+    $this->getSession()->getPage()->fillField('properties[default_value]', $value);
+    $this->getSession()->getPage()->pressButton('Save');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->pageTextContains(' has been updated');
+  }
+
+  /**
    * Edit contact element on the build form.
    *
    * @param array $params
@@ -393,6 +408,12 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     }
     if (!empty($params['hide_fields'])) {
       $this->getSession()->getPage()->selectFieldOption('properties[hide_fields][]', $params['hide_fields']);
+    }
+    if (!empty($params['submit_disabled'])) {
+      $this->getSession()->getPage()->checkField("properties[submit_disabled]");
+    }
+    if (!empty($params['no_hide_blank'])) {
+      $this->getSession()->getPage()->checkField("properties[no_hide_blank]");
     }
 
     $this->assertSession()->waitForElementVisible('xpath', '//select[@name="properties[widget]"]');
