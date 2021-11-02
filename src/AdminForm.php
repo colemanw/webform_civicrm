@@ -1021,7 +1021,7 @@ class AdminForm implements AdminFormInterface {
         '#type' => 'select',
         '#title' => t('Number of Memberships for @contact', ['@contact' => $utils->wf_crm_contact_label($c, $this->data, 'wrap')]),
         '#default_value' => $num,
-        '#options' => range(0, 9),
+        '#options' => range(0, 10),
         '#prefix' => '<div class="number-of">',
         '#suffix' => '</div>',
       ];
