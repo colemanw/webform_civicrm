@@ -1935,7 +1935,7 @@ class AdminForm implements AdminFormInterface {
                */
               // @todo Properly handle fieldset creation.
               // self::insertComponent($field, $enabled, $this->settings, !isset($previous_data['data'][$type][$c]));
-              self::insertComponent($field, $enabled, $this->settings, TRUE);
+              self::insertComponent($field, $enabled, $this->settings, TRUE, $this->webform);
               $created[] = $field['name'];
               if (isset($field['civicrm_condition'])) {
                 $this->addConditionalRule($field, $enabled);
@@ -2104,12 +2104,13 @@ class AdminForm implements AdminFormInterface {
    * Set parents for all elements in the webform.
    */
   protected function setParentOnElements(&$enabled) {
+    $contactPageElement = $this->webform->getElement('contact_pagebreak');
     if (!isset($enabled['contact_pagebreak'])) {
       $enabled = array_merge([
         'contact_pagebreak' => [
           'type' => 'webform_wizard_page',
           'form_key' => 'contact_pagebreak',
-          'title' => (string) t('Contact Information'),
+          'title' => $contactPageElement['#title'] ?? (string) t('Contact Information'),
         ]
       ], $enabled);
     }
@@ -2232,8 +2233,10 @@ class AdminForm implements AdminFormInterface {
    * @param $settings
    *   webform_civicrm configuration for this form
    * @param bool $create_fieldsets
+   * @param $webform
+   *   webform object
    */
-  public static function insertComponent(&$field, &$enabled, $settings, $create_fieldsets = FALSE) {
+  public static function insertComponent(&$field, &$enabled, $settings, $create_fieldsets = FALSE, $webform = NULL) {
     $options = NULL;
     $utils = \Drupal::service('webform_civicrm.utils');
     list(, $c, $ent, $n, $table, $name) = explode('_', $field['form_key'], 6);
@@ -2316,10 +2319,14 @@ class AdminForm implements AdminFormInterface {
     }
     // Create page break for contribution
     if ($name === 'enable_contribution') {
+      $title = (string) t('Payment');
+      if (!empty($webform)) {
+        $title = $webform->getElement('contribution_pagebreak')['#title'] ?? $title;
+      }
       $enabled['contribution_pagebreak'] = [
         'type' => 'webform_wizard_page',
         'form_key' => 'contribution_pagebreak',
-        'title' => (string) t('Payment'),
+        'title' => $title,
       ];
       unset($enabled[$field['form_key']]);
       return;
