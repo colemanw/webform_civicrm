@@ -2195,7 +2195,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
         }
       }
-      $item['price_field_id'] = $utils->wf_civicrm_api('PriceField', 'get', [
+      $item['price_field_id'] = wf_civicrm_api('PriceField', 'get', [
         'sequential' => 1,
         'price_set_id' => $priceSetId,
         'options' => ['limit' => 1],
