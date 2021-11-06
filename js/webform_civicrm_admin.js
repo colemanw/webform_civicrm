@@ -455,7 +455,7 @@ var wfCiviAdmin = (function ($, D) {
                 var type = $('select[name="' + (i + 1) + '_contact_type"', '#webform-civicrm-settings-form').val();
                 icon_name = getContactIcon(type);
               }
-              $('#webform-civicrm-settings-form .vertical-tabs__menu-item a').eq(i).prepend('<i class="crm-i ' + icon_name + '" ' + name + '> </i>');
+              $('#webform-civicrm-settings-form .vertical-tabs__menu-item a').eq(i).children('span').prepend('<i class="crm-i ' + icon_name + '" ' + name + '> </i>');
             }
           }
           $(this).addClass('wf-civi-icon-processed');
