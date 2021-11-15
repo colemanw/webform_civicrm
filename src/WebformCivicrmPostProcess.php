@@ -718,6 +718,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     if ($params['contact_type'] == 'Individual' && empty($params['first_name']) && empty($params['last_name'])) {
       $params['display_name'] = $params['sort_name'] = empty($params['nick_name']) ? $contact['email'][1]['email'] : $params['nick_name'];
     }
+    if (isset($params['image_URL'])) {
+      \CRM_Contact_BAO_Contact::processImageParams($params);
+    }
     $result = $utils->wf_civicrm_api('contact', 'create', $params);
     return wf_crm_aval($result, 'id', 0);
   }
@@ -759,6 +762,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       }
     }
     $params['id'] = $this->ent['contact'][$c]['id'];
+    if (isset($params['image_URL'])) {
+      \CRM_Contact_BAO_Contact::processImageParams($params);
+    }
     $utils->wf_civicrm_api('contact', 'create', $params);
   }
 

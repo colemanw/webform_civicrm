@@ -798,11 +798,13 @@ abstract class WebformCivicrmBase {
       return NULL;
     }
     if ($fieldName === 'image_URL') {
-      return [
-        'data_type' => 'File',
-        'name' => NULL,
-        'icon' => $val,
-      ];
+      // @todo Figure out why, the image isn't returned correctly.
+      return NULL;
+      // return [
+      //   'data_type' => 'File',
+      //   'name' => NULL,
+      //   'icon' => $val,
+      // ];
     }
     $file = \Drupal::service('webform_civicrm.utils')->wf_crm_apivalues('Attachment', 'get', $val);
     if (!empty($file[$val])) {
@@ -821,12 +823,23 @@ abstract class WebformCivicrmBase {
    *
    * @param int $id Drupal file id
    *
-   * @return string|bool: url of file if found
+   * @return mixed
+   *   An array of the file entity or empty string.
    */
   function getDrupalFileUrl($id) {
-    $file = File::load($id);
+    if ($id = $this->saveDrupalFileToCivi($id)) {
+      $config = \CRM_Core_Config::singleton();
+      $result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('file', 'getsingle', ['id' => $id]);
 
-    return $file ? file_create_url($file->uri) : FALSE;
+      if ($result) {
+        return [
+          'name' => $config->customFileUploadDir . wf_crm_aval($result, 'uri'),
+          'type' => wf_crm_aval($result, 'mime_type'),
+        ];
+      }
+    }
+
+    return '';
   }
 
   /**
