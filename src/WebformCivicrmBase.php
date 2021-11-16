@@ -7,6 +7,7 @@ namespace Drupal\webform_civicrm;
  * Front-end form handler base class.
  */
 
+use Drupal\Component\Utility\UrlHelper;
 use Drupal\File\Entity\File;
 
 /**
@@ -798,10 +799,11 @@ abstract class WebformCivicrmBase {
       return NULL;
     }
     if ($fieldName === 'image_URL') {
+      $parsed = UrlHelper::parse($val);
+
       return [
         'data_type' => 'File',
-        // Hardcode the name for now since the value is the file URL.
-        'name' => 'photo.jpg',
+        'name' => $parsed['query']['photo'],
         'icon' => 'image',
         'file_url' => $val,
       ];
