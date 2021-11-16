@@ -798,13 +798,13 @@ abstract class WebformCivicrmBase {
       return NULL;
     }
     if ($fieldName === 'image_URL') {
-      // @todo Figure out why, the image isn't returned correctly.
-      return NULL;
-      // return [
-      //   'data_type' => 'File',
-      //   'name' => NULL,
-      //   'icon' => $val,
-      // ];
+      return [
+        'data_type' => 'File',
+        // Hardcode the name for now since the value is the file URL.
+        'name' => 'photo.jpg',
+        'icon' => 'image',
+        'file_url' => $val,
+      ];
     }
     $file = \Drupal::service('webform_civicrm.utils')->wf_crm_apivalues('Attachment', 'get', $val);
     if (!empty($file[$val])) {
