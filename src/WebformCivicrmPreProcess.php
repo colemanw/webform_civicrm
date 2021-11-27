@@ -541,7 +541,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
             if ($dt == 'File') {
               $fileInfo = $this->getFileInfo($name, $val, $ent, $n);
               if ($fileInfo && in_array($element['#type'], ['file', 'managed_file'])) {
-                $elements['#attached']['drupalSettings']['webform_civicrm']['fileFields'][] = [
+                $this->form['#attached']['drupalSettings']['webform_civicrm']['fileFields'][] = [
                   'eid' => $eid,
                   'fileInfo' => $fileInfo
                 ];
