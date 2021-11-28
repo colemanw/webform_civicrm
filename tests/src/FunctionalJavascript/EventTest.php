@@ -20,7 +20,7 @@ final class EventTest extends WebformCivicrmTestBase {
     ]);
     $event = $this->utils->wf_civicrm_api('Event', 'create', [
       'event_type_id' => "Conference",
-      'title' => "Test Event" . substr(sha1(rand()), 0, 4),
+      'title' => "Test Event",
       'start_date' => date('Y-m-d'),
       'financial_type_id' => $ft['id'],
     ]);
@@ -141,6 +141,73 @@ final class EventTest extends WebformCivicrmTestBase {
   }
 
   /**
+   * Waitlist Event Participant submission.
+   */
+  function testWaitlistParticipant() {
+    // Enable waitlist on the event with max participant = 2.
+    $this->utils->wf_civicrm_api('Event', 'create', [
+      'id' => $this->_event['id'],
+      'max_participants' => 2,
+      'has_waitlist' => 1,
+      'waitlist_text' => 'This event is currently full. However you can register now and get added to a waiting list. You will be notified if spaces become available.',
+    ]);
+
+    // Create a webform with 3 contacts.
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+    $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 3);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+
+    // Configure Event tab.
+    $this->getSession()->getPage()->clickLink('Event Registration');
+    $this->getSession()->getPage()->selectFieldOption('participant_reg_type', 'all');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->selectFieldOption('reg_options[show_remaining]', 'always');
+    $this->getSession()->getPage()->selectFieldOption('participant_1_number_of_participant', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_participant_1_participant_event_id[]', 'Test Event');
+
+    $this->saveCiviCRMSettings();
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+
+    $edit = [
+      'civicrm_1_contact_1_contact_first_name' => 'Frederick',
+      'civicrm_1_contact_1_contact_last_name' => 'Pabst',
+      'civicrm_2_contact_1_contact_first_name' => 'Mark',
+      'civicrm_2_contact_1_contact_last_name' => 'Anthony',
+      'civicrm_3_contact_1_contact_first_name' => 'John',
+      'civicrm_3_contact_1_contact_last_name' => 'Doe',
+    ];
+    $this->postSubmission($this->webform, $edit);
+
+    $api_result = $this->utils->wf_civicrm_api('participant', 'get', [
+      'sequential' => 1,
+    ]);
+    $this->assertEquals(0, $api_result['is_error']);
+    $this->assertEquals(3, $api_result['count']);
+    $participants = $api_result['values'];
+    $this->assertEquals($this->_event['id'], $participants[0]['event_id']);
+
+    // Verify 2 participants are registered and 3rd one is added to waitlist.
+    $this->assertEquals('Registered', $participants[0]['participant_status']);
+    $this->assertEquals('Registered', $participants[1]['participant_status']);
+    $this->assertEquals('On waitlist', $participants[2]['participant_status']);
+
+    // Visit the webform again and confirm if waitlist text is displayed.
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->pageTextContains('This event is currently full. However you can register now and get added to a waiting list. You will be notified if spaces become available.');
+  }
+
+  /**
    * Event Participant submission.
    */
   function testSubmitEventParticipant() {
@@ -207,8 +274,7 @@ final class EventTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     //Assert if recur is attached to the created membership.
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $api_result = $utils->wf_civicrm_api('participant', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('participant', 'get', [
       'sequential' => 1,
     ]);
     $this->assertEquals(0, $api_result['is_error']);

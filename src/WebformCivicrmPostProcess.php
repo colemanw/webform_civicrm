@@ -547,7 +547,13 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           $this->form_state->setErrorByName($eid, t('Sorry, you can no longer register for %event.', ['%event' => $event['title']]));
         }
         elseif (!empty($event['max_participants']) && $event['count'] > $event['available_places']) {
-          if (!empty($event['is_full'])) {
+          if (!empty($event['has_waitlist'])) {
+            $this->waitlist_events[$eid] = 0;
+            if (!empty($event['available_places'])) {
+              $this->waitlist_events[$eid] = $event['available_places'];
+            }
+          }
+          elseif (!empty($event['is_full'])) {
             $this->form_state->setErrorByName($eid, t('%event : @text', ['%event' => $event['title'], '@text' => $event['event_full_text']]));
           }
           else {
@@ -1175,6 +1181,14 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
               list($eid) = explode('-', $id_and_type);
               $params['event_id'] = $eid;
               unset($remove[$eid], $params['registered_by_id'], $params['id'], $params['source']);
+              if (isset($this->waitlist_events[$eid])) {
+                if ($this->waitlist_events[$eid] < 1) {
+                  $params['status_id'] = 'On Waitlist';
+                }
+                else {
+                  $this->waitlist_events[$eid]--;
+                }
+              }
               // Is existing participant?
               if (!empty($existing[$eid])) {
                 $params['id'] = $existing[$params['event_id']];
