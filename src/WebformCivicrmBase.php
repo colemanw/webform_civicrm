@@ -8,6 +8,7 @@ namespace Drupal\webform_civicrm;
  */
 
 use Drupal\Component\Utility\UrlHelper;
+use Drupal\Core\Url;
 use Drupal\File\Entity\File;
 
 /**
@@ -834,10 +835,11 @@ abstract class WebformCivicrmBase {
       $result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('file', 'getsingle', ['id' => $id]);
 
       if ($result) {
-        return [
-          'name' => $config->customFileUploadDir . wf_crm_aval($result, 'uri'),
-          'type' => wf_crm_aval($result, 'mime_type'),
-        ];
+        $photo = basename($config->customFileUploadDir . wf_crm_aval($result, 'uri'));
+        return Url::fromRoute('civicrm.civicrm_contact_imagefile', [], [
+          'query' => ['photo' => $photo],
+          'absolute' => TRUE,
+        ])->toString();
       }
     }
 
