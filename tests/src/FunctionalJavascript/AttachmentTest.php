@@ -48,14 +48,26 @@ final class AttachmentTest extends WebformCivicrmTestBase {
    * Create file custom fields.
    */
   protected function createFileCustomField() {
-    $this->_cg = civicrm_api3('CustomGroup', 'create', [
-      'title' => "Attach Files",
+    $this->_cg[1] = civicrm_api3('CustomGroup', 'create', [
+      'title' => "Attach Files 1",
+      'extends' => "Contact",
+    ]);
+    $this->_cg[2] = civicrm_api3('CustomGroup', 'create', [
+      'title' => "Attach Files 2",
       'extends' => "Contact",
     ]);
     foreach (['File1', 'File2', 'File3'] as $f) {
       $this->_cf[$f] = civicrm_api3('CustomField', 'create', [
-        'custom_group_id' => $this->_cg['id'],
-        'label' => "Upload " . $f,
+        'custom_group_id' => $this->_cg[1]['id'],
+        'label' => "Upload {$f} on cg1",
+        'data_type' => "File",
+        'html_type' => "File",
+      ]);
+    }
+    foreach (['cg2File1', 'cg2File2', 'cg2File3'] as $f) {
+      $this->_cf[$f] = civicrm_api3('CustomField', 'create', [
+        'custom_group_id' => $this->_cg[2]['id'],
+        'label' => "Upload {$f} on cg2",
         'data_type' => "File",
         'html_type' => "File",
       ]);
@@ -88,22 +100,28 @@ final class AttachmentTest extends WebformCivicrmTestBase {
       'webform' => $this->webform->id(),
     ]));
     $this->enableCivicrmOnWebform();
-    $this->getSession()->getPage()->selectFieldOption("contact_1_number_of_cg{$this->_cg['id']}", 'Yes');
+    $this->getSession()->getPage()->selectFieldOption("contact_1_number_of_cg{$this->_cg[1]['id']}", 'Yes');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+
+    $this->getSession()->getPage()->selectFieldOption("contact_1_number_of_cg{$this->_cg[2]['id']}", 'Yes');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
     // Enable custom fields.
-    foreach ($this->_cf as $cfName => $cf) {
-      $this->getSession()->getPage()->checkField($cfName);
-      $this->assertSession()->checkboxChecked($cfName);
+    foreach ($this->_cf as $cf) {
+      $this->getSession()->getPage()->checkField($cf['values'][$cf['id']]['label']);
+      $this->assertSession()->checkboxChecked($cf['values'][$cf['id']]['label']);
     }
     $this->saveCiviCRMSettings();
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->htmlOutput();
     $this->assertPageNoErrorMessages();
-    $this->assertSession()->pageTextContains($this->fileParams['File1']['name']);
-    $this->assertSession()->pageTextContains($this->fileParams['File2']['name']);
-    $this->assertSession()->pageTextContains($this->fileParams['File3']['name']);
+
+    // Ensure all files are loaded on the form.
+    foreach ($this->fileParams as $name => $file) {
+      $this->assertSession()->pageTextContains($file['name']);
+    }
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertPageNoErrorMessages();
@@ -138,7 +156,31 @@ final class AttachmentTest extends WebformCivicrmTestBase {
         'content' => 'My test content 3',
         'entity_id' => $this->rootUserCid,
         'entity_table' => "civicrm_contact",
-      ]
+      ],
+      'cg2File1' => [
+        'name' => self::getFilePrefix() . 'file1cg2.txt',
+        'mime_type' => 'text/plain',
+        'description' => 'CG2 - My test description 1',
+        'content' => 'CG2 - My test content 1',
+        'entity_id' => $this->rootUserCid,
+        'entity_table' => "civicrm_contact",
+      ],
+      'cg2File2' => [
+        'name' => self::getFilePrefix() . 'file2cg2.txt',
+        'mime_type' => 'text/plain',
+        'description' => 'CG2 - My test description 2',
+        'content' => 'CG2 - My test content 2',
+        'entity_id' => $this->rootUserCid,
+        'entity_table' => "civicrm_contact",
+      ],
+      'cg2File3' => [
+        'name' => self::getFilePrefix() . 'file3cg2.txt',
+        'mime_type' => 'text/plain',
+        'description' => 'CG2 - My test description 3',
+        'content' => 'CG2 - My test content 3',
+        'entity_id' => $this->rootUserCid,
+        'entity_table' => "civicrm_contact",
+      ],
     ];
   }
 
