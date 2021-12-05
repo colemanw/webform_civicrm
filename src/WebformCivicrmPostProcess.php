@@ -323,8 +323,22 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   private function sendReceipt() {
     // tax integration
     if (!is_null($this->tax_rate)) {
+      $dataArray = [];
+      $totalTaxAmount = NULL;
+      foreach ($this->line_items as $key => $value) {
+        if (isset($value['tax_amount']) && isset($value['tax_rate'])) {
+          if (isset($dataArray[$value['tax_rate']])) {
+            $dataArray[$value['tax_rate']] = $dataArray[$value['tax_rate']] + $value['tax_amount'];
+          }
+          else {
+            $dataArray[$value['tax_rate']] = $value['tax_amount'];
+          }
+          $totalTaxAmount += $value['tax_amount'];
+        }
+      }
       $template = \CRM_Core_Smarty::singleton();
-      $template->assign('dataArray', ["{$this->tax_rate}" => $this->tax_rate / 100]);
+      $template->assign('dataArray', $dataArray);
+      $template->assign('totalTaxAmount', $totalTaxAmount);
     }
     if ($this->contributionIsIncomplete) {
       $template = \CRM_Core_Smarty::singleton();
@@ -1762,6 +1776,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       }
 
       if ($itemTaxRate !== NULL) {
+        $line_item['tax_rate'] = $itemTaxRate;
         $line_item['line_total'] = $line_item['unit_price'] * (int) $line_item['qty'];
         $line_item['tax_amount'] = ($itemTaxRate / 100) * $line_item['line_total'];
         $this->totalContribution += ($line_item['unit_price'] * (int) $line_item['qty']) + $line_item['tax_amount'];
