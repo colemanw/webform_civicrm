@@ -553,7 +553,6 @@ class Fields implements FieldsInterface {
         'name' => t('Is Active'),
         'type' => 'select',
         'expose_list' => TRUE,
-        'value' => '1',
       ];
       $fields['relationship_relationship_permission'] = [
         'name' => t('Permissions'),
