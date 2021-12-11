@@ -83,7 +83,7 @@ class CivicrmOptions extends OptionsBase {
     ];
 
     // Do not load option values if this is a numeric field.
-    if ($this->isNumberField($element_properties)) {
+    if ($this->isNumberField($form_state->get('element_properties'))) {
       return $form;
     }
 

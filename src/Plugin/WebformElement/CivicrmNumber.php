@@ -4,6 +4,7 @@ namespace Drupal\webform_civicrm\Plugin\WebformElement;
 
 use Drupal\webform\Plugin\WebformElement\Number;
 use Drupal\webform\Utility\WebformReflectionHelper;
+use Drupal\webform\WebformSubmissionInterface;
 
 /**
  * Provides a 'civicrm_number' element.
@@ -22,7 +23,6 @@ use Drupal\webform\Utility\WebformReflectionHelper;
  */
 class CivicrmNumber extends Number {
 
-
   /**
    * {@inheritdoc}
    */
@@ -38,6 +38,14 @@ class CivicrmNumber extends Number {
     }
     asort($types);
     return $types;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
+    unset($element['#options'], $element['#data_type']);
+    parent::prepare($element, $webform_submission);
   }
 
 }
