@@ -18,6 +18,8 @@ use Drupal\webform\Plugin\WebformHandlerInterface;
 use Drupal\webform_civicrm\Plugin\WebformElement\CivicrmContact;
 use Drupal\webform_civicrm\WebformCivicrmBase;
 use Drupal\Core\Datetime\DrupalDateTime;
+use Drupal\webform\Utility\WebformHtmlHelper;
+use Drupal\webform\Utility\WebformXss;
 
 
 class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivicrmPreProcessInterface {
@@ -832,7 +834,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
    */
   function setMessage($message, $type='status') {
     if (empty($_POST)) {
-      \Drupal::messenger()->addStatus($message);
+      \Drupal::messenger()->addStatus(WebformHtmlHelper::toHtmlMarkup($message, WebformXss::getHtmlTagList()));
     }
   }
 
