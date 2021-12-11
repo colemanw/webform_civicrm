@@ -27,8 +27,7 @@ civicrm_contact:
     component:
       css/token-input.css: {}
   js:
-    # @todo is this a bad assumption? is there a way to load via CiviCRM helpers?
-    /libraries/civicrm/packages/jquery/plugins/jquery.tokeninput.js: {}
+    js/jquery.tokeninput.js: {}
     js/webform_civicrm_contact.js: {}
   dependencies:
     - webform_civicrm/forms
