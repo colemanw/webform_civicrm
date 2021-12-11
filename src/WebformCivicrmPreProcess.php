@@ -505,7 +505,6 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
           if (isset($this->info[$ent][$c][$table][$n][$name])
             && !(isset($element['#form_key']) && isset($submitted[$element['#form_key']]))) {
             $val = $this->info[$ent][$c][$table][$n][$name];
-
             if ($ent === 'contact') {
               $createModeKey = 'civicrm_' . $c . '_contact_' . $n . '_' . $table . '_createmode';
               $multivaluesCreateMode = isset($this->data['config']['create_mode'][$createModeKey]) ? (int) $this->data['config']['create_mode'][$createModeKey] : NULL;
@@ -540,6 +539,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
             // Contact image & custom file fields
             if ($dt == 'File') {
               $fileInfo = $this->getFileInfo($name, $val, $ent, $n);
+
               if ($fileInfo && in_array($element['#type'], ['file', 'managed_file'])) {
                 $this->form['#attached']['drupalSettings']['webform_civicrm']['fileFields'][] = [
                   'eid' => $eid,

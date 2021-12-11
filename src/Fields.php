@@ -103,6 +103,7 @@ class Fields implements FieldsInterface {
     $components = $this->getComponents();
     $sets = $this->getSets($components);
     $utils = \Drupal::service('webform_civicrm.utils');
+    $elements = \Drupal::service('plugin.manager.webform.element')->getInstances();
 
     static $fields = [];
 
@@ -192,17 +193,14 @@ class Fields implements FieldsInterface {
         'type' => 'select',
         'value' => $utils->wf_crm_get_civi_setting('lcMessages', 'en_US'),
       ];
-      /*
-       * @todo is this fine w/ the core file element?
-      if (array_key_exists('file', webform_components())) {
-        $fields['contact_image_URL'] = array(
+      if (!$elements['managed_file']->isDisabled() && !$elements['managed_file']->isHidden()) {
+        $fields['contact_image_URL'] = [
           'name' => t('Upload Image'),
-          'type' => 'file',
+          'type' => 'managed_file',
           'extra' => array('width' => 40),
           'data_type' => 'File',
-        );
+        ];
       }
-      */
       $fields['contact_contact_id'] = [
         'name' => t('Contact ID'),
         'type' => 'hidden',
