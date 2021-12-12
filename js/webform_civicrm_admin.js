@@ -580,18 +580,5 @@ var wfCiviAdmin = (function ($, D) {
     }
   };
 
-  /**
-   * This block uses CiviCRM's jQuery not Drupal's version
-   * TODO: Move more code here! Drupal's version of jQuery is ancient.
-   */
-  CRM.$(function($) {
-    // Inline help
-    $('#webform-civicrm-settings-form, #webform-component-edit-form').on('click', 'a.helpicon', function () {
-      var topic = $(this).attr('href').substr(1);
-      CRM.help($(this).attr('title'), {q: 'webform-civicrm/help/' + topic}, D.settings.basePath);
-      return false;
-    });
-  });
-
   return pub;
 })(jQuery, Drupal);
