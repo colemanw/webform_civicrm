@@ -1,8 +1,3 @@
-// Shim for old versions of jQuery
-if (typeof jQuery.fn.prop !== 'function') {
-  jQuery.fn.prop = jQuery.fn.attr;
-}
-
 /**
  * Javascript Module for managing the webform_civicrm admin form.
  */
