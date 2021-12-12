@@ -10,7 +10,7 @@ Installation & Getting Started
 - Create a new webform (or go to edit an existing one).
 - Click on the Settings -> CiviCRM tab.
 - Enable the fields you like, and optionally choose introduction text and other settings.
-- Customize the webform settings for your new fields however you wish!
+- Customize the webform settings for your new fields however you wish.
 
 Documentation
 -------------
