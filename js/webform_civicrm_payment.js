@@ -1,5 +1,5 @@
 // Webform payment processing using CiviCRM's jQuery
-cj(function($) {
+CRM.$(function($) {
   'use strict';
   var
     setting = drupalSettings.webform_civicrm,
