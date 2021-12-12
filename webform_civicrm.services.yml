@@ -1,21 +1,27 @@
 services:
+  webform_civicrm.utils:
+    class: Drupal\webform_civicrm\Utils
   webform_civicrm.fields:
     class: Drupal\webform_civicrm\Fields
+    arguments: ['@webform_civicrm.utils']
   webform_civicrm.field_options:
     class: Drupal\webform_civicrm\FieldOptions
     arguments: ['@webform_civicrm.fields']
   webform_civicrm.admin_help:
     class: Drupal\webform_civicrm\AdminHelp
+    arguments: ['@webform_civicrm.utils']
   webform_civicrm.admin_form:
     class: Drupal\webform_civicrm\AdminForm
+    arguments: ['@webform_civicrm.utils']
   webform_civicrm.contact_component:
     class: Drupal\webform_civicrm\ContactComponent
-  webform_civicrm.utils:
-    class: Drupal\webform_civicrm\Utils
+    arguments: ['@webform_civicrm.utils']
   webform_civicrm.webform_ajax:
     class: Drupal\webform_civicrm\WebformAjax
-    arguments: ['@request_stack']
+    arguments: ['@request_stack', '@webform_civicrm.utils']
   webform_civicrm.preprocess:
     class: Drupal\webform_civicrm\WebformCivicrmPreProcess
+    arguments: ['@webform_civicrm.utils']
   webform_civicrm.postprocess:
     class: Drupal\webform_civicrm\WebformCivicrmPostProcess
+    arguments: ['@webform_civicrm.utils']

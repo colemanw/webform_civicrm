@@ -41,6 +41,10 @@ class AdminForm implements AdminFormInterface {
    */
   public static $fieldset_entities = ['contact', 'billing_1_number_of_billing', 'activity', 'case', 'grant'];
 
+  public function __construct(UtilsInterface $utils) {
+    $this->utils = $utils;
+  }
+
   /**
    * Initialize and set form variables.
    * @param array $form
@@ -51,11 +55,10 @@ class AdminForm implements AdminFormInterface {
    */
   function initialize(array $form, FormStateInterface $form_state, WebformInterface $webform) {
     \Drupal::getContainer()->get('civicrm')->initialize();
-    $utils = \Drupal::service('webform_civicrm.utils');
     $this->form = $form;
     $this->form_state = $form_state;
-    $this->fields = $utils->wf_crm_get_fields();
-    $this->sets = $utils->wf_crm_get_fields('sets');
+    $this->fields = $this->utils->wf_crm_get_fields();
+    $this->sets = $this->utils->wf_crm_get_fields('sets');
     $this->settings = $form_state->getValues();
     $this->webform = $webform;
     return $this;
@@ -67,7 +70,6 @@ class AdminForm implements AdminFormInterface {
    */
   public function buildForm() {
     $this->form_state->set('nid', $this->webform->id());
-    $utils = \Drupal::service('webform_civicrm.utils');
 
     // Display confirmation message before deleting fields
     if (!empty($this->form_state->get('msg'))) {
@@ -84,7 +86,7 @@ class AdminForm implements AdminFormInterface {
       $this->rebuildForm();
     }
     // Merge in existing fields
-    $existing = array_keys($utils->wf_crm_enabled_fields($this->webform, NULL, TRUE));
+    $existing = array_keys($this->utils->wf_crm_enabled_fields($this->webform, NULL, TRUE));
     $this->settings += array_fill_keys($existing, 'create_civicrm_webform_element');
 
     // Sort fields by set
@@ -209,9 +211,8 @@ class AdminForm implements AdminFormInterface {
    * Add necessary css & js
    */
   private function addResources() {
-    $utils = \Drupal::service('webform_civicrm.utils');
     $this->form['#attached']['library'][] = 'webform_civicrm/admin';
-    $this->form['#attached']['drupalSettings']['webform_civicrm'] = ['rTypes' => $utils->wf_crm_get_relationship_types()];
+    $this->form['#attached']['drupalSettings']['webform_civicrm'] = ['rTypes' => $this->utils->wf_crm_get_relationship_types()];
     // Add CiviCRM core css & js, which includes jQuery, jQuery UI + other plugins
     \CRM_Core_Resources::singleton()->addCoreResources();
   }
@@ -248,11 +249,10 @@ class AdminForm implements AdminFormInterface {
    * @param array $c Contact info
    */
   private function buildContactTab($n, $c) {
-    $utils = \Drupal::service('webform_civicrm.utils');
-    list($contact_types, $sub_types) = $utils->wf_crm_get_contact_types();
+    list($contact_types, $sub_types) = $this->utils->wf_crm_get_contact_types();
     $this->form['contact_' . $n] = [
       '#type' => 'details',
-      '#title' => $n . '. ' . $utils->wf_crm_contact_label($n, $this->data),
+      '#title' => $n . '. ' . $this->utils->wf_crm_contact_label($n, $this->data),
       '#markup' => $n > 1 ? NULL : t('<hr/>' . 'Primary contact. Usually assumed to be the person filling out the form.') . '<br />'
         . t('Enable the "Existing Contact" field to autofill with the current user (or another contact).' . '<br />'
           . 'Address, Phone, Email, Custom fields for Contacts can also be added to the webform.'. '<hr/>' ),
@@ -269,7 +269,7 @@ class AdminForm implements AdminFormInterface {
     $this->form['contact_' . $n][$n . '_webform_label'] = [
       '#type' => 'textfield',
       '#title' => t('Label'),
-      '#default_value' => $utils->wf_crm_contact_label($n, $this->data, 'plain'),
+      '#default_value' => $this->utils->wf_crm_contact_label($n, $this->data, 'plain'),
       '#suffix' => '</div>',
     ];
     $this->help($this->form['contact_' . $n][$n . '_webform_label'], 'webform_label', t('Contact Label'));
@@ -354,11 +354,11 @@ class AdminForm implements AdminFormInterface {
           'js_select' => $this->addToggle($fsid),
         ];
         if ($sid == 'relationship') {
-          $fieldset['#title'] = t('Relationship to @contact', ['@contact' => $utils->wf_crm_contact_label($i, $this->data, 'wrap')]);
+          $fieldset['#title'] = t('Relationship to @contact', ['@contact' => $this->utils->wf_crm_contact_label($i, $this->data, 'wrap')]);
         }
         elseif ((isset($set['max_instances']) && $set['max_instances'] > 1)) {
           $fieldset['#title'] .= ' ' . $i;
-          if (in_array($sid, $utils->wf_crm_location_fields()) && $i == 1) {
+          if (in_array($sid, $this->utils->wf_crm_location_fields()) && $i == 1) {
             $fieldset['#title'] .= ' ' . t('(primary)');
           }
         }
@@ -414,7 +414,7 @@ class AdminForm implements AdminFormInterface {
               0 =>t('- None -'),
               'Unsupervised' => t('Default Unsupervised'),
               'Supervised' => t('Default Supervised'),
-            ] + $utils->wf_crm_get_matching_rules($c['contact'][1]['contact_type']),
+            ] + $this->utils->wf_crm_get_matching_rules($c['contact'][1]['contact_type']),
           '#title' => t('Matching Rule'),
           '#prefix' => '<div class="number-of">',
           '#suffix' => '</div>',
@@ -434,8 +434,7 @@ class AdminForm implements AdminFormInterface {
    * Configure messages
    */
   private function buildMessageTabs() {
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $tokens = '<strong>' . t('Tokens for :contact', [':contact' => $utils->wf_crm_contact_label(1, $this->data, TRUE)]) . ':</strong> [' . implode('], [', $utils->wf_crm_get_fields('tokens')) . '].';
+    $tokens = '<strong>' . t('Tokens for :contact', [':contact' => $this->utils->wf_crm_contact_label(1, $this->data, TRUE)]) . ':</strong> [' . implode('], [', $this->utils->wf_crm_get_fields('tokens')) . '].';
     $this->form['prefix'] = [
       '#type' => 'details',
       '#title' => t('Introduction Text'),
@@ -482,7 +481,6 @@ class AdminForm implements AdminFormInterface {
    * Activity settings
    */
   private function buildActivityTab() {
-    $utils = \Drupal::service('webform_civicrm.utils');
     $this->form['activityTab'] = [
       '#type' => 'details',
       '#title' => t('Activities'),
@@ -509,7 +507,7 @@ class AdminForm implements AdminFormInterface {
       $this->form['activityTab']['activity'][$num]["activity_{$n}_settings_existing_activity_status"] = [
         '#type' => 'select',
         '#title' => t('Update Existing Activity'),
-        '#options' => ['' => '- ' . t('None') . ' -'] + $utils->wf_crm_apivalues('activity', 'getoptions', ['field' => 'status_id']),
+        '#options' => ['' => '- ' . t('None') . ' -'] + $this->utils->wf_crm_apivalues('activity', 'getoptions', ['field' => 'status_id']),
         '#default_value' => wf_crm_aval($this->data, "activity:$n:existing_activity_status", []),
         '#multiple' => TRUE,
         '#prefix' => '<div class="float-item">',
@@ -529,7 +527,7 @@ class AdminForm implements AdminFormInterface {
       $this->form['activityTab']['activity'][$num]['wrap'] = [];
       $wrap = &$this->form['activityTab']['activity'][$num]['wrap'];
       if (isset($this->sets['case'])) {
-        $case_types = $utils->wf_crm_apivalues('case', 'getoptions', ['field' => 'case_type_id']);
+        $case_types = $this->utils->wf_crm_apivalues('case', 'getoptions', ['field' => 'case_type_id']);
         if ($case_types) {
           $wrap['case']["activity_{$n}_settings_case_type_id"] = [
             '#type' => 'select',
@@ -559,7 +557,7 @@ class AdminForm implements AdminFormInterface {
             $wrap['case']['#description'] = t('File on existing case matching the following criteria:');
             $this->help($wrap['case'], 'file_on_case');
             $wrap['case']["activity_{$n}_settings_case_type_id"]['#title'] = t('Case Type');
-            $status_options = $utils->wf_crm_apivalues('case', 'getoptions', ['field' => 'status_id']);
+            $status_options = $this->utils->wf_crm_apivalues('case', 'getoptions', ['field' => 'status_id']);
             $wrap['case']["activity_{$n}_settings_case_status_id"] = [
               '#type' => 'select',
               '#title' => t('Case Status'),
@@ -596,7 +594,7 @@ class AdminForm implements AdminFormInterface {
       // Add ajax survey type field
       if (isset($this->fields['activity_survey_id'])) {
         $this->addAjaxItem("activityTab:activity:$num:wrap:{$num}_fields", "civicrm_{$n}_activity_1_activity_campaign_id", "..:custom");
-        if ($type && array_key_exists($type, $utils->wf_crm_get_campaign_activity_types())) {
+        if ($type && array_key_exists($type, $this->utils->wf_crm_get_campaign_activity_types())) {
           $this->sets['activity_survey'] = [
             'entity_type' => 'activity',
             'label' => $wrap[$num . '_fields']["civicrm_{$n}_activity_1_activity_activity_type_id"]['#options'][$type],
@@ -655,8 +653,7 @@ class AdminForm implements AdminFormInterface {
    * FIXME: This is exactly the same code as buildGrantTab. More utilities and less boilerplate needed.
    */
   private function buildCaseTab() {
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $types = $utils->wf_crm_apivalues('case', 'getoptions', ['field' => 'case_type_id']);
+    $types = $this->utils->wf_crm_apivalues('case', 'getoptions', ['field' => 'case_type_id']);
     if (!$types) {
       return;
     }
@@ -685,7 +682,7 @@ class AdminForm implements AdminFormInterface {
       $this->form['caseTab']['case'][$fs]["case_{$n}_settings_existing_case_status"] = [
         '#type' => 'select',
         '#title' => t('Update Existing Case'),
-        '#options' => ['' => '- ' . t('None') . ' -'] + $utils->wf_crm_apivalues('case', 'getoptions', ['field' => 'status_id']),
+        '#options' => ['' => '- ' . t('None') . ' -'] + $this->utils->wf_crm_apivalues('case', 'getoptions', ['field' => 'status_id']),
         '#default_value' => wf_crm_aval($this->data, "case:{$n}:existing_case_status", []),
         '#multiple' => TRUE,
       ];
@@ -732,14 +729,13 @@ class AdminForm implements AdminFormInterface {
    * @return array
    */
   private function filterCaseSets($case_type) {
-    $utils = \Drupal::service('webform_civicrm.utils');
     $case_sets = [];
     foreach ($this->sets as $sid => $set) {
       if ($set['entity_type'] == 'case' && (!$case_type || empty($set['sub_types']) || in_array($case_type, $set['sub_types']))) {
         if ($sid == 'caseRoles') {
           // Lookup case-role names
           $creator = $manager = NULL;
-          $case_types = $utils->wf_crm_apivalues('case_type', 'get', ['id' => $case_type]);
+          $case_types = $this->utils->wf_crm_apivalues('case_type', 'get', ['id' => $case_type]);
           foreach ($case_types as $type) {
             foreach ($type['definition']['caseRoles'] as $role) {
               if (!empty($role['creator'])) {
@@ -751,13 +747,13 @@ class AdminForm implements AdminFormInterface {
             }
           }
           if ($creator) {
-            $rel_type = $utils->wf_civicrm_api('relationshipType', 'getsingle', ['name_b_a' => $creator]);
+            $rel_type = $this->utils->wf_civicrm_api('relationshipType', 'getsingle', ['name_b_a' => $creator]);
             $label = $creator == $manager ? ts('Case # Creator/Manager') : ts('Case # Creator');
             $set['fields']['case_creator_id']['name'] = $rel_type['label_b_a'] . ' (' . $label . ')';
             unset($set['fields']['case_role_' . $rel_type['id']]);
           }
           if ($manager && $manager != $creator) {
-            $rel_type = $utils->wf_civicrm_api('relationshipType', 'getsingle', ['name_b_a' => $manager]);
+            $rel_type = $this->utils->wf_civicrm_api('relationshipType', 'getsingle', ['name_b_a' => $manager]);
             $set['fields']['case_role_' . $rel_type['id']]['name'] .= ' (' . ts('Case # Manager') . ')';
           }
         }
@@ -771,7 +767,6 @@ class AdminForm implements AdminFormInterface {
    * Event participant settings
    */
   private function buildParticipantTab() {
-    $utils = \Drupal::service('webform_civicrm.utils');
     $this->form['participant'] = [
       '#type' => 'details',
       '#title' => t('Event Registration'),
@@ -793,7 +788,7 @@ class AdminForm implements AdminFormInterface {
     $this->form['participant']['event_type'] = [
       '#type' => 'select',
       '#title' => t('Show Events of Type(s)'),
-      '#options' => ['any' => t('- Any Type -')] + $utils->wf_crm_apivalues('event', 'getoptions', ['field' => 'event_type_id']),
+      '#options' => ['any' => t('- Any Type -')] + $this->utils->wf_crm_apivalues('event', 'getoptions', ['field' => 'event_type_id']),
       '#default_value' => wf_crm_aval($this->data, 'reg_options:event_type', 'any'),
       '#prefix' => '<div id="event-reg-options-wrapper"><div class="web-civi-checkbox-set">',
       '#parents' => ['reg_options', 'event_type'],
@@ -934,7 +929,7 @@ class AdminForm implements AdminFormInterface {
     for ($n = 1; $reg_type && (($n <= count($this->data['contact']) && $reg_type != 'all') || $n == 1); ++$n) {
       $this->form['participant']['participants'][$n] = [
         '#type' => 'fieldset',
-        '#title' => $reg_type == 'all' ? t('Registration') : $utils->wf_crm_contact_label($n, $this->data, 'wrap'),
+        '#title' => $reg_type == 'all' ? t('Registration') : $this->utils->wf_crm_contact_label($n, $this->data, 'wrap'),
       ];
       $num = wf_crm_aval($this->data, "participant:{$n}:number_of_participant");
       if (!$num || ($n > 1 && $reg_type == 'all')) {
@@ -942,7 +937,7 @@ class AdminForm implements AdminFormInterface {
       }
       $this->form['participant']['participants'][$n]['participant_' . $n . '_number_of_participant'] = [
         '#type' => 'select',
-        '#title' => $reg_type == 'all' ? t('Number of Event Sets') : t('Number of Event Sets for @contact', ['@contact' => $utils->wf_crm_contact_label($n, $this->data, 'wrap')]),
+        '#title' => $reg_type == 'all' ? t('Number of Event Sets') : t('Number of Event Sets for @contact', ['@contact' => $this->utils->wf_crm_contact_label($n, $this->data, 'wrap')]),
         '#default_value' => $num,
         '#options' => range(0, $this->sets['participant']['max_instances']),
         '#prefix' => '<div class="number-of">',
@@ -1008,7 +1003,6 @@ class AdminForm implements AdminFormInterface {
    * Membership settings
    */
   private function buildMembershipTab() {
-    $utils = \Drupal::service('webform_civicrm.utils');
     $this->form['membership'] = [
       '#type' => 'details',
       '#title' => t('Memberships'),
@@ -1019,7 +1013,7 @@ class AdminForm implements AdminFormInterface {
       $num = wf_crm_aval($this->data, "membership:{$c}:number_of_membership", 0);
       $this->form['membership'][$c]["membership_{$c}_number_of_membership"] = [
         '#type' => 'select',
-        '#title' => t('Number of Memberships for @contact', ['@contact' => $utils->wf_crm_contact_label($c, $this->data, 'wrap')]),
+        '#title' => t('Number of Memberships for @contact', ['@contact' => $this->utils->wf_crm_contact_label($c, $this->data, 'wrap')]),
         '#default_value' => $num,
         '#options' => range(0, 10),
         '#prefix' => '<div class="number-of">',
@@ -1030,7 +1024,7 @@ class AdminForm implements AdminFormInterface {
         $fs = "membership_{$c}_membership_{$n}_fieldset";
         $this->form['membership'][$c]['membership'][$fs] = [
           '#type' => 'fieldset',
-          '#title' => t('Membership :num for :contact', [':num' => $n, ':contact' => $utils->wf_crm_contact_label($c, $this->data, 'wrap')]),
+          '#title' => t('Membership :num for :contact', [':num' => $n, ':contact' => $this->utils->wf_crm_contact_label($c, $this->data, 'wrap')]),
           '#attributes' => ['id' => $fs, 'class' => ['web-civi-checkbox-set']],
           'js_select' => $this->addToggle($fs),
         ];
@@ -1050,7 +1044,6 @@ class AdminForm implements AdminFormInterface {
    * Contribution settings
    */
   private function buildContributionTab() {
-    $utils = \Drupal::service('webform_civicrm.utils');
     $this->form['contribution'] = [
       '#type' => 'details',
       '#title' => t('Contribution'),
@@ -1111,7 +1104,7 @@ class AdminForm implements AdminFormInterface {
       }
     }
     //Add financial type config.
-    $ft_options = (array) $utils->wf_crm_apivalues('Contribution', 'getoptions', [
+    $ft_options = (array) $this->utils->wf_crm_apivalues('Contribution', 'getoptions', [
       'field' => "financial_type_id",
     ]);
     $this->form['contribution']['sets']['contribution']['civicrm_1_contribution_1_contribution_financial_type_id'] = [
@@ -1269,8 +1262,7 @@ class AdminForm implements AdminFormInterface {
    * FIXME: This is nearly the same code as buildCaseTab. More utilities and less boilerplate needed.
    */
   private function buildGrantTab() {
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $types = $utils->wf_crm_apivalues('grant', 'getoptions', ['field' => 'grant_type_id']);
+    $types = $this->utils->wf_crm_apivalues('grant', 'getoptions', ['field' => 'grant_type_id']);
     if (!$types) {
       return;
     }
@@ -1299,7 +1291,7 @@ class AdminForm implements AdminFormInterface {
       $this->form['grantTab']['grant'][$fs]["grant_{$n}_settings_existing_grant_status"] = [
         '#type' => 'select',
         '#title' => t('Update Existing Grant'),
-        '#options' => ['' => '- ' . t('None') . ' -'] + $utils->wf_crm_apivalues('grant', 'getoptions', ['field' => 'status_id']),
+        '#options' => ['' => '- ' . t('None') . ' -'] + $this->utils->wf_crm_apivalues('grant', 'getoptions', ['field' => 'status_id']),
         '#default_value' => wf_crm_aval($this->data, "grant:{$n}:existing_grant_status", []),
         '#multiple' => TRUE,
       ];
@@ -1337,7 +1329,6 @@ class AdminForm implements AdminFormInterface {
    * Configure additional options
    */
   private function buildOptionsTab() {
-    $utils = \Drupal::service('webform_civicrm.utils');
     $this->form['additional_options'] = [
       '#type' => 'details',
       '#group' => 'webform_civicrm',
@@ -1347,7 +1338,7 @@ class AdminForm implements AdminFormInterface {
     $this->form['additional_options']['checksum_text'] = [
       '#type' => 'item',
       '#markup' => '<p>' .
-        t('To have this form auto-filled for anonymous users, enable the "Existing Contact" field for :contact and send the following link from CiviMail:', [':contact' => $utils->wf_crm_contact_label(1, $this->data, 'escape')]) .
+        t('To have this form auto-filled for anonymous users, enable the "Existing Contact" field for :contact and send the following link from CiviMail:', [':contact' => $this->utils->wf_crm_contact_label(1, $this->data, 'escape')]) .
         '<br /><pre>' . Url::fromRoute('entity.webform.canonical', ['webform' => $this->webform->id()], ['query' => ['cid1' => ''], 'absolute' => TRUE])->toString() . '{contact.contact_id}&amp;{contact.checksum}</pre></p>',
     ];
     $this->form['additional_options']['create_fieldsets'] = [
@@ -1362,7 +1353,7 @@ class AdminForm implements AdminFormInterface {
       '#default_value' => (bool) $this->settings['confirm_subscription'],
       '#description' => t('Recommended. Send a confirmation email before adding contacts to publicly subscribable mailing list groups.') . '<br />' . t('Your public mailing lists:') . ' <em>',
     ];
-    $ml = $utils->wf_crm_apivalues('group', 'get', ['is_hidden' => 0, 'visibility' => 'Public Pages', 'group_type' => 2], 'title');
+    $ml = $this->utils->wf_crm_apivalues('group', 'get', ['is_hidden' => 0, 'visibility' => 'Public Pages', 'group_type' => 2], 'title');
     if ($ml) {
       if (count($ml) > 4) {
         $ml = array_slice($ml, 0, 3);
@@ -1514,7 +1505,6 @@ class AdminForm implements AdminFormInterface {
    *   FAPI form item array for the admin form
    */
   private function addItem($fid, $field) {
-    $utils = \Drupal::service('webform_civicrm.utils');
     list(, $c, $ent, $n, $table, $name) = explode('_', $fid, 6);
     $item = [
       // We don't need numbers on the admin form since they are already grouped in fieldsets
@@ -1537,7 +1527,7 @@ class AdminForm implements AdminFormInterface {
       if ($field['type'] != 'hidden') {
         $options += ['create_civicrm_webform_element' => t('- User Select -')];
       }
-      $options += $utils->wf_crm_field_options($field, 'config_form', $this->data);
+      $options += $this->utils->wf_crm_field_options($field, 'config_form', $this->data);
       $item += [
         '#type' => 'select',
         '#options' => $options,
@@ -1673,10 +1663,9 @@ class AdminForm implements AdminFormInterface {
    * Made public so we can invoke from D8 form, for now.
    */
   public function rebuildData() {
-    $utils = \Drupal::service('webform_civicrm.utils');
     $this->settings['data'] = ['contact' => []];
     $this->data = &$this->settings['data'];
-    list($contact_types, $sub_types) = $utils->wf_crm_get_contact_types();
+    list($contact_types, $sub_types) = $this->utils->wf_crm_get_contact_types();
     for ($c = 1; $c <= $this->settings['number_of_contacts']; ++$c) {
       // Contact settings
       $contact_type_key = $c . '_contact_type';
@@ -1760,7 +1749,7 @@ class AdminForm implements AdminFormInterface {
     // Defaults when adding a case
     for ($i=1, $iMax = wf_crm_aval($this->settings, 'case_number_of_case'); $i <= $iMax; ++$i) {
       if (!isset($this->settings["civicrm_{$i}_case_1_case_case_type_id"])) {
-        $case_types = array_keys($utils->wf_crm_apivalues('Case', 'getoptions', ['field' => 'case_type_id']));
+        $case_types = array_keys($this->utils->wf_crm_apivalues('Case', 'getoptions', ['field' => 'case_type_id']));
         $this->data['case'][$i]['case'][1]['case_type_id'] = $case_types[0];
       }
     }
@@ -1805,7 +1794,6 @@ class AdminForm implements AdminFormInterface {
    * This needs to be reworked to support the checking of D8 elements and their removal.
    */
   public function postProcess() {
-    $utils = \Drupal::service('webform_civicrm.utils');
     $button = $this->form_state->getTriggeringElement()['#id'];
     $this->settings = $this->form_state->getValues();
 
@@ -1814,7 +1802,7 @@ class AdminForm implements AdminFormInterface {
     $handler = $handler_collection->get('webform_civicrm');
     $handler_configuration = $handler->getConfiguration();
 
-    $enabled = $existing = $utils->wf_crm_enabled_fields($this->webform, NULL, TRUE);
+    $enabled = $existing = $this->utils->wf_crm_enabled_fields($this->webform, NULL, TRUE);
     $delete_me = $this->getFieldsToDelete($enabled);
 
     // Display a confirmation before deleting fields
@@ -1905,7 +1893,7 @@ class AdminForm implements AdminFormInterface {
     foreach ($this->settings as $key => $val) {
       if (strpos($key, 'civicrm') === 0) {
         ++$i;
-        $field = $utils->wf_crm_get_field($key);
+        $field = $this->utils->wf_crm_get_field($key);
         if (!isset($enabled[$key])) {
           $val = (array) $val;
           if (in_array('create_civicrm_webform_element', $val, TRUE) || (!empty($val[0]) && $field['type'] == 'hidden')) {
@@ -1925,7 +1913,7 @@ class AdminForm implements AdminFormInterface {
               ];
               // Cannot use isNewFieldset effectively.
               $previous_data = $handler_configuration['settings'];
-              list(, $c, $ent) =  $utils->wf_crm_explode_key($key);
+              list(, $c, $ent) =  $this->utils->wf_crm_explode_key($key);
               $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
               $create = !isset($previous_data['data'][$type][$c]);
               /*
@@ -1967,7 +1955,7 @@ class AdminForm implements AdminFormInterface {
       }
       // add empty fieldsets for custom civicrm sets with no fields, if "add dynamically" is checked
       elseif (strpos($key, 'settings_dynamic_custom') && $val == 1) {
-        $emptySets = $utils->wf_crm_get_empty_sets();
+        $emptySets = $this->utils->wf_crm_get_empty_sets();
         list($ent, $n, , , ,$cgId) = explode('_', $key, 6);
         $fieldsetKey = "civicrm_{$n}_{$ent}_1_{$cgId}_fieldset";
         if (array_key_exists($cgId, $emptySets) && !isset($existing[$fieldsetKey])) {
@@ -2046,7 +2034,6 @@ class AdminForm implements AdminFormInterface {
    * Fix paging on the webform.
    */
   protected function setPaging() {
-    $utils = \Drupal::service('webform_civicrm.utils');
     $elements = $this->webform->getElementsDecoded();
     if (!isset($elements['contact_pagebreak'])) {
       return;
@@ -2068,7 +2055,7 @@ class AdminForm implements AdminFormInterface {
         }
       }
       $elements = $newElements;
-      $utils->remove_element($elements, 'contact_pagebreak');
+      $this->utils->remove_element($elements, 'contact_pagebreak');
     }
     else {
       // Return if childrens are already added.
@@ -2142,7 +2129,6 @@ class AdminForm implements AdminFormInterface {
    * @param array $enabled
    */
   private function addConditionalRule($field, $enabled) {
-    $utils = \Drupal::service('webform_civicrm.utils');
     list(, $c, $ent, $n, $table, $name) = explode('_', $field['form_key'], 6);
     $rgid = $weight = -1;
     foreach ($this->node->webform['conditionals'] as $rgid => $existing) {
@@ -2166,7 +2152,7 @@ class AdminForm implements AdminFormInterface {
       $source_key = "civicrm_{$c}_{$ent}_{$n}_{$source}";
       $source_id = wf_crm_aval($enabled, $source_key);
       if ($source_id) {
-        $options = $utils->wf_crm_field_options(['form_key' => $source_key], '', $this->settings['data']);
+        $options = $this->utils->wf_crm_field_options(['form_key' => $source_key], '', $this->settings['data']);
         foreach ((array) $condition['values'] as $value) {
           if (isset($options[$value])) {
             $rule_group['rules'][] = [
@@ -2202,7 +2188,6 @@ class AdminForm implements AdminFormInterface {
    * @return array
    */
   private function getFieldsToDelete($fields) {
-    $utils = \Drupal::service('webform_civicrm.utils');
     // Find fields to delete
     foreach ($fields as $key => $val) {
       $val = (array) wf_crm_aval($this->settings, $key);
@@ -2214,7 +2199,7 @@ class AdminForm implements AdminFormInterface {
         unset($fields[$key]);
       }
       else {
-        $field = $utils->wf_crm_get_field($key);
+        $field = $this->utils->wf_crm_get_field($key);
         if ($field['type'] == 'hidden' && (!empty($val[0]) || $field['name'] == 'Payment Processor Mode')) {
           unset($fields[$key]);
         }
@@ -2407,8 +2392,7 @@ class AdminForm implements AdminFormInterface {
    *  id of the payment processor as per is_test flag.
    */
   protected function getPaymentProcessorValue($ppId) {
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $pName = $utils->wf_civicrm_api('PaymentProcessor', 'getvalue', [
+    $pName = $this->utils->wf_civicrm_api('PaymentProcessor', 'getvalue', [
       'return' => "name",
       'id' => $ppId,
     ]);
@@ -2417,7 +2401,7 @@ class AdminForm implements AdminFormInterface {
       'is_active' => 1,
       'name' => $pName,
     ];
-    return key($utils->wf_crm_apivalues('PaymentProcessor', 'get', $params));
+    return key($this->utils->wf_crm_apivalues('PaymentProcessor', 'get', $params));
   }
 
   /**
@@ -2443,7 +2427,7 @@ class AdminForm implements AdminFormInterface {
     $ret = [];
     foreach ($this->data['contact'] as $num => $contact) {
       if ($num != $exclude) {
-        $ret[$num] = \Drupal::service('webform_civicrm.utils')->wf_crm_contact_label($num, $this->data, 'plain');
+        $ret[$num] = $this->utils->wf_crm_contact_label($num, $this->data, 'plain');
       }
     }
     return $ret;

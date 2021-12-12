@@ -20,8 +20,9 @@ class WebformAjax extends WebformCivicrmBase implements WebformAjaxInterface {
 
   private $requestStack;
 
-  function __construct(RequestStack $requestStack) {
+  function __construct(RequestStack $requestStack, UtilsInterface $utils) {
     $this->requestStack = $requestStack;
+    $this->utils = $utils;
   }
 
   /**
