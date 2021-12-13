@@ -1,11 +1,10 @@
 // Webform payment processing using CiviCRM's jQuery
-cj(function($) {
+(function ($, D, drupalSettings) {
   'use strict';
-  var
-    setting = drupalSettings.webform_civicrm,
-    $processorFields = $('[name$="civicrm_1_contribution_1_contribution_payment_processor_id"]');
+  var setting = drupalSettings.webform_civicrm;
 
   function getPaymentProcessor() {
+    var $processorFields = $('[name$="civicrm_1_contribution_1_contribution_payment_processor_id"]');
     if (!$processorFields.length) {
       return setting.paymentProcessor;
     }
@@ -43,16 +42,6 @@ cj(function($) {
       $('#billing-payment-block').html('');
     }
   }
-  $('fieldset.billing_name_address-group').remove();
-  $processorFields.on('change', function() {
-    setting.billingSubmission || (setting.billingSubmission = {});
-    $('#billing-payment-block').find('input:visible, select').each(function() {
-      var name = $(this).attr('name');
-      name && (setting.billingSubmission[name] = $(this).val());
-    });
-    loadBillingBlock();
-  });
-  loadBillingBlock();
 
   function getTotalAmount() {
     var totalAmount = 0.0;
@@ -113,29 +102,46 @@ cj(function($) {
     updateLineItem(lineKey, amount, label);
   }
 
-  $('.civicrm-enabled.contribution-line-item')
-    .each(calculateLineItemAmount)
-    .on('change keyup', calculateLineItemAmount)
-    .each(function() {
-      // Also use Drupal's jQuery to listen to this event, for compatibility with other modules
-      jQuery(this).change(calculateLineItemAmount);
-    });
+  D.behaviors.webform_civicrmPayment = {
+    attach: function (context) {
+      $('fieldset.billing_name_address-group', context).remove();
 
-  tally();
+      $('[name$="civicrm_1_contribution_1_contribution_payment_processor_id"]', context).on('change', function() {
+        drupalSettings.billingSubmission || (drupalSettings.billingSubmission = {});
+        $('#billing-payment-block').find('input:visible, select').each(function() {
+          var name = $(this).attr('name');
+          name && (drupalSettings.billingSubmission[name] = $(this).val());
+        });
+        loadBillingBlock();
+      });
 
-  var payment = {
-    getTotalAmount: function() {
-      return getTotalAmount();
+      loadBillingBlock();
+
+      $('.civicrm-enabled.contribution-line-item')
+        .each(calculateLineItemAmount)
+        .on('change keyup', calculateLineItemAmount)
+        .each(function() {
+          // Also use Drupal's jQuery to listen to this event, for compatibility with other modules
+          jQuery(this).change(calculateLineItemAmount);
+        });
+
+      tally();
+
+      var payment = {
+        getTotalAmount: function() {
+          return getTotalAmount();
+        }
+      };
+
+      if (typeof CRM.payment === 'undefined') {
+        CRM.payment = payment;
+      }
+      else {
+        $.extend(CRM.payment, payment);
+      }
+
+      $('.webform-submission-form #edit-actions').detach().appendTo('.webform-submission-form');
     }
-  };
-
-  if (typeof CRM.payment === 'undefined') {
-    CRM.payment = payment;
-  }
-  else {
-    $.extend(CRM.payment, payment);
   }
 
-  $('.webform-submission-form #edit-actions').detach().appendTo('.webform-submission-form');
-
-});
+})(jQuery, Drupal, drupalSettings);
