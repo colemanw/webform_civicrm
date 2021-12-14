@@ -2621,12 +2621,18 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         if (in_array($type, $component['#hide_fields'])) {
           $value = wf_crm_aval($this->loadContact($c), "$table:$n:$name");
           // Check to see if configured to Submit disabled field value(s)
-          if ($checkSubmitDisabledSetting && !empty($component['#submit_disabled']) && !empty($value)) {
-            $fieldKey = implode('_', ['civicrm', $c, $ent, $n, $table, $name]);
-            $data = $this->submission->getData();
-            if (isset($data[$fieldKey])) {
-              $data[$fieldKey] = $value;
-              $this->submission->setData($data);
+          if ($checkSubmitDisabledSetting && !empty($component['#submit_disabled'])) {
+            // If field is disabled on the webform, do not overwrite existing values on the contact.
+            if (!empty($value) && !empty($this->submission)) {
+              $fieldKey = implode('_', ['civicrm', $c, $ent, $n, $table, $name]);
+              $data = $this->submission->getData();
+              if (isset($data[$fieldKey])) {
+                $data[$fieldKey] = $value;
+                $this->submission->setData($data);
+              }
+            }
+            else {
+              return FALSE;
             }
           }
           // With the no_hide_blank setting we must load the contact to determine if the field was hidden
