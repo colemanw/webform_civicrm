@@ -58,6 +58,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
     $this->getSession()->getPage()->selectFieldOption('civicrm_2_contact_1_relationship_relationship_type_id[]', 'create_civicrm_webform_element');
 
+    $this->createScreenshot($this->htmlOutputDirectory . '/adminscreen.png');
     $this->saveCiviCRMSettings();
 
     $this->drupalGet($this->webform->toUrl('canonical'));
