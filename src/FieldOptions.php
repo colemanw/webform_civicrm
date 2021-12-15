@@ -29,6 +29,9 @@ class FieldOptions implements FieldOptionsInterface {
         list($contact_types, $sub_types) = $utils->wf_crm_get_contact_types();
         $ret = wf_crm_aval($sub_types, $data['contact'][$c]['contact'][1]['contact_type'], []);
       }
+      elseif (isset($field['type']) && $field['type'] === 'civicrm_number') {
+        return [];
+      }
       elseif ($name === 'relationship_type_id') {
         $ret = $utils->wf_crm_get_contact_relationship_types($data['contact'][$c]['contact'][1]['contact_type'], $data['contact'][$n]['contact'][1]['contact_type'], $data['contact'][$c]['contact'][1]['contact_sub_type'], $data['contact'][$n]['contact'][1]['contact_sub_type']);
       }

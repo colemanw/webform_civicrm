@@ -7,6 +7,8 @@ namespace Drupal\webform_civicrm;
  * Front-end form handler base class.
  */
 
+use Drupal\Component\Utility\UrlHelper;
+use Drupal\Core\Url;
 use Drupal\File\Entity\File;
 
 /**
@@ -798,10 +800,13 @@ abstract class WebformCivicrmBase {
       return NULL;
     }
     if ($fieldName === 'image_URL') {
+      $parsed = UrlHelper::parse($val);
+
       return [
         'data_type' => 'File',
-        'name' => NULL,
-        'icon' => $val,
+        'name' => $parsed['query']['photo'],
+        'icon' => 'image',
+        'file_url' => $val,
       ];
     }
     $file = \Drupal::service('webform_civicrm.utils')->wf_crm_apivalues('Attachment', 'get', $val);
@@ -821,12 +826,24 @@ abstract class WebformCivicrmBase {
    *
    * @param int $id Drupal file id
    *
-   * @return string|bool: url of file if found
+   * @return mixed
+   *   An array of the file entity or empty string.
    */
   function getDrupalFileUrl($id) {
-    $file = File::load($id);
+    if ($id = $this->saveDrupalFileToCivi($id)) {
+      $config = \CRM_Core_Config::singleton();
+      $result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('file', 'getsingle', ['id' => $id]);
 
-    return $file ? file_create_url($file->uri) : FALSE;
+      if ($result) {
+        $photo = basename($config->customFileUploadDir . wf_crm_aval($result, 'uri'));
+        return Url::fromRoute('civicrm.civicrm_contact_imagefile', [], [
+          'query' => ['photo' => $photo],
+          'absolute' => TRUE,
+        ])->toString();
+      }
+    }
+
+    return '';
   }
 
   /**

@@ -323,8 +323,22 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   private function sendReceipt() {
     // tax integration
     if (!is_null($this->tax_rate)) {
+      $dataArray = [];
+      $totalTaxAmount = NULL;
+      foreach ($this->line_items as $key => $value) {
+        if (isset($value['tax_amount']) && isset($value['tax_rate'])) {
+          if (isset($dataArray[$value['tax_rate']])) {
+            $dataArray[$value['tax_rate']] = $dataArray[$value['tax_rate']] + $value['tax_amount'];
+          }
+          else {
+            $dataArray[$value['tax_rate']] = $value['tax_amount'];
+          }
+          $totalTaxAmount += $value['tax_amount'];
+        }
+      }
       $template = \CRM_Core_Smarty::singleton();
-      $template->assign('dataArray', ["{$this->tax_rate}" => $this->tax_rate / 100]);
+      $template->assign('dataArray', $dataArray);
+      $template->assign('totalTaxAmount', $totalTaxAmount);
     }
     if ($this->contributionIsIncomplete) {
       $template = \CRM_Core_Smarty::singleton();
@@ -1762,6 +1776,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       }
 
       if ($itemTaxRate !== NULL) {
+        $line_item['tax_rate'] = $itemTaxRate;
         $line_item['line_total'] = $line_item['unit_price'] * (int) $line_item['qty'];
         $line_item['tax_amount'] = ($itemTaxRate / 100) * $line_item['line_total'];
         $this->totalContribution += ($line_item['unit_price'] * (int) $line_item['qty']) + $line_item['tax_amount'];
@@ -2534,7 +2549,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           $val .= $time;
         }
         // The admin can change a number field to use checkbox/radio/select/grid widget and we'll sum the result
-        elseif ($field['type'] === 'number') {
+        elseif ($field['type'] === 'number' || $field['type'] === 'civicrm_number') {
           $sum = 0;
           foreach ((array) $val as $k => $v) {
             // Perform multiplication across grid elements
@@ -2606,12 +2621,18 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         if (in_array($type, $component['#hide_fields'])) {
           $value = wf_crm_aval($this->loadContact($c), "$table:$n:$name");
           // Check to see if configured to Submit disabled field value(s)
-          if ($checkSubmitDisabledSetting && !empty($component['#submit_disabled']) && !empty($value)) {
-            $fieldKey = implode('_', ['civicrm', $c, $ent, $n, $table, $name]);
-            $data = $this->submission->getData();
-            if (isset($data[$fieldKey])) {
-              $data[$fieldKey] = $value;
-              $this->submission->setData($data);
+          if ($checkSubmitDisabledSetting && !empty($component['#submit_disabled'])) {
+            // If field is disabled on the webform, do not overwrite existing values on the contact.
+            if (!empty($value) && !empty($this->submission)) {
+              $fieldKey = implode('_', ['civicrm', $c, $ent, $n, $table, $name]);
+              $data = $this->submission->getData();
+              if (isset($data[$fieldKey])) {
+                $data[$fieldKey] = $value;
+                $this->submission->setData($data);
+              }
+            }
+            else {
+              return FALSE;
             }
           }
           // With the no_hide_blank setting we must load the contact to determine if the field was hidden

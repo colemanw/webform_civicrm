@@ -144,4 +144,4 @@
     }
   }
 
-})(cj, Drupal, drupalSettings);
+})(CRM.$, Drupal, drupalSettings);

@@ -18,6 +18,8 @@ use Drupal\webform\Plugin\WebformHandlerInterface;
 use Drupal\webform_civicrm\Plugin\WebformElement\CivicrmContact;
 use Drupal\webform_civicrm\WebformCivicrmBase;
 use Drupal\Core\Datetime\DrupalDateTime;
+use Drupal\webform\Utility\WebformHtmlHelper;
+use Drupal\webform\Utility\WebformXss;
 
 
 class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivicrmPreProcessInterface {
@@ -505,7 +507,6 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
           if (isset($this->info[$ent][$c][$table][$n][$name])
             && !(isset($element['#form_key']) && isset($submitted[$element['#form_key']]))) {
             $val = $this->info[$ent][$c][$table][$n][$name];
-
             if ($ent === 'contact') {
               $createModeKey = 'civicrm_' . $c . '_contact_' . $n . '_' . $table . '_createmode';
               $multivaluesCreateMode = isset($this->data['config']['create_mode'][$createModeKey]) ? (int) $this->data['config']['create_mode'][$createModeKey] : NULL;
@@ -540,8 +541,9 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
             // Contact image & custom file fields
             if ($dt == 'File') {
               $fileInfo = $this->getFileInfo($name, $val, $ent, $n);
+
               if ($fileInfo && in_array($element['#type'], ['file', 'managed_file'])) {
-                $elements['#attached']['drupalSettings']['webform_civicrm']['fileFields'][] = [
+                $this->form['#attached']['drupalSettings']['webform_civicrm']['fileFields'][] = [
                   'eid' => $eid,
                   'fileInfo' => $fileInfo
                 ];
@@ -832,7 +834,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
    */
   function setMessage($message, $type='status') {
     if (empty($_POST)) {
-      \Drupal::messenger()->addStatus($message);
+      \Drupal::messenger()->addStatus(WebformHtmlHelper::toHtmlMarkup($message, WebformXss::getHtmlTagList()));
     }
   }
 

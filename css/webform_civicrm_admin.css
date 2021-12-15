@@ -198,3 +198,7 @@ form .civi-icon.case {
 #webform-component-edit-form div.form-item-extra-default-relationship-to label {
   display:none;
 }
+
+.crm-i {
+  margin-right: 3px;
+}

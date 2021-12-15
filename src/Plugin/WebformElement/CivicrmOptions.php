@@ -70,7 +70,7 @@ class CivicrmOptions extends OptionsBase {
       '#title' => $this->t('Listbox'),
       '#description' => $this->t('Check this option if you want the select component to be displayed as a select list box instead of radio buttons or checkboxes.'),
       '#access' => TRUE,
-      '#default_value' => $element_properties['extra']['aslist'],
+      '#default_value' => $element_properties['extra']['aslist'] ?? FALSE,
       '#parents' => ['properties', 'extra', 'aslist'],
     ];
     $form['extra']['multiple'] = [
@@ -78,9 +78,14 @@ class CivicrmOptions extends OptionsBase {
       '#title' => $this->t('Multiple'),
       '#description' => $this->t('Check this option if multiple options can be selected for the input field.'),
       '#access' => TRUE,
-      '#default_value' => $element_properties['extra']['multiple'],
+      '#default_value' => $element_properties['extra']['multiple'] ?? FALSE,
       '#parents' => ['properties', 'extra', 'multiple'],
     ];
+
+    // Do not load option values if this is a numeric field.
+    if ($this->isNumberField($form_state->get('element_properties'))) {
+      return $form;
+    }
 
     // Options.
     $form['options'] = [
@@ -135,6 +140,9 @@ class CivicrmOptions extends OptionsBase {
    */
   public function getConfigurationFormProperties(array &$form, FormStateInterface $form_state) {
     $properties = parent::getConfigurationFormProperties($form, $form_state);
+    if ($this->isNumberField($properties)) {
+      return $properties;
+    }
     if (!empty($form['properties'])) {
       // Get additional properties off of the options element.
       $select_options = $form['properties']['options']['options'];
@@ -212,6 +220,24 @@ class CivicrmOptions extends OptionsBase {
   }
 
   /**
+   * If this is a CiviCRM Number element.
+   *
+   * @param array $element
+   *
+   * @return bool
+   */
+  protected function isNumberField($element) {
+    $form_key = $element['form_key'] ?? $element['#form_key'] ?? NULL;
+    if (!empty($form_key)) {
+      $field = \Drupal::service('webform_civicrm.utils')->wf_crm_get_field($form_key);
+      if (isset($field['type']) && $field['type'] == 'civicrm_number') {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+
+  /**
    * Ajax callback.
    *
    * @param array $form
@@ -253,20 +279,38 @@ class CivicrmOptions extends OptionsBase {
     $types = [];
     $has_multiple_values = $this->hasMultipleValues($element);
 
-    $supportedTypes = ['checkboxes', 'radios', 'select'];
+    $supportedTypes = [
+      'checkboxes',
+      'radios',
+      'webform_radios_other',
+      'select',
+      'webform_select_other',
+      'civicrm_number'
+    ];
     $elements = $this->elementManager->getInstances();
     foreach ($elements as $element_name => $element_instance) {
-      if (!in_array($element_name, $supportedTypes)) {
-        continue;
+      if (in_array($element_name, $supportedTypes)) {
+        $types[$element_name] = $element_instance->getPluginLabel();
       }
-      if ($has_multiple_values !== $element_instance->hasMultipleValues($element)) {
-        continue;
-      }
-      $types[$element_name] = $element_instance->getPluginLabel();
     }
 
     asort($types);
     return $types;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
+    $properties = $this->getConfigurationFormProperties($form, $form_state);
+    if ($this->isNumberField($properties)) {
+      foreach ($properties['#options'] as $key => $option) {
+        if (!is_numeric($key)) {
+          $form_state->setErrorByName('options', $this->t('This is a CiviCRM number field. @field keys must be numeric.', ['@field' => $properties['#title']]));
+          break;
+        }
+      }
+    }
   }
 
 }
