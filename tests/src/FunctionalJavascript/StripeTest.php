@@ -46,31 +46,7 @@ final class StripeTest extends WebformCivicrmTestBase {
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
-    $this->enableCivicrmOnWebform();
-
-    $this->getSession()->getPage()->clickLink('Contribution');
-    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertSession()->pageTextContains('You must enable an email field for Contact 1 in order to process transactions.');
-    $this->getSession()->getPage()->pressButton('Enable It');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->getSession()->getPage()->checkField('Contribution Amount');
-    $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
-    $this->getSession()->getPage()->selectFieldOption('Financial Type', 'Donation');
-
-    $this->assertCount(3, $this->getOptions('Payment Processor'));
-    $this->getSession()->getPage()->selectFieldOption('Payment Processor', $this->paymentProcessorID);
-
-    $this->getSession()->getPage()->selectFieldOption('lineitem_1_number_of_lineitem', 2);
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->htmlOutput();
-    $this->getSession()->getPage()->checkField("civicrm_1_lineitem_1_contribution_line_total");
-    $this->assertSession()->checkboxChecked("civicrm_1_lineitem_1_contribution_line_total");
-    $this->getSession()->getPage()->checkField("civicrm_1_lineitem_2_contribution_line_total");
-    $this->assertSession()->checkboxChecked("civicrm_1_lineitem_2_contribution_line_total");
-    $this->getSession()->getPage()->selectFieldOption('civicrm_1_lineitem_2_contribution_financial_type_id', 2);
-
-    $this->saveCiviCRMSettings();
+    $this->setUpSettings();
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
@@ -82,6 +58,50 @@ final class StripeTest extends WebformCivicrmTestBase {
       'Line Item Amount 2' => '29.50',
     ];
     $this->postSubmission($this->webform, $edit, 'Next >');
+
+    $this->getSession()->getPage()->fillField('Contribution Amount', '10.00');
+    $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
+    $this->htmlOutput();
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '59.50');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $this->fillStripeCardWidget();
+
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertPageNoErrorMessages();
+    $this->htmlOutput();
+
+    $this->assertSession()->waitForElementVisible('css', '.webform-confirmation');
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+    $this->assertPageNoErrorMessages();
+
+    $this->verifyPaymentResult();
+  }
+
+  /**
+   * Test webform submission using stripe processor with AJAX enabled.
+   */
+  public function testAjaxSubmitContribution() {
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->webform->setSetting('ajax', TRUE);
+    $this->webform->save();
+    $this->setUpSettings();
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+    $edit = [
+      'First Name' => 'Frederick',
+      'Last Name' => 'Pabst',
+      'Email' => 'fred@example.com',
+      'Line Item Amount' => '20.00',
+      'Line Item Amount 2' => '29.50',
+    ];
+    $this->postSubmission($this->webform, $edit, 'Next >');
+    $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->getSession()->getPage()->fillField('Contribution Amount', '10.00');
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
@@ -169,6 +189,37 @@ final class StripeTest extends WebformCivicrmTestBase {
     foreach ($lineItems as $item) {
       $this->assertEquals($priceFieldID, $item['price_field_id']);
     }
+  }
+
+  /**
+   * Setup CiviCRM settings.
+   */
+  protected function setUpSettings() {
+    $this->enableCivicrmOnWebform();
+
+    $this->getSession()->getPage()->clickLink('Contribution');
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->pageTextContains('You must enable an email field for Contact 1 in order to process transactions.');
+    $this->getSession()->getPage()->pressButton('Enable It');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->checkField('Contribution Amount');
+    $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
+    $this->getSession()->getPage()->selectFieldOption('Financial Type', 'Donation');
+
+    $this->assertCount(3, $this->getOptions('Payment Processor'));
+    $this->getSession()->getPage()->selectFieldOption('Payment Processor', $this->paymentProcessorID);
+
+    $this->getSession()->getPage()->selectFieldOption('lineitem_1_number_of_lineitem', 2);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->checkField("civicrm_1_lineitem_1_contribution_line_total");
+    $this->assertSession()->checkboxChecked("civicrm_1_lineitem_1_contribution_line_total");
+    $this->getSession()->getPage()->checkField("civicrm_1_lineitem_2_contribution_line_total");
+    $this->assertSession()->checkboxChecked("civicrm_1_lineitem_2_contribution_line_total");
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_lineitem_2_contribution_financial_type_id', 2);
+
+    $this->saveCiviCRMSettings();
   }
 
 }
