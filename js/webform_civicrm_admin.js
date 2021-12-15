@@ -180,8 +180,8 @@ var wfCiviAdmin = (function ($, D) {
   function changeContactLabel() {
     var c = $(this).attr('name').split('_')[0];
     var label = getContactLabel(c);
-    $('strong.vertical-tabs__menu-item-title', '#webform-civicrm-settings-form').eq(c - 1).html(c + '. ' + label);
-    $('select[data-type=ContactReference] option[value=' + c + '], select[name$=address_master_id] option[value=' + c + '], .contact-label.number-' + c, '#webform-civicrm-settings-form').html(label);
+    $('.vertical-tabs__menu-item', '#webform-civicrm-settings-form').eq(c - 1).find('a strong').first().text(c + '. ' + label);
+    $('select[data-type=ContactReference] option[value=' + c + '], select[name$=address_master_id] option[value=' + c + '], .contact-label.number-' + c, '#webform-civicrm-settings-form').text(label);
     $('details#edit-membership').trigger('summaryUpdated');
   }
 
@@ -333,12 +333,12 @@ var wfCiviAdmin = (function ($, D) {
       $('#edit-nid', context).once('wf-civi').change(function() {
         if ($(this).is(':checked')) {
           $('.form-type-vertical-tabs, .form-item-number-of-contacts').removeAttr('style');
-          $('.vertical-tabs__panes').removeClass('hidden');
+          $('.vertical-tabs details', '#webform-civicrm-settings-form').removeClass('hidden');
           $('[name="number_of_contacts"]').prop('disabled', false);
         }
         else {
           $('.form-type-vertical-tabs, .form-item-number-of-contacts').css('opacity', '0.4');
-          $('.vertical-tabs__panes').addClass('hidden');
+          $('.vertical-tabs details', '#webform-civicrm-settings-form').addClass('hidden');
           $('[name="number_of_contacts"]').prop('disabled', true);
         }
       }).change();
@@ -439,18 +439,18 @@ var wfCiviAdmin = (function ($, D) {
       // We don't use the once() method because we need the i from the loop
       $('#webform-civicrm-settings-form details[class*="vertical-tabs"]').each(function(i) {
         if (!$(this).hasClass('wf-civi-icon-processed')) {
-          var clas = $(this).attr('class').split(' ');
-          var name = '';
+          var clas = $(this).attr('class').split(' '),
+            name = '';
           for (var c in clas) {
             var cl = clas[c].split('_');
-            if (cl[1] == 'icon') {
+            if (cl[1] === 'icon') {
               var icon_name = cl[2];
-              if (cl[0] == 'contact') {
+              if (cl[0] === 'contact') {
                 name = 'name="' + (i + 1) + '_contact_type"';
                 var type = $('select[name="' + (i + 1) + '_contact_type"', '#webform-civicrm-settings-form').val();
                 icon_name = getContactIcon(type);
               }
-              $('#webform-civicrm-settings-form .vertical-tabs__menu-item').eq(i).children('a').prepend('<i class="crm-i ' + icon_name + '" ' + name + '> </i>');
+              $('#webform-civicrm-settings-form .vertical-tabs__menu-item').eq(i).find('a strong').first().before('<i class="crm-i ' + icon_name + '" ' + name + '> </i> ');
             }
           }
           $(this).addClass('wf-civi-icon-processed');
