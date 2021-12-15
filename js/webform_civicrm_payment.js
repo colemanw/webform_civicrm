@@ -144,4 +144,4 @@
     }
   }
 
-})(jQuery, Drupal, drupalSettings);
+})(cj, Drupal, drupalSettings);
