@@ -2,7 +2,7 @@ name: 'Webform CiviCRM'
 type: module
 description: 'Webform CiviCRM Integration'
 core_version_requirement: ^8.8 || ^9
-package: 'Custom'
+package: 'CiviCRM'
 dependencies:
   - drupal:webform
   - civicrm
