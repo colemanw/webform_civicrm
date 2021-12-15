@@ -394,24 +394,6 @@ function webform_civicrm_help($section) {
 }
 
 /**
- * Implements hook_webform_component_presave().
- * Alter form keys when cloning a contact.
- *
- * @todo this needs to be handled in CivicrmContact.
- */
-function webform_civicrm_webform_component_presave(&$component) {
-  if ($c = wf_crm_contact_clone_storage()) {
-    $component['form_key'] = str_replace($c['old'], $c['new'], $component['form_key']);
-    if ($component['type'] == 'civicrm_contact') {
-      // Only contact 1 can be the current user
-      if (wf_crm_aval($component, 'extra:default') == 'user') {
-        unset($component['extra']['default']);
-      }
-    }
-  }
-}
-
-/**
  * Implements hook_preprocess_HOOK().
  * Add CiviCRM names to webform submission results table.
  */
@@ -492,51 +474,6 @@ function wf_crm_aval($haystack, $keys, $default = NULL, $strict = FALSE) {
   }
   // $haystack has been reduced down to the item we want
   return $haystack;
-}
-
-/**
- * Store info while a clone operation is running.
- *
- * @param array $input
- *   Data to store
- * @return array
- */
-function wf_crm_contact_clone_storage($input = NULL) {
-  static $storage = NULL;
-  if ($input) {
-    $storage = $input;
-  }
-  return $storage;
-}
-
-/**
- * Clone a contact via webform.
- * This submit handler is called when cloning a contact's fieldset
- */
-function wf_crm_contact_clone($form, $form_state) {
-  $fid = $form['form_key']['#default_value'];
-  $utils = \Drupal::service('webform_civicrm.utils');
-  list(, $old) = $utils->wf_crm_explode_key($fid);
-  $node = Node::load($form['nid']['#value']);
-  $settings = $node->webform_civicrm;
-  $new = count($settings['data']['contact']) + 1;
-  // Clone contact
-  $settings['data']['contact'][$new] = $settings['data']['contact'][$old];
-  // Set label
-  $settings['data']['contact'][$new]['contact'][1]['webform_label'] = $form_state['input']['name'];
-  $storage = [
-    'old' => ["civicrm_{$old}_contact_"],
-    'new' => ["civicrm_{$new}_contact_"],
-  ];
-  // Clone participant if registering separately
-  if (wf_crm_aval($settings['data'], 'participant_reg_type') == 'separate') {
-    $settings['data']['participant'][$new] = $settings['data']['participant'][$old];
-    $storage['old'][] = "civicrm_{$old}_participant_";
-    $storage['new'][] = "civicrm_{$new}_participant_";
-  }
-  drupal_write_record('webform_civicrm_forms', $settings, 'nid');
-  // Store data to rewrite form keys
-  wf_crm_contact_clone_storage($storage);
 }
 
 /**
