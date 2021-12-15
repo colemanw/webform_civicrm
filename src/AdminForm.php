@@ -1717,9 +1717,6 @@ class AdminForm implements AdminFormInterface {
           'civicrm_' . $c . '_contact_1_contact_first_name' => 'create_civicrm_webform_element',
           'civicrm_' . $c . '_contact_1_contact_last_name' => 'create_civicrm_webform_element',
         ];
-        // ToDo: investigate how to re-instate this feature
-        // $link = [':link' => 'href="https://docs.civicrm.org/sysadmin/en/latest/integration/drupal/webform/#cloning-a-contact" target="_blank"'];
-        // \Drupal::messenger()->addStatus(t('Tip: Consider using the clone feature to add multiple similar contacts. (<a :link>more info</a>)', $link));
       }
     }
     // Store meta settings, i.e. number of email for contact 1
