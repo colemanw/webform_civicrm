@@ -769,20 +769,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $existing = array_merge([[]], $result['values']);
         }
         foreach ($contact[$location] as $i => $params) {
-          // Update drupal email address
-          if ($location == 'email' && !empty($params['email']) && $i == 1) {
-            $uid = wf_crm_user_cid($cid, 'contact');
-            if ($uid) {
-              $user = user_load($uid);
-              if ($params['email'] != $user->mail) {
-                // Verify this email is unique before saving it to user
-                $args = [':mail' => $params['email']];
-                if (!(db_query("SELECT count(uid) FROM {users} WHERE mail = :mail", $args)->fetchField())) {
-                  user_save($user, ['mail' => $params['email']]);
-                }
-              }
-            }
-          }
+
           // Check if anything was changed, else skip the update
           if (!empty($existing[$i])) {
             $same = TRUE;
@@ -795,6 +782,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
               continue;
             }
           }
+
           if ($location == 'address') {
             // Store shared addresses for later since we haven't necessarily processed
             // the contact this address is shared with yet.
@@ -811,16 +799,21 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             $params['master_id'] = $params['geo_code_1'] = $params['geo_code_2'] = 'null';
           }
           $params['contact_id'] = $cid;
+
+          // Update existing information of a matching location type
           if (!empty($existing[$i])) {
             $params['id'] = $existing[$i]['id'];
           }
+
+          // Delete this location if nothing was entered and this is a known contact
           if ($this->locationIsEmpty($location, $params)) {
-            // Delete this location if nothing was entered and this is a known contact
             if (!empty($this->existing_contacts[$c]) && !empty($params['id'])) {
               wf_civicrm_api($location, 'delete', $params);
             }
             continue;
           }
+
+          // Handle setting primary status
           if ($location != 'website') {
             if (empty($params['location_type_id'])) {
               $params['location_type_id'] = wf_crm_aval($existing, "$i:location_type_id", 1);
@@ -838,6 +831,22 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
       }
     }
+
+    // Update drupal email address if required, after all other processing
+    if (!empty($contact['email'][1]['email'])) {
+      $uid = wf_crm_user_cid($cid, 'contact');
+      if ($uid) {
+        $user = user_load($uid);
+        if ($contact['email'][1]['email'] != $user->mail) {
+          // Verify this email is unique before saving it to user
+          $args = [':mail' => $contact['email'][1]['email']];
+          if (!(db_query("SELECT count(uid) FROM {users} WHERE mail = :mail", $args)->fetchField())) {
+            user_save($user, ['mail' => $contact['email'][1]['email']]);
+          }
+        }
+      }
+    }
+
   }
 
   /**
