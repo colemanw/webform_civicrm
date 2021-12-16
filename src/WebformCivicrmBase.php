@@ -32,6 +32,7 @@ abstract class WebformCivicrmBase {
   protected $line_items = [];
   protected $membership_types = [];
   protected $loadedContacts = [];
+  protected $editingSubmission;
 
   // No direct access - storage for variables fetched via __get
   private $_payment_processor;
@@ -203,8 +204,9 @@ abstract class WebformCivicrmBase {
     // Get custom contact data if needed
     foreach ($contact as $k => $v) {
       if (substr($k, 0, 12) == 'number_of_cg' && !empty($v)) {
-        if (!in_array(substr($k, 10), $exclude)) {
-          $info += array_diff_key($this->getCustomData($cid), array_flip($exclude));
+        $cgKey = substr($k, 10);
+        if (!in_array($cgKey, $exclude, TRUE)) {
+          $info += array_diff_key($this->getCustomData($cid, 'contact', TRUE, $c), array_flip($exclude));
           break;
         }
       }
@@ -647,10 +649,12 @@ abstract class WebformCivicrmBase {
    *   Type of crm entity. 'contact' is assumed
    * @param $normalize
    *   Default true: if true shift all arrays to start at index 1
+   * @param int $entity_num
+   *   Index of entity on the form; used for matching multi-record custom data
    *
    * @return array
    */
-  protected function getCustomData($entity_id, $entity_type = NULL, $normalize = TRUE) {
+  protected function getCustomData($entity_id, $entity_type = 'contact', $normalize = TRUE, $entity_num = 1) {
     static $parents = [];
     if (empty($parents)) {
       // Create matching table to sort fields by group
@@ -661,21 +665,31 @@ abstract class WebformCivicrmBase {
         }
       }
     }
-    $params = ['entity_id' => $entity_id];
-    if ($entity_type) {
-      $params['entity_table'] = ucfirst($entity_type);
-    }
+    $params = [
+      'entity_id' => $entity_id,
+      'entity_table' => ucfirst($entity_type),
+    ];
     $result = $this->utils->wf_crm_apivalues('CustomValue', 'get', $params);
     $values = [];
     foreach ($result as $key => $value) {
       $name = 'custom_' . $key;
       // Sort into groups
       if (isset($parents[$name])) {
+        $cgKey = $parents[$name];
         $n = 1;
-        foreach ($value as $id => $item) {
-          // Non-numeric keys are api extras like "id" and "latest"
-          if (is_numeric($id)) {
-            $values[$parents[$name]][$normalize ? $n++ : $id][$name] = $item;
+        // When editing a submission, match existing data to submitted ids
+        if (!empty($this->ent['contact'][$entity_num][$cgKey])) {
+          foreach ($this->ent['contact'][$entity_num][$cgKey] as $id) {
+            $values[$cgKey][$normalize ? $n++ : $id][$name] = $value[$id] ?? NULL;
+          }
+        }
+        // If not editing a submission, exclude "create only" custom data
+        elseif (empty($this->data['config']['create_mode']["civicrm_{$entity_num}_contact_1_{$cgKey}_createmode"])) {
+          foreach ($value as $id => $item) {
+            // Non-numeric keys are api extras like "id" and "latest"
+            if (is_numeric($id)) {
+              $values[$cgKey][$normalize ? $n++ : $id][$name] = $item;
+            }
           }
         }
       }

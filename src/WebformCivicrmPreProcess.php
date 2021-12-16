@@ -15,6 +15,7 @@ use Drupal\Core\Link;
 use Drupal\Core\Render\Markup;
 use Drupal\Core\Url;
 use Drupal\webform\Plugin\WebformHandlerInterface;
+use Drupal\webform\WebformSubmissionInterface;
 use Drupal\webform_civicrm\Plugin\WebformElement\CivicrmContact;
 use Drupal\webform_civicrm\WebformCivicrmBase;
 use Drupal\Core\Datetime\DrupalDateTime;
@@ -29,7 +30,6 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
   private $info = [];
   private $all_fields;
   private $all_sets;
-  private $handler;
 
   public function __construct(UtilsInterface $utils) {
     $this->utils = $utils;
@@ -38,12 +38,12 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
   /**
    * Initialize form variables.
    *
-   * @param $form
-   * @param $form_state
-   * @param $handler
+   * @param array $form
+   * @param FormStateInterface $form_state
+   * @param WebformHandlerInterface $handler
+   * @param WebformSubmissionInterface $webform_submission
    */
-  function initialize(&$form, FormStateInterface $form_state, WebformHandlerInterface $handler) {
-    $this->handler = $handler;
+  function initialize(array &$form, FormStateInterface $form_state, WebformHandlerInterface $handler, WebformSubmissionInterface $webform_submission) {
     $this->form = &$form;
     $this->form_state = $form_state;
     $this->node = $handler->getWebform();
@@ -518,15 +518,6 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
           if (isset($this->info[$ent][$c][$table][$n][$name])
             && !(isset($element['#form_key']) && isset($submitted[$element['#form_key']]))) {
             $val = $this->info[$ent][$c][$table][$n][$name];
-            if ($ent === 'contact') {
-              $createModeKey = 'civicrm_' . $c . '_contact_' . $n . '_' . $table . '_createmode';
-              $multivaluesCreateMode = isset($this->data['config']['create_mode'][$createModeKey]) ? (int) $this->data['config']['create_mode'][$createModeKey] : NULL;
-
-              // Set empty value for field with 'Create only' mode.
-              if ($multivaluesCreateMode === self::MULTIVALUE_FIELDSET_MODE_CREATE_ONLY) {
-                $val = wf_crm_aval($element, '#default_value', '');
-              }
-            }
             if (($element['#type'] == 'checkboxes' || !empty($element['#multiple'])) && !is_array($val)) {
               $val = $this->utils->wf_crm_explode_multivalue_str($val);
             }

@@ -108,9 +108,7 @@ class CivicrmWebformHandler extends WebformHandlerBase {
 
   public function alterForm(array &$form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
     $this->civicrm->initialize();
-    $settings = $this->configuration;
-    $data = $settings['data'];
-    $processor = \Drupal::service('webform_civicrm.preprocess')->initialize($form, $form_state, $this);
+    $processor = \Drupal::service('webform_civicrm.preprocess')->initialize($form, $form_state, $this, $webform_submission);
     $processor->alterForm();
   }
 

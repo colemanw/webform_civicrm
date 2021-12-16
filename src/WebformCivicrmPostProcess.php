@@ -2779,7 +2779,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $saveParams = ['id' => $cid];
     foreach ($contact as $table => $items) {
       if (is_array($items) && $items && $this->isMultiRecordCustomSet($table)) {
-        $existingCustomData = $existingCustomData ?? $this->getCustomData($cid, 'contact', FALSE);
+        $existingCustomData = $existingCustomData ?? $this->getCustomData($cid, 'contact', FALSE, $index);
         $existing = $existingCustomData[$table] ?? [];
         // Index existing ids beginning with 1
         $existingIds = array_slice(array_merge([NULL], array_keys($existing)), 1, NULL, TRUE);
