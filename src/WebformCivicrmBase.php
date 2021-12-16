@@ -132,10 +132,13 @@ abstract class WebformCivicrmBase {
     $contact = $this->data['contact'][$c];
     $prefix = 'civicrm_' . $c . '_contact_1_';
     $existing_contact_field = $this->node->getElement($prefix . 'contact_existing');
-    $element_manager = \Drupal::getContainer()->get('plugin.manager.webform.element');
-    $existing_component_plugin = $element_manager->getElementInstance($existing_contact_field);
-    $element_exclude = $existing_component_plugin->getElementProperty($existing_contact_field, 'no_autofill');
-    $exclude = array_merge($exclude, $element_exclude);
+    // If editing a webform submission, contact id might be present without being supplied by an existing_contact field
+    if ($existing_contact_field) {
+      $element_manager = \Drupal::getContainer()->get('plugin.manager.webform.element');
+      $existing_component_plugin = $element_manager->getElementInstance($existing_contact_field);
+      $element_exclude = $existing_component_plugin->getElementProperty($existing_contact_field, 'no_autofill');
+      $exclude = array_merge($exclude, $element_exclude);
+    }
     foreach (array_merge(['contact'], $this->utils->wf_crm_location_fields()) as $ent) {
       if ((!empty($contact['number_of_' . $ent]) && !in_array($ent, $exclude)) || $ent == 'contact') {
         $params = ['contact_id' => $cid];

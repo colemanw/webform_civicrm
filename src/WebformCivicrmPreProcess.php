@@ -54,6 +54,17 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
     $this->all_sets = $this->utils->wf_crm_get_fields('sets');
     $this->enabled = $this->utils->wf_crm_enabled_fields($handler->getWebform());
     $this->line_items = $form_state->get(['civicrm', 'line_items']) ?: [];
+    $this->editingSubmission = $webform_submission->id();
+    // If editing an existing submission, load entity data
+    if ($this->editingSubmission) {
+      $query = \Drupal::database()->select('webform_civicrm_submissions', 'wcs')
+        ->fields('wcs', ['civicrm_data'])
+        ->condition('sid', $this->editingSubmission, '=');
+      $content = $query->execute()->fetchAssoc();
+      if (!empty($content['civicrm_data'])) {
+        $this->ent = unserialize($content['civicrm_data']);
+      }
+    }
     return $this;
   }
 

@@ -51,7 +51,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    * @var \Drupal\webform\WebformSubmissionInterface
    */
   private $submission;
-  private $update = [];
   private $all_fields;
   private $all_sets;
   private $shared_address = [];
@@ -71,21 +70,21 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $this->utils = $utils;
   }
 
-  function initialize(WebformInterface $webform) {
+  function initialize(WebformSubmissionInterface $webform_submission) {
     if ($this->initialized) {
       return $this;
     }
 
-    $this->node = $webform;
+    $this->node = $webform_submission->getWebform();
 
-    $handler_collection = $webform->getHandlers('webform_civicrm');
+    $handler_collection = $this->node->getHandlers('webform_civicrm');
     $instance_ids = $handler_collection->getInstanceIds();
     $handler = $handler_collection->get(reset($instance_ids));
     $this->database = \Drupal::database();
 
     $this->settings = $handler->getConfiguration()['settings'];
     $this->data = $this->settings['data'];
-    $this->enabled = $this->utils->wf_crm_enabled_fields($webform);
+    $this->enabled = $this->utils->wf_crm_enabled_fields($this->node);
     $this->all_fields = $this->utils->wf_crm_get_fields();
     $this->all_sets = $this->utils->wf_crm_get_fields('sets');
 
@@ -97,15 +96,15 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    * Called after a webform is submitted
    * Or, for a multipage form, called after each page
    * @param array $form
-   * @param array $form_state (reference)
+   * @param FormStateInterface $form_state
    */
-  public function validate($form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
+  public function validate($form, FormStateInterface $form_state) {
     $this->form = $form;
     $this->form_state = $form_state;
     $this->rawValues = $form_state->getValues();
-    $this->crmValues = $this->utils->wf_crm_enabled_fields($webform_submission->getWebform(), $this->rawValues);
+    $this->crmValues = $this->utils->wf_crm_enabled_fields($this->node, $this->rawValues);
     // Even though this object is destroyed between page submissions, this trick allows us to persist some data - see below
-    $this->ent = $form_state->get(['civicrm', 'ent']) ?: [];
+    $this->ent = $form_state->get(['civicrm', 'ent']) ?: $this->ent;
 
     $errors = $this->form_state->getErrors();
     foreach ($errors as $key => $error) {
@@ -150,6 +149,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     }
     // Even though this object is destroyed between page submissions, this trick allows us to persist some data - see above
     $form_state->set(['civicrm', 'ent'], $this->ent);
+    // TODO: Is line_items being set but never retrieved?
     $form_state->set(['civicrm', 'line_items'], $this->line_items);
   }
 
@@ -182,8 +182,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $this->submission = $webform_submission;
     $this->data = $this->settings['data'];
     $this->modifyWebformSubmissionData($webform_submission);
-    // Check for existing submission
-    // $this->setUpdateParam();
+
     // Fill $this->id from existing contacts
     $this->getExistingContactIds();
 
@@ -596,19 +595,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
 
       // Fill data array with submitted form values
       $this->fillDataFromSubmission();
-    }
-  }
-
-  /**
-   * If this is an update op, set param for drupal_write_record()
-   */
-  private function setUpdateParam() {
-    if (!empty($this->submission->sid)) {
-      $submitted = [$this->submission->sid => new stdClass()];
-      webform_civicrm_webform_submission_load($submitted);
-      if (isset($submitted[$this->submission->sid]->civicrm)) {
-        $this->update = 'sid';
-      }
     }
   }
 
