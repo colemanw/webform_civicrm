@@ -503,16 +503,15 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         'is_test' => 0,
       ]);
       foreach ($existing as $participant) {
-        if (isset($this->events[$participant['event_id']])) {
-          if (!(--$this->events[$participant['event_id']]['count'])) {
-            unset($this->events[$participant['event_id']]);
-          }
-        }
         foreach ($this->line_items as $k => &$item) {
           if ($participant['event_id'] == $item['event_id'] && in_array($participant['contact_id'], $item['contact_ids'])) {
             unset($this->line_items[$k]['contact_ids'][array_search($participant['contact_id'], $item['contact_ids'])]);
             if (!(--$item['qty'])) {
               unset($this->line_items[$k]);
+            }
+            // Update the count in $this->events elements.
+            if (!(--$this->events[$participant['event_id']]['count'])) {
+              unset($this->events[$participant['event_id']]);
             }
           }
         }
