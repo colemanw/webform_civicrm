@@ -239,12 +239,18 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
    * Assert populated values on the field.
    * fieldValueEquals() fails for populated values on chromedriver > 91
    *
-   * @param $id
+   * @param $selector
    * @param $value
+   * @param $isRadio
    */
-  public function assertFieldValue($id, $value) {
+  public function assertFieldValue($selector, $value, $isRadio = FALSE) {
     $driver = $this->getSession()->getDriver();
-    $fieldVal = $driver->evaluateScript("document.getElementById('{$id}').value;");
+    if ($isRadio) {
+      $fieldVal = $driver->evaluateScript("document.querySelector(\"input[type=radio][name='{$selector}']:checked\").value;");
+    }
+    else {
+      $fieldVal = $driver->evaluateScript("document.getElementById('{$selector}').value;");
+    }
     $this->assertEquals($fieldVal, $value);
   }
 
@@ -492,7 +498,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
    */
   protected function assertOptionSelected($id, $option, $message = NULL) {
     $option_field = $this->assertSession()->optionExists($id, $option);
-    $message = $message ?: "Option $option for field $id is selected.";
+    $message = $message ?: "Option $option for field $id is not selected.";
     $this->assertTrue($option_field->hasAttribute('selected'), $message);
   }
 

@@ -228,13 +228,14 @@ var wfCivi = (function ($, D, drupalSettings) {
         pub.initFileField(fid, this);
         return;
       }
-      var $wrapper = $(formClass +' div.form-item[class*="--'+(fid.replace(/_/g, '-'))+'"]');
+      var $wrapper = $(formClass +' div.form-item[class*="-'+(fid.replace(/_/g, '-'))+'"]');
       if (this.data_type === 'Date') {
         var vals = val.split(' ');
-        var $el = $('input[type="date"]', $wrapper);
-        if ($el.length) {
-          $('input[type="date"]', $wrapper).val(vals[0]).trigger('change', 'webform_civicrm:autofill');
-          $('input[type="time"]', $wrapper).val(vals[1]).trigger('change', 'webform_civicrm:autofill');
+        var $date_el = $('input[name="' + fid + '[date]"]', $wrapper);
+        var $time_el = $('input[name="' + fid + '[time]"]', $wrapper);
+        if ($date_el.length) {
+          $date_el.val(vals[0]).trigger('change', 'webform_civicrm:autofill');
+          $time_el.val(vals[1]).trigger('change', 'webform_civicrm:autofill');
         }
         else {
           var date = val.split('-');
