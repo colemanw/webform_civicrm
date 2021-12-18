@@ -871,19 +871,24 @@ abstract class WebformCivicrmBase {
   }
 
   /**
-   * Returns a default value for a component.
-   *
-   * @param object $node
+   * Returns default values for elements
+   * set on the webform.
    *
    * @return array
    */
-  function getDefaults() {
+  function getWebformDefaults() {
+    $utils = \Drupal::service('webform_civicrm.utils');
     $defaults = [];
     $elements = $this->node->getElementsDecodedAndFlattened();
     foreach ($elements as $comp) {
-      if (!empty($comp['#default_value'])) {
+      if (!empty($comp['#default_value']) && isset($comp['#form_key'])) {
         $key = str_replace('_', '-', $comp['#form_key']);
-        $defaults[$key] = $comp['#type'] == 'date' ? date('Y-m-d', strtotime($comp['#default_value'])) : $comp['#default_value'];
+        if ($comp['#type'] == 'date' || $comp['#type'] == 'datelist') {
+          $defaults[$key] = date('Y-m-d', strtotime($comp['#default_value']));
+        }
+        else {
+          $defaults[$key] = $comp['#default_value'];
+        }
       }
     }
     return $defaults;
