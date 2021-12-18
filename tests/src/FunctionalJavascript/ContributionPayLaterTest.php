@@ -12,6 +12,62 @@ use Drupal\webform\Entity\Webform;
  */
 final class ContributionPayLaterTest extends WebformCivicrmTestBase {
 
+  /**
+   * Test Membership submission using the Pay Later option.
+   */
+  public function testSubmitPaylaterMembership() {
+    $this->createMembershipType(20);
+
+    $this->drupalLogin($this->rootUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+
+    $this->configureContributionTab(TRUE, 'Pay Later');
+
+    $this->getSession()->getPage()->clickLink('Memberships');
+    $this->getSession()->getPage()->selectFieldOption('membership_1_number_of_membership', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_membership_1_membership_membership_type_id', 'Basic');
+    $this->htmlOutput();
+
+    $this->saveCiviCRMSettings();
+
+    $this->drupalLogout();
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+
+    $this->assertSession()->waitForField('First Name');
+    $this->getSession()->getPage()->fillField('First Name', 'Frederick');
+    $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
+    $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
+
+    $this->getSession()->getPage()->pressButton('Next >');
+
+    $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
+    $this->htmlOutput();
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '20.00');
+
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
+    $api_result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('membership', 'get', [
+      'sequential' => 1,
+    ]);
+    $this->assertEquals(1, $api_result['count']);
+    $membership = reset($api_result['values']);
+
+    $this->assertEquals('Basic', $membership['membership_name']);
+    $this->assertEquals('5', $membership['status_id']);
+
+    // Assert if dates are not empty.
+    $this->assertNotEmpty($membership['join_date']);
+    $this->assertNotEmpty($membership['start_date']);
+    $this->assertNotEmpty($membership['end_date']);
+  }
+
   public function testSubmitContribution() {
     $this->createFinancialCustomGroup();
     $this->createFinancialCustomGroup('Donation');
