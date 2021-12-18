@@ -466,6 +466,43 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertArrayHasKey('Orange', array_flip($fruitVal));
     $this->assertArrayNotHasKey('Mango', array_flip($fruitVal));
 
+    // Ensure the element is still accessible.
+    $this->drupalLogin($this->rootUser);
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+
+    //Change contact element to autocomplete + remove default load.
+    $editContact = [
+      'selector' => 'edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations',
+      'widget' => 'Autocomplete',
+      'default' => '- None -',
+    ];
+    $this->editContactElement($editContact);
+
+    //Visit the webform.
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->htmlOutput();
+    $this->assertPageNoErrorMessages();
+
+    $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', 'Frederick');
+
+    $this->htmlOutput();
+    $this->createScreenshot($this->htmlOutputDirectory . '/ajaxvalues.png');
+
+    // Ensure all fields are loaded correctly.
+    $this->assertFieldValue('edit-civicrm-1-contact-1-contact-first-name', 'Frederick');
+    $this->assertFieldValue('edit-civicrm-1-contact-1-contact-last-name', 'Pabst');
+    $this->assertFieldValue('edit-civicrm-1-contact-1-cg1-custom-1', 'Lorem Ipsum');
+    $this->assertFieldValue('edit-civicrm-1-contact-1-cg1-custom-2-date', '12-12-2020');
+    $this->assertFieldValue('edit-civicrm-1-contact-1-cg1-custom-2-time', '10:20');
+    $this->assertSession()->checkboxChecked("Red - Recommended");
+    $this->assertSession()->checkboxChecked("Apple");
+    $this->assertSession()->checkboxChecked("Orange");
+    $this->assertSession()->checkboxChecked("Yes");
+    $this->assertSession()->checkboxNotChecked("Mango");
+    $this->assertSession()->checkboxNotChecked("Green");
+
+    $this->assertOptionSelected('civicrm_1_contact_1_cg1_custom_7', 'OptionA');
+
     // Delete Custom field options.
     $listOptions = civicrm_api3('OptionValue', 'get', [
       'sequential' => 1,
@@ -477,8 +514,6 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
       ]);
     }
 
-    // Ensure the element is still accessible.
-    $this->drupalLogin($this->rootUser);
     $this->drupalGet($this->webform->toUrl('edit-form'));
     $this->assertSession()->waitForField('Checkboxes');
     $this->htmlOutput();
