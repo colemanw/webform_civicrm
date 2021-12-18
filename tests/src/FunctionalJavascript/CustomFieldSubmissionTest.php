@@ -466,6 +466,9 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertArrayHasKey('Orange', array_flip($fruitVal));
     $this->assertArrayNotHasKey('Mango', array_flip($fruitVal));
 
+    // Ensure the element is still accessible.
+    $this->drupalLogin($this->rootUser);
+
     // Delete Custom field options.
     $listOptions = civicrm_api3('OptionValue', 'get', [
       'sequential' => 1,
@@ -477,8 +480,6 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
       ]);
     }
 
-    // Ensure the element is still accessible.
-    $this->drupalLogin($this->rootUser);
     $this->drupalGet($this->webform->toUrl('edit-form'));
     $this->assertSession()->waitForField('Checkboxes');
     $this->htmlOutput();
@@ -492,6 +493,80 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->elementTextContains('css', "[data-drupal-selector='edit-properties-options-options']", 'Nothing');
     $this->getSession()->getPage()->pressButton('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();
+  }
+
+  /**
+   * Test Contact Values loaded via ajax, i.e,
+   * on selecting a contact from autocomplete, select, etc.
+   */
+  public function testAjaxLoadOfContactValues() {
+    $this->createCustomFields();
+    $createParams = [
+      'first_name' => 'Frederick',
+      'last_name' => 'Pabst',
+      'custom_' . $this->_customFields['text'] => 'Lorem Ipsum',
+      'custom_' . $this->_customFields['date_time'] => '12-12-2020 10:20',
+      'custom_' . $this->_customFields['test_radio_2'] => 'Radio Option Two',
+      'custom_' . $this->_customFields['color_checkboxes'] => 'Red',
+      'custom_' . $this->_customFields['fruits'] => ['Mango', 'Orange'],
+      'custom_' . $this->_customFields['single_radio'] => 1,
+      'custom_' . $this->_customFields['select_list'] => 'OptionB',
+    ];
+    $this->createIndividual($createParams);
+
+    $this->drupalLogin($this->rootUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    // The label has a <div> in it which can cause weird failures here.
+    $this->enableCivicrmOnWebform();
+
+    $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_cg1', 'Yes');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+
+    // Enable custom fields.
+    foreach ($this->_customFields as $name => $id) {
+      $this->getSession()->getPage()->checkField("civicrm_1_contact_1_cg1_custom_{$id}");
+      $this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_{$id}");
+    }
+    $this->saveCiviCRMSettings();
+
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+
+    //Change contact element to autocomplete + remove default load.
+    $editContact = [
+      'selector' => 'edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations',
+      'widget' => 'Autocomplete',
+      'default' => '- None -',
+    ];
+    $this->editContactElement($editContact);
+
+    //Visit the webform.
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->htmlOutput();
+    $this->assertPageNoErrorMessages();
+
+    $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', 'Frederick');
+
+    $this->htmlOutput();
+    $this->createScreenshot($this->htmlOutputDirectory . '/ajaxvalues.png');
+
+    // Ensure all fields are loaded correctly.
+    $this->assertFieldValue('edit-civicrm-1-contact-1-contact-first-name', 'Frederick');
+    $this->assertFieldValue('edit-civicrm-1-contact-1-contact-last-name', 'Pabst');
+    $this->assertFieldValue("edit-civicrm-1-contact-1-cg1-custom-{$this->_customFields['text']}", 'Lorem Ipsum');
+    $this->assertFieldValue("edit-civicrm-1-contact-1-cg1-custom-{$this->_customFields['date_time']}-date", '2020-12-12');
+    $this->assertFieldValue("edit-civicrm-1-contact-1-cg1-custom-{$this->_customFields['date_time']}-time", '10:20');
+    $this->assertSession()->checkboxChecked("Red");
+    $this->assertSession()->checkboxChecked("Mango");
+    $this->assertSession()->checkboxChecked("Orange");
+    $this->assertSession()->checkboxNotChecked("Apple");
+    $this->assertSession()->checkboxNotChecked("Green");
+
+    $this->assertFieldValue("edit-civicrm-1-contact-1-cg1-custom-{$this->_customFields['select_list']}", 'OptionB');
+    $this->assertFieldValue("civicrm_1_contact_1_cg1_custom_3", 2, TRUE);
+    $this->assertFieldValue("civicrm_1_contact_1_cg1_custom_{$this->_customFields['single_radio']}", 1, TRUE);
   }
 
 }

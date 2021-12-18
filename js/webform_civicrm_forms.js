@@ -228,6 +228,25 @@ var wfCivi = (function ($, D, drupalSettings) {
         pub.initFileField(fid, this);
         return;
       }
+      var $wrapper = $(formClass +' div.form-item[class*="-'+(fid.replace(/_/g, '-'))+'"]');
+      if (this.data_type === 'Date') {
+        var vals = val.split(' ');
+        var $date_el = $('input[name="' + fid + '[date]"]', $wrapper);
+        var $time_el = $('input[name="' + fid + '[time]"]', $wrapper);
+        if ($date_el.length) {
+          $date_el.val(vals[0]).trigger('change', 'webform_civicrm:autofill');
+          $time_el.val(vals[1]).trigger('change', 'webform_civicrm:autofill');
+        }
+        else {
+          var date = val.split('-');
+          if (date.length === 3) {
+            $(':input[id$="year"]', $wrapper).val(date[0]).trigger('change', 'webform_civicrm:autofill');
+            $(':input[id$="month"]', $wrapper).val(parseInt(date[1], 10)).trigger('change', 'webform_civicrm:autofill');
+            $(':input[id$="day"]', $wrapper).val(parseInt(date[2], 10)).trigger('change', 'webform_civicrm:autofill');
+          }
+        }
+        return;
+      }
       // First try to find a single element - works for textfields and selects
       var $el = $(formClass +' :input.civicrm-enabled[name$="'+fid+'"]').not(':checkbox, :radio');
       if ($el.length) {
@@ -245,26 +264,11 @@ var wfCivi = (function ($, D, drupalSettings) {
           $el.val(val).trigger('change', 'webform_civicrm:autofill');
         }
       }
-      // Next go after the wrapper - for radios, dates & checkboxes
+      // Next go after the wrapper - for radios & checkboxes
       else {
-        var $wrapper = $(formClass +' div.form-item.webform-component[class*="--'+(fid.replace(/_/g, '-'))+'"]');
-        if ($wrapper.length) {
-          // Date fields
-          if ($wrapper.hasClass('webform-component-date')) {
-            var vals = val.split('-');
-            if (vals.length === 3) {
-              $(':input[id$="year"]', $wrapper).val(vals[0]).trigger('change', 'webform_civicrm:autofill');
-              $(':input[id$="month"]', $wrapper).val(parseInt(vals[1], 10)).trigger('change', 'webform_civicrm:autofill');
-              $(':input[id$="day"]', $wrapper).val(parseInt(vals[2], 10)).trigger('change', 'webform_civicrm:autofill');
-            }
-          }
-          // Checkboxes & radios
-          else {
-            $.each($.makeArray(val), function(k, v) {
-              $(':input[value="'+v+'"]', $wrapper).prop('checked', true).trigger('change', 'webform_civicrm:autofill');
-            });
-          }
-        }
+        $.each($.makeArray(val), function(k, v) {
+          $('input[value="'+v+'"]', $wrapper).prop('checked', true).trigger('change', 'webform_civicrm:autofill');
+        });
       }
     });
   }
