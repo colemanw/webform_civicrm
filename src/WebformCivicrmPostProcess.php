@@ -51,7 +51,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    * @var \Drupal\webform\WebformSubmissionInterface
    */
   private $submission;
-  private $update = [];
   private $all_fields;
   private $all_sets;
   private $shared_address = [];
@@ -71,21 +70,21 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $this->utils = $utils;
   }
 
-  function initialize(WebformInterface $webform) {
+  function initialize(WebformSubmissionInterface $webform_submission) {
     if ($this->initialized) {
       return $this;
     }
 
-    $this->node = $webform;
+    $this->node = $webform_submission->getWebform();
 
-    $handler_collection = $webform->getHandlers('webform_civicrm');
+    $handler_collection = $this->node->getHandlers('webform_civicrm');
     $instance_ids = $handler_collection->getInstanceIds();
     $handler = $handler_collection->get(reset($instance_ids));
     $this->database = \Drupal::database();
 
     $this->settings = $handler->getConfiguration()['settings'];
     $this->data = $this->settings['data'];
-    $this->enabled = $this->utils->wf_crm_enabled_fields($webform);
+    $this->enabled = $this->utils->wf_crm_enabled_fields($this->node);
     $this->all_fields = $this->utils->wf_crm_get_fields();
     $this->all_sets = $this->utils->wf_crm_get_fields('sets');
 
@@ -97,15 +96,15 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    * Called after a webform is submitted
    * Or, for a multipage form, called after each page
    * @param array $form
-   * @param array $form_state (reference)
+   * @param FormStateInterface $form_state
    */
-  public function validate($form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
+  public function validate($form, FormStateInterface $form_state) {
     $this->form = $form;
     $this->form_state = $form_state;
     $this->rawValues = $form_state->getValues();
-    $this->crmValues = $this->utils->wf_crm_enabled_fields($webform_submission->getWebform(), $this->rawValues);
+    $this->crmValues = $this->utils->wf_crm_enabled_fields($this->node, $this->rawValues);
     // Even though this object is destroyed between page submissions, this trick allows us to persist some data - see below
-    $this->ent = $form_state->get(['civicrm', 'ent']) ?: [];
+    $this->ent = $form_state->get(['civicrm', 'ent']) ?: $this->ent;
 
     $errors = $this->form_state->getErrors();
     foreach ($errors as $key => $error) {
@@ -150,6 +149,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     }
     // Even though this object is destroyed between page submissions, this trick allows us to persist some data - see above
     $form_state->set(['civicrm', 'ent'], $this->ent);
+    // TODO: Is line_items being set but never retrieved?
     $form_state->set(['civicrm', 'line_items'], $this->line_items);
   }
 
@@ -182,8 +182,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $this->submission = $webform_submission;
     $this->data = $this->settings['data'];
     $this->modifyWebformSubmissionData($webform_submission);
-    // Check for existing submission
-    // $this->setUpdateParam();
+
     // Fill $this->id from existing contacts
     $this->getExistingContactIds();
 
@@ -229,6 +228,13 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
 
     // Once all contacts are saved we can fill contact ref fields
     $this->fillContactRefs();
+
+    foreach ($this->data['contact'] as $c => $contact) {
+      $cid = $this->ent['contact'][$c]['id'];
+      if ($cid) {
+        $this->saveMultiRecordCustomData($contact, $c, $cid);
+      }
+    }
 
     // Save a non-live transaction
     if ($this->totalContribution && empty($this->ent['contribution'][1]['id'])) {
@@ -377,7 +383,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    */
   private function formatSubmission() {
     $data = $this->ent;
-    unset($data['contact']);
     $record = [
       'sid' => $this->submission->id(),
       'contact_id' => '-',
@@ -590,19 +595,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
 
       // Fill data array with submitted form values
       $this->fillDataFromSubmission();
-    }
-  }
-
-  /**
-   * If this is an update op, set param for drupal_write_record()
-   */
-  private function setUpdateParam() {
-    if (!empty($this->submission->sid)) {
-      $submitted = [$this->submission->sid => new stdClass()];
-      webform_civicrm_webform_submission_load($submitted);
-      if (isset($submitted[$this->submission->sid]->civicrm)) {
-        $this->update = 'sid';
-      }
     }
   }
 
@@ -2384,58 +2376,52 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   /**
    * Recursive function to fill ContactRef fields with contact IDs
    *
-   * @param $customOnly
-   *   TRUE if only custom contact reference needs to be filled.
+   * @param $contactPrefillMode
+   *   TRUE if only standard custom fields needs to be filled.
+   *   This is a pre-fill mode which sets a placeholder value if the referenced contact hasn't been saved yet.
    * @internal param $values null|array
    *   Leave blank - used internally to recurse through data
    * @internal param $depth int
    *   Leave blank - used internally to track recursion level
    */
-  private function fillContactRefs($customOnly = FALSE, $values = NULL, $depth = 0) {
+  private function fillContactRefs($contactPrefillMode = FALSE, $values = NULL, $depth = 0) {
     $order = ['ent', 'c', 'table', 'n', 'name'];
     static $ent = '';
     static $c = '';
     static $table = '';
     static $n = '';
-    $customName = NULL;
     if ($values === NULL) {
       $values = $this->data;
     }
     foreach ($values as $key => $val) {
       ${$order[$depth]} = $key;
       if ($depth < 4 && is_array($val)) {
-        $this->fillContactRefs($customOnly, $val, $depth + 1);
+        $this->fillContactRefs($contactPrefillMode, $val, $depth + 1);
       }
       elseif ($depth == 4 && $val && wf_crm_aval($this->all_fields, "{$table}_{$name}:data_type") == 'ContactReference') {
-        if ($customOnly && substr($name, 0, 6) != 'custom') {
+        // Standard custom fields are processed with their entity; fields from multi-record sets are processed separately
+        $isStandardCustom = substr($name, 0, 6) === 'custom' && !$this->isMultiRecordCustomSet($table);
+        if ($contactPrefillMode && (!$isStandardCustom || $ent !== 'contact')) {
           return;
         }
         if (is_array($val)) {
           $this->data[$ent][$c][$table][$n][$name] = [];
           foreach ($val as $v) {
             if (is_numeric($v) && !empty($this->ent['contact'][$v]['id'])) {
-              $tableName = $customOnly ? $ent : $table;
+              $tableName = $isStandardCustom ? $ent : $table;
               $this->data[$ent][$c][$tableName][$n][$name][] = $this->ent['contact'][$v]['id'];
             }
           }
         }
         else {
-          $createModeKey = 'civicrm_' . $c . '_contact_' . $n . '_' . $table . '_createmode';
-          $multivaluesCreateMode = $this->data['config']['create_mode'][$createModeKey] ?? NULL;
-          $cgMaxInstance = $this->all_sets[$table]['max_instances'] ?? 1;
-          $key = $n;
-          if (substr($name, 0, 6) == 'custom' && $cgMaxInstance > 1) {
-            // Retrieve name for multi value custom fields.
-            $customName = $this->getNameForMultiValueFields($multivaluesCreateMode, $name, $table, $c, $n);
-            $key = 1;
-          }
+          // Unset val so it is not mistaken for a contact id
+          $this->data[$ent][$c][$table][$n][$name] = NULL;
+
           if (!empty($this->ent['contact'][$val]['id'])) {
-            unset($this->data[$ent][$c][$table][$n][$name]);
-            $tableName = substr($name, 0, 6) == 'custom' ? $ent : $table;
-            $fld = $customName ?? $name;
-            $this->data[$ent][$c][$tableName][$key][$fld] = $this->ent['contact'][$val]['id'];
+            $tableName = $isStandardCustom ? $ent : $table;
+            $this->data[$ent][$c][$tableName][$n][$name] = $this->ent['contact'][$val]['id'];
           }
-          elseif (substr($name, 0, 6) == 'custom') {
+          elseif ($contactPrefillMode) {
             $this->data[$ent][$c]['update_contact_ref'][$n][$name] = $val;
           }
         }
@@ -2553,19 +2539,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         // Only known contacts are allowed to empty a field
         if (($val !== '' && $val !== NULL && $val !== []) || !empty($this->existing_contacts[$c])) {
           $this->data[$ent][$c][$table][$n][$name] = $val;
-          if (substr($name, 0, 6) === 'custom') {
-            $multivaluesCreateMode = NULL;
-            // Handle 'Create mode' for multivalues custom fields of Contact entity.
-            if ($ent === 'contact' && is_numeric(substr($name, 7))) {
-              $createModeKey = 'civicrm_' . $c . '_contact_' . $n . '_' . $table . '_createmode';
-              $multivaluesCreateMode = $this->data['config']['create_mode'][$createModeKey] ?? NULL;
-              $cgMaxInstance = $this->all_sets[$table]['max_instances'] ?? 1;
-              // Is this a multi-value custom field?
-              if ($cgMaxInstance > 1) {
-                $name = $this->getNameForMultiValueFields($multivaluesCreateMode, $name, $table, $c, $n);
-                $n = 1;
-              }
-            }
+          if (substr($name, 0, 6) === 'custom' && !$this->isMultiRecordCustomSet($table)) {
             $this->data[$ent][$c][$ent][$n][$name] = $customValue ?? $val;
           }
         }
@@ -2795,43 +2769,47 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   }
 
   /**
-   * Retrieve name for multi-value custom fields.
-   *
-   * For edit mode, update the $name key to 'custom_<fieldID>_<existing_value_id>.
-   *
-   * If webform is configured to only "insert" new values,
-   * modify the params in the format of custom_<fieldID>_-1, custom_<fieldID>_-2, etc.
-   *
-   * @param bool $multivaluesCreateMode
-   * @param string $name
-   * @param string $table
-   * @param int $c
-   * @param int $n
-   *
-   * @return string $name
+   * @param array $contact
+   * @param int $index
+   * @param int $cid
    */
-  private function getNameForMultiValueFields($multivaluesCreateMode, $name, $table, $c, $n): string {
-    // Multi value fields are already saved while creating the billing contact.
-    if ($c == 1 && !empty($this->billing_contact)) {
-      return '';
-    }
-
-    $existingValue = NULL;
-    if (empty($multivaluesCreateMode) && !empty($this->existing_contacts[$c])) {
-      $existingValue = $this->getCustomData($this->existing_contacts[$c], NULL, FALSE)[$table] ?? NULL;
-      if (!empty($existingValue) && is_array($existingValue)) {
-        $existingValue = key(array_slice($existingValue, $n - 1, 1, TRUE));
-        if (!empty($existingValue)) {
-          return "{$name}_{$existingValue}";
+  private function saveMultiRecordCustomData($contact, $index, $cid) {
+    $existingCustomData = NULL;
+    $inserts = [];
+    $saveParams = ['id' => $cid];
+    foreach ($contact as $table => $items) {
+      if (is_array($items) && $items && $this->isMultiRecordCustomSet($table)) {
+        $existingCustomData = $existingCustomData ?? $this->getCustomData($cid, 'contact', FALSE, $index);
+        $existing = $existingCustomData[$table] ?? [];
+        // Index existing ids beginning with 1
+        $existingIds = array_slice(array_merge([NULL], array_keys($existing)), 1, NULL, TRUE);
+        $newIndex = 0;
+        foreach ($items as $i => $item) {
+          $id = $existingIds[$i] ?? --$newIndex;
+          if ($id > 0) {
+            $this->ent['contact'][$index][$table][$i] = $existingIds[$i];
+          }
+          else {
+            $inserts[$table][] = $i;
+          }
+          foreach ($item as $field => $val) {
+            $saveParams[$field . '_' . $id] = $val;
+          }
         }
       }
     }
-
-    // No existing value found, insert a new value.
-    if (empty($existingValue)) {
-      return "{$name}_-{$n}";
+    if (count($saveParams) > 1) {
+      $utils = \Drupal::service('webform_civicrm.utils');
+      $utils->wf_civicrm_api('Contact', 'create', $saveParams);
+      // FIXME: This sucks, but APIv3 does not return the id of newly inserted custom data
+      foreach ($inserts as $table => $newRecords) {
+        $dbTable = \CRM_Core_DAO::getFieldValue('CRM_Core_DAO_CustomGroup', str_replace('cg', '', $table), 'table_name');
+        $maxId = \CRM_Core_DAO::singleValueQuery("SELECT MAX(id) FROM $dbTable");
+        foreach ($newRecords as $count => $i) {
+          $this->ent['contact'][$index][$table][$i] = $maxId - count($newRecords) + $count + 1;
+        }
+      }
     }
-    return $name;
   }
 
   /**
@@ -2855,15 +2833,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         foreach ($params['contact'] as $contactParams) {
           foreach ($contactParams as $key => $value) {
             if (strpos($key, "{$refKey}_") === 0 && !isset($updateParams[$key]) && !in_array($key, $skipKeys)) {
-              //If this is an edit to an existing record, remove any matching keys that was previously set to 'create' new records.
-              if (strpos($key, "{$refKey}_-") !== 0) {
-                foreach ($updateParams as $k => $v) {
-                  if (strpos($k, "{$refKey}_-") === 0) {
-                    $skipKeys[] = $k;
-                    unset($updateParams[$k]);
-                  }
-                }
-              }
               $updateParams[$key] = $value;
             }
           }
@@ -2893,6 +2862,15 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   private function getPaymentInstrument($paymentProcessorId) {
     $processor = \Civi\Payment\System::singleton()->getById($paymentProcessorId);
     return $processor->getPaymentInstrumentID();
+  }
+
+  /**
+   * Check if a set of data is for a multi-record custom field
+   * @param $key e.g. "cg5"
+   * @return bool
+   */
+  private function isMultiRecordCustomSet($key) {
+    return strpos($key, 'cg') === 0 && ($this->all_sets[$key]['max_instances'] ?? 1) > 1;
   }
 
 }

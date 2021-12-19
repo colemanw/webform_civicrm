@@ -108,9 +108,7 @@ class CivicrmWebformHandler extends WebformHandlerBase {
 
   public function alterForm(array &$form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
     $this->civicrm->initialize();
-    $settings = $this->configuration;
-    $data = $settings['data'];
-    $processor = \Drupal::service('webform_civicrm.preprocess')->initialize($form, $form_state, $this);
+    $processor = \Drupal::service('webform_civicrm.preprocess')->initialize($form, $form_state, $this, $webform_submission);
     $processor->alterForm();
   }
 
@@ -126,7 +124,7 @@ class CivicrmWebformHandler extends WebformHandlerBase {
    */
   public function validateForm(array &$form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
     $this->civicrm->initialize();
-    $processor = \Drupal::service('webform_civicrm.postprocess')->initialize($webform_submission->getWebform());
+    $processor = \Drupal::service('webform_civicrm.postprocess')->initialize($webform_submission);
     $processor->validate($form, $form_state, $webform_submission);
   }
 
@@ -135,7 +133,7 @@ class CivicrmWebformHandler extends WebformHandlerBase {
    */
   public function preSave(WebformSubmissionInterface $webform_submission) {
     $this->civicrm->initialize();
-    $processor = \Drupal::service('webform_civicrm.postprocess')->initialize($webform_submission->getWebform());
+    $processor = \Drupal::service('webform_civicrm.postprocess')->initialize($webform_submission);
     $processor->preSave($webform_submission);
   }
 
@@ -144,7 +142,7 @@ class CivicrmWebformHandler extends WebformHandlerBase {
    */
   public function postSave(WebformSubmissionInterface $webform_submission, $update = TRUE) {
     $this->civicrm->initialize();
-    $processor = \Drupal::service('webform_civicrm.postprocess')->initialize($webform_submission->getWebform());
+    $processor = \Drupal::service('webform_civicrm.postprocess')->initialize($webform_submission);
     $processor->postSave($webform_submission);
   }
 
