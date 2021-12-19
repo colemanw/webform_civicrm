@@ -15,6 +15,10 @@ use Drupal\Core\Url;
  */
 class AdminHelp implements AdminHelpInterface {
 
+  public function __construct(UtilsInterface $utils) {
+    $this->utils = $utils;
+  }
+
   protected function intro() {
     return '<p>' .
       t('Create anything from a simple newsletter signup, to a complex multi-step registration system.') .
@@ -354,8 +358,7 @@ class AdminHelp implements AdminHelpInterface {
 
   protected function activity_assignee_contact_id() {
     \Drupal::service('civicrm')->initialize();
-    $utils = \Drupal::service('webform_civicrm.utils');
-    if ($utils->wf_crm_get_civi_setting('activity_assignee_notification')) {
+    if ($this->utils->wf_crm_get_civi_setting('activity_assignee_notification')) {
       return '<p>' . t('A copy of this activity will be emailed to the assignee.') . '</p>';
     }
     else {
@@ -487,7 +490,7 @@ class AdminHelp implements AdminHelpInterface {
     }
     \Drupal::service('civicrm')->initialize();
     $help = '';
-    $info = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('custom_field', 'getsingle', ['id' => $id]);
+    $info = $this->utils->wf_civicrm_api('custom_field', 'getsingle', ['id' => $id]);
     if (!empty($info['help_pre'])) {
       $help .= '<p>' . $info['help_pre'] . '</p>';
     }
@@ -504,7 +507,7 @@ class AdminHelp implements AdminHelpInterface {
     list( , $set) = explode('_', $param);
     \Drupal::service('civicrm')->initialize();
     $help = '';
-    $sets = \Drupal::service('webform_civicrm.utils')->wf_crm_get_fields('sets');
+    $sets = $this->utils->wf_crm_get_fields('sets');
     if (!empty($sets[$set]['help_text'])) {
       $help .= '<p>' . $sets[$set]['help_text'] . '</p>';
     }

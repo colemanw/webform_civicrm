@@ -7,6 +7,10 @@ class Fields implements FieldsInterface {
   protected $components = [];
   protected $sets = [];
 
+  public function __construct(UtilsInterface $utils) {
+    $this->utils = $utils;
+  }
+
   /**
    * {@inheritdoc}
    */
@@ -41,7 +45,7 @@ class Fields implements FieldsInterface {
 
   protected function getComponents(): array {
     if (empty($this->components)) {
-      $this->components = \Drupal::service('webform_civicrm.utils')->wf_crm_get_civi_setting('enable_components');
+      $this->components = $this->utils->wf_crm_get_civi_setting('enable_components');
     }
 
     return $this->components;
@@ -76,7 +80,7 @@ class Fields implements FieldsInterface {
       if (in_array('CiviContribute', $components, TRUE)) {
         $sets['line_items'] = ['entity_type' => 'line_item', 'label' => t('Line Items')];
       }
-      $extra_sets = \Drupal::service('webform_civicrm.utils')->wf_crm_get_empty_sets();
+      $extra_sets = $this->utils->wf_crm_get_empty_sets();
       $sets += $extra_sets;
       $this->sets = $sets;
     }
@@ -85,14 +89,13 @@ class Fields implements FieldsInterface {
   }
 
   protected function getMoneyDefaults(): array {
-    $utils = \Drupal::service('webform_civicrm.utils');
     return [
       'type' => 'civicrm_number',
       'data_type' => 'Money',
       'extra' => [
-        'field_prefix' => $utils->wf_crm_get_civi_setting('defaultCurrencySymbol', '$'),
-        'point' => $utils->wf_crm_get_civi_setting('monetaryDecimalPoint', '.'),
-        'separator' => $utils->wf_crm_get_civi_setting('monetaryThousandSeparator', ','),
+        'field_prefix' => $this->utils->wf_crm_get_civi_setting('defaultCurrencySymbol', '$'),
+        'point' => $this->utils->wf_crm_get_civi_setting('monetaryDecimalPoint', '.'),
+        'separator' => $this->utils->wf_crm_get_civi_setting('monetaryThousandSeparator', ','),
         'decimals' => 2,
         'min' => 0,
       ],
@@ -102,7 +105,6 @@ class Fields implements FieldsInterface {
   protected function wf_crm_get_fields($var = 'fields') {
     $components = $this->getComponents();
     $sets = $this->getSets($components);
-    $utils = \Drupal::service('webform_civicrm.utils');
     $elements = \Drupal::service('plugin.manager.webform.element')->getInstances();
 
     static $fields = [];
@@ -141,8 +143,8 @@ class Fields implements FieldsInterface {
         'contact_type' => 'organization',
       ];
       // Individual names
-      $enabled_names = $utils->wf_crm_get_civi_setting('contact_edit_options');
-      $name_options = array_column($utils->wf_crm_apivalues('OptionValue', 'get', ['option_group_id' => 'contact_edit_options', 'return' => ['name', 'value']]), 'name', 'value');
+      $enabled_names = $this->utils->wf_crm_get_civi_setting('contact_edit_options');
+      $name_options = array_column($this->utils->wf_crm_apivalues('OptionValue', 'get', ['option_group_id' => 'contact_edit_options', 'return' => ['name', 'value']]), 'name', 'value');
       $enabled_names = array_intersect_key($name_options, array_flip($enabled_names));
       foreach (['prefix_id' => t('Name Prefix'), 'formal_title' => t('Formal Title'), 'first_name' => t('First Name'), 'middle_name' => t('Middle Name'), 'last_name' => t('Last Name'), 'suffix_id' => t('Name Suffix')] as $key => $label) {
         if (in_array(ucwords(str_replace(['_id', '_'], ['', ' '], $key)),
@@ -191,7 +193,7 @@ class Fields implements FieldsInterface {
       $fields['contact_preferred_language'] = [
         'name' => t('Preferred Language'),
         'type' => 'select',
-        'value' => $utils->wf_crm_get_civi_setting('lcMessages', 'en_US'),
+        'value' => $this->utils->wf_crm_get_civi_setting('lcMessages', 'en_US'),
       ];
       if (!$elements['managed_file']->isDisabled() && !$elements['managed_file']->isHidden()) {
         $fields['contact_image_URL'] = [
@@ -286,7 +288,7 @@ class Fields implements FieldsInterface {
         'type' => 'select',
         'civicrm_live_options' => 1,
         'extra' => ['aslist' => 1],
-        'default_value' => $utils->wf_crm_get_civi_setting('defaultContactCountry', 1228),
+        'default_value' => $this->utils->wf_crm_get_civi_setting('defaultContactCountry', 1228),
       ];
       $fields['address_state_province_id'] = [
         'name' => t('State/Province'),
@@ -448,7 +450,7 @@ class Fields implements FieldsInterface {
           'name' => t('Case # Client'),
           'type' => 'select',
           'expose_list' => TRUE,
-          'extra' => ['required' => 1, 'multiple' => $utils->wf_crm_get_civi_setting('civicaseAllowMultipleClients', 0)],
+          'extra' => ['required' => 1, 'multiple' => $this->utils->wf_crm_get_civi_setting('civicaseAllowMultipleClients', 0)],
           'data_type' => 'ContactReference',
           'set' => 'caseRoles',
           'value' => 1,
@@ -492,9 +494,9 @@ class Fields implements FieldsInterface {
         ];
         // Fetch case roles
         $sets['caseRoles'] = ['entity_type' => 'case', 'label' => t('Case Roles')];
-        foreach ($utils->wf_crm_apivalues('case_type', 'get') as $case_type) {
+        foreach ($this->utils->wf_crm_apivalues('case_type', 'get') as $case_type) {
           foreach ($case_type['definition']['caseRoles'] as $role) {
-            foreach ($utils->wf_crm_get_relationship_types() as $rel_type) {
+            foreach ($this->utils->wf_crm_get_relationship_types() as $rel_type) {
               if (in_array($role['name'], [$rel_type['name_b_a'], $rel_type['label_b_a']])) {
                 $case_role_fields_key = 'case_role_' . $rel_type['id'];
                 if (!isset($fields[$case_role_fields_key])) {
@@ -514,7 +516,7 @@ class Fields implements FieldsInterface {
           }
         }
       }
-      $all_tagsets = $utils->wf_crm_apivalues('tag', 'get', [
+      $all_tagsets = $this->utils->wf_crm_apivalues('tag', 'get', [
         'return' => ['id', 'name', 'used_for'],
         'is_tagset' => 1,
         'parent_id' => ['IS NULL' => 1],
@@ -718,7 +720,7 @@ class Fields implements FieldsInterface {
           'type' => 'select',
           'civicrm_live_options' => 1,
           'extra' => ['aslist' => 1],
-          'default_value' => $utils->wf_crm_get_civi_setting('defaultContactCountry', 1228),
+          'default_value' => $this->utils->wf_crm_get_civi_setting('defaultContactCountry', 1228),
           'set' => 'billing_1_number_of_billing',
           'parent' => 'contribution_pagebreak',
         ];
@@ -910,7 +912,7 @@ class Fields implements FieldsInterface {
       }
 
       // File attachment fields
-      $numAttachments = $utils->wf_crm_get_civi_setting('max_attachments', 3);
+      $numAttachments = $this->utils->wf_crm_get_civi_setting('max_attachments', 3);
       foreach ($sets as $ent => $set) {
         if (!empty($set['attachments']) && $numAttachments) {
           $sets["{$ent}upload"] = [
@@ -928,9 +930,9 @@ class Fields implements FieldsInterface {
       }
 
       // Fetch custom groups
-      list($contact_types) = $utils->wf_crm_get_contact_types();
+      list($contact_types) = $this->utils->wf_crm_get_contact_types();
       $custom_sets = [];
-      $custom_groups = $utils->wf_crm_apivalues('CustomGroup', 'get', [
+      $custom_groups = $this->utils->wf_crm_apivalues('CustomGroup', 'get', [
         'return' => ['title', 'extends', 'extends_entity_column_value', 'extends_entity_column_id', 'is_multiple', 'max_multiple', 'help_pre'],
         'is_active' => 1,
         'extends' => ['IN' => array_keys($contact_types + $sets)],
@@ -970,10 +972,10 @@ class Fields implements FieldsInterface {
       }
 
       // Fetch custom fields
-      $custom_types = $utils->wf_crm_custom_types_map_array();
+      $custom_types = $this->utils->wf_crm_custom_types_map_array();
       $custom_fields = [];
       if (count($custom_sets) > 0) {
-        $custom_fields = $utils->wf_crm_apivalues('CustomField', 'get', [
+        $custom_fields = $this->utils->wf_crm_apivalues('CustomField', 'get', [
           'is_active' => 1,
           'custom_group_id' => ['IN' => array_keys($custom_sets)],
           'html_type' => ['IN' => array_keys($custom_types)],
@@ -991,7 +993,7 @@ class Fields implements FieldsInterface {
         $fields[$id]['name'] = $custom_field['label'];
         $fields[$id]['required'] = (int) !empty($custom_field['is_required']);
         if (!empty($custom_field['default_value'])) {
-          $fields[$id]['value'] = implode(',', $utils->wf_crm_explode_multivalue_str($custom_field['default_value']));
+          $fields[$id]['value'] = implode(',', $this->utils->wf_crm_explode_multivalue_str($custom_field['default_value']));
         }
         $fields[$id]['data_type'] = $custom_field['data_type'];
         if (!empty($custom_field['help_pre']) || !empty($custom_field['help_post'])) {

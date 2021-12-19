@@ -49,17 +49,16 @@ abstract class WebformCivicrmBase {
    * @return mixed
    */
   function __get($name) {
-    $utils = \Drupal::service('webform_civicrm.utils');
     switch ($name) {
       case 'payment_processor':
         $payment_processor_id = wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id');
         if ($payment_processor_id && !$this->_payment_processor) {
-          $this->_payment_processor = $utils->wf_civicrm_api('payment_processor', 'getsingle', ['id' => $payment_processor_id]);
+          $this->_payment_processor = $this->utils->wf_civicrm_api('payment_processor', 'getsingle', ['id' => $payment_processor_id]);
         }
         return $this->_payment_processor;
 
       case 'tax_rate':
-        $taxSettings = $utils->wf_crm_get_civi_setting('contribution_invoice_settings');
+        $taxSettings = $this->utils->wf_crm_get_civi_setting('contribution_invoice_settings');
         if (is_array($taxSettings) && !empty($taxSettings['invoicing'])) {
           $contribution_enabled = wf_crm_aval($this->data, 'contribution:1:contribution:1:enable_contribution');
           if ($contribution_enabled) {
@@ -84,9 +83,8 @@ abstract class WebformCivicrmBase {
    * Load Billing Address for contact.
    */
   protected function loadBillingAddress($cid) {
-    $utils = \Drupal::service('webform_civicrm.utils');
     $billingFields = ["street_address", "city", "postal_code", "country_id", "state_province_id"];
-    $billingAddress = $utils->wf_civicrm_api('Address', 'get', [
+    $billingAddress = $this->utils->wf_civicrm_api('Address', 'get', [
       'contact_id' => $cid,
       'location_type_id' => 'Billing',
       'return' => $billingFields,
@@ -127,7 +125,6 @@ abstract class WebformCivicrmBase {
       return $this->loadedContacts[$c];
     }
     $info = [];
-    $utils = \Drupal::service('webform_civicrm.utils');
     $cid = $this->ent['contact'][$c]['id'];
     if (!$cid) {
       return $info;
@@ -139,15 +136,15 @@ abstract class WebformCivicrmBase {
     $existing_component_plugin = $element_manager->getElementInstance($existing_contact_field);
     $element_exclude = $existing_component_plugin->getElementProperty($existing_contact_field, 'no_autofill');
     $exclude = array_merge($exclude, $element_exclude);
-    foreach (array_merge(['contact'], $utils->wf_crm_location_fields()) as $ent) {
+    foreach (array_merge(['contact'], $this->utils->wf_crm_location_fields()) as $ent) {
       if ((!empty($contact['number_of_' . $ent]) && !in_array($ent, $exclude)) || $ent == 'contact') {
         $params = ['contact_id' => $cid];
         if ($ent != 'contact' && $ent != 'website') {
           $params['options']['sort'] = 'is_primary DESC';
         }
-        $result = $utils->wf_civicrm_api($ent, 'get', $params);
+        $result = $this->utils->wf_civicrm_api($ent, 'get', $params);
         // Handle location field sorting
-        if (in_array($ent, $utils->wf_crm_location_fields())) {
+        if (in_array($ent, $this->utils->wf_crm_location_fields())) {
           $result['values'] = $this->reorderByLocationType($c, $ent, $result['values']);
         }
         if (!empty($result['values'])) {
@@ -164,7 +161,7 @@ abstract class WebformCivicrmBase {
             }
             // Privacy fields
             if (isset($this->enabled[$prefix . 'contact_privacy'])) {
-              foreach (array_keys($utils->wf_crm_get_privacy_options()) as $key) {
+              foreach (array_keys($this->utils->wf_crm_get_privacy_options()) as $key) {
                 if (!empty($result[1][$key])) {
                   $result[1]['privacy'][] = $key;
                 }
@@ -172,7 +169,7 @@ abstract class WebformCivicrmBase {
             }
             // User id
             if (isset($this->enabled[$prefix . 'contact_user_id'])) {
-              $result[1]['user_id'] = $utils->wf_crm_user_cid($cid, 'contact');
+              $result[1]['user_id'] = $this->utils->wf_crm_user_cid($cid, 'contact');
             }
             // Hack for gender as textfield. More general solution needed for all pseudoconsant fields
             $gender_field = $this->node->getElement("civicrm_{$c}_contact_1_contact_gender_id");
@@ -185,7 +182,7 @@ abstract class WebformCivicrmBase {
             foreach ($result as &$address) {
               // Translate to abbr
               if (!empty($address['state_province_id'])) {
-                $address['state_province_id'] = $utils->wf_crm_state_abbr($address['state_province_id']);
+                $address['state_province_id'] = $this->utils->wf_crm_state_abbr($address['state_province_id']);
               }
               // Load custom data
               if (isset($address['id'])){
@@ -219,7 +216,7 @@ abstract class WebformCivicrmBase {
           list(, , , , , $field) = explode('_', $fid, 6);
           // Cheap way to avoid fetching the same data twice from the api
           if (!is_array($api[$ent])) {
-            $api[$ent] = $utils->wf_civicrm_api($api[$ent], 'get', ['contact_id' => $cid]);
+            $api[$ent] = $this->utils->wf_civicrm_api($api[$ent], 'get', ['contact_id' => $cid]);
           }
           foreach (wf_crm_aval($api[$ent], 'values') as $val) {
             $info['other'][1][$field][] = $val[$ent . '_id'];
@@ -229,7 +226,7 @@ abstract class WebformCivicrmBase {
     }
     // Retrieve relationship data
     if (!in_array('relationship', $exclude) && !empty($contact['number_of_relationship'])) {
-      $this->enabled = $utils->wf_crm_enabled_fields($this->node);
+      $this->enabled = $this->utils->wf_crm_enabled_fields($this->node);
       for ($r = 1; $r <= $contact['number_of_relationship']; ++$r) {
         $types = [];
         $prefix = "civicrm_{$c}_contact_{$r}_relationship_";
@@ -260,7 +257,6 @@ abstract class WebformCivicrmBase {
    */
   protected function findContact($component) {
     $contactComponent = \Drupal::service('webform_civicrm.contact_component');
-    $utils = \Drupal::service('webform_civicrm.utils');
     $component['#form_key'] = $component['#form_key'] ?? $component['#webform_key'];
 
     list(, $c,) = explode('_', $component['#form_key'], 3);
@@ -286,7 +282,7 @@ abstract class WebformCivicrmBase {
       $found = [];
       switch ($component['#default']) {
         case 'user':
-          $cid = $utils->wf_crm_user_cid();
+          $cid = $this->utils->wf_crm_user_cid();
           $found = ($c == 1 && $cid) ? [$cid] : [];
           break;
         case 'contact_id':
@@ -505,7 +501,6 @@ abstract class WebformCivicrmBase {
     if (!$active_only) {
       $active_only = !empty($this->settings['create_new_relationship']);
     }
-    $utils = \Drupal::service('webform_civicrm.utils');
 
     if ($r_types && $cid1 && $cid2) {
       $types = [];
@@ -522,7 +517,7 @@ abstract class WebformCivicrmBase {
         $params['is_active'] = 1;
         $params['options']['sort'] = 'is_active DESC, end_date ASC';
       }
-      foreach ($utils->wf_crm_apivalues('relationship', 'get', $params) as $rel) {
+      foreach ($this->utils->wf_crm_apivalues('relationship', 'get', $params) as $rel) {
         $type = $rel['relationship_type_id'];
         $side = $rel['contact_id_a'] == $cid1 ? 'a' : 'b';
         if (
@@ -555,11 +550,10 @@ abstract class WebformCivicrmBase {
    */
   protected function getExposedOptions($field_key, $exclude = []) {
     $field = $this->getComponent($field_key);
-    $utils = \Drupal::service('webform_civicrm.utils');
 
     if ($field && $field['#type'] == 'hidden') {
       // Fetch live options
-      $exposed = $utils->wf_crm_field_options($field, 'civicrm_live_options', $this->data);
+      $exposed = $this->utils->wf_crm_field_options($field, 'civicrm_live_options', $this->data);
       foreach ($exclude as $i) {
         unset($exposed[$i]);
       }
@@ -594,14 +588,13 @@ abstract class WebformCivicrmBase {
   protected function findMemberships($cid) {
     static $status_types;
     static $membership_types;
-    $utils = \Drupal::service('webform_civicrm.utils');
 
     if (!isset($membership_types)) {
-      $domain = $utils->wf_civicrm_api('domain', 'get', ['current_domain' => 1, 'return' => 'id']);
+      $domain = $this->utils->wf_civicrm_api('domain', 'get', ['current_domain' => 1, 'return' => 'id']);
       $domain = wf_crm_aval($domain, 'id', 1);
-      $membership_types = array_keys($utils->wf_crm_apivalues('membershipType', 'get', ['is_active' => 1, 'domain_id' => $domain, 'return' => 'id']));
+      $membership_types = array_keys($this->utils->wf_crm_apivalues('membershipType', 'get', ['is_active' => 1, 'domain_id' => $domain, 'return' => 'id']));
     }
-    $existing = $utils->wf_crm_apivalues('membership', 'get', [
+    $existing = $this->utils->wf_crm_apivalues('membership', 'get', [
       'contact_id' => $cid,
       // Limit to only enabled membership types
       'membership_type_id' => ['IN' => $membership_types],
@@ -612,7 +605,7 @@ abstract class WebformCivicrmBase {
       return [];
     }
     if (!$status_types) {
-      $status_types = $utils->wf_crm_apivalues('membership_status', 'get');
+      $status_types = $this->utils->wf_crm_apivalues('membership_status', 'get');
     }
     // Attempt to order memberships by most recent and active
     $active = $expired = [];
@@ -629,10 +622,9 @@ abstract class WebformCivicrmBase {
    * Fetch info and remaining spaces for events
    */
   protected function loadEvents() {
-    $utils = \Drupal::service('webform_civicrm.utils');
     if (!empty($this->events)) {
       $now = time();
-      $events = $utils->wf_crm_apivalues('Event', 'get', [
+      $events = $this->utils->wf_crm_apivalues('Event', 'get', [
         'return' => ['title', 'start_date', 'end_date', 'event_type_id', 'max_participants', 'financial_type_id', 'event_full_text', 'is_full'],
         'id' => ['IN' => array_keys($this->events)],
       ]);
@@ -657,10 +649,9 @@ abstract class WebformCivicrmBase {
    */
   protected function getCustomData($entity_id, $entity_type = NULL, $normalize = TRUE) {
     static $parents = [];
-    $utils = \Drupal::service('webform_civicrm.utils');
     if (empty($parents)) {
       // Create matching table to sort fields by group
-      foreach ($utils->wf_crm_get_fields() as $key => $value) {
+      foreach ($this->utils->wf_crm_get_fields() as $key => $value) {
         list($group, $field) = explode('_', $key, 2);
         if (strpos($field, 'custom_') === 0) {
           $parents[$field] = $group;
@@ -671,7 +662,7 @@ abstract class WebformCivicrmBase {
     if ($entity_type) {
       $params['entity_table'] = ucfirst($entity_type);
     }
-    $result = $utils->wf_crm_apivalues('CustomValue', 'get', $params);
+    $result = $this->utils->wf_crm_apivalues('CustomValue', 'get', $params);
     $values = [];
     foreach ($result as $key => $value) {
       $name = 'custom_' . $key;
@@ -696,7 +687,7 @@ abstract class WebformCivicrmBase {
    * @return mixed
    */
   protected function getData($fid, $default = NULL, $strict = FALSE) {
-    if ($pieces = \Drupal::service('webform_civicrm.utils')->wf_crm_explode_key($fid)) {
+    if ($pieces = $this->utils->wf_crm_explode_key($fid)) {
       list( , $c, $ent, $n, $table, $name) = $pieces;
       return wf_crm_aval($this->data, "{$ent}:{$c}:{$table}:{$n}:{$name}", $default, $strict);
     }
@@ -714,8 +705,7 @@ abstract class WebformCivicrmBase {
    */
   function findCaseForContact($cid, $filters) {
     $case = NULL;
-    $utils = \Drupal::service('webform_civicrm.utils');
-    foreach ($utils->wf_crm_apivalues('case', 'get', ['client_id' => $cid]) as $item) {
+    foreach ($this->utils->wf_crm_apivalues('case', 'get', ['client_id' => $cid]) as $item) {
       if (empty($item['is_deleted'])) {
         $match = TRUE;
         foreach (array_filter($filters) as $filter => $value) {
@@ -739,8 +729,7 @@ abstract class WebformCivicrmBase {
    */
   protected function getMembershipTypeField($type, $field) {
     if (!$this->membership_types) {
-      $utils = \Drupal::service('webform_civicrm.utils');
-      $this->membership_types = $utils->wf_crm_apivalues('membership_type', 'get');
+      $this->membership_types = $this->utils->wf_crm_apivalues('membership_type', 'get');
     }
     return wf_crm_aval($this->membership_types, $type . ':' . $field);
   }
@@ -809,7 +798,7 @@ abstract class WebformCivicrmBase {
         'file_url' => $val,
       ];
     }
-    $file = \Drupal::service('webform_civicrm.utils')->wf_crm_apivalues('Attachment', 'get', $val);
+    $file = $this->utils->wf_crm_apivalues('Attachment', 'get', $val);
     if (!empty($file[$val])) {
       return [
         'data_type' => 'File',
@@ -832,7 +821,7 @@ abstract class WebformCivicrmBase {
   function getDrupalFileUrl($id) {
     if ($id = $this->saveDrupalFileToCivi($id)) {
       $config = \CRM_Core_Config::singleton();
-      $result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('file', 'getsingle', ['id' => $id]);
+      $result = $this->utils->wf_civicrm_api('file', 'getsingle', ['id' => $id]);
 
       if ($result) {
         $photo = basename($config->customFileUploadDir . wf_crm_aval($result, 'uri'));
