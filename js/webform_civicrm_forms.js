@@ -183,10 +183,6 @@ var wfCivi = (function ($, D, drupalSettings) {
           var fn = (op === 'hide' && (!showEmpty || !isFormItemBlank($el))) ? 'hide' : 'show';
           $(':input', $el).prop('disabled', fn === 'hide');
           $(':input', $el).prop('readonly', fn === 'hide');
-          $('select.civicrm-enabled[name*="_address_state_province_id"]').each(function() {
-            $(this).prop('disabled', fn === 'hide');
-            $(this).prop('readonly', fn === 'hide');
-          });
           if (hideOrDisable === 'hide') {
             $el[fn](speed, function() {$el[fn];});
           }
