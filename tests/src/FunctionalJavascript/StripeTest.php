@@ -212,6 +212,7 @@ final class StripeTest extends WebformCivicrmTestBase {
 
     $this->assertCount(3, $this->getOptions('Payment Processor'));
     $this->getSession()->getPage()->selectFieldOption('Payment Processor', $this->paymentProcessorID);
+    $this->enableBillingSection();
 
     $this->getSession()->getPage()->selectFieldOption('lineitem_1_number_of_lineitem', 2);
     $this->assertSession()->assertWaitOnAjaxRequest();
