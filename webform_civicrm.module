@@ -44,6 +44,44 @@ function webform_civicrm_library_info_alter(array &$libraries, $extension) {
 }
 
 /**
+ * Add webform receipt params to contribution emails.
+ *
+ * @param array $params
+ * @param string $context
+ */
+function webform_civicrm_civicrm_alterMailParams(&$params, $context) {
+  if (!empty($params['valueName'])) {
+    if (in_array($params['valueName'], ['contribution_online_receipt', 'membership_online_receipt']) && !empty($params['tplParams']['contributionID'])) {
+      $query = \Drupal::database()
+        ->select('webform_civicrm_submissions', 'wcs')
+        ->condition('civicrm_data', "%{$params['tplParams']['contributionID']}%", 'LIKE')
+        ->condition('contact_id', "%-{$params['contactId']}-%", 'LIKE')
+        ->fields('wcs', ['sid', 'civicrm_data']);
+      $query->leftJoin('webform_submission', 'ws', 'ws.sid = wcs.sid');
+      $query->isNotNull('ws.sid');
+      $results = $query->execute();
+
+      while ($content = $results->fetchAssoc()) {
+        $civicrm_data = unserialize($content['civicrm_data']);
+        if (!empty($content['sid']) && !empty($civicrm_data['contribution'][1]['id']) && $civicrm_data['contribution'][1]['id'] == $params['tplParams']['contributionID']) {
+          $submission = WebformSubmission::load($content['sid']);
+          $webform = $submission->getWebform();
+          $handler = $webform->getHandlers('webform_civicrm');
+          $config = $handler->getConfiguration();
+          if (empty($config['webform_civicrm'])) {
+            continue;
+          }
+          $settings = &$config['webform_civicrm']['settings'];
+          $utils = \Drupal::service('webform_civicrm.utils');
+          $receiptParams = $utils->getReceiptParams($settings['data'], $params['tplParams']['contributionID']);
+          $params['tplParams']= array_merge($params['tplParams'], $receiptParams);
+        }
+      }
+    }
+  }
+}
+
+/**
  * Implements hook_element_info_alter().
  */
 function webform_civicrm_element_info_alter(array &$types) {

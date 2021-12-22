@@ -109,7 +109,7 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
 
     //Configure Contribution tab.
-    $this->configureContributionTab(TRUE);
+    $this->configureContributionTab();
     $this->getSession()->getPage()->checkField('Contribution Amount');
     $this->assertSession()->checkboxChecked('Contribution Amount');
 

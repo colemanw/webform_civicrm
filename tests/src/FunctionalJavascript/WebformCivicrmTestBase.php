@@ -5,6 +5,7 @@ namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 use Behat\Mink\Element\NodeElement;
 use Drupal\Tests\webform\Traits\WebformBrowserTestTrait;
 use Behat\Mink\Exception\ElementNotFoundException;
+use Drupal\Core\Url;
 
 abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
 
@@ -91,6 +92,35 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     ]);
   }
 
+
+  /**
+   * Redirect civicrm emails to database.
+   */
+  public function redirectEmailsToDB() {
+    $url = Url::fromUri('internal:/civicrm/admin/setting/smtp', [
+      'absolute' => TRUE,
+      'query' => ['reset' => 1]
+    ])->toString();
+    $this->drupalGet($url);
+
+    $this->getSession()->getPage()->selectFieldOption('outBound_option', 5);
+
+    $this->getSession()->getPage()->pressButton('_qf_Smtp_next');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+  }
+
+  /**
+   * @return string
+   */
+  public function getMostRecentEmail() {
+    $msg = '';
+    $result = \Drupal::database()->query("SELECT headers, body FROM civicrm_mailing_spool ORDER BY id DESC LIMIT 1");
+    while ($content = $result->fetchAssoc()) {
+      $msg = $content['headers'] . "\n\n" . $content['body'];
+    }
+    return $msg;
+  }
+
   /**
    * Create Membership Type
    */
@@ -171,7 +201,12 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->getSession()->resizeWindow(1440, 900);
   }
 
-  protected function configureContributionTab($disableReceipt = FALSE, $pp = NULL, $financial_type_id = 1) {
+  /**
+   * Configure contribution tab on civicrm settings page.
+   *
+   * @param array $params
+   */
+  protected function configureContributionTab($params = []) {
     //Configure Contribution tab.
     $this->getSession()->getPage()->clickLink('Contribution');
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
@@ -180,11 +215,23 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->getSession()->getPage()->pressButton('Enable It');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
-    $this->getSession()->getPage()->selectFieldOption('Financial Type', $financial_type_id);
+    $this->getSession()->getPage()->selectFieldOption('Financial Type', $params['financial_type_id'] ?? 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
 
-    if ($pp) {
-      $this->getSession()->getPage()->selectFieldOption('Payment Processor', $pp);
+    if (!empty($params['pp'])) {
+      $this->getSession()->getPage()->selectFieldOption('Payment Processor', $params['pp']);
+    }
+
+    if (!empty($params['receipt'])) {
+      $this->getSession()->getPage()->selectFieldOption('Enable Receipt?', 'Yes');
+      $this->assertSession()->assertWaitOnAjaxRequest();
+      foreach ($params['receipt'] as $k => $v) {
+        $this->getSession()->getPage()->fillField("receipt_1_number_of_receipt_{$k}", $v);
+      }
+    }
+    else {
+      $this->getSession()->getPage()->selectFieldOption('Enable Receipt?', 'No');
+      $this->assertSession()->assertWaitOnAjaxRequest();
     }
   }
 

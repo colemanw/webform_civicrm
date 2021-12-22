@@ -12,6 +12,72 @@ use Drupal\webform\Entity\Webform;
  */
 final class ContributionPayLaterTest extends WebformCivicrmTestBase {
 
+  public function testReceiptParams() {
+    $this->drupalLogin($this->rootUser);
+    $this->redirectEmailsToDB();
+
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+
+    $params = [
+      'pp' => 'Pay Later',
+      'receipt' => [
+        'receipt_from_name' => 'Admin',
+        'receipt_from_email' => 'admin@example.com',
+        'pay_later_receipt' => 'Payment by Direct Credit to: ABC. Please quote invoice number and name.',
+        'receipt_text' => 'Thank you for your contribution.',
+      ]
+    ];
+    $this->configureContributionTab($params);
+    $this->getSession()->getPage()->selectFieldOption('Enable Billing Address?', 'No');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->checkField('Contribution Amount');
+
+    $this->saveCiviCRMSettings();
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+    $this->getSession()->getPage()->fillField('First Name', 'Frederick');
+    $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
+    $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
+
+    $this->getSession()->getPage()->pressButton('Next >');
+    $this->assertPageNoErrorMessages();
+    $this->getSession()->getPage()->fillField('Contribution Amount', '30');
+
+    $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
+    $this->htmlOutput();
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '30.00');
+
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
+    $contribution = \Civi\Api4\Contribution::get()
+      ->addSelect('source', 'total_amount', 'contribution_status_id:label', 'currency')
+      ->setLimit(1)
+      ->execute()
+      ->first();
+
+    $sent_email = $this->getMostRecentEmail();
+    $this->assertStringContainsString('From: Admin <admin@example.com>', $sent_email);
+    $this->assertStringContainsString('To: Frederick Pabst <fred@example.com>', $sent_email);
+    $this->assertStringContainsString('Payment by Direct Credit to: ABC. Please quote invoice number and name.', $sent_email);
+    $this->assertStringContainsString('Thank you for your contribution', $sent_email);
+
+    // Complete the contribution and recheck receipt.
+    civicrm_api3('Contribution', 'completetransaction', [
+      'id' => $contribution['id'],
+      'is_email_receipt' => 1,
+    ]);
+    $sent_email = $this->getMostRecentEmail();
+    $this->assertStringContainsString('From: Admin <admin@example.com>', $sent_email);
+    $this->assertStringContainsString('To: Frederick Pabst <fred@example.com>', $sent_email);
+    $this->assertStringContainsString('Thank you for your contribution', $sent_email);
+  }
+
   public function testSubmitContribution() {
     $this->createFinancialCustomGroup();
     $this->createFinancialCustomGroup('Donation');
@@ -29,7 +95,10 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField('Country');
     $this->assertSession()->checkboxChecked('Country');
 
-    $this->configureContributionTab(TRUE, 'Pay Later');
+    $params = [
+      'pp' => 'Pay Later',
+    ];
+    $this->configureContributionTab($params);
     $this->getSession()->getPage()->checkField('Contribution Amount');
 
     // Change financial type to Member Dues and confirm if its custom field is loaded.
@@ -171,6 +240,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->utils->wf_civicrm_api('contribution', 'delete', [
       'id' => $contribution['id'],
     ]);
+    $this->contribution_id = $contribution['id'];
 
     $address = $this->utils->wf_civicrm_api('Address', 'get', [
       'sequential' => 1,

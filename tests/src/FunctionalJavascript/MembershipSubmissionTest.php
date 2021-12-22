@@ -261,7 +261,11 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
 
     // Configure Contribution tab.
-    $this->configureContributionTab(FALSE, $payment_processor['id'], '2');
+    $params = [
+      'pp' => $payment_processor['id'],
+      'financial_type_id' => 2,
+    ];
+    $this->configureContributionTab($params);
 
     // Configure Membership tab.
     $this->getSession()->getPage()->clickLink('Memberships');

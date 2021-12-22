@@ -352,30 +352,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       $template = \CRM_Core_Smarty::singleton();
       $template->assign('is_pay_later', 1);
     }
-    $this->utils->wf_civicrm_api('contribution', 'sendconfirmation', $this->getReceiptParams());
-  }
-
-  /**
-   * Build params for contribution receipt.
-   *
-   * @return array
-   */
-  private function getReceiptParams() {
-    $contributionData = wf_crm_aval($this->data, 'contribution:1:contribution:1');
-    $params = ['id' => $this->ent['contribution'][1]['id']];
-    $params['payment_processor_id'] = $contributionData['payment_processor_id'];
-    unset($params['payment_processor']);
-
-    $params['financial_type_id'] = $contributionData['financial_type_id'];
-    $params['currency'] = wf_crm_aval($this->data, "contribution:1:currency");
-
-    //Assign receipt values set on the webform config page.
-    $receipt = wf_crm_aval($this->data, "receipt", []);
-    $receiptValues = ['cc_receipt', 'bcc_receipt', 'receipt_text', 'pay_later_receipt', 'receipt_from_name', 'receipt_from_email'];
-    foreach ($receiptValues as $val) {
-      $params[$val] = $receipt["number_number_of_receipt_{$val}"] ?? '';
-    }
-    return $params;
+    $this->utils->wf_civicrm_api('contribution', 'sendconfirmation', $this->utils->getReceiptParams($this->data, $this->ent['contribution'][1]['id']));
   }
 
   /**

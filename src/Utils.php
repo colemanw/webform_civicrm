@@ -976,4 +976,27 @@ class Utils implements UtilsInterface {
     }
   }
 
+  /**
+   * Build params for contribution receipt.
+   *
+   * @return array
+   */
+  public function getReceiptParams($data, $contributionID) {
+    $contributionData = wf_crm_aval($data, 'contribution:1:contribution:1');
+    $params = ['id' => $contributionID];
+    $params['payment_processor_id'] = $contributionData['payment_processor_id'];
+    unset($params['payment_processor']);
+
+    $params['financial_type_id'] = $contributionData['financial_type_id'];
+    $params['currency'] = wf_crm_aval($data, "contribution:1:currency");
+
+    //Assign receipt values set on the webform config page.
+    $receipt = wf_crm_aval($data, "receipt", []);
+    $receiptValues = ['cc_receipt', 'bcc_receipt', 'receipt_text', 'pay_later_receipt', 'receipt_from_name', 'receipt_from_email'];
+    foreach ($receiptValues as $val) {
+      $params[$val] = $receipt["number_number_of_receipt_{$val}"] ?? '';
+    }
+    return $params;
+  }
+
 }
