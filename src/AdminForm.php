@@ -2284,6 +2284,7 @@ class AdminForm implements AdminFormInterface {
     if (isset($field['value_callback'])) {
       $method = 'get_default_' . $table . '_' . $name;
       $field['value'] = self::$method($field['form_key'], $options);
+      unset($field['value_callback']);
     }
     // For hidden+select fields such as contribution_page
     if ($field['type'] == 'hidden' && !empty($field['expose_list']) && !empty($settings[$field['form_key']])) {
