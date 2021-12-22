@@ -53,7 +53,7 @@ jobs:
       # - CiviCRM requires `compile-mode: all`
       - name: Setup sendmail
         run: |
-        sudo apt-get install sendmail
+          sudo apt-get install sendmail
       - name: Setup Drupal
         run: |
           COMPOSER_MEMORY_LIMIT=-1 composer create-project drupal/recommended-project:${{ matrix.drupal }} ~/drupal --no-interaction
