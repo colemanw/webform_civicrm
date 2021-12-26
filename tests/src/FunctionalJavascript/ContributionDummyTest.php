@@ -49,6 +49,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->htmlOutput();
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '10.00');
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-items .civicrm_1_contribution_1', 'Contribution Amount');
 
     $this->fillCardAndSubmit();
 
