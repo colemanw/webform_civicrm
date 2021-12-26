@@ -35,6 +35,11 @@
             field.data('form-defaults'),
           );
         });
+
+        //In case of error, highlight the token-input field.
+        if (field.hasClass('error')) {
+          field.parent('div.form-item').addClass('has-error');
+        }
       });
 
 
