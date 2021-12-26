@@ -75,6 +75,7 @@
       }
       $('td+td', $lineItem).html(CRM.formatMoney(amount * taxPara));
       $lineItem.data('amount', amount * taxPara);
+      $lineItem.attr('data-amount', amount * taxPara);
     }
     tally();
   }
@@ -97,7 +98,7 @@
   function calculateLineItemAmount() {
     var fieldKey = $(this).data('civicrmFieldKey'),
       amount = getFieldAmount(fieldKey),
-      label = $(this).closest('div.webform-component').find('label').text() || Drupal.t('Contribution'),
+      label = $(this).closest('div.form-item').find('label').text() || Drupal.t('Contribution'),
       lineKey = fieldKey.split('_').slice(0, 4).join('_');
     updateLineItem(lineKey, amount, label);
   }
