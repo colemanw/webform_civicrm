@@ -1983,7 +1983,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     ];
 
     $APIAction = 'transact';
-    if ($paymentType === 'deferred') {
+    if (in_array($paymentType, ['deferred', 'ipn'], TRUE)) {
       $APIAction = 'create';
     }
     $result = $this->utils->wf_civicrm_api('contribution', $APIAction, $contributionParams + $additionalParams);
@@ -2036,10 +2036,15 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
 
     $numInstallments = wf_crm_aval($params, 'installments', NULL, TRUE);
     $frequencyInterval = wf_crm_aval($params, 'frequency_unit');
-    if ($numInstallments != 1 && !empty($frequencyInterval) && $this->contributionIsPayLater) {
-      $result = $this->contributionRecur($params, 'deferred');
+    if ($numInstallments != 1 && !empty($frequencyInterval)) {
+      if ($this->contributionIsPayLater) {
+        $result = $this->contributionRecur($params, 'deferred');
+      }
+      elseif (empty($this->isLivePaymentProcessor())) {
+        $result = $this->contributionRecur($params, 'ipn');
+      }
     }
-    else {
+    if (empty($result['id'])) {
       $result = $this->utils->wf_civicrm_api('contribution', 'create', $params);
     }
 
@@ -2062,6 +2067,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $contact = $this->utils->wf_civicrm_api('contact', 'getsingle', ['id' => $this->ent['contact'][1]['id']]);
     $params += $contact;
     $params['contributionID'] = $params['id'] = $this->ent['contribution'][1]['id'];
+    if (!empty($this->ent['contribution_recur'][1]['id'])) {
+      $params['is_recur'] = TRUE;
+      $params['contributionRecurID'] = $this->ent['contribution_recur'][1]['id'];
+    }
     // Generate a fake qfKey in case payment processor redirects to contribution thank-you page
     $params['qfKey'] = $this->getQfKey();
 
