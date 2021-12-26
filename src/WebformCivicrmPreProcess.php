@@ -593,7 +593,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
       $field = $elements[$this->enabled[$fid]];
       if ($field['#type'] === 'hidden') {
         $this->line_items[] = [
-          'line_total' => $field['value'],
+          'line_total' => $field['#default_value'],
           'qty' => 1,
           'element' => 'civicrm_1_contribution_1',
           'label' => !empty($field['name']) ? $field['name'] : t('Contribution Amount'),

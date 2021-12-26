@@ -30,7 +30,7 @@ class CivicrmNumber extends Number {
     $types = parent::getRelatedTypes($element);
     // Allow number field to be retyped into options widgets.
     $elements = $this->elementManager->getInstances();
-    $supportedTypes = ['civicrm_options'];
+    $supportedTypes = ['civicrm_options', 'hidden'];
     foreach ($elements as $element_name => $element_instance) {
       if (in_array($element_name, $supportedTypes)) {
         $types[$element_name] = $element_instance->getPluginLabel();

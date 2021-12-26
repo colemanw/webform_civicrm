@@ -328,7 +328,12 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       $this->assertSession()->waitForField('properties[options][options][civicrm_option_1][enabled]', 3000);
     }
     if ($default) {
-      $this->getSession()->getPage()->selectFieldOption("properties[options][default]", $default);
+      if ($type == 'hidden') {
+        $this->getSession()->getPage()->fillField("properties[default_value]", $default);
+      }
+      else {
+        $this->getSession()->getPage()->selectFieldOption("properties[options][default]", $default);
+      }
     }
     if (!$type || $type == 'civicrm-options') {
       $this->getSession()->getPage()->uncheckField('properties[extra][aslist]');
