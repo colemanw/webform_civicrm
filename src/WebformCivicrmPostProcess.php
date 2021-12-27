@@ -532,10 +532,11 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
             $this->form_state->setErrorByName($eid, t('%event : @text', ['%event' => $event['title'], '@text' => $event['event_full_text']]));
           }
           else {
-            $this->form_state->setErrorByName($eid, format_plural($event['available_places'],
-              'Sorry, you tried to register !count people for %event but there is only 1 space remaining.',
-              'Sorry, you tried to register !count people for %event but there are only @count spaces remaining.',
-              ['%event' => $event['title'], '@count' => $event['count']]));
+            $registrations = \Drupal::translation()->formatPlural($event['count'], '1 person', '@count people');
+            $this->form_state->setErrorByName($eid, \Drupal::translation()->formatPlural($event['available_places'],
+              'Sorry, you tried to register @registrations for %event but there is only 1 space remaining.',
+              'Sorry, you tried to register @registrations for %event but there are only @count spaces remaining.',
+              ['%event' => $event['title'], '@registrations' => $registrations]));
           }
         }
       }
