@@ -487,6 +487,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $checkbox_edit_button = $this->assertSession()->elementExists('css', "[data-drupal-selector='edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-{$this->_customFields['select_list']}-operations'] a.webform-ajax-link");
     $checkbox_edit_button->click();
     // $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->wait(5000);
     $this->htmlOutput();
 
     $this->assertSession()->elementExists('css', ".empty.message");
