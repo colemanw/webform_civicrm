@@ -322,7 +322,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     foreach ($customFieldLabels as $label) {
       $this->assertSession()->pageTextContains($label);
     }
-    //Disable Custom field.
+    // Disable Custom field.
     $fieldURL = Url::fromUri('internal:/civicrm/admin/custom/group/field/update', [
       'absolute' => TRUE,
       'query' => ['reset' => 1, 'action' => 'update', 'gid' => 1, 'id' => $this->_customFields['color_checkboxes']]
@@ -333,7 +333,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->pressButton('_qf_Field_done-bottom');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
-    //Reload the webform page - the custom field should be removed.
+    // Reload the webform page - the custom field should be removed.
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->htmlOutput();
     $this->assertPageNoErrorMessages();
@@ -500,8 +500,20 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     // $this->createScreenshot($this->htmlOutputDirectory . 'KG1.png');
 
     $checkbox_edit_button->click();
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->getSession()->wait(5000);
+
+    // KG - this is where I want my screenshots
+    // $this->htmlOutputDirectory = '/Applications/MAMP/htdocs/d9civicrm.local/web/sites/default/files/simpletest/';
+    // $this->createScreenshot($this->htmlOutputDirectory . 'KG2.png');
+
+    // AJAX on D9.3 consistently times out with timout: 10000 on Github Actions and sometimes on my local.
+    // So bumping timeout: 30000
+    // $this->assertSession()->assertWaitOnAjaxRequest(30000);
+    $this->getSession()->wait(30000);
+
+    // KG - this is where I want my screenshots
+    // $this->htmlOutputDirectory = '/Applications/MAMP/htdocs/d9civicrm.local/web/sites/default/files/simpletest/';
+    // $this->createScreenshot($this->htmlOutputDirectory . 'KG3.png');
+
     $this->htmlOutput();
 
     $this->assertSession()->elementExists('css', ".empty.message");
