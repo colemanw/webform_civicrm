@@ -1893,7 +1893,7 @@ class AdminForm implements AdminFormInterface {
         $field = $this->utils->wf_crm_get_field($key);
         if (!isset($enabled[$key])) {
           $val = (array) $val;
-          if (in_array('create_civicrm_webform_element', $val, TRUE) || (!empty($val[0]) && $field['type'] == 'hidden')) {
+          if (in_array('create_civicrm_webform_element', $val, TRUE) || (isset($val[0]) && $field['type'] == 'hidden')) {
             // Restore disabled component
             if (isset($disabled[$key])) {
               webform_component_update($disabled[$key]);
