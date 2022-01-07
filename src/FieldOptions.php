@@ -83,6 +83,9 @@ class FieldOptions implements FieldOptionsInterface {
       elseif ($table == 'membership' && $name == 'num_terms') {
         $ret = array_combine(range(1, 9), range(1, 9));
       }
+      elseif ($table == 'membership' && $name == 'auto_renew') {
+        $ret = [1 => t('Yes'), 0 => t('No')];
+      }
       elseif ($table === 'contribution' && $name === 'payment_processor_id') {
         // For the config form we display a list of all active (live) payment processors
         // Saving will map the IDs to live or test.

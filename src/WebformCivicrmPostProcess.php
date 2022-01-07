@@ -1903,8 +1903,34 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
 
     // Only if #installments = 1, do we process a single transaction/contribution. #installments = 0 (or not set) in CiviCRM Core means open ended commitment;
     $numInstallments = wf_crm_aval($contributionParams, 'installments', NULL, TRUE);
-    $frequencyInterval = wf_crm_aval($contributionParams, 'frequency_unit');
-    if ($numInstallments != 1 && !empty($frequencyInterval)) {
+    $frequencyUnit = wf_crm_aval($contributionParams, 'frequency_unit');
+    // Check Membership with auto-renewal is true, it checks multiple
+    // memberships until auto_renew flag true.
+    $isThereMembershipToBeAutoRenewed = $this->isThereMembershipToBeAutoRenewed();
+    if ($isThereMembershipToBeAutoRenewed) {
+      // get membership type unit and internal (required to create recurring payment)
+      // Frequency either get from configuration or membership types from
+      // civicrm record.
+      $minimumFrequencyData = $this->calculateMembershipFrequencyUnitAndInterval();
+      $frequencyInterval = wf_crm_aval($contributionParams, 'frequency_interval');
+      // no input from webform, the set it from membership type
+      if (empty($frequencyUnit)) {
+        $frequencyUnit = $minimumFrequencyData['unit']; // year, month, day
+      }
+      // no input from the form, the set it from membership type
+      if (empty($frequencyInterval)) {
+        $frequencyInterval = $minimumFrequencyData['interval']; // 1, 2, 3
+      }
+    }
+    if (($numInstallments != 1 || $isThereMembershipToBeAutoRenewed) && !empty($frequencyUnit)) {
+      // if the form submitted for membership then use membership type
+      // setting for recurring interval, otherwise use
+      // configured internal in webform for normal recurring payment.
+      if ($isThereMembershipToBeAutoRenewed) {
+        $contributionParams['auto_renew'] = 1;
+        $contributionParams['frequency_interval'] = $frequencyInterval;
+        $contributionParams['frequency_unit'] = $frequencyUnit;
+      }
       $result = $this->contributionRecur($contributionParams);
     }
     else {
@@ -1961,6 +1987,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       'payment_processor_id' =>  $contributionParams['payment_processor_id'],
       'financial_type_id' =>  $contributionParams['financial_type_id'],
     ];
+
+    if (!empty($contributionParams['auto_renew'])) {
+      $contributionRecurParams['auto_renew'] = 1;
+    }
 
     if(empty($contributionParams['payment_processor_id'])) {
       $contributionRecurParams['payment_processor_id'] = 'null';
@@ -2850,6 +2880,57 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    */
   private function isMultiRecordCustomSet($key) {
     return strpos($key, 'cg') === 0 && ($this->all_sets[$key]['max_instances'] ?? 1) > 1;
+  }
+
+  /**
+   * Determines if the webform is configured to have any membership to be
+   * auto-renewed or not.
+   *
+   * @return bool
+   */
+  private function isThereMembershipToBeAutoRenewed() {
+    $autoRenewMembership = FALSE;
+    foreach ($this->data['membership'] as $contactMemberships) {
+      foreach ($contactMemberships['membership'] as $membership) {
+        if (!empty($membership['auto_renew'])) {
+          $autoRenewMembership = TRUE;
+        }
+      }
+    }
+
+    return $autoRenewMembership;
+  }
+
+  /**
+   * If the user did not configure a recurring contribution
+   * or did not configure the frequency unit or Interval for it,
+   * this method will take care of that and generate both
+   * based on the frequency unit and duration of the membership.
+   * @return array
+   * @throws \CiviCRM_API3_Exception
+   */
+  private function calculateMembershipFrequencyUnitAndInterval() {
+    $membershipsTypeId = NULL;
+    foreach ($this->data['membership'] as $contactMemberships) {
+      if (!empty($membershipsTypeId)) {
+        break;
+      }
+
+      foreach ($contactMemberships['membership'] as $membership) {
+        if ($membership['auto_renew']) {
+          $membershipsTypeId = $membership['membership_type_id'];
+          break;
+        }
+      }
+    }
+
+    $membershipTypeDetails = civicrm_api3('MembershipType', 'get', [
+      'id' => $membershipsTypeId,
+      'sequential' => 1,
+      'return' => ['duration_unit', 'duration_interval'],
+    ])['values'][0];
+
+    return ['unit' => $membershipTypeDetails['duration_unit'], 'interval' => $membershipTypeDetails['duration_interval']];
   }
 
 }

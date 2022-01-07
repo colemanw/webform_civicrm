@@ -830,6 +830,12 @@ class Fields implements FieldsInterface {
           'name' => t('End Date'),
           'type' => 'date',
         ];
+        $fields['membership_auto_renew'] = [
+          'name' => t('Auto-renew Membership?'),
+          'type' => 'select',
+          'expose_list' => TRUE,
+          'value' => 0,
+        ];
       }
       // Add campaign fields
       if (in_array('CiviCampaign', $components)) {
