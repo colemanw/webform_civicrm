@@ -18,6 +18,7 @@
             toHide, {
             hintText: field.data('search-prompt'),
             noResultsText: field.data('none-prompt'),
+            resultsFormatter: formatChoices,
             searchingText: "Searching..."
           });
         }
@@ -42,6 +43,16 @@
         }
       });
 
+      /**
+       * Format the choices in the "Existing Contact widget", with a special format for the "No Results" item.
+       */
+      function formatChoices(item){
+        var string = item[this.propertyToSearch];
+        if (string == this.noResultsText) {
+          return "<li><em><i>" + string + "</i></em></li>";
+        }
+        return "<li>" + string + "</li>";
+      }
 
       function changeDefault() {
         var val = $(this).val().replace(/_/g, '-');
