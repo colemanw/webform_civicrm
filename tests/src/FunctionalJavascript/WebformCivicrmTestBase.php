@@ -315,7 +315,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   protected function editCivicrmOptionElement($selector, $multiple = TRUE, $enableStatic = FALSE, $default = NULL, $type = NULL) {
     $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="' . $selector . '"] a.webform-ajax-link');
     $checkbox_edit_button->click();
-    $this->assertSession()->waitForElementVisible('css', '[data-drupal-selector="edit-change-type"]', 3000);
+    $this->assertSession()->waitForField('drupal-off-canvas');
     $this->htmlOutput();
     if ($type) {
       $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-change-type"]')->click();
@@ -345,7 +345,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     }
     $this->htmlOutput();
     $this->getSession()->getPage()->pressButton('Save');
-    $this->assertSession()->assertWaitOnAjaxRequest(5000);
+    $this->assertSession()->waitForText('has been updated.');
   }
 
   /**

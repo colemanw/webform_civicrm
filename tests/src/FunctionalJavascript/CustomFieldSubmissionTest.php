@@ -385,7 +385,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-' . $this->_customFields['color_checkboxes'] . '-operations"] a.webform-ajax-link');
     $checkbox_edit_button->click();
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->waitForField('drupal-off-canvas');
     $this->htmlOutput();
     $this->getSession()->getPage()->selectFieldOption("properties[civicrm_live_options]", 0);
     $this->assertSession()->assertWaitOnAjaxRequest();
@@ -486,7 +486,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     $checkbox_edit_button = $this->assertSession()->elementExists('css', "[data-drupal-selector='edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-{$this->_customFields['select_list']}-operations'] a.webform-ajax-link");
     $checkbox_edit_button->click();
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->waitForField('drupal-off-canvas');
     $this->htmlOutput();
 
     $this->assertSession()->elementExists('css', ".empty.message");
