@@ -125,3 +125,7 @@ form.contact-loading,
 form.contact-loading * {
     cursor: progress !important;
 }
+
+form div.form-item.has-error ul.token-input-list {
+  border-color: #d72222;
+}
