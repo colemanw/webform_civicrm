@@ -870,6 +870,12 @@ class AdminForm implements AdminFormInterface {
         'title start end dateformatDatetime' => t('Title + Start-Date-Time + End'),
       ],
     ];
+    $this->form['participant']['show_full_events'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Show Full Events'),
+      '#default_value' => (bool) wf_crm_aval($this->data, 'reg_options:show_full_events', 1, TRUE),
+      '#parents' => ['reg_options', 'show_full_events'],
+    ];
     $this->help($this->form['participant']['title_display'], 'reg_options_title_display');
     $this->form['participant']['reg_options'] = [
       '#prefix' => '<div class="clearfix"> </div>',
@@ -925,6 +931,7 @@ class AdminForm implements AdminFormInterface {
     $this->addAjaxItem('participant', 'show_future_events', 'participants');
     $this->addAjaxItem('participant', 'show_public_events', 'participants');
     $this->addAjaxItem('participant', 'title_display', 'participants');
+    $this->addAjaxItem('participant', 'show_full_events', 'participants');
 
     for ($n = 1; $reg_type && (($n <= count($this->data['contact']) && $reg_type != 'all') || $n == 1); ++$n) {
       $this->form['participant']['participants'][$n] = [
