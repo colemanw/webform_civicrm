@@ -354,6 +354,12 @@ class Fields implements FieldsInterface {
             'expose_list' => TRUE,
             'value' => '1',
           ];
+          $fields[$key . '_is_primary'] = [
+            'name' => 'Is Primary',
+            'type' => 'select',
+            'expose_list' => TRUE,
+            'value' => '1',
+          ];
         }
       }
       $fields['website_url'] = [

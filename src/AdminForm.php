@@ -372,6 +372,10 @@ class AdminForm implements AdminFormInterface {
               (isset($field['contact_type']) && $field['contact_type'] != $c['contact'][1]['contact_type'])) {
               continue;
             }
+            // Make sure Primary field is only displayed for the 1st set.
+            if (strpos($fid, 'is_primary') !== false && $i > 1) {
+              continue;
+            }
             $fid = 'civicrm_' . $n . '_contact_' . $i . '_' . $fid;
             $fieldset[$fid] = $this->addItem($fid, $field);
           }
