@@ -540,6 +540,19 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
               $options = $this->utils->wf_crm_field_options($element, '', $this->data);
               $val = wf_crm_aval($options, $val);
             }
+            //Ensure value from webform default is loaded when the field is null in civicrm.
+            if (!empty($element['#options']) && isset($val)) {
+              if (!is_array($val) && !isset($element['#options'][$val])) {
+                $val = NULL;
+              }
+              if ((empty($val) || (is_array($val) && empty(array_filter($val)))) && !empty($this->form['#attributes']['data-form-defaults'])) {
+                $formDefaults = Json::decode($this->form['#attributes']['data-form-defaults']);
+                $key = str_replace('_', '-', $element['#form_key']);
+                if (isset($formDefaults[$key])) {
+                  $val = $formDefaults[$key];
+                }
+              }
+            }
             // Contact image & custom file fields
             if ($dt == 'File') {
               $fileInfo = $this->getFileInfo($name, $val, $ent, $n);

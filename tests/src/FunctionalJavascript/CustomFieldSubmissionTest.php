@@ -496,6 +496,58 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
   }
 
   /**
+   * Ensure webform default values are loaded when the contact
+   * in civicrm does not have a value set on it.
+   */
+  public function testCustomFieldWebformDefaults() {
+    $this->createCustomFields();
+    $createParams = [
+      'first_name' => 'Frederick',
+      'last_name' => 'Pabst',
+      'custom_' . $this->_customFields['text'] => 'Lorem Ipsum',
+    ];
+    $contactID = $this->createIndividual($createParams)['id'];
+
+    $this->drupalLogin($this->rootUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+
+    $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_cg1', 'Yes');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+
+    // Enable custom fields.
+    foreach ($this->_customFields as $name => $id) {
+      $this->getSession()->getPage()->checkField("civicrm_1_contact_1_cg1_custom_{$id}");
+      $this->assertSession()->checkboxChecked("civicrm_1_contact_1_cg1_custom_{$id}");
+    }
+    $this->saveCiviCRMSettings();
+
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+
+    $this->setDefaultValue("edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-{$this->_customFields['test_radio_2']}-operations", 3);
+    $this->setDefaultValue("edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-{$this->_customFields['color_checkboxes']}-operations", 2);
+    $this->setDefaultValue("edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-{$this->_customFields['fruits']}-operations", 'Mango, Orange');
+
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $contactID]]));
+    $this->htmlOutput();
+    $this->assertPageNoErrorMessages();
+
+    //Ensure default values are loaded.
+    $this->assertFieldValue("edit-civicrm-1-contact-1-cg1-custom-{$this->_customFields['text']}", 'Lorem Ipsum');
+
+    // This is loaded from webform default since no value is set in civi.
+    $this->assertSession()->checkboxNotChecked("Red");
+    $this->assertSession()->checkboxChecked("Green");
+
+    $this->assertSession()->checkboxChecked("Mango");
+    $this->assertSession()->checkboxChecked("Orange");
+    $this->assertSession()->checkboxNotChecked("Apple");
+  }
+
+  /**
    * Test Contact Values loaded via ajax, i.e,
    * on selecting a contact from autocomplete, select, etc.
    */
