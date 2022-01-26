@@ -1008,4 +1008,17 @@ class Utils implements UtilsInterface {
     return $params;
   }
 
+  /**
+   * Does an element support multiple values
+   *
+   * @param array $element
+   */
+  public function hasMultipleValues($element) {
+    if (!empty($element['#extra']['multiple']) ||
+      (empty($element['#civicrm_live_options']) && !empty($element['#options']) && count($element['#options']) === 1)) {
+      return TRUE;
+    }
+    return FALSE;
+  }
+
 }

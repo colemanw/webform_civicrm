@@ -265,11 +265,7 @@ class CivicrmOptions extends OptionsBase {
    * {@inheritdoc}
    */
   public function hasMultipleValues(array $element) {
-    if (!empty($element['#extra']['multiple']) ||
-      (empty($element['#civicrm_live_options']) && !empty($element['#options']) && count($element['#options']) === 1)) {
-      return TRUE;
-    }
-    return FALSE;
+    return \Drupal::service('webform_civicrm.utils')->hasMultipleValues($element);
   }
 
   /**
