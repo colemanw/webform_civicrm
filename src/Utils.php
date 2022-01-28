@@ -701,56 +701,49 @@ class Utils implements UtilsInterface {
       $propertyBag = new \Civi\Payment\PropertyBag();
       $propertyBag->mergeLegacyInputParams($params);
       $propertyBag->setContributionID($order['id']);
-      // @fixme: Class \Civi\Payment\CRM_Utils_Money not found (fixed in 5.28 via https://github.com/civicrm/civicrm-core/pull/17505
-      //   But note we still return a localized format
-      // $propertyBag->setAmount($params['total_amount']);
+      $propertyBag->setAmount($params['total_amount']);
 
-      // We need the payment params as an array to pass to PaymentProcessor.Pay API3.
-      // If https://github.com/civicrm/civicrm-core/pull/17507 was merged we wouldn't need this hack
-      //   using ReflectionClass to access the array.
-      $reflectionClass = new \ReflectionClass($propertyBag);
-      $reflectionProperty = $reflectionClass->getProperty('props');
-      $reflectionProperty->setAccessible(TRUE);
-      $payParams = $reflectionProperty->getValue($propertyBag)['default'];
+      /* @var \CRM_Core_Payment $paymentProcessor */
+      $paymentProcessor = \Civi\Payment\System::singleton()->getById($params['payment_processor_id']);
+      $payResult = $paymentProcessor->doPayment($propertyBag);
 
-      // propertyBag has 'contributionID', we need 'contribution_id'.
-      $payParams['contribution_id'] = $propertyBag->getContributionID();
-      // propertyBag has 'currency', iATS uses `currencyID` until https://github.com/iATSPayments/com.iatspayments.civicrm/pull/350 is merged
-      $payParams['currencyID'] = $propertyBag->getCurrency();
-      $payParams['amount'] = $params['total_amount'];
-      // For legacy purposes (if payment processor does not use propertyBag)
-      if (isset($payParams['isRecur'])) {
-        $payParams['is_recur'] = $payParams['isRecur'];
+      // payment_status is not yet returned by some paymentprocessors so set it if not.
+      // See https://lab.civicrm.org/dev/financial/-/issues/141
+      if (!isset($payResult['payment_status']) && isset($payResult['payment_status_id'])) {
+        $payResult['payment_status'] = \CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'contribution_status_id', $payResult['payment_status_id']);
       }
-      $payResult = reset(civicrm_api3('PaymentProcessor', 'pay', $payParams)['values']);
 
       // webform_civicrm sends out receipts using Contribution.send_confirmation API if the contribution page is has is_email_receipt = TRUE.
       // We allow this to be overridden here but default to FALSE.
       $params['is_email_receipt'] = $params['is_email_receipt'] ?? FALSE;
 
-      // Assuming the payment was taken, record it which will mark the Contribution
-      // as Completed and update related entities.
-      civicrm_api3('Payment', 'create', [
-        'contribution_id' => $order['id'],
-        'total_amount' => $payParams['amount'],
-        'payment_instrument_id' => $order['values'][$order['id']]['payment_instrument_id'],
-        // If there is a processor, provide it:
-        'payment_processor_id' => $payParams['payment_processor_id'],
-        'is_send_contribution_notification' => $params['is_email_receipt'],
-        'trxn_id' => $payResult['trxn_id'] ?? NULL,
-      ]);
+      if ($payResult['payment_status'] === 'Completed') {
+        // Assuming the payment was taken, record it which will mark the Contribution
+        // as Completed and update related entities.
+        civicrm_api3('Payment', 'create', [
+          'contribution_id' => $order['id'],
+          'total_amount' => $propertyBag->getAmount(),
+          'fee_amount' => $payResult['fee_amount'] ?? 0,
+          'payment_instrument_id' => $order['values'][$order['id']]['payment_instrument_id'],
+          // If there is a processor, provide it:
+          'payment_processor_id' => $params['payment_processor_id'],
+          'is_send_contribution_notification' => $params['is_email_receipt'],
+          'trxn_id' => $payResult['trxn_id'] ?? NULL,
+        ]);
+      }
     }
     catch (\Exception $e) {
+      // Payment failed - update the Contribution status in CiviCRM to "Failed"
+      \Civi\Api4\Contribution::update(FALSE)
+        ->addWhere('id', '=', $order['id'])
+        ->addValue('contribution_status_id:name', 'Failed')
+        ->execute();
       return ['error_message' => $e->getMessage()];
     }
 
-    $contribution = civicrm_api3('Contribution', 'getsingle', ['id' => $order['id']]);
-    // Transact API works a bit differently because we are actually adding the payment and updating the contribution status.
-    // A "normal" transaction (eg. using doPayment() or just PaymentProcessor.pay) would not update the contribution and would
-    // rely on the caller to do so. The caller relies on the `payment_status_id` (Pending or Completed) to know whether the payment
-    // was successful or not.
-    $contribution['payment_status_id'] = $contribution['contribution_status_id'];
-    return $contribution;
+    // Contribution.transact is expected to return an API3 result containing the contribution
+    //   eg. [ 'id' => X, 'values' => [ X => [ contribution details ] ]
+    return civicrm_api3('Contribution', 'get', ['id' => $order['id']]);
   }
 
   /**
