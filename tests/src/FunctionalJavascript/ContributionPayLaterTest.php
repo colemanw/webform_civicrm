@@ -270,7 +270,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
 
     $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contribution-1-contribution-total-amount-operations"] a.webform-ajax-link');
     $checkbox_edit_button->click();
-    $this->assertSession()->waitForElementVisible('css', '[data-drupal-selector="edit-change-type"]', 3000);
+    $this->assertSession()->waitForField('drupal-off-canvas');
     $this->htmlOutput();
 
     if ($changeTypeToOption) {
@@ -291,7 +291,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     }
 
     $this->getSession()->getPage()->pressButton('Save');
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->waitForText('has been updated.');
   }
 
 }
