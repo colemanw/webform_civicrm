@@ -2085,9 +2085,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       $paymentProcessor->doPayment($params);
     }
     catch (\Civi\Payment\Exception\PaymentProcessorException $e) {
-        \Drupal::messenger()->addError(ts('Payment approval failed with message: %error ', [
-            '%error' =>  $e->getMessage(),
-        ]));
+      \Drupal::messenger()->addError(ts('Payment approval failed with message: %error ', [
+        '%error' =>  $e->getMessage(),
+      ]));
       \CRM_Utils_System::redirect($this->getIpnRedirectUrl('cancel'));
     }
 
