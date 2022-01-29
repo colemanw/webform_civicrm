@@ -1769,11 +1769,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $cid = $this->findDuplicateContact($contact);
     }
     $address = [
-      'street_address' => $this->billing_params['street_address'],
-      'city' => $this->billing_params['city'],
-      'country_id' => $this->billing_params['country_id'],
+      'street_address' => $this->billing_params['street_address'] ?? '',
+      'city' => $this->billing_params['city'] ?? '',
+      'country_id' => $this->billing_params['country_id'] ?? '',
       'state_province_id' => wf_crm_aval($this->billing_params, 'state_province_id'),
-      'postal_code' => $this->billing_params['postal_code'],
+      'postal_code' => $this->billing_params['postal_code'] ?? '',
       'location_type_id' => 'Billing',
     ];
     $email = [
