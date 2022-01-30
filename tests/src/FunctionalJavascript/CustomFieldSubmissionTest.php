@@ -535,7 +535,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
     $this->assertPageNoErrorMessages();
 
-    //Ensure default values are loaded.
+    // Ensure default values are loaded.
     $this->assertFieldValue("edit-civicrm-1-contact-1-cg1-custom-{$this->_customFields['text']}", 'Lorem Ipsum');
 
     // This is loaded from webform default since no value is set in civi.
