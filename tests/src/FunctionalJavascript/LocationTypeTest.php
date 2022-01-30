@@ -70,4 +70,5 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
     $this->assertEquals('Newark', $address['values'][1]['city']);
     $this->assertEquals(0, $address['values'][1]['is_primary']);
   }
+
 }
