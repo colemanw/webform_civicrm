@@ -252,7 +252,7 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
    * Test Tokens in Email.
    */
   public function testTokensInEmail() {
-    //Create 2 meeting activities for the contact.
+    // Create 2 meeting activities for the contact.
     $actID1 = $this->utils->wf_civicrm_api('Activity', 'create', [
       'source_contact_id' => $this->rootUserCid,
       'activity_type_id' => "Meeting",
