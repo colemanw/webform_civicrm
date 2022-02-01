@@ -724,35 +724,43 @@ class Utils implements UtilsInterface {
         $payParams['is_recur'] = $payParams['isRecur'];
       }
       $paymentProcessor = \Civi\Payment\System::singleton()->getById($params['payment_processor_id']);
-      $payResult = $paymentProcessor->doPayment($propertyBag);
+      // We want to switch the input params here from $payParams to $propertyBag but that causes test to fail
+      $payResult = $paymentProcessor->doPayment($payParams);
+
+      if (!isset($payResult['payment_status']) && isset($payResult['payment_status_id'])) {
+        $payResult['payment_status'] = \CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'contribution_status_id', $payResult['payment_status_id']);
+      }
 
       // webform_civicrm sends out receipts using Contribution.send_confirmation API if the contribution page is has is_email_receipt = TRUE.
       // We allow this to be overridden here but default to FALSE.
       $params['is_email_receipt'] = $params['is_email_receipt'] ?? FALSE;
 
-      // Assuming the payment was taken, record it which will mark the Contribution
-      // as Completed and update related entities.
-      civicrm_api3('Payment', 'create', [
-        'contribution_id' => $order['id'],
-        'total_amount' => $payParams['amount'],
-        'payment_instrument_id' => $order['values'][$order['id']]['payment_instrument_id'],
-        // If there is a processor, provide it:
-        'payment_processor_id' => $payParams['payment_processor_id'],
-        'is_send_contribution_notification' => $params['is_email_receipt'],
-        'trxn_id' => $payResult['trxn_id'] ?? NULL,
-      ]);
+      if ($payResult['payment_status'] === 'Completed') {
+        // Assuming the payment was taken, record it which will mark the Contribution
+        // as Completed and update related entities.
+        civicrm_api3('Payment', 'create', [
+          'contribution_id' => $order['id'],
+          'total_amount' => $payParams['amount'],
+          'payment_instrument_id' => $order['values'][$order['id']]['payment_instrument_id'],
+          // If there is a processor, provide it:
+          'payment_processor_id' => $payParams['payment_processor_id'],
+          'is_send_contribution_notification' => $params['is_email_receipt'],
+          'trxn_id' => $payResult['trxn_id'] ?? NULL,
+        ]);
+      }
     }
     catch (\Exception $e) {
+      // Payment failed - update the Contribution status in CiviCRM to "Failed"
+      \Civi\Api4\Contribution::update(FALSE)
+        ->addWhere('id', '=', $order['id'])
+        ->addValue('contribution_status_id:name', 'Failed')
+        ->execute();
       return ['error_message' => $e->getMessage()];
     }
 
-    $contribution = civicrm_api3('Contribution', 'getsingle', ['id' => $order['id']]);
-    // Transact API works a bit differently because we are actually adding the payment and updating the contribution status.
-    // A "normal" transaction (eg. using doPayment() or just PaymentProcessor.pay) would not update the contribution and would
-    // rely on the caller to do so. The caller relies on the `payment_status_id` (Pending or Completed) to know whether the payment
-    // was successful or not.
-    $contribution['payment_status_id'] = $contribution['contribution_status_id'];
-    return $contribution;
+    // Contribution.transact is expected to return an API3 result containing the contribution
+    //   eg. [ 'id' => X, 'values' => [ X => [ contribution details ] ]
+    return civicrm_api3('Contribution', 'get', ['id' => $order['id']]);
   }
 
   /**
