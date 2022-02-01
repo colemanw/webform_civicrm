@@ -701,6 +701,7 @@ class Utils implements UtilsInterface {
       $propertyBag = new \Civi\Payment\PropertyBag();
       $propertyBag->mergeLegacyInputParams($params);
       $propertyBag->setContributionID($order['id']);
+      
       // @fixme: Class \Civi\Payment\CRM_Utils_Money not found (fixed in 5.28 via https://github.com/civicrm/civicrm-core/pull/17505
       //   But note we still return a localized format
       // $propertyBag->setAmount($params['total_amount']);
