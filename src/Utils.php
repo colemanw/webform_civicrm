@@ -724,7 +724,7 @@ class Utils implements UtilsInterface {
         $payParams['is_recur'] = $payParams['isRecur'];
       }
       $paymentProcessor = \Civi\Payment\System::singleton()->getById($params['payment_processor_id']);
-      $payResult = $paymentProcessor->doPayment($payParams);
+      $payResult = $paymentProcessor->doPayment($propertyBag);
 
       // webform_civicrm sends out receipts using Contribution.send_confirmation API if the contribution page is has is_email_receipt = TRUE.
       // We allow this to be overridden here but default to FALSE.
