@@ -707,6 +707,26 @@ class Utils implements UtilsInterface {
       $paymentProcessor = \Civi\Payment\System::singleton()->getById($params['payment_processor_id']);
       $payResult = $paymentProcessor->doPayment($propertyBag);
 
+      if ($payResult instanceof \Civi\Payment\PropertyBag) {
+        // doPayment should NOT return a propertyBag but some processors currently return the input $params.
+        // If $params was a propertyBag that means you'll get a PropertyBag here!
+        // If https://github.com/civicrm/civicrm-core/pull/17507 was merged we wouldn't need this hack
+        //   using ReflectionClass to access the array.
+        if ($payResult->has('payment_status')) {
+          $newPayResult['payment_status'] = $payResult->getCustomProperty('payment_status');
+        }
+        if ($payResult->has('payment_status_id')) {
+          $newPayResult['payment_status_id'] = $payResult->getCustomProperty('payment_status_id');
+        }
+        if ($payResult->has('trxn_id')) {
+          $newPayResult['trxn_id'] = $payResult->getCustomProperty('trxn_id');
+        }
+        if ($payResult->has('fee_amount')) {
+          $newPayResult['fee_amount'] = $payResult->getCustomProperty('fee_amount');
+        }
+        $payResult = $newPayResult;
+      }
+
       // payment_status is not yet returned by some paymentprocessors so set it if not.
       // See https://lab.civicrm.org/dev/financial/-/issues/141
       if (!isset($payResult['payment_status']) && isset($payResult['payment_status_id'])) {
