@@ -257,7 +257,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   protected function assertPageNoErrorMessages() {
     $error_messages = $this->getSession()->getPage()->findAll('css', '.messages.messages--error');
     $this->assertCount(0, $error_messages, implode(', ', array_map(static function(NodeElement $el) {
-      return $el->getValue();
+      return $el->getText();
     }, $error_messages)));
   }
 
