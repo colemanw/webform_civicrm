@@ -24,7 +24,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
       'key' => "com.iatspayments.civicrm",
     ]);
 
-    // Legacy
+    // Legacy CC
     $params = [
       'domain_id' => 1,
       'name' => 'iATS Credit Card - TE4188',
@@ -47,6 +47,30 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
     $this->payment_processor_legacy = current($result['values']);
+
+    // Legacy ACH/EFT
+    $params = [
+      'domain_id' => 1,
+      'name' => 'iATS ACHEFT - TE4188',
+      'payment_processor_type_id' => 'iATS Payments ACH/EFT',
+      'financial_account_id' => 12,
+      'is_test' => FALSE,
+      'is_active' => 1,
+      'user_name' => 'TE4188',
+      'password' => 'abcde01',
+      'url_site' => 'https://www.iatspayments.com/NetGate/ProcessLinkv2.asmx?WSDL',
+      'url_recur' => 'https://www.iatspayments.com/NetGate/ProcessLinkv2.asmx?WSDL',
+      'class_name' => 'Payment_iATSServiceACHEFT',
+      'is_recur' => 1,
+      'sequential' => 1,
+      'payment_type' => 1,
+      'payment_instrument_id' => 'Debit Card',
+    ];
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $result = $utils->wf_civicrm_api('payment_processor', 'create', $params);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+    $this->payment_processor_legacy_acheft = current($result['values']);
 
     // 1st Pay
     $params = [
@@ -92,7 +116,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
     $this->getSession()->getPage()->selectFieldOption('Financial Type', 'Donation');
     // throw new \Exception(var_export($this->getOptions('Payment Processor'), TRUE));
-    $this->assertCount(4, $this->getOptions('Payment Processor'));
+    $this->assertCount(5, $this->getOptions('Payment Processor'));
     $this->getSession()->getPage()->selectFieldOption('Payment Processor',  $this->payment_processor_faps['id']);
     $this->enableBillingSection();
 
@@ -202,7 +226,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
     $this->getSession()->getPage()->selectFieldOption('Financial Type', 1);
 
-    $this->assertCount(4, $this->getOptions('Payment Processor'));
+    $this->assertCount(5, $this->getOptions('Payment Processor'));
     $this->getSession()->getPage()->selectFieldOption('Payment Processor',  $this->payment_processor_legacy['id']);
 
     $this->enableBillingSection();
@@ -318,6 +342,80 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->assertEquals($contribution_total_amount, $sum_line_total + $sum_tax_amount);
   }
 
+  public function testSubmitACHEFTContribution() {
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    // The label has a <div> in it which can cause weird failures here.
+    $this->assertSession()->waitForText('Enable CiviCRM Processing');
+    $this->assertSession()->waitForField('nid');
+    $this->getSession()->getPage()->checkField('nid');
+    $this->getSession()->getPage()->clickLink('Contribution');
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->pageTextContains('You must enable an email field for Contact 1 in order to process transactions.');
+    $this->getSession()->getPage()->pressButton('Enable It');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->checkField('Contribution Amount');
+    $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
+    $this->getSession()->getPage()->selectFieldOption('Financial Type', 1);
+
+    $this->assertCount(5, $this->getOptions('Payment Processor'));
+    $this->getSession()->getPage()->selectFieldOption('Payment Processor',  $this->payment_processor_legacy_acheft['id']);
+
+    $this->enableBillingSection();
+
+    $this->getSession()->getPage()->pressButton('Save Settings');
+    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+    $this->getSession()->getPage()->fillField('First Name', 'Frederick');
+    $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
+    $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
+
+    $this->getSession()->getPage()->pressButton('Next >');
+
+    $this->getSession()->getPage()->fillField('Contribution Amount', '99.00');
+
+    $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
+    $this->htmlOutput();
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '99.00');
+
+    // Wait for the ACHEFT form to load in.
+    $this->assertSession()->waitForField('account_holder');
+    $this->getSession()->getPage()->fillField('Account Holder', 'CiviCRM user');
+    $this->getSession()->getPage()->fillField('Bank Account Number', '12345678');
+    $this->getSession()->getPage()->fillField('Bank Identification Number', '111111111');
+    $this->getSession()->getPage()->fillField('Bank Name', 'Bank of CiviCRM');
+    $this->getSession()->getPage()->selectFieldOption('bank_account_type', 'Savings');
+    $billingValues = [
+      'first_name' => 'Frederick',
+      'last_name' => 'Pabst',
+      'street_address' => '123 Milwaukee Ave',
+      'city' => 'Milwaukee',
+      'country' => '1228',
+      'state_province' => '1048',
+      'postal_code' => '53177',
+    ];
+    $this->fillBillingFields($billingValues);
+    $this->getSession()->getPage()->pressButton('Submit');
+
+    $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
+      'sequential' => 1,
+    ]);
+    $this->assertEquals(1, $api_result['count']);
+    $contribution = reset($api_result['values']);
+    $this->assertNotEmpty($contribution['trxn_id']);
+    $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
+    $this->assertEquals('Donation', $contribution['financial_type']);
+    $this->assertEquals('99.00', $contribution['total_amount']);
+    $this->assertEquals('Pending', $contribution['contribution_status']);
+    $this->assertEquals('USD', $contribution['currency']);
+
+  }
+
   public function testSubmitRecurringContribution() {
 
     $this->drupalLogin($this->adminUser);
@@ -338,7 +436,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
     $this->getSession()->getPage()->selectFieldOption('Financial Type', 1);
 
-    $this->assertCount(4, $this->getOptions('Payment Processor'));
+    $this->assertCount(5, $this->getOptions('Payment Processor'));
     $this->getSession()->getPage()->selectFieldOption('Payment Processor',  $this->payment_processor_legacy['id']);
 
     $this->enableBillingSection();
