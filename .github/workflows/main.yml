@@ -12,8 +12,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - drupal: '9.1.*'
+          - drupal: '9.3.*'
             civicrm: '5.35.*'
+          - drupal: '9.3.*'
+            civicrm: '5.45.*'
           - drupal: '9.3.*'
             civicrm: '5.46.*'
           - drupal: '9.3.*'
@@ -73,6 +75,8 @@ jobs:
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
+          COMPOSER_MEMORY_LIMIT=-1 composer require pear/pear_exception:"1.0.2 as 1.0.1" --no-updates
+          COMPOSER_MEMORY_LIMIT=-1 composer require --no-update phpoffice/phpword:'0.18.0 as 0.15.0' --no-update
           COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} --prefer-dist
       # For some reason drupal/webform:5.x installs even if it is drupal:^9.0
       - name: Ensure Webform ^6.0
