@@ -719,16 +719,16 @@ class Utils implements UtilsInterface {
       ////$payParams['currencyID'] = $propertyBag->getCurrency();
       $params['amount'] = $params['total_amount'];
       // For legacy purposes (if payment processor does not use propertyBag)
-      if (isset($payParams['isRecur'])) {
-        $payParams['is_recur'] = $payParams['isRecur'];
-      }
+      ////if (isset($payParams['isRecur'])) {
+      ////  $payParams['is_recur'] = $payParams['isRecur'];
+      ////}
       $params['contribution_id'] = $order['id'];
       ////throw new \Exception(var_export($params, TRUE));
       $payParams = $params;
 
-      $params['payment_processor_id'] = $params['payment_processor'];
-      $params['contribution_id'] = $order['id'];
-      $params['currencyID'] = $params['currency'];
+      ////$params['payment_processor_id'] = $params['payment_processor'];
+      ////$params['contribution_id'] = $order['id'];
+      ////$params['currencyID'] = $params['currency'];
       $payResult = reset(civicrm_api3('PaymentProcessor', 'pay', $payParams)['values']);
 
       // webform_civicrm sends out receipts using Contribution.send_confirmation API if the contribution page is has is_email_receipt = TRUE.
