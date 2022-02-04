@@ -319,13 +319,13 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->htmlOutput();
     if ($type) {
       $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-change-type"]')->click();
-      $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector='edit-elements-{$type}-operation']", 3000)->click();
-      $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector='edit-cancel']", 3000);
+      $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector='edit-elements-{$type}-operation']", 5000)->click();
+      $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector='edit-cancel']", 5000);
     }
 
     if ($enableStatic) {
       $this->getSession()->getPage()->selectFieldOption("properties[civicrm_live_options]", 0);
-      $this->assertSession()->waitForField('properties[options][options][civicrm_option_1][enabled]', 3000);
+      $this->assertSession()->waitForField('properties[options][options][civicrm_option_1][enabled]', 5000);
     }
     if ($default) {
       $this->getSession()->getPage()->selectFieldOption("properties[options][default]", $default);
