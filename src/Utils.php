@@ -696,32 +696,9 @@ class Utils implements UtilsInterface {
 
     $order = civicrm_api3('Order', 'create', $params);
     try {
-      // Use the Payment Processor to attempt to take the actual payment. You may
-      // pass in other params here, too.
-      $propertyBag = new \Civi\Payment\PropertyBag();
-      $propertyBag->mergeLegacyInputParams($params);
-      $propertyBag->setContributionID($order['id']);
-      // @fixme: Class \Civi\Payment\CRM_Utils_Money not found (fixed in 5.28 via https://github.com/civicrm/civicrm-core/pull/17505
-      //   But note we still return a localized format
-      // $propertyBag->setAmount($params['total_amount']);
-
-      // We need the payment params as an array to pass to PaymentProcessor.Pay API3.
-      // If https://github.com/civicrm/civicrm-core/pull/17507 was merged we wouldn't need this hack
-      //   using ReflectionClass to access the array.
-      $reflectionClass = new \ReflectionClass($propertyBag);
-      $reflectionProperty = $reflectionClass->getProperty('props');
-      $reflectionProperty->setAccessible(TRUE);
-      $payParams = $reflectionProperty->getValue($propertyBag)['default'];
-
-      // propertyBag has 'contributionID', we need 'contribution_id'.
-      $payParams['contribution_id'] = $propertyBag->getContributionID();
-      // propertyBag has 'currency', iATS uses `currencyID` until https://github.com/iATSPayments/com.iatspayments.civicrm/pull/350 is merged
-      $payParams['currencyID'] = $propertyBag->getCurrency();
-      $payParams['amount'] = $params['total_amount'];
-      // For legacy purposes (if payment processor does not use propertyBag)
-      if (isset($payParams['isRecur'])) {
-        $payParams['is_recur'] = $payParams['isRecur'];
-      }
+      $params['amount'] = $params['total_amount'];
+      $params['contribution_id'] = $order['id'];
+      $payParams = $params;
       $payResult = reset(civicrm_api3('PaymentProcessor', 'pay', $payParams)['values']);
 
       // webform_civicrm sends out receipts using Contribution.send_confirmation API if the contribution page is has is_email_receipt = TRUE.
@@ -730,6 +707,7 @@ class Utils implements UtilsInterface {
 
       // Assuming the payment was taken, record it which will mark the Contribution
       // as Completed and update related entities.
+      // ToDo: check to see if payment actually completed first
       civicrm_api3('Payment', 'create', [
         'contribution_id' => $order['id'],
         'total_amount' => $payParams['amount'],

@@ -89,7 +89,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     ]));
     $this->enableCivicrmOnWebform();
 
-    //Enable Address fields.
+    // Enable Address fields.
     $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_address', 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->checkField('Country');
@@ -264,7 +264,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->assertPageNoErrorMessages();
 
     if ($type == 'webform-radios-other' && !$changeTypeToOption) {
-      $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contribution-1-contribution-total-amount-operations', FALSE, FALSE, NULL, $type);
+      $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contribution-1-contribution-total-amount-operations', FALSE, FALSE, NULL, 'webform-radios-other');
       return;
     }
 
