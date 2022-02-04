@@ -319,6 +319,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->htmlOutput();
     if ($type) {
       $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-change-type"]')->click();
+      $this->assertSession()->assertWaitOnAjaxRequest();
       $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector='edit-elements-{$type}-operation']", 5000)->click();
       $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector='edit-cancel']", 5000);
     }

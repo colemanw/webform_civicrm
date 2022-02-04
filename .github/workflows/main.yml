@@ -12,12 +12,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - drupal: '9.1.*'
-            civicrm: '5.35.*'
           - drupal: '9.2.*'
-            civicrm: '5.39.*'
+            civicrm: '5.35.*'
           - drupal: '9.3.*'
-            civicrm: '5.46.x-dev'
+            civicrm: '5.46.*'
           - drupal: '9.3.*'
             civicrm: 'dev-master'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
