@@ -75,10 +75,10 @@ jobs:
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
+          #these next two lines are necessary for D9.3 + CiviCRM 5.35.*
           COMPOSER_MEMORY_LIMIT=-1 composer require pear/pear_exception:"1.0.2 as 1.0.1" --no-update
           COMPOSER_MEMORY_LIMIT=-1 composer require --no-update phpoffice/phpword:'0.18.0 as 0.15.0' --no-update
           COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} --prefer-dist -W
-      # For some reason drupal/webform:5.x installs even if it is drupal:^9.0
       - name: Ensure Webform ^6.0
         run: |
           cd ~/drupal
