@@ -1994,15 +1994,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         'id' => $resultRecur['id'],
         'currency' => $contributionParams['currency'],
         'next_sched_contribution_date' => date("Y-m-d H:i:s", strtotime('+' . $contributionRecurParams['frequency_interval'] . ' ' . $contributionRecurParams['frequency_unit'])),
-       ];
-      if ($APIAction == 'transact') {
-        // Now that we include Transact within webform_civicrm module it comes back flattened:
-        $recurParams['invoice_id'] = $result['invoice_id'];
-        $recurParams['payment_instrument_id'] = $result['payment_instrument_id'];
-      } else {
-        $recurParams['invoice_id'] = $result['values'][$result['id']]['invoice_id'];
-        $recurParams['payment_instrument_id'] = $result['values'][$result['id']]['payment_instrument_id'];
-      }
+      ];
+      $recurParams['invoice_id'] = $result['values'][$result['id']]['invoice_id'];
+      $recurParams['payment_instrument_id'] = $result['values'][$result['id']]['payment_instrument_id'];
       $this->utils->wf_civicrm_api('ContributionRecur', 'create', $recurParams);
     }
     return $result;

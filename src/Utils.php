@@ -744,13 +744,9 @@ class Utils implements UtilsInterface {
       return ['error_message' => $e->getMessage()];
     }
 
-    $contribution = civicrm_api3('Contribution', 'getsingle', ['id' => $order['id']]);
-    // Transact API works a bit differently because we are actually adding the payment and updating the contribution status.
-    // A "normal" transaction (eg. using doPayment() or just PaymentProcessor.pay) would not update the contribution and would
-    // rely on the caller to do so. The caller relies on the `payment_status_id` (Pending or Completed) to know whether the payment
-    // was successful or not.
-    $contribution['payment_status_id'] = $contribution['contribution_status_id'];
-    return $contribution;
+    // Contribution.transact is expected to return an API3 result containing the contribution
+    //   eg. [ 'id' => X, 'values' => [ X => [ contribution details ] ]    return $contribution;
+    return civicrm_api3('Contribution', 'get', ['id' => $order['id']]);
   }
 
   /**
