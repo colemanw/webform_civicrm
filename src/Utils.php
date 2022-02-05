@@ -449,7 +449,7 @@ class Utils implements UtilsInterface {
         $exp = explode('_', $key, 5);
         $customGroupFieldsetKey = '';
         if (count($exp) == 5) {
-          list($lobo, $i, $ent, $n, $id) = $exp;
+          [$lobo, $i, $ent, $n, $id] = $exp;
           if ($lobo != 'civicrm') {
             continue;
           }
@@ -490,7 +490,7 @@ class Utils implements UtilsInterface {
       return $fields[$key];
     }
     if ($pieces = $this->wf_crm_explode_key($key)) {
-      list( , , , , $table, $name) = $pieces;
+      [ , , , , $table, $name] = $pieces;
       if (isset($fields[$table . '_' . $name])) {
         return $fields[$table . '_' . $name];
       }
@@ -590,7 +590,7 @@ class Utils implements UtilsInterface {
     if ($str) {
       foreach (explode("\n", trim($str)) as $row) {
         if ($row && $row[0] !== '<' && strpos($row, '|')) {
-          list($k, $v) = explode('|', $row);
+          [$k, $v] = explode('|', $row);
           $ret[trim($k)] = trim($v);
         }
       }
@@ -708,17 +708,30 @@ class Utils implements UtilsInterface {
       // Assuming the payment was taken, record it which will mark the Contribution
       // as Completed and update related entities.
       // ToDo: check to see if payment actually completed first
-      civicrm_api3('Payment', 'create', [
-        'contribution_id' => $order['id'],
-        'total_amount' => $payParams['amount'],
-        'payment_instrument_id' => $order['values'][$order['id']]['payment_instrument_id'],
-        // If there is a processor, provide it:
-        'payment_processor_id' => $payParams['payment_processor_id'],
-        'is_send_contribution_notification' => $params['is_email_receipt'],
-        'trxn_id' => $payResult['trxn_id'] ?? NULL,
-      ]);
-    }
-    catch (\Exception $e) {
+
+      // throw new \Exception(var_export($payResult, TRUE));
+
+      // payment_status_id = 1 -> payment completed;
+      // payment_status_id = 2 -> payment NOT completed;
+      if ($payResult['payment_status_id'] == '1') {
+        civicrm_api3('Payment', 'create', [
+          'contribution_id' => $order['id'],
+          'total_amount' => $payParams['amount'],
+          'payment_instrument_id' => $order['values'][$order['id']]['payment_instrument_id'],
+          'payment_processor_id' => $payParams['payment_processor_id'],
+          'is_send_contribution_notification' => $params['is_email_receipt'],
+          'trxn_id' => $payResult['trxn_id'] ?? NULL,
+        ]);
+      } else {
+        civicrm_api3('Contribution', 'create', [
+          'id' => $order['id'],
+          'total_amount' => $payParams['amount'],
+          'payment_instrument_id' => $order['values'][$order['id']]['payment_instrument_id'],
+          'payment_processor_id' => $payParams['payment_processor_id'],
+          'trxn_id' => $payResult['trxn_id'] ?? NULL,
+          ]);
+      }
+    } catch (\Exception $e) {
       return ['error_message' => $e->getMessage()];
     }
 
