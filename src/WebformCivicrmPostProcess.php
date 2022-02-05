@@ -110,7 +110,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     foreach ($errors as $key => $error) {
       $pieces = $this->utils->wf_crm_explode_key(substr($key, strrpos($key, '][') + 2));
       if ($pieces) {
-        list( , $c, $ent, $n, $table, $name) = $pieces;
+        [ , $c, $ent, $n, $table, $name] = $pieces;
         if ($this->isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name)) {
           $this->unsetError($key);
         }
@@ -469,7 +469,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       // @todo this duplicates a lot in \wf_crm_webform_preprocess::populateEvents
       foreach (wf_crm_aval($par, 'participant', []) as $n => $p) {
         foreach (array_filter(wf_crm_aval($p, 'event_id', [])) as $id_and_type) {
-          list($eid) = explode('-', $id_and_type);
+          [$eid] = explode('-', $id_and_type);
           if (is_numeric($eid)) {
             $this->events[$eid]['ended'] = TRUE;
             $this->events[$eid]['title'] = t('this event');
@@ -581,7 +581,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   private function getExistingContactIds() {
     foreach ($this->enabled as $field_key => $fid) {
       if (substr($field_key, -8) === 'existing') {
-        list(, $c, ) = explode('_', $field_key, 3);
+        [, $c, ] = explode('_', $field_key, 3);
         $cid = wf_crm_aval($this->submissionValue($fid), 0);
         $this->ent['contact'][$c]['id'] = $this->verifyExistingContact($cid, $field_key);
         if ($this->ent['contact'][$c]['id']) {
@@ -712,7 +712,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $fetch = $multi = [];
     foreach ($this->all_fields as $fid => $field) {
       if (!empty($field['extra']['multiple']) && substr($fid, 0, 7) == 'contact') {
-        list(, $name) = explode('_', $fid, 2);
+        [, $name] = explode('_', $fid, 2);
         if ($name != 'privacy' && isset($params[$name])) {
           $fetch["return.$name"] = 1;
           $multi[] = $name;
@@ -885,7 +885,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   private function saveGroupsAndTags($contact, $cid, $c) {
     // Process groups & tags
     foreach ($this->all_fields as $fid => $field) {
-      list($set, $type) = explode('_', $fid, 2);
+      [$set, $type] = explode('_', $fid, 2);
       if ($set == 'other') {
         $field_name = 'civicrm_' . $c . '_contact_1_' . $fid;
         if (!empty($contact['other'][1][$type]) || isset($this->enabled[$field_name])) {
@@ -1071,12 +1071,12 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    */
   private function processRelationship($params, $cid1, $cid2) {
     if (!empty($params['relationship_type_id']) && $cid2 && $cid1 != $cid2) {
-      list($type, $side) = explode('_', $params['relationship_type_id']);
+      [$type, $side] = explode('_', $params['relationship_type_id']);
       $existing = $this->getRelationship([$params['relationship_type_id']], $cid1, $cid2);
       $perm = wf_crm_aval($params, 'relationship_permission');
       // Swap contacts if this is an inverse relationship
       if ($side == 'b' || ($existing && $existing['contact_id_a'] != $cid1)) {
-        list($cid1, $cid2) = [$cid2, $cid1];
+        [$cid1, $cid2] = [$cid2, $cid1];
         if ($perm == 1 || $perm == 2) {
           $perm = $perm == 1 ? 2 : 1;
         }
@@ -1123,7 +1123,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         if (empty($this->data['reg_options']['disable_unregister'])) {
           if (empty($params['status_id'])) {
             foreach ($this->getExposedOptions($fid) as $eid => $title) {
-              list($eid) = explode('-', $eid);
+              [$eid] = explode('-', $eid);
               if (isset($existing[$eid])) {
                 $remove[$eid] = $title;
               }
@@ -1140,7 +1140,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           $this->events = (array) $params['event_id'];
           foreach ($this->events as $i => $id_and_type) {
             if (!empty($id_and_type)) {
-              list($eid) = explode('-', $id_and_type);
+              [$eid] = explode('-', $id_and_type);
               $params['event_id'] = $eid;
               unset($remove[$eid], $params['registered_by_id'], $params['id'], $params['source']);
               // Is existing participant?
@@ -1566,7 +1566,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    */
   public function handleEntityTags($entityType, $entityId, $n, $params) {
     foreach ($this->all_fields as $fid => $field) {
-      list($set, $type) = explode('_', $fid, 2);
+      [$set, $type] = explode('_', $fid, 2);
       if ($set == $entityType && isset($field['table']) && $field['table'] == 'tag') {
         $field_name = 'civicrm_' . $n . '_' . $entityType. '_1_' . $fid;
         if ((isset($params['tag']) || isset($this->enabled[$field_name])) && isset($this->data[$entityType][$n])) {
@@ -1958,11 +1958,11 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       'amount' => $contributionRecurAmount,
       'contribution_status_id' => 'In Progress',
       'currency' => $contributionParams['currency'],
-      'payment_processor_id' =>  $contributionParams['payment_processor_id'],
-      'financial_type_id' =>  $contributionParams['financial_type_id'],
+      'payment_processor_id' => $contributionParams['payment_processor_id'],
+      'financial_type_id' => $contributionParams['financial_type_id'],
     ];
 
-    if(empty($contributionParams['payment_processor_id'])) {
+    if (empty($contributionParams['payment_processor_id'])) {
       $contributionRecurParams['payment_processor_id'] = 'null';
     }
 
@@ -2333,7 +2333,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $attachments = $new ? [] : $this->getAttachments($ent, $id);
     foreach ((array) wf_crm_aval($this->data[$ent], "$n:{$ent}upload:1") as $num => $file_id) {
       if ($file_id) {
-        list(, $i) = explode('_', $num);
+        [, $i] = explode('_', $num);
         $dao = new \CRM_Core_DAO_EntityFile();
         if (!empty($attachments[$i])) {
           $dao->id = $attachments[$i]['id'];
@@ -2411,7 +2411,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       $customValue = NULL;
       // If value is null then it was hidden by a webform conditional rule - skip it
       if ($val !== NULL && $val !== [NULL]) {
-        list( , $c, $ent, $n, $table, $name) = explode('_', $field_key, 6);
+        [ , $c, $ent, $n, $table, $name] = explode('_', $field_key, 6);
         // The following are not strictly CiviCRM fields, so ignore
         if (in_array($name, ['existing', 'fieldset', 'createmode'])) {
           continue;

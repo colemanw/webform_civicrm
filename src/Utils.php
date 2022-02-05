@@ -707,10 +707,6 @@ class Utils implements UtilsInterface {
 
       // Assuming the payment was taken, record it which will mark the Contribution
       // as Completed and update related entities.
-      // ToDo: check to see if payment actually completed first
-
-      // throw new \Exception(var_export($payResult, TRUE));
-
       // payment_status_id = 1 -> payment completed;
       // payment_status_id = 2 -> payment NOT completed;
       if ($payResult['payment_status_id'] == '1') {
