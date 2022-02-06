@@ -870,6 +870,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
             if ($location == 'email' && $params['location_type_id'] == $is_primary_email_location_type) {
               $params['is_primary'] = 1;
             }
+            if (isset($this->settings["civicrm_{$c}_contact_1_{$location}_is_primary"]) && $this->settings["civicrm_{$c}_contact_1_{$location}_is_primary"] == 0) {
+              unset($params['is_primary']);
+            }
           }
           $this->utils->wf_civicrm_api($location, 'create', $params);
         }
