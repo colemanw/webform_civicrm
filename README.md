@@ -16,7 +16,7 @@ Documentation
 -------------
 
 Further instructions can be found at:
-https://docs.civicrm.org/webform-civicrm/en/latest/
+https://docs.civicrm.org/webform-civicrm/en/latest
 
 Issues
 ------
