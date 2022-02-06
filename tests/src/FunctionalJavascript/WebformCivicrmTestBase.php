@@ -530,7 +530,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->assertSession()->waitForElementVisible('xpath', '//li[contains(@class, "token-input-dropdown")][1]');
     // $this->createScreenshot($this->htmlOutputDirectory . '/autocomplete.png');
 
-    $page->find('xpath', '//li[contains(@class, "token-input-dropdown")]')->click();
+    $page->find('xpath', '//li[contains(@class, "token-input-dropdown")][1]')->click();
     $this->assertSession()->assertWaitOnAjaxRequest();
   }
 
