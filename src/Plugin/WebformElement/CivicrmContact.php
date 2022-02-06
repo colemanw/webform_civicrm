@@ -583,10 +583,15 @@ class CivicrmContact extends WebformElementBase {
   /**
    * {@inheritdoc}
    */
-  protected function formatHtmlItem(array $element, WebformSubmissionInterface $webform_submission, array $options = []) {
-    $value = parent::formatHtmlItem($element, $webform_submission, $options);
+  protected function format($type, array &$element, WebformSubmissionInterface $webform_submission, array $options = []) {
+    $value = parent::format($type, $element, $webform_submission, $options);
     $format = $this->getItemFormat($element);
-    $cid = $value['#plain_text'] ?? NULL;
+    if ($type === 'Text') {
+      $cid = $value;
+    }
+    else {
+      $cid = $value['#plain_text'] ?? NULL;
+    }
 
     if ($format === 'raw' || empty($cid) || !is_numeric($cid)) {
       return $value;
@@ -594,6 +599,9 @@ class CivicrmContact extends WebformElementBase {
     $utils = \Drupal::service('webform_civicrm.utils');
     $contact = $utils->wf_crm_apivalues('contact', 'get', ['id' => $cid], 'display_name');
     if (!empty($contact[$cid])) {
+      if ($type === 'Text') {
+        return $contact[$cid];
+      }
       if (empty($options['email']) && \Drupal::currentUser()->hasPermission('access CiviCRM')) {
         unset($value['#plain_text']);
         $cidURL = Url::fromUri('internal:/civicrm/contact/view', ['query' => ['reset' => 1, 'cid' => $cid]])->toString();
