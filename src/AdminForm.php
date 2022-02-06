@@ -359,7 +359,7 @@ class AdminForm implements AdminFormInterface {
         elseif ((isset($set['max_instances']) && $set['max_instances'] > 1)) {
           $fieldset['#title'] .= ' ' . $i;
           if (in_array($sid, $this->utils->wf_crm_location_fields()) && $i == 1) {
-            $fieldset['#title'] .= ' ' . t('(primary)');
+            $fieldset['#title'] .= ' ' . t('(often primary)');
           }
         }
         else {
