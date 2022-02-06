@@ -316,7 +316,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
         }
       }
     }
-    if ($this->events && (!empty($reg['show_remaining']) || !empty($reg['block_form']))) {
+    if ($this->events) {
       $this->loadEvents();
       foreach ($this->events as $eid => $event) {
         if ($event['ended']) {
@@ -324,9 +324,12 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
             $this->setMessage(t('Sorry, %event has ended.', ['%event' => $event['title']]), 'warning');
           }
         }
+        elseif (!empty($event['is_full']) && !empty($event['has_waitlist']) && !empty($event['waitlist_text'])) {
+          $this->setMessage(Markup::create('<em>' . Html::escape($event['title']) . '</em>: ' . Html::escape($event['waitlist_text'])), 'warning');
+        }
         elseif (!empty($event['is_full'])) {
           if (!empty($reg['show_remaining'])) {
-            $this->setMessage('<em>' . Html::escape($event['title']) . '</em>: ' . Html::escape($event['event_full_text']), 'warning');
+            $this->setMessage(Markup::create('<em>' . Html::escape($event['title']) . '</em>: ' . Html::escape($event['event_full_text'])), 'warning');
           }
         }
         else {

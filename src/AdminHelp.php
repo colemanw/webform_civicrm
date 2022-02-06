@@ -227,7 +227,10 @@ class AdminHelp implements AdminHelpInterface {
 
   protected function reg_options_validate() {
     return '<p>' .
-      t('Will not allow the form to be submitted if user registers for an event that is ended or full.') .
+      t('Will not allow the form to be submitted if user registers for an event that is ended or full.').
+      '</p>'.
+     '<p>' .
+      t('If an event offers a waitlist, the form will be submitted and the participant will be added to a waiting list.').
       '</p>';
   }
 

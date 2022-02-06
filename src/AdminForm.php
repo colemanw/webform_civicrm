@@ -903,7 +903,7 @@ class AdminForm implements AdminFormInterface {
     $this->form['participant']['reg_options']['show_remaining'] = $field;
     $this->form['participant']['reg_options']['validate'] = [
       '#type' => 'checkbox',
-      '#title' => t('Prevent Registration for Past/Full Events'),
+      '#title' => t('Prevent Registration (enable waitlist) for Past/Full Events'),
       '#default_value' => (bool) wf_crm_aval($this->data, 'reg_options:validate'),
     ];
     $this->help($this->form['participant']['reg_options']['validate'], 'reg_options_validate');

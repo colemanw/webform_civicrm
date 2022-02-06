@@ -29,6 +29,7 @@ abstract class WebformCivicrmBase {
   protected $data = [];
   protected $ent = [];
   protected $events = [];
+  protected $waitlist_events = [];
   protected $line_items = [];
   protected $membership_types = [];
   protected $loadedContacts = [];
@@ -630,7 +631,7 @@ abstract class WebformCivicrmBase {
     if (!empty($this->events)) {
       $now = time();
       $events = $this->utils->wf_crm_apivalues('Event', 'get', [
-        'return' => ['title', 'start_date', 'end_date', 'event_type_id', 'max_participants', 'financial_type_id', 'event_full_text', 'is_full'],
+        'return' => ['title', 'start_date', 'end_date', 'event_type_id', 'max_participants', 'financial_type_id', 'event_full_text', 'is_full', 'has_waitlist', 'waitlist_text'],
         'id' => ['IN' => array_keys($this->events)],
       ]);
       foreach ($events as $id => $event) {
