@@ -1946,10 +1946,6 @@ class AdminForm implements AdminFormInterface {
           $component['value'] = $val;
           $enabled[$key] = $component;
         }
-        elseif (substr($key, -11) === '_createmode') {
-          // Update webform's settings with 'Create mode' value for custom group.
-          $this->settings['data']['config']['create_mode'][$key] = $val;
-        }
         else {
           // Try to "update" options for existing fields via ::insertComponent
           // Always insert fieldsets, as there are checks to see if the
@@ -1959,6 +1955,10 @@ class AdminForm implements AdminFormInterface {
           }
           $field += ['form_key' => $key];
           self::insertComponent($field, $enabled, $this->settings);
+        }
+        if (substr($key, -11) === '_createmode') {
+          // Update webform's settings with 'Create mode' value for custom group.
+          $this->settings['data']['config']['create_mode'][$key] = $val;
         }
       }
       // add empty fieldsets for custom civicrm sets with no fields, if "add dynamically" is checked
