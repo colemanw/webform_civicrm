@@ -154,8 +154,9 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     ]);
     $contact = reset($api_result['values']);
 
+    throw new \Exception(var_export($contact, TRUE));
+
     $this->assertEquals('Pabsted', $contact['last_name']);
-    // throw new \Exception(var_export($contact, TRUE));
 
     // First Name and Email should have remained the same:
     $this->assertEquals('Frederick', $contact['first_name']);
