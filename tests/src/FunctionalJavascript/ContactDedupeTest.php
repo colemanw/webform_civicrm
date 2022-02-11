@@ -30,6 +30,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
         'threshold' => 10,
         'used' => 'General',
         'name' => 'FirstPhone',
+        'title' => 'FirstPhone',
         'is_reserved' => FALSE,
         ],
     ]);
@@ -79,7 +80,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
 
     // Select our Custom Rule FirstPhone
-    $this->getSession()->getPage()->selectFieldOption('contact_1_settings_matching_rule', '');
+    $this->getSession()->getPage()->selectFieldOption('contact_1_settings_matching_rule', 'FirstPhone');
     // We do need Phone then!
     $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_phone', 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
