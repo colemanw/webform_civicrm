@@ -78,20 +78,20 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contact_1_contact_contact_sub_type[]', 'Student');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
+    // Select our Custom Rule FirstPhone
+    $this->getSession()->getPage()->selectFieldOption('contact_1_settings_matching_rule', '');
+    // We do need Phone then!
+    $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_phone', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->createScreenshot($this->htmlOutputDirectory . 'img.png');
+    $this->assertSession()->checkboxChecked("civicrm_1_contact_1_phone_phone");
+    $this->htmlOutput();
+
     // The Default Unsupervised Matching Rule in CiviCRM is: Email so we need to get it on the webform:
     $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_email', 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertSession()->checkboxChecked("civicrm_1_contact_1_email_email");
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contact_1_email_location_type_id', 'Main');
-    $this->htmlOutput();
-
-    // Select our Custom Rule FirstPhone
-    $this->createScreenshot($this->htmlOutputDirectory . 'rules.png');
-    $this->getSession()->getPage()->selectFieldOption('contact_1_settings_matching_rule', 'FirstPhone');
-    // We do need Phone then!
-    $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_phone', 1);
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertSession()->checkboxChecked("civicrm_1_contact_1_phone_phone");
     $this->htmlOutput();
 
     $this->getSession()->getPage()->pressButton('Save Settings');
