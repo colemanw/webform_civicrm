@@ -23,14 +23,50 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->assertEquals(1, $result['count']);
   }
 
+  private function createDedupeRule() {
+    $result = civicrm_api4('DedupeRuleGroup', 'create', [
+      'values' => [
+        'contact_type' => 'Individual',
+        'threshold' => 10,
+        'used' => 'General',
+        'name' => 'FirstPhone',
+        'is_reserved' => FALSE,
+        ],
+    ]);
+    $result_DedupeRuleGroup = reset($result);
+    $dedupe_rule_group_id = $result_DedupeRuleGroup['id'];
+
+    $result = civicrm_api4('DedupeRule', 'create', [
+      'values' => [
+        'dedupe_rule_group_id' => $dedupe_rule_group_id,
+        'rule_table' => 'civicrm_contact',
+        'rule_field' => 'first_name',
+        'rule_length' => '',
+        'rule_weight' => 5,
+      ],
+    ]);
+
+    $result = civicrm_api4('DedupeRule', 'create', [
+      'values' => [
+        'dedupe_rule_group_id' => $dedupe_rule_group_id,
+        'rule_table' => 'civicrm_phone',
+        'rule_field' => 'phone_numeric',
+        'rule_length' => '',
+        'rule_weight' => 5,
+      ],
+    ]);
+  }
+
   /**
    * Test submitting Contact - Matching Rule
    */
   public function testSubmitWebform() {
 
-    $this->createContactSubtype();
-
     $this->drupalLogin($this->adminUser);
+
+    $this->createContactSubtype();
+    $this->createDedupeRule();
+
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -49,6 +85,15 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contact_1_email_location_type_id', 'Main');
     $this->htmlOutput();
 
+    // Select our Custom Rule FirstPhone
+    $this->createScreenshot($this->htmlOutputDirectory . 'rules.png');
+    $this->getSession()->getPage()->selectFieldOption('contact_1_settings_matching_rule', 'FirstPhone');
+    // We do need Phone then!
+    $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_phone', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->checkboxChecked("civicrm_1_contact_1_phone_phone");
+    $this->htmlOutput();
+
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
     $this->assertPageNoErrorMessages();
@@ -62,6 +107,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'frederick@pabst.io');
+    $this->getSession()->getPage()->fillField('Phone', '4031234567');
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertPageNoErrorMessages();
@@ -94,6 +140,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabsted');
     $this->getSession()->getPage()->fillField('Email', 'frederick@pabst.io');
+    $this->getSession()->getPage()->fillField('Phone', '4031234567');
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertPageNoErrorMessages();
