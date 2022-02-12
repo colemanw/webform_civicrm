@@ -23,14 +23,65 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->assertEquals(1, $result['count']);
   }
 
+  private function createDedupeRule() {
+    $result = civicrm_api4('DedupeRuleGroup', 'create', [
+      'values' => [
+        'contact_type' => 'Individual',
+        'threshold' => 10,
+        'used' => 'General',
+        'name' => 'FirstPhone',
+        'title' => 'FirstPhone',
+        'is_reserved' => FALSE,
+        ],
+    ]);
+    $result_DedupeRuleGroup = reset($result);
+    $dedupe_rule_group_id = $result_DedupeRuleGroup['id'];
+
+    $result = civicrm_api4('DedupeRule', 'create', [
+      'values' => [
+        'dedupe_rule_group_id' => $dedupe_rule_group_id,
+        'rule_table' => 'civicrm_contact',
+        'rule_field' => 'first_name',
+        'rule_length' => '',
+        'rule_weight' => 5,
+      ],
+    ]);
+
+    $result = civicrm_api4('DedupeRule', 'create', [
+      'values' => [
+        'dedupe_rule_group_id' => $dedupe_rule_group_id,
+        'rule_table' => 'civicrm_phone',
+        'rule_field' => 'phone_numeric',
+        'rule_length' => '',
+        'rule_weight' => 5,
+      ],
+    ]);
+  }
+
   /**
    * Test submitting Contact - Matching Rule
    */
   public function testSubmitWebform() {
 
-    $this->createContactSubtype();
+    // Determine CiviCRM version. API4 does not exist for CiviCRM 5.35.* so the test fails :-)
+    // ToDo - remove check when we remove support for 5.35.*
+    $api_result = civicrm_api3('Domain', 'get', [
+      'sequential' => 1,
+      'return' => ["version"],
+    ]);
+    $domain = reset($api_result['values']);
+    if ($domain['version'] == '5.35.2') {
+      return;
+    }
+
+    // We'll be using phone_numeric so we must ensure we have the triggers that we need for that field to be populated
+    \Civi::service('sql_triggers')->rebuild('civicrm_phone', TRUE);
 
     $this->drupalLogin($this->adminUser);
+
+    $this->createContactSubtype();
+    $this->createDedupeRule();
+
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -41,6 +92,15 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contact_1_contact_contact_sub_type[]', 'Student');
     $this->assertSession()->assertWaitOnAjaxRequest();
+
+    // Select our Custom Rule FirstPhone
+    $this->getSession()->getPage()->selectFieldOption('contact_1_settings_matching_rule', 'FirstPhone');
+    // We do need Phone then!
+    $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_phone', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->createScreenshot($this->htmlOutputDirectory . 'img.png');
+    $this->assertSession()->checkboxChecked("civicrm_1_contact_1_phone_phone");
+    $this->htmlOutput();
 
     // The Default Unsupervised Matching Rule in CiviCRM is: Email so we need to get it on the webform:
     $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_email', 1);
@@ -62,6 +122,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'frederick@pabst.io');
+    $this->getSession()->getPage()->fillField('Phone', '4031234567');
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertPageNoErrorMessages();
@@ -92,8 +153,8 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->assertSession()->waitForField('First Name');
 
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
-    $this->getSession()->getPage()->fillField('Last Name', 'Pabsted');
-    $this->getSession()->getPage()->fillField('Email', 'frederick@pabst.io');
+    $this->getSession()->getPage()->fillField('Last Name', 'Pabst-edited');
+    $this->getSession()->getPage()->fillField('Phone', '4031234567');
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertPageNoErrorMessages();
@@ -106,8 +167,9 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     ]);
     $contact = reset($api_result['values']);
 
-    $this->assertEquals('Pabsted', $contact['last_name']);
-    // throw new \Exception(var_export($contact, TRUE));
+    // throw new \Exception(var_export($api_result, TRUE));
+
+    $this->assertEquals('Pabst-edited', $contact['last_name']);
 
     // First Name and Email should have remained the same:
     $this->assertEquals('Frederick', $contact['first_name']);
