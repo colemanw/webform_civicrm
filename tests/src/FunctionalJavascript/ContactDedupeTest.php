@@ -62,6 +62,8 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
    * Test submitting Contact - Matching Rule
    */
   public function testSubmitWebform() {
+    // We'll be using phone_numeric so we must ensure we have the triggers that we need for that field to be populated
+    \Civi::service('sql_triggers')->rebuild('civicrm_phone', TRUE);
 
     $this->drupalLogin($this->adminUser);
 
