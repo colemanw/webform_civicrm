@@ -139,7 +139,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->assertSession()->waitForField('First Name');
 
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
-    $this->getSession()->getPage()->fillField('Last Name', 'Pabsted');
+    $this->getSession()->getPage()->fillField('Last Name', 'Pabst-edited');
     $this->getSession()->getPage()->fillField('Email', 'frederick@pabst.io');
     $this->getSession()->getPage()->fillField('Phone', '4031234567');
 
@@ -154,9 +154,9 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     ]);
     $contact = reset($api_result['values']);
 
-    throw new \Exception(var_export($contact, TRUE));
+    // throw new \Exception(var_export($api_result, TRUE));
 
-    $this->assertEquals('Pabsted', $contact['last_name']);
+    $this->assertEquals('Pabst-edited', $contact['last_name']);
 
     // First Name and Email should have remained the same:
     $this->assertEquals('Frederick', $contact['first_name']);
