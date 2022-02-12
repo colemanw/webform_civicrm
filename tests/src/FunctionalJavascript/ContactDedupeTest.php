@@ -142,7 +142,6 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst-edited');
-    $this->getSession()->getPage()->fillField('Email', 'frederick@pabst.io');
     $this->getSession()->getPage()->fillField('Phone', '4031234567');
 
     $this->getSession()->getPage()->pressButton('Submit');
