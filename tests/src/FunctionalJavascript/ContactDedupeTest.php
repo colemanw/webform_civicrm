@@ -62,6 +62,18 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
    * Test submitting Contact - Matching Rule
    */
   public function testSubmitWebform() {
+
+    // Determine CiviCRM version. API4 does not exist for CiviCRM 5.35.* so the test fails :-)
+    // ToDo - remove check when we remove support for 5.35.*
+    $api_result = civicrm_api3('Domain', 'get', [
+      'sequential' => 1,
+      'return' => ["version"],
+    ]);
+    $domain = reset($api_result['values']);
+    if ($domain['version'] == '5.35.2') {
+      return;
+    }
+
     // We'll be using phone_numeric so we must ensure we have the triggers that we need for that field to be populated
     \Civi::service('sql_triggers')->rebuild('civicrm_phone', TRUE);
 
