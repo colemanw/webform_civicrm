@@ -727,6 +727,7 @@ class Utils implements UtilsInterface {
         civicrm_api3('Payment', 'create', [
           'contribution_id' => $order['id'],
           'total_amount' => $payParams['amount'],
+          'fee_amount' => $payResult['fee_amount'] ?? 0,
           'payment_instrument_id' => $order['values'][$order['id']]['payment_instrument_id'],
           'payment_processor_id' => $payParams['payment_processor_id'],
           'is_send_contribution_notification' => $params['is_email_receipt'],
@@ -736,6 +737,7 @@ class Utils implements UtilsInterface {
         civicrm_api3('Contribution', 'create', [
           'id' => $order['id'],
           'total_amount' => $payParams['amount'],
+          'fee_amount' => $payResult['fee_amount'] ?? 0,
           'payment_instrument_id' => $order['values'][$order['id']]['payment_instrument_id'],
           'payment_processor_id' => $payParams['payment_processor_id'],
           'trxn_id' => $payResult['trxn_id'] ?? NULL,
