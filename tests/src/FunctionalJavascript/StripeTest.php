@@ -38,6 +38,21 @@ final class StripeTest extends WebformCivicrmTestBase {
   }
 
   /**
+   * Verify recur payment transaction.
+   */
+  public function testRecurPayment() {
+    $this->drupalLogin($this->rootUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->setUpSettings(TRUE);
+
+    $this->submitWebform();
+
+    $this->verifyPaymentResult(TRUE);
+  }
+
+  /**
    * Test webform submission using stripe processor.
    * Verifies the payment with 1 contribution and 2 line item amounts.
    */
@@ -48,6 +63,12 @@ final class StripeTest extends WebformCivicrmTestBase {
     ]));
     $this->setUpSettings();
 
+    $this->submitWebform();
+
+    $this->verifyPaymentResult();
+  }
+
+  public function submitWebform() {
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
     $edit = [
@@ -75,8 +96,6 @@ final class StripeTest extends WebformCivicrmTestBase {
     $this->assertSession()->waitForElementVisible('css', '.webform-confirmation');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
     $this->assertPageNoErrorMessages();
-
-    $this->verifyPaymentResult();
   }
 
   /**
@@ -150,8 +169,7 @@ final class StripeTest extends WebformCivicrmTestBase {
   /**
    * Verify Payment values.
    */
-  private function verifyPaymentResult() {
-    $utils = \Drupal::service('webform_civicrm.utils');
+  private function verifyPaymentResult($recur = FALSE) {
     $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
       'contribution_status_id' => 'Completed',
       'sequential' => 1,
@@ -159,6 +177,16 @@ final class StripeTest extends WebformCivicrmTestBase {
     $this->assertEquals(1, $api_result['count']);
     $contribution = reset($api_result['values']);
     $this->assertNotEmpty($contribution['trxn_id']);
+    if ($recur) {
+      $this->assertNotEmpty($contribution['contribution_recur_id']);
+      $recurContribution = $this->utils->wf_civicrm_api('ContributionRecur', 'get', [
+        'sequential' => 1,
+      ]);
+      $recurContribution = reset($recurContribution['values']);
+      $this->assertEquals('month', $recurContribution['frequency_unit']);
+      $this->assertEquals('59.50', $recurContribution['amount']);
+      $this->assertEquals('5', $recurContribution['contribution_status_id']);
+    }
     $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
     $this->assertEquals('Donation', $contribution['financial_type']);
     $this->assertEquals('59.50', $contribution['total_amount']);
@@ -185,7 +213,7 @@ final class StripeTest extends WebformCivicrmTestBase {
     $this->assertEquals($expectedFTIds, $financialTypeIds);
     $this->assertEquals($contribution['total_amount'], array_sum($lineTotals));
 
-    $priceFieldID = $utils->wf_civicrm_api('PriceField', 'get', [
+    $priceFieldID = $this->utils->wf_civicrm_api('PriceField', 'get', [
       'sequential' => 1,
       'price_set_id' => 'default_contribution_amount',
       'options' => ['limit' => 1],
@@ -198,7 +226,7 @@ final class StripeTest extends WebformCivicrmTestBase {
   /**
    * Setup CiviCRM settings.
    */
-  protected function setUpSettings() {
+  protected function setUpSettings($recur = FALSE) {
     $this->enableCivicrmOnWebform();
 
     $this->getSession()->getPage()->clickLink('Contribution');
@@ -210,10 +238,16 @@ final class StripeTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField('Contribution Amount');
     $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
     $this->getSession()->getPage()->selectFieldOption('Financial Type', 'Donation');
+    if ($recur) {
+      $this->getSession()->getPage()->selectFieldOption('Frequency of Installments', 'month');
+      $this->htmlOutput();
+    }
 
     $this->assertCount(3, $this->getOptions('Payment Processor'));
     $this->getSession()->getPage()->selectFieldOption('Payment Processor', $this->paymentProcessorID);
-    $this->enableBillingSection();
+    $this->getSession()->getPage()->selectFieldOption('Enable Billing Address?', 'No');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
 
     $this->getSession()->getPage()->selectFieldOption('lineitem_1_number_of_lineitem', 2);
     $this->assertSession()->assertWaitOnAjaxRequest();
