@@ -23,6 +23,9 @@ final class StripeTest extends WebformCivicrmTestBase {
     $this->utils->wf_civicrm_api('Extension', 'download', [
       'key' => "com.drastikbydesign.stripe",
     ]);
+    $this->utils->wf_civicrm_api('Extension', 'download', [
+      'key' => "contributiontransactlegacy",
+    ]);
     $params = [];
     $result = $this->utils->wf_civicrm_api('Stripe', 'setuptest', $params);
     $this->paymentProcessorID = $result['id'];
