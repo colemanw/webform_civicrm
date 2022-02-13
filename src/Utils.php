@@ -719,11 +719,19 @@ class Utils implements UtilsInterface {
       // We allow this to be overridden here but default to FALSE.
       $params['is_email_receipt'] = $params['is_email_receipt'] ?? FALSE;
 
+      // payment_status_id is deprecated - https://lab.civicrm.org/dev/financial/-/issues/141
+      if (!isset($payResult['payment_status'])) {
+        $payResult['payment_status'] = 'Pending';
+        // payment_status_id = 1 -> payment completed;
+        // payment_status_id = 2 -> payment NOT completed;
+        if ($payResult['payment_status_id'] == '1') {
+          $payResult['payment_status'] = 'Completed';
+        }
+      }
+
       // Assuming the payment was taken, record it which will mark the Contribution
       // as Completed and update related entities.
-      // payment_status_id = 1 -> payment completed;
-      // payment_status_id = 2 -> payment NOT completed;
-      if ($payResult['payment_status_id'] == '1') {
+      if ($payResult['payment_status'] === 'Completed') {
         civicrm_api3('Payment', 'create', [
           'contribution_id' => $order['id'],
           'total_amount' => $payParams['amount'],
