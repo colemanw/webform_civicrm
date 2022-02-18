@@ -140,7 +140,7 @@
         $.extend(CRM.payment, payment);
       }
 
-      $('.webform-submission-form #edit-actions').detach().appendTo('.webform-submission-form');
+      $('.webform-submission-form #edit-actions', context).once('wf-civi').detach().appendTo('.webform-submission-form');
     }
   }
 
