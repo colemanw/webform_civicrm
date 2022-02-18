@@ -380,10 +380,13 @@ abstract class WebformCivicrmBase {
       $valueFound = false;
       foreach($values as $key => $value){
         if ((in_array($ent, ['address', 'email']) && $value['location_type_id'] == $setting['location_type_id'])
-          || (
-             $value['location_type_id'] == $setting['location_type_id'] &&
-             (!isset($setting[$ent.'_type_id']) || $value[$ent.'_type_id'] == $setting[$ent.'_type_id'])
-             )
+            || (
+              $value['location_type_id'] == $setting['location_type_id'] &&
+              (
+                !isset($setting[$ent.'_type_id']) ||
+                (isset($value[$ent.'_type_id'])) && $value[$ent.'_type_id'] == $setting[$ent.'_type_id']
+              )
+            )
         ) {
             $reorderedArray[$key] = $value;
             $valueFound = true;
