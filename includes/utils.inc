@@ -1430,6 +1430,9 @@ function wf_crm_get_fields($var = 'fields') {
         $fields[$id]['extra']['description_above'] = (int) empty($custom_field['help_pre']);
         $fields[$id]['has_help'] = TRUE;
       }
+      if ($custom_field['serialize'] || FALSE) {
+        $fields[$id]['extra']['multiple'] = 1;
+      }
       // Conditional rule - todo: support additional entities
       if ($sets[$set]['entity_type'] == 'contact' && !empty($sets[$set]['sub_types'])) {
         $fields[$id]['civicrm_condition'] = [
