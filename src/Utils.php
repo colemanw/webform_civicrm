@@ -145,6 +145,8 @@ class Utils implements UtilsInterface {
   function wf_crm_get_events($reg_options, $context) {
     $ret = [];
     $format = wf_crm_aval($reg_options, 'title_display', 'title');
+    $sort_field = wf_crm_aval($reg_options, 'event_sort_field', 'start_date');
+    $sort_order = ($context == 'config_form' && $sort_field === 'start_date') ? ' DESC' : '';
     $params = [
       'is_template' => 0,
       'is_active' => 1,
@@ -156,7 +158,7 @@ class Utils implements UtilsInterface {
     if (is_numeric(wf_crm_aval($reg_options, 'show_public_events'))) {
       $params['is_public'] = $reg_options['show_public_events'];
     }
-    $params['options'] = ['sort' => 'start_date' . ($context == 'config_form' ? ' DESC' : '')];
+    $params['options'] = ['sort' => $sort_field . $sort_order];
     $values = $this->wf_crm_apivalues('Event', 'get', $params);
     // 'now' means only current events, 1 means show all past events, other values are relative date strings
     $date_past = wf_crm_aval($reg_options, 'show_past_events', 'now');
