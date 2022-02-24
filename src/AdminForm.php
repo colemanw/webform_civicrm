@@ -427,7 +427,7 @@ class AdminForm implements AdminFormInterface {
         $rule_field =& $this->form['contact_' . $n]['contact_subtype_wrapper']["contact_{$n}_settings_matching_rule"];
         // Reset to default if selected rule doesn't exist or isn't valid for this contact type
         if (!array_key_exists($rule_field['#default_value'], $rule_field['#options'])) {
-          $rule_field['#default_value'] = $this->form_state['input']["contact_{$n}_settings_matching_rule"] = 'Unsupervised';
+          $rule_field['#default_value'] = $this->form_state->getUserInput()["contact_{$n}_settings_matching_rule"] = 'Unsupervised';
         }
         $this->help($rule_field, 'matching_rule');
       }
