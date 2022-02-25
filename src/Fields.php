@@ -196,7 +196,7 @@ class Fields implements FieldsInterface {
         'value' => $this->utils->wf_crm_get_civi_setting('lcMessages', 'en_US'),
       ];
       if (isset($elements['managed_file']) && !$elements['managed_file']->isDisabled() && !$elements['managed_file']->isHidden()) {
-        $fields['contact_image_URL'] = [
+        $fields['contact_image_url'] = [
           'name' => t('Upload Image'),
           'type' => 'managed_file',
           'extra' => array('width' => 40),
