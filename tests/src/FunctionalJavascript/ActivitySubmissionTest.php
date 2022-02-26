@@ -76,9 +76,6 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->checkboxChecked("civicrm_1_activity_1_activity_activity_date_time");
     $this->assertSession()->checkboxChecked("civicrm_1_activity_1_activity_duration");
 
-    // KG take sceenshot
-    // $this->createScreenshot($this->htmlOutputDirectory . 'KG2.png');
-
     $this->saveCiviCRMSettings();
   }
 
@@ -103,9 +100,6 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
       $this->getSession()->getPage()->fillField("civicrm_{$i}_contact_1_contact_first_name", $this->_contacts[$i]['first_name']);
       $this->getSession()->getPage()->fillField("civicrm_{$i}_contact_1_contact_last_name", $this->_contacts[$i]['last_name']);
     }
-
-    // KG take sceenshot
-    // $this->createScreenshot($this->htmlOutputDirectory . 'KG.png');
 
     $this->getSession()->getPage()->fillField('Activity Subject', 'Awesome Activity');
     $this->getSession()->getPage()->fillField('Activity Details', 'Lorem ipsum dolor sit amet.');
