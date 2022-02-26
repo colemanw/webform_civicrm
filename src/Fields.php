@@ -405,7 +405,8 @@ class Fields implements FieldsInterface {
       ];
       $fields['activity_details'] = [
         'name' => t('Activity # Details'),
-        'type' => \Drupal::moduleHandler()->moduleExists('webform_html_textarea') ? 'html_textarea' : 'textarea',
+        'type' => 'text_format',
+        'allowed_formats' => [],
       ];
       $fields['activity_status_id'] = [
         'name' => t('Activity # Status'),
