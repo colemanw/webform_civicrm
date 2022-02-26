@@ -406,7 +406,7 @@ class Fields implements FieldsInterface {
       $fields['activity_details'] = [
         'name' => t('Activity # Details'),
         'type' => 'text_format',
-        'allowed_formats' => [],
+        'allowed_formats' => 'html',
       ];
       $fields['activity_status_id'] = [
         'name' => t('Activity # Status'),
