@@ -417,7 +417,6 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
   }
 
   public function testSubmitRecurringContribution() {
-
     $this->drupalLogin($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
@@ -449,8 +448,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->pressButton('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
 
-    $this->createScreenshot($this->htmlOutputDirectory . 'KG.png');
-
+    // Test 1: $120 -> paid in 12 instalments -> $10/month
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
@@ -513,6 +511,74 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     ]);
     $this->assertEquals(1, $api_result['count']);
     $paymentToken = reset($api_result['values']);
+    // throw new \Exception(var_export($paymentToken, TRUE));
+    $this->assertNotEmpty($paymentToken['token']);
+
+    // Test 2: $120 -> paid monthly -> $120/month
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+    $this->getSession()->getPage()->fillField('First Name', 'Frederick');
+    $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
+    $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
+
+    $this->getSession()->getPage()->pressButton('Next >');
+
+    $this->getSession()->getPage()->fillField('Contribution Amount', '120.00');
+    $this->getSession()->getPage()->fillField('Number of Installments', '0');
+
+    $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
+    $this->htmlOutput();
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '120.00');
+
+    // Wait for the credit card form to load in.
+    $this->assertSession()->waitForField('credit_card_number');
+    $this->getSession()->getPage()->fillField('Card Number', '4222222222222220');
+    $this->getSession()->getPage()->fillField('Security Code', '123');
+    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[M]', '11');
+    $this_year = date('Y');
+    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[Y]', $this_year + 1);
+    $billingValues = [
+      'first_name' => 'Frederick',
+      'last_name' => 'Pabst',
+      'street_address' => '123 Milwaukee Ave',
+      'city' => 'Milwaukee',
+      'country' => '1228',
+      'state_province' => '1048',
+      'postal_code' => '53177',
+    ];
+    $this->fillBillingFields($billingValues);
+    $this->getSession()->getPage()->pressButton('Submit');
+
+    $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
+      'sequential' => 1,
+    ]);
+    $this->assertEquals(2, $api_result['count']);
+    // I need the second Contribution!
+    $contribution = $api_result['values'][1];
+    $this->assertNotEmpty($contribution['trxn_id']);
+    $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
+    $this->assertEquals('Donation', $contribution['financial_type']);
+    $this->assertEquals('120.00', $contribution['total_amount']);
+    $this->assertEquals('Completed', $contribution['contribution_status']);
+    $this->assertEquals('USD', $contribution['currency']);
+
+    $this->assertNotEmpty($contribution['contribution_recur_id']);
+    $api_result = $this->utils->wf_civicrm_api('ContributionRecur', 'get', [
+      'sequential' => 1,
+    ]);
+    $contributionRecur = $api_result['values'][1];
+
+    $this->assertEquals('month', $contributionRecur['frequency_unit']);
+    $this->assertEquals('120.00', $contributionRecur['amount']);
+    $this->assertEquals('USD', $contributionRecur['currency']);
+    $this->assertEquals('1', $contributionRecur['frequency_interval']);
+    $this->assertEquals('0', $contributionRecur['installments']);
+
+    $api_result = $this->utils->wf_civicrm_api('PaymentToken', 'get', [
+      'sequential' => 1,
+    ]);
+    $this->assertEquals(2, $api_result['count']);
+    $paymentToken = $api_result['values'][1];
     // throw new \Exception(var_export($paymentToken, TRUE));
     $this->assertNotEmpty($paymentToken['token']);
   }
