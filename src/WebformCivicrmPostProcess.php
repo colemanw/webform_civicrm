@@ -211,6 +211,12 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
 
       $newContact = empty($this->ent['contact'][$c]['id']);
 
+      // Avoid Issue with lowercase validation of webform
+      if (!empty($contact['contact'][1]['image_url'])) {
+        $contact['contact'][1]['image_URL'] = $contact['contact'][1]['image_url'];
+        unset($contact['contact'][1]['image_url']);
+      }
+
       // Create new contact
       if ($newContact) {
         $this->ent['contact'][$c]['id'] = $this->createContact($contact);
@@ -2464,7 +2470,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
             $val = \CRM_Utils_Array::implodePadded($val);
           }
         }
-        elseif ($name === 'image_URL') {
+        elseif ($name === 'image_url') {
           if (empty($val[0]) || !($val = $this->getDrupalFileUrl($val[0]))) {
             // This field can't be emptied due to the nature of file uploads
             continue;

@@ -808,7 +808,7 @@ abstract class WebformCivicrmBase {
     if (!$val) {
       return NULL;
     }
-    if ($fieldName === 'image_URL') {
+    if ($fieldName === 'image_url') {
       $parsed = UrlHelper::parse($val);
 
       return [

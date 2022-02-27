@@ -52,7 +52,7 @@ class AdminHelp implements AdminHelpInterface {
       '</p>';
   }
 
-  protected function contact_image_URL() {
+  protected function contact_image_url() {
     return '<p>' .
       t('Allows an image to be associated with a contact. This image will appear in CiviCRM, but the file is stored in Drupal. If the webform submission or entire webform were to be deleted, the image would be lost.') .
       '</p>';
