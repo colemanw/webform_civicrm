@@ -914,6 +914,9 @@ class Fields implements FieldsInterface {
         ];
         $fields['grant_amount_total'] = [
             'name' => t('Amount Requested'),
+            'attributes' => [
+              'required' => 1,
+            ],
           ] + $moneyDefaults;
         $fields['grant_amount_granted'] = [
             'name' => t('Amount Granted'),
