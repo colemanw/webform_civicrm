@@ -69,13 +69,48 @@ class Fields implements FieldsInterface {
         'CiviEvent' => ['entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9],
         'CiviContribute' => ['entity_type' => 'contribution', 'label' => t('Contribution')],
         'CiviMember' => ['entity_type' => 'membership', 'label' => t('Membership'), 'custom_fields' => 'combined'],
-        'CiviGrant' => ['entity_type' => 'grant', 'label' => t('Grant'), 'max_instances' => 30, 'attachments' => TRUE],
       ];
       foreach ($conditional_sets as $component => $set) {
         if (in_array($component, $components, TRUE)) {
           $sets[$set['entity_type']] = $set;
         }
       }
+
+      // Retrieve CiviCRM version
+      $api_result = civicrm_api3('System', 'get', [
+        'sequential' => 1,
+      ]);
+      $civicrm_version = $api_result['values'][0]['version'];
+
+      if ($civicrm_version >= 5.47) {
+        // check to see if civigrant extension is enabled
+        $api_result = civicrm_api3('Extension', 'get', [
+          'sequential' => 1,
+          'full_name' => "civigrant",
+        ]);
+        if ($api_result['values']['status'] == "installed") {
+          // It's enabled
+          $conditional_set_civigrant = [
+            'CiviGrant' => ['entity_type' => 'grant', 'label' => t('Grant'), 'max_instances' => 30, 'attachments' => TRUE],
+          ];
+          foreach ($conditional_set_civigrant as $component => $set) {
+            if (in_array($component, $components, TRUE)) {
+              $sets[$set['entity_type']] = $set;
+            }
+          }
+        }
+      } else {
+        // check to see if component CiviGrant is enabled
+        $conditional_set_civigrant = [
+          'CiviGrant' => ['entity_type' => 'grant', 'label' => t('Grant'), 'max_instances' => 30, 'attachments' => TRUE],
+        ];
+        foreach ($conditional_set_civigrant as $component => $set) {
+          if (in_array($component, $components, TRUE)) {
+            $sets[$set['entity_type']] = $set;
+          }
+        }
+      }
+
       // Contribution line items
       if (in_array('CiviContribute', $components, TRUE)) {
         $sets['line_items'] = ['entity_type' => 'line_item', 'label' => t('Line Items')];
