@@ -88,7 +88,7 @@ class Fields implements FieldsInterface {
           'sequential' => 1,
           'full_name' => "civigrant",
         ]);
-        if ($api_result['values']['status'] == "installed") {
+        if ($api_result['values'][0]['status'] == "installed") {
           // It's enabled
           $conditional_set_civigrant = [
             'CiviGrant' => ['entity_type' => 'grant', 'label' => t('Grant'), 'max_instances' => 30, 'attachments' => TRUE],
