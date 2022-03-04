@@ -1293,6 +1293,9 @@ class AdminForm implements AdminFormInterface {
     ];
     $this->addAjaxItem("grantTab", "grant_number_of_grant", "grant");
     for ($n = 1; $n <= $num; ++$n) {
+      $this->settings += [
+        'civicrm_' . $n . '_grant_1_grant_amount_total' => 'create_civicrm_webform_element',
+      ];
       $fs = "grant_grant_{$n}_fieldset";
       $this->form['grantTab']['grant'][$fs] = [
         '#type' => 'fieldset',
