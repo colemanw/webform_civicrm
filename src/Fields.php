@@ -64,6 +64,17 @@ class Fields implements FieldsInterface {
         'activity' => ['entity_type' => 'activity', 'label' => t('Activity'), 'max_instances' => 99,  'attachments' => TRUE],
         'relationship' => ['entity_type' => 'contact', 'label' => t('Relationship'), 'help_text' => TRUE, 'custom_fields' => 'combined'],
       ];
+      $civicrm_version = $this->utils->wf_crm_apivalues('System', 'get')[0]['version'];
+      // Grant is moved to extension after > 5.47.0.
+      if (version_compare($civicrm_version, '5.47') >= 0) {
+        $components = array_diff($components, ['CiviGrant']);
+        $grantStatus = $this->utils->wf_crm_apivalues('Extension', 'get', [
+          'full_name' => 'civigrant'
+        ], 'status');
+        if (array_pop($grantStatus) == 'installed') {
+          $components[] = 'CiviGrant';
+        }
+      }
       $conditional_sets = [
         'CiviCase' => ['entity_type' => 'case', 'label' => t('Case'), 'max_instances' => 30],
         'CiviEvent' => ['entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9],
