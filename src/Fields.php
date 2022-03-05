@@ -64,53 +64,29 @@ class Fields implements FieldsInterface {
         'activity' => ['entity_type' => 'activity', 'label' => t('Activity'), 'max_instances' => 99,  'attachments' => TRUE],
         'relationship' => ['entity_type' => 'contact', 'label' => t('Relationship'), 'help_text' => TRUE, 'custom_fields' => 'combined'],
       ];
+      $civicrm_version = $this->utils->wf_crm_apivalues('System', 'get')[0]['version'];
+      // Grant is moved to extension after > 5.47.0.
+      if (version_compare($civicrm_version, '5.47') >= 0) {
+        $components = array_diff($components, ['CiviGrant']);
+        $grantStatus = $this->utils->wf_crm_apivalues('Extension', 'get', [
+          'full_name' => 'civigrant'
+        ], 'status');
+        if (array_pop($grantStatus) == 'installed') {
+          $components[] = 'CiviGrant';
+        }
+      }
       $conditional_sets = [
         'CiviCase' => ['entity_type' => 'case', 'label' => t('Case'), 'max_instances' => 30],
         'CiviEvent' => ['entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9],
         'CiviContribute' => ['entity_type' => 'contribution', 'label' => t('Contribution')],
         'CiviMember' => ['entity_type' => 'membership', 'label' => t('Membership'), 'custom_fields' => 'combined'],
+        'CiviGrant' => ['entity_type' => 'grant', 'label' => t('Grant'), 'max_instances' => 30, 'attachments' => TRUE],
       ];
       foreach ($conditional_sets as $component => $set) {
         if (in_array($component, $components, TRUE)) {
           $sets[$set['entity_type']] = $set;
         }
       }
-
-      // Retrieve CiviCRM version
-      $api_result = civicrm_api3('System', 'get', [
-        'sequential' => 1,
-      ]);
-      $civicrm_version = $api_result['values'][0]['version'];
-
-      if ($civicrm_version >= 5.47) {
-        // check to see if civigrant extension is enabled
-        $api_result = civicrm_api3('Extension', 'get', [
-          'sequential' => 1,
-          'full_name' => "civigrant",
-        ]);
-        if ($api_result['values'][0]['status'] == "installed") {
-          // It's enabled
-          $conditional_set_civigrant = [
-            'CiviGrant' => ['entity_type' => 'grant', 'label' => t('Grant'), 'max_instances' => 30, 'attachments' => TRUE],
-          ];
-          foreach ($conditional_set_civigrant as $component => $set) {
-            if (in_array($component, $components, TRUE)) {
-              $sets[$set['entity_type']] = $set;
-            }
-          }
-        }
-      } else {
-        // check to see if component CiviGrant is enabled
-        $conditional_set_civigrant = [
-          'CiviGrant' => ['entity_type' => 'grant', 'label' => t('Grant'), 'max_instances' => 30, 'attachments' => TRUE],
-        ];
-        foreach ($conditional_set_civigrant as $component => $set) {
-          if (in_array($component, $components, TRUE)) {
-            $sets[$set['entity_type']] = $set;
-          }
-        }
-      }
-
       // Contribution line items
       if (in_array('CiviContribute', $components, TRUE)) {
         $sets['line_items'] = ['entity_type' => 'line_item', 'label' => t('Line Items')];
