@@ -1,5 +1,5 @@
 // Webform payment processing using CiviCRM's jQuery
-(function ($, D, drupalSettings) {
+(function ($, D, drupalSettings, once) {
   'use strict';
   var setting = drupalSettings.webform_civicrm;
 
@@ -141,8 +141,8 @@
         $.extend(CRM.payment, payment);
       }
 
-      $('.webform-submission-form #edit-actions', context).once('wf-civi').detach().appendTo('.webform-submission-form');
+      jQuery('.webform-submission-form #edit-actions', context).once('wf-civi').detach().appendTo('.webform-submission-form');
     }
   }
 
-})(CRM.$, Drupal, drupalSettings);
+})(CRM.$, Drupal, drupalSettings, once);
