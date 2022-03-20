@@ -17,18 +17,22 @@ final class GrantTest extends WebformCivicrmTestBase {
     $civicrm_version = $this->utils->wf_crm_apivalues('System', 'get')[0]['version'];
     // Grant is moved to extension after > 5.47.0.
     if (version_compare($civicrm_version, '5.47') >= 0) {
-      $res = civicrm_api3('Extension', 'install', [
+      $result = $this->utils->wf_civicrm_api('Extension', 'install', [
         'keys' => "civigrant",
       ]);
-      $this->assertEquals(1, $res['count']);
+      $this->assertEquals(1, $result['count']);
     }
     else {
       $this->enableComponent('CiviGrant');
     }
-    civicrm_api3('System', 'flush', [
-      'triggers' => 1,
-      'session' => 1,
+    $result = $this->utils->wf_civicrm_api('OptionValue', 'create', [
+      'option_group_id' => "grant_type",
+      'label' => "Emergency Grant Type",
+      'name' => "Emergency Grant Type",
     ]);
+    $this->grant_type_id = $result['values'][$result['id']]['value'];
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
     drupal_flush_all_caches();
   }
 
@@ -42,11 +46,13 @@ final class GrantTest extends WebformCivicrmTestBase {
     ]));
 
     $this->enableCivicrmOnWebform();
-    $this->createScreenshot($this->htmlOutputDirectory . '/grant_settings.png');
     $this->getSession()->getPage()->clickLink('Grants');
 
     //Configure Grant tab.
     $this->getSession()->getPage()->selectFieldOption('Number of Grants', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->selectFieldOption('Grant Type', $this->grant_type_id);
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
     $this->assertSession()->checkboxChecked("Amount Requested");
@@ -71,6 +77,7 @@ final class GrantTest extends WebformCivicrmTestBase {
     $this->assertEquals($this->rootUserCid, $grant['contact_id']);
     $this->assertEquals(date('Y-m-d'), $grant['application_received_date']);
     $this->assertEquals(100, $grant['amount_total']);
+    $this->assertEquals($this->grant_type_id, $grant['grant_type_id']);
   }
 
 }
