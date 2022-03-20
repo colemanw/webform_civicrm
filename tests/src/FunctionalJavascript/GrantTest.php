@@ -37,16 +37,12 @@ final class GrantTest extends WebformCivicrmTestBase {
    */
   function testSubmitGrant() {
     $this->drupalLogin($this->rootUser);
-    civicrm_api3('System', 'flush', [
-      'triggers' => 1,
-      'session' => 1,
-    ]);
-    drupal_flush_all_caches();
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
 
     $this->enableCivicrmOnWebform();
+    $this->createScreenshot($this->htmlOutputDirectory . '/grant_settings.png');
     $this->getSession()->getPage()->clickLink('Grants');
 
     //Configure Grant tab.
