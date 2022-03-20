@@ -24,6 +24,10 @@ final class GrantTest extends WebformCivicrmTestBase {
     else {
       $this->enableComponent('CiviGrant');
     }
+    civicrm_api3('System', 'flush', [
+      'triggers' => 1,
+      'session' => 1,
+    ]);
     drupal_flush_all_caches();
   }
 
@@ -32,6 +36,11 @@ final class GrantTest extends WebformCivicrmTestBase {
    */
   function testSubmitGrant() {
     $this->drupalLogin($this->rootUser);
+    civicrm_api3('System', 'flush', [
+      'triggers' => 1,
+      'session' => 1,
+    ]);
+    drupal_flush_all_caches();
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
