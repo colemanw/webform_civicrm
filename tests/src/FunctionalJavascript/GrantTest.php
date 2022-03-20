@@ -17,9 +17,10 @@ final class GrantTest extends WebformCivicrmTestBase {
     $civicrm_version = $this->utils->wf_crm_apivalues('System', 'get')[0]['version'];
     // Grant is moved to extension after > 5.47.0.
     if (version_compare($civicrm_version, '5.47') >= 0) {
-      civicrm_api3('Extension', 'install', [
+      $res = civicrm_api3('Extension', 'install', [
         'keys' => "civigrant",
       ]);
+      $this->assertEquals(1, $res['count']);
     }
     else {
       $this->enableComponent('CiviGrant');
