@@ -21,19 +21,19 @@ final class GrantTest extends WebformCivicrmTestBase {
         'keys' => "civigrant",
       ]);
       $this->assertEquals(1, $result['count']);
+      $result = $this->utils->wf_civicrm_api('OptionValue', 'create', [
+        'option_group_id' => "grant_type",
+        'label' => "Emergency Grant Type",
+        'name' => "Emergency Grant Type",
+      ]);
+      $this->grant_type_id = $result['values'][$result['id']]['value'];
+      $this->assertEquals(0, $result['is_error']);
+      $this->assertEquals(1, $result['count']);
+      drupal_flush_all_caches();
     }
     else {
       $this->enableComponent('CiviGrant');
     }
-    $result = $this->utils->wf_civicrm_api('OptionValue', 'create', [
-      'option_group_id' => "grant_type",
-      'label' => "Emergency Grant Type",
-      'name' => "Emergency Grant Type",
-    ]);
-    $this->grant_type_id = $result['values'][$result['id']]['value'];
-    $this->assertEquals(0, $result['is_error']);
-    $this->assertEquals(1, $result['count']);
-    drupal_flush_all_caches();
   }
 
   /**
