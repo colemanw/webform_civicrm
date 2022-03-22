@@ -24,7 +24,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
   }
 
   private function createDedupeRule() {
-    $result = civicrm_api4('DedupeRuleGroup', 'create', [
+    $result = (array) civicrm_api4('DedupeRuleGroup', 'create', [
       'values' => [
         'contact_type' => 'Individual',
         'threshold' => 10,

@@ -1905,7 +1905,11 @@ class AdminForm implements AdminFormInterface {
       if (strpos($key, 'civicrm') === 0) {
         ++$i;
         $field = $this->utils->wf_crm_get_field($key);
-        if (!isset($enabled[$key])) {
+        if (substr($key, -11) === '_createmode') {
+          // Update webform's settings with 'Create mode' value for custom group.
+          $this->settings['data']['config']['create_mode'][$key] = $val;
+        }
+        elseif (!isset($enabled[$key])) {
           $val = (array) $val;
           if (in_array('create_civicrm_webform_element', $val, TRUE) || (!empty($val[0]) && $field['type'] == 'hidden')) {
             // Restore disabled component
@@ -1948,10 +1952,6 @@ class AdminForm implements AdminFormInterface {
           $component = WebformArrayHelper::removePrefix($component);
           $component['value'] = $val;
           $enabled[$key] = $component;
-        }
-        elseif (substr($key, -11) === '_createmode') {
-          // Update webform's settings with 'Create mode' value for custom group.
-          $this->settings['data']['config']['create_mode'][$key] = $val;
         }
         else {
           // Try to "update" options for existing fields via ::insertComponent
