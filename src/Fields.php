@@ -6,6 +6,10 @@ class Fields implements FieldsInterface {
 
   protected $components = [];
   protected $sets = [];
+  /**
+   * Store data from CiviCRM API getfields action.
+   */
+  protected $fieldMetadata = [];
 
   public function __construct(UtilsInterface $utils) {
     $this->utils = $utils;
@@ -113,6 +117,49 @@ class Fields implements FieldsInterface {
     ];
   }
 
+  /**
+   * Use CiviCRM API getfields so we can populate field info dynamically.
+   */
+  protected function getFieldMetadata(): void {
+    $components = $this->getComponents();
+    $setNames = array_keys($this->getSets($components));
+    foreach ($setNames as $setName) {
+      $result = $this->utils->wf_crm_apivalues($setName, 'getfields');
+      if ($result) {
+        $this->fieldMetadata[$setName] = $result;
+      }
+    }
+    array_filter($this->fieldMetadata);
+  }
+
+  /**
+   * Use the CiviCRM API metadata to further fill out the $fields array.
+   */
+  protected function addFieldMetadata(array $fields): array {
+    foreach ($fields as $fieldName => $field) {
+      [$entity, $name] = explode('_', $fieldName, 2);
+      if ($this->fieldMetadata[$entity][$name] ?? FALSE) {
+        $fieldLength = $this->addFieldLength($this->fieldMetadata[$entity][$name], $field);
+        // Merge the existing data last so this file can always override CiviCRM metadata.
+        $fields[$fieldName] = array_merge($fieldLength, $fields[$fieldName]);
+      }
+    }
+    return $fields;
+  }
+
+  /**
+   * Add the maximum length to a field in the $fields array based upon the Civi metadata.
+   */
+  protected function addFieldLength(array $fieldMetadata, array $field): array {
+    $lengthData = [];
+    if (isset($fieldMetadata['maxlength']) && in_array($field['type'], ['textfield', 'textarea'])) {
+      $lengthData['counter_type'] = 'character';
+      $lengthData['counter_maximum'] = $fieldMetadata['maxlength'];
+      $lengthData['counter_maximum_message'] = ' ';
+    }
+    return $lengthData;
+  }
+
   protected function wf_crm_get_fields($var = 'fields') {
     $components = $this->getComponents();
     $sets = $this->getSets($components);
@@ -122,6 +169,7 @@ class Fields implements FieldsInterface {
 
     if (!$fields) {
       $moneyDefaults = $this->getMoneyDefaults();
+      $fieldMetadata = $this->getFieldMetadata();
 
       // Field keys are in the format table_column
       // Use a # sign as a placeholder for field number in the title (or by default it will be appended to the end)
@@ -952,6 +1000,8 @@ class Fields implements FieldsInterface {
           }
         }
       }
+      // Add any elements we want from CiviCRM getfields metadata.
+      $fields = $this->addFieldMetadata($fields);
 
       // Fetch custom groups
       list($contact_types) = $this->utils->wf_crm_get_contact_types();
@@ -1069,6 +1119,12 @@ class Fields implements FieldsInterface {
         elseif ($fields[$id]['type'] == 'textarea') {
           $fields[$id]['extra']['cols'] = $custom_field['note_columns'] ?? 60;
           $fields[$id]['extra']['rows'] = $custom_field['note_rows'] ?? 4;
+        }
+        // Set maximum field length.
+        if (isset($custom_field['text_length']) && in_array($fields[$id]['type'], ['textfield', 'textareas'])) {
+          $fields[$id]['counter_type'] = 'character';
+          $fields[$id]['counter_maximum'] = $custom_field['text_length'];
+          $fields[$id]['counter_maximum_message'] = ' ';
         }
       }
       // The sets are modified in this function to include the custom sets.
