@@ -2271,7 +2271,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
 
     // Save line-items
     foreach ($this->line_items as &$item) {
-      if (empty($item['line_total'])) {
+      if (empty($item['line_total']) && $item['entity_table'] != 'civicrm_membership') {
         continue;
       }
       if (empty($item['entity_id'])) {
