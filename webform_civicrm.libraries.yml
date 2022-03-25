@@ -18,6 +18,7 @@ payment:
     js/webform_civicrm_payment.js: {}
   dependencies:
     - core/jquery
+    - core/once
     - core/drupal
     - core/drupalSettings
     - webform_civicrm/forms
