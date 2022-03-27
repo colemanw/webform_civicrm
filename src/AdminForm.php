@@ -842,7 +842,7 @@ class AdminForm implements AdminFormInterface {
     $this->form['participant']['show_public_events'] = [
       '#type' => 'select',
       '#title' => t('Show Public Events'),
-      '#default_value' => wf_crm_aval($this->data, 'reg_options:show_public_events', 'title'),
+      '#default_value' => wf_crm_aval($this->data, 'reg_options:show_public_events', 'title', TRUE),
       // This is breaking HTML in D8.
       // '#suffix' => '</div>',
       '#parents' => ['reg_options', 'show_public_events'],
