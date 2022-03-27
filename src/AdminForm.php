@@ -858,7 +858,6 @@ class AdminForm implements AdminFormInterface {
       '#type' => 'select',
       '#title' => t('Title Display'),
       '#default_value' => wf_crm_aval($this->data, 'reg_options:title_display', 'title'),
-      '#suffix' => '</div>',
       '#parents' => ['reg_options', 'title_display'],
       '#tree' => TRUE,
       '#options' => [
@@ -879,6 +878,18 @@ class AdminForm implements AdminFormInterface {
       '#title' => t('Show Full Events'),
       '#default_value' => (bool) wf_crm_aval($this->data, 'reg_options:show_full_events', 1, TRUE),
       '#parents' => ['reg_options', 'show_full_events'],
+    ];
+    $this->form['participant']['event_sort_field'] = [
+      '#type' => 'select',
+      '#title' => t('Sort Events By'),
+      '#default_value' => wf_crm_aval($this->data, 'reg_options:event_sort_field', 'start_date'),
+      '#suffix' => '</div>',
+      '#parents' => ['reg_options', 'event_sort_field'],
+      '#tree' => TRUE,
+      '#options' => [
+        'start_date' => t('Start Date'),
+        'title' => t('Title'),
+      ],
     ];
     $this->help($this->form['participant']['title_display'], 'reg_options_title_display');
     $this->form['participant']['reg_options'] = [
@@ -936,6 +947,7 @@ class AdminForm implements AdminFormInterface {
     $this->addAjaxItem('participant', 'show_public_events', 'participants');
     $this->addAjaxItem('participant', 'title_display', 'participants');
     $this->addAjaxItem('participant', 'show_full_events', 'participants');
+    $this->addAjaxItem('participant', 'event_sort_field', 'participants');
 
     for ($n = 1; $reg_type && (($n <= count($this->data['contact']) && $reg_type != 'all') || $n == 1); ++$n) {
       $this->form['participant']['participants'][$n] = [
