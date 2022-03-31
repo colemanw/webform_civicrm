@@ -46,7 +46,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
 
     $result = civicrm_api4('DedupeRule', 'create', [
       'values' => [
-        'dedupe_rule_group_id' => $dedupe_rule_group_id,
+        'dedupe_rule_group_id' => $this->dedupeRuleGroupId,
         'rule_table' => 'civicrm_contact',
         'rule_field' => 'first_name',
         'rule_length' => '',
@@ -56,7 +56,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
 
     $result = civicrm_api4('DedupeRule', 'create', [
       'values' => [
-        'dedupe_rule_group_id' => $dedupe_rule_group_id,
+        'dedupe_rule_group_id' => $this->dedupeRuleGroupId,
         'rule_table' => 'civicrm_phone',
         'rule_field' => 'phone_numeric',
         'rule_length' => '',
