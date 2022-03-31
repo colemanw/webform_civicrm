@@ -1010,7 +1010,7 @@ class Fields implements FieldsInterface {
           $fields[$id]['extra']['description_above'] = (int) empty($custom_field['help_pre']);
           $fields[$id]['has_help'] = TRUE;
         }
-        if ($custom_field['serialize'] || FALSE) {
+        if (!empty($custom_field['serialize'])) {
           $fields[$id]['extra']['multiple'] = 1;
         }
         // Conditional rule - todo: support additional entities
