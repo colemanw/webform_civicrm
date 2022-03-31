@@ -11,6 +11,13 @@ use Drupal\Core\Url;
  */
 final class ContactDedupeTest extends WebformCivicrmTestBase {
 
+  /**
+   * The dedupe rule group ID.
+   *
+   * @var int
+   */
+  protected $dedupeRuleGroupId;
+
   private function createContactSubtype() {
     $params = [
         'name' => "Student",
@@ -35,7 +42,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
         ],
     ]);
     $result_DedupeRuleGroup = reset($result);
-    $dedupe_rule_group_id = $result_DedupeRuleGroup['id'];
+    $this->dedupeRuleGroupId = $result_DedupeRuleGroup['id'];
 
     $result = civicrm_api4('DedupeRule', 'create', [
       'values' => [
