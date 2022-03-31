@@ -6,7 +6,7 @@ Webform CiviCRM is a powerful, flexible, user-friendly form builder for CiviCRM!
 Installation & Getting Started
 ------------------------------
 
-- Download and enable this module, plus CiviCRM, Webform.
+- Download and enable this module, plus CiviCRM, Webform!
 - Create a new webform (or go to edit an existing one).
 - Click on the Settings -> CiviCRM tab.
 - Enable the fields you like, and optionally choose introduction text and other settings.
