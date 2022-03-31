@@ -181,6 +181,23 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     ]);
     $email = reset($api_result['values']);
     $this->assertEquals('frederick@pabst.io', $email['email']);
+
+    $this->drupalLogin($this->adminUser);
+
+    civicrm_api4('DedupeRule', 'delete', [
+      'where' => [['dedupe_rule_group_id.id', '=', $this->dedupeRuleGroupId]],
+    ]);
+
+    civicrm_api4('DedupeRuleGroup', 'delete', [
+      'where' => [['id', '=', $this->dedupeRuleGroupId]],
+    ]);
+
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+
+    $this->assertSession()->elementExists('css', 'input[data-drupal-selector="edit-nid"]');
+    $this->assertPageNoErrorMessages();
   }
 
 }
