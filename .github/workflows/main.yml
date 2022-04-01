@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - 6.x
+  schedule:
+    # Run Monday/Thursday at 12:13 GMT
+    - cron: '13 12 * * 1,4'
 
 jobs:
   phpunit:
