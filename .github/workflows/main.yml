@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - 6.x
+  schedule:
+    # Run Monday/Thursday at 12:13 GMT
+    - cron: '13 12 * * 1,4'
 
 jobs:
   phpunit:
@@ -39,7 +42,7 @@ jobs:
             php-version: 7.4
             extensions: dom, curl, libxml, mbstring, zip, pdo, mysql, pdo_mysql, bcmath, soap, intl, gd, exif, iconv
             coverage: none
-            tools: composer:2.2
+            tools: composer:v2
       - name: Get composer cache directory
         id: composercache
         run: echo "::set-output name=dir::$(composer config cache-files-dir)"
