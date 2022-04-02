@@ -136,7 +136,7 @@ class ContactComponent implements ContactComponentInterface {
       }
       if (count($ret) < $limit && $element['#allow_create']) {
         // HTML hack to get prompt to show up different than search results
-        $ret[] = ['id' => "-$str", 'name' => '<em><i>' . Xss::filter($element['#none_prompt']) . '</i></em>'];
+        $ret[] = ['id' => "-$str", 'name' => Xss::filter($element['#none_prompt'])];
       }
     }
     // Select results
