@@ -56,6 +56,17 @@ var wfCivi = (function ($, D) {
       return path + (path.indexOf('?') < 0 ? '?' : '&') + $.param(getCids(nid));
     }
 
+    /**
+     * Format the choices in the "Existing Contact widget", with a special format for the "No Results" item.
+     */
+    function formatChoices(item) {
+      var string = item[this.propertyToSearch];
+      if (string == this.noResultsText) {
+        return "<li><em><i>" + string + "</i></em></li>";
+      }
+      return "<li>" + string + "</li>";
+    }
+
     if ($field.length) {
       if ($field.is('[type=hidden]') && !cid) {
         return;
@@ -86,6 +97,7 @@ var wfCivi = (function ($, D) {
         tokenInputSettings.queryParam = 'str';
         tokenInputSettings.tokenLimit = 1;
         tokenInputSettings.prePopulate = prep;
+        tokenInputSettings.resultsFormatter = formatChoices;
         $field.tokenInput(getCallbackPath, tokenInputSettings);
       }
     }
