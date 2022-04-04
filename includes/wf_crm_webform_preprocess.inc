@@ -486,7 +486,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             if (($element['#type'] == 'checkboxes' || !empty($element['#multiple'])) && !is_array($val)) {
               $val = wf_crm_explode_multivalue_str($val);
             }
-            if ($element['#type'] != 'checkboxes' && $element['#type'] != 'date'
+            if ($element['#type'] != 'checkboxes' && $element['#type'] != 'date' && $element['#type'] != 'value'
               && empty($element['#multiple']) && is_array($val)) {
               // If there's more than one value for a non-multi field, pick the most appropriate
               if (!empty($element['#options'])) {
