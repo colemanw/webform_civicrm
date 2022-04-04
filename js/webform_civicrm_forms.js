@@ -434,6 +434,25 @@ var wfCivi = (function ($, D) {
       $('div.civicrm-enabled[id*=contact-1-contact-image-url]:has(.file)', context).each(function() {
         pub.initFileField(getFieldNameFromClass($(this).parent()));
       });
+
+      // If an autocomplete-select widget is marked required while hidden, remove the "required" class.
+      var observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          if (mutation.target.offsetParent === null) {
+            mutation.target.removeAttribute('required');
+            mutation.target.classList.remove('required');
+          }
+        });
+      });
+
+      // Look for an autocomplete-select widgets being set to "required" or "style" changing (potentially to 'none').
+      $('.token-input-input-token').each(function() {
+        observer.observe($(this)[0], {
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['required', 'style']
+        });
+      });
     }
   };
   return pub;
