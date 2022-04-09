@@ -11,6 +11,13 @@ use Drupal\Core\Url;
  */
 final class ContactDedupeTest extends WebformCivicrmTestBase {
 
+  /**
+   * The dedupe rule group ID.
+   *
+   * @var int
+   */
+  protected $dedupeRuleGroupId;
+
   private function createContactSubtype() {
     $params = [
         'name' => "Student",
@@ -35,11 +42,11 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
         ],
     ]);
     $result_DedupeRuleGroup = reset($result);
-    $dedupe_rule_group_id = $result_DedupeRuleGroup['id'];
+    $this->dedupeRuleGroupId = $result_DedupeRuleGroup['id'];
 
     $result = civicrm_api4('DedupeRule', 'create', [
       'values' => [
-        'dedupe_rule_group_id' => $dedupe_rule_group_id,
+        'dedupe_rule_group_id' => $this->dedupeRuleGroupId,
         'rule_table' => 'civicrm_contact',
         'rule_field' => 'first_name',
         'rule_length' => '',
@@ -49,7 +56,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
 
     $result = civicrm_api4('DedupeRule', 'create', [
       'values' => [
-        'dedupe_rule_group_id' => $dedupe_rule_group_id,
+        'dedupe_rule_group_id' => $this->dedupeRuleGroupId,
         'rule_table' => 'civicrm_phone',
         'rule_field' => 'phone_numeric',
         'rule_length' => '',
@@ -181,6 +188,23 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     ]);
     $email = reset($api_result['values']);
     $this->assertEquals('frederick@pabst.io', $email['email']);
+
+    $this->drupalLogin($this->adminUser);
+
+    civicrm_api4('DedupeRule', 'delete', [
+      'where' => [['dedupe_rule_group_id.id', '=', $this->dedupeRuleGroupId]],
+    ]);
+
+    civicrm_api4('DedupeRuleGroup', 'delete', [
+      'where' => [['id', '=', $this->dedupeRuleGroupId]],
+    ]);
+
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+
+    $this->assertSession()->elementExists('css', 'input[data-drupal-selector="edit-nid"]');
+    $this->assertPageNoErrorMessages();
   }
 
 }
