@@ -35,7 +35,7 @@ final class CaseSubmissionTest extends WebformCivicrmTestBase {
 
     $this->saveCiviCRMSettings();
 
-    //Edit contact element and remove default section.
+    // Edit contact element and remove default section.
     $this->drupalGet($this->webform->toUrl('edit-form'));
     $editContact = [
       'selector' => "edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations",
