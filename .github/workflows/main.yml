@@ -7,6 +7,13 @@ on:
   schedule:
     # Run Monday/Thursday at 12:13 GMT
     - cron: '13 12 * * 1,4'
+  workflow_dispatch:
+    branches:
+      - 6.x
+    inputs:
+      coreprurl:
+        description: (optional) Core PR URL
+        required: false
 
 jobs:
   phpunit:
@@ -91,6 +98,12 @@ jobs:
         run: |
           cd ~/drupal
           COMPOSER_MEMORY_LIMIT=-1 composer require drupal/token:^1.9
+      - name: Optionally Apply Core PR
+        if: ${{ github.event.inputs.coreprurl != 0 }}
+        run: |
+          cd  ~/drupal/vendor/civicrm/civicrm-core
+          curl -L -o prpatch.patch ${{ github.event.inputs.coreprurl }}.patch
+          git apply prpatch.patch
       - uses: nanasess/setup-chromedriver@master
       - name: Run chromedriver
         run: chromedriver &
