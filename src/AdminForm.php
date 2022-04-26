@@ -1756,7 +1756,7 @@ class AdminForm implements AdminFormInterface {
       }
     }
     // Enable billing address by default when contribution is enabled.
-    if ($this->settings['civicrm_1_contribution_1_contribution_enable_contribution'] && empty($this->data['billing'])) {
+    if (!empty($this->settings['civicrm_1_contribution_1_contribution_enable_contribution']) && empty($this->data['billing'])) {
       $this->data['billing'] = ['number_number_of_billing' => 1];
       $billingFields = ['first_name', 'last_name', 'street_address', 'city', 'postal_code', 'state_province_id', 'country_id'];
       foreach ($billingFields as $field) {
