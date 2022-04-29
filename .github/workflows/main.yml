@@ -8,8 +8,6 @@ on:
     # Run Monday/Thursday at 12:13 GMT
     - cron: '13 12 * * 1,4'
   workflow_dispatch:
-    branches:
-      - 6.x
     inputs:
       coreprurl:
         description: (optional) Core PR URL
