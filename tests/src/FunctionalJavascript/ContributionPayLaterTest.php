@@ -275,6 +275,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
 
     if ($changeTypeToOption) {
       $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-change-type"]')->click();
+      $this->assertSession()->assertWaitOnAjaxRequest();
       $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector='edit-elements-civicrm-options-operation']", 3000)->click();
       $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector='edit-cancel']", 3000);
     }

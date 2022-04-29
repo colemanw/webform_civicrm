@@ -2470,6 +2470,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
             $val = \CRM_Utils_Array::implodePadded($val);
           }
         }
+        elseif (empty($component['#extra']['multiple']) && $this->utils->hasMultipleValues($component)) {
+          $val = $val[0] ?? NULL;
+        }
         elseif ($name === 'image_url') {
           if (empty($val[0]) || !($val = $this->getDrupalFileUrl($val[0]))) {
             // This field can't be emptied due to the nature of file uploads
