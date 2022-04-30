@@ -347,8 +347,26 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->pressButton('_qf_Field_done-bottom');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->htmlOutput();
+    $this->assertPageNoErrorMessages();
+
     // Verify if the custom field is back on the page.
     $this->assertSession()->pageTextContains('Label for Custom Checkbox field');
+
+    //Change single radio to static.
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+    // Enable static option on radio field.
+    $this->editCivicrmOptionElement("edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-{$this->_customFields['single_radio']}-operations", FALSE, TRUE);
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->htmlOutput();
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->checkboxNotChecked("Yes");
+
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
   }
 
   /**
