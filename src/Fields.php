@@ -729,10 +729,9 @@ class Fields implements FieldsInterface {
           'type' => 'select',
           'expose_list' => TRUE,
           'civicrm_live_options' => TRUE,
-          'value' => 1,
           'default' => 1,
-          'set' => 'line_items',
           'parent' => 'contribution_pagebreak',
+          'extra' => ['required' => 1],
         ];
         $sets['contributionRecur'] = ['entity_type' => 'contribution', 'label' => t('Recurring Contribution')];
         $fields['contribution_frequency_unit'] = [

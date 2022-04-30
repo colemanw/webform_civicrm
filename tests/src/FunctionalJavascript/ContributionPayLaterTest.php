@@ -23,6 +23,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
 
     $params = [
       'pp' => 'Pay Later',
+      'financial_type_id' => 'create_civicrm_webform_element',
       'receipt' => [
         'receipt_from_name' => 'Admin',
         'receipt_from_email' => 'admin@example.com',
@@ -50,16 +51,21 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->htmlOutput();
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '30.00');
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_financial_type_id', 2);
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     $contribution = \Civi\Api4\Contribution::get()
-      ->addSelect('source', 'total_amount', 'contribution_status_id:label', 'currency')
+      ->addSelect('source', 'total_amount', 'contribution_status_id:label', 'currency', 'financial_type_id:label')
       ->setLimit(1)
       ->execute()
       ->first();
+    $this->assertEquals('30.00', $contribution['total_amount']);
+    $this->assertEquals('Pending', $contribution['contribution_status_id:label']);
+    $this->assertEquals('Member Dues', $contribution['financial_type_id:label']);
+    $this->assertEquals('USD', $contribution['currency']);
 
     $sent_email = $this->getMostRecentEmail();
     $this->assertStringContainsString('From: Admin <admin@example.com>', $sent_email);

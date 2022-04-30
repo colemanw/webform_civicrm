@@ -54,7 +54,8 @@ function webform_civicrm_civicrm_alterMailParams(&$params, $context) {
           }
           $settings = &$config['webform_civicrm']['settings'];
           $utils = \Drupal::service('webform_civicrm.utils');
-          $receiptParams = $utils->getReceiptParams($settings['data'], $params['tplParams']['contributionID']);
+          $submissionData = array_merge($settings['data'], $submission->getData());
+          $receiptParams = $utils->getReceiptParams($submissionData, $params['tplParams']['contributionID']);
           $params['tplParams']= array_merge($params['tplParams'], $receiptParams);
         }
       }
@@ -197,11 +198,13 @@ function _fillCiviCRMData($data, $webformSubmission) {
       if (!empty($element['#webform_multiple'])) {
         foreach ($val as $k => $v) {
           if (isset($element['#options'][$v])) {
+            $data[$key]["{$k}_raw"] = $data[$key][$k];
             $data[$key][$k] = $element['#options'][$v];
           }
         }
       }
       elseif (isset($element['#options'][$val])) {
+        $data["{$key}_raw"] = $data[$key];
         $data[$key] = $element['#options'][$val];
       }
     }
