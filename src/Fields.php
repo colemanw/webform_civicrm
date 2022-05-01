@@ -718,12 +718,16 @@ class Fields implements FieldsInterface {
           'type' => 'textfield',
           'parent' => 'contribution_pagebreak',
         ];
+        $donationFinancialType = $this->utils->wf_civicrm_api('FinancialType', 'getvalue', [
+          'return' => 'id',
+          'name' => 'Donation',
+        ]);
         $fields['contribution_financial_type_id'] = [
           'name' => t('Financial Type'),
           'type' => 'select',
           'expose_list' => TRUE,
           'civicrm_live_options' => TRUE,
-          'default' => 1,
+          'default_value' => $donationFinancialType,
           'parent' => 'contribution_pagebreak',
           'extra' => ['required' => 1],
         ];
@@ -738,7 +742,7 @@ class Fields implements FieldsInterface {
           'type' => 'select',
           'expose_list' => TRUE,
           'civicrm_live_options' => TRUE,
-          'default' => 1,
+          'default_value' => $donationFinancialType,
           'parent' => 'contribution_pagebreak',
           'set' => 'line_items',
           'fid' => 'contribution_financial_type_id',

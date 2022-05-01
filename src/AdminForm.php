@@ -1579,8 +1579,8 @@ class AdminForm implements AdminFormInterface {
         $item['#default_value'] = self::$method($fid, $options);
       }
       // 4: From field default
-      elseif (isset($field['value'])) {
-        $item['#default_value'] = $field['value'];
+      elseif (isset($field['value']) || isset($field['default_value'])) {
+        $item['#default_value'] = $field['value'] ?? $field['default_value'];
       }
       // 5: For required fields like phone type, default to the first option
       elseif (empty($field['extra']['multiple']) && !isset($field['empty_option'])) {
