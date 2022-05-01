@@ -91,6 +91,7 @@ class AdminForm implements AdminFormInterface {
 
     // Sort fields by set
     foreach ($this->fields as $fid => $field) {
+      $fid = $field['fid'] ?? $fid;
       if (isset($field['set'])) {
         $set = $field['set'];
       }

@@ -718,12 +718,6 @@ class Fields implements FieldsInterface {
           'type' => 'textfield',
           'parent' => 'contribution_pagebreak',
         ];
-        // Line items
-        $fields['contribution_line_total'] = [
-            'name' => t('Line Item Amount'),
-            'set' => 'line_items',
-            'parent' => 'contribution_pagebreak',
-          ] + $moneyDefaults;
         $fields['contribution_financial_type_id'] = [
           'name' => t('Financial Type'),
           'type' => 'select',
@@ -732,6 +726,22 @@ class Fields implements FieldsInterface {
           'default' => 1,
           'parent' => 'contribution_pagebreak',
           'extra' => ['required' => 1],
+        ];
+        // Line items
+        $fields['contribution_line_total'] = [
+            'name' => t('Line Item Amount'),
+            'set' => 'line_items',
+            'parent' => 'contribution_pagebreak',
+          ] + $moneyDefaults;
+        $fields['lineitem_financial_type_id'] = [
+          'name' => t('Financial Type'),
+          'type' => 'select',
+          'expose_list' => TRUE,
+          'civicrm_live_options' => TRUE,
+          'default' => 1,
+          'parent' => 'contribution_pagebreak',
+          'set' => 'line_items',
+          'fid' => 'contribution_financial_type_id',
         ];
         $sets['contributionRecur'] = ['entity_type' => 'contribution', 'label' => t('Recurring Contribution')];
         $fields['contribution_frequency_unit'] = [
