@@ -718,21 +718,34 @@ class Fields implements FieldsInterface {
           'type' => 'textfield',
           'parent' => 'contribution_pagebreak',
         ];
+        $donationFinancialType = $this->utils->wf_civicrm_api('FinancialType', 'getvalue', [
+          'return' => 'id',
+          'name' => 'Donation',
+        ]);
+        $fields['contribution_financial_type_id'] = [
+          'name' => t('Financial Type'),
+          'type' => 'select',
+          'expose_list' => TRUE,
+          'civicrm_live_options' => TRUE,
+          'default_value' => $donationFinancialType,
+          'parent' => 'contribution_pagebreak',
+          'extra' => ['required' => 1],
+        ];
         // Line items
         $fields['contribution_line_total'] = [
             'name' => t('Line Item Amount'),
             'set' => 'line_items',
             'parent' => 'contribution_pagebreak',
           ] + $moneyDefaults;
-        $fields['contribution_financial_type_id'] = [
+        $fields['lineitem_financial_type_id'] = [
           'name' => t('Financial Type'),
           'type' => 'select',
           'expose_list' => TRUE,
           'civicrm_live_options' => TRUE,
-          'value' => 1,
-          'default' => 1,
-          'set' => 'line_items',
+          'default_value' => $donationFinancialType,
           'parent' => 'contribution_pagebreak',
+          'set' => 'line_items',
+          'fid' => 'contribution_financial_type_id',
         ];
         $sets['contributionRecur'] = ['entity_type' => 'contribution', 'label' => t('Recurring Contribution')];
         $fields['contribution_frequency_unit'] = [

@@ -91,6 +91,7 @@ class AdminForm implements AdminFormInterface {
 
     // Sort fields by set
     foreach ($this->fields as $fid => $field) {
+      $fid = $field['fid'] ?? $fid;
       if (isset($field['set'])) {
         $set = $field['set'];
       }
@@ -1092,6 +1093,12 @@ class AdminForm implements AdminFormInterface {
     // Make sure webform is set-up to prevent credit card abuse.
     $this->checkSubmissionLimit();
     $financialType = wf_crm_aval($this->data, 'contribution:1:contribution:1:financial_type_id');
+    if (!$financialType && $this->settings['civicrm_1_contribution_1_contribution_financial_type_id'] != 'create_civicrm_webform_element') {
+      $financialType = $this->utils->wf_civicrm_api('FinancialType', 'getvalue', [
+        'return' => 'id',
+        'name' => 'Donation',
+      ]);
+    }
     // Add contribution fields
     foreach ($this->sets as $sid => $set) {
       if ($set['entity_type'] == 'contribution' && (empty($set['sub_types']) || in_array($financialType, $set['sub_types']) )) {
@@ -1126,17 +1133,6 @@ class AdminForm implements AdminFormInterface {
         }
       }
     }
-    //Add financial type config.
-    $ft_options = (array) $this->utils->wf_crm_apivalues('Contribution', 'getoptions', [
-      'field' => "financial_type_id",
-    ]);
-    $this->form['contribution']['sets']['contribution']['civicrm_1_contribution_1_contribution_financial_type_id'] = [
-      '#type' => 'select',
-      '#title' => t('Financial Type'),
-      '#default_value' => $financialType,
-      '#options' => $ft_options,
-      '#required' => TRUE,
-    ];
     $this->addAjaxItem("contribution:sets:contribution", "civicrm_1_contribution_1_contribution_financial_type_id", "..:custom");
 
     //Add Currency.
@@ -1583,8 +1579,8 @@ class AdminForm implements AdminFormInterface {
         $item['#default_value'] = self::$method($fid, $options);
       }
       // 4: From field default
-      elseif (isset($field['value'])) {
-        $item['#default_value'] = $field['value'];
+      elseif (isset($field['value']) || isset($field['default_value'])) {
+        $item['#default_value'] = $field['value'] ?? $field['default_value'];
       }
       // 5: For required fields like phone type, default to the first option
       elseif (empty($field['extra']['multiple']) && !isset($field['empty_option'])) {

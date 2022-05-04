@@ -993,10 +993,10 @@ class Utils implements UtilsInterface {
   public function getReceiptParams($data, $contributionID) {
     $contributionData = wf_crm_aval($data, 'contribution:1:contribution:1');
     $params = ['id' => $contributionID];
-    $params['payment_processor_id'] = $contributionData['payment_processor_id'];
+    $params['payment_processor_id'] = $contributionData['payment_processor_id'] ?? $data['civicrm_1_contribution_1_contribution_payment_processor_id'] ?? NULL;
     unset($params['payment_processor']);
 
-    $params['financial_type_id'] = $contributionData['financial_type_id'];
+    $params['financial_type_id'] = $contributionData['financial_type_id'] ?? $data['civicrm_1_contribution_1_contribution_financial_type_id_raw'] ?? NULL;
     $params['currency'] = wf_crm_aval($data, "contribution:1:currency");
 
     //Assign receipt values set on the webform config page.
