@@ -817,10 +817,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         foreach ($contact[$location] as $i => $params) {
           // Translate state/prov abbr to id
           if (!empty($params['state_province_id'])) {
-            $default_country = $this->utils->wf_crm_get_civi_setting('defaultContactCountry', 1228);
-            if (!($params['state_province_id'] = $this->utils->wf_crm_state_abbr($params['state_province_id'], 'id', wf_crm_aval($params, 'country_id', $default_country)))) {
-              $params['state_province_id'] = '';
-            }
+            $params['state_province_id'] = $this->utils->wf_crm_state_abbr($params['state_province_id'], 'id', $params['country_id'] ?? NULL) ?? '';
           }
           // Substitute county stub ('-' is a hack to get around required field when there are no available counties)
           if (isset($params['county_id']) && $params['county_id'] === '-') {
