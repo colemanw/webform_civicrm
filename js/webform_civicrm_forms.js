@@ -116,8 +116,8 @@ var wfCivi = (function ($, D, drupalSettings) {
         }
       }
       else {
-        $(':visible', container).hide();
-        container.append('<input type="submit" class="button form-submit ajax-processed civicrm-remove-file" value="' + Drupal.t('Remove') + '" onclick="wfCivi.clearFileField(\'' + field + '\'); return false;">');
+        $(container).children().hide();
+        container.append('<input type="submit" class="button form-submit ajax-processed civicrm-remove-file" value="' + Drupal.t('Change') + '" onclick="wfCivi.clearFileField(\'' + field + '\'); return false;">');
       }
       container.prepend('<span class="file civicrm-file-icon file--'+info.icon+'">' + (info.name ? ('<a href="'+ info.file_url+ '" target="_blank">'+info.name +'</a>') : '') + '</span>');
     }
@@ -127,7 +127,7 @@ var wfCivi = (function ($, D, drupalSettings) {
     var element = 'div#edit-' + field.replace(/_/g, '-') + '.civicrm-enabled';
     var container = $(element.toLowerCase());
     $('.civicrm-remove-file, .civicrm-file-icon', container).remove();
-    $('input[type=file], input[type=submit]', container).show();
+    $(container).children().show();
   };
 
   /**

@@ -549,6 +549,11 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
                   'eid' => $eid,
                   'fileInfo' => $fileInfo
                 ];
+                // Unset required attribute on the file if its loaded from civicrm.
+                if (!empty($val)) {
+                  $element['#required'] = FALSE;
+                  unset($element['#states']['required']);
+                }
               }
             }
             // Set value for "secure value" elements
