@@ -800,6 +800,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     // Check which location_type_id is to be set as is_primary=1;
     $is_primary_address_location_type = wf_crm_aval($contact, 'address:1:location_type_id');
     $is_primary_email_location_type = wf_crm_aval($contact, 'email:1:location_type_id');
+    $billingLocTypeID = $this->utils->wf_civicrm_api('LocationType', 'get', [
+      'name' => "Billing",
+    ])['id'] ?? NULL;
 
     foreach ($this->utils->wf_crm_location_fields() as $location) {
       if (!empty($contact[$location])) {
@@ -816,7 +819,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         }
         foreach ($contact[$location] as $i => $params) {
           // Translate state/prov abbr to id
-          if (!empty($params['state_province_id']) && !is_numeric($params['state_province_id'])) {
+          if (!empty($params['state_province_id']) && $params['location_type_id'] != $billingLocTypeID) {
             $default_country = $this->utils->wf_crm_get_civi_setting('defaultContactCountry', 1228);
             if (!($params['state_province_id'] = $this->utils->wf_crm_state_abbr($params['state_province_id'], 'id', wf_crm_aval($params, 'country_id', $default_country)))) {
               $params['state_province_id'] = '';
