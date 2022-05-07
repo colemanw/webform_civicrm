@@ -93,8 +93,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     // $this->assertPageNoErrorMessages();
 
     // Assert if recur is attached to the created membership.
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $api_result = $utils->wf_civicrm_api('membership', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('membership', 'get', [
       'sequential' => 1,
       'return' => 'contribution_recur_id',
     ]);
@@ -102,7 +101,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->assertNotEmpty($membership['contribution_recur_id']);
 
     // Let's make sure we have a Contribution by ensuring we have a Transaction ID
-    $api_result = $utils->wf_civicrm_api('contribution', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
       'sequential' => 1,
     ]);
     $contribution = reset($api_result['values']);
@@ -291,7 +290,6 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
   }
 
   public function purchaseMembershipProvince($province) {
-    $utils = \Drupal::service('webform_civicrm.utils');
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
 
@@ -335,6 +333,14 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
       'sequential' => 1,
     ]);
+    $addresses = $this->utils->wf_crm_apivalues('address', 'get', [
+      'sequential' => 1,
+    ]);
+    foreach ($addresses as $address) {
+      if ($address['location_type_id'] == 5) {
+        $this->assertEquals(1048, $address['state_province_id']);
+      }
+    }
 
     if ($province == 'Alberta') {
       $this->assertEquals(1, $api_result['count']);
@@ -381,7 +387,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
       $this->assertEquals(2, $api_result['count']);
       $line_items = next($api_result['values']);
     }
-    $priceFieldID = $utils->wf_civicrm_api('PriceField', 'get', [
+    $priceFieldID = $this->utils->wf_civicrm_api('PriceField', 'get', [
       'sequential' => 1,
       'price_set_id' => 'default_membership_type_amount',
       'options' => ['limit' => 1],
