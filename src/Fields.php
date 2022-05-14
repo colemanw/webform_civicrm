@@ -718,10 +718,10 @@ class Fields implements FieldsInterface {
           'type' => 'textfield',
           'parent' => 'contribution_pagebreak',
         ];
-        $donationFinancialType = $this->utils->wf_civicrm_api('FinancialType', 'getvalue', [
+        $donationFinancialType = current($this->utils->wf_crm_apivalues('FinancialType', 'get', [
           'return' => 'id',
           'name' => 'Donation',
-        ]);
+        ], 'id')) ?? NULL;
         $fields['contribution_financial_type_id'] = [
           'name' => t('Financial Type'),
           'type' => 'select',
