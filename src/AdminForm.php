@@ -1094,10 +1094,10 @@ class AdminForm implements AdminFormInterface {
     $this->checkSubmissionLimit();
     $financialType = wf_crm_aval($this->data, 'contribution:1:contribution:1:financial_type_id');
     if (!$financialType && $this->settings['civicrm_1_contribution_1_contribution_financial_type_id'] != 'create_civicrm_webform_element') {
-      $financialType = $this->utils->wf_civicrm_api('FinancialType', 'getvalue', [
+      $financialType = current($this->utils->wf_crm_apivalues('FinancialType', 'get', [
         'return' => 'id',
         'name' => 'Donation',
-      ]);
+      ], 'id')) ?? NULL;
     }
     // Add contribution fields
     foreach ($this->sets as $sid => $set) {
