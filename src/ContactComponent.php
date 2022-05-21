@@ -92,26 +92,33 @@ class ContactComponent implements ContactComponentInterface {
     $limit = $str ? 12 : 500;
     $ret = [];
     $display_fields = array_values($element['#results_display']);
+    $fieldMappings = [
+      'current_employer' => ['employer_id', 'display_name'],
+      'email' => ['email', 'email'],
+      'phone' => ['phone', 'phone'],
+      'city' => ['address', 'city'],
+      'state_province' => ['address', 'state_province_id:label'],
+      'country' => ['address', 'country_id:label'],
+      'county' => ['address', 'county_id:label'],
+      'postal_code' => ['address', 'postal_code'],
+    ];
+    $joinedTables = [];
+    foreach ($fieldMappings as $field => $type) {
+      if ($key = array_search($field, $display_fields)) {
+        unset($display_fields[$key]);
+        [$table, $fieldName]= $type;
+        $display_fields[] = "{$table}.{$fieldName}";
+        if (empty($joinedTables[$table]) && in_array($table, ['email', 'phone', 'address'])) {
+          $joinedTables[$table] = TRUE;
+          $params['join'][] = [ucfirst($table) . " AS {$table}", 'LEFT', ["{$table}.is_primary", '=', 1]];
+        }
+      }
+    }
     $search_field = 'display_name';
     $sort_field = 'sort_name';
     // Search and sort based on the selected display field
     if (!in_array('display_name', $display_fields)) {
       $search_field = $sort_field = $display_fields[0];
-    }
-    $locType = [
-      'email' => ['email' => 'email'],
-      'phone' => ['phone' => 'phone'],
-      'city' => ['address' => 'city'],
-      'state_province' => ['address' => 'state_province_id:label'],
-      'country' => ['address' => 'country_id:label'],
-    ];
-    foreach ($locType as $field => $type) {
-      if (in_array($field, $display_fields)) {
-        foreach ($type as $table => $fieldName) {
-          $display_fields[] = "{$table}.{$fieldName}";
-          $params['join'][] = [ucfirst($table) . " AS {$table}", 'LEFT', ["{$table}.is_primary", '=', 1]];
-        }
-      }
     }
     $params += [
       'limit' => $limit,
@@ -135,7 +142,7 @@ class ContactComponent implements ContactComponentInterface {
     if ($str) {
       $params['where'][] = [$search_field, 'CONTAINS', $str];
     }
-    $result = $this->utils->wf_civicrm_api4('contact', 'get', $params);
+    $result = $this->utils->wf_civicrm_api4('Contact', 'get', $params);
     // Autocomplete results
     if ($str) {
       foreach ($result as $contact) {
@@ -218,7 +225,7 @@ class ContactComponent implements ContactComponentInterface {
       }
     }
     // Fetch contact name with filters applied
-    $result = $this->utils->wf_civicrm_api4('contact', 'get', $filters, 0);
+    $result = $this->utils->wf_civicrm_api4('Contact', 'get', $filters, 0);
     return $this->wf_crm_format_contact($result, /*$component['#extra']['results_display']*/ ['display_name']);
   }
 
