@@ -98,17 +98,34 @@ class ContactComponent implements ContactComponentInterface {
     if (!in_array('display_name', $display_fields)) {
       $search_field = $sort_field = $display_fields[0];
     }
+    $locType = [
+      'email' => ['email' => 'email'],
+      'phone' => ['phone' => 'phone'],
+      'city' => ['address' => 'city'],
+      'state_province' => ['address' => 'state_province_id:label'],
+      'country' => ['address' => 'country_id:label'],
+    ];
+    foreach ($locType as $field => $type) {
+      if (in_array($field, $display_fields)) {
+        foreach ($type as $table => $fieldName) {
+          $display_fields[] = "{$table}.{$fieldName}";
+          $params['join'][] = [ucfirst($table) . " AS {$table}", 'LEFT', ["{$table}.is_primary", '=', 1]];
+        }
+      }
+    }
     $params += [
-      'rowCount' => $limit,
-      'sort' => $sort_field,
-      'return' => $display_fields,
+      'limit' => $limit,
+      'orderBy' => [
+        $sort_field => 'ASC',
+      ],
+      'select' => $display_fields,
     ];
     if (!empty($params['relationship']['contact'])) {
       $c = $params['relationship']['contact'];
       $relations = NULL;
       if (!empty($contacts[$c]['id'])) {
         $relations = $this->wf_crm_find_relations($contacts[$c]['id'], wf_crm_aval($params['relationship'], 'types'));
-        $params['id'] = ['IN' => $relations];
+        $params['where'][] = ['id', 'IN', $relations];
       }
       if (!$relations) {
         return $ret;
@@ -116,20 +133,12 @@ class ContactComponent implements ContactComponentInterface {
     }
     unset($params['relationship']);
     if ($str) {
-      $str = str_replace(' ', '%', \CRM_Utils_Type::escape($str, 'String'));
-      // The contact api takes a quirky format for display_name and sort_name
-      if (in_array($search_field, ['sort_name', 'display_name'])) {
-        $params[$search_field] = $str;
-      }
-      // Others use the standard convention
-      else {
-        $params[$search_field] = ['LIKE' => "%$str%"];
-      }
+      $params['where'][] = [$search_field, 'CONTAINS', $str];
     }
-    $result = $this->utils->wf_civicrm_api('contact', 'get', $params);
+    $result = $this->utils->wf_civicrm_api4('contact', 'get', $params);
     // Autocomplete results
     if ($str) {
-      foreach (wf_crm_aval($result, 'values', []) as $contact) {
+      foreach ($result as $contact) {
         if ($name = $this->wf_crm_format_contact($contact, $display_fields)) {
           $ret[] = ['id' => $contact['id'], 'name' => $name];
         }
@@ -144,14 +153,14 @@ class ContactComponent implements ContactComponentInterface {
       if (!empty($element['#allow_create'])) {
         $ret['-'] = Xss::filter($element['#none_prompt']);
       }
-      foreach (wf_crm_aval($result, 'values', []) as $contact) {
+      foreach ($result as $contact) {
         // Select lists will be escaped by FAPI
         if ($name = $this->wf_crm_format_contact($contact, $display_fields, FALSE)) {
           $ret[$contact['id']] = $name;
         }
       }
       // If we get exactly $limit results, there are probably more - warn that the list is truncated
-      if (wf_crm_aval($result, 'count') >= $limit) {
+      if (wf_crm_aval($result, 'rowCount') >= $limit) {
         \Drupal::logger('webform_civicrm')->warning(
           'Maximum contacts exceeded, list truncated on the webform "@title". The webform_civicrm "@field" field cannot display more than @limit contacts because it is a select list. Recommend switching to autocomplete widget in element settings.',
           ['@limit' => $limit, '@field' => $element['#title'], '@title' => $node->label()]);
@@ -188,29 +197,29 @@ class ContactComponent implements ContactComponentInterface {
     if (!is_numeric($cid)) {
       return FALSE;
     }
-    $filters['id'] = $cid;
-    $filters['is_deleted'] = 0;
+    $filters['where'][] = ['id', '=', $cid];
+    $filters['where'][] = ['is_deleted', '=', 0];
     // A contact always has permission to view self
     if ($cid == $this->utils->wf_crm_user_cid()) {
-      $filters['check_permissions'] = FALSE;
+      $filters['checkPermissions'] = FALSE;
     }
-    if (!empty($filters['check_permissions'])) {
+    if (!empty($filters['checkPermissions'])) {
       // If we have a valid checksum for this contact, bypass other permission checks
       // For legacy reasons we support "cid" param as an alias of "cid1"
       // ToDo use: \Drupal::request()->query->all();
       if (wf_crm_aval($_GET, "cid$c") == $cid || ($c == 1 && wf_crm_aval($_GET, "cid") == $cid)) {
         // For legacy reasons we support "cs" param as an alias of "cs1"
         if (!empty($_GET['cs']) && $c == 1 && \CRM_Contact_BAO_Contact_Utils::validChecksum($cid, $_GET['cs'])) {
-          $filters['check_permissions'] = FALSE;
+          $filters['checkPermissions'] = FALSE;
         }
         elseif (!empty($_GET["cs$c"]) && \CRM_Contact_BAO_Contact_Utils::validChecksum($cid, $_GET["cs$c"])) {
-          $filters['check_permissions'] = FALSE;
+          $filters['checkPermissions'] = FALSE;
         }
       }
     }
     // Fetch contact name with filters applied
-    $result = $this->utils->wf_civicrm_api('contact', 'get', $filters);
-    return $this->wf_crm_format_contact(wf_crm_aval($result, "values:$cid"), /*$component['#extra']['results_display']*/ ['display_name']);
+    $result = $this->utils->wf_civicrm_api4('contact', 'get', $filters, 0);
+    return $this->wf_crm_format_contact($result, /*$component['#extra']['results_display']*/ ['display_name']);
   }
 
   /**
@@ -316,13 +325,14 @@ class ContactComponent implements ContactComponentInterface {
     /** @var \Drupal\webform\Plugin\WebformElementManagerInterface $element_manager */
     $element_manager = \Drupal::service('plugin.manager.webform.element');
     $contact_element = $element_manager->getElementInstance($component);
-    $params = ['is_deleted' => 0];
+    $params = [];
+    $params['where'][] = ['is_deleted', '=', 0];
     $contactFilters = [
       'contact_type',
       'contact_sub_type',
       'tag',
       'group',
-      'check_permissions',
+      'checkPermissions',
       'relationship' => [
         'contact',
         'types',
@@ -339,7 +349,10 @@ class ContactComponent implements ContactComponentInterface {
         }
       }
       else {
-        $params[$filter] = $contact_element->getElementProperty($component, $filter);
+        $filterVal = $contact_element->getElementProperty($component, $filter);
+        if ($filterVal) {
+          $params['where'][] = [$filter, '=', $filterVal];
+        }
       }
     }
     return $params;
