@@ -326,6 +326,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
       'selector' => 'edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations',
       'widget' => 'Static',
       'default' => 'Current User',
+      'required' => TRUE,
     ];
     $this->editContactElement($editContact);
     $this->assertSession()->pageTextContains('Existing Contact has been updated');
@@ -351,6 +352,15 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
     $this->assertPageNoErrorMessages();
+
+    $this->drupalLogout();
+
+    // Submit the form as an anonymous user.
+    // Empty static widget should throw an error on submission.
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertSession()->pageTextContains('Existing Contact field is required');
   }
 
   /**
