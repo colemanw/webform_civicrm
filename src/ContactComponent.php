@@ -225,7 +225,7 @@ class ContactComponent implements ContactComponentInterface {
       }
     }
     // Fetch contact name with filters applied
-    $result = $this->utils->wf_civicrm_api4('Contact', 'get', $filters, 0);
+    $result = $this->utils->wf_civicrm_api4('Contact', 'get', $filters)[0] ?? [];
     return $this->wf_crm_format_contact($result, /*$component['#extra']['results_display']*/ ['display_name']);
   }
 
@@ -358,7 +358,12 @@ class ContactComponent implements ContactComponentInterface {
       else {
         $filterVal = $contact_element->getElementProperty($component, $filter);
         if ($filterVal) {
-          $params['where'][] = [$filter, '=', $filterVal];
+          $op = '=';
+          if (in_array($filter, ['group', 'tag'])) {
+            $filter .= 's';
+            $op = 'IN';
+          }
+          $params['where'][] = [$filter, $op, $filterVal];
         }
       }
     }
