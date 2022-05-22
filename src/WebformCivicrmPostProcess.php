@@ -642,6 +642,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $rule = wf_crm_aval($contact, 'matching_rule', 'Unsupervised', TRUE);
     if ($rule) {
       $contact['contact'][1]['contact_type'] = ucfirst($contact['contact'][1]['contact_type']);
+      $contact['contact'][1]['contact_sub_type'] = array_map('ucfirst', $contact['contact'][1]['contact_sub_type']);
       $params = [
         'check_permission' => FALSE,
         'sequential' => TRUE,
