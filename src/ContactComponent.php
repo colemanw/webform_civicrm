@@ -345,17 +345,4 @@ class ContactComponent implements ContactComponentInterface {
     return $params;
   }
 
-
-  /**
-   * Validation callback
-   *
-   * @param array $element
-   * @param array $form_state
-   */
-  function wf_crm_contact_component_required($element, &$form_state) {
-    if (empty($element['#value'])) {
-      form_error($element, t('@name field is required.', ['@name' => $element['#title']]));
-    }
-  }
-
 }

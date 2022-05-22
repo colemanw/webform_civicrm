@@ -508,6 +508,10 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     if (!empty($params['remove_default_url'])) {
       $this->getSession()->getPage()->uncheckField('properties[allow_url_autofill]');
     }
+    if (!empty($params['required'])) {
+      $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-validation"]')->click();
+      $this->getSession()->getPage()->checkField('properties[required]');
+    }
 
     $this->getSession()->getPage()->pressButton('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();

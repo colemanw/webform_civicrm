@@ -614,4 +614,33 @@ class CivicrmContact extends WebformElementBase {
     return $value;
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  protected function prepareElementValidateCallbacks(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
+    parent::prepareElementValidateCallbacks($element, $webform_submission);
+    if ($element['#type'] == 'hidden' && !empty($element['#required'])) {
+      $element['#element_validate'][] = [get_class($this), 'validateRequired'];
+    }
+  }
+
+  /**
+   * Form API callback. Validate static widget #required attribute.
+   */
+  public static function validateRequired(&$element, FormStateInterface &$form_state) {
+    if (empty($element['#required'])) {
+      return;
+    }
+
+    if (empty($element['#value'])) {
+      $args = [
+        '%name' => empty($element['#title']) ? $element['#parents'][0] : $element['#title'],
+      ];
+      // Avoid error while calling form_state which expects '#group' as a string value :(.
+      $static_element = $element;
+      unset($static_element['#group']);
+      $form_state->setError($static_element, t('%name field is required.', $args));
+    }
+  }
+
 }
