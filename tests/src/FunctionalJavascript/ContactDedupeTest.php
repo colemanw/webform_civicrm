@@ -20,12 +20,11 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
 
   private function createContactSubtype() {
     $params = [
-        'name' => "Student",
-        'is_active' => 1,
-        'parent_id' => "Individual",
+      'name' => "Student",
+      'is_active' => 1,
+      'parent_id' => "Individual",
     ];
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $result = $utils->wf_civicrm_api('ContactType', 'create', $params);
+    $result = $this->utils->wf_civicrm_api('ContactType', 'create', $params);
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
   }
@@ -93,9 +92,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
       'webform' => $this->webform->id(),
     ]));
     // The label has a <div> in it which can cause weird failures here.
-    $this->assertSession()->waitForText('Enable CiviCRM Processing');
-    $this->assertSession()->waitForField('nid');
-    $this->getSession()->getPage()->checkField('nid');
+    $this->enableCivicrmOnWebform();
 
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contact_1_contact_contact_sub_type[]', 'Student');
     $this->assertSession()->assertWaitOnAjaxRequest();
@@ -116,9 +113,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contact_1_email_location_type_id', 'Main');
     $this->htmlOutput();
 
-    $this->getSession()->getPage()->pressButton('Save Settings');
-    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
-    $this->assertPageNoErrorMessages();
+    $this->saveCiviCRMSettings();
 
     $this->drupalLogout();
     $this->drupalGet($this->webform->toUrl('canonical'));
@@ -136,8 +131,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     // Note: custom fields are on contact_id=3 (1=default org; 2=the drupal user)
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $api_result = $utils->wf_civicrm_api('Contact', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('Contact', 'get', [
       'sequential' => 1,
       'first_name' => 'Frederick',
       'last_name' => 'Pabst',
@@ -146,7 +140,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $contact = reset($api_result['values']);
     $this->assertEquals('Student', implode($contact['contact_sub_type']));
 
-    $api_result = $utils->wf_civicrm_api('Email', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('Email', 'get', [
       'contact_id' => $contact['id'],
       'sequential' => 1,
     ]);
@@ -168,7 +162,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     // Check to see Last Name has been updated
-    $api_result = $utils->wf_civicrm_api('Contact', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('Contact', 'get', [
       'sequential' => 1,
       'contact_id' => $contact['id'],
     ]);
@@ -182,7 +176,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->assertEquals('Frederick', $contact['first_name']);
     $this->assertEquals('Student', implode($contact['contact_sub_type']));
 
-    $api_result = $utils->wf_civicrm_api('Email', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('Email', 'get', [
       'contact_id' => $contact['id'],
       'sequential' => 1,
     ]);
