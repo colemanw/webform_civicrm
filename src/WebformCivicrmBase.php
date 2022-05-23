@@ -9,7 +9,7 @@ namespace Drupal\webform_civicrm;
 
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Url;
-use Drupal\File\Entity\File;
+use Drupal\file\Entity\File;
 
 /**
  * Class WebformCivicrmBase
