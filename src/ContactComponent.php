@@ -114,11 +114,10 @@ class ContactComponent implements ContactComponentInterface {
         }
       }
     }
-    $search_field = 'display_name';
     $sort_field = 'sort_name';
     // Search and sort based on the selected display field
     if (!in_array('display_name', $display_fields)) {
-      $search_field = $sort_field = $display_fields[0];
+      $sort_field = $display_fields[0];
     }
     $params += [
       'limit' => $limit,
@@ -140,7 +139,11 @@ class ContactComponent implements ContactComponentInterface {
     }
     unset($params['relationship']);
     if ($str) {
-      $params['where'][] = [$search_field, 'CONTAINS', $str];
+      $searchFields = [];
+      foreach ($display_fields as $fld) {
+        $searchFields[] = [$fld, 'CONTAINS', $str];
+      }
+      $params['where'][] = ['OR', $searchFields];
     }
     $result = $this->utils->wf_civicrm_api4('Contact', 'get', $params);
     // Autocomplete results
