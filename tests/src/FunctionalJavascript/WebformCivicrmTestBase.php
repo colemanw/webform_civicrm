@@ -499,9 +499,12 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
 
     // Apply contact filter.
     if (!empty($params['filter'])) {
+      $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-filters"]')->click();
       if (!empty($params['filter']['group'])) {
-        $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-filters"]')->click();
         $this->getSession()->getPage()->selectFieldOption('Groups', $params['filter']['group']);
+      }
+      if (isset($params['filter']['check_permissions']) && empty($params['filter']['check_permissions'])) {
+        $this->getSession()->getPage()->uncheckField('properties[check_permissions]');
       }
     }
 
