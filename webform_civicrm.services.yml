@@ -25,3 +25,6 @@ services:
   webform_civicrm.postprocess:
     class: Drupal\webform_civicrm\WebformCivicrmPostProcess
     arguments: ['@webform_civicrm.utils']
+  webform_civicrm.confirmform:
+      class: Drupal\webform_civicrm\WebformCivicrmConfirmForm
+      arguments: ['@webform_civicrm.utils']
