@@ -39,12 +39,13 @@ class FieldOptionsTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function tearDown() {
+  protected function tearDown(): void {
     $conn = Database::getConnection('default', 'civicrm_test');
     $database = $conn->getConnectionOptions()['database'];
     // Todo: get this working when db name passed in as an argument.
     $conn->query("DROP DATABASE $database");
     $conn->destroy();
+    parent::tearDown();
   }
 
   /**

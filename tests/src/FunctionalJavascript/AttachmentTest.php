@@ -39,7 +39,7 @@ final class AttachmentTest extends WebformCivicrmTestBase {
     return self::$filePrefix;
   }
 
-  protected function tearDown() {
+  protected function tearDown(): void {
     parent::tearDown();
     $this->cleanupFiles();
   }
