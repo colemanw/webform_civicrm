@@ -290,7 +290,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->assertEquals(1, $api_result['count']);
     $contribution = reset($api_result['values']);
     $this->assertNotEmpty($contribution['trxn_id']);
-    $this->assertContains(':', $contribution['trxn_id']);
+    $this->assertStringContainsString(':', $contribution['trxn_id']);
     $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
     $this->assertEquals('Donation', $contribution['financial_type']);
     $this->assertEquals('10.00', $contribution['total_amount']);
