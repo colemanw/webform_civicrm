@@ -16,7 +16,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     // Download installs and enables!

@@ -53,7 +53,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->utils = \Drupal::service('webform_civicrm.utils');
 

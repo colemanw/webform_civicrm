@@ -26,7 +26,7 @@ class FieldOptionsTest extends KernelTestBase {
 
   }
 
-  protected function setUp() {
+  protected function setUp(): void {
     $this->markTestSkipped('Requires MySQL');
     parent::setUp();
 

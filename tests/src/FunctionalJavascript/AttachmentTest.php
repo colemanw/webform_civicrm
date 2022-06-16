@@ -23,7 +23,7 @@ final class AttachmentTest extends WebformCivicrmTestBase {
     'file',
   ];
 
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->cleanupFiles();
     $this->addAttachmentOnContact();
