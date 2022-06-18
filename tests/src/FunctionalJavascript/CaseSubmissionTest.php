@@ -11,13 +11,10 @@ use Drupal\Core\Url;
  */
 final class CaseSubmissionTest extends WebformCivicrmTestBase {
 
-  /**
-   * Test Case Submission.
-   */
-  public function testCaseSubmission() {
-    $this->drupalLogin($this->rootUser);
+  protected function setUp() {
+    parent::setUp();
     $this->enableComponent('CiviCase');
-    $this->_caseContact = $this->createIndividual();
+    $this->drupalLogin($this->rootUser);
 
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
@@ -34,6 +31,13 @@ final class CaseSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField('Case Start Date');
 
     $this->saveCiviCRMSettings();
+  }
+
+  /**
+   * Test Case Submission.
+   */
+  public function testCaseSubmission() {
+    $this->_caseContact = $this->createIndividual();
 
     // Edit contact element and remove default section.
     $this->drupalGet($this->webform->toUrl('edit-form'));
@@ -48,22 +52,45 @@ final class CaseSubmissionTest extends WebformCivicrmTestBase {
     $this->submitCaseAndVerifyResult($caseSubject);
     $caseSubject = "Update Test Case" . substr(sha1(rand()), 0, 7);
     $this->submitCaseAndVerifyResult($caseSubject);
+  }
 
+  /**
+   * Test Case Submission and update with non admin user.
+   */
+  public function testCaseSubmissionWithNonAdminUser() {
+    $this->testUser = $this->createUser([
+      'access content',
+    ]);
+    $ufContact = $this->getUFMatchRecord($this->testUser->id());
+    $this->_caseContact = $this->utils->wf_civicrm_api('Contact', 'create', [
+      'id' => $ufContact['contact_id'],
+      'first_name' => 'Mark',
+      'last_name' => 'Gibson',
+    ])['values'][$ufContact['contact_id']];
+
+    $this->drupalLogin($this->testUser);
+    $caseSubject = "Test Case create with authenticated user";
+    $this->submitCaseAndVerifyResult($caseSubject, FALSE);
+
+    $caseSubject = "Test Case update with authenticated user";
+    $this->submitCaseAndVerifyResult($caseSubject, FALSE);
   }
 
   /**
    * Submit Case and verify the result.
    *
    * @param string $caseSubject
+   * @param bool $fillAutocomplete
    */
-  protected function submitCaseAndVerifyResult($caseSubject) {
+  protected function submitCaseAndVerifyResult($caseSubject, $fillAutocomplete = TRUE) {
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
 
-    $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', $this->_caseContact['first_name']);
-
-    $this->assertFieldValue('edit-civicrm-1-contact-1-contact-first-name', $this->_caseContact['first_name']);
-    $this->assertFieldValue('edit-civicrm-1-contact-1-contact-last-name', $this->_caseContact['last_name']);
+    if ($fillAutocomplete) {
+      $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', $this->_caseContact['first_name']);
+      $this->assertFieldValue('edit-civicrm-1-contact-1-contact-first-name', $this->_caseContact['first_name']);
+      $this->assertFieldValue('edit-civicrm-1-contact-1-contact-last-name', $this->_caseContact['last_name']);
+    }
 
     $this->getSession()->getPage()->fillField('Case Subject', $caseSubject);
     $this->getSession()->getPage()->pressButton('Submit');
