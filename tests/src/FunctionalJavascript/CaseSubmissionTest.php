@@ -58,6 +58,10 @@ final class CaseSubmissionTest extends WebformCivicrmTestBase {
    * Test Case Submission and update with non admin user.
    */
   public function testCaseSubmissionWithNonAdminUser() {
+    if (!\CRM_Core_BAO_Domain::isDBVersionAtLeast('5.50.4')) {
+      $this->markTestSkipped('Test requires core fix that is only in 5.50.4+');
+    }
+
     $this->testUser = $this->createUser([
       'access content',
     ]);
