@@ -20,15 +20,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - drupal: '9.3.*'
+          - drupal: '9.4.x-dev'
             civicrm: '5.45.*'
-          - drupal: '9.3.*'
+          - drupal: '9.4.x-dev'
             civicrm: '5.49.*'
-          - drupal: '9.3.*'
+          - drupal: '9.4.x-dev'
             civicrm: '5.50.*'
-          - drupal: '9.3.*'
+          - drupal: '9.4.x-dev'
             civicrm: '5.51.x-dev'
-          - drupal: '9.3.*'
+          - drupal: '9.4.x-dev'
             civicrm: 'dev-master'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
     services:
@@ -73,6 +73,11 @@ jobs:
           composer config minimum-stability dev
           composer config prefer-stable true
           composer config preferred-install dist
+          composer config allow-plugins.civicrm/composer-compile-plugin true
+          composer config allow-plugins.civicrm/composer-downloads-plugin true
+          composer config allow-plugins.civicrm/civicrm-asset-plugin true
+          composer config allow-plugins.cweagans/composer-patches true
+          composer config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
           # Note in composer v2 the order is more important. We want the path one to have higher priority.
           composer config repositories.0 composer https://packages.drupal.org/8
           composer config repositories.1 path $GITHUB_WORKSPACE
