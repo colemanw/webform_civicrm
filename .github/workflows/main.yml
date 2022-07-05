@@ -23,6 +23,8 @@ jobs:
           - drupal: '9.4.x-dev'
             civicrm: '5.45.*'
           - drupal: '9.4.x-dev'
+            civicrm: '5.49.*'
+          - drupal: '9.4.x-dev'
             civicrm: '5.50.*'
           - drupal: '9.4.x-dev'
             civicrm: '5.51.x-dev'
