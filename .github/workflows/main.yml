@@ -73,11 +73,11 @@ jobs:
           composer config minimum-stability dev
           composer config prefer-stable true
           composer config preferred-install dist
+          composer config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
           composer config allow-plugins.civicrm/composer-compile-plugin true
           composer config allow-plugins.civicrm/composer-downloads-plugin true
           composer config allow-plugins.civicrm/civicrm-asset-plugin true
           composer config allow-plugins.cweagans/composer-patches true
-          composer config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
           # Note in composer v2 the order is more important. We want the path one to have higher priority.
           composer config repositories.0 composer https://packages.drupal.org/8
           composer config repositories.1 path $GITHUB_WORKSPACE
