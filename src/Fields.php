@@ -362,16 +362,14 @@ class Fields implements FieldsInterface {
       ];
       $fields['address_state_province_id'] = [
         'name' => t('State/Province'),
-        'type' => 'textfield',
-        'extra' => [
-          'maxlength' => 5,
-          'width' => 4,
-        ],
+        'type' => 'select',
+        'extra' => ['aslist' => 1],
         'data_type' => 'state_province_abbr',
       ];
       $fields['address_county_id'] = [
         'name' => t('District/County'),
-        'type' => 'textfield',
+        'type' => 'select',
+        'extra' => ['aslist' => 1],
       ];
       $fields['address_master_id'] = [
         'name' => t('Share address of'),
