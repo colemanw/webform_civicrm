@@ -633,6 +633,23 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   }
 
   /**
+   * Normalize the Contact Subtype into a Camel_Case format.
+   * @param string $subtype
+   * @return string
+   */
+  private function normalizeContactSubtype($subtype) {
+    // the subtype is only made up of one word
+    if (stripos($subtype, '_') === FALSE) {
+      return ucfirst($subtype);
+    }
+
+    // the subtype is made up of multiple words concatenated with an underscore
+    $components = explode('_', $subtype);
+    $components = array_map('ucfirst', $components);
+    return implode('_', $components);
+  }
+
+  /**
    * Search for an existing contact using configured deupe rule
    * @param array $contact
    * @return int
@@ -642,7 +659,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $rule = wf_crm_aval($contact, 'matching_rule', 'Unsupervised', TRUE);
     if ($rule) {
       $contact['contact'][1]['contact_type'] = ucfirst($contact['contact'][1]['contact_type']);
-      $contact['contact'][1]['contact_sub_type'] = array_map('ucfirst', $contact['contact'][1]['contact_sub_type']);
+      $contact['contact'][1]['contact_sub_type'] = array_map(['self', 'normalizeContactSubtype'], $contact['contact'][1]['contact_sub_type']);
       $params = [
         'check_permission' => FALSE,
         'sequential' => TRUE,
