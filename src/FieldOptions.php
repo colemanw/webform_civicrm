@@ -29,7 +29,7 @@ class FieldOptions implements FieldOptionsInterface {
         list($contact_types, $sub_types) = $utils->wf_crm_get_contact_types();
         $ret = wf_crm_aval($sub_types, $data['contact'][$c]['contact'][1]['contact_type'], []);
       }
-      elseif (($name === 'state_province_id') || (isset($field['type']) && $field['type'] === 'civicrm_number')) {
+      elseif ((strpos($name, 'state_province_id') !== false) || (isset($field['type']) && $field['type'] === 'civicrm_number')) {
         return [];
       }
       elseif ($name === 'relationship_type_id') {
