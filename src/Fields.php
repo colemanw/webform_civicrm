@@ -817,11 +817,8 @@ class Fields implements FieldsInterface {
         ];
         $fields['contribution_billing_address_state_province_id'] = [
           'name' => t('State/Province'),
-          'type' => 'textfield',
-          'extra' => [
-            'maxlength' => 5,
-            'width' => 4,
-          ],
+          'type' => 'select',
+          'extra' => ['aslist' => 1],
           'data_type' => 'state_province_abbr',
           'set' => 'billing_1_number_of_billing',
           'parent' => 'contribution_pagebreak',
