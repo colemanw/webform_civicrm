@@ -65,14 +65,19 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
     //Submit the form.
     $this->drupalGet($this->webform->toUrl('canonical'));
 
+    $countryID = $this->utils->wf_civicrm_api('Country', 'getvalue', [
+      'return' => "id",
+      'name' => "United States",
+    ]);
+    $stateID = $this->utils->wf_crm_state_abbr('NJ', 'id');
     $edit = [
       'First Name' => 'Frederick',
       'Last Name' => 'Pabst',
       'Street Address' => '9th Street',
       'City' => 'Newark',
       'Postal Code' => '12345',
-      'Country' => 1228,
-      'State/Province' => $this->utils->wf_crm_state_abbr('NJ', 'id'), // New Jersey
+      'Country' => $countryID,
+      'State/Province' => $stateID, // New Jersey
     ];
     $this->postSubmission($this->webform, $edit);
 
@@ -87,6 +92,8 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
 
     $this->assertEquals('Newark', $address['values'][1]['city']);
     $this->assertEquals(0, $address['values'][1]['is_primary']);
+    $this->assertEquals($stateID, $address['values'][1]['state_province_id']);
+    $this->assertEquals($countryID, $address['values'][1]['country_id']);
   }
 
   /**

@@ -225,7 +225,6 @@ class CivicrmOptions extends OptionsBase {
     }
   }
 
-
   protected function getFieldOptions($element, $data = []) {
     \Drupal::getContainer()->get('civicrm')->initialize();
     $field_options = \Drupal::service('webform_civicrm.field_options');
