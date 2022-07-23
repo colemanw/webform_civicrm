@@ -331,7 +331,7 @@ class Utils implements UtilsInterface {
           $contact_types[strtolower($type['name'])] = $type['label'];
           continue;
         }
-        $sub_types[strtolower($data[$type['parent_id']]['name'])][strtolower($type['name'])] = $type['label'];
+        $sub_types[strtolower($data[$type['parent_id']]['name'])][$type['name']] = $type['label'];
       }
     }
     return [$contact_types, $sub_types];
@@ -367,11 +367,11 @@ class Utils implements UtilsInterface {
         $r['type_b'] = strtolower(wf_crm_aval($r, 'contact_type_b'));
         $r['sub_type_a'] = wf_crm_aval($r, 'contact_sub_type_a');
         if (!is_null($r['sub_type_a'])) {
-          $r['sub_type_a'] = strtolower($r['sub_type_a']);
+          $r['sub_type_a'] = $r['sub_type_a'];
         }
         $r['sub_type_b'] = wf_crm_aval($r, 'contact_sub_type_b');
         if (!is_null($r['sub_type_b'])) {
-          $r['sub_type_b'] = strtolower($r['sub_type_b']);
+          $r['sub_type_b'] = $r['sub_type_b'];
         }
         $types[$r['id']] = $r;
       }
