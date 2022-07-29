@@ -100,12 +100,17 @@ jobs:
         run: |
           cd ~/drupal
           COMPOSER_MEMORY_LIMIT=-1 composer require drupal/token:^1.9
+      - name: Set identity
+        # Needed for `git am` but otherwise irrelevant
+        run: |
+          git config --global user.email "webform.civicrm@example.org"
+          git config --global user.name "Webform CiviCRM"
       - name: Optionally Apply Core PR
         if: ${{ github.event.inputs.coreprurl != 0 }}
         run: |
           cd  ~/drupal/vendor/civicrm/civicrm-core
           curl -L -o prpatch.patch ${{ github.event.inputs.coreprurl }}.patch
-          git apply prpatch.patch
+          git am prpatch.patch
       - uses: nanasess/setup-chromedriver@master
       - name: Run chromedriver
         run: chromedriver &
