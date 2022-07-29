@@ -11,7 +11,7 @@ use Drupal\Core\Url;
  */
 final class CaseSubmissionTest extends WebformCivicrmTestBase {
 
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->enableComponent('CiviCase');
     $this->drupalLogin($this->rootUser);
