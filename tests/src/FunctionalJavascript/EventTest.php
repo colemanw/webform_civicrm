@@ -12,7 +12,7 @@ use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
  */
 final class EventTest extends WebformCivicrmTestBase {
 
-  protected function setup() {
+  protected function setUp(): void {
     parent::setUp();
     $this->ft = $this->utils->wf_civicrm_api('FinancialType', 'get', [
       'return' => ["id"],

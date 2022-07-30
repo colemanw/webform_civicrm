@@ -14,7 +14,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->utils->wf_civicrm_api('Extension', 'download', [
       'key' => "com.aghstrategies.uscounties",

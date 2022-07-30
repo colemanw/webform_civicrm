@@ -11,7 +11,7 @@ use Drupal\Core\Url;
  */
 final class LocationTypeTest extends WebformCivicrmTestBase {
 
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->utils->wf_civicrm_api('Address', 'create', [
       'contact_id' => $this->rootUserCid,

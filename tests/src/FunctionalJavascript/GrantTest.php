@@ -12,7 +12,7 @@ use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
  */
 final class GrantTest extends WebformCivicrmTestBase {
 
-  protected function setup() {
+  protected function setUp(): void {
     parent::setUp();
     $civicrm_version = $this->utils->wf_crm_apivalues('System', 'get')[0]['version'];
     // Grant is moved to extension after > 5.47.0.
