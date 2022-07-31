@@ -523,7 +523,7 @@ class CivicrmContact extends WebformElementBase {
    *
    * Also sets options for select lists.
    *
-   * @param \Drupal\webform\WebformInterface $node
+   * @param WebformInterface $node
    *   Node object
    * @param array $component
    *   Webform component

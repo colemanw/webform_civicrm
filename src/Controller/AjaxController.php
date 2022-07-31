@@ -15,7 +15,7 @@ class AjaxController implements ContainerInjectionInterface {
   /**
    * The CiviCRM service.
    *
-   * @var \Drupal\civicrm\Civicrm
+   * @var Civicrm
    */
   protected $civicrm;
 

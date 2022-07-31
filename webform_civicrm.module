@@ -1,5 +1,6 @@
 <?php
 
+use Drupal\webform\WebformInterface;
 use Drupal\webform\Entity\Webform;
 /**
  * @file
@@ -352,7 +353,7 @@ function webform_civicrm_civicrm_buildForm($formName, $form) {
     $fid = $form->getVar('_id');
     if ($fid) {
       // @todo Start using webform_civicrm_forms to track enabled webforms.
-      /** @var \Drupal\webform\WebformInterface[] $webforms */
+      /** @var WebformInterface[] $webforms */
       $webforms = Webform::loadMultiple();
       foreach ($webforms as $webform) {
         $handler_collection = $webform->getHandlers('webform_civicrm');
@@ -404,7 +405,7 @@ function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = N
 function webform_civicrm_help($section) {
   if ($section == 'help.page.webform_civicrm') {
     // Return a line-break version of the module README.md
-    return nl2br(file_get_contents(drupal_get_path('module', 'webform_civicrm') . '/README.md'));
+    return nl2br(file_get_contents(\Drupal::service('extension.list.module')->getPath('webform_civicrm') . '/README.md'));
   }
 }
 

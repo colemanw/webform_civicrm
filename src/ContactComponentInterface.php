@@ -2,12 +2,13 @@
 
 namespace Drupal\webform_civicrm;
 
+use Drupal\webform\WebformInterface;
 interface ContactComponentInterface {
 
   /**
    * Format filters for the contact get api
    *
-   * @param \Drupal\webform\WebformInterface $node
+   * @param WebformInterface $node
    *   Webform node object
    * @param array $component
    *   Webform component of type 'civicrm_contact'
@@ -48,7 +49,7 @@ interface ContactComponentInterface {
   /**
    * Returns a list of contacts based on component settings.
    *
-   * @param \Drupal\webform\WebformInterface $node
+   * @param WebformInterface $node
    *   Node object
    * @param array $component
    *   Webform component

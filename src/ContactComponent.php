@@ -2,6 +2,9 @@
 
 namespace Drupal\webform_civicrm;
 
+use Drupal\webform\WebformInterface;
+use Drupal\Core\Render\Markup;
+use Drupal\webform\Plugin\WebformElementManagerInterface;
 use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\Xss;
 
@@ -71,7 +74,7 @@ class ContactComponent implements ContactComponentInterface {
   /**
    * Returns a list of contacts based on component settings.
    *
-   * @param \Drupal\webform\WebformInterface $node
+   * @param WebformInterface $node
    *   Node object
    * @param array $element
    *   Webform element
@@ -156,7 +159,7 @@ class ContactComponent implements ContactComponentInterface {
           'Maximum contacts exceeded, list truncated on the webform "@title". The webform_civicrm "@field" field cannot display more than @limit contacts because it is a select list. Recommend switching to autocomplete widget in element settings.',
           ['@limit' => $limit, '@field' => $element['#title'], '@title' => $node->label()]);
         if ($node->access('update') && \Drupal::currentUser()->hasPermission('access CiviCRM')) {
-          $warning_message = \Drupal\Core\Render\Markup::create('<strong>' . t('Maximum contacts exceeded, list truncated.') .'</strong><br>' .
+          $warning_message = Markup::create('<strong>' . t('Maximum contacts exceeded, list truncated.') .'</strong><br>' .
           t('The field "@field" cannot show more than @limit contacts because it is a select list. Recommend switching to autocomplete widget.', ['@limit' => $limit, '@field' => $element['#title']]));
           \Drupal::messenger()->addMessage($warning_message);
         }
@@ -304,7 +307,7 @@ class ContactComponent implements ContactComponentInterface {
   /**
    * Format filters for the contact get api
    *
-   * @param \Drupal\webform\WebformInterface $node
+   * @param WebformInterface $node
    *   Webform node object
    * @param array $component
    *   Webform component of type 'civicrm_contact'
@@ -313,7 +316,7 @@ class ContactComponent implements ContactComponentInterface {
    *   Api params
    */
   function wf_crm_search_filters($node, array $component) {
-    /** @var \Drupal\webform\Plugin\WebformElementManagerInterface $element_manager */
+    /** @var WebformElementManagerInterface $element_manager */
     $element_manager = \Drupal::service('plugin.manager.webform.element');
     $contact_element = $element_manager->getElementInstance($component);
     $params = ['is_deleted' => 0];
