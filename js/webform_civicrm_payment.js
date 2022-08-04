@@ -92,7 +92,7 @@
         }
         total += isNaN(amount) ? 0 : amount;
       });
-    return total < 0 ? 0 : total;
+    return total;
   }
 
   function calculateLineItemAmount() {
