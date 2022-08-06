@@ -2,8 +2,6 @@
 
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
-use Drupal\webform\WebformInterface;
-use Drupal\user\Entity\User;
 use Behat\Mink\Element\NodeElement;
 use Drupal\Tests\webform\Traits\WebformBrowserTestTrait;
 use Behat\Mink\Exception\ElementNotFoundException;
@@ -41,14 +39,14 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   /**
    * The test webform.
    *
-   * @var WebformInterface
+   * @var \Drupal\webform\WebformInterface
    */
   protected $webform;
 
   /**
    * The test admin user.
    *
-   * @var User
+   * @var \Drupal\user\Entity\User
    */
   protected $adminUser;
 

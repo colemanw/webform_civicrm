@@ -2,9 +2,7 @@
 
 namespace Drupal\webform_civicrm;
 
-use Drupal\webform\WebformInterface;
 use Drupal\Core\Render\Markup;
-use Drupal\webform\Plugin\WebformElementManagerInterface;
 use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\Xss;
 
@@ -74,7 +72,7 @@ class ContactComponent implements ContactComponentInterface {
   /**
    * Returns a list of contacts based on component settings.
    *
-   * @param WebformInterface $node
+   * @param \Drupal\webform\WebformInterface $node
    *   Node object
    * @param array $element
    *   Webform element
@@ -307,7 +305,7 @@ class ContactComponent implements ContactComponentInterface {
   /**
    * Format filters for the contact get api
    *
-   * @param WebformInterface $node
+   * @param \Drupal\webform\WebformInterface $node
    *   Webform node object
    * @param array $component
    *   Webform component of type 'civicrm_contact'
@@ -316,7 +314,7 @@ class ContactComponent implements ContactComponentInterface {
    *   Api params
    */
   function wf_crm_search_filters($node, array $component) {
-    /** @var WebformElementManagerInterface $element_manager */
+    /** @var \Drupal\webform\Plugin\WebformElementManagerInterface $element_manager */
     $element_manager = \Drupal::service('plugin.manager.webform.element');
     $contact_element = $element_manager->getElementInstance($component);
     $params = ['is_deleted' => 0];

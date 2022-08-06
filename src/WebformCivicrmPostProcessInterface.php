@@ -28,14 +28,14 @@ interface WebformCivicrmPostProcessInterface {
   /**
    * Process webform submission when it is about to be saved.
    *
-   * @param WebformSubmissionInterface $webform_submission
+   * @param \Drupal\webform\WebformSubmissionInterface $webform_submission
    */
   public function preSave(WebformSubmissionInterface $webform_submission);
 
   /**
    * Process webform submission after it is has been saved.
    *
-   * @param WebformSubmissionInterface $webform_submission
+   * @param \Drupal\webform\WebformSubmissionInterface $webform_submission
    */
   public function postSave(WebformSubmissionInterface $webform_submission);
 

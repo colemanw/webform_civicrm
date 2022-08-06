@@ -2,7 +2,6 @@
 
 namespace Drupal\webform_civicrm\Form;
 
-use Drupal\webform\WebformInterface;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -31,7 +30,7 @@ class WebformCiviCRMSettingsForm extends FormBase {
   }
 
   /**
-   * @return WebformInterface
+   * @return \Drupal\webform\WebformInterface
    */
   public function getWebform() {
     return $this->routeMatch->getParameter('webform');
@@ -90,7 +89,7 @@ class WebformCiviCRMSettingsForm extends FormBase {
       $this->messenger()->addWarning('No changes made to CiviCRM settings');
       return;
     }
-    /** @var WebformHandlerInterface $handler */
+    /** @var \Drupal\webform\Plugin\WebformHandlerInterface $handler */
     if (!$has_handler) {
       $handler = $this->webformHandlerManager->createInstance('webform_civicrm');
       $handler->setWebform($webform);
@@ -129,7 +128,7 @@ class WebformCiviCRMSettingsForm extends FormBase {
    *
    * @param array $form
    *   The complete form.
-   * @param FormStateInterface $form_state
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The form state.
    *
    * @return array
