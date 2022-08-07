@@ -17,16 +17,10 @@ jobs:
   phpunit:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
-          - drupal: '9.4.x-dev'
-            civicrm: '5.45.*'
-          - drupal: '9.4.x-dev'
-            civicrm: '5.51.*'
-          - drupal: '9.4.x-dev'
-            civicrm: '5.52.x-dev'
-          - drupal: '9.4.x-dev'
+          - drupal: '9.4.*'
             civicrm: 'dev-master'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
     services:
@@ -84,6 +78,8 @@ jobs:
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
+          COMPOSER_MEMORY_LIMIT=-1 composer require cweagans/composer-patches
+          composer config --json --merge extra.patches '{"civicrm/civicrm-core": {"thing": "https://github.com/civicrm/civicrm-core/pull/24142.patch"}}'
           COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} --prefer-dist -W
       - name: Ensure Webform ^6.0
         run: |
