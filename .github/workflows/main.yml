@@ -20,13 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - drupal: '9.4.x-dev'
-            civicrm: '5.45.*'
-          - drupal: '9.4.x-dev'
-            civicrm: '5.51.*'
-          - drupal: '9.4.x-dev'
-            civicrm: '5.52.x-dev'
-          - drupal: '9.4.x-dev'
+           - drupal: '9.4.x-dev'
             civicrm: 'dev-master'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
     services:
@@ -42,7 +36,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: shivammathur/setup-php@v2
         with:
-            php-version: 7.4
+            php-version: 8.1
             extensions: dom, curl, libxml, mbstring, zip, pdo, mysql, pdo_mysql, bcmath, soap, intl, gd, exif, iconv
             coverage: none
             tools: composer:v2
