@@ -404,7 +404,7 @@ function webform_civicrm_civicrm_merge($type, $data, $new_id = NULL, $old_id = N
 function webform_civicrm_help($section) {
   if ($section == 'help.page.webform_civicrm') {
     // Return a line-break version of the module README.md
-    return nl2br(file_get_contents(drupal_get_path('module', 'webform_civicrm') . '/README.md'));
+    return nl2br(file_get_contents(\Drupal::service('extension.list.module')->getPath('webform_civicrm') . '/README.md'));
   }
 }
 

@@ -119,8 +119,8 @@ final class SaveSettingsTest extends WebformCivicrmTestBase {
 
     // Ensure the action was cancelled and activity type is still - User Select -
     $this->assertSession()->pageTextContains('Cancelled');
-    $this->assertOptionSelected('edit-civicrm-1-activity-1-activity-activity-type-id', '- User Select -');
-    $this->assertOptionSelected('number_of_contacts', 1);
+    $this->assertTrue($this->assertSession()->optionExists('edit-civicrm-1-activity-1-activity-activity-type-id', '- User Select -')->hasAttribute('selected'));
+    $this->assertTrue($this->assertSession()->optionExists('number_of_contacts', 1)->hasAttribute('selected'));
 
     // Repeat the step and delete activity type element from the page.
     $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 2);

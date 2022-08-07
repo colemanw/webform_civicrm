@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
+use Civi\Api4\Grant;
 use Drupal\Core\Url;
 use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
 
@@ -71,7 +72,7 @@ final class GrantTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     //Assert if grant is successfully created.
-    $grant = \Civi\Api4\Grant::get(FALSE)
+    $grant = Grant::get(FALSE)
       ->execute()
       ->first();
     $this->assertEquals($this->rootUserCid, $grant['contact_id']);

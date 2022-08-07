@@ -2,6 +2,7 @@
 
 namespace Drupal\webform_civicrm;
 
+use Drupal\Core\Render\Markup;
 use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\Xss;
 
@@ -156,7 +157,7 @@ class ContactComponent implements ContactComponentInterface {
           'Maximum contacts exceeded, list truncated on the webform "@title". The webform_civicrm "@field" field cannot display more than @limit contacts because it is a select list. Recommend switching to autocomplete widget in element settings.',
           ['@limit' => $limit, '@field' => $element['#title'], '@title' => $node->label()]);
         if ($node->access('update') && \Drupal::currentUser()->hasPermission('access CiviCRM')) {
-          $warning_message = \Drupal\Core\Render\Markup::create('<strong>' . t('Maximum contacts exceeded, list truncated.') .'</strong><br>' .
+          $warning_message = Markup::create('<strong>' . t('Maximum contacts exceeded, list truncated.') .'</strong><br>' .
           t('The field "@field" cannot show more than @limit contacts because it is a select list. Recommend switching to autocomplete widget.', ['@limit' => $limit, '@field' => $element['#title']]));
           \Drupal::messenger()->addMessage($warning_message);
         }

@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
+use Civi\Api4\Contribution;
 use Drupal\Core\Url;
 use Drupal\webform\Entity\Webform;
 
@@ -57,7 +58,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
-    $contribution = \Civi\Api4\Contribution::get()
+    $contribution = Contribution::get()
       ->addSelect('source', 'total_amount', 'contribution_status_id:label', 'currency', 'financial_type_id:label')
       ->setLimit(1)
       ->execute()
@@ -231,7 +232,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
    */
   private function verifyResult() {
     $cfName = $this->_customGroup['Donation']['name'] . '.' . $this->_customFields['Donation']['name'];
-    $contribution = \Civi\Api4\Contribution::get()
+    $contribution = Contribution::get()
       ->addSelect('source', 'total_amount', 'contribution_status_id:label', 'currency', $cfName)
       ->setLimit(1)
       ->execute()

@@ -49,14 +49,14 @@ class FieldOptionsTest extends KernelTestBase {
   }
 
   /**
-   * @dataProvider testGetDataprovider
+   * @dataProvider getDataprovider
    */
   public function testGet(array $field, string $context, array $data) {
     $field_options = $this->container->get('webform_civicrm.field_options');
     $options = $field_options->get($field, $context, $data);
   }
 
-  public function testGetDataprovider() {
+  public function getDataprovider() {
     yield [
       ['form_key' => 'civicrm_1_contact_1_email_email'],
       'live_options',

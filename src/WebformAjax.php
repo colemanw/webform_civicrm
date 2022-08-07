@@ -7,6 +7,7 @@
 
 namespace Drupal\webform_civicrm;
 
+use Drupal\webform\WebformInterface;
 use Drupal\Component\Utility\Xss;
 use Drupal\webform\Entity\Webform;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -48,7 +49,7 @@ class WebformAjax extends WebformCivicrmBase implements WebformAjaxInterface {
       throw new AccessDeniedHttpException('Invalid parameters.');
     }
     $webform = Webform::load($webformId);
-    if (!$webform instanceof \Drupal\webform\WebformInterface) {
+    if (!$webform instanceof WebformInterface) {
       throw new AccessDeniedHttpException('Invalid form.');
     }
     $this->node = $webform;
