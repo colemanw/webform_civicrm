@@ -78,6 +78,8 @@ jobs:
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
+          COMPOSER_MEMORY_LIMIT=-1 composer require cweagans/composer-patches
+          composer config --json --merge extra.patches '{"civicrm/civicrm-core": {"php81-1": "https://github.com/civicrm/civicrm-core/compare/master...demeritcowboy:civicrm-core:php81-drupal9.patch"}}'
           COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} --prefer-dist -W
       - name: Ensure Webform ^6.0
         run: |
