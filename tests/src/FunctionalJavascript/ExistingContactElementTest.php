@@ -173,49 +173,6 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
   }
 
   /**
-   * Check if autocomplete widget results is
-   * searchable with all display field values.
-   */
-  public function testDisplayFields() {
-    $this->createIndividual([
-      'first_name' => 'James',
-      'last_name' => 'Doe',
-      'source' => 'Webform Testing',
-    ]);
-
-    $this->drupalLogin($this->rootUser);
-    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
-      'webform' => $this->webform->id(),
-    ]));
-    $this->enableCivicrmOnWebform();
-    $this->saveCiviCRMSettings();
-    $this->drupalGet($this->webform->toUrl('edit-form'));
-
-    // Edit contact element and add source to display fields.
-    $editContact = [
-      'selector' => 'edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations',
-      'widget' => 'Autocomplete',
-      'results_display' => ['display_name', 'source'],
-      'default' => '- None -',
-    ];
-    $this->editContactElement($editContact);
-
-    // Search on first name and verify if the contact is selected.
-    $this->drupalGet($this->webform->toUrl('canonical'));
-    $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', 'James');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertFieldValue('edit-civicrm-1-contact-1-contact-first-name', 'James');
-    $this->assertFieldValue('edit-civicrm-1-contact-1-contact-last-name', 'Doe');
-
-    // Search on source value and verify if the contact is selected.
-    $this->drupalGet($this->webform->toUrl('canonical'));
-    $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', 'Webform Testing');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertFieldValue('edit-civicrm-1-contact-1-contact-first-name', 'James');
-    $this->assertFieldValue('edit-civicrm-1-contact-1-contact-last-name', 'Doe');
-  }
-
-  /**
    * Test submission of hidden fields.
    */
   public function testHiddenField() {
@@ -234,7 +191,7 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
      $this->saveCiviCRMSettings();
      $this->drupalGet($this->webform->toUrl('edit-form'));
 
-    // Edit contact element and hide email field.
+     // Edit contact element and hide email field.
     $editContact = [
       'selector' => 'edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations',
       'widget' => 'Autocomplete',
