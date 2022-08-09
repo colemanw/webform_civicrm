@@ -1,4 +1,4 @@
-name: Integration Tests
+name: D10 Integration Tests
 on:
   workflow_dispatch:
     inputs:
