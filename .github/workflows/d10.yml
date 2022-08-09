@@ -1,0 +1,144 @@
+name: D10 Integration Tests
+on:
+  workflow_dispatch:
+    inputs:
+      coreprurl:
+        description: (optional) Core PR URL
+        required: false
+
+jobs:
+  phpunit:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - drupal: '10.0.0.x-dev'
+            civicrm: '5.54.alpha1'
+    name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_DATABASE: db
+        ports:
+          - 3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+    steps:
+      - uses: actions/checkout@v2
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.1
+          extensions: dom, curl, libxml, mbstring, zip, pdo, mysql, pdo_mysql, bcmath, soap, intl, gd, exif, iconv
+          coverage: none
+          tools: composer:v2
+      - name: Get composer cache directory
+        id: composercache
+        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+      - uses: actions/cache@v2
+        with:
+          path: ${{ steps.composercache.outputs.dir }}
+          key: ${{ runner.os }}-${{ matrix.drupal }}-composer-${{ hashFiles('**/composer.json') }}
+          restore-keys: ${{ runner.os }}-composer-
+      - name: Dave gist
+        run: |
+          ROOTDIR=~/workspace
+          mkdir -p $ROOTDIR
+          cd $ROOTDIR
+          mkdir -p drupal10staging
+          cd drupal10staging
+          git clone --depth 1 https://github.com/civicrm/civicrm-core.git
+          git clone --depth 1 https://github.com/civicrm/composer-compile-lib.git
+          cd civicrm-core
+          curl -L -O https://gist.githubusercontent.com/demeritcowboy/302a9b868f3a1a5d04925068ae487053/raw/77432f8dfbb4e4000d2b1f1fe7c3cfbae8ef76b3/drupal10civicrmcore.diff
+          git apply drupal10civicrmcore.diff
+          curl -L -O https://github.com/civicrm/civicrm-core/pull/23294.diff
+          git apply 23294.diff
+          cd ../composer-compile-lib
+          php -r 'file_put_contents("composer.json", str_replace('"'"'"symfony/filesystem": "~2.8'"'"', '"'"'"symfony/filesystem": "~2.8 || ~6.0'"'"', file_get_contents("composer.json")));'
+          cd ../..
+      - name: Setup problem matchers for PHPUnit
+        run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
+      # Notes
+      # - Must enable patching for civicrm/civicrm-core
+      # - CiviCRM requires `compile-mode: all`
+      - name: Setup sendmail
+        run: |
+          sudo apt-get install sendmail
+      - name: Setup Drupal
+        run: |
+          COMPOSER_MEMORY_LIMIT=-1 composer create-project drupal/recommended-project:${{ matrix.drupal }} ~/drupal --no-interaction --no-install
+          cd ~/drupal
+          composer config extra.enable-patching true
+          composer config extra.compile-mode all
+          composer config minimum-stability dev
+          composer config prefer-stable true
+          composer config preferred-install dist
+          composer config allow-plugins.civicrm/composer-compile-plugin true
+          composer config allow-plugins.civicrm/composer-downloads-plugin true
+          composer config allow-plugins.civicrm/civicrm-asset-plugin true
+          composer config allow-plugins.cweagans/composer-patches true
+          composer config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+          # Note in composer v2 the order is more important. We want the path one to have higher priority.
+          composer config repositories.0 composer https://packages.drupal.org/8
+          composer config repositories.1 path $GITHUB_WORKSPACE
+          composer install --no-interaction
+          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:${{ matrix.drupal }}
+      - name: Adjust repo
+        run: |
+          cd ~/drupal
+          php -r 'file_put_contents("composer.json", str_replace('"'"'"type": "composer",'"'"', '"'"'"type": "path", "url": "'"$ROOTDIR"'/drupal10staging/civicrm-core", "options": {"versions": {"civicrm/civicrm-core": "'"$CIVIVER"'"}}},{"type": "path","url": "'"$ROOTDIR"'/drupal10staging/composer-compile-lib","options": {"versions": {"civicrm/composer-compile-lib": "v0.6"}}},{"type": "composer",'"'"', file_get_contents("composer.json")));'
+      - name: Install CiviCRM ${{ matrix.civicrm }}
+        run: |
+          cd ~/drupal
+          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} --prefer-dist -W
+      - name: Ensure Webform ^6.0
+        run: |
+          cd ~/drupal
+          #COMPOSER_MEMORY_LIMIT=-1 composer require cweagans/composer-patches
+          #jq '.extra.patches = {"drupal/webform": {"Regression": "https://www.drupal.org/files/issues/2021-12-13/3254028-2.patch"}}' composer.json > temp.json && mv temp.json composer.json
+          COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:6.x-dev@dev'
+      - name: Install webform_civicrm
+        run: |
+          cd ~/drupal
+          # We used the github action `checkout` plugin at the start to check out the PR branch, and then set up a composer virtual `path` repo earlier when setting up composer config. So this should pull from that repo not the real one.
+          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/webform_civicrm:@dev
+      - name: Install token
+        run: |
+          cd ~/drupal
+          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/token:^1.9
+      - name: Set identity
+        # Needed for `git am` but otherwise irrelevant
+        run: |
+          git config --global user.email "webform.civicrm@example.org"
+          git config --global user.name "Webform CiviCRM"
+      - name: Optionally Apply Core PR
+        if: ${{ github.event.inputs.coreprurl != 0 }}
+        run: |
+          cd  ~/drupal/vendor/civicrm/civicrm-core
+          curl -L -o prpatch.patch ${{ github.event.inputs.coreprurl }}.patch
+          git am prpatch.patch
+      - uses: nanasess/setup-chromedriver@master
+      - name: Run chromedriver
+        run: chromedriver &
+      - name: Run php built-in server
+        run: php -S 127.0.0.1:8080 -t ~/drupal/web &
+      - name: Run PHPUnit
+        run: |
+          mkdir $BROWSERTEST_OUTPUT_DIRECTORY
+          cd ~/drupal/web
+          ../vendor/bin/phpunit -c core modules/contrib/webform_civicrm
+        env:
+          SYMFONY_DEPRECATIONS_HELPER: 999999
+          SIMPLETEST_DB: mysql://root:@127.0.0.1:${{ job.services.mysql.ports[3306] }}/db
+          SIMPLETEST_BASE_URL: http://127.0.0.1:8080
+          MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","chromeOptions":{"args":["--disable-gpu", "--no-sandbox", "--headless"]}}, "http://127.0.0.1:9515"]'
+          BROWSERTEST_OUTPUT_DIRECTORY: '${{ runner.temp }}/browser_output'
+      - uses: actions/upload-artifact@v2
+        if: ${{ failure() || success() }}
+        with:
+          name: phpunit_browser_output
+          # For some reason Drupal prints here and not our specified BROWSERTEST_OUTPUT_DIRECTORY.
+          path: '/home/runner/drupal/web/sites/simpletest/browser_output'
+          retention-days: 7
