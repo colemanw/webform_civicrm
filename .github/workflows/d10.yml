@@ -95,7 +95,7 @@ jobs:
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-core:${{ matrix.civicrm }} civicrm/civicrm-{packages,drupal-8}:dev-master -W
+          COMPOSER_MEMORY_LIMIT=-1 composer require composer/installers:'^1.0' civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-core:${{ matrix.civicrm }} civicrm/civicrm-{packages,drupal-8}:dev-master -W
       - name: Ensure Webform ^6.0
         run: |
           cd ~/drupal
