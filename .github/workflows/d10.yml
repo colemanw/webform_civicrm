@@ -13,7 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - drupal: '10.0.0.x-dev'
+          - drupal: '10.0.x-dev'
             civicrm: '5.54.alpha1'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
     services:
@@ -87,7 +87,10 @@ jobs:
           COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:${{ matrix.drupal }}
       - name: Adjust repo
         run: |
+          ROOTDIR=~/workspace
           cd ~/drupal
+          # temp - find out where is ~ in case we need explicit full path
+          pwd
           php -r 'file_put_contents("composer.json", str_replace('"'"'"type": "composer",'"'"', '"'"'"type": "path", "url": "'"$ROOTDIR"'/drupal10staging/civicrm-core", "options": {"versions": {"civicrm/civicrm-core": "'"$CIVIVER"'"}}},{"type": "path","url": "'"$ROOTDIR"'/drupal10staging/composer-compile-lib","options": {"versions": {"civicrm/composer-compile-lib": "v0.6"}}},{"type": "composer",'"'"', file_get_contents("composer.json")));'
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
