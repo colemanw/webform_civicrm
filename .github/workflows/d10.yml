@@ -14,7 +14,7 @@ jobs:
       matrix:
         include:
           - drupal: '10.0.0.x-dev'
-            civicrm: 'dev-master'
+            civicrm: '5.54.alpha1'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
     services:
       mysql:
@@ -41,6 +41,23 @@ jobs:
           path: ${{ steps.composercache.outputs.dir }}
           key: ${{ runner.os }}-${{ matrix.drupal }}-composer-${{ hashFiles('**/composer.json') }}
           restore-keys: ${{ runner.os }}-composer-
+      - name: Dave gist
+        run: |
+          ROOTDIR=~/workspace
+          mkdir -p $ROOTDIR
+          cd $ROOTDIR
+          mkdir -p drupal10staging
+          cd drupal10staging
+          git clone --depth 1 https://github.com/civicrm/civicrm-core.git
+          git clone --depth 1 https://github.com/civicrm/composer-compile-lib.git
+          cd civicrm-core
+          curl -L -O https://gist.githubusercontent.com/demeritcowboy/302a9b868f3a1a5d04925068ae487053/raw/77432f8dfbb4e4000d2b1f1fe7c3cfbae8ef76b3/drupal10civicrmcore.diff
+          git apply drupal10civicrmcore.diff
+          curl -L -O https://github.com/civicrm/civicrm-core/pull/23294.diff
+          git apply 23294.diff
+          cd ../composer-compile-lib
+          php -r 'file_put_contents("composer.json", str_replace('"'"'"symfony/filesystem": "~2.8'"'"', '"'"'"symfony/filesystem": "~2.8 || ~6.0'"'"', file_get_contents("composer.json")));'
+          cd ../..
       - name: Setup problem matchers for PHPUnit
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
       # Notes
@@ -68,6 +85,10 @@ jobs:
           composer config repositories.1 path $GITHUB_WORKSPACE
           composer install --no-interaction
           COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:${{ matrix.drupal }}
+      - name: Adjust repo
+        run: |
+          cd ~/drupal
+          php -r 'file_put_contents("composer.json", str_replace('"'"'"type": "composer",'"'"', '"'"'"type": "path", "url": "'"$ROOTDIR"'/drupal10staging/civicrm-core", "options": {"versions": {"civicrm/civicrm-core": "'"$CIVIVER"'"}}},{"type": "path","url": "'"$ROOTDIR"'/drupal10staging/composer-compile-lib","options": {"versions": {"civicrm/composer-compile-lib": "v0.6"}}},{"type": "composer",'"'"', file_get_contents("composer.json")));'
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
