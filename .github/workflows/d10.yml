@@ -89,7 +89,8 @@ jobs:
         run: |
           ROOTDIR=~/workspace
           cd ~/drupal
-          php -r 'file_put_contents("composer.json", str_replace('"'"'"type": "composer",'"'"', '"'"'"type": "path", "url": "'"$ROOTDIR"'/drupal10staging/civicrm-core", "options": {"versions": {"civicrm/civicrm-core": "'"${{ matrix.civicrm }}"'"}}},{"type": "path","url": "'"$ROOTDIR"'/drupal10staging/composer-compile-lib","options": {"versions": {"civicrm/composer-compile-lib": "v0.6"}}},{"type": "composer",'"'"', file_get_contents("composer.json")));'
+          composer config --json --merge repositories.2 '{"type":"path","url":"'"$ROOTDIR"'/drupal10staging/civicrm-core", "options": {"versions": {"civicrm/civicrm-core": "'"${{ matrix.civicrm }}"'"}}}'
+          composer config --json --merge repositories.3 '{"type":"path","url":"'"$ROOTDIR"'/drupal10staging/composer-compile-lib", "options": {"versions": {"civicrm/composer-compile-lib": "v0.6"}}}'
           cat composer.json
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
