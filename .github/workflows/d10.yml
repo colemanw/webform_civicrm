@@ -10,7 +10,7 @@ jobs:
   phpunit:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
           - drupal: '10.0.x-dev'
@@ -99,6 +99,8 @@ jobs:
           git clone https://git.drupalcode.org/project/webform.git
           cd webform
           sed -i -e 's/\^9/\^9 || \^10/' webform.info.yml
+          cd modules/webform_ui
+          sed -i -e 's/\^9/\^9 || \^10/' webform_ui.info.yml
       - name: Install webform_civicrm
         run: |
           cd ~/drupal
