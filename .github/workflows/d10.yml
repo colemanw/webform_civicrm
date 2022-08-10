@@ -57,12 +57,8 @@ jobs:
           git apply 23294.diff
           cd ../composer-compile-lib
           php -r 'file_put_contents("composer.json", str_replace('"'"'"symfony/filesystem": "~2.8'"'"', '"'"'"symfony/filesystem": "~2.8 || ~6.0'"'"', file_get_contents("composer.json")));'
-          cd ../..
       - name: Setup problem matchers for PHPUnit
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
-      # Notes
-      # - Must enable patching for civicrm/civicrm-core
-      # - CiviCRM requires `compile-mode: all`
       - name: Setup sendmail
         run: |
           sudo apt-get install sendmail
@@ -91,7 +87,6 @@ jobs:
           cd ~/drupal
           composer config --json --merge repositories.2 '{"type":"path","url":"'"$ROOTDIR"'/drupal10staging/civicrm-core", "options": {"versions": {"civicrm/civicrm-core": "'"${{ matrix.civicrm }}"'"}}}'
           composer config --json --merge repositories.3 '{"type":"path","url":"'"$ROOTDIR"'/drupal10staging/composer-compile-lib", "options": {"versions": {"civicrm/composer-compile-lib": "v0.6"}}}'
-          cat composer.json
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
@@ -99,9 +94,11 @@ jobs:
       - name: Ensure Webform ^6.0
         run: |
           cd ~/drupal
-          #COMPOSER_MEMORY_LIMIT=-1 composer require cweagans/composer-patches
-          #jq '.extra.patches = {"drupal/webform": {"Regression": "https://www.drupal.org/files/issues/2021-12-13/3254028-2.patch"}}' composer.json > temp.json && mv temp.json composer.json
-          COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:6.x-dev@dev'
+          # We can't use composer because the real webform doesn't do drupal 10 yet, so git clone and edit the info file.
+          cd web/modules/contrib
+          git clone https://git.drupalcode.org/project/webform.git
+          cd webform
+          sed -i -e 's/\^9/\^9 || \^10/' webform.info.yml
       - name: Install webform_civicrm
         run: |
           cd ~/drupal
