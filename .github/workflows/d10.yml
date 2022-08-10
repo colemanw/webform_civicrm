@@ -10,11 +10,11 @@ jobs:
   phpunit:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
           - drupal: '10.0.x-dev'
-            civicrm: '5.54.alpha1'
+            civicrm: 'dev-master'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
     services:
       mysql:
@@ -26,7 +26,7 @@ jobs:
           - 3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: shivammathur/setup-php@v2
         with:
           php-version: 8.1
@@ -35,34 +35,14 @@ jobs:
           tools: composer:v2
       - name: Get composer cache directory
         id: composercache
-        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
-      - uses: actions/cache@v2
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+      - uses: actions/cache@v3
         with:
           path: ${{ steps.composercache.outputs.dir }}
           key: ${{ runner.os }}-${{ matrix.drupal }}-composer-${{ hashFiles('**/composer.json') }}
           restore-keys: ${{ runner.os }}-composer-
-      - name: Dave gist
-        run: |
-          ROOTDIR=~/workspace
-          mkdir -p $ROOTDIR
-          cd $ROOTDIR
-          mkdir -p drupal10staging
-          cd drupal10staging
-          git clone --depth 1 https://github.com/civicrm/civicrm-core.git
-          git clone --depth 1 https://github.com/civicrm/composer-compile-lib.git
-          cd civicrm-core
-          curl -L -O https://gist.githubusercontent.com/demeritcowboy/302a9b868f3a1a5d04925068ae487053/raw/77432f8dfbb4e4000d2b1f1fe7c3cfbae8ef76b3/drupal10civicrmcore.diff
-          git apply drupal10civicrmcore.diff
-          curl -L -O https://github.com/civicrm/civicrm-core/pull/23294.diff
-          git apply 23294.diff
-          cd ../composer-compile-lib
-          php -r 'file_put_contents("composer.json", str_replace('"'"'"symfony/filesystem": "~2.8'"'"', '"'"'"symfony/filesystem": "~2.8 || ~6.0'"'"', file_get_contents("composer.json")));'
-          cd ../..
       - name: Setup problem matchers for PHPUnit
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
-      # Notes
-      # - Must enable patching for civicrm/civicrm-core
-      # - CiviCRM requires `compile-mode: all`
       - name: Setup sendmail
         run: |
           sudo apt-get install sendmail
@@ -85,23 +65,15 @@ jobs:
           composer config repositories.1 path $GITHUB_WORKSPACE
           composer install --no-interaction
           COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:${{ matrix.drupal }}
-      - name: Adjust repo
-        run: |
-          ROOTDIR=~/workspace
-          cd ~/drupal
-          composer config --json --merge repositories.2 '{"type":"path","url":"'"$ROOTDIR"'/drupal10staging/civicrm-core", "options": {"versions": {"civicrm/civicrm-core": "'"${{ matrix.civicrm }}"'"}}}'
-          composer config --json --merge repositories.3 '{"type":"path","url":"'"$ROOTDIR"'/drupal10staging/composer-compile-lib", "options": {"versions": {"civicrm/composer-compile-lib": "v0.6"}}}'
-          cat composer.json
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require composer/installers:'^1.0' civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-core:${{ matrix.civicrm }} civicrm/civicrm-{packages,drupal-8}:dev-master -W
-      - name: Ensure Webform ^6.0
+          COMPOSER_MEMORY_LIMIT=-1 composer require composer/installers:'^1.0' civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} -W
+      - name: Ensure Webform ^6.2
         run: |
           cd ~/drupal
-          #COMPOSER_MEMORY_LIMIT=-1 composer require cweagans/composer-patches
-          #jq '.extra.patches = {"drupal/webform": {"Regression": "https://www.drupal.org/files/issues/2021-12-13/3254028-2.patch"}}' composer.json > temp.json && mv temp.json composer.json
-          COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:6.x-dev@dev'
+          # Drupal 10 support starts in 6.2
+          COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:^6.2@beta'
       - name: Install webform_civicrm
         run: |
           cd ~/drupal
@@ -138,7 +110,7 @@ jobs:
           SIMPLETEST_BASE_URL: http://127.0.0.1:8080
           MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","chromeOptions":{"args":["--disable-gpu", "--no-sandbox", "--headless"]}}, "http://127.0.0.1:9515"]'
           BROWSERTEST_OUTPUT_DIRECTORY: '${{ runner.temp }}/browser_output'
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: ${{ failure() || success() }}
         with:
           name: phpunit_browser_output
