@@ -51,7 +51,7 @@ jobs:
           git clone --depth 1 https://github.com/civicrm/civicrm-core.git
           git clone --depth 1 https://github.com/civicrm/composer-compile-lib.git
           cd civicrm-core
-          curl -L -O https://gist.githubusercontent.com/demeritcowboy/302a9b868f3a1a5d04925068ae487053/raw/77432f8dfbb4e4000d2b1f1fe7c3cfbae8ef76b3/drupal10civicrmcore.diff
+          curl -L -O https://gist.githubusercontent.com/demeritcowboy/302a9b868f3a1a5d04925068ae487053/raw/854faa2f4c731d74e261724c162b31b04079e65f/drupal10civicrmcore.diff
           git apply drupal10civicrmcore.diff
           curl -L -O https://github.com/civicrm/civicrm-core/pull/23294.diff
           git apply 23294.diff
