@@ -53,8 +53,8 @@ jobs:
           cd civicrm-core
           curl -L -O https://gist.githubusercontent.com/demeritcowboy/302a9b868f3a1a5d04925068ae487053/raw/854faa2f4c731d74e261724c162b31b04079e65f/drupal10civicrmcore.diff
           git apply drupal10civicrmcore.diff
-          curl -L -O https://github.com/civicrm/civicrm-core/pull/23294.diff
-          git apply 23294.diff
+          curl -L -O https://github.com/civicrm/civicrm-core/pull/24132.diff
+          git apply 24132.diff
           cd ../composer-compile-lib
           php -r 'file_put_contents("composer.json", str_replace('"'"'"symfony/filesystem": "~2.8'"'"', '"'"'"symfony/filesystem": "~2.8 || ~6.0'"'"', file_get_contents("composer.json")));'
       - name: Setup problem matchers for PHPUnit
