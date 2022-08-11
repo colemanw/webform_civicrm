@@ -96,11 +96,11 @@ jobs:
           cd ~/drupal
           # We can't use composer because the real webform doesn't do drupal 10 yet, so git clone and edit the info file.
           cd web/modules/contrib
-          git clone https://git.drupalcode.org/project/webform.git
+          git clone -b 6.2.x https://git.drupalcode.org/project/webform.git
           cd webform
-          sed -i -e 's/\^9/\^9 || \^10/' webform.info.yml
+          sed -i -e 's/\^9.2/\^9.2 || \^10/' webform.info.yml
           cd modules/webform_ui
-          sed -i -e 's/\^9/\^9 || \^10/' webform_ui.info.yml
+          sed -i -e 's/\^9.2/\^9.2 || \^10/' webform_ui.info.yml
       - name: Install webform_civicrm
         run: |
           cd ~/drupal
