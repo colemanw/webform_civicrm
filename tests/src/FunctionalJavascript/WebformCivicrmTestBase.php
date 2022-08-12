@@ -75,7 +75,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       'administer webform',
       'edit all contacts',
       'view all activities',
-    ]);
+    ], NULL, FALSE, ['first_name' => 'Webform', 'last_name' => 'CiviCRM']);
     // Retrieve CiviCRM version
     $result = civicrm_api3('System', 'get', [
       'sequential' => 1,
