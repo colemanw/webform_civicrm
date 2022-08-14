@@ -632,6 +632,29 @@ class Utils implements UtilsInterface {
   }
 
   /**
+   * Wrapper for all CiviCRM APIv4 calls
+   *
+   * @param string $entity
+   *   API entity
+   * @param string $operation
+   *   API operation
+   * @param array $params
+   *   API params
+   * @param string|int|array $index
+   *   Controls the Result array format.
+   *
+   * @return array
+   *   Result of API call
+   */
+  function wf_civicrm_api4($entity, $operation, $params, $index = NULL) {
+    if (!$entity) {
+      return [];
+    }
+    $result = civicrm_api4($entity, $operation, $params, $index);
+    return $result;
+  }
+
+  /**
    * Wrapper for all CiviCRM API calls
    * For consistency, future-proofing, and error handling
    *
