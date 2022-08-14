@@ -308,6 +308,7 @@ function webform_civicrm_update_8003() {
  */
 function webform_civicrm_update_8004() {
   $stateFormKey = 'address_state_province_id';
+  $countyFormKey = 'address_county_id';
   $webforms = Webform::loadMultiple();
   foreach ($webforms as $webform) {
     $handler = $webform->getHandlers('webform_civicrm');
@@ -317,7 +318,8 @@ function webform_civicrm_update_8004() {
     }
     $elements = $webform->getElementsInitializedAndFlattened();
     foreach ($elements as $element) {
-      if (!empty($element['#form_key']) && !empty($element['#type']) && $element['#type'] == 'textfield' && strpos($element['#form_key'], $stateFormKey) !== false) {
+      if (!empty($element['#form_key']) && !empty($element['#type']) && $element['#type'] == 'textfield'
+      && (strpos($element['#form_key'], $stateFormKey) !== false || strpos($element['#form_key'], $countyFormKey) !== false)) {
         $element = array_merge($element, [
           '#type' => 'civicrm_options',
           '#webform_plugin_id' => 'civicrm_options',
