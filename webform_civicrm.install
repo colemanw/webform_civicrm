@@ -325,6 +325,7 @@ function webform_civicrm_update_8004() {
           '#webform_plugin_id' => 'civicrm_options',
           '#extra' => ['aslist' => 1],
           '#civicrm_live_options' => 0,
+          '#empty_option' => '- None -',
           '#options' => [],
         ]);
         $webform->setElementProperties($element['#form_key'], $element, $element['#parent']);

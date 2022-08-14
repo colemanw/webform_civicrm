@@ -388,7 +388,7 @@ var wfCivi = (function (D, $, drupalSettings, once) {
         stateProvinceCache[''] = {'': setting.noCountry};
       }
 
-      // Replace state/prov & county textboxes with dynamic select lists
+      // Replace state/prov & county with dynamic select lists
       $('select.civicrm-enabled[name*="_address_state_province_id"]', context).each(function() {
         var $el = $(this);
         var $form = $el.parents('form');

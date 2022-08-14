@@ -365,11 +365,13 @@ class Fields implements FieldsInterface {
         'type' => 'select',
         'extra' => ['aslist' => 1],
         'data_type' => 'state_province_abbr',
+        'empty_option' => t('- None -'),
       ];
       $fields['address_county_id'] = [
         'name' => t('District/County'),
         'type' => 'select',
         'extra' => ['aslist' => 1],
+        'empty_option' => t('- None -'),
       ];
       $fields['address_master_id'] = [
         'name' => t('Share address of'),
@@ -822,6 +824,7 @@ class Fields implements FieldsInterface {
           'data_type' => 'state_province_abbr',
           'set' => 'billing_1_number_of_billing',
           'parent' => 'contribution_pagebreak',
+          'empty_option' => t('- None -'),
         ];
       }
       if (isset($sets['participant'])) {

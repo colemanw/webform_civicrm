@@ -536,6 +536,9 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
                 $val = array_pop($val);
               }
             }
+            if (in_array($name, ['state_province_id', 'county_id'])) {
+              $element['#attributes']['data-val'] = $val;
+            }
             if ($element['#type'] == 'autocomplete' && is_string($val) && strlen($val)) {
               $options = $this->utils->wf_crm_field_options($element, '', $this->data);
               $val = wf_crm_aval($options, $val);
