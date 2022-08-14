@@ -2,7 +2,7 @@
  * Javascript Module for administering the webform_civicrm contact field.
  */
 
-var wfCiviContact = (function ($, D) {
+var wfCiviContact = (function (D, $, once) {
 
   var pub = {};
 
@@ -34,7 +34,7 @@ var wfCiviContact = (function ($, D) {
 
   D.behaviors.webform_civicrmContact = {
     attach: function (context) {
-      $('#edit-extra-default', context).once('wf-civi').change(function() {
+      $(once('wf-civi', '#edit-extra-default', context)).change(function() {
         var val = $(this).val().replace(/_/g, '-');
         $('#edit-contact-defaults > div > .form-item', context).not('.form-item-extra-default, .form-item-extra-allow-url-autofill').each(function() {
           if ($(this).hasClass('form-item-extra-default-'+val)) {
@@ -72,10 +72,10 @@ var wfCiviContact = (function ($, D) {
           CRM.utils.setOptions('#edit-extra-filters-relationship-type', types);
         }
       }
-      $('#edit-extra-default', context).once('wf-civi').change(changeDefault).each(changeDefault);
-      $('#edit-extra-default-relationship-to', context).once('wf-civi').change(changeDefaultRelationTo);
-      $('#edit-extra-filters-relationship-contact', context).once('wf-civi').change(changeFiltersRelationTo).each(changeFiltersRelationTo);
-      $('#edit-extra-widget', context).once('wf-civi').change(function() {
+      $(once('wf-civi', '#edit-extra-default', context)).change(changeDefault).each(changeDefault);
+      $(once('wf-civi', '#edit-extra-default-relationship-to', context)).change(changeDefaultRelationTo);
+      $(once('wf-civi', '#edit-extra-filters-relationship-contact', context)).change(changeFiltersRelationTo).each(changeFiltersRelationTo);
+      $(once('wf-civi', '#edit-extra-widget', context)).change(function() {
         if ($(this).val() == 'hidden') {
           $('.form-item-extra-search-prompt', context).css('display', 'none');
           $('.form-item-extra-show-hidden-contact', context).removeAttr('style');
@@ -86,12 +86,12 @@ var wfCiviContact = (function ($, D) {
         }
       }).change();
 
-      $('select[name*=hide_fields]', context).once('wf-civi').change(function() {
+      $(once('wf-civi', 'select[name*=hide_fields]', context)).change(function() {
         $(this).parent().nextAll('.form-item').toggle(!!$(this).val());
       }).change();
 
       // Warning if enforce permissions is disabled
-      $('#webform-component-edit-form', context).once('wf-civi').submit(function() {
+      $(once('wf-civi', '#webform-component-edit-form', context)).submit(function() {
         if (!$('input[name="extra[filters][check_permissions]"]').is(':checked') && $('input[name="extra[allow_url_autofill]"]').is(':checked')) {
           return confirm(Drupal.t('Warning: "Enforce Permissions" is disabled but "Use contact id from URL" is enabled. Anyone with access to this webform will be able to view any contact in the database (who meets the filter criteria) by typing their contact id in the URL.'));
         }
@@ -100,4 +100,4 @@ var wfCiviContact = (function ($, D) {
   };
 
   return pub;
-})(jQuery, Drupal);
+})(Drupal, jQuery, once);
