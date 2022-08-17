@@ -17,17 +17,9 @@ jobs:
   phpunit:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
-          - drupal: '9.3.*'
-            civicrm: '5.45.*'
-          - drupal: '9.4.*'
-            civicrm: '5.51.*'
-          - drupal: '9.4.*'
-            civicrm: '5.52.*'
-          - drupal: '9.4.*'
-            civicrm: '5.53.x-dev'
           - drupal: '9.4.*'
             civicrm: 'dev-master'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
@@ -93,6 +85,12 @@ jobs:
           #COMPOSER_MEMORY_LIMIT=-1 composer require cweagans/composer-patches
           #jq '.extra.patches = {"drupal/webform": {"Regression": "https://www.drupal.org/files/issues/2021-12-13/3254028-2.patch"}}' composer.json > temp.json && mv temp.json composer.json
           COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:6.x-dev@dev'
+          cd web/modules/contrib
+          rm -rf webform
+          git clone -b 6.2.x https://git.drupalcode.org/project/webform.git
+          cd webform
+          curl -L -O https://git.drupalcode.org/project/webform/-/merge_requests/139.diff
+          git apply 139.diff
       - name: Install webform_civicrm
         run: |
           cd ~/drupal
