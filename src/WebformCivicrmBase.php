@@ -608,6 +608,7 @@ abstract class WebformCivicrmBase {
       'membership_type_id' => ['IN' => $membership_types],
       // skip membership through Inheritance.
       'owner_membership_id' => ['IS NULL' => 1],
+      'options' => ['sort' => 'end_date DESC'],
     ]);
     if (!$existing) {
       return [];
@@ -621,8 +622,9 @@ abstract class WebformCivicrmBase {
       $membership['is_active'] = $status_types[$membership['status_id']]['is_current_member'];
       $membership['status'] = $status_types[$membership['status_id']]['label'];
       $list = $membership['is_active'] ? 'active' : 'expired';
-      array_unshift($$list, $membership);
+      $$list[] = $membership;
     }
+
     return array_merge($active, $expired);
   }
 
