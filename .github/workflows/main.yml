@@ -83,6 +83,12 @@ jobs:
           composer config repositories.1 path $GITHUB_WORKSPACE
           composer install --no-interaction
           COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:${{ matrix.drupal }}
+      - name: Suppress links to screenshots
+        # There's so many! They can be useful locally if running one test, but they aren't useful here and cause massive scrolling.
+        run: |
+          cd ~/drupal
+          curl -L -O https://raw.githubusercontent.com/colemanw/webform_civicrm/def72b3dce1ea4bc7dd2cdd28a72844885727789/DrupalHtmlOutputTrait.diff
+          git apply DrupalHtmlOutputTrait.diff
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
