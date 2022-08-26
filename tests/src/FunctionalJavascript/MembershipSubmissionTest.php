@@ -135,7 +135,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
     // Create two memberships with the same status with the first membership
     // having an end date after the second membership's end date.
-    \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('membership', 'create', [
+    $this->utils->wf_civicrm_api('membership', 'create', [
       'membership_type_id' => 'Basic',
       'contact_id' => 2,
       'join_date' => '08/10/21',
@@ -145,7 +145,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
       'status_id' => 'Expired',
     ]);
 
-    \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('membership', 'create', [
+    $this->utils->wf_civicrm_api('membership', 'create', [
       'membership_type_id' => 'Basic',
       'contact_id' => 2,
       'join_date' => '01/01/21',
