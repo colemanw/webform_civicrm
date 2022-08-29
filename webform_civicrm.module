@@ -331,6 +331,8 @@ function webform_civicrm_webform_submission_render_alter(&$renderable) {
     return;
   }
   civicrm_initialize();
+  // See https://www.drupal.org/project/webform_civicrm/issues/3177210
+  module_load_include('inc', 'webform_civicrm', 'includes/utils');
 
   // Add display name to title while viewing a submission.
   if (!empty($renderable['#submission']->civicrm['contact'][1]['display_name']) && empty($renderable['#email']) && $renderable['#format'] == 'html') {
@@ -1083,7 +1085,7 @@ function webform_civicrm_civicrm_pre($op, $objectName, $id, &$params) {
  * We use it to override the return url so that the user gets redirected to the right place from paypal.
  *
  * Required by (at least) 'Paypal - Website Payments Standard' and 'Redsys'
- * 
+ *
  */
 function webform_civicrm_civicrm_alterPaymentProcessorParams($paymentObj, $rawParams, &$cookedParams) {
   if (!empty($rawParams['webform_redirect_cancel']) && !empty($rawParams['webform_redirect_success'])
