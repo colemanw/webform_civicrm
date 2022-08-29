@@ -4,7 +4,7 @@ namespace Drupal\webform_civicrm;
 
 use Drupal\Core\Form\FormStateInterface;
 
-class WebformCivicrmConfirmForm  {
+class WebformCivicrmConfirmForm  implements WebformCivicrmConfirmFormInterface {
 
   /**
    * @var \Drupal\Core\Form\FormStateInterface
