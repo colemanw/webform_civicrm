@@ -6,6 +6,7 @@ use Behat\Mink\Element\NodeElement;
 use Drupal\Tests\webform\Traits\WebformBrowserTestTrait;
 use Behat\Mink\Exception\ElementNotFoundException;
 use Drupal\Core\Url;
+use Drupal\Tests\civicrm\FunctionalJavascript\CiviCrmTestBase;
 
 abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
 
