@@ -23,7 +23,7 @@ final class AttachmentTest extends WebformCivicrmTestBase {
     'file',
   ];
 
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->cleanupFiles();
     $this->addAttachmentOnContact();
@@ -39,7 +39,7 @@ final class AttachmentTest extends WebformCivicrmTestBase {
     return self::$filePrefix;
   }
 
-  protected function tearDown() {
+  protected function tearDown(): void {
     parent::tearDown();
     $this->cleanupFiles();
   }

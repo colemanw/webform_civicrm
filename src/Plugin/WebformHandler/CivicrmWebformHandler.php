@@ -44,6 +44,13 @@ class CivicrmWebformHandler extends WebformHandlerBase {
   /**
    * {@inheritdoc}
    */
+  public function getSummary() {
+    return [];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $form['link'] = [
       '#type' => 'link',

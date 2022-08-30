@@ -1,7 +1,7 @@
 /**
  * Javascript Module for managing webform_civicrm options for select elements.
  */
-(function ($, D) {
+(function (D, $, once) {
   function defaultBoxes(newType, defaultName) {
     var oldType = newType == 'radio' ? 'checkbox' : 'radio';
     var defaultValue = $('input[name*="[civicrm_defaults]"]:checked').val() || '';
@@ -38,7 +38,7 @@
 
   D.behaviors.webform_civicrmOptions = {
     attach: function (context) {
-      $('input.civicrm-enabled', context).once('wf-civi').change(function() {
+      $(once('wf-civi', 'input.civicrm-enabled', context)).change(function() {
         if ($(this).is(':checked') ) {
           $(this).parents('tr').find('input.civicrm-label, input.civicrm-default').prop('disabled', false);
         }
@@ -55,7 +55,7 @@
 
       var multiple = $('input[name="extra[multiple]"]');
       if (multiple.is(':checkbox')) {
-        multiple.once('wf-civi').change(function() {
+        $(once('wf-civi', multiple)).change(function() {
           var type = $(this).is(':checked') ? 'checkbox' : 'radio';
           defaultBoxes(type, defaultName);
         }).change();
@@ -65,4 +65,4 @@
       }
     }
   };
-})(jQuery, Drupal);
+})(Drupal, jQuery, once);

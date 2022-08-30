@@ -642,7 +642,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $rule = wf_crm_aval($contact, 'matching_rule', 'Unsupervised', TRUE);
     if ($rule) {
       $contact['contact'][1]['contact_type'] = ucfirst($contact['contact'][1]['contact_type']);
-      $contact['contact'][1]['contact_sub_type'] = array_map('ucfirst', $contact['contact'][1]['contact_sub_type']);
       $params = [
         'check_permission' => FALSE,
         'sequential' => TRUE,
@@ -819,8 +818,12 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           $existing = array_merge([[]], $result['values']);
         }
         foreach ($contact[$location] as $i => $params) {
+          $stateIsID = FALSE;
+          if (!empty($existing[$i]['state_province_id']) && $existing[$i]['state_province_id'] == $params['state_province_id']) {
+            $stateIsID = TRUE;
+          }
           // Translate state/prov abbr to id
-          if (!empty($params['state_province_id']) && $params['location_type_id'] != $billingLocTypeID) {
+          if (!$stateIsID && !empty($params['state_province_id']) && $params['location_type_id'] != $billingLocTypeID) {
             $default_country = $this->utils->wf_crm_get_civi_setting('defaultContactCountry', 1228);
             if (!($params['state_province_id'] = $this->utils->wf_crm_state_abbr($params['state_province_id'], 'id', wf_crm_aval($params, 'country_id', $default_country)))) {
               $params['state_province_id'] = '';
@@ -1680,7 +1683,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     if (isset($this->enabled[$fid])) {
       foreach ($this->data['lineitem'][1]['contribution'] as $n => $lineitem) {
         $fid = "civicrm_1_lineitem_{$n}_contribution_line_total";
-        if ($this->getData($fid) > 0) {
+        if ($this->getData($fid) != 0) {
           $this->line_items[] = [
             'qty' => 1,
             'unit_price' => $lineitem['line_total'],

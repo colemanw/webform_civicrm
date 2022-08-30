@@ -14,7 +14,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->utils->wf_civicrm_api('Extension', 'download', [
       'key' => "com.aghstrategies.uscounties",
@@ -364,6 +364,52 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
   }
 
   /**
+   * Submit webform with subtype value.
+   */
+  public function testSubmitWebformWithContactSubtype() {
+    $params = [
+      'name' => "First Contact",
+      'is_active' => 1,
+      'parent_id' => "Individual",
+    ];
+    $result = $this->utils->wf_civicrm_api('ContactType', 'create', $params);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contact_1_contact_contact_sub_type[]', 'create_civicrm_webform_element');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $this->saveCiviCRMSettings();
+
+    $this->drupalLogout();
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+
+    $this->getSession()->getPage()->checkField('First Contact');
+    $this->assertSession()->checkboxChecked("First Contact");
+    $this->getSession()->getPage()->fillField('First Name', 'Frederick');
+    $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
+
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
+    $api_result = $this->utils->wf_civicrm_api('Contact', 'get', [
+      'sequential' => 1,
+      'first_name' => 'Frederick',
+      'last_name' => 'Pabst',
+    ]);
+    $this->assertEquals(1, $api_result['count']);
+    $contact = reset($api_result['values']);
+    $this->assertEquals('First_Contact', implode($contact['contact_sub_type']));
+  }
+
+  /**
    * Test submitting a contact.
    *
    * @dataProvider dataContactValues
@@ -378,12 +424,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
       'webform' => $this->webform->id(),
     ]));
     // The label has a <div> in it which can cause weird failures here.
-    $this->assertSession()->waitForText('Enable CiviCRM Processing');
-    $this->assertSession()->waitForField('nid');
-    $this->htmlOutput();
-    $this->getSession()->getPage()->checkField('nid');
-    $this->getSession()->getPage()->selectFieldOption('1_contact_type', strtolower($contact_type));
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->enableCivicrmOnWebform();
 
     // @see wf_crm_location_fields().
     $configurable_contact_field_groups = [
@@ -421,8 +462,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
       }
     }
 
-    $this->getSession()->getPage()->pressButton('Save Settings');
-    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    $this->saveCiviCRMSettings();
 
     $this->drupalLogout();
     $this->drupalGet($this->webform->toUrl('canonical'));

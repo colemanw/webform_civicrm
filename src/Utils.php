@@ -331,7 +331,7 @@ class Utils implements UtilsInterface {
           $contact_types[strtolower($type['name'])] = $type['label'];
           continue;
         }
-        $sub_types[strtolower($data[$type['parent_id']]['name'])][strtolower($type['name'])] = $type['label'];
+        $sub_types[strtolower($data[$type['parent_id']]['name'])][$type['name']] = $type['label'];
       }
     }
     return [$contact_types, $sub_types];
@@ -367,11 +367,11 @@ class Utils implements UtilsInterface {
         $r['type_b'] = strtolower(wf_crm_aval($r, 'contact_type_b'));
         $r['sub_type_a'] = wf_crm_aval($r, 'contact_sub_type_a');
         if (!is_null($r['sub_type_a'])) {
-          $r['sub_type_a'] = strtolower($r['sub_type_a']);
+          $r['sub_type_a'] = $r['sub_type_a'];
         }
         $r['sub_type_b'] = wf_crm_aval($r, 'contact_sub_type_b');
         if (!is_null($r['sub_type_b'])) {
-          $r['sub_type_b'] = strtolower($r['sub_type_b']);
+          $r['sub_type_b'] = $r['sub_type_b'];
         }
         $types[$r['id']] = $r;
       }
@@ -629,6 +629,29 @@ class Utils implements UtilsInterface {
       $str .= ($str ? "\n" : '') . $k . '|' . $v;
     }
     return $str;
+  }
+
+  /**
+   * Wrapper for all CiviCRM APIv4 calls
+   *
+   * @param string $entity
+   *   API entity
+   * @param string $operation
+   *   API operation
+   * @param array $params
+   *   API params
+   * @param string|int|array $index
+   *   Controls the Result array format.
+   *
+   * @return array
+   *   Result of API call
+   */
+  function wf_civicrm_api4($entity, $operation, $params, $index = NULL) {
+    if (!$entity) {
+      return [];
+    }
+    $result = civicrm_api4($entity, $operation, $params, $index);
+    return $result;
   }
 
   /**

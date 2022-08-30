@@ -1,7 +1,7 @@
-(function ($, D, drupalSettings) {
+(function (D, $, drupalSettings, once) {
   D.behaviors.webform_civicrm_contact = {
     attach: function (context) {
-      $('[data-civicrm-contact]', context).once('webform_civicrm_contact').each(function (i, el) {
+      $(once('webform_civicrm_contact', '[data-civicrm-contact]', context)).each(function (i, el) {
         var field = $(el);
         var toHide = [];
         if (field.data('hide-fields')) {
@@ -117,4 +117,4 @@
 
     }
   }
-})(jQuery, Drupal, drupalSettings)
+})(Drupal, jQuery, drupalSettings, once)

@@ -1,7 +1,7 @@
 /**
  * Javascript Module for managing the webform_civicrm admin form.
  */
-var wfCiviAdmin = (function ($, D) {
+var wfCiviAdmin = (function (D, $, once) {
   var billingEmailMsg;
   /**
    * Public methods.
@@ -250,10 +250,10 @@ var wfCiviAdmin = (function ($, D) {
       employerOptions();
       showHideParticipantOptions();
 
-      $('select[multiple]', '#webform-civicrm-settings-form, #webform-component-edit-form').once('wf-crm-multiselect').each(initMultiSelect);
+      $(once('wf-crm-multiselect', 'select[multiple]', document.querySelector('#webform-civicrm-settings-form, #webform-component-edit-form'))).each(initMultiSelect);
 
       // Summaries for vertical tabs
-      $('details[id^="edit-contact-"]', context).once('wf-civi').drupalSetSummary(function (context) {
+      $(once('wf-civi', 'details[id^="edit-contact-"]', context)).drupalSetSummary(function (context) {
         var label = $('select[name$="_contact_type"] option:selected', context).text();
         if ($('select[name$="_contact_sub_type[]"]', context).val()) {
           var first = true;
@@ -265,7 +265,7 @@ var wfCiviAdmin = (function ($, D) {
         }
         return label;
       });
-      $('details#edit-st-message', context).once('wf-civi').drupalSetSummary(function (context) {
+      $(once('wf-civi', 'details#edit-st-message', context)).drupalSetSummary(function (context) {
         if ($('[name="toggle_message"]', context).is(':checked')) {
           return checkLength($('#edit-message', context).val());
         }
@@ -273,14 +273,14 @@ var wfCiviAdmin = (function ($, D) {
           return Drupal.t('- None -');
         }
       });
-      $('details#edit-prefix', context).once('wf-civi').drupalSetSummary(function (context) {
+      $(once('wf-civi', 'details#edit-prefix', context)).drupalSetSummary(function (context) {
         var label = $('[name="prefix_known"]', context).val() || $('[name="prefix_unknown"]', context).val();
         return checkLength(label) || Drupal.t('- None -');
       });
-      $('#edit-participant, #edit-contribution', context).once('wf-civi').drupalSetSummary(function (context) {
+      $(once('wf-civi', '#edit-participant, #edit-contribution', context)).drupalSetSummary(function (context) {
         return $('select:first option:selected', context).text();
       });
-      $('details#edit-activitytab', context).once('wf-civi').drupalSetSummary(function (context) {
+      $(once('wf-civi', 'details#edit-activitytab', context)).drupalSetSummary(function (context) {
         var label = [];
         $('fieldset.activity-wrapper', context).each(function() {
           var caseType = $('select[name$=case_type_id]', this).val();
@@ -289,14 +289,14 @@ var wfCiviAdmin = (function ($, D) {
         });
         return label.join('<br />') || Drupal.t('- None -');
       });
-      $('details#edit-casetab', context).once('wf-civi').drupalSetSummary(function (context) {
+      $(once('wf-civi', 'details#edit-casetab', context)).drupalSetSummary(function (context) {
         var label = [];
         $('select[name$=case_type_id]', context).each(function() {
           label.push($(this).find('option:selected').text());
         });
         return label.join('<br />') || Drupal.t('- None -');
       });
-      $('details#edit-membership', context).once('wf-civi').drupalSetSummary(function (context) {
+      $(once('wf-civi', 'details#edit-membership', context)).drupalSetSummary(function (context) {
         var memberships = [];
         $('select[name$=membership_type_id]', context).each(function() {
           var label = getContactLabel($(this).attr('name').split('_')[1]);
@@ -304,14 +304,14 @@ var wfCiviAdmin = (function ($, D) {
         });
         return memberships.join('<br />') || Drupal.t('- None -');
       });
-      $('#edit-granttab', context).once('wf-civi').drupalSetSummary(function (context) {
+      $(once('wf-civi', '#edit-granttab', context)).drupalSetSummary(function (context) {
         var label = [];
         $('select[name$=grant_type_id]', context).each(function() {
           label.push($(this).find('option:selected').text());
         });
         return label.join('<br />') || Drupal.t('- None -');
       });
-      $('details#edit-additional-options', context).once('wf-civi').drupalSetSummary(function (context) {
+      $(once('wf-civi', 'details#edit-additional-options', context)).drupalSetSummary(function (context) {
         var label = [];
         $(':checked', context).each(function() {
           label.push($.trim($(this).siblings('label').contents().first().text()));
@@ -319,7 +319,7 @@ var wfCiviAdmin = (function ($, D) {
         return label.join(', ') || Drupal.t('- None -');
       });
 
-      $('select[name=participant_reg_type]', context).once('wf-civi').change(function() {
+      $(once('wf-civi', 'select[name=participant_reg_type]', context)).change(function() {
         showHideParticipantOptions('fast');
       });
 
@@ -330,7 +330,7 @@ var wfCiviAdmin = (function ($, D) {
         }
       }
 
-      $('#edit-nid', context).once('wf-civi').change(function() {
+      $(once('wf-civi', '#edit-nid', context)).change(function() {
         if ($(this).is(':checked')) {
           $('.form-type-vertical-tabs, .form-item-number-of-contacts').removeAttr('style');
           $('.vertical-tabs details', '#webform-civicrm-settings-form').removeClass('hidden');
@@ -347,7 +347,7 @@ var wfCiviAdmin = (function ($, D) {
       if ($('#edit-toggle-message').not(':checked')) {
         $('#edit-st-message .form-item-message').hide();
       }
-      $('#edit-toggle-message', context).once('wf-civi').change(function() {
+      $(once('wf-civi', '#edit-toggle-message', context)).change(function() {
         if ($(this).is(':checked')) {
           $('#edit-message').prop('disabled', false);
           $('#edit-st-message .form-item-message').show('fast');
@@ -379,24 +379,24 @@ var wfCiviAdmin = (function ($, D) {
         }
         $('.web-civi-js-select', $fieldset).css('visibility', checked ? 'hidden' : '');
       }
-      $('.dynamic-custom-checkbox input', context).once('wf-civi-dynamic').each(handleDynamicCustom).change(handleDynamicCustom);
+      $(once('wf-civi-dynamic', '.dynamic-custom-checkbox input', context)).each(handleDynamicCustom).change(handleDynamicCustom);
 
-      $('.web-civi-js-select a').once('wf-civi').click(function() {
+      $(once('wf-civi', '.web-civi-js-select a')).click(function() {
         var $fieldset = $(this).closest('fieldset');
         pub.selectReset($(this).attr('class'), $fieldset);
         return false;
       });
 
-      $('select[id*=contact-type], select[id*=contact-sub-type]', context).once('wf-civi-relationship').change(function() {
+      $(once('wf-civi-relationship', 'select[id*=contact-type], select[id*=contact-sub-type]', context)).change(function() {
         relationshipOptions();
       });
 
-      $('#edit-number-of-contacts', context).once('wf-civi').change(function() {
+      $(once('wf-civi', '#edit-number-of-contacts', context)).change(function() {
         $('.webform-civicrm-settings-form')[0].submit();
       });
 
       // Show/hide custom relationship fields
-      $('select[name*="relationship_relationship_type_id"]', context).once('wf-civi-rel').change(function() {
+      $(once('wf-civi-rel', 'select[name*="relationship_relationship_type_id"]', context)).change(function() {
         var name = $(this).attr('name').replace('relationship_type_id[]', '');
         // Input type may be single or multi-select
         var val = typeof($(this).val()) == 'string' ? [$(this).val()] : $(this).val();
@@ -420,7 +420,7 @@ var wfCiviAdmin = (function ($, D) {
         });
       }).change();
 
-      $('select[name*="address_master_id"]', context).once('wf-civi').change(function() {
+      $(once('wf-civi', 'select[name*="address_master_id"]', context)).change(function() {
         var ele = $(this);
         var fs = ele.parent().parent();
         switch (ele.val()) {
@@ -471,14 +471,14 @@ var wfCiviAdmin = (function ($, D) {
       }
 
       // Respond to contact type changing
-      $('select[name$="_contact_type"]').once('contact-type').change(function() {
+      $(once('contact-type', 'select[name$="_contact_type"]')).change(function() {
         $('#webform-civicrm-settings-form .vertical-tabs__menu-item i[name="' + $(this).attr('name') + '"]').removeClass().addClass('crm-i ' + getContactIcon($(this).val()));
         employerOptions();
       });
 
       // Contact label change events
-      $('input[name$=_webform_label]', context).once('wf-keyup').keyup(changeContactLabel);
-      $('input[name$=_webform_label]', context).once('wf-change').change(function() {
+      $(once('wf-keyup', 'input[name$=_webform_label]', context)).keyup(changeContactLabel);
+      $(once('wf-change', 'input[name$=_webform_label]', context)).change(function() {
         // Trim string and replace with default if empty
         var label = $(this).val().replace(/^\s+|\s+$/g,'');
         if (!label.length) {
@@ -490,7 +490,7 @@ var wfCiviAdmin = (function ($, D) {
       });
 
       // Contribution honoree fields
-      $('select[name$=contribution_honor_contact_id]', context).once('crm-contrib').change(function() {
+      $(once('crm-contrib', 'select[name$=contribution_honor_contact_id]', context)).change(function() {
         if ($(this).val() == '0') {
           $('.form-item-civicrm-1-contribution-1-contribution-honor-type-id').hide();
         }
@@ -498,7 +498,7 @@ var wfCiviAdmin = (function ($, D) {
           $('.form-item-civicrm-1-contribution-1-contribution-honor-type-id').show();
         }
       }).change();
-      $('select[name$=contribution_honor_type_id]', context).once('crm-contrib').change(function() {
+      $(once('crm-contrib', 'select[name$=contribution_honor_type_id]', context)).change(function() {
         var $label = $('.form-item-civicrm-1-contribution-1-contribution-honor-contact-id label');
         if ($(this).val() == 'create_civicrm_webform_element') {
           $label.html(Drupal.t('In Honor/Memory of'));
@@ -509,7 +509,7 @@ var wfCiviAdmin = (function ($, D) {
       }).change();
 
       // Membership constraints
-      $('select[name$=_membership_num_terms]', context).once('crm-mem-date').change(function(e, type) {
+      $(once('crm-mem-date', 'select[name$=_membership_num_terms]', context)).change(function(e, type) {
         var $dateWrappers = $(this).parent().siblings('[class$="-date"]').not('[class$="-status-override-end-date"]');
         if ($(this).val() == '0') {
           $dateWrappers.show();
@@ -521,7 +521,7 @@ var wfCiviAdmin = (function ($, D) {
           $dateWrappers.hide().find('input').prop('checked', false);
         }
       }).trigger('change', 'init');
-      $('select[name$=_membership_status_id]', context).once('crm-mem-date').change(function(e) {
+      $(once('crm-mem-date', 'select[name$=_membership_status_id]', context)).change(function(e) {
         $target = $(this).parent().siblings('[class$="membership-status-override-end-date"]');
         if ($(this).val() == '0') {
           $target.hide().find('input').prop('checked', false);
@@ -558,22 +558,22 @@ var wfCiviAdmin = (function ($, D) {
           $('#edit-participant').prepend('<div class="wf-crm-paid-entities-info messages status">' + Drupal.t('Configure the Contribution settings to enable paid events.') + '</div>');
         }
       }
-      $('[name=civicrm_1_contribution_1_contribution_enable_contribution], [name=civicrm_1_contact_1_email_email]', context).once('email-alert').change(billingMessages);
+      $(once('email-alert', '[name=civicrm_1_contribution_1_contribution_enable_contribution], [name=civicrm_1_contact_1_email_email]', context)).change(billingMessages);
       billingMessages();
 
       // Handlers for submit-limit & tracking-mode mini-forms
-      $('#configure-submit-limit', context).once('wf-civi').click(function() {
+      $(once('wf-civi', '#configure-submit-limit', context)).click(function() {
         $(this).hide();
         $('#submit-limit-wrapper').show();
       });
-      $('#configure-submit-limit-cancel', context).once('wf-civi').click(function() {
+      $(once('wf-civi', '#configure-submit-limit-cancel', context)).click(function() {
         $('#submit-limit-wrapper').hide();
         $('#configure-submit-limit').show();
       });
-      $('#configure-submit-limit-save', context).once('wf-civi').click(function() {
+      $(once('wf-civi', '#configure-submit-limit-save', context)).click(function() {
         $('[name=civicrm_1_contribution_1_contribution_enable_contribution]').change();
       });
-      $('#webform-tracking-mode', context).once('wf-civi').click(function() {
+      $(once('wf-civi', '#webform-tracking-mode', context)).click(function() {
         $('[name=webform_tracking_mode]').val('strict');
         $('[name=civicrm_1_contribution_1_contribution_enable_contribution]').change();
       });
@@ -581,4 +581,4 @@ var wfCiviAdmin = (function ($, D) {
   };
 
   return pub;
-})(jQuery, Drupal);
+})(Drupal, jQuery, once);

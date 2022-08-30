@@ -53,7 +53,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->utils = \Drupal::service('webform_civicrm.utils');
 
@@ -484,6 +484,9 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       }
     }
     $this->htmlOutput();
+    if (!empty($params['results_display'])) {
+      $this->addFieldValue('properties[results_display][]', $params['results_display']);
+    }
 
     if (!empty($params['default'])) {
       $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-contact-defaults"]')->click();
