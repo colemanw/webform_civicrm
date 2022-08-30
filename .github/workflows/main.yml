@@ -17,17 +17,9 @@ jobs:
   phpunit:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
-          - drupal: '9.3.*'
-            civicrm: '5.45.*'
-          - drupal: '9.4.*'
-            civicrm: '5.51.*'
-          - drupal: '9.4.*'
-            civicrm: '5.52.*'
-          - drupal: '9.4.*'
-            civicrm: '5.53.x-dev'
           - drupal: '9.4.*'
             civicrm: 'dev-master'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
@@ -93,6 +85,11 @@ jobs:
         run: |
           cd ~/drupal
           COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} --prefer-dist -W
+      - name: test speed patch
+        run: |
+          cd ~/drupal/web/modules/contrib/civicrm
+          curl -L -o speed.diff https://github.com/civicrm/civicrm-drupal-8/commit/6d87bbb6197153681dd147608fd44315423e74c7.diff
+          git apply speed.diff
       - name: Ensure Webform ^6.0
         run: |
           cd ~/drupal
