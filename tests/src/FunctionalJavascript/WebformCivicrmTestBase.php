@@ -92,8 +92,23 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       'uf_name' => $this->rootUser->getAccountName(),
       'contact_id' => $this->rootUserCid,
     ]);
+    // When using snapshot dbs, the rootUser password needs to be reset since the user is reset by
+    // the drupal test system and then it doesn't match the db and logging in with this user fails.
+    $newpass = $this->randomMachineName();
+    $account = \Drupal\user\Entity\User::load(1);
+    $account->setPassword($newpass);
+    $account->save();
+    //$account->passRaw = $newpass; // needed if we were to use this account right away to log in now
+    // (as opposed to the UserSession we're creating below to use to log in later)
+    $this->rootUser = new \Drupal\Core\Session\UserSession([
+      'uid' => 1,
+      'name' => $this->rootUser->getAccountName(),
+      'mail' => $this->rootUser->getEmail(),
+      'pass_raw' => $newpass,
+      'passRaw' => $newpass,
+      'timezone' => date_default_timezone_get(),
+    ]);
   }
-
 
   /**
    * Redirect civicrm emails to database.
