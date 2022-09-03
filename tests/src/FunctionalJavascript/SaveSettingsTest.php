@@ -169,6 +169,10 @@ final class SaveSettingsTest extends WebformCivicrmTestBase {
 
     $this->saveCiviCRMSettings();
     $this->assertSession()->pageTextContains('Added 4 fields to the form');
+    $this->assertSession()->pageTextContains('Added field: Existing Contact');
+    $this->assertSession()->pageTextContains('Added field: First Name');
+    $this->assertSession()->pageTextContains('Added field: Last Name');
+    $this->assertSession()->pageTextContains('Added field: Activity Type');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
   }
 

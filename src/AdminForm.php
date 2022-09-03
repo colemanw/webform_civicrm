@@ -1936,7 +1936,7 @@ class AdminForm implements AdminFormInterface {
               ];
               // Cannot use isNewFieldset effectively.
               $previous_data = $handler_configuration['settings'];
-              list(, $c, $ent) =  $this->utils->wf_crm_explode_key($key);
+              list(, $c, $ent, $n, $table, $name) =  $this->utils->wf_crm_explode_key($key);
               $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
               $create = !isset($previous_data['data'][$type][$c]);
               /*
@@ -1947,7 +1947,10 @@ class AdminForm implements AdminFormInterface {
               // @todo Properly handle fieldset creation.
               // self::insertComponent($field, $enabled, $this->settings, !isset($previous_data['data'][$type][$c]));
               self::insertComponent($field, $enabled, $this->settings, TRUE, $this->webform);
-              $created[] = $field['name'];
+              // Enable Contribution is an optional page break added on the form.
+              if ($name != 'enable_contribution') {
+                $created[] = $field['name'];
+              }
               if (isset($field['civicrm_condition'])) {
                 $this->addConditionalRule($field, $enabled);
               }
@@ -1997,6 +2000,9 @@ class AdminForm implements AdminFormInterface {
     \Drupal::messenger()->addStatus(
       \Drupal::translation()->formatPlural(count($created), 'Added one field to the form', 'Added @count fields to the form')
     );
+    foreach ($created as $field_name) {
+      \Drupal::messenger()->addStatus(t('Added field: %name', ['%name' => $field_name]));
+    }
 
     // Create record
     $handler_configuration['settings'] = $this->settings;
