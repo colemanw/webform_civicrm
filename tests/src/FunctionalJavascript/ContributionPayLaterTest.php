@@ -75,6 +75,13 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->assertStringContainsString('Payment by Direct Credit to: ABC. Please quote invoice number and name.', $sent_email);
     $this->assertStringContainsString('Thank you for your contribution', $sent_email);
 
+    // "Hack" for versions before 5.54 - it doesn't pick up the setting we set earlier.
+    if (version_compare(\CRM_Core_BAO_Domain::version(), '5.54.alpha1', '<')) {
+      $mb = \Civi::settings()->get('mailing_backend');
+      $mb['outBound_option'] = \CRM_Mailing_Config::OUTBOUND_OPTION_REDIRECT_TO_DB;
+      \Civi::settings()->set('mailing_backend', $mb);
+    }
+
     // Complete the contribution and recheck receipt.
     civicrm_api3('Contribution', 'completetransaction', [
       'id' => $contribution['id'],
