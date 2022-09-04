@@ -16,6 +16,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
   public function testReceiptParams() {
     $this->drupalLogin($this->rootUser);
     $this->redirectEmailsToDB();
+    $this->setOrgInfo();
 
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
@@ -30,7 +31,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
         'receipt_from_email' => 'admin@example.com',
         'pay_later_receipt' => 'Payment by Direct Credit to: ABC. Please quote invoice number and name.',
         'receipt_text' => 'Thank you for your contribution.',
-      ]
+      ],
     ];
     $this->configureContributionTab($params);
     $this->getSession()->getPage()->selectFieldOption('Enable Billing Address?', 'No');
@@ -80,9 +81,9 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
       'is_email_receipt' => 1,
     ]);
     $sent_email = $this->getMostRecentEmail();
-    $this->assertStringContainsString('From: Admin <admin@example.com>', $sent_email);
+    $this->assertStringContainsString('From: Pay Laterers <pay.later@example.org>', $sent_email);
     $this->assertStringContainsString('To: Frederick Pabst <fred@example.com>', $sent_email);
-    $this->assertStringContainsString('Thank you for your contribution', $sent_email);
+    $this->assertStringContainsString('Subject: Invoice - Contribution - Frederick Pabst', $sent_email);
   }
 
   public function testSubmitContribution() {
@@ -300,6 +301,27 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->pressButton('Save');
     $this->assertSession()->waitForText('has been updated.');
+  }
+
+  /**
+   * Set the info at Administer - Communications - Organization Info
+   */
+  private function setOrgInfo() {
+    // This fails - see https://lab.civicrm.org/dev/drupal/-/issues/133
+    // $this->drupalGet(\CRM_Utils_System::url('civicrm/admin/domain', 'action=update&reset=1', TRUE, NULL, FALSE));
+    // $this->getSession()->getPage()->fillField('name', 'Pay Laterers');
+    // $this->getSession()->getPage()->fillField('email_1_email', 'pay.later@example.org');
+    // $this->getSession()->getPage()->pressButton('_qf_Domain_next_view-bottom');
+
+    civicrm_api3('Domain', 'create', ['id' => 1, 'name' => 'Pay Laterers']);
+    $option_value = civicrm_api3('OptionValue', 'get', [
+      'option_group_id' => 'from_email_address',
+      'is_default' => 1,
+    ]);
+    civicrm_api3('OptionValue', 'create', [
+      'id' => $option_value['id'],
+      'label' => '"Pay Laterers" <pay.later@example.org>',
+    ]);
   }
 
 }
