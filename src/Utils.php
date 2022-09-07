@@ -1038,7 +1038,7 @@ class Utils implements UtilsInterface {
    */
   public function hasMultipleValues($element) {
     if (!empty($element['#extra']['multiple']) ||
-      (empty($element['#civicrm_live_options']) && !empty($element['#options']) && count($element['#options']) === 1)) {
+      (empty($element['#civicrm_live_options']) && !empty($element['#options']) && is_array($element['#options']) && count($element['#options']) === 1)) {
       return TRUE;
     }
     return FALSE;
