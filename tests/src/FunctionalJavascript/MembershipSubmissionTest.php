@@ -156,7 +156,9 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     ]);
 
     $this->drupalGet($this->webform->toUrl('canonical'));
-    $this->assertSession()->statusMessageContains('Basic membership for ' . mb_strtolower($this->adminUser->getEmail()) . ' has a status of "Expired". Expired ' . \CRM_Utils_Date::customFormat('2022-08-10'));
+    $this->assertSession()->elementExists('xpath', $this->assertSession()->buildXPathQuery('//div[@data-drupal-messages]//div[contains(., :message)]', [
+      ':message' => 'Basic membership for ' . mb_strtolower($this->adminUser->getEmail()) . ' has a status of "Expired". Expired ' . \CRM_Utils_Date::customFormat('2022-08-10'),
+    ]));
 
     $this->drupalLogout();
     $this->drupalGet($this->webform->toUrl('canonical'));
