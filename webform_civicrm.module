@@ -207,6 +207,20 @@ function _fillCiviCRMData($data, $webformSubmission) {
         $data["{$key}_raw"] = $data[$key];
         $data[$key] = $element['#options'][$val];
       }
+      elseif (strpos($key, 'state_province_id') !== false) {
+        $country_key = str_replace('state_province_id', 'country_id', $key);
+        $country_id = $data["{$country_key}_raw"] ?? $data[$country_key] ?? NULL;
+        $params = [
+          'sequential' => 1,
+          'country_id' => $country_id,
+          'abbreviation' => $val,
+        ];
+        if (is_numeric($val)) {
+          $params['id'] = $val;
+          $params['options'] = ['or' => [["abbreviation", "id"]]];
+        }
+        $data[$key] = $utils->wf_crm_apivalues('StateProvince', 'get', $params, 'name')[0] ?? $data[$key];
+      }
     }
   }
 
