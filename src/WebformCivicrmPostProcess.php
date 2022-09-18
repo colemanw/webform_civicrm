@@ -1927,6 +1927,8 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       $result = $this->contributionRecur($contributionParams);
     }
     else {
+      // Not a recur payment, remove any recur fields if present.
+      unset($contributionParams['frequency_unit'], $contributionParams['frequency_interval'], $contributionParams['is_recur']);
       $result = $this->utils->wf_civicrm_api('contribution', 'transact', $contributionParams);
     }
 
@@ -2083,6 +2085,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $params['total_amount'] = round($this->totalContribution, 2);
     // Some processors want this one way, some want it the other
     $params['amount'] = $params['total_amount'];
+    $frequencyUnit = wf_crm_aval($params, 'frequency_unit');
+    if (empty($frequencyUnit)) {
+      unset($params['frequency_unit'], $params['frequency_interval'], $params['is_recur']);
+    }
 
     $params['financial_type_id'] = wf_crm_aval($this->data, 'contribution:1:contribution:1:financial_type_id');
 
