@@ -2822,7 +2822,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $updateParams = [
       'id' => $cid,
     ];
-    $skipKeys = [];
+
     foreach ($params['update_contact_ref'] as $n => $refKeys) {
       foreach ($refKeys as $refKey => $val) {
         // Skip contact ref that doesn't have a valid contact ids.
@@ -2831,7 +2831,12 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         }
         foreach ($params['contact'] as $contactParams) {
           foreach ($contactParams as $key => $value) {
-            if (strpos($key, "{$refKey}_") === 0 && !isset($updateParams[$key]) && !in_array($key, $skipKeys)) {
+            // for multi-value contact ref its custom_18_-1 for new
+            // custom_18_3 for existing record
+            // For non multi-value contact ref its custom_18
+            if ((strpos($key, "{$refKey}_") === 0 || $refKey === $key)
+              && !isset($updateParams[$key])
+            ) {
               $updateParams[$key] = $value;
             }
           }
