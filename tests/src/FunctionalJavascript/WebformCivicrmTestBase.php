@@ -219,8 +219,8 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('Financial Type', $params['financial_type_id'] ?? 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
 
-    if (!empty($params['pp'])) {
-      $this->getSession()->getPage()->selectFieldOption('Payment Processor', $params['pp']);
+    if (!empty($params['payment_processor_id'])) {
+      $this->getSession()->getPage()->selectFieldOption('Payment Processor', $params['payment_processor_id']);
     }
 
     if (!empty($params['receipt'])) {

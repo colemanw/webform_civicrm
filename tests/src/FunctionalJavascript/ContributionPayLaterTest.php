@@ -24,7 +24,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->enableCivicrmOnWebform();
 
     $params = [
-      'pp' => 'Pay Later',
+      'payment_processor_id' => 'Pay Later',
       'financial_type_id' => 'create_civicrm_webform_element',
       'receipt' => [
         'receipt_from_name' => 'Admin',
@@ -111,7 +111,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->assertSession()->checkboxChecked('Country');
 
     $params = [
-      'pp' => 'Pay Later',
+      'payment_processor_id' => 'Pay Later',
     ];
     $this->configureContributionTab($params);
     $this->getSession()->getPage()->checkField('Contribution Amount');
@@ -329,6 +329,74 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
       'id' => $option_value['id'],
       'label' => '"Pay Laterers" <pay.later@example.org>',
     ]);
+  }
+
+  /**
+   * Test if default value on the civicrm option element
+   * is not passed to civicrm on webform submit.
+   */
+  public function testCivicrmOptionsDefaultSubmission() {
+    $this->drupalLogin($this->rootUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+    $this->getSession()->getPage()->checkField('Gender');
+
+    $params = [
+      'payment_processor_id' => 'Pay Later',
+    ];
+    $this->configureContributionTab($params);
+
+    $this->getSession()->getPage()->selectFieldOption('Enable Billing Address?', 'No');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->checkField('Contribution Amount');
+
+    $this->saveCiviCRMSettings();
+
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+    $this->assertPageNoErrorMessages();
+
+    // Set Male to be the default option.
+    $maleID = $this->utils->wf_crm_apivalues('OptionValue', 'get', [
+      'sequential' => 1,
+      'option_group_id' => "gender",
+      'name' => "Male",
+    ], 'value')[0] ?? NULL;
+    $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contact-1-contact-gender-id-operations', FALSE, FALSE, $maleID);
+
+    $this->drupalLogout();
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+    $this->getSession()->getPage()->fillField('First Name', 'Mei');
+    $this->getSession()->getPage()->fillField('Last Name', 'Parker');
+    $this->getSession()->getPage()->fillField('Email', 'meiparker@example.com');
+    $femaleID = $this->utils->wf_crm_apivalues('OptionValue', 'get', [
+      'sequential' => 1,
+      'option_group_id' => "gender",
+      'name' => "Female",
+    ], 'value')[0] ?? NULL;
+    $this->getSession()->getPage()->selectFieldOption("civicrm_1_contact_1_contact_gender_id", $femaleID);
+
+    $this->getSession()->getPage()->pressButton('Next >');
+    $this->assertPageNoErrorMessages();
+    $this->getSession()->getPage()->fillField('Contribution Amount', '20');
+
+    $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
+    $this->htmlOutput();
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '20.00');
+
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
+    $contact = $this->utils->wf_crm_apivalues('Contact', 'get', [
+      'sequential' => 1,
+      'first_name' => "Mei",
+      'last_name' => "Parker",
+    ])[0] ?? [];
+    $this->assertEquals('Female', $contact['gender']);
   }
 
 }

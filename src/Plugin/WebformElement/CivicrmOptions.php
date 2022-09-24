@@ -193,7 +193,7 @@ class CivicrmOptions extends OptionsBase {
       $element['#options'] = $new;
     }
 
-    if (!empty($element['#default_option'])) {
+    if (empty($element['#default_value']) && !empty($element['#default_option'])) {
       $element['#default_value'] = $element['#default_option'];
     }
 

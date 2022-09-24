@@ -24,7 +24,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->enableCivicrmOnWebform();
 
     $params = [
-      'pp' => $payment_processor['id'],
+      'payment_processor_id' => $payment_processor['id'],
     ];
     $this->configureContributionTab($params);
     $this->getSession()->getPage()->checkField("Contribution Amount");
@@ -94,7 +94,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField("civicrm_2_contact_1_contact_existing");
 
     $params = [
-      'pp' => $payment_processor['id'],
+      'payment_processor_id' => $payment_processor['id'],
     ];
     $this->configureContributionTab($params);
     $this->getSession()->getPage()->checkField("Contribution Amount");
@@ -267,7 +267,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField("civicrm_2_contact_1_contact_existing");
 
     $params = [
-      'pp' => $payment_processor['id'],
+      'payment_processor_id' => $payment_processor['id'],
     ];
     $this->configureContributionTab($params);
     $this->getSession()->getPage()->checkField('Contribution Amount');
@@ -326,7 +326,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->enableCivicrmOnWebform();
 
     $params = [
-      'pp' => $payment_processor['id'],
+      'payment_processor_id' => $payment_processor['id'],
     ];
     $this->configureContributionTab($params);
     $this->getSession()->getPage()->checkField('Contribution Amount');
