@@ -156,6 +156,15 @@ class CivicrmWebformHandler extends WebformHandlerBase {
   /**
    * {@inheritdoc}
    */
+  public function confirmForm(array &$form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission) {
+    $this->civicrm->initialize();
+    $processor = \Drupal::service('webform_civicrm.confirmform')->initialize($form_state);
+    $processor->doPayment();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function deleteHandler() {
     $elements = array_filter($this->webform->getElementsDecodedAndFlattened(), function (array $element) {
       return strpos($element['#form_key'], 'civicrm_') !== 0;

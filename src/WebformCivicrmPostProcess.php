@@ -2097,19 +2097,11 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $params['item_name'] = $params['description'] = t('Webform Payment: @title', ['@title' => $this->node->label()]);
 
     if (method_exists($paymentProcessor, 'setSuccessUrl')) {
-      $paymentProcessor->setSuccessUrl($this->getIpnRedirectUrl('success'));
-      $paymentProcessor->setCancelUrl($this->getIpnRedirectUrl('cancel'));
+      $params['successURL'] = $this->getIpnRedirectUrl('success');
+      $params['cancelURL'] = $this->getIpnRedirectUrl('cancel');
     }
 
-    try {
-      $paymentProcessor->doPayment($params);
-    }
-    catch (\Civi\Payment\Exception\PaymentProcessorException $e) {
-      \Drupal::messenger()->addError(ts('Payment approval failed with message: %error ', [
-        '%error' =>  $e->getMessage(),
-      ]));
-      \CRM_Utils_System::redirect($this->getIpnRedirectUrl('cancel'));
-    }
+    $this->form_state->set(['civicrm', 'doPayment'], $params);
 
   }
 
