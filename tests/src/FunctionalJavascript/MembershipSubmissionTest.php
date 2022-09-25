@@ -292,7 +292,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
     // Configure Contribution tab.
     $params = [
-      'pp' => $payment_processor['id'],
+      'payment_processor_id' => $payment_processor['id'],
       'financial_type_id' => 2,
     ];
     $this->configureContributionTab($params);
