@@ -1,5 +1,5 @@
 // Webform payment processing using CiviCRM's jQuery
-(function ($, D, drupalSettings) {
+(function (D, $, drupalSettings, once) {
   'use strict';
   var setting = drupalSettings.webform_civicrm;
 
@@ -75,6 +75,7 @@
       }
       $('td+td', $lineItem).html(CRM.formatMoney(amount * taxPara));
       $lineItem.data('amount', amount * taxPara);
+      $lineItem.attr('data-amount', amount * taxPara);
     }
     tally();
   }
@@ -91,13 +92,13 @@
         }
         total += isNaN(amount) ? 0 : amount;
       });
-    return total < 0 ? 0 : total;
+    return total;
   }
 
   function calculateLineItemAmount() {
     var fieldKey = $(this).data('civicrmFieldKey'),
       amount = getFieldAmount(fieldKey),
-      label = $(this).closest('div.webform-component').find('label').text() || Drupal.t('Contribution'),
+      label = $(this).closest('div.form-item').find('label').text() || Drupal.t('Contribution'),
       lineKey = fieldKey.split('_').slice(0, 4).join('_');
     updateLineItem(lineKey, amount, label);
   }
@@ -140,8 +141,8 @@
         $.extend(CRM.payment, payment);
       }
 
-      $('.webform-submission-form #edit-actions').detach().appendTo('.webform-submission-form');
+      jQuery(once('wf-civi', '.webform-submission-form #edit-actions', context)).detach().appendTo('.webform-submission-form');
     }
   }
 
-})(CRM.$, Drupal, drupalSettings);
+})(Drupal, CRM.$, drupalSettings, once);

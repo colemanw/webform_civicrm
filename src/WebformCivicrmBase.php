@@ -9,7 +9,7 @@ namespace Drupal\webform_civicrm;
 
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Url;
-use Drupal\File\Entity\File;
+use Drupal\file\Entity\File;
 
 /**
  * Class WebformCivicrmBase
@@ -380,10 +380,13 @@ abstract class WebformCivicrmBase {
       $valueFound = false;
       foreach($values as $key => $value){
         if ((in_array($ent, ['address', 'email']) && $value['location_type_id'] == $setting['location_type_id'])
-          || (
-             $value['location_type_id'] == $setting['location_type_id'] &&
-             (!isset($setting[$ent.'_type_id']) || $value[$ent.'_type_id'] == $setting[$ent.'_type_id'])
-             )
+            || (
+              $value['location_type_id'] == $setting['location_type_id'] &&
+              (
+                !isset($setting[$ent.'_type_id']) ||
+                (isset($value[$ent.'_type_id'])) && $value[$ent.'_type_id'] == $setting[$ent.'_type_id']
+              )
+            )
         ) {
             $reorderedArray[$key] = $value;
             $valueFound = true;
@@ -605,6 +608,7 @@ abstract class WebformCivicrmBase {
       'membership_type_id' => ['IN' => $membership_types],
       // skip membership through Inheritance.
       'owner_membership_id' => ['IS NULL' => 1],
+      'options' => ['sort' => 'end_date DESC'],
     ]);
     if (!$existing) {
       return [];
@@ -618,8 +622,9 @@ abstract class WebformCivicrmBase {
       $membership['is_active'] = $status_types[$membership['status_id']]['is_current_member'];
       $membership['status'] = $status_types[$membership['status_id']]['label'];
       $list = $membership['is_active'] ? 'active' : 'expired';
-      array_unshift($$list, $membership);
+      $$list[] = $membership;
     }
+
     return array_merge($active, $expired);
   }
 
@@ -805,7 +810,7 @@ abstract class WebformCivicrmBase {
     if (!$val) {
       return NULL;
     }
-    if ($fieldName === 'image_URL') {
+    if ($fieldName === 'image_url') {
       $parsed = UrlHelper::parse($val);
 
       return [

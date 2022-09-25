@@ -6,6 +6,10 @@ class Fields implements FieldsInterface {
 
   protected $components = [];
   protected $sets = [];
+  /**
+   * Store data from CiviCRM API getfields action.
+   */
+  protected $fieldMetadata = [];
 
   public function __construct(UtilsInterface $utils) {
     $this->utils = $utils;
@@ -64,6 +68,17 @@ class Fields implements FieldsInterface {
         'activity' => ['entity_type' => 'activity', 'label' => t('Activity'), 'max_instances' => 99,  'attachments' => TRUE],
         'relationship' => ['entity_type' => 'contact', 'label' => t('Relationship'), 'help_text' => TRUE, 'custom_fields' => 'combined'],
       ];
+      $civicrm_version = $this->utils->wf_crm_apivalues('System', 'get')[0]['version'];
+      // Grant is moved to extension after > 5.47.0.
+      if (version_compare($civicrm_version, '5.47') >= 0) {
+        $components = array_diff($components, ['CiviGrant']);
+        $grantStatus = $this->utils->wf_crm_apivalues('Extension', 'get', [
+          'full_name' => 'civigrant'
+        ], 'status');
+        if (array_pop($grantStatus) == 'installed') {
+          $components[] = 'CiviGrant';
+        }
+      }
       $conditional_sets = [
         'CiviCase' => ['entity_type' => 'case', 'label' => t('Case'), 'max_instances' => 30],
         'CiviEvent' => ['entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9],
@@ -102,6 +117,49 @@ class Fields implements FieldsInterface {
     ];
   }
 
+  /**
+   * Use CiviCRM API getfields so we can populate field info dynamically.
+   */
+  protected function getFieldMetadata(): void {
+    $components = $this->getComponents();
+    $setNames = array_keys($this->getSets($components));
+    foreach ($setNames as $setName) {
+      $result = $this->utils->wf_crm_apivalues($setName, 'getfields');
+      if ($result) {
+        $this->fieldMetadata[$setName] = $result;
+      }
+    }
+    array_filter($this->fieldMetadata);
+  }
+
+  /**
+   * Use the CiviCRM API metadata to further fill out the $fields array.
+   */
+  protected function addFieldMetadata(array $fields): array {
+    foreach ($fields as $fieldName => $field) {
+      [$entity, $name] = explode('_', $fieldName, 2);
+      if ($this->fieldMetadata[$entity][$name] ?? FALSE) {
+        $fieldLength = $this->addFieldLength($this->fieldMetadata[$entity][$name], $field);
+        // Merge the existing data last so this file can always override CiviCRM metadata.
+        $fields[$fieldName] = array_merge($fieldLength, $fields[$fieldName]);
+      }
+    }
+    return $fields;
+  }
+
+  /**
+   * Add the maximum length to a field in the $fields array based upon the Civi metadata.
+   */
+  protected function addFieldLength(array $fieldMetadata, array $field): array {
+    $lengthData = [];
+    if (isset($fieldMetadata['maxlength']) && in_array($field['type'], ['textfield', 'textarea'])) {
+      $lengthData['counter_type'] = 'character';
+      $lengthData['counter_maximum'] = $fieldMetadata['maxlength'];
+      $lengthData['counter_maximum_message'] = ' ';
+    }
+    return $lengthData;
+  }
+
   protected function wf_crm_get_fields($var = 'fields') {
     $components = $this->getComponents();
     $sets = $this->getSets($components);
@@ -111,6 +169,7 @@ class Fields implements FieldsInterface {
 
     if (!$fields) {
       $moneyDefaults = $this->getMoneyDefaults();
+      $fieldMetadata = $this->getFieldMetadata();
 
       // Field keys are in the format table_column
       // Use a # sign as a placeholder for field number in the title (or by default it will be appended to the end)
@@ -195,8 +254,8 @@ class Fields implements FieldsInterface {
         'type' => 'select',
         'value' => $this->utils->wf_crm_get_civi_setting('lcMessages', 'en_US'),
       ];
-      if (!$elements['managed_file']->isDisabled() && !$elements['managed_file']->isHidden()) {
-        $fields['contact_image_URL'] = [
+      if (isset($elements['managed_file']) && !$elements['managed_file']->isDisabled() && !$elements['managed_file']->isHidden()) {
+        $fields['contact_image_url'] = [
           'name' => t('Upload Image'),
           'type' => 'managed_file',
           'extra' => array('width' => 40),
@@ -354,6 +413,12 @@ class Fields implements FieldsInterface {
             'expose_list' => TRUE,
             'value' => '1',
           ];
+          $fields[$key . '_is_primary'] = [
+            'name' => 'Is Primary',
+            'type' => 'select',
+            'expose_list' => TRUE,
+            'value' => '1',
+          ];
         }
       }
       $fields['website_url'] = [
@@ -399,7 +464,8 @@ class Fields implements FieldsInterface {
       ];
       $fields['activity_details'] = [
         'name' => t('Activity # Details'),
-        'type' => \Drupal::moduleHandler()->moduleExists('webform_html_textarea') ? 'html_textarea' : 'textarea',
+        'type' => 'text_format',
+        'allowed_formats' => [],
       ];
       $fields['activity_status_id'] = [
         'name' => t('Activity # Status'),
@@ -652,21 +718,34 @@ class Fields implements FieldsInterface {
           'type' => 'textfield',
           'parent' => 'contribution_pagebreak',
         ];
+        $donationFinancialType = current($this->utils->wf_crm_apivalues('FinancialType', 'get', [
+          'return' => 'id',
+          'name' => 'Donation',
+        ], 'id')) ?? NULL;
+        $fields['contribution_financial_type_id'] = [
+          'name' => t('Financial Type'),
+          'type' => 'select',
+          'expose_list' => TRUE,
+          'civicrm_live_options' => TRUE,
+          'default_value' => $donationFinancialType,
+          'parent' => 'contribution_pagebreak',
+          'extra' => ['required' => 1],
+        ];
         // Line items
         $fields['contribution_line_total'] = [
             'name' => t('Line Item Amount'),
             'set' => 'line_items',
             'parent' => 'contribution_pagebreak',
           ] + $moneyDefaults;
-        $fields['contribution_financial_type_id'] = [
+        $fields['lineitem_financial_type_id'] = [
           'name' => t('Financial Type'),
           'type' => 'select',
           'expose_list' => TRUE,
           'civicrm_live_options' => TRUE,
-          'value' => 1,
-          'default' => 1,
-          'set' => 'line_items',
+          'default_value' => $donationFinancialType,
           'parent' => 'contribution_pagebreak',
+          'set' => 'line_items',
+          'fid' => 'contribution_financial_type_id',
         ];
         $sets['contributionRecur'] = ['entity_type' => 'contribution', 'label' => t('Recurring Contribution')];
         $fields['contribution_frequency_unit'] = [
@@ -908,6 +987,9 @@ class Fields implements FieldsInterface {
         ];
         $fields['grant_amount_total'] = [
             'name' => t('Amount Requested'),
+            'attributes' => [
+              'required' => 1,
+            ],
           ] + $moneyDefaults;
         $fields['grant_amount_granted'] = [
             'name' => t('Amount Granted'),
@@ -931,6 +1013,8 @@ class Fields implements FieldsInterface {
           }
         }
       }
+      // Add any elements we want from CiviCRM getfields metadata.
+      $fields = $this->addFieldMetadata($fields);
 
       // Fetch custom groups
       list($contact_types) = $this->utils->wf_crm_get_contact_types();
@@ -1004,6 +1088,9 @@ class Fields implements FieldsInterface {
           $fields[$id]['extra']['description_above'] = (int) empty($custom_field['help_pre']);
           $fields[$id]['has_help'] = TRUE;
         }
+        if (!empty($custom_field['serialize'])) {
+          $fields[$id]['extra']['multiple'] = 1;
+        }
         // Conditional rule - todo: support additional entities
         if ($sets[$set]['entity_type'] == 'contact' && !empty($sets[$set]['sub_types'])) {
           $fields[$id]['civicrm_condition'] = [
@@ -1048,6 +1135,12 @@ class Fields implements FieldsInterface {
         elseif ($fields[$id]['type'] == 'textarea') {
           $fields[$id]['extra']['cols'] = $custom_field['note_columns'] ?? 60;
           $fields[$id]['extra']['rows'] = $custom_field['note_rows'] ?? 4;
+        }
+        // Set maximum field length.
+        if (isset($custom_field['text_length']) && in_array($fields[$id]['type'], ['textfield', 'textareas'])) {
+          $fields[$id]['counter_type'] = 'character';
+          $fields[$id]['counter_maximum'] = $custom_field['text_length'];
+          $fields[$id]['counter_maximum_message'] = ' ';
         }
       }
       // The sets are modified in this function to include the custom sets.

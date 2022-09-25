@@ -1,7 +1,7 @@
-(function ($, D, drupalSettings) {
+(function (D, $, drupalSettings, once) {
   D.behaviors.webform_civicrm_contact = {
     attach: function (context) {
-      $('[data-civicrm-contact]', context).once('webform_civicrm_contact').each(function (i, el) {
+      $(once('webform_civicrm_contact', '[data-civicrm-contact]', context)).each(function (i, el) {
         var field = $(el);
         var toHide = [];
         if (field.data('hide-fields')) {
@@ -18,6 +18,7 @@
             toHide, {
             hintText: field.data('search-prompt'),
             noResultsText: field.data('none-prompt'),
+            resultsFormatter: formatChoices,
             searchingText: "Searching..."
           });
         }
@@ -35,13 +36,32 @@
             field.data('form-defaults'),
           );
         });
+
+        //In case of error, highlight the token-input field.
+        if (field.hasClass('error')) {
+          field.parent('div.form-item').addClass('has-error');
+        }
       });
 
+      /**
+       * Format the choices in the "Existing Contact widget", with a special format for the "No Results" item.
+       */
+      function formatChoices(item){
+        var string = item[this.propertyToSearch];
+        if (string == this.noResultsText) {
+          return "<li><em><i>" + string + "</i></em></li>";
+        }
+        return "<li>" + string + "</li>";
+      }
 
+      /**
+       * TODO: Remove this function and use states api instead once
+       * https://www.drupal.org/project/drupal/issues/1149078 is fixed in core webform module.
+       */
       function changeDefault() {
         var val = $(this).val().replace(/_/g, '-');
 
-        $('[data-drupal-selector=edit-contact-defaults] > div > .form-item', context).not('[class$=properties-default], [class$=properties-allow-url-autofill]').each(function() {
+        $('[data-drupal-selector=edit-contact-defaults] > div > .form-item', context).not('[class$=properties-default], [class*=properties-allow-url-autofill]').each(function() {
           if (val.length && $(this).is('[class*=form-item-properties-default-'+val+']')) {
             $(this).removeAttr('style');
           }
@@ -97,4 +117,4 @@
 
     }
   }
-})(jQuery, Drupal, drupalSettings)
+})(Drupal, jQuery, drupalSettings, once)

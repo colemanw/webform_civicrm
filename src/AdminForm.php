@@ -91,6 +91,7 @@ class AdminForm implements AdminFormInterface {
 
     // Sort fields by set
     foreach ($this->fields as $fid => $field) {
+      $fid = $field['fid'] ?? $fid;
       if (isset($field['set'])) {
         $set = $field['set'];
       }
@@ -359,7 +360,7 @@ class AdminForm implements AdminFormInterface {
         elseif ((isset($set['max_instances']) && $set['max_instances'] > 1)) {
           $fieldset['#title'] .= ' ' . $i;
           if (in_array($sid, $this->utils->wf_crm_location_fields()) && $i == 1) {
-            $fieldset['#title'] .= ' ' . t('(primary)');
+            $fieldset['#title'] .= ' ' . t('(often primary)');
           }
         }
         else {
@@ -370,6 +371,10 @@ class AdminForm implements AdminFormInterface {
             if ($fid == 'contact_contact_sub_type' ||
               ($fid == 'address_master_id' && count($this->data['contact']) == 1) ||
               (isset($field['contact_type']) && $field['contact_type'] != $c['contact'][1]['contact_type'])) {
+              continue;
+            }
+            // Make sure Primary field is only displayed for the 1st set.
+            if (strpos($fid, 'is_primary') !== false && $i > 1) {
               continue;
             }
             $fid = 'civicrm_' . $n . '_contact_' . $i . '_' . $fid;
@@ -423,7 +428,7 @@ class AdminForm implements AdminFormInterface {
         $rule_field =& $this->form['contact_' . $n]['contact_subtype_wrapper']["contact_{$n}_settings_matching_rule"];
         // Reset to default if selected rule doesn't exist or isn't valid for this contact type
         if (!array_key_exists($rule_field['#default_value'], $rule_field['#options'])) {
-          $rule_field['#default_value'] = $this->form_state['input']["contact_{$n}_settings_matching_rule"] = 'Unsupervised';
+          $rule_field['#default_value'] = $this->form_state->getUserInput()["contact_{$n}_settings_matching_rule"] = 'Unsupervised';
         }
         $this->help($rule_field, 'matching_rule');
       }
@@ -838,7 +843,7 @@ class AdminForm implements AdminFormInterface {
     $this->form['participant']['show_public_events'] = [
       '#type' => 'select',
       '#title' => t('Show Public Events'),
-      '#default_value' => wf_crm_aval($this->data, 'reg_options:show_public_events', 'title'),
+      '#default_value' => wf_crm_aval($this->data, 'reg_options:show_public_events', 'title', TRUE),
       // This is breaking HTML in D8.
       // '#suffix' => '</div>',
       '#parents' => ['reg_options', 'show_public_events'],
@@ -854,7 +859,6 @@ class AdminForm implements AdminFormInterface {
       '#type' => 'select',
       '#title' => t('Title Display'),
       '#default_value' => wf_crm_aval($this->data, 'reg_options:title_display', 'title'),
-      '#suffix' => '</div>',
       '#parents' => ['reg_options', 'title_display'],
       '#tree' => TRUE,
       '#options' => [
@@ -868,6 +872,24 @@ class AdminForm implements AdminFormInterface {
         'title start end dateformatFull' => t('Title + Start-Date + End'),
         'title start end dateformatTime' => t('Title + Start-Time + End'),
         'title start end dateformatDatetime' => t('Title + Start-Date-Time + End'),
+      ],
+    ];
+    $this->form['participant']['show_full_events'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Show Full Events'),
+      '#default_value' => (bool) wf_crm_aval($this->data, 'reg_options:show_full_events', 1, TRUE),
+      '#parents' => ['reg_options', 'show_full_events'],
+    ];
+    $this->form['participant']['event_sort_field'] = [
+      '#type' => 'select',
+      '#title' => t('Sort Events By'),
+      '#default_value' => wf_crm_aval($this->data, 'reg_options:event_sort_field', 'start_date'),
+      '#suffix' => '</div>',
+      '#parents' => ['reg_options', 'event_sort_field'],
+      '#tree' => TRUE,
+      '#options' => [
+        'start_date' => t('Start Date'),
+        'title' => t('Title'),
       ],
     ];
     $this->help($this->form['participant']['title_display'], 'reg_options_title_display');
@@ -925,6 +947,8 @@ class AdminForm implements AdminFormInterface {
     $this->addAjaxItem('participant', 'show_future_events', 'participants');
     $this->addAjaxItem('participant', 'show_public_events', 'participants');
     $this->addAjaxItem('participant', 'title_display', 'participants');
+    $this->addAjaxItem('participant', 'show_full_events', 'participants');
+    $this->addAjaxItem('participant', 'event_sort_field', 'participants');
 
     for ($n = 1; $reg_type && (($n <= count($this->data['contact']) && $reg_type != 'all') || $n == 1); ++$n) {
       $this->form['participant']['participants'][$n] = [
@@ -1069,6 +1093,12 @@ class AdminForm implements AdminFormInterface {
     // Make sure webform is set-up to prevent credit card abuse.
     $this->checkSubmissionLimit();
     $financialType = wf_crm_aval($this->data, 'contribution:1:contribution:1:financial_type_id');
+    if (!$financialType && $this->settings['civicrm_1_contribution_1_contribution_financial_type_id'] != 'create_civicrm_webform_element') {
+      $financialType = current($this->utils->wf_crm_apivalues('FinancialType', 'get', [
+        'return' => 'id',
+        'name' => 'Donation',
+      ], 'id')) ?? NULL;
+    }
     // Add contribution fields
     foreach ($this->sets as $sid => $set) {
       if ($set['entity_type'] == 'contribution' && (empty($set['sub_types']) || in_array($financialType, $set['sub_types']) )) {
@@ -1103,17 +1133,6 @@ class AdminForm implements AdminFormInterface {
         }
       }
     }
-    //Add financial type config.
-    $ft_options = (array) $this->utils->wf_crm_apivalues('Contribution', 'getoptions', [
-      'field' => "financial_type_id",
-    ]);
-    $this->form['contribution']['sets']['contribution']['civicrm_1_contribution_1_contribution_financial_type_id'] = [
-      '#type' => 'select',
-      '#title' => t('Financial Type'),
-      '#default_value' => $financialType,
-      '#options' => $ft_options,
-      '#required' => TRUE,
-    ];
     $this->addAjaxItem("contribution:sets:contribution", "civicrm_1_contribution_1_contribution_financial_type_id", "..:custom");
 
     //Add Currency.
@@ -1282,6 +1301,9 @@ class AdminForm implements AdminFormInterface {
     ];
     $this->addAjaxItem("grantTab", "grant_number_of_grant", "grant");
     for ($n = 1; $n <= $num; ++$n) {
+      $this->settings += [
+        'civicrm_' . $n . '_grant_1_grant_amount_total' => 'create_civicrm_webform_element',
+      ];
       $fs = "grant_grant_{$n}_fieldset";
       $this->form['grantTab']['grant'][$fs] = [
         '#type' => 'fieldset',
@@ -1557,8 +1579,8 @@ class AdminForm implements AdminFormInterface {
         $item['#default_value'] = self::$method($fid, $options);
       }
       // 4: From field default
-      elseif (isset($field['value'])) {
-        $item['#default_value'] = $field['value'];
+      elseif (isset($field['value']) || isset($field['default_value'])) {
+        $item['#default_value'] = $field['value'] ?? $field['default_value'];
       }
       // 5: For required fields like phone type, default to the first option
       elseif (empty($field['extra']['multiple']) && !isset($field['empty_option'])) {
@@ -1730,7 +1752,7 @@ class AdminForm implements AdminFormInterface {
       }
     }
     // Enable billing address by default when contribution is enabled.
-    if ($this->settings['civicrm_1_contribution_1_contribution_enable_contribution'] && empty($this->data['billing'])) {
+    if (!empty($this->settings['civicrm_1_contribution_1_contribution_enable_contribution']) && empty($this->data['billing'])) {
       $this->data['billing'] = ['number_number_of_billing' => 1];
       $billingFields = ['first_name', 'last_name', 'street_address', 'city', 'postal_code', 'state_province_id', 'country_id'];
       foreach ($billingFields as $field) {
@@ -1891,7 +1913,11 @@ class AdminForm implements AdminFormInterface {
       if (strpos($key, 'civicrm') === 0) {
         ++$i;
         $field = $this->utils->wf_crm_get_field($key);
-        if (!isset($enabled[$key])) {
+        if (substr($key, -11) === '_createmode') {
+          // Update webform's settings with 'Create mode' value for custom group.
+          $this->settings['data']['config']['create_mode'][$key] = $val;
+        }
+        elseif (!isset($enabled[$key])) {
           $val = (array) $val;
           if (in_array('create_civicrm_webform_element', $val, TRUE) || (!empty($val[0]) && $field['type'] == 'hidden')) {
             // Restore disabled component
@@ -1910,7 +1936,7 @@ class AdminForm implements AdminFormInterface {
               ];
               // Cannot use isNewFieldset effectively.
               $previous_data = $handler_configuration['settings'];
-              list(, $c, $ent) =  $this->utils->wf_crm_explode_key($key);
+              list(, $c, $ent, $n, $table, $name) =  $this->utils->wf_crm_explode_key($key);
               $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
               $create = !isset($previous_data['data'][$type][$c]);
               /*
@@ -1921,7 +1947,10 @@ class AdminForm implements AdminFormInterface {
               // @todo Properly handle fieldset creation.
               // self::insertComponent($field, $enabled, $this->settings, !isset($previous_data['data'][$type][$c]));
               self::insertComponent($field, $enabled, $this->settings, TRUE, $this->webform);
-              $created[] = $field['name'];
+              // Enable Contribution is an optional page break added on the form.
+              if ($name != 'enable_contribution') {
+                $created[] = $field['name'];
+              }
               if (isset($field['civicrm_condition'])) {
                 $this->addConditionalRule($field, $enabled);
               }
@@ -1934,10 +1963,6 @@ class AdminForm implements AdminFormInterface {
           $component = WebformArrayHelper::removePrefix($component);
           $component['value'] = $val;
           $enabled[$key] = $component;
-        }
-        elseif (substr($key, -11) === '_createmode') {
-          // Update webform's settings with 'Create mode' value for custom group.
-          $this->settings['data']['config']['create_mode'][$key] = $val;
         }
         else {
           // Try to "update" options for existing fields via ::insertComponent
@@ -1975,6 +2000,9 @@ class AdminForm implements AdminFormInterface {
     \Drupal::messenger()->addStatus(
       \Drupal::translation()->formatPlural(count($created), 'Added one field to the form', 'Added @count fields to the form')
     );
+    foreach ($created as $field_name) {
+      \Drupal::messenger()->addStatus(t('Added field: %name', ['%name' => $field_name]));
+    }
 
     // Create record
     $handler_configuration['settings'] = $this->settings;

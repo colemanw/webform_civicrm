@@ -19,6 +19,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     'webform_ui',
     'webform_civicrm',
     'token',
+    'ckeditor',
   ];
 
   /**
@@ -52,7 +53,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->utils = \Drupal::service('webform_civicrm.utils');
 
@@ -257,7 +258,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   protected function assertPageNoErrorMessages() {
     $error_messages = $this->getSession()->getPage()->findAll('css', '.messages.messages--error');
     $this->assertCount(0, $error_messages, implode(', ', array_map(static function(NodeElement $el) {
-      return $el->getValue();
+      return $el->getText();
     }, $error_messages)));
   }
 
@@ -315,17 +316,18 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   protected function editCivicrmOptionElement($selector, $multiple = TRUE, $enableStatic = FALSE, $default = NULL, $type = NULL) {
     $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="' . $selector . '"] a.webform-ajax-link');
     $checkbox_edit_button->click();
-    $this->assertSession()->waitForElementVisible('css', '[data-drupal-selector="edit-change-type"]', 3000);
+    $this->assertSession()->waitForField('drupal-off-canvas');
     $this->htmlOutput();
     if ($type) {
       $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-change-type"]')->click();
-      $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector='edit-elements-{$type}-operation']", 3000)->click();
-      $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector='edit-cancel']", 3000);
+      $this->assertSession()->assertWaitOnAjaxRequest();
+      $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector='edit-elements-{$type}-operation']", 5000)->click();
+      $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector='edit-cancel']", 5000);
     }
 
     if ($enableStatic) {
       $this->getSession()->getPage()->selectFieldOption("properties[civicrm_live_options]", 0);
-      $this->assertSession()->waitForField('properties[options][options][civicrm_option_1][enabled]', 3000);
+      $this->assertSession()->waitForField('properties[options][options][civicrm_option_1][enabled]', 5000);
     }
     if ($default) {
       if ($type == 'hidden') {
@@ -350,7 +352,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     }
     $this->htmlOutput();
     $this->getSession()->getPage()->pressButton('Save');
-    $this->assertSession()->assertWaitOnAjaxRequest(5000);
+    $this->assertSession()->waitForText('has been updated.');
   }
 
   /**
@@ -487,6 +489,9 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       }
     }
     $this->htmlOutput();
+    if (!empty($params['results_display'])) {
+      $this->addFieldValue('properties[results_display][]', $params['results_display']);
+    }
 
     if (!empty($params['default'])) {
       $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-contact-defaults"]')->click();
@@ -502,14 +507,21 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
 
     // Apply contact filter.
     if (!empty($params['filter'])) {
+      $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-filters"]')->click();
       if (!empty($params['filter']['group'])) {
-        $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-filters"]')->click();
         $this->getSession()->getPage()->selectFieldOption('Groups', $params['filter']['group']);
+      }
+      if (isset($params['filter']['check_permissions']) && empty($params['filter']['check_permissions'])) {
+        $this->getSession()->getPage()->uncheckField('properties[check_permissions]');
       }
     }
 
     if (!empty($params['remove_default_url'])) {
       $this->getSession()->getPage()->uncheckField('properties[allow_url_autofill]');
+    }
+    if (!empty($params['required'])) {
+      $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-validation"]')->click();
+      $this->getSession()->getPage()->checkField('properties[required]');
     }
 
     $this->getSession()->getPage()->pressButton('Save');
@@ -531,7 +543,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $driver->element('xpath', $elementXpath)->postValue(['value' => [$value]]);
 
     $this->assertSession()->waitForElementVisible('xpath', '//li[contains(@class, "token-input-dropdown")][1]');
-    $this->createScreenshot($this->htmlOutputDirectory . '/autocomplete.png');
+    // $this->createScreenshot($this->htmlOutputDirectory . '/autocomplete.png');
 
     $page->find('xpath', '//li[contains(@class, "token-input-dropdown")][1]')->click();
     $this->assertSession()->assertWaitOnAjaxRequest();

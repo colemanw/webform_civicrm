@@ -145,6 +145,8 @@ class Utils implements UtilsInterface {
   function wf_crm_get_events($reg_options, $context) {
     $ret = [];
     $format = wf_crm_aval($reg_options, 'title_display', 'title');
+    $sort_field = wf_crm_aval($reg_options, 'event_sort_field', 'start_date');
+    $sort_order = ($context == 'config_form' && $sort_field === 'start_date') ? ' DESC' : '';
     $params = [
       'is_template' => 0,
       'is_active' => 1,
@@ -156,7 +158,7 @@ class Utils implements UtilsInterface {
     if (is_numeric(wf_crm_aval($reg_options, 'show_public_events'))) {
       $params['is_public'] = $reg_options['show_public_events'];
     }
-    $params['options'] = ['sort' => 'start_date' . ($context == 'config_form' ? ' DESC' : '')];
+    $params['options'] = ['sort' => $sort_field . $sort_order];
     $values = $this->wf_crm_apivalues('Event', 'get', $params);
     // 'now' means only current events, 1 means show all past events, other values are relative date strings
     $date_past = wf_crm_aval($reg_options, 'show_past_events', 'now');
@@ -175,6 +177,20 @@ class Utils implements UtilsInterface {
       foreach ($values as $key => $value) {
         if (isset($value['end_date']) && $value['end_date'] >= $date_future) {
           unset($values[$key]);
+        }
+      }
+    }
+    // A "full" event is one where the maximum participants is less than or equal to the number of registered participants (whose roles count toward the registration cap).
+    // FIXME: When we move to API4, we should ensure Event.get has a calculated "registered_participants" field tp avoid an API call per event.
+    // For now, keep the "show full" check last to minimize the API calls.
+    if (!wf_crm_aval($reg_options, 'show_full_events', '1', TRUE)) {
+      $rolesThatCount = array_column($this->wf_crm_apivalues('OptionValue', 'get', ['option_group_id' => "participant_role", 'filter' => 1]), 'value');
+      foreach ($values as $key => $value) {
+        if (!empty($value['max_participants'])) {
+          $registrationCount = $this->wf_civicrm_api('Participant', 'getcount', ['event_id' => $key, 'role_id' => ['IN' => $rolesThatCount]]);
+          if ($registrationCount >= $value['max_participants']) {
+            unset($values[$key]);
+          }
         }
       }
     }
@@ -315,7 +331,7 @@ class Utils implements UtilsInterface {
           $contact_types[strtolower($type['name'])] = $type['label'];
           continue;
         }
-        $sub_types[strtolower($data[$type['parent_id']]['name'])][strtolower($type['name'])] = $type['label'];
+        $sub_types[strtolower($data[$type['parent_id']]['name'])][$type['name']] = $type['label'];
       }
     }
     return [$contact_types, $sub_types];
@@ -351,11 +367,11 @@ class Utils implements UtilsInterface {
         $r['type_b'] = strtolower(wf_crm_aval($r, 'contact_type_b'));
         $r['sub_type_a'] = wf_crm_aval($r, 'contact_sub_type_a');
         if (!is_null($r['sub_type_a'])) {
-          $r['sub_type_a'] = strtolower($r['sub_type_a']);
+          $r['sub_type_a'] = $r['sub_type_a'];
         }
         $r['sub_type_b'] = wf_crm_aval($r, 'contact_sub_type_b');
         if (!is_null($r['sub_type_b'])) {
-          $r['sub_type_b'] = strtolower($r['sub_type_b']);
+          $r['sub_type_b'] = $r['sub_type_b'];
         }
         $types[$r['id']] = $r;
       }
@@ -449,7 +465,7 @@ class Utils implements UtilsInterface {
         $exp = explode('_', $key, 5);
         $customGroupFieldsetKey = '';
         if (count($exp) == 5) {
-          list($lobo, $i, $ent, $n, $id) = $exp;
+          [$lobo, $i, $ent, $n, $id] = $exp;
           if ($lobo != 'civicrm') {
             continue;
           }
@@ -490,7 +506,7 @@ class Utils implements UtilsInterface {
       return $fields[$key];
     }
     if ($pieces = $this->wf_crm_explode_key($key)) {
-      list( , , , , $table, $name) = $pieces;
+      [ , , , , $table, $name] = $pieces;
       if (isset($fields[$table . '_' . $name])) {
         return $fields[$table . '_' . $name];
       }
@@ -590,7 +606,7 @@ class Utils implements UtilsInterface {
     if ($str) {
       foreach (explode("\n", trim($str)) as $row) {
         if ($row && $row[0] !== '<' && strpos($row, '|')) {
-          list($k, $v) = explode('|', $row);
+          [$k, $v] = explode('|', $row);
           $ret[trim($k)] = trim($v);
         }
       }
@@ -613,6 +629,29 @@ class Utils implements UtilsInterface {
       $str .= ($str ? "\n" : '') . $k . '|' . $v;
     }
     return $str;
+  }
+
+  /**
+   * Wrapper for all CiviCRM APIv4 calls
+   *
+   * @param string $entity
+   *   API entity
+   * @param string $operation
+   *   API operation
+   * @param array $params
+   *   API params
+   * @param string|int|array $index
+   *   Controls the Result array format.
+   *
+   * @return array
+   *   Result of API call
+   */
+  function wf_civicrm_api4($entity, $operation, $params, $index = NULL) {
+    if (!$entity) {
+      return [];
+    }
+    $result = civicrm_api4($entity, $operation, $params, $index);
+    return $result;
   }
 
   /**
@@ -696,61 +735,54 @@ class Utils implements UtilsInterface {
 
     $order = civicrm_api3('Order', 'create', $params);
     try {
-      // Use the Payment Processor to attempt to take the actual payment. You may
-      // pass in other params here, too.
-      $propertyBag = new \Civi\Payment\PropertyBag();
-      $propertyBag->mergeLegacyInputParams($params);
-      $propertyBag->setContributionID($order['id']);
-      // @fixme: Class \Civi\Payment\CRM_Utils_Money not found (fixed in 5.28 via https://github.com/civicrm/civicrm-core/pull/17505
-      //   But note we still return a localized format
-      // $propertyBag->setAmount($params['total_amount']);
-
-      // We need the payment params as an array to pass to PaymentProcessor.Pay API3.
-      // If https://github.com/civicrm/civicrm-core/pull/17507 was merged we wouldn't need this hack
-      //   using ReflectionClass to access the array.
-      $reflectionClass = new \ReflectionClass($propertyBag);
-      $reflectionProperty = $reflectionClass->getProperty('props');
-      $reflectionProperty->setAccessible(TRUE);
-      $payParams = $reflectionProperty->getValue($propertyBag)['default'];
-
-      // propertyBag has 'contributionID', we need 'contribution_id'.
-      $payParams['contribution_id'] = $propertyBag->getContributionID();
-      // propertyBag has 'currency', iATS uses `currencyID` until https://github.com/iATSPayments/com.iatspayments.civicrm/pull/350 is merged
-      $payParams['currencyID'] = $propertyBag->getCurrency();
-      $payParams['amount'] = $params['total_amount'];
-      // For legacy purposes (if payment processor does not use propertyBag)
-      if (isset($payParams['isRecur'])) {
-        $payParams['is_recur'] = $payParams['isRecur'];
-      }
+      $params['amount'] = $params['total_amount'];
+      $params['contribution_id'] = $order['id'];
+      $payParams = $params;
       $payResult = reset(civicrm_api3('PaymentProcessor', 'pay', $payParams)['values']);
 
       // webform_civicrm sends out receipts using Contribution.send_confirmation API if the contribution page is has is_email_receipt = TRUE.
       // We allow this to be overridden here but default to FALSE.
       $params['is_email_receipt'] = $params['is_email_receipt'] ?? FALSE;
 
+      // payment_status_id is deprecated - https://lab.civicrm.org/dev/financial/-/issues/141
+      if (!isset($payResult['payment_status'])) {
+        $payResult['payment_status'] = 'Pending';
+        // payment_status_id = 1 -> payment completed;
+        // payment_status_id = 2 -> payment NOT completed;
+        if ($payResult['payment_status_id'] == '1') {
+          $payResult['payment_status'] = 'Completed';
+        }
+      }
+
       // Assuming the payment was taken, record it which will mark the Contribution
       // as Completed and update related entities.
-      civicrm_api3('Payment', 'create', [
-        'contribution_id' => $order['id'],
-        'total_amount' => $payParams['amount'],
-        'payment_instrument_id' => $order['values'][$order['id']]['payment_instrument_id'],
-        // If there is a processor, provide it:
-        'payment_processor_id' => $payParams['payment_processor_id'],
-        'is_send_contribution_notification' => $params['is_email_receipt'],
-        'trxn_id' => $payResult['trxn_id'] ?? NULL,
-      ]);
-    }
-    catch (\Exception $e) {
+      if ($payResult['payment_status'] === 'Completed') {
+        civicrm_api3('Payment', 'create', [
+          'contribution_id' => $order['id'],
+          'total_amount' => $payParams['amount'],
+          'fee_amount' => $payResult['fee_amount'] ?? 0,
+          'payment_instrument_id' => $order['values'][$order['id']]['payment_instrument_id'],
+          'payment_processor_id' => $payParams['payment_processor_id'],
+          'is_send_contribution_notification' => $params['is_email_receipt'],
+          'trxn_id' => $payResult['trxn_id'] ?? NULL,
+        ]);
+      } else {
+        civicrm_api3('Contribution', 'create', [
+          'id' => $order['id'],
+          'total_amount' => $payParams['amount'],
+          'fee_amount' => $payResult['fee_amount'] ?? 0,
+          'payment_instrument_id' => $order['values'][$order['id']]['payment_instrument_id'],
+          'payment_processor_id' => $payParams['payment_processor_id'],
+          'trxn_id' => $payResult['trxn_id'] ?? NULL,
+          ]);
+      }
+    } catch (\Exception $e) {
       return ['error_message' => $e->getMessage()];
     }
 
-    $contribution = civicrm_api3('Contribution', 'getsingle', ['id' => $order['id']]);
-    // Transact API works a bit differently because we are actually adding the payment and updating the contribution status.
-    // A "normal" transaction (eg. using doPayment() or just PaymentProcessor.pay) would not update the contribution and would
-    // rely on the caller to do so. The caller relies on the `payment_status_id` (Pending or Completed) to know whether the payment
-    // was successful or not.
-    $contribution['payment_status_id'] = $contribution['contribution_status_id'];
-    return $contribution;
+    // Contribution.transact is expected to return an API3 result containing the contribution
+    //   eg. [ 'id' => X, 'values' => [ X => [ contribution details ] ]    return $contribution;
+    return civicrm_api3('Contribution', 'get', ['id' => $order['id']]);
   }
 
   /**
@@ -984,10 +1016,10 @@ class Utils implements UtilsInterface {
   public function getReceiptParams($data, $contributionID) {
     $contributionData = wf_crm_aval($data, 'contribution:1:contribution:1');
     $params = ['id' => $contributionID];
-    $params['payment_processor_id'] = $contributionData['payment_processor_id'];
+    $params['payment_processor_id'] = $contributionData['payment_processor_id'] ?? $data['civicrm_1_contribution_1_contribution_payment_processor_id'] ?? NULL;
     unset($params['payment_processor']);
 
-    $params['financial_type_id'] = $contributionData['financial_type_id'];
+    $params['financial_type_id'] = $contributionData['financial_type_id'] ?? $data['civicrm_1_contribution_1_contribution_financial_type_id_raw'] ?? NULL;
     $params['currency'] = wf_crm_aval($data, "contribution:1:currency");
 
     //Assign receipt values set on the webform config page.
@@ -997,6 +1029,19 @@ class Utils implements UtilsInterface {
       $params[$val] = $receipt["number_number_of_receipt_{$val}"] ?? '';
     }
     return $params;
+  }
+
+  /**
+   * Does an element support multiple values
+   *
+   * @param array $element
+   */
+  public function hasMultipleValues($element) {
+    if (!empty($element['#extra']['multiple']) ||
+      (empty($element['#civicrm_live_options']) && !empty($element['#options']) && is_array($element['#options']) && count($element['#options']) === 1)) {
+      return TRUE;
+    }
+    return FALSE;
   }
 
 }

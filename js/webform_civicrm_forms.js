@@ -2,7 +2,7 @@
  * JS for CiviCRM-enabled webforms
  */
 
-var wfCivi = (function ($, D, drupalSettings) {
+var wfCivi = (function (D, $, drupalSettings, once) {
   'use strict';
   var setting = drupalSettings.webform_civicrm;
   /**
@@ -347,7 +347,7 @@ var wfCivi = (function ($, D, drupalSettings) {
 
   function sharedAddress(item, action, speed) {
     var name = parseName($(item).attr('name'));
-    var fields = $(item).parents('form.webform-submission-form').find('[name*="['+(name.replace('master_id', ''))+'"]').not('[name*=location_type_id]').not('[name*=master_id]').not('[type="hidden"]');
+    var fields = $(item).parents('form.webform-submission-form').find('[name*="'+(name.replace(/master_id.*$/, ''))+'"').not('[name*=location_type_id]').not('[name*=master_id]').not('[type="hidden"]');
     if (action === 'hide') {
       fields.parent().hide(speed, function() {$(this).css('display', 'none');});
       fields.prop('disabled', true);
@@ -441,10 +441,10 @@ var wfCivi = (function ($, D, drupalSettings) {
       });
 
       // Add handler to country field to trigger ajax refresh of corresponding state/prov
-      $('form.webform-submission-form .civicrm-enabled[name*="_address_country_id"]').once('civicrm').change(countrySelect);
+      $(once('civicrm', 'form.webform-submission-form .civicrm-enabled[name*="_address_country_id"]')).change(countrySelect);
 
       // Show/hide address fields when sharing an address
-      $('form.webform-submission-form .civicrm-enabled[name*="_address_master_id"]').once('civicrm').change(function(){
+      $(once('civicrm', 'form.webform-submission-form .civicrm-enabled[name*="_address_master_id"]')).change(function(){
         var action = ($(this).val() === '' || ($(this).is('input:checkbox:not(:checked)'))) ? 'show' : 'hide';
         sharedAddress(this, action, 500);
       });
@@ -461,7 +461,7 @@ var wfCivi = (function ($, D, drupalSettings) {
         pub.initFileField(getFieldNameFromClass($(this).parent()));
       });
 
-      $('form.webform-submission-form').once('civicrm').each(function () {
+      $(once('civicrm', 'form.webform-submission-form')).each(function () {
         if (Array.isArray(drupalSettings.webform_civicrm.fileFields)) {
           drupalSettings.webform_civicrm.fileFields.forEach(function (fileField){
             wfCivi.initFileField(fileField.eid, fileField.fileInfo);
@@ -471,4 +471,4 @@ var wfCivi = (function ($, D, drupalSettings) {
     }
   };
   return pub;
-  })(jQuery, Drupal, drupalSettings);
+  })(Drupal, jQuery, drupalSettings, once);

@@ -26,7 +26,7 @@ class FieldOptionsTest extends KernelTestBase {
 
   }
 
-  protected function setUp() {
+  protected function setUp(): void {
     $this->markTestSkipped('Requires MySQL');
     parent::setUp();
 
@@ -39,23 +39,24 @@ class FieldOptionsTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function tearDown() {
+  protected function tearDown(): void {
     $conn = Database::getConnection('default', 'civicrm_test');
     $database = $conn->getConnectionOptions()['database'];
     // Todo: get this working when db name passed in as an argument.
     $conn->query("DROP DATABASE $database");
     $conn->destroy();
+    parent::tearDown();
   }
 
   /**
-   * @dataProvider testGetDataprovider
+   * @dataProvider getDataprovider
    */
   public function testGet(array $field, string $context, array $data) {
     $field_options = $this->container->get('webform_civicrm.field_options');
     $options = $field_options->get($field, $context, $data);
   }
 
-  public function testGetDataprovider() {
+  public function getDataprovider() {
     yield [
       ['form_key' => 'civicrm_1_contact_1_email_email'],
       'live_options',

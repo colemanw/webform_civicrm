@@ -14,7 +14,7 @@ final class StripeTest extends WebformCivicrmTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     // Download installs and enables!
     $this->utils->wf_civicrm_api('Extension', 'download', [
@@ -162,6 +162,7 @@ final class StripeTest extends WebformCivicrmTestBase {
     $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
     $this->assertEquals('Donation', $contribution['financial_type']);
     $this->assertEquals('59.50', $contribution['total_amount']);
+    $this->assertEquals('2.03', $contribution['fee_amount']);
     $this->assertEquals('Completed', $contribution['contribution_status']);
     $this->assertEquals('USD', $contribution['currency']);
 

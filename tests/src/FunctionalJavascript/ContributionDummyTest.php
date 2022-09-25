@@ -49,6 +49,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->htmlOutput();
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '10.00');
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-items .civicrm_1_contribution_1', 'Contribution Amount');
 
     $this->fillCardAndSubmit();
 
@@ -66,7 +67,6 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
   }
 
   public function testSubmitContribution() {
-    $utils = \Drupal::service('webform_civicrm.utils');
     $payment_processor = $this->createPaymentProcessor();
     $this->createMembershipType(100, FALSE, 'Basic');
     $this->createMembershipType(200, FALSE, 'Advanced');
@@ -161,9 +161,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     // Amounts = 10 + 20.00 + 29.50 + 100.00 + 200.00 = 359.5
     // Taxes = 1.48 + 5 + 10 = 16.48
     // Total = 359.5 + 16.48 = 375.98
-
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '375.98');
-    // $this->createScreenshot($this->htmlOutputDirectory . '/lineitem_tally.png');
 
     $this->htmlOutput();
 
@@ -202,12 +200,12 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertEquals('16.48', $contribution['tax_amount']);
     $tax_total_amount = $contribution['tax_amount'];
 
-    $contriPriceFieldID = $utils->wf_civicrm_api('PriceField', 'get', [
+    $contriPriceFieldID = $this->utils->wf_civicrm_api('PriceField', 'get', [
       'sequential' => 1,
       'price_set_id' => 'default_contribution_amount',
       'options' => ['limit' => 1],
     ])['id'] ?? NULL;
-    $membershipPriceFieldID = $utils->wf_civicrm_api('PriceField', 'get', [
+    $membershipPriceFieldID = $this->utils->wf_civicrm_api('PriceField', 'get', [
       'sequential' => 1,
       'price_set_id' => 'default_membership_type_amount',
       'options' => ['limit' => 1],
@@ -247,6 +245,76 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertEquals($contribution_total_amount, $sum_line_total + $sum_tax_amount);
   }
 
+  /**
+   * Test current employer submission.
+   */
+  public function testCurrentEmployer() {
+    $payment_processor = $this->createPaymentProcessor();
+    $this->drupalLogin($this->rootUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+
+    $this->enableCivicrmOnWebform();
+
+    $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 2);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->clickLink('2. Contact 2');
+    $this->getSession()->getPage()->selectFieldOption('2_contact_type', 'organization');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $this->getSession()->getPage()->checkField("civicrm_2_contact_1_contact_existing");
+
+    $params = [
+      'pp' => $payment_processor['id'],
+    ];
+    $this->configureContributionTab($params);
+    $this->getSession()->getPage()->checkField('Contribution Amount');
+    $this->enableBillingSection();
+
+    // Set contact 2 as current employer to first contact.
+    $this->getSession()->getPage()->clickLink('1. Contact 1');
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contact_1_contact_employer_id', 'Contact 2');
+
+    $this->saveCiviCRMSettings();
+
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+    // Change contact 2 to select and remove any permissions.
+    $params = [
+      'selector' => 'edit-webform-ui-elements-civicrm-2-contact-1-contact-existing-operations',
+      'widget' => 'select',
+      'filter' => [
+        'check_permissions' => FALSE,
+      ],
+    ];
+    $this->editContactElement($params);
+
+    $this->drupalLogout();
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+    $this->getSession()->getPage()->selectFieldOption('civicrm_2_contact_1_contact_existing', 'Default Organization');
+
+    $this->getSession()->getPage()->fillField('First Name', 'Frederick');
+    $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
+    $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
+
+    $this->getSession()->getPage()->pressButton('Next >');
+    $this->getSession()->getPage()->fillField('Contribution Amount', '1');
+    $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
+    $this->htmlOutput();
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '1');
+
+    $this->fillCardAndSubmit();
+
+    $api_result = $this->utils->wf_civicrm_api('contact', 'get', [
+      'sequential' => 1,
+      'first_name' => 'Frederick',
+    ]);
+    $this->assertEquals('Default Organization', $api_result['values'][0]['current_employer']);
+  }
+
   public function testOverThousand() {
     $payment_processor = $this->createPaymentProcessor();
 
@@ -255,9 +323,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
       'webform' => $this->webform->id(),
     ]));
     // The label has a <div> in it which can cause weird failures here.
-    $this->assertSession()->waitForText('Enable CiviCRM Processing');
-    $this->assertSession()->waitForField('nid');
-    $this->getSession()->getPage()->checkField('nid');
+    $this->enableCivicrmOnWebform();
 
     $params = [
       'pp' => $payment_processor['id'],

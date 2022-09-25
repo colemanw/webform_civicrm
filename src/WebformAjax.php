@@ -7,6 +7,7 @@
 
 namespace Drupal\webform_civicrm;
 
+use Drupal\webform\WebformInterface;
 use Drupal\Component\Utility\Xss;
 use Drupal\webform\Entity\Webform;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -48,7 +49,7 @@ class WebformAjax extends WebformCivicrmBase implements WebformAjaxInterface {
       throw new AccessDeniedHttpException('Invalid parameters.');
     }
     $webform = Webform::load($webformId);
-    if (!$webform instanceof \Drupal\webform\WebformInterface) {
+    if (!$webform instanceof WebformInterface) {
       throw new AccessDeniedHttpException('Invalid form.');
     }
     $this->node = $webform;
@@ -91,7 +92,7 @@ class WebformAjax extends WebformCivicrmBase implements WebformAjaxInterface {
       if ($this->getParameter('load') == 'name') {
         if ($this->getParameter('cid')[0] === '-') {
           // HTML hack to get prompt to show up different than search results
-          $data = '<em><i>' . Xss::filter($element['#none_prompt']) . '</i></em>';
+          $data = Xss::filter($element['#none_prompt']);
         }
         else {
           $data = $name;

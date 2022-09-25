@@ -173,6 +173,49 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
   }
 
   /**
+   * Check if autocomplete widget results is
+   * searchable with all display field values.
+   */
+  public function testDisplayFields() {
+    $this->createIndividual([
+      'first_name' => 'James',
+      'last_name' => 'Doe',
+      'source' => 'Webform Testing',
+    ]);
+
+    $this->drupalLogin($this->rootUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+    $this->saveCiviCRMSettings();
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+
+    // Edit contact element and add source to display fields.
+    $editContact = [
+      'selector' => 'edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations',
+      'widget' => 'Autocomplete',
+      'results_display' => ['display_name', 'source'],
+      'default' => '- None -',
+    ];
+    $this->editContactElement($editContact);
+
+    // Search on first name and verify if the contact is selected.
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', 'James');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertFieldValue('edit-civicrm-1-contact-1-contact-first-name', 'James');
+    $this->assertFieldValue('edit-civicrm-1-contact-1-contact-last-name', 'Doe');
+
+    // Search on source value and verify if the contact is selected.
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', 'Webform Testing');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertFieldValue('edit-civicrm-1-contact-1-contact-first-name', 'James');
+    $this->assertFieldValue('edit-civicrm-1-contact-1-contact-last-name', 'Doe');
+  }
+
+  /**
    * Test submission of hidden fields.
    */
   public function testHiddenField() {
@@ -191,7 +234,7 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
      $this->saveCiviCRMSettings();
      $this->drupalGet($this->webform->toUrl('edit-form'));
 
-     // Edit contact element and hide email field.
+    // Edit contact element and hide email field.
     $editContact = [
       'selector' => 'edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations',
       'widget' => 'Autocomplete',
@@ -252,7 +295,7 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
    * Test Tokens in Email.
    */
   public function testTokensInEmail() {
-    //Create 2 meeting activities for the contact.
+    // Create 2 meeting activities for the contact.
     $actID1 = $this->utils->wf_civicrm_api('Activity', 'create', [
       'source_contact_id' => $this->rootUserCid,
       'activity_type_id' => "Meeting",
@@ -285,7 +328,7 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
 
     $email = [
       'to_mail' => '[webform_submission:values:civicrm_1_contact_1_email_email:raw]',
-      'body' => 'Existing Contact - [webform_submission:values:civicrm_1_contact_1_contact_existing]. Activity 1 ID - [webform_submission:activity-id:1]. Activity 2 ID - [webform_submission:activity-id:2]. Webform CiviCRM Contacts IDs - [webform_submission:contact-id:1]. Webform CiviCRM Contacts Links - [webform_submission:contact-link:1].',
+      'body' => 'Submitted Values Are - [webform_submission:values] Existing Contact - [webform_submission:values:civicrm_1_contact_1_contact_existing]. Activity 1 ID - [webform_submission:activity-id:1]. Activity 2 ID - [webform_submission:activity-id:2]. Webform CiviCRM Contacts IDs - [webform_submission:contact-id:1]. Webform CiviCRM Contacts Links - [webform_submission:contact-link:1].',
     ];
     $this->addEmailHandler($email);
     $this->drupalGet($this->webform->toUrl('handlers'));
@@ -313,11 +356,24 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
     $this->assertStringContainsString('frederick@pabst.io', $sent_email[0]['to']);
 
     // Verify tokens are rendered correctly.
-    $this->assertStringContainsString('Existing Contact - Frederick Pabst.', $sent_email[0]['body']);
-    $this->assertStringContainsString("Activity 1 ID - {$actID1}", $sent_email[0]['body']);
-    $this->assertStringContainsString("Activity 2 ID - {$actID2}", $sent_email[0]['body']);
-    $this->assertStringContainsString("Webform CiviCRM Contacts IDs - {$this->rootUserCid}", $sent_email[0]['body']);
-    $this->assertStringContainsString($cidURL, $sent_email[0]['body']);
+    $this->assertEquals("Submitted Values Are -
+-------- Contact 1 
+-----------------------------------------------------------
+
+*Existing Contact*
+Frederick Pabst
+*First Name*
+Frederick
+*Last Name*
+Pabst
+*Email*
+frederick@pabst.io [1]
+Existing Contact - Frederick Pabst. Activity 1 ID - {$actID1}. Activity 2 ID - {$actID2}.
+Webform CiviCRM Contacts IDs - {$this->rootUserCid}. Webform CiviCRM Contacts Links -
+{$cidURL}.
+
+[1] mailto:frederick@pabst.io
+", $sent_email[0]['body']);
   }
 
 }

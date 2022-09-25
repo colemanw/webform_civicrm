@@ -14,7 +14,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     foreach (['GroupA', 'GroupB', 'GroupC'] as $group) {
       $this->groups[$group] = $this->utils->wf_civicrm_api('Group', 'create', [
