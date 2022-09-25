@@ -2085,8 +2085,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $params['total_amount'] = round($this->totalContribution, 2);
     // Some processors want this one way, some want it the other
     $params['amount'] = $params['total_amount'];
-    $frequencyUnit = wf_crm_aval($params, 'frequency_unit');
-    if (empty($frequencyUnit)) {
+    $numInstallments = wf_crm_aval($params, 'installments', NULL, TRUE);
+    $frequencyInterval = wf_crm_aval($params, 'frequency_unit');
+    if ($numInstallments == 1 || empty($frequencyInterval)) {
       unset($params['frequency_unit'], $params['frequency_interval'], $params['is_recur']);
     }
 
