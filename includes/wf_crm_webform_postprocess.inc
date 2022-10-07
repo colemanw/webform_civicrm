@@ -1992,27 +1992,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $paymentProcessor->setCancelUrl($this->getIpnRedirectUrl('cancel'));
     }
 
-    //Paypal Express checkout
-    if (wf_crm_aval($_POST, 'credit_card_number') == 'express') {
-      try {
-        $params['button'] = 'express';
-        $params['component'] = 'contribute';
-        $result = $paymentProcessor->doPreApproval($params);
-        if (empty($result)) {
-          // This could happen, for example, when paypal looks at the button value & decides it is not paypal express.
-          return;
-        }
-      }
-      catch (\Civi\Payment\Exception\PaymentProcessorException $e) {
-        drupal_set_message(ts('Payment approval failed with message: ') . $e->getMessage(),'error');
-        CRM_Utils_System::redirect($this->getIpnRedirectUrl('cancel'));
-      }
-      $preApprovalParams = $paymentProcessor->getPreApprovalDetails($result['pre_approval_parameters']);
-      $params = array_merge($params, $preApprovalParams);
-      if (!empty($result['redirect_url'])) {
-        CRM_Utils_System::redirect($result['redirect_url']);
-      }
-    }
     try {
       $paymentProcessor->doPayment($params);
     }
