@@ -21,9 +21,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
       'webform' => $this->webform->id(),
     ]));
     // The label has a <div> in it which can cause weird failures here.
-    $this->assertSession()->waitForText('Enable CiviCRM Processing');
-    $this->assertSession()->waitForField('nid');
-    $this->getSession()->getPage()->checkField('nid');
+    $this->enableCivicrmOnWebform();
     $this->getSession()->getPage()->clickLink('Memberships');
 
     // Configure Membership tab.
@@ -48,8 +46,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     // $this->createScreenshot($this->htmlOutputDirectory . '/membership_page_settings_before_save.png');
     $this->enableBillingSection();
 
-    $this->getSession()->getPage()->pressButton('Save Settings');
-    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    $this->saveCiviCRMSettings();
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
@@ -65,6 +62,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->htmlOutput();
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '1.00');
+    $this->assertSession()->elementTextContains('css', '.civicrm_1_membership_1', 'Basic: Frederick Pabst');
 
     // Wait for the credit card form to load in.
     $this->assertSession()->waitForField('credit_card_number');
@@ -120,17 +118,14 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
       'webform' => $this->webform->id(),
     ]));
     // The label has a <div> in it which can cause weird failures here.
-    $this->assertSession()->waitForText('Enable CiviCRM Processing');
-    $this->assertSession()->waitForField('nid');
-    $this->getSession()->getPage()->checkField('nid');
+    $this->enableCivicrmOnWebform();
     $this->getSession()->getPage()->clickLink('Memberships');
 
     $this->getSession()->getPage()->selectFieldOption('membership_1_number_of_membership', 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
-    $this->getSession()->getPage()->pressButton('Save Settings');
-    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    $this->saveCiviCRMSettings();
 
     // Create two memberships with the same status with the first membership
     // having an end date after the second membership's end date.
@@ -173,7 +168,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
-    $api_result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('membership', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('membership', 'get', [
       'sequential' => 1,
       'options' => ['sort' => 'id DESC'],
     ]);
@@ -250,7 +245,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
-    $api_result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('membership', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('membership', 'get', [
       'sequential' => 1,
     ]);
     $this->assertEquals(1, $api_result['count']);
@@ -307,8 +302,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
     $this->htmlOutput();
 
-    $this->getSession()->getPage()->pressButton('Save Settings');
-    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    $this->saveCiviCRMSettings();
 
     $this->drupalLogout();
 
@@ -350,6 +344,8 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     // $this->createScreenshot($this->htmlOutputDirectory . 'KG.png');
 
     $this->getSession()->getPage()->pressButton('Next >');
+    $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
+    $this->assertSession()->elementTextContains('css', '.civicrm_1_membership_1', "Basic: {$province}_first {$province}_last");
 
     $this->fillCardAndSubmit();
 

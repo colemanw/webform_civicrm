@@ -1718,11 +1718,21 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
             };
 
             if ($price) {
+              if (!empty($this->data['contact'][$c]['contact'][$n])) {
+                $member_contact = $this->data['contact'][$c]['contact'][$n];
+                if (!empty($member_contact['first_name']) && !empty($member_contact['last_name'])) {
+                  $member_name = "{$member_contact['first_name']} {$member_contact['last_name']}";
+                }
+              }
+              // If member name is not entered on the form, retrieve it from civicrm.
+              if (empty($member_name)) {
+                $member_name = $this->utils->wf_crm_display_name($this->existing_contacts[$c]);
+              }
               $this->line_items[] = [
                 'qty' => $membership_item['num_terms'],
                 'unit_price' => $price,
                 'financial_type_id' => $membership_financialtype,
-                'label' => $this->getMembershipTypeField($type, 'name') . ": " . $this->utils->wf_crm_display_name($this->existing_contacts[$c]),
+                'label' => $this->getMembershipTypeField($type, 'name') . ": " . $member_name,
                 'element' => "civicrm_{$c}_membership_{$n}",
                 'entity_table' => 'civicrm_membership',
               ];
