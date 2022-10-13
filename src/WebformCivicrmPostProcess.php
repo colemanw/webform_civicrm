@@ -1976,7 +1976,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       foreach ($this->line_items as $key => $k) {
         $this->line_items[$key]['unit_price'] = round(($k['unit_price'] / $numInstallments), 2, PHP_ROUND_HALF_UP);
         $this->line_items[$key]['line_total'] = round(($k['line_total'] / $numInstallments), 2, PHP_ROUND_HALF_UP);
-        $this->line_items[$key]['tax_amount'] = round(($k['tax_amount'] / $numInstallments), 2, PHP_ROUND_HALF_UP);
+        if (isset($k['tax_amount'])) {
+          $this->line_items[$key]['tax_amount'] = round(($k['tax_amount'] / $numInstallments), 2, PHP_ROUND_HALF_UP);
+        }
       }
     }
 
