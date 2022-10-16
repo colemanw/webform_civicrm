@@ -86,11 +86,13 @@ function webform_civicrm_datetime_set_format($element) {
  * Implements hook_form_alter().
  */
 function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
-  if ($form_id == 'webform_edit_form' && $form_state->getFormObject()->getEntity()->getHandlers()->has('webform_civicrm')) {
-    \Drupal::service('civicrm')->initialize();
-    \CRM_Core_Resources::singleton()->addCoreResources();
+  if (is_a($form_state->getFormObject(), '\Drupal\webform\WebformInterface') && is_a($form_state->getFormObject(), '\Drupal\Core\Entity\EntityFormInterface')) {
+    if ($form_state->getFormObject()->getEntity()->getHandlers()->has('webform_civicrm')) {
+      \Drupal::service('civicrm')->initialize();
+      \CRM_Core_Resources::singleton()->addCoreResources();
+    }
   }
-  //Do not load civicrm elements on the "Add element" form.
+  // Do not load civicrm elements on the "Add element" form.
   if ($form_id == 'webform_ui_element_type_select_form') {
     foreach ($form as $k => $fieldset) {
       if (is_array($fieldset) && !empty($fieldset['#title']) && strtolower($fieldset['#title']) == 'civicrm') {
