@@ -14,7 +14,7 @@ final class AuthorizeNetTest extends WebformCivicrmTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $result = $this->utils->wf_civicrm_api('PaymentProcessor', 'create', [
@@ -80,6 +80,8 @@ final class AuthorizeNetTest extends WebformCivicrmTestBase {
     $this->assertSession()->waitForElementVisible('css', '.webform-confirmation');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
     $this->assertPageNoErrorMessages();
+
+    $this->verifyPaymentResult();
   }
 
   /**
@@ -127,6 +129,8 @@ final class AuthorizeNetTest extends WebformCivicrmTestBase {
     $this->assertSession()->waitForElementVisible('css', '.webform-confirmation');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
     $this->assertPageNoErrorMessages();
+
+    $this->verifyPaymentResult();
   }
 
   /**
@@ -140,6 +144,54 @@ final class AuthorizeNetTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('credit_card_exp_date[M]', '11');
     $this->getSession()->getPage()->fillField('credit_card_exp_date[Y]', date('Y') + 1);
     $this->getSession()->getPage()->fillField('cvv2', '123');
+  }
+
+  /**
+   * Verify Payment values.
+   */
+  private function verifyPaymentResult() {
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
+      'contribution_status_id' => 'Completed',
+      'sequential' => 1,
+    ]);
+    $this->assertEquals(1, $api_result['count']);
+    $contribution = reset($api_result['values']);
+    $this->assertNotEmpty($contribution['trxn_id']);
+    $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
+    $this->assertEquals('Donation', $contribution['financial_type']);
+    $this->assertEquals('10.00', $contribution['total_amount']);
+    $this->assertEquals('0.00', $contribution['fee_amount']);
+    $this->assertEquals('Completed', $contribution['contribution_status']);
+    $this->assertEquals('USD', $contribution['currency']);
+
+    $creditCardID = $this->utils->wf_civicrm_api('OptionValue', 'getvalue', [
+      'return' => "value",
+      'label' => "Credit Card",
+      'option_group_id' => "payment_instrument",
+    ]);
+    $this->assertEquals($creditCardID, $contribution['payment_instrument_id']);
+
+    $lineItems = $this->utils->wf_civicrm_api('line_item', 'get', [
+      'sequential' => 1,
+    ])['values'];
+    $lineTotals = array_column($lineItems, 'line_total');
+    $expectedLineTotals = ['10.00'];
+    $this->assertEquals($expectedLineTotals, $lineTotals);
+
+    $financialTypeIds = array_column($lineItems, 'financial_type_id');
+    $expectedFTIds = ['1'];
+    $this->assertEquals($expectedFTIds, $financialTypeIds);
+    $this->assertEquals($contribution['total_amount'], array_sum($lineTotals));
+
+    $priceFieldID = $utils->wf_civicrm_api('PriceField', 'get', [
+      'sequential' => 1,
+      'price_set_id' => 'default_contribution_amount',
+      'options' => ['limit' => 1],
+    ])['id'] ?? NULL;
+    foreach ($lineItems as $item) {
+      $this->assertEquals($priceFieldID, $item['price_field_id']);
+    }
   }
 
   /**
