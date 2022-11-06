@@ -1,5 +1,4 @@
 name: D10 Integration Tests
-# delete this comment
 on:
   workflow_dispatch:
     inputs:
@@ -100,6 +99,9 @@ jobs:
           git clone -b 6.2.x https://git.drupalcode.org/project/webform.git
           cd webform
           sed -i -e 's/\^9.4/\^9.4 || \^10/' webform.info.yml
+          # temp thing until is merged upstream
+          curl -L -o patch.patch https://www.drupal.org/files/issues/2022-08-18/webform-getImplementations-3296057-10.patch
+          git apply patch.patch
           cd modules/webform_ui
           sed -i -e 's/\^9.4/\^9.4 || \^10/' webform_ui.info.yml
       - name: Install webform_civicrm
