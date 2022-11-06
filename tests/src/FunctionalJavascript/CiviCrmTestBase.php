@@ -11,7 +11,7 @@ use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
 // @todo move into civicrm-drupal-8 package - DONE
 abstract class CiviCrmTestBase extends WebDriverTestBase {
 
-  protected $defaultTheme = 'classy';
+  protected $defaultTheme = 'starterkit_theme';
 
   protected static $modules = [
     'block',
