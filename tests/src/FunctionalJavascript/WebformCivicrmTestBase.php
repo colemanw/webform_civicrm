@@ -20,7 +20,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     'webform_ui',
     'webform_civicrm',
     'token',
-    'ckeditor',
+    'ckeditor5',
   ];
 
   /**
