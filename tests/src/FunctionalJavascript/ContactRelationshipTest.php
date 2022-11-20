@@ -273,4 +273,117 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->assertSession()->fieldValueEquals('Organization Name', 'Western Canada High');
   }
 
+  /**
+   * Verify default relationship load on contact subtypes.
+   */
+  function testSubTypeRelationship() {
+    // Create subtype 1
+    $subType1 = $this->utils->wf_civicrm_api('ContactType', 'create', [
+      'parent_id' => "Organization",
+      'name' => "Team",
+    ]);
+    // Create subtype 2
+    $subType2 = $this->utils->wf_civicrm_api('ContactType', 'create', [
+      'parent_id' => "Organization",
+      'name' => "Sponsor",
+    ]);
+
+    // Create Relationship Type
+    $relType = $this->utils->wf_civicrm_api('RelationshipType', 'create', [
+      'name_a_b' => "Test Relationship",
+      'name_b_a' => "Test Relationship",
+      'contact_type_a' => "Organization",
+      'contact_type_b' => "Organization",
+      'contact_sub_type_a' => "Team",
+      'contact_sub_type_b' => "Sponsor",
+    ]);
+
+    // Create 3 organization contacts and relate to each other.
+    $teamOrg1 = $this->utils->wf_civicrm_api('Contact', 'create', [
+      'contact_type' => "Organization",
+      'contact_sub_type' => "Team",
+      'organization_name' => "Team Org1",
+    ]);
+    $teamOrg2 = $this->utils->wf_civicrm_api('Contact', 'create', [
+      'contact_type' => "Organization",
+      'contact_sub_type' => "Team",
+      'organization_name' => "Team Org2",
+    ]);
+    $sponsorOrg1 = $this->utils->wf_civicrm_api('Contact', 'create', [
+      'contact_type' => "Organization",
+      'contact_sub_type' => "Sponsor",
+      'organization_name' => "Sponsor Org",
+    ]);
+    foreach ([$teamOrg1['id'], $teamOrg2['id']] as $teamID) {
+      $result = $this->utils->wf_civicrm_api('Relationship', 'create', [
+        'contact_id_a' => $teamID,
+        'contact_id_b' => $sponsorOrg1['id'],
+        'relationship_type_id' => "Test Relationship",
+      ]);
+    }
+
+    // Create webform with 3 organization contacts.
+    $this->drupalLogin($this->rootUser);
+
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+
+    $this->getSession()->getPage()->selectFieldOption("number_of_contacts", 3);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    foreach ([1, 2, 3] as $c) {
+      $this->getSession()->getPage()->clickLink("Contact {$c}");
+      $this->assertSession()->assertWaitOnAjaxRequest();
+      $this->getSession()->getPage()->selectFieldOption("{$c}_contact_type", 'Organization');
+      $this->assertSession()->assertWaitOnAjaxRequest();
+
+      $subType = $c == 2 ? 'Sponsor' : 'Team';
+      $this->getSession()->getPage()->selectFieldOption("civicrm_{$c}_contact_1_contact_contact_sub_type[]", $subType);
+      $this->assertSession()->assertWaitOnAjaxRequest();
+
+      if ($c > 1) {
+        $this->getSession()->getPage()->checkField("civicrm_{$c}_contact_1_contact_existing");
+        $this->assertSession()->checkboxChecked("civicrm_{$c}_contact_1_contact_existing");
+      }
+      $this->getSession()->getPage()->checkField("civicrm_{$c}_contact_1_contact_organization_name");
+      $this->assertSession()->checkboxChecked("civicrm_{$c}_contact_1_contact_organization_name");
+    }
+    $this->saveCiviCRMSettings();
+
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+    // Edit contact element 2.
+    $editContact = [
+      'selector' => 'edit-webform-ui-elements-civicrm-2-contact-1-contact-existing-operations',
+      'widget' => 'Static',
+      'default' => 'relationship',
+      'default_relationship' => [
+        'default_relationship_to' => 'Contact 1',
+        'default_relationship' => 'Test Relationship Contact 1',
+      ],
+    ];
+    $this->editContactElement($editContact);
+
+    // Edit contact element 3.
+    $editContact = [
+      'selector' => 'edit-webform-ui-elements-civicrm-3-contact-1-contact-existing-operations',
+      'widget' => 'Static',
+      'default' => 'relationship',
+      'default_relationship' => [
+        'default_relationship_to' => 'Contact 2',
+        'default_relationship' => 'Test Relationship Contact 2',
+      ],
+    ];
+    $this->editContactElement($editContact);
+
+    // Check if related contacts are loaded on the webform.
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $teamOrg1['id']]]));
+    $this->assertPageNoErrorMessages();
+    $this->htmlOutput();
+
+    $this->assertSession()->fieldValueEquals('civicrm_2_contact_1_contact_organization_name', 'Sponsor Org');
+    $this->assertSession()->fieldValueEquals('civicrm_3_contact_1_contact_organization_name', 'Team Org2');
+  }
+
 }

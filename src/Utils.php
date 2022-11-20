@@ -396,7 +396,7 @@ class Utils implements UtilsInterface {
   function wf_crm_get_contact_relationship_types($type_a, $type_b, $sub_type_a, $sub_type_b) {
     $ret = [];
     foreach ($this->wf_crm_get_relationship_types() as $t) {
-      $reciprocal = ($t['label_a_b'] != $t['label_b_a'] && $t['label_b_a'] || $t['type_a'] != $t['type_b']);
+      $reciprocal = ($t['label_a_b'] != $t['label_b_a'] && $t['label_b_a'] || $t['type_a'] != $t['type_b'] || $t['sub_type_a'] != $t['sub_type_b']);
       if (($t['type_a'] == $type_a || !$t['type_a'])
         && ($t['type_b'] == $type_b || !$t['type_b'])
         && (in_array($t['sub_type_a'], $sub_type_a) || !$t['sub_type_a'])
