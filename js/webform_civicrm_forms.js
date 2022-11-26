@@ -296,6 +296,7 @@ var wfCivi = (function (D, $, drupalSettings, once) {
       $.getJSON(setting.callbackPath+'/stateProvince/' + countryId, function(data) {
         fillOptions(stateSelect, data);
         stateProvinceCache[countryId] = data;
+        sameBillingAddress(true);
       });
     }
   }
@@ -354,6 +355,41 @@ var wfCivi = (function (D, $, drupalSettings, once) {
     else {
       fields.removeAttr('disabled');
       fields.parent().show(speed);
+    }
+  }
+
+  /**
+   * Copy Values from Contact 1 Address fields to billing address.
+   *
+   * @param bool state_only
+   *  true, if only state field needs to be populated.
+   */
+  function sameBillingAddress(state_only = false) {
+    if ($('input[name="civicrm_1_contribution_1_contribution_billing_address_same_as"]').length && $('input[name="civicrm_1_contribution_1_contribution_billing_address_same_as"]').is(':checked')) {
+      // Address fields are on different pages.
+      if (typeof setting.billing_values != "undefined") {
+        $.each(setting.billing_values, function(k, v) {
+          if (state_only && k == 'state_province_id') {
+            $('[name=civicrm_1_contribution_1_contribution_billing_address_' + k).val(v);
+          }
+          else if (!state_only) {
+            $('[name=civicrm_1_contribution_1_contribution_billing_address_' + k).val(v).change();
+          }
+        });
+      }
+      else {
+        // Address fields are on same page.
+        var billing_fields = state_only ? ['state_province_id'] : ['street_address', 'city', 'postal_code', 'state_province_id', 'country_id', 'first_name', 'middle_name', 'last_name'];
+        $.each(billing_fields, function(key, field_name) {
+          var v = (key < 5) ? $('[name=civicrm_1_contact_1_address_' + field_name).val() : $('[name=civicrm_1_contact_1_contact_' + field_name).val();
+          if (state_only && field_name == 'state_province_id') {
+            $('[name=civicrm_1_contribution_1_contribution_billing_address_' + field_name).val(v);
+          }
+          else if (!state_only) {
+            $('[name=civicrm_1_contribution_1_contribution_billing_address_' + field_name).val(v).change();
+          }
+        });
+      }
     }
   }
 
@@ -428,6 +464,12 @@ var wfCivi = (function (D, $, drupalSettings, once) {
 
       // Add handler to country field to trigger ajax refresh of corresponding state/prov
       $(once('civicrm', 'form.webform-submission-form .civicrm-enabled[name*="_address_country_id"]')).change(countrySelect);
+
+      // Copy address fields to billing section if "Same As" checkbox is enabled.
+      $(once('civicrm', 'form.webform-submission-form .civicrm-enabled[name="civicrm_1_contribution_1_contribution_billing_address_same_as"]')).change(function(){
+        sameBillingAddress();
+      });
+      sameBillingAddress();
 
       // Show/hide address fields when sharing an address
       $(once('civicrm', 'form.webform-submission-form .civicrm-enabled[name*="_address_master_id"]')).change(function(){

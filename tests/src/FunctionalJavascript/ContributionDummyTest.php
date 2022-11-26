@@ -85,6 +85,79 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertSession()-> linkNotExists('View Participant');
   }
 
+  /**
+   * Test sameas billing address checkbox.
+   */
+  public function testBillingSameAs() {
+    $payment_processor = $this->createPaymentProcessor();
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+
+    // Enable Address fields.
+    $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_address', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->checkField('Country');
+    $this->assertSession()->checkboxChecked('Country');
+
+    $params = [
+      'payment_processor_id' => $payment_processor['id'],
+    ];
+    $this->configureContributionTab($params);
+    $this->getSession()->getPage()->checkField("Contribution Amount");
+    $this->assertSession()->checkboxChecked("Contribution Amount");
+    $this->getSession()->getPage()->checkField("Same As");
+    $this->assertSession()->checkboxChecked("Same As");
+    $this->saveCiviCRMSettings();
+
+    $this->drupalLogout();
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+    $billingValues = [
+      'first_name' => 'Frederick',
+      'last_name' => 'Pabst',
+      'street_address' => '123 Milwaukee Ave',
+      'city' => 'Milwaukee',
+      'country_id' => '1228',
+      'state_province_id' => $this->utils->wf_crm_state_abbr('NJ', 'id'),
+      'postal_code' => '53177',
+    ];
+    $this->getSession()->getPage()->fillField('First Name', $billingValues['first_name']);
+    $this->getSession()->getPage()->fillField('Last Name', $billingValues['last_name']);
+    $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
+
+    $this->getSession()->getPage()->fillField('Street Address', $billingValues['street_address']);
+    $this->getSession()->getPage()->fillField('City', $billingValues['city']);
+    $this->getSession()->getPage()->fillField('Postal Code', $billingValues['postal_code']);
+    $this->getSession()->getPage()->selectFieldOption('Country', $billingValues['country_id']);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption('State/Province', $billingValues['state_province_id']);
+    $this->getSession()->getPage()->pressButton('Next >');
+
+    $this->getSession()->getPage()->fillField('Contribution Amount', '10.00');
+    $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
+    $this->htmlOutput();
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '10.00');
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-items .civicrm_1_contribution_1', 'Contribution Amount');
+
+    $this->fillCardAndSubmit($billingValues);
+
+    // Verify 2 address are created and has same values.
+    unset($billingValues['first_name'], $billingValues['last_name']);
+    $api_result = $this->utils->wf_civicrm_api('address', 'get', [
+      'sequential' => 1,
+    ]);
+    $this->assertEquals(2, $api_result['count']);
+    foreach ($api_result['values'] as $key => $address) {
+      foreach ($billingValues as $field => $value) {
+        $this->assertEquals($value, $address[$field]);
+      }
+    }
+  }
+
   public function testSubmitContribution() {
     $payment_processor = $this->createPaymentProcessor();
     $this->createMembershipType(100, FALSE, 'Basic');

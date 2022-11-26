@@ -2,7 +2,7 @@
  * Javascript Module for managing the webform_civicrm admin form.
  */
 var wfCiviAdmin = (function (D, $, once) {
-  var billingEmailMsg;
+  var billingEmailMsg, billingSameAsMsg;
   /**
    * Public methods.
    */
@@ -579,6 +579,31 @@ var wfCiviAdmin = (function (D, $, once) {
         $(once('email-alert', '[name=civicrm_1_contribution_1_contribution_enable_contribution], [name=civicrm_' + contactIdForContrib + '_contact_1_email_email]', context)).change(billingMessages);
         billingMessages();
       }
+
+      /**
+       * Display required message for address if 'same as' is enabled under billing section.
+       */
+      function checkSameAsRequirement() {
+        if (($('[name=civicrm_1_contribution_1_contribution_billing_address_same_as]:checked').length == 1 && $('[name=contact_1_number_of_address]').val() == '0')) {
+          var msg = Drupal.t('You must enable an address field for :contact in order to copy values to the billing address fields.', {':contact': getContactLabel(1)});
+          if (!$('.wf-crm-billing-sameas-alert').length) {
+            $('[name=billing_1_number_of_billing]').after('<div class="messages error wf-crm-billing-sameas-alert">' + msg + ' <button>' + Drupal.t('Enable It') + '</button></div>');
+            $('.wf-crm-billing-sameas-alert button').click(function() {
+              $('select[name=contact_1_number_of_address]').val('1').change();
+              return false;
+            });
+            if ($('.wf-crm-billing-sameas-alert').is(':hidden')) {
+              billingSameAsMsg = CRM.alert(msg, Drupal.t('Address Required'), 'error');
+            }
+          }
+        }
+        else {
+          $('.wf-crm-billing-sameas-alert').remove();
+          billingSameAsMsg && billingSameAsMsg.close && billingSameAsMsg.close();
+        }
+      }
+
+      $(once('sameas-alert', '[name=civicrm_1_contribution_1_contribution_billing_address_same_as], [name=contact_1_number_of_address]', context)).change(checkSameAsRequirement);
 
       // Handlers for submit-limit & tracking-mode mini-forms
       $(once('wf-civi', '#configure-submit-limit', context)).click(function() {

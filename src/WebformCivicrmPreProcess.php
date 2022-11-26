@@ -212,6 +212,19 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
           '#markup' => Markup::create('<div class="crm-container crm-public" id="billing-payment-block"></div>'),
         ],
       ];
+
+      // Copy first address values from Contact 1 to Billing Address.
+      $form_data = $this->form_state->getValues();
+      if (!empty($form_data) && !empty($this->data['contact'][1]['address'][1])) {
+        $billing_fields = ['country_id', 'first_name', 'last_name', 'street_address', 'city', 'postal_code', 'state_province_id'];
+        $billing_values = [];
+        foreach ($billing_fields as $value) {
+          $addressKey = 'civicrm_1_contact_1_address_' . $value;
+          $contactKey = 'civicrm_1_contact_1_contact_' . $value;
+          $billing_values[$value] = $form_data[$addressKey] ?? $form_data[$contactKey] ?? NULL;
+        }
+        $this->form['#attached']['drupalSettings']['webform_civicrm']['billing_values'] = $billing_values;
+      }
     }
   }
 
