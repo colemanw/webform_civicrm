@@ -45,7 +45,7 @@ interface UtilsInterface {
   public function wf_crm_get_fields($var = 'fields');
 
   /**
-   * Get list of states, keyed by abbreviation rather than ID.
+   * Get list of states, keyed by ID.
    * @param null|int|string $param
    */
   public function wf_crm_get_states($param = NULL);

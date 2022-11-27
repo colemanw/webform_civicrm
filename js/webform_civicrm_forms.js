@@ -294,7 +294,7 @@ var wfCivi = (function (D, $, drupalSettings, once) {
       fillOptions(stateSelect, stateProvinceCache[countryId]);
     }
     else {
-      $.getJSON(setting.callbackPath+'/stateProvince/' + countryId + '/' + is_billing, function(data) {
+      $.getJSON(setting.callbackPath+'/stateProvince/' + countryId, function(data) {
         fillOptions(stateSelect, data);
         stateProvinceCache[countryId] = data;
       });

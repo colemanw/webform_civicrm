@@ -184,10 +184,6 @@ abstract class WebformCivicrmBase {
           // Extra processing for addresses
           if ($ent == 'address') {
             foreach ($result as &$address) {
-              // Translate to abbr
-              if (!empty($address['state_province_id'])) {
-                $address['state_province_id'] = $this->utils->wf_crm_state_abbr($address['state_province_id']);
-              }
               // Load custom data
               if (isset($address['id'])){
                 $custom = $this->getCustomData($address['id'], 'address');

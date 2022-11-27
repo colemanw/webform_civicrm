@@ -412,8 +412,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           else {
             $country_id = (int) $this->utils->wf_crm_get_civi_setting('defaultContactCountry', 1228);
           }
-          $isBilling = (strpos($element['#name'], 'billing_address_') !== false) ?? FALSE;
-          $states = $this->utils->wf_crm_get_states($country_id, $isBilling);
+          $states = $this->utils->wf_crm_get_states($country_id);
           if ($states && !array_key_exists(strtoupper($element['#value']), $states)) {
             $countries = $this->utils->wf_crm_apivalues('address', 'getoptions', ['field' => 'country_id']);
             $this->form_state->setError($element, t('Mismatch: "@state" is not a state/province of %country. Please enter a valid state/province abbreviation for %field.', ['@state' => $element['#value'], '%country' => $countries[$country_id], '%field' => $element['#title']]));
@@ -818,17 +817,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           $existing = array_merge([[]], $result['values']);
         }
         foreach ($contact[$location] as $i => $params) {
-          $stateIsID = FALSE;
-          if (!empty($existing[$i]['state_province_id']) && $existing[$i]['state_province_id'] == $params['state_province_id']) {
-            $stateIsID = TRUE;
-          }
-          // Translate state/prov abbr to id
-          if (!$stateIsID && !empty($params['state_province_id']) && $params['location_type_id'] != $billingLocTypeID) {
-            $default_country = $this->utils->wf_crm_get_civi_setting('defaultContactCountry', 1228);
-            if (!($params['state_province_id'] = $this->utils->wf_crm_state_abbr($params['state_province_id'], 'id', wf_crm_aval($params, 'country_id', $default_country)))) {
-              $params['state_province_id'] = '';
-            }
-          }
           // Substitute county stub ('-' is a hack to get around required field when there are no available counties)
           if (isset($params['county_id']) && $params['county_id'] === '-') {
             $params['county_id'] = '';
