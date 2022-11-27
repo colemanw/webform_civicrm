@@ -2083,6 +2083,22 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $params = $this->data['contribution'][1]['contribution'][1];
     $processor_type = $this->utils->wf_civicrm_api('payment_processor', 'getsingle', ['id' => $params['payment_processor_id']]);
     $paymentProcessor = \Civi\Payment\System::singleton()->getById($params['payment_processor_id']);
+
+    // Include billing fields with keys expected by payment processor.
+    $billingAddressFieldsMetadata = [];
+    if (method_exists($paymentProcessor, 'getBillingAddressFieldsMetadata')) {
+      $billingAddressFieldsMetadata = $paymentProcessor->getBillingAddressFieldsMetadata();
+      foreach ($params as $key => $value) {
+        if (strpos($key, 'billing_address_') !== false) {
+          $name = str_replace('billing_address_', '', $key);
+          foreach (["billing_{$name}", "billing_{$name}-5"] as $billingName) {
+            if (isset($billingAddressFieldsMetadata[$billingName])) {
+              $params[$billingName] = $value;
+            }
+          }
+        }
+      }
+    }
     // Ideally we would pass the correct id for the test processor through but that seems not to be the
     // case so load it here.
     if (!empty($params['is_test'])) {
