@@ -522,10 +522,26 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $this->loadEvents();
     // Add event info to line items
     $format = wf_crm_aval($this->data['reg_options'], 'title_display', 'title');
+    if ($this->line_items) {
+      $eventFTId = $this->utils->wf_crm_apivalues('FinancialType', 'get', [
+        'sequential' => 1,
+        'return' => ["id"],
+        'name' => "Event Fee",
+        'is_active' => 1,
+      ])[0];
+      if (empty($eventFTId)) {
+        $eventFTId = $this->utils->wf_crm_apivalues('FinancialType', 'get', [
+          'sequential' => 1,
+          'return' => ["id"],
+          'is_active' => 1,
+          'options' => ['limit' => 1],
+        ])[0];
+      }
+    }
     foreach ($this->line_items as &$item) {
       $label = empty($item['contact_label']) ? '' : "{$item['contact_label']} - ";
       $item['label'] = $label . $this->utils->wf_crm_format_event($this->events[$item['event_id']], $format);
-      $item['financial_type_id'] = wf_crm_aval($this->events[$item['event_id']], 'financial_type_id', 'Event Fee');
+      $item['financial_type_id'] = wf_crm_aval($this->events[$item['event_id']], 'financial_type_id', $eventFTId);
     }
     // Form Validation
     if (!empty($this->data['reg_options']['validate'])) {
