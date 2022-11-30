@@ -53,8 +53,6 @@ jobs:
           cd civicrm-core
           curl -L -O https://gist.githubusercontent.com/demeritcowboy/302a9b868f3a1a5d04925068ae487053/raw/ca7cd483297fea05931512102a78fde7ee4431c5/drupal10civicrmcore.diff
           git apply drupal10civicrmcore.diff
-          curl -L -O https://github.com/civicrm/civicrm-core/pull/24132.diff
-          git apply 24132.diff
           cd ../composer-compile-lib
           php -r 'file_put_contents("composer.json", str_replace('"'"'"symfony/filesystem": "~2.8'"'"', '"'"'"symfony/filesystem": "~2.8 || ~6.0'"'"', file_get_contents("composer.json")));'
       - name: Setup problem matchers for PHPUnit
@@ -99,9 +97,6 @@ jobs:
           git clone -b 6.2.x https://git.drupalcode.org/project/webform.git
           cd webform
           sed -i -e 's/\^9.4/\^9.4 || \^10/' webform.info.yml
-          # temp thing until is merged upstream
-          curl -L -o patch.patch https://www.drupal.org/files/issues/2022-08-18/webform-getImplementations-3296057-10.patch
-          git apply patch.patch
           cd modules/webform_ui
           sed -i -e 's/\^9.4/\^9.4 || \^10/' webform_ui.info.yml
       - name: Install webform_civicrm
