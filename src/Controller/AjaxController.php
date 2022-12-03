@@ -40,11 +40,10 @@ class AjaxController implements ContainerInjectionInterface {
    * @param string $operation
    *   The operation to perform: stateProvince or county
    */
-  public function handle($key, $input = '', $isBilling = FALSE) {
+  public function handle($key, $input = '') {
     $this->civicrm->initialize();
     if ($key === 'stateProvince') {
-      $isBilling = ($isBilling === 'false') ? FALSE : $isBilling;
-      return $this->stateProvince($input, $isBilling);
+      return $this->stateProvince($input);
     }
     elseif ($key === 'county') {
       return $this->county($input);
@@ -55,12 +54,12 @@ class AjaxController implements ContainerInjectionInterface {
     }
   }
 
-  protected function stateProvince($input, $isBilling = FALSE) {
+  protected function stateProvince($input) {
     if (!$input || ((int) $input != $input && $input != 'default')) {
       $data = ['' => t('- first choose a country')];
     }
     else {
-      $data = \Drupal::service('webform_civicrm.utils')->wf_crm_get_states($input, $isBilling);
+      $data = \Drupal::service('webform_civicrm.utils')->wf_crm_get_states($input);
     }
 
     // @todo use Drupal's cacheable response?
@@ -74,7 +73,7 @@ class AjaxController implements ContainerInjectionInterface {
       list($state, $country) = explode('-', $input);
       $params = [
         'field' => 'county_id',
-        'state_province_id' => $utils->wf_crm_state_abbr($state, 'id', $country)
+        'state_province_id' => $state
       ];
       $data = $utils->wf_crm_apivalues('address', 'getoptions', $params);
     }

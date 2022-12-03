@@ -54,7 +54,7 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
       'City' => 'Newark',
       'Postal Code' => '12345',
       'Country' => 1228,
-      'State/Province' => 'NJ',
+      'State/Province' => $this->utils->wf_crm_state_abbr('NJ', 'id'), // New Jersey
     ];
     $this->postSubmission($this->webform, $edit);
 

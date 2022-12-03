@@ -529,22 +529,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
           if (is_array($field_value_key)) {
             foreach ($field_value_key as $value_key) {
               if (isset($contact_values[$field_group][$key][$value_key])) {
-                switch ($value_key) {
-                  case 'state_province_id':
-                    $state = $this
-                      ->utils
-                      ->wf_civicrm_api('StateProvince', 'getvalue', [
-                        'return' => "abbreviation",
-                        'id' => $result_entity[$value_key],
-                      ]);
-
-                    $this->assertEquals($contact_values[$field_group][$key][$value_key], $state);
-                    break;
-
-                  default:
-                    $this->assertEquals($contact_values[$field_group][$key][$value_key], $result_entity[$value_key]);
-                    break;
-                }
+                $this->assertEquals($contact_values[$field_group][$key][$value_key], $result_entity[$value_key]);
               }
             }
           }
@@ -607,8 +592,8 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
             'street_address' => 'Test',
             'city' => 'Adamsville',
             'postal_code' => '35005',
-            'country_id' => '1228',
-            'state_province_id' => 'AL',
+            'country_id' => '1228', // United States
+            'state_province_id' => '1000', // Alabama
             'county_id' => '7',
           ]
         ],
