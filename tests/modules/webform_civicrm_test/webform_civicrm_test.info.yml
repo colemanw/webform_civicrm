@@ -1,0 +1,7 @@
+name: 'Webform CiviCRM test'
+type: module
+description: 'Support module for webform civicrm testing.'
+package: 'Webform CiviCRM Testing'
+core_version_requirement: ^8.8 || ^9
+dependencies:
+  - 'webform_civicrm:webform_civicrm'
