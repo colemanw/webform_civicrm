@@ -334,7 +334,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Street Address', '39 Street');
     $this->getSession()->getPage()->fillField('City', 'City');
     $this->getSession()->getPage()->fillField('Postal Code', 'A0B 1C2');
-    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contact_1_address_state_province_id', 'AB');
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contact_1_address_state_province_id', $this->utils->wf_crm_state_abbr('AB', 'id', 1039));
     $this->getSession()->getPage()->fillField('Email', $province . '@example.com');
 
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_membership_1_membership_financial_type_id', $financial_type_id);
