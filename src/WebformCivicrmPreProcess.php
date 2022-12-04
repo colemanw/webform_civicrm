@@ -536,9 +536,6 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
                 $val = array_pop($val);
               }
             }
-            if (in_array($name, ['state_province_id', 'county_id'])) {
-              $element['#attributes']['data-val'] = $val;
-            }
             if ($element['#type'] == 'autocomplete' && is_string($val) && strlen($val)) {
               $options = $this->utils->wf_crm_field_options($element, '', $this->data);
               $val = wf_crm_aval($options, $val);
@@ -576,6 +573,9 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
             else {
               $element['#default_value'] = $val;
             }
+          }
+          if (in_array($name, ['state_province_id', 'county_id'])) {
+            $element['#attributes']['data-val'] = $element['#default_value'] ?? NULL;
           }
           if ($name == 'existing') {
             CivicrmContact::wf_crm_fill_contact_value($this->node, $element, $this->ent);
