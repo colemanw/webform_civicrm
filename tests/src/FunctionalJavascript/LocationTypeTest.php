@@ -186,6 +186,19 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
     // Update the last name
     $this->getSession()->getPage()->fillField('Last Name', 'Morissette');
     $this->getSession()->getPage()->pressButton('Next >');
+    $this->assertPageNoErrorMessages();
+    $canada_id = $this->utils->wf_civicrm_api('Country', 'getvalue', [
+      'return' => "id",
+      'name' => "Canada",
+    ]);
+    $state_id = $this->utils->wf_crm_state_abbr('AB', 'id', $canada_id);
+    // Check if address fields are pre populated with existing values.
+    $this->assertSession()->fieldValueEquals('Street Address', '123 Defence Colony');
+    $this->assertSession()->fieldValueEquals('City', 'Edmonton');
+    $this->assertSession()->fieldValueEquals('Country', $canada_id);
+    $this->getSession()->wait(1000);
+    $this->assertSession()->fieldValueEquals('State/Province', $state_id);
+    $this->assertSession()->fieldValueEquals('Postal Code', 11111);
 
     // Change the street & city value in the address fields.
     $address = [
@@ -213,8 +226,8 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
       'last_name' => 'Morissette',
       'street_address' => "123 Defence Colony Updated",
       'city' => "Calgary",
-      'country_id' => 1039,
-      'state_province_id' => $this->utils->wf_crm_state_abbr('AB', 'id', 1039),
+      'country_id' => $canada_id,
+      'state_province_id' => $state_id,
       'postal_code' => 11111,
     ];
     foreach ($expected_values as $key => $value) {

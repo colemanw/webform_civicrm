@@ -606,14 +606,30 @@ elements: |-
       '#title': Country
       '#civicrm_live_options': 1
     civicrm_1_contact_1_address_state_province_id:
-      '#type': textfield
+      '#type': civicrm_options
       '#extra':
-        maxlength: 5
-        width: 4
+        aslist: 1
       '#data_type': state_province_abbr
       '#form_key': civicrm_1_contact_1_address_state_province_id
       '#parent': civicrm_1_contact_1_fieldset_fieldset
       '#title': State/Province
+      '#webform': update_contact_details
+      '#webform_id': update_contact_details--civicrm_1_contact_1_address_state_province_id
+      '#webform_key': civicrm_1_contact_1_address_state_province_id
+      '#webform_parent_key': address_information
+      '#webform_parent_flexbox': false
+      '#webform_depth': 1
+      '#webform_children': {  }
+      '#webform_multiple': false
+      '#webform_composite': false
+      '#webform_parents':
+        - address_information
+        - civicrm_1_contact_1_address_state_province_id
+      '#admin_title': State/Province
+      '#webform_plugin_id': civicrm_options
+      '#civicrm_live_options': 0
+      '#empty_option': '- None -'
+      '#options': {  }
 css: ''
 javascript: ''
 settings:
