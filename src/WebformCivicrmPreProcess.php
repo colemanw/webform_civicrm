@@ -574,7 +574,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
               $element['#default_value'] = $val;
             }
           }
-          if (in_array($name, ['state_province_id', 'county_id'])) {
+          if (in_array($name, ['state_province_id', 'county_id', 'billing_address_state_province_id', 'billing_address_county_id'])) {
             $element['#attributes']['data-val'] = $element['#default_value'] ?? NULL;
           }
           if ($name == 'existing') {

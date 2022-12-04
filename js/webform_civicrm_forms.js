@@ -289,8 +289,7 @@ var wfCivi = (function (D, $, drupalSettings, once) {
 
   function populateStates(stateSelect, countryId) {
     $(stateSelect).prop('disabled', true);
-    var is_billing = stateSelect.attr('name').indexOf("billing_address") >= 0;
-    if (!is_billing && stateProvinceCache[countryId]) {
+    if (stateProvinceCache[countryId]) {
       fillOptions(stateSelect, stateProvinceCache[countryId]);
     }
     else {
