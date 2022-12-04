@@ -316,19 +316,21 @@ function webform_civicrm_update_8004() {
     if (empty($config['webform_civicrm'])) {
       continue;
     }
-    $elements = $webform->getElementsInitializedAndFlattened();
-    foreach ($elements as $element) {
-      if (!empty($element['#form_key']) && !empty($element['#type']) && $element['#type'] == 'textfield'
-      && (strpos($element['#form_key'], $stateFormKey) !== false || strpos($element['#form_key'], $countyFormKey) !== false)) {
-        $element = array_merge($element, [
-          '#type' => 'civicrm_options',
-          '#webform_plugin_id' => 'civicrm_options',
-          '#extra' => ['aslist' => 1],
-          '#civicrm_live_options' => 0,
-          '#empty_option' => '- None -',
-          '#options' => [],
-        ]);
-        $webform->setElementProperties($element['#form_key'], $element, $element['#parent']);
+    $settings = &$config['webform_civicrm']['settings'] ?? [];
+    foreach ($settings as $key => $val) {
+      if (strpos($key, $stateFormKey) !== false || strpos($key, $countyFormKey) !== false) {
+        $element = $webform->getElement($key);
+        if (!empty($element['#type']) && $element['#type'] == 'textfield') {
+          $element = array_merge($element, [
+            '#type' => 'civicrm_options',
+            '#webform_plugin_id' => 'civicrm_options',
+            '#extra' => ['aslist' => 1],
+            '#civicrm_live_options' => 0,
+            '#empty_option' => '- None -',
+            '#options' => [],
+          ]);
+          $webform->setElementProperties($element['#form_key'], $element);
+        }
       }
     }
     $webform->save();
