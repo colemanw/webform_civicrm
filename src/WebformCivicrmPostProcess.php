@@ -522,7 +522,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $this->loadEvents();
     // Add event info to line items
     $format = wf_crm_aval($this->data['reg_options'], 'title_display', 'title');
-    //Get the Event Fee Finacial Type Id if active, otherwise get the first active Financial Type Id
+    // Get the Event Fee Financial Type Id if active, otherwise get the first active Financial Type Id
     if ($this->line_items) {
       $eventFTId = $this->utils->wf_crm_apivalues('FinancialType', 'get', [
         'sequential' => 1,
