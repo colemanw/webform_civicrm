@@ -14,7 +14,7 @@ jobs:
       matrix:
         include:
           - drupal: '10.0.x-dev'
-            civicrm: '5.57.alpha1'
+            civicrm: '5.58.alpha1'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
     services:
       mysql:
@@ -99,6 +99,8 @@ jobs:
           sed -i -e 's/\^9.4/\^9.4 || \^10/' webform.info.yml
           cd modules/webform_ui
           sed -i -e 's/\^9.4/\^9.4 || \^10/' webform_ui.info.yml
+          curl -L -O https://www.drupal.org/files/issues/2022-12-09/3322552-49.patch
+          git apply 3322552-49.patch
       - name: Install webform_civicrm
         run: |
           cd ~/drupal
