@@ -759,6 +759,14 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       }
     }
     $params['id'] = $this->ent['contact'][$c]['id'];
+    if (file_exists('/home/runner/drupal/web/sites/simpletest/browser_output/testDynamicCustomFields.log')) {
+      $fp = fopen('/home/runner/drupal/web/sites/simpletest/browser_output/testDynamicCustomFields.log', 'a');
+      if ($fp) {
+        fwrite($fp, var_export($params, true));
+        fclose($fp);
+        rename('/home/runner/drupal/web/sites/simpletest/browser_output/testDynamicCustomFields.log', '/home/runner/drupal/web/sites/simpletest/browser_output/testDynamicCustomFields.log.' . time() . rand(100000, 999999));
+      }
+    }
     $this->utils->wf_civicrm_api('contact', 'create', $params);
   }
 

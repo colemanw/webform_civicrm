@@ -364,6 +364,9 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertPageNoErrorMessages();
     $this->assertSession()->checkboxNotChecked("Yes");
 
+    $fp = fopen('/home/runner/drupal/web/sites/simpletest/browser_output/testDynamicCustomFields.log', 'a');
+    fwrite($fp, "Opened\n");
+    fclose($fp);
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
