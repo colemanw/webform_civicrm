@@ -88,6 +88,17 @@ var wfCiviAdmin = (function (D, $, once) {
   };
 
   /**
+   * Load custom fields related to participant fields.
+   */
+  $('.cf-participant-fields').each(function() {
+    $(this).on("change", function(event) {
+      var fs = '#' + $(this).closest('.event-fs').attr('id');
+      pub.participantConditional(fs)
+    });
+    $(this).trigger('change');
+  });
+
+  /**
    * Private methods.
    */
 
