@@ -978,7 +978,7 @@ class AdminForm implements AdminFormInterface {
         $this->form['participant']['participants'][$n]['div'][$fs] = [
           '#type' => 'fieldset',
           '#title' => t('Event :num', [':num' => $e]),
-          '#attributes' => ['id' => $fs],
+          '#attributes' => ['id' => $fs, 'class' => ['event-fs']],
         ];
         foreach ($this->sets as $sid => $set) {
           if ($set['entity_type'] == 'participant') {
@@ -1011,8 +1011,7 @@ class AdminForm implements AdminFormInterface {
                 $item['#suffix'] = '</div>';
               }
               if ($fid == 'participant_event_id' || $fid == 'participant_role_id') {
-                $item['#attributes']['onchange'] = "wfCiviAdmin.participantConditional('#$fs');";
-                $item['#attributes']['class'][] = $fid;
+                $item['#attributes']['class'][] = "cf-participant-fields {$fid}";
                 $$fid = wf_crm_aval($item, '#default_value');
               }
               $this->form['participant']['participants'][$n]['div'][$fs][$sid][$id] = $item;
