@@ -688,7 +688,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   public function fillCKEditor($locator, $value) {
     $el = $this->getSession()->getPage()->findField($locator);
     if (empty($el)) {
-      throw new ExpectationException('Could not find WYSIWYG with locator: ' . $locator, $this->getSession());
+      throw new ExpectationException('Could not find WYSIWYG with locator: ' . $locator, $this->getSession()->getDriver());
     }
     $fieldId = $el->getAttribute('id');
     if (empty($fieldId)) {
