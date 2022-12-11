@@ -213,11 +213,19 @@ function _fillCiviCRMData($data, $webformSubmission) {
         $params = [
           'sequential' => 1,
           'country_id' => $country_id,
-          'id' => $val,
         ];
-        if (!is_numeric($val)) {
+        $is_abbr = $utils->wf_civicrm_api4('StateProvince', 'get', [
+          'select' => ['row_count'],
+          'where' => [['abbreviation', '=', $val]],
+        ])->count() > 0;
+        if (is_numeric($val)) {
+          $params['id'] = $val;
+        }
+        elseif ($is_abbr) {
           $params['abbreviation'] = $val;
-          unset($params['id']);
+        }
+        else {
+          continue;
         }
         $data[$key] = $utils->wf_crm_apivalues('StateProvince', 'get', $params, 'name')[0] ?? $data[$key];
       }
