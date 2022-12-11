@@ -189,10 +189,10 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->switchToIFrame('firstpay-iframe');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
-    // $this->getSession()->getPage()->fillField('Cryptogram', 'cryptogram');
+    $this->createScreenshot($this->htmlOutputDirectory . '/faps_is_it_there.png');
 
     $this->assertSession()->waitForElementVisible('css', 'input[name="text-card-number"]');
-    $this->getSession()->getPage()->fillField('text-card-number', '4222 2222 2222 2220');
+    $this->getSession()->getPage()->fillField('text-card-number', '4222222222222220');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->fillField('text-cvv', '123');
     $this->assertSession()->assertWaitOnAjaxRequest();
@@ -201,8 +201,9 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('select-expiration-year', $expYear);
     $this->assertSession()->assertWaitOnAjaxRequest();
 
-    $this->getSession()->wait(5000);
     $this->createScreenshot($this->htmlOutputDirectory . '/faps_is_it_filled.png');
+
+    $this->getSession()->wait(5000);
 
     $this->getSession()->switchToIFrame();
   }
