@@ -192,7 +192,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     // $this->getSession()->getPage()->fillField('Cryptogram', 'cryptogram');
 
     $this->assertSession()->waitForElementVisible('css', 'input[name="text-card-number"]');
-    $this->getSession()->getPage()->fillField('text-card-number', '1234123412341234');
+    $this->getSession()->getPage()->fillField('text-card-number', '4222 2222 2222 2220');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->fillField('text-cvv', '123');
     $this->assertSession()->assertWaitOnAjaxRequest();
