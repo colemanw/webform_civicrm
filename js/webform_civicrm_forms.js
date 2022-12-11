@@ -289,8 +289,7 @@ var wfCivi = (function (D, $, drupalSettings, once) {
 
   function populateStates(stateSelect, countryId) {
     $(stateSelect).prop('disabled', true);
-    var is_billing = stateSelect.attr('name').indexOf("billing_address") >= 0;
-    if (!is_billing && stateProvinceCache[countryId]) {
+    if (stateProvinceCache[countryId]) {
       fillOptions(stateSelect, stateProvinceCache[countryId]);
     }
     else {
@@ -380,17 +379,6 @@ var wfCivi = (function (D, $, drupalSettings, once) {
     return cids;
   }
 
-  function makeSelect($el) {
-    var value = $el.val(),
-      classes = $el.attr('class').replace('text', 'select'),
-      id = $el.attr('id'),
-      $form = $el.closest('form');
-    $el.replaceWith('<select id="'+$el.attr('id')+'" name="'+$el.attr('name')+'"' + ' class="' + classes + ' civicrm-processed" data-val="' + value + '"></select>');
-    return $('#' + id, $form).change(function() {
-      $(this).attr('data-val', '');
-    });
-  }
-
   D.behaviors.webform_civicrmForm = {
     attach: function (context) {
       if (!stateProvinceCache['default'] && setting) {
@@ -399,8 +387,8 @@ var wfCivi = (function (D, $, drupalSettings, once) {
         stateProvinceCache[''] = {'': setting.noCountry};
       }
 
-      // Replace state/prov & county textboxes with dynamic select lists
-      $('input:text.civicrm-enabled[name*="_address_state_province_id"]', context).each(function() {
+      // Replace state/prov & county with dynamic select lists
+      $('select.civicrm-enabled[name*="_address_state_province_id"]', context).each(function() {
         var $el = $(this);
         var $form = $el.parents('form');
         var key = parseName($el.attr('name'));
@@ -411,9 +399,7 @@ var wfCivi = (function (D, $, drupalSettings, once) {
 
         var readOnly = $el.attr('readonly');
 
-        $el = makeSelect($el);
         if ($county.length && !$county.attr('readonly')) {
-          $county = makeSelect($county);
           $el.change(populateCounty);
         }
 

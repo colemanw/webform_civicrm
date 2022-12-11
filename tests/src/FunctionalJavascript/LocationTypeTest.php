@@ -65,14 +65,19 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
     //Submit the form.
     $this->drupalGet($this->webform->toUrl('canonical'));
 
+    $countryID = $this->utils->wf_civicrm_api('Country', 'getvalue', [
+      'return' => "id",
+      'name' => "United States",
+    ]);
+    $stateID = $this->utils->wf_crm_state_abbr('NJ', 'id');
     $edit = [
       'First Name' => 'Frederick',
       'Last Name' => 'Pabst',
       'Street Address' => '9th Street',
       'City' => 'Newark',
       'Postal Code' => '12345',
-      'Country' => 1228,
-      'State/Province' => $this->utils->wf_crm_state_abbr('NJ', 'id'), // New Jersey
+      'Country' => $countryID,
+      'State/Province' => $stateID, // New Jersey
     ];
     $this->postSubmission($this->webform, $edit);
 
@@ -87,6 +92,8 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
 
     $this->assertEquals('Newark', $address['values'][1]['city']);
     $this->assertEquals(0, $address['values'][1]['is_primary']);
+    $this->assertEquals($stateID, $address['values'][1]['state_province_id']);
+    $this->assertEquals($countryID, $address['values'][1]['country_id']);
   }
 
   /**
@@ -179,6 +186,19 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
     // Update the last name
     $this->getSession()->getPage()->fillField('Last Name', 'Morissette');
     $this->getSession()->getPage()->pressButton('Next >');
+    $this->assertPageNoErrorMessages();
+    $canada_id = $this->utils->wf_civicrm_api('Country', 'getvalue', [
+      'return' => "id",
+      'name' => "Canada",
+    ]);
+    $state_id = $this->utils->wf_crm_state_abbr('AB', 'id', $canada_id);
+    // Check if address fields are pre populated with existing values.
+    $this->assertSession()->fieldValueEquals('Street Address', '123 Defence Colony');
+    $this->assertSession()->fieldValueEquals('City', 'Edmonton');
+    $this->assertSession()->fieldValueEquals('Country', $canada_id);
+    $this->getSession()->wait(1000);
+    $this->assertSession()->fieldValueEquals('State/Province', $state_id);
+    $this->assertSession()->fieldValueEquals('Postal Code', 11111);
 
     // Change the street & city value in the address fields.
     $address = [
@@ -206,8 +226,8 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
       'last_name' => 'Morissette',
       'street_address' => "123 Defence Colony Updated",
       'city' => "Calgary",
-      'country_id' => 1039,
-      'state_province_id' => $this->utils->wf_crm_state_abbr('AB', 'id', 1039),
+      'country_id' => $canada_id,
+      'state_province_id' => $state_id,
       'postal_code' => 11111,
     ];
     foreach ($expected_values as $key => $value) {

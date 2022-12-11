@@ -648,6 +648,9 @@ class Utils implements UtilsInterface {
     if (!$entity) {
       return [];
     }
+    $params += [
+      'checkPermissions' => FALSE,
+    ];
     $result = civicrm_api4($entity, $operation, $params, $index);
     return $result;
   }

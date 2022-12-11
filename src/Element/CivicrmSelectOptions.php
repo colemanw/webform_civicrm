@@ -104,6 +104,10 @@ class CivicrmSelectOptions extends FormElement {
       $element['options']['#tabledrag'] = [];
       $element['options']['#tableselect'] = FALSE;
     }
+    if (strpos($element['#form_key'], 'address_state_province_id') !== false || strpos($key, 'address_county_id') !== false) {
+      $parent_label = (strpos($element['#form_key'], 'address_state_province_id') !== false) ? 'Country' : 'State/Province';
+      $element['options']['#empty'] = t('Options are loaded dynamically on the webform based on the value selected in @key field.', ['@key' => $parent_label]);
+    }
 
     $current_options = $element['#default_value'];
     $weight = 0;
