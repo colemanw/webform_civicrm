@@ -20,16 +20,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - drupal: '9.3.*'
-            civicrm: '5.45.*'
           - drupal: '9.4.*'
             civicrm: '5.51.*'
-          - drupal: '9.4.*'
-            civicrm: '5.55.*'
-          - drupal: '9.4.*'
-            civicrm: '5.56.x-dev'
-          - drupal: '9.4.*'
-            civicrm: 'dev-master'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
     services:
       mysql:

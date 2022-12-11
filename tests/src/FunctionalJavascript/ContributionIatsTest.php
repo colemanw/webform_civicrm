@@ -150,7 +150,6 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->createScreenshot($this->htmlOutputDirectory . 'faps169.png');
     $this->assertPageNoErrorMessages();
     $this->htmlOutput();
 
@@ -185,6 +184,8 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
 
     $this->getSession()->wait(5000);
 
+    $this->createScreenshot($this->htmlOutputDirectory . '/faps_is_it_there.png');
+
     $this->getSession()->switchToIFrame('firstpay-iframe');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
@@ -201,6 +202,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->getSession()->wait(5000);
+    $this->createScreenshot($this->htmlOutputDirectory . '/faps_is_it_filled.png');
 
     $this->getSession()->switchToIFrame();
   }
