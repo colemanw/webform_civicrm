@@ -184,8 +184,6 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
 
     $this->getSession()->wait(5000);
 
-    $this->createScreenshot($this->htmlOutputDirectory . '/faps_is_it_there.png');
-
     $this->getSession()->switchToIFrame('firstpay-iframe');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
@@ -193,7 +191,9 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
 
     $this->assertSession()->waitForElementVisible('css', 'input[name="text-card-number"]');
     $this->getSession()->getPage()->fillField('text-card-number', '4222222222222220');
+    $this->createScreenshot($this->htmlOutputDirectory . '/faps_filled01.png');
     $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->createScreenshot($this->htmlOutputDirectory . '/faps_filled02.png');
     $this->getSession()->getPage()->fillField('text-cvv', '123');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->fillField('select-expiration-month', '11');
@@ -202,8 +202,6 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->createScreenshot($this->htmlOutputDirectory . '/faps_is_it_filled.png');
-
-    $this->getSession()->wait(5000);
 
     $this->getSession()->switchToIFrame();
   }
