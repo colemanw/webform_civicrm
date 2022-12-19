@@ -51,7 +51,7 @@ jobs:
           git clone --depth 1 https://github.com/civicrm/civicrm-core.git
           git clone --depth 1 https://github.com/civicrm/composer-compile-lib.git
           cd civicrm-core
-          curl -L -O https://gist.githubusercontent.com/demeritcowboy/302a9b868f3a1a5d04925068ae487053/raw/dc9f81563c8bf75f70f0c6144be00ca1002e4934/drupal10civicrmcore.diff
+          curl -L -O https://gist.githubusercontent.com/demeritcowboy/302a9b868f3a1a5d04925068ae487053/raw/ed23eabd5118fe89b9d2c99181d757f9f95fb8f9/drupal10civicrmcore.diff
           git apply drupal10civicrmcore.diff
           cd ../composer-compile-lib
           php -r 'file_put_contents("composer.json", str_replace('"'"'"symfony/filesystem": "~2.8'"'"', '"'"'"symfony/filesystem": "~2.8 || ~6.0'"'"', file_get_contents("composer.json")));'
