@@ -97,8 +97,6 @@ jobs:
           git clone -b 6.2.x https://git.drupalcode.org/project/webform.git
           cd webform
           sed -i -e 's/\^9.4/\^9.4 || \^10/' webform.info.yml
-          curl -L -O https://www.drupal.org/files/issues/2022-12-09/3322552-49.patch
-          git apply 3322552-49.patch
           cd modules/webform_ui
           sed -i -e 's/\^9.4/\^9.4 || \^10/' webform_ui.info.yml
       - name: Install webform_civicrm
