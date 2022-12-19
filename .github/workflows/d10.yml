@@ -49,12 +49,9 @@ jobs:
           mkdir -p drupal10staging
           cd drupal10staging
           git clone --depth 1 https://github.com/civicrm/civicrm-core.git
-          git clone --depth 1 https://github.com/civicrm/composer-compile-lib.git
           cd civicrm-core
           curl -L -O https://gist.githubusercontent.com/demeritcowboy/302a9b868f3a1a5d04925068ae487053/raw/ed23eabd5118fe89b9d2c99181d757f9f95fb8f9/drupal10civicrmcore.diff
           git apply drupal10civicrmcore.diff
-          cd ../composer-compile-lib
-          php -r 'file_put_contents("composer.json", str_replace('"'"'"symfony/filesystem": "~2.8'"'"', '"'"'"symfony/filesystem": "~2.8 || ~6.0'"'"', file_get_contents("composer.json")));'
       - name: Setup problem matchers for PHPUnit
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
       - name: Setup sendmail
@@ -84,7 +81,6 @@ jobs:
           ROOTDIR=~/workspace
           cd ~/drupal
           composer config --json --merge repositories.2 '{"type":"path","url":"'"$ROOTDIR"'/drupal10staging/civicrm-core", "options": {"versions": {"civicrm/civicrm-core": "'"${{ matrix.civicrm }}"'"}}}'
-          composer config --json --merge repositories.3 '{"type":"path","url":"'"$ROOTDIR"'/drupal10staging/composer-compile-lib", "options": {"versions": {"civicrm/composer-compile-lib": "v0.6"}}}'
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
