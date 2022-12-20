@@ -1196,7 +1196,18 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
                   if (empty($item['participant_id'])) {
                     $item['participant_id'] = $item['entity_id'] = $result['id'];
                   }
-                  $item['participant_count'] = wf_crm_aval($item, 'participant_count', 0) + 1;
+                  // Initialize the $participantCount as one.
+                  $participantCount = 1;
+                  // If there is a value set by the Participant Count field on the Webform, use that instead.
+                  if (isset($this->crmValues["civicrm_{$n}_participant_{$e}_participant_count"]) && $this->crmValues["civicrm_{$n}_participant_{$e}_participant_count"] !== '') {
+                    $participantCount = (int) $this->crmValues["civicrm_{$n}_participant_{$e}_participant_count"];
+                    // Get (or create if needed) a Price Set that has a value field that correctly counts the number of participants registered on submission.
+                    $participantPriceValueID = $this->utils->wf_crm_get_participant_price_set();
+                    // Set the price field value id to the result of the function that gets/creates the needed Price Set.
+                    $item['price_field_value_id'] = $participantPriceValueID;
+                  };
+                  // The participant count and qty should always be the same value.
+                  $item['participant_count'] = $item['qty'] = wf_crm_aval($item, 'participant_count', 0) + $participantCount;
                   break;
                 }
               }

@@ -201,6 +201,67 @@ class Utils implements UtilsInterface {
   }
 
   /**
+   *  Create a hidden Price Set that contains a Price Field Value with a `count` of one so that `qty` accurately reflects
+   * number of seats registered on submission
+   */
+  function wf_crm_get_participant_price_set() {
+    // Get the price_set_value id
+    $qtyPriceFieldValueId = civicrm_api4('PriceFieldValue', 'get', [
+      'checkPermissions' => FALSE,
+      'select' => ['id'],
+      'where' => [['name', '=', 'quantity_count_field_value']],
+    ])[0]['id'] ?? NULL;
+    // If the Price Set Value exsists, return it.
+    if ($qtyPriceFieldValueId) {
+      return $qtyPriceFieldValueId;
+    }
+    else {
+      // If it does not exist, create the price set, price field, and price field value (with a `count` of 1).
+      $qtyPriceSetId = civicrm_api4('PriceSet', 'create', [
+        'checkPermissions' => FALSE,
+        'values' => [
+          'name' => 'quantity_count',
+          'title' => 'Webform participant quantity count',
+          'extends:label' => 'CiviEvent',
+          'is_active' => TRUE,
+          'is_reserved' => TRUE,
+          'is_required' => FALSE,
+          'is_quick_config' => TRUE,
+        ],
+      ])[0]['id'];
+      $qtyPriceFieldId = civicrm_api4('PriceField', 'create', [
+        'checkPermissions' => FALSE,
+        'values' => [
+          'price_set_id' => $qtyPriceSetId,
+          'name' => 'quantity_count_field',
+          'label' => 'Webform participant quantity count field',
+          'html_type' => 'Select',
+          'is_active' => TRUE,
+        ],
+      ])[0]['id'];
+      $activeFinancialtype = civicrm_api4('FinancialType', 'get', [
+        'checkPermissions' => FALSE,
+        'select' => ['id'],
+        'where' => [['is_active', '=', TRUE]],
+        'limit' => 1,
+      ])[0]['id'];
+      $qtyPriceFieldValueId = civicrm_api4('PriceFieldValue', 'create', [
+        'checkPermissions' => FALSE,
+        'values' => [
+          'price_field_id' => $qtyPriceFieldId,
+          'name' => 'quantity_count_field_value',
+          'label' => 'Webform participant quantity count field value',
+          'count' => 1,
+          'amount' => 1,
+          'is_active' => TRUE,
+          'financial_type_id' => $activeFinancialtype,
+        ],
+      ])[0]['id'];
+      return $qtyPriceFieldValueId;
+    }
+  }
+
+  /**
    * @param array $event
    * @param string $format
    * @return string
