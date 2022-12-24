@@ -99,7 +99,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     drupal_flush_all_caches();
   }
 
-  public function testSubmit1stPayContribution() {
+  /*public function testSubmit1stPayContribution() {
     $this->drupalLogin($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
@@ -173,7 +173,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $contribution_total_amount = $contribution['total_amount'];
     $this->assertEquals('Completed', $contribution['contribution_status']);
     $this->assertEquals('USD', $contribution['currency']);
-  }
+  }*/
 
   /**
    * Fill values for the iATS Cryptogram.
@@ -187,8 +187,6 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
 
     $this->getSession()->switchToIFrame('firstpay-iframe');
     $this->assertSession()->assertWaitOnAjaxRequest();
-
-    // $this->getSession()->getPage()->fillField('Cryptogram', 'cryptogram');
 
     $this->assertSession()->waitForElementVisible('css', 'input[name="text-card-number"]');
     $this->getSession()->getPage()->fillField('text-card-number', '4222222222222220');
