@@ -374,4 +374,231 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertEquals('1', $api_result['values'][0]['financial_type_id']);
   }
 
+  public function testAssignContributionSecondContact() {
+    $this->drupalLogin($this->adminUser);
+
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+
+    $this->enableCivicrmOnWebform();
+
+    $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 2);
+
+    $this->configureContributionTab();
+    $this->getSession()->getPage()->checkField("Contribution Amount");
+    $this->assertSession()->checkboxChecked("Contribution Amount");
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
+    //  Assign the contribution to contact "2"
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_contact_id', 2);
+    $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
+
+    $this->getSession()->getPage()->selectFieldOption('Enable Billing Address?', 'No');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    // Specific alert, not required to achieve.
+    $this->assertSession()->pageTextContains('You must enable an email field for Contact 2 in order to process transactions.');
+    $this->getSession()->getPage()->pressButton('Enable It');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $this->htmlOutput();
+    $this->saveCiviCRMSettings();
+
+    $this->htmlOutput();
+
+    $this->drupalLogout();
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+
+    $this->getSession()->getPage()->fillField('civicrm_1_contact_1_contact_first_name', 'Frederick');
+    $this->getSession()->getPage()->fillField('civicrm_1_contact_1_contact_last_name', 'Pabst');
+    $this->getSession()->getPage()->fillField('civicrm_1_contact_1_email_email', 'fred@example.com');
+
+    // Second contact to assign  the contribution
+    $this->getSession()->getPage()->fillField('civicrm_2_contact_1_contact_first_name', 'Max');
+    $this->getSession()->getPage()->fillField('civicrm_2_contact_1_contact_last_name', 'Plank');
+    $this->getSession()->getPage()->fillField('civicrm_2_contact_1_email_email', 'max@example.com');
+
+    $this->htmlOutput();
+    $this->getSession()->getPage()->pressButton('Next >');
+    $this->htmlOutput();
+
+    $this->getSession()->getPage()->fillField('Contribution Amount', '11.00');
+    $this->htmlOutput();
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->htmlOutput();
+
+    $api_result_contribution = $this->utils->wf_civicrm_api('contribution', 'get', [
+      'sequential' => 1,
+    ]);
+
+    $api_result_contact =  $this->utils->wf_civicrm_api('contact', 'getSingle', [
+      'sequential' => 1,
+      'first_name' => "Max",
+      'last_name' => 'Plank',
+    ]);
+
+    $this->assertEquals(1, $api_result_contribution['count']);
+    $contribution = reset($api_result_contribution['values']);
+
+    $this->assertEquals($contribution['contact_id'], $api_result_contact['id']);
+    $this->assertEquals('11.00', $contribution['total_amount']);
+
+  }
+
+  public function testAssignContributionSecondContactSelectByUser() {
+    $this->drupalLogin($this->adminUser);
+
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+
+    $this->enableCivicrmOnWebform();
+
+    $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 2);
+
+    $this->configureContributionTab();
+    $this->getSession()->getPage()->checkField("Contribution Amount");
+    $this->assertSession()->checkboxChecked("Contribution Amount");
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
+    //  Assign the contribution to contact "- User Select -"
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_contact_id', 'create_civicrm_webform_element');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
+
+    $this->enableBillingSection();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $this->htmlOutput();
+    $this->saveCiviCRMSettings();
+
+    $this->htmlOutput();
+
+    $this->drupalLogout();
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+
+    $this->getSession()->getPage()->fillField('civicrm_1_contact_1_contact_first_name', 'Frederick');
+    $this->getSession()->getPage()->fillField('civicrm_1_contact_1_contact_last_name', 'Pabst');
+    $this->getSession()->getPage()->fillField('civicrm_1_contact_1_email_email', 'fred@example.com');
+
+    // Second contact to assign  the contribution
+    $this->getSession()->getPage()->fillField('civicrm_2_contact_1_contact_first_name', 'Max');
+    $this->getSession()->getPage()->fillField('civicrm_2_contact_1_contact_last_name', 'Plank');
+
+    $this->getSession()->getPage()->pressButton('Next >');
+    $this->htmlOutput();
+
+    $this->getSession()->getPage()->fillField('Contribution Amount', '11.00');
+    $this->getSession()->getPage()->selectFieldOption('edit-civicrm-1-contribution-1-contribution-contact-id', 2);
+
+    $billingValues = [
+      'first_name' => 'Max',
+      'last_name' => 'Plank',
+      'street_address' => '123 Milwaukee Ave',
+      'city' => 'Milwaukee',
+      'country' => '1228',
+      'state_province' => '1048',
+      'postal_code' => '53177',
+    ];
+    $this->fillBillingFields($billingValues);
+
+    $this->htmlOutput();
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->htmlOutput();
+
+    $api_result_contribution = $this->utils->wf_civicrm_api('contribution', 'get', [
+      'sequential' => 1,
+    ]);
+
+    $api_result_contact =  $this->utils->wf_civicrm_api('contact', 'getSingle', [
+      'sequential' => 1,
+      'first_name' => "Max",
+      'last_name' => 'Plank',
+    ]);
+
+    $this->assertEquals(1, $api_result_contribution['count']);
+    $contribution = reset($api_result_contribution['values']);
+
+    $this->assertEquals($contribution['contact_id'], $api_result_contact['id']);
+    $this->assertEquals('11.00', $contribution['total_amount']);
+
+  }
+
+  public function testAssignContributionSecondContactSelectByUserPaymentProcessor() {
+    $payment_processor = $this->createPaymentProcessor();
+    $this->drupalLogin($this->adminUser);
+
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+
+    $this->enableCivicrmOnWebform();
+
+    $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 2);
+
+    $params = [
+      'payment_processor_id' => $payment_processor['id'],
+    ];
+
+    $this->configureContributionTab($params);
+    $this->getSession()->getPage()->checkField("Contribution Amount");
+    $this->assertSession()->checkboxChecked("Contribution Amount");
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
+    //  Assign the contribution to contact "- User Select -"
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_contact_id', 'create_civicrm_webform_element');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
+
+    $this->enableBillingSection();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $this->htmlOutput();
+    $this->saveCiviCRMSettings();
+
+    $this->htmlOutput();
+
+    $this->drupalLogout();
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+
+    $this->getSession()->getPage()->fillField('civicrm_1_contact_1_contact_first_name', 'Frederick');
+    $this->getSession()->getPage()->fillField('civicrm_1_contact_1_contact_last_name', 'Pabst');
+    $this->getSession()->getPage()->fillField('civicrm_1_contact_1_email_email', 'fred@example.com');
+
+    // Second contact to assign  the contribution
+    $this->getSession()->getPage()->fillField('civicrm_2_contact_1_contact_first_name', 'Max');
+    $this->getSession()->getPage()->fillField('civicrm_2_contact_1_contact_last_name', 'Plank');
+
+    $this->getSession()->getPage()->pressButton('Next >');
+    $this->getSession()->getPage()->selectFieldOption('edit-civicrm-1-contribution-1-contribution-contact-id', 2);
+
+    $this->getSession()->getPage()->fillField('Contribution Amount', '10.00');
+    $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
+
+    $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '10.00');
+
+    $this->htmlOutput();
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->fillCardAndSubmit();
+
+    $api_result_contribution = $this->utils->wf_civicrm_api('contribution', 'get', [
+      'sequential' => 1,
+    ]);
+
+    $api_result_contact =  $this->utils->wf_civicrm_api('contact', 'getSingle', [
+      'sequential' => 1,
+      'first_name' => "Max",
+      'last_name' => 'Plank',
+    ]);
+
+    $this->assertEquals(1, $api_result_contribution['count']);
+    $contribution = reset($api_result_contribution['values']);
+
+    $this->assertEquals($contribution['contact_id'], $api_result_contact['id']);
+    $this->assertEquals('10.00', $contribution['total_amount']);
+
+  }
 }
