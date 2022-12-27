@@ -84,6 +84,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
 
     $this->settings = $handler->getConfiguration()['settings'];
     $this->data = $this->settings['data'];
+
+    // Decouple of the configuration of the selected contact in admin page with the contact assigned to the contribution
+    unset($this->data['contribution'][1]['contribution'][1]['contact_id']);
+
     $this->enabled = $this->utils->wf_crm_enabled_fields($this->node);
     $this->all_fields = $this->utils->wf_crm_get_fields();
     $this->all_sets = $this->utils->wf_crm_get_fields('sets');
@@ -1872,16 +1876,17 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    */
   private function createBillingContact() {
     $cid = wf_crm_aval($this->existing_contacts, 1);
+    $contact_ref_contribution = $this->settings['data']['contribution'][1]['contribution'][1]['contact_id'] ?? $this->rawValues["civicrm_1_contribution_1_contribution_contact_id"];
     if (!$cid) {
-      $contact = $this->data['contact'][1];
+
+      $contact = $this->data['contact'][$contact_ref_contribution];
       // Only use middle name from billing if we are using the rest of the billing name as well
-      if (empty($contact['contact'][1]['first_name']) && !empty($this->billing_params['middle_name'])) {
-        $contact['contact'][1]['middle_name'] = $this->billing_params['middle_name'];
+      if (empty($contact['contact'][$contact_ref_contribution]['first_name']) && !empty($this->billing_params['middle_name'])) {
+        $contact['contact'][$contact_ref_contribution]['middle_name'] = $this->billing_params['middle_name'];
       }
-      $contact['contact'][1] += [
-        'first_name' => $this->billing_params['first_name'] ?? NULL,
-        'last_name' => $this->billing_params['last_name'] ?? NULL,
-      ];
+      $contact['contact'][1]['first_name'] = $this->billing_params['first_name'] ?? NULL;
+      $contact['contact'][1]['last_name'] = $this->billing_params['last_name'] ?? NULL;
+
       $cid = $this->findDuplicateContact($contact);
     }
     $address = [
@@ -1898,7 +1903,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     ];
     if (!$cid) {
       // Current employer must wait for ContactRef ids to be filled
-      unset($contact['contact'][1]['employer_id']);
+      unset($contact['contact'][$contact_ref_contribution]['employer_id']);
       $cid = $this->createContact($contact);
       $this->billing_contact = $cid;
     }
@@ -1916,7 +1921,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       }
     }
     if ($cid) {
-      $address['contact_id'] = $email['contact_id'] = $this->ent['contact'][1]['id'] = $cid;
+      $address['contact_id'] = $email['contact_id'] = $this->ent['contact'][$contact_ref_contribution]['id'] = $cid;
       // Don't create a blank billing address.
       if ($address['street_address'] || $address['city'] || $address['country_id'] || $address['state_province_id'] || $address['postal_code']) {
         $this->utils->wf_civicrm_api('address', 'create', $address);
@@ -2182,7 +2187,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $params['financial_type_id'] = wf_crm_aval($this->data, 'contribution:1:contribution:1:financial_type_id');
     $params['currency'] = $params['currencyID'] = wf_crm_aval($this->data, "contribution:1:currency");
     $params['skipRecentView'] = $params['skipLineItem'] = 1;
-    $params['contact_id'] = $this->ent['contact'][1]['id'];
+    ## Deb
+    // For the "civicrm_1_contribution_1_contribution_contact_id", if webform civicrm admin is configured($this->settings), get this value, if not the user selected value will be used ($this->submission).
+    $contact_ref_contribution = $this->settings['data']['contribution'][1]['contribution'][1]['contact_id'] ?? $this->rawValues["civicrm_1_contribution_1_contribution_contact_id"];
+    $this->data['contribution'][1]['contribution'][1]['contact_id'] = $params['contact_id'] = $this->ent['contact'][$contact_ref_contribution]['id'];
     $params['total_amount'] = round($this->totalContribution, 2);
 
     // Most payment processors expect this (normally be set by contribution page processConfirm)

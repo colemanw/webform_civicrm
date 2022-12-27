@@ -672,6 +672,16 @@ class Fields implements FieldsInterface {
           'parent' => 'contribution_pagebreak',
         ];
         // @todo moved in order since we can't pass `weight`.
+        $fields['contribution_contact_id'] = [
+          'name' => t('Contact'),
+          'type' => 'select',
+          'expose_list' => TRUE,
+          'data_type' => 'ContactReference',
+          'extra' => [
+            'aslist' => 1,
+            'required' => TRUE
+          ],
+        ];
         $fields['contribution_total_amount'] = [
             'name' => 'Contribution Amount',
             'parent' => 'contribution_pagebreak',
