@@ -175,6 +175,14 @@ class AdminHelp implements AdminHelpInterface {
     $this->fee();
   }
 
+  protected function participant_count() {
+    return '<p>' .
+      t('Number of participants (for purposes of max participants) this registration counts for upon submission of the form.') .
+      '</p><p>' .
+      t('Note that if a value is not given, the default Participant Count will be 1.') .
+      '</p>';
+  }
+
   protected function fee() {
     return '<p>' .
       t('Once added to the webform, this field can be configured in a number of ways by changing its settings.') .

@@ -320,4 +320,102 @@ final class EventTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('Test Event 3');
   }
 
+  /**
+   * Verify the participant count is calculated correctly (with multiple participants) - register all for same event.
+   */
+  function testParticipantCountSameReg() {
+    $this->drupalLogin($this->adminUser);
+    // Set the max participants on the event.
+    $maxParticipants = 10;
+    $this->utils->wf_civicrm_api('Event', 'create', ['id' => $this->_event['id'], 'max_participants' => $maxParticipants]);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+
+    $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 2);
+
+    $this->getSession()->getPage()->clickLink('Event Registration');
+
+    // Configure Event tab.
+    $this->getSession()->getPage()->selectFieldOption('participant_reg_type', 'same');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption('participant_1_number_of_participant', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_participant_1_participant_event_id[]', 'Test Event');
+    $this->getSession()->getPage()->checkField('Participant Count');
+
+    $this->saveCiviCRMSettings();
+
+    // Submit the form.
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+    $edit = [
+      'civicrm_1_contact_1_contact_first_name' => 'Frederick',
+      'civicrm_1_contact_1_contact_last_name' => 'Pabst',
+      'civicrm_2_contact_1_contact_first_name' => 'Mark',
+      'civicrm_2_contact_1_contact_last_name' => 'Anthony',
+      'civicrm_1_participant_1_participant_count' => '3',
+    ];
+    $this->postSubmission($this->webform, $edit);
+    // Check the number of places available.
+    $result = civicrm_api3('Event', 'getsingle', [
+      'return' => ["is_full"],
+      'id' => $this->_event['id'],
+    ]);
+    // 10 places, 2 participants, count is 3: 10 - (2 * 3) = 4.
+    $this->assertEquals(4, $result['available_places']);
+  }
+
+  /**
+   * Verify the participant count is calculated correctly (with multiple participants) - register for separate events.
+   */
+  function testParticipantCountSeparateReg() {
+    $this->drupalLogin($this->adminUser);
+    // Set the max participants on the event.
+    $maxParticipants = 10;
+    $this->utils->wf_civicrm_api('Event', 'create', ['id' => $this->_event['id'], 'max_participants' => $maxParticipants]);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+
+    $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 2);
+    $this->getSession()->getPage()->clickLink('Event Registration');
+
+    // Configure Event tab.
+    $this->getSession()->getPage()->selectFieldOption('participant_reg_type', 'separate');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption('participant_1_number_of_participant', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption('participant_2_number_of_participant', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_participant_1_participant_event_id[]', 'Test Event');
+    $this->getSession()->getPage()->selectFieldOption('civicrm_2_participant_1_participant_event_id[]', 'Test Event');
+    $this->getSession()->getPage()->checkField('civicrm_1_participant_1_participant_count');
+    $this->getSession()->getPage()->checkField('civicrm_2_participant_1_participant_count');
+
+    $this->saveCiviCRMSettings();
+
+    // Submit the form.
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+    $edit = [
+      'civicrm_1_contact_1_contact_first_name' => 'Frederick',
+      'civicrm_1_contact_1_contact_last_name' => 'Pabst',
+      'civicrm_2_contact_1_contact_first_name' => 'Mark',
+      'civicrm_2_contact_1_contact_last_name' => 'Anthony',
+      'civicrm_1_participant_1_participant_count' => '5',
+      'civicrm_2_participant_1_participant_count' => '2',
+    ];
+    $this->postSubmission($this->webform, $edit);
+    // Check the number of places available.
+    $result = civicrm_api3('Event', 'getsingle', [
+      'return' => ["is_full"],
+      'id' => $this->_event['id'],
+    ]);
+    // 10 - 5 - 2 = 3.
+    $this->assertEquals(3, $result['available_places']);
+  }
+
 }
