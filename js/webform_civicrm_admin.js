@@ -543,7 +543,7 @@ var wfCiviAdmin = (function (D, $, once) {
 
       function billingMessages() {
         var contactId = $('[name=civicrm_1_contribution_1_contribution_contact_id]').val();
-        if (typeof contactId == 'undefined') {
+        if (typeof contactId == 'undefined' || (typeof contactId != 'undefined' && contactId == 'create_civicrm_webform_element')) {
           contactId = 1;
         }
         var $pageSelect = $('[name=civicrm_1_contribution_1_contribution_enable_contribution]');
