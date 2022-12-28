@@ -478,15 +478,20 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           if (is_numeric($eid)) {
             $this->events[$eid]['ended'] = TRUE;
             $this->events[$eid]['title'] = t('this event');
-            $this->events[$eid]['count'] = wf_crm_aval($this->events, "$eid:count", 0) + $count;
+            $this->events[$eid]['count'] = wf_crm_aval($this->events, "$eid:count", 0) + ($count * ($p['count'] ?? 1));
+            // Get (or create if needed) a Price Set that has a value field that correctly counts the number of participants registered on submission.
+            $participantPriceValueID = $this->utils->wf_crm_get_participant_price_set();
             $this->line_items[] = [
-              'qty' => $count,
+              'qty' => $count * ($p['count'] ?? 1),
+              'participant_count' => $count * ($p['count'] ?? 1),
               'entity_table' => 'civicrm_participant',
               'event_id' => $eid,
               'contact_ids' => $contacts,
-              'unit_price' => $p['fee_amount'] ?? 0,
+              'unit_price' => ($p['fee_amount'] ?? 0) / ($p['count'] ?? 1),
               'element' => "civicrm_{$c}_participant_{$n}_participant_{$id_and_type}",
               'contact_label' => $participantName,
+              'price_field_value_id' => $participantPriceValueID,
+              'line_total' => $p['fee_amount'] ?? 0,
             ];
           }
         }
@@ -1201,7 +1206,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
                   if (empty($item['participant_id'])) {
                     $item['participant_id'] = $item['entity_id'] = $result['id'];
                   }
-                  $item['participant_count'] = wf_crm_aval($item, 'participant_count', 0) + 1;
                   break;
                 }
               }
@@ -1215,6 +1219,13 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         foreach ($remove as $eid => $title) {
           $this->utils->wf_civicrm_api('participant', 'create', ['status_id' => "Cancelled", 'id' => $existing[$eid]]);
           \Drupal::messenger()->addStatus(t('Registration cancelled for @event', ['@event' => $title]));
+        }
+        // Free events need line items for correct participant count.
+        $contribution_enabled = wf_crm_aval($this->data, 'contribution:1:contribution:1:enable_contribution');
+        if (!$contribution_enabled && isset($this->line_items)) {
+          foreach ($this->line_items as $item) {
+            $this->utils->wf_civicrm_api('lineItem', 'create', $item);
+          }
         }
       }
     }

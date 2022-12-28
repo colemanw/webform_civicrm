@@ -141,6 +141,70 @@ final class EventTest extends WebformCivicrmTestBase {
   }
 
   /**
+   * Verify the participant count is calculated correctly (with multiple participants)
+   */
+  function testParticipantCount() {
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+
+    $event = $this->utils->wf_civicrm_api('Event', 'create', [
+      'event_type_id' => "Conference",
+      'title' => "Participant Count Test Event",
+      'start_date' => date('Y-m-d'),
+      'financial_type_id' => $this->ft['id'],
+      'max_participants' => 1000,
+    ]);
+    $this->assertEquals(0, $event['is_error']);
+    $this->assertEquals(1, $event['count']);
+
+    $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 3);
+    $this->htmlOutput();
+
+    $this->getSession()->getPage()->clickLink('Event Registration');
+
+    // Configure Event tab.
+    $this->getSession()->getPage()->selectFieldOption('participant_reg_type', 'all');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->selectFieldOption('participant_1_number_of_participant', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_participant_1_participant_event_id[]', 'Participant Count Test Event');
+    $this->getSession()->getPage()->checkField('Participant Fee');
+    $this->getSession()->getPage()->checkField('Participant Count');
+
+    $this->saveCiviCRMSettings();
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+    $edit = [
+      'civicrm_1_contact_1_contact_first_name' => 'Frederick',
+      'civicrm_1_contact_1_contact_last_name' => 'Pabst',
+      'civicrm_2_contact_1_contact_first_name' => 'Mark',
+      'civicrm_2_contact_1_contact_last_name' => 'Anthony',
+      'civicrm_3_contact_1_contact_first_name' => 'Emma',
+      'civicrm_3_contact_1_contact_last_name' => 'Goldman',
+      'civicrm_1_participant_1_participant_fee_amount' => '120',
+      'civicrm_1_participant_1_participant_count' => '3',
+    ];
+    $this->postSubmission($this->webform, $edit);
+
+    $eventSeatsAvailable = civicrm_api3('Event', 'get', [
+      'sequential' => 1,
+      'return' => ["is_full"],
+      'title' => "Participant Count Test Event",
+    ]);
+
+    $this->assertEquals(994, $eventSeatsAvailable['values'][0]['available_places']);
+
+    // Ensure both contacts are added to the event.
+    $this->verifyResults();
+  }
+
+  /**
    * Event Participant submission.
    */
   function testSubmitEventParticipant() {
