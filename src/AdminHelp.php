@@ -70,8 +70,18 @@ class AdminHelp implements AdminHelpInterface {
       '</p>';
   }
 
+  protected function contribution_contact_id() {
+    return '<p>' .
+      t('The contribution record created after webform submission is assigned to this contact.') .
+      '</p><p>' .
+      t('Enable "-User Select-" option if you want user to select the payment contact while submitting the form.') .
+      '</p><p>' .
+      t('Please enable respective email fields on the contact tab. Webform submission may lead to fatal error if email value is not sent to the selected payment processor.') .
+      '</p>';
+  }
+
   protected function contact_external_identifier() {
-    $this->contact_contact_id();
+    return $this->contact_contact_id();
   }
 
   protected function contact_source() {

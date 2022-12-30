@@ -1849,7 +1849,8 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     // Email
     for ($i = 1; $i <= $this->data['contact'][1]['number_of_email']; ++$i) {
       if (!empty($this->crmValues["civicrm_1_contact_{$i}_email_email"])) {
-        $params['email'] = $this->crmValues["civicrm_1_contact_{$i}_email_email"];
+        $c = $this->getContributionContactIndex();
+        $params['email'] = $this->crmValues["civicrm_{$c}_contact_{$i}_email_email"];
         break;
       }
     }
@@ -1867,13 +1868,21 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   }
 
   /**
+   * Return index value of contribution contact.
+   */
+  private function getContributionContactIndex() {
+    return wf_crm_aval($this->settings, "data:contribution:1:contribution:1:contact_id") ?? wf_crm_aval($this->submissionValue("civicrm_1_contribution_1_contribution_contact_id"), 0) ?? 1;
+  }
+
+  /**
    * Create contact 1 if not already existing (required by contribution.transact)
    * @return int
    */
   private function createBillingContact() {
-    $cid = wf_crm_aval($this->existing_contacts, 1);
+    $i = $this->getContributionContactIndex();
+    $cid = wf_crm_aval($this->existing_contacts, $i);
     if (!$cid) {
-      $contact = $this->data['contact'][1];
+      $contact = $this->data['contact'][$i];
       // Only use middle name from billing if we are using the rest of the billing name as well
       if (empty($contact['contact'][1]['first_name']) && !empty($this->billing_params['middle_name'])) {
         $contact['contact'][1]['middle_name'] = $this->billing_params['middle_name'];
@@ -1916,7 +1925,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       }
     }
     if ($cid) {
-      $address['contact_id'] = $email['contact_id'] = $this->ent['contact'][1]['id'] = $cid;
+      $address['contact_id'] = $email['contact_id'] = $this->ent['contact'][$i]['id'] = $cid;
       // Don't create a blank billing address.
       if ($address['street_address'] || $address['city'] || $address['country_id'] || $address['state_province_id'] || $address['postal_code']) {
         $this->utils->wf_civicrm_api('address', 'create', $address);
@@ -2182,7 +2191,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $params['financial_type_id'] = wf_crm_aval($this->data, 'contribution:1:contribution:1:financial_type_id');
     $params['currency'] = $params['currencyID'] = wf_crm_aval($this->data, "contribution:1:currency");
     $params['skipRecentView'] = $params['skipLineItem'] = 1;
-    $params['contact_id'] = $this->ent['contact'][1]['id'];
+
+    $i = $this->getContributionContactIndex();
+    $params['contact_id'] = $this->ent['contact'][$i]['id'];
+
     $params['total_amount'] = round($this->totalContribution, 2);
 
     // Most payment processors expect this (normally be set by contribution page processConfirm)

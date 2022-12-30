@@ -336,3 +336,27 @@ function webform_civicrm_update_8004() {
     $webform->save();
   }
 }
+
+/**
+ * Set Contact 1 as the assigned for Contributions in all webforms
+ * (It keeps default behavior <= 6.2.0)
+ */
+function webform_civicrm_update_8005() {
+  \Drupal::service('civicrm')->initialize();
+  $webforms = Webform::loadMultiple();
+  foreach ($webforms as $webform) {
+    $handler = $webform->getHandlers('webform_civicrm');
+    $config = $handler->getConfiguration();
+    if (empty($config['webform_civicrm'])) {
+      continue;
+    }
+    $settings = &$config['webform_civicrm']['settings'];
+    // If Contribution enabled, set Contact 1 assigned as default behavior <= 6.2.0
+    if ($settings['civicrm_1_contribution_1_contribution_enable_contribution'] == "1") {
+      $settings['civicrm_1_contribution_1_contribution_contact_id'] = 1;
+      $settings['data']['contribution'][1]['contribution'][1]['contact_id'] = 1;
+      $handler->setConfiguration($config);
+      $webform->save();
+    }
+  }
+}
