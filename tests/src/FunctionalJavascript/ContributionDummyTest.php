@@ -538,6 +538,12 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 2);
 
+    // Enable email field for contact 2.
+    $this->getSession()->getPage()->clickLink("Contact 2");
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption('contact_2_number_of_email', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
     $params = [
       'payment_processor_id' => $payment_processor['id'],
     ];
@@ -571,6 +577,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     // Second contact to assign  the contribution
     $this->getSession()->getPage()->fillField('civicrm_2_contact_1_contact_first_name', 'Max');
     $this->getSession()->getPage()->fillField('civicrm_2_contact_1_contact_last_name', 'Plank');
+    $this->getSession()->getPage()->fillField('civicrm_2_contact_1_email_email', 'maxplank@example.com');
 
     $this->getSession()->getPage()->pressButton('Next >');
     $this->getSession()->getPage()->selectFieldOption('edit-civicrm-1-contribution-1-contribution-contact-id', 2);
