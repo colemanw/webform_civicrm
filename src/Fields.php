@@ -880,7 +880,6 @@ class Fields implements FieldsInterface {
           'name' => t('Membership Financial Type'),
           'type' => 'select',
           'expose_list' => TRUE,
-          'value' => 0,
           'exposed_empty_option' => '- ' . t('Automatic') . ' -',
         ];
         $fields['membership_status_id'] = [
