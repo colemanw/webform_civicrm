@@ -261,6 +261,11 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->assertCount(0, $error_messages, implode(', ', array_map(static function(NodeElement $el) {
       return $el->getText();
     }, $error_messages)));
+    // Check for fatal errors. Doing it this way so that the text itself which
+    // contains the stack trace is automatically output to the github action
+    // log.
+    $the_text = $this->getSession()->getPage()->getText();
+    $this->assertStringNotContainsString('The website encountered an unexpected error', $the_text);
   }
 
   /**
