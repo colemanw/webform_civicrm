@@ -33,8 +33,8 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   private $multiPageDataLoaded;
   private $billing_params = [];
   private $totalContribution = 0;
-  private $contributionIsIncomplete = FALSE;
-  private $contributionIsPayLater = FALSE;
+  protected $contributionIsIncomplete = FALSE;
+  protected $contributionIsPayLater = FALSE;
 
   // During validation this contains an array of known contact ids and the placeholder 0 for valid contacts
   // During submission processing this contains an array of known contact ids
@@ -1091,7 +1091,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    * @param $cid2
    *   Contact id
    */
-  private function processRelationship($params, $cid1, $cid2) {
+  public function processRelationship($params, $cid1, $cid2) {
     if (!empty($params['relationship_type_id']) && $cid2 && $cid1 != $cid2) {
       [$type, $side] = explode('_', $params['relationship_type_id']);
       $existing = $this->getRelationship([$params['relationship_type_id']], $cid1, $cid2);
@@ -1127,7 +1127,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    * @param int $c
    * @param int $cid
    */
-  private function processParticipants($c, $cid) {
+  public function processParticipants($c, $cid) {
     static $registered_by_id = [];
     $n = $this->data['participant_reg_type'] == 'separate' ? $c : 1;
     if ($p = wf_crm_aval($this->data, "participant:$n:participant")) {
@@ -1226,7 +1226,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    * @param int $c
    * @param int $cid
    */
-  private function processMemberships($c, $cid) {
+  public function processMemberships($c, $cid) {
     static $types;
     if (!isset($types)) {
       $types = $this->utils->wf_crm_apivalues('membership_type', 'get');
@@ -1326,7 +1326,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   /**
    * Process shared addresses
    */
-  private function processSharedAddresses() {
+  public function processSharedAddresses() {
     foreach ($this->shared_address as $cid => $shared) {
       foreach ($shared as $i => $addr) {
         if (!empty($this->ent['contact'][$addr['mc']]['id'])) {
@@ -1355,7 +1355,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   /**
    * Save case data
    */
-  private function processCases() {
+  public function processCases() {
     foreach (wf_crm_aval($this->data, 'case', []) as $n => $data) {
       if (is_array($data) && !empty($data['case'][1]['client_id'])) {
         $params = $data['case'][1];
@@ -1464,7 +1464,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   /**
    * Save activity data
    */
-  private function processActivities() {
+  public function processActivities() {
     $activities = wf_crm_aval($this->data, 'activity', []);
     foreach ($activities as $n => $data) {
       if (is_array($data)) {
