@@ -361,16 +361,10 @@ class Utils implements UtilsInterface {
     static $types = [];
     if (!$types) {
       foreach ($this->wf_crm_apivalues('relationship_type', 'get', ['is_active' => 1]) as $r) {
-        $r['type_a'] = strtolower(wf_crm_aval($r, 'contact_type_a'));
-        $r['type_b'] = strtolower(wf_crm_aval($r, 'contact_type_b'));
-        $r['sub_type_a'] = wf_crm_aval($r, 'contact_sub_type_a');
-        if (!is_null($r['sub_type_a'])) {
-          $r['sub_type_a'] = $r['sub_type_a'];
-        }
-        $r['sub_type_b'] = wf_crm_aval($r, 'contact_sub_type_b');
-        if (!is_null($r['sub_type_b'])) {
-          $r['sub_type_b'] = $r['sub_type_b'];
-        }
+        $r['type_a'] = strtolower(wf_crm_aval($r, 'contact_type_a', ''));
+        $r['type_b'] = strtolower(wf_crm_aval($r, 'contact_type_b', ''));
+        $r['sub_type_a'] = strtolower(wf_crm_aval($r, 'contact_sub_type_a', ''));
+        $r['sub_type_b'] = strtolower(wf_crm_aval($r, 'contact_sub_type_b', ''));
         $types[$r['id']] = $r;
       }
     }
