@@ -468,6 +468,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       $this->assertSession()->waitForElementVisible('css', '[data-drupal-selector="edit-form"]');
       $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
       $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-field-handling"]')->click();
+      $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-element-description"]')->click();
     }
     if (!empty($params['title'])) {
       $this->getSession()->getPage()->fillField('title', $params['title']);
@@ -686,6 +687,11 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
    * @param string $value
    */
   public function fillCKEditor($locator, $value) {
+    $format = \Drupal::config('webform.settings')->get('html_editor.element_format');
+    if ($format === 'webform_default') {
+      $locator .= '[value]';
+    }
+
     $el = $this->getSession()->getPage()->findField($locator);
     if (empty($el)) {
       throw new ExpectationException('Could not find WYSIWYG with locator: ' . $locator, $this->getSession()->getDriver());
@@ -694,7 +700,15 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     if (empty($fieldId)) {
       throw new Exception('Could not find an id for field with locator: ' . $locator);
     }
-    $this->getSession()->executeScript("CKEDITOR.instances[\"$fieldId\"].setData(\"$value\");");
+
+    // Fill value on the wysiwyg editor.
+    $this->getSession()->executeScript("
+      const element = document.getElementById(\"$fieldId\");
+      const editor = Drupal.CKEditor5Instances.get(
+        element.getAttribute('data-ckeditor5-id'),
+      );
+      editor.setData(\"$value\");
+    ");
   }
 
   /**
