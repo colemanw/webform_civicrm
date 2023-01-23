@@ -487,7 +487,14 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
 
     $this->assertSession()->waitForElementVisible('xpath', '//select[@name="properties[widget]"]');
     if ($params['widget'] == 'Static') {
-      $this->getSession()->getPage()->selectFieldOption('properties[show_hidden_contact]', 1);
+      try {
+        $this->getSession()->getPage()->selectFieldOption('properties[show_hidden_contact]', 1);
+      }
+      catch (\WebDriver\Exception\ElementNotVisible $e) {
+        // for some reason the section didn't open probably - click it again ??
+        $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
+        $this->getSession()->getPage()->selectFieldOption('properties[show_hidden_contact]', 1);
+      }
     }
     else {
       $this->getSession()->getPage()->selectFieldOption('Form Widget', $params['widget']);
