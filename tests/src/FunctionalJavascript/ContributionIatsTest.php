@@ -20,9 +20,20 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     parent::setUp();
 
     // Download installs and enables!
+    /*
     $result = civicrm_api3('Extension', 'download', [
       'key' => "com.iatspayments.civicrm",
     ]);
+     */
+    // @todo Make downloaded extensions more like carrot and have the extensions downloaded once in the yml file before the whole test run to a known location.
+    system('cd ' . escapeshellarg(\CRM_Core_Config::singleton()->extensionsDir) . '; git clone https://github.com/iATSPayments/com.iatspayments.civicrm.git > /dev/null 2> /dev/null');
+    $f = rtrim(\CRM_Core_Config::singleton()->extensionsDir, '/') . '/com.iatspayments.civicrm/CRM/Iats/iATSServiceRequest.php';
+    // @todo PR this against IATS
+    $content = str_replace('$processresult->AUTHORIZATIONRESULT', 'get_mangled_object_vars($processresult->AUTHORIZATIONRESULT)', file_get_contents($f));
+    $content = str_replace('$processresult->TRANSACTIONID', 'get_mangled_object_vars($processresult->TRANSACTIONID)', $content);
+    file_put_contents($f, $content);
+    $result = civicrm_api3('Extension', 'refresh', ['remote' => FALSE]);
+    $result = civicrm_api3('Extension', 'enable', ['keys' => 'com.iatspayments.civicrm']);
 
     // Legacy CC
     $params = [
