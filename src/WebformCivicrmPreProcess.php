@@ -396,6 +396,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
     $n = $this->data['participant_reg_type'] == 'separate' ? $c : 1;
     $p = wf_crm_aval($this->data, "participant:$n:participant");
     if ($p) {
+      $urlParam = '';
       foreach ($p as $e => $value) {
         $event_ids = [];
         // Get the available event list from the component
@@ -412,7 +413,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
           $urlParam = "c{$c}event{$e}";
         }
         foreach (explode(',', wf_crm_aval($_GET, $urlParam)) as $url_param_value) {
-          if (isset($eids[$url_param_value])){
+          if (isset($eids[$url_param_value])) {
             $event_ids[] = $eids[$url_param_value];
           }
         }
