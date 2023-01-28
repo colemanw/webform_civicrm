@@ -362,6 +362,9 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
         'default_relationship_to' => 'Contact 1',
         'default_relationship' => 'Test Relationship Contact 1',
       ],
+      'filter' => [
+        'filter_relationship_types' => 'Test Relationship Contact 1'
+      ],
     ];
     $this->editContactElement($editContact);
 
