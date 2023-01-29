@@ -2152,26 +2152,8 @@ class AdminForm implements AdminFormInterface {
    * @param array $field
    * @param array $enabled
    */
-  private function addConditionalRule($field, $enabled) {
+  private function addConditionalRule(&$field, &$enabled) {
     list(, $c, $ent, $n, $table, $name) = explode('_', $field['form_key'], 6);
-    $rgid = $weight = -1;
-    foreach ($this->node->webform['conditionals'] as $rgid => $existing) {
-      $weight = $existing['weight'];
-    }
-    $rgid++;
-    $rule_group = $field['civicrm_condition'] + [
-      'nid' => $this->node->nid,
-      'rgid' => $rgid,
-      'weight' => $weight,
-      'actions' => [
-        [
-          'target' => $enabled[$field['form_key']],
-          'target_type' => 'component',
-          'action' => $field['civicrm_condition']['action'],
-        ],
-      ],
-    ];
-    $rule_group['rules'] = [];
     foreach ($field['civicrm_condition']['rules'] as $source => $condition) {
       $source_key = "civicrm_{$c}_{$ent}_{$n}_{$source}";
       $source_id = wf_crm_aval($enabled, $source_key);
@@ -2179,21 +2161,17 @@ class AdminForm implements AdminFormInterface {
         $options = $this->utils->wf_crm_field_options(['form_key' => $source_key], '', $this->settings['data']);
         foreach ((array) $condition['values'] as $value) {
           if (isset($options[$value])) {
-            $rule_group['rules'][] = [
-              'source_type' => 'component',
-              'source' => $source_id,
-              'operator' => wf_crm_aval($condition, 'operator', 'equal'),
-              'value' => $value,
+            $field['states'] = [
+              'visible' => [
+                ":input[name='{$source_id}']" => ['value' => $value],
+              ],
             ];
+            unset($field['civicrm_condition']);
           }
         }
       }
     }
-    if ($rule_group['rules']) {
-      $this->node->webform['conditionals'][] = $rule_group;
-      \Drupal::ModuleHandler()->loadInclude('webform', 'inc', 'includes/webform.conditionals');
-      webform_conditional_insert($rule_group);
-    }
+    $enabled[$field['form_key']] = $field;
   }
 
   /**
