@@ -68,7 +68,7 @@ class Fields implements FieldsInterface {
         'activity' => ['entity_type' => 'activity', 'label' => t('Activity'), 'max_instances' => 99,  'attachments' => TRUE],
         'relationship' => ['entity_type' => 'contact', 'label' => t('Relationship'), 'help_text' => TRUE, 'custom_fields' => 'combined'],
       ];
-      
+
       $civicrm_version = \CRM_Utils_System::version();
       // Grant is moved to extension after > 5.47.0.
       if (version_compare($civicrm_version, '5.47') >= 0) {
@@ -1114,7 +1114,7 @@ class Fields implements FieldsInterface {
         if ($sets[$set]['entity_type'] == 'contact' && !empty($sets[$set]['sub_types'])) {
           $fields[$id]['civicrm_condition'] = [
             'andor' => 'or',
-            'action' => 'show',
+            'action' => 'visible',
             'rules' => [
               'contact_contact_sub_type' => [
                 'values' => $sets[$set]['sub_types'],
