@@ -27,6 +27,17 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $result = $this->utils->wf_civicrm_api('ContactType', 'create', $params);
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
+
+    // Create custom group for Student.
+    $this->cgID = $this->createCustomGroup([
+      'title' => "Student Extras",
+      'extends_entity_column_value' => ['Student'],
+    ])['id'];
+    $this->cfID = $this->utils->wf_civicrm_api('CustomField', 'create', [
+      'custom_group_id' => $this->cgID,
+      'label' => 'Advisor Name',
+      'html_type' => "Text",
+    ])['id'];
   }
 
   private function createDedupeRule() {
@@ -96,6 +107,11 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contact_1_contact_contact_sub_type[]', 'Student');
     $this->assertSession()->assertWaitOnAjaxRequest();
+    // Check if student custom group is displayed on the form.
+    $this->assertSession()->pageTextContains('Student Extras');
+    $this->getSession()->getPage()->selectFieldOption('Enable Student Extras Fields', 'Yes');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->checkField('Advisor Name');
 
     // Select our Custom Rule FirstPhone
     $this->getSession()->getPage()->selectFieldOption('contact_1_settings_matching_rule', 'FirstPhone');
@@ -125,6 +141,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'frederick@pabst.io');
     $this->getSession()->getPage()->fillField('Phone', '4031234567');
+    $this->getSession()->getPage()->fillField('Advisor Name', 'Professor Jane Smith');
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertPageNoErrorMessages();
@@ -135,10 +152,12 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
       'sequential' => 1,
       'first_name' => 'Frederick',
       'last_name' => 'Pabst',
+      'return' => ["custom_{$this->cfID}", 'contact_sub_type'],
     ]);
     $this->assertEquals(1, $api_result['count']);
     $contact = reset($api_result['values']);
     $this->assertEquals('Student', implode($contact['contact_sub_type']));
+    $this->assertEquals('Professor Jane Smith', $contact["custom_{$this->cfID}"]);
 
     $api_result = $this->utils->wf_civicrm_api('Email', 'get', [
       'contact_id' => $contact['id'],

@@ -1950,9 +1950,10 @@ class AdminForm implements AdminFormInterface {
               if ($name != 'enable_contribution') {
                 $created[] = $field['name'];
               }
-              if (isset($field['civicrm_condition'])) {
-                $this->addConditionalRule($field, $enabled);
-              }
+              // @todo: Update Conditionals as per Drupal 9 standards.
+              // if (isset($field['civicrm_condition'])) {
+              //   $this->addConditionalRule($field, $enabled);
+              // }
             }
           }
         }
