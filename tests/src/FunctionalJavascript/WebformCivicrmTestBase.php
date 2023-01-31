@@ -458,17 +458,17 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
    *     ],
    *   ];
    */
-  protected function editContactElement($params, $openWidget = TRUE) {
+  protected function editContactElement($params) {
     $this->assertSession()->waitForElementVisible('css', "[data-drupal-selector=\"{$params['selector']}\"] a.webform-ajax-link");
 
     $contactElementEdit = $this->assertSession()->elementExists('css', "[data-drupal-selector=\"{$params['selector']}\"] a.webform-ajax-link");
     $contactElementEdit->click();
     $this->htmlOutput();
-    if ($openWidget) {
-      $this->assertSession()->waitForElementVisible('css', '[data-drupal-selector="edit-form"]');
-      $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
-      $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-field-handling"]')->click();
-      $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-element-description"]')->click();
+
+    $this->assertSession()->waitForElementVisible('css', "button.webform-details-toggle-state");
+    $expandLink = $this->cssSelect('button.webform-details-toggle-state')[0];
+    if ($expandLink->getText() == 'Expand all') {
+      $expandLink->click();
     }
     if (!empty($params['title'])) {
       $this->getSession()->getPage()->fillField('title', $params['title']);
@@ -545,7 +545,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     }
 
     $this->getSession()->getPage()->pressButton('Save');
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->assertSession()->waitForElementVisible('css', '.webform-ajax-messages');
   }
 
   /**
