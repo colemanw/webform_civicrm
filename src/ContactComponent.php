@@ -208,6 +208,8 @@ class ContactComponent implements ContactComponentInterface {
     if (!is_numeric($cid)) {
       return FALSE;
     }
+    // Remove unnecessary param as api v4 does not accept them.
+    unset($filters['relationship']);
     $filters['where'][] = ['id', '=', $cid];
     $filters['where'][] = ['is_deleted', '=', 0];
     // A contact always has permission to view self

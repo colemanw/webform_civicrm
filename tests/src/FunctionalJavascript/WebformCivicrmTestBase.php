@@ -520,6 +520,9 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       if (!empty($params['filter']['group'])) {
         $this->getSession()->getPage()->selectFieldOption('Groups', $params['filter']['group']);
       }
+      if (!empty($params['filter']['filter_relationship_types'])) {
+        $this->getSession()->getPage()->selectFieldOption('properties[filter_relationship_types][]', $params['filter']['filter_relationship_types']);
+      }
       if (isset($params['filter']['check_permissions']) && empty($params['filter']['check_permissions'])) {
         $this->getSession()->getPage()->uncheckField('properties[check_permissions]');
       }
