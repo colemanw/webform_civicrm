@@ -27,6 +27,15 @@ final class StripeTest extends WebformCivicrmTestBase {
       'key' => "com.drastikbydesign.stripe",
     ]);
 
+    // Hack for now
+    $f = rtrim(\CRM_Core_Config::singleton()->extensionsDir, '/') . '/com.drastikbydesign.stripe/Civi/Stripe/Event/AuthorizeEvent.php';
+    $content = str_replace('\\Symfony\\Component\\EventDispatcher\\Event', '\\Civi\\Core\\Event\\GenericHookEvent', file_get_contents($f));
+    file_put_contents($f, $content);
+
+    $f = rtrim(\CRM_Core_Config::singleton()->extensionsDir, '/') . '/firewall/Civi/Firewall/Event/FraudEvent.php';
+    $content = str_replace('\\Symfony\\Component\\EventDispatcher\\Event', '\\Civi\\Core\\Event\\GenericHookEvent', file_get_contents($f));
+    file_put_contents($f, $content);
+
     $params = [];
     $result = $this->utils->wf_civicrm_api('Stripe', 'setuptest', $params);
     $this->paymentProcessorID = $result['id'];
