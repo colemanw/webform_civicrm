@@ -193,6 +193,10 @@ function _fillCiviCRMData($data, $webformSubmission) {
   $utils = \Drupal::service('webform_civicrm.utils');
   $webform = $webformSubmission->getWebform();
   foreach ($data as $key => $val) {
+    if (strpos($key, 'contribution_payment_processor_id') !== FALSE) {
+      continue;
+    }
+
     $element = $webform->getElement($key);
     if (!empty($val) && $element['#type'] == 'civicrm_options') {
       if (!empty($element['#webform_multiple'])) {
