@@ -26,6 +26,24 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
   }
 
   /**
+   * Test Activity with single option for Activity Type.
+   */
+  public function testSingleActivityTypeOption() {
+    $this->drupalLogin($this->rootUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->addActivityFields(1, TRUE);
+    // Alter activity type field to use static options with only 1 option enabled.
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+    $this->htmlOutput();
+    $this->editCivicrmOptionElement("edit-webform-ui-elements-civicrm-1-activity-1-activity-activity-type-id-operations", FALSE, TRUE, NULL, NULL, TRUE, TRUE);
+
+    $this->submitWebform();
+    $this->verifyActivityValues();
+  }
+
+  /**
    * Test activity on multiple assignees
    */
   public function testMultipleAssignees() {
@@ -43,7 +61,7 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
    *
    * @param int $num
    */
-  private function addActivityFields($num = 1) {
+  private function addActivityFields($num = 1, $select_activity = FALSE) {
     $this->enableCivicrmOnWebform();
 
     $this->getSession()->getPage()->selectFieldOption('number_of_contacts', $num);
@@ -54,6 +72,12 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('activity_number_of_activity', 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
+
+    if ($select_activity) {
+      $this->getSession()->getPage()->selectFieldOption('civicrm_1_activity_1_activity_activity_type_id', '- User Select -');
+      $this->assertSession()->assertWaitOnAjaxRequest();
+      $this->htmlOutput();
+    }
 
     $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_subject");
     $this->getSession()->getPage()->checkField("civicrm_1_activity_1_activity_details");
