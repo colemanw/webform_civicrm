@@ -594,6 +594,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
    */
   private function displayLineItems() {
     $rows = [];
+    $currency = wf_crm_aval($this->data, "contribution:1:currency");
     $total = 0;
     // Support hidden contribution field
     $fid = 'civicrm_1_contribution_1_contribution_total_amount';
@@ -634,7 +635,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
         $total += $item['tax_amount'];
         $label = $item['label'] . ($item['qty'] > 1 ? " ({$item['qty']})" : '');
         $rows[] = [
-          'data' => [$label, \CRM_Utils_Money::format($item['line_total'] + $item['tax_amount'])],
+          'data' => [$label, \CRM_Utils_Money::format($item['line_total'] + $item['tax_amount'], $currency)],
           'class' => [$item['element'], 'line-item'],
           'data-amount' => $item['line_total'] + $item['tax_amount'],
           'data-tax' => (float) $itemTaxRate,
@@ -643,14 +644,14 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
       else {
         $label = $item['label'] . ($item['qty'] > 1 ? " ({$item['qty']})" : '');
         $rows[] = [
-          'data' => [$label, \CRM_Utils_Money::format($item['line_total'])],
+          'data' => [$label, \CRM_Utils_Money::format($item['line_total'], $currency)],
           'class' => [$item['element'], 'line-item'],
           'data-amount' => $item['line_total'],
         ];
       }
     }
     $rows[] = [
-      'data' => [t('Total'), \CRM_Utils_Money::format($total)],
+      'data' => [t('Total'), \CRM_Utils_Money::format($total, $currency)],
       'id' => 'wf-crm-billing-total',
       'data-amount' => $total,
     ];

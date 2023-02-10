@@ -54,8 +54,34 @@
   function tally() {
     var total = 0;
     total = getTotalAmount();
-    $('#wf-crm-billing-total').find('td+td').html(CRM.formatMoney(total));
+    // Match the existing format for the total.
+    var moneyFormat = getCurrencyFormat($('#wf-crm-billing-total').find('td+td').html());
+    $('#wf-crm-billing-total').find('td+td').html(CRM.formatMoney(total, false, moneyFormat));
+    $('.line-item').find('td+td').html(CRM.formatMoney(total, false, moneyFormat));
     $('#billing-payment-block').toggle(total > 0);
+  }
+
+  // Given an existing amount, generate a valid format for CRM.formatMoney.
+  function getCurrencyFormat(currentAmount) {
+    if (!currentAmount) {
+      return null;
+    }
+    var moneyFormat = null;
+    var noSymbolsFormat = null;
+    // comma or decimal point followed by exactly two digits optionally followed by non-digits.
+    var decimalSeparator = (currentAmount.match(/([\.|,])\d{2}\D*$/) ?? [])[1] ?? '';
+    // comma, period, space, apostrophe or underscore followed by 3 digits.
+    var thousandsSeparator = (currentAmount.match(/([\., \'_])\d{3}/) ?? [])[1] ?? '';
+    // a single digit optionally followed by any number of digits and/or decimal/thousands separators.
+    var noSymbolsAmount = (currentAmount.match(/([0-9][\., \'_0-9]*)/) ?? [])[1].trim() ?? '';
+
+    if (decimalSeparator) {
+      noSymbolsFormat = '1' + thousandsSeparator + '234' + decimalSeparator + '56';
+    } else {
+      noSymbolsFormat = '1' + thousandsSeparator + '235';
+    }
+    moneyFormat = currentAmount.replace(noSymbolsAmount, noSymbolsFormat);
+    return moneyFormat;
   }
 
   function updateLineItem(item, amount, label) {
