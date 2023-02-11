@@ -684,10 +684,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           }
         }
       }
-      // Translate state abbr to id (skip if using $masters address which would have returned id not abbr from the api)
-      if (empty($masters) && !empty($contact['address'][1]['state_province_id'])) {
-        $contact['address'][1]['state_province_id'] = $this->utils->wf_crm_state_abbr($contact['address'][1]['state_province_id'], 'id', $contact['address'][1]['country_id'] ?? NULL);
-      }
       foreach ($contact as $table => $fields) {
         if (is_array($fields) && !empty($fields[1])) {
           $params['match'] += $fields[1];
