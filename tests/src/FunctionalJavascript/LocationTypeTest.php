@@ -69,7 +69,10 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
       'return' => "id",
       'name' => "United States",
     ]);
-    $stateID = $this->utils->wf_crm_state_abbr('NJ', 'id');
+    $stateID = $this->utils->wf_civicrm_api('StateProvince', 'getvalue', [
+      'return' => "id",
+      'name' => "New Jersey",
+    ]);
     $edit = [
       'First Name' => 'Frederick',
       'Last Name' => 'Pabst',
@@ -77,7 +80,7 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
       'City' => 'Newark',
       'Postal Code' => '12345',
       'Country' => $countryID,
-      'State/Province' => $stateID, // New Jersey
+      'State/Province' => $stateID,
     ];
     $this->postSubmission($this->webform, $edit);
 
@@ -191,7 +194,10 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
       'return' => "id",
       'name' => "Canada",
     ]);
-    $state_id = $this->utils->wf_crm_state_abbr('AB', 'id', $canada_id);
+    $state_id = $this->utils->wf_civicrm_api('StateProvince', 'getvalue', [
+      'return' => "id",
+      'name' => "Alberta",
+    ]);
     // Check if address fields are pre populated with existing values.
     $this->assertSession()->fieldValueEquals('Street Address', '123 Defence Colony');
     $this->assertSession()->fieldValueEquals('City', 'Edmonton');
