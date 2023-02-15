@@ -138,7 +138,7 @@ function webform_civicrm_webform_autocomplete_options_alter(&$results, $node, $c
     $key = $utils->wf_crm_explode_key($node->webform['components'][$cid]['form_key']);
   }
   if (isset($key) && substr($key[5], 0, 7) == 'custom_') {
-    civicrm_initialize();
+    \Drupal::service('civicrm')->initialize();
     $customField = $utils->wf_civicrm_api('CustomField', 'getsingle', [
       'id' => substr($key[5], 7),
       'return' => 'option_group_id',
@@ -868,7 +868,7 @@ function _webform_civicrm_replaceCaseLinkTokens($tokens, $webformSubmissionData)
  * @return int
  */
 function _webform_civicrm_getCaseContactID($caseID) {
-  civicrm_initialize();
+  \Drupal::service('civicrm')->initialize();
 
   $caseEntity = civicrm_api3('Case', 'get', [
     'return' => ['contact_id'],
