@@ -105,34 +105,6 @@ class Utils implements UtilsInterface {
   }
 
   /**
-   * Match a state/province id to its abbr. and vice-versa
-   *
-   * @param $input
-   *   User input (state province id or abbr)
-   * @param $ret
-   *   String: 'id'
-   * @param $country_id
-   *   Int: (optional) must be supplied if fetching id from abbr
-   *
-   * @return string or integer
-   */
-  function wf_crm_state_abbr($input, $ret = 'abbreviation', $country_id = NULL) {
-    $params = ['sequential' => 1];
-    if ($ret == 'id') {
-      $params['abbreviation'] = $input;
-      if (!$country_id || $country_id === 'default') {
-        $country_id = (int) $this->wf_crm_get_civi_setting('defaultContactCountry', 1228);
-      }
-    }
-    else {
-      $params['id'] = $input;
-    }
-    $params['country_id'] = $country_id;
-    $result = $this->wf_crm_apivalues('StateProvince', 'get', $params, $ret);
-    return wf_crm_aval($result, 0);
-  }
-
-  /**
    * Get list of events.
    *
    * @param array $reg_options
