@@ -1188,6 +1188,8 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
               if (empty($params['status_id'])) {
                 unset($params['status_id']);
               }
+              // Set the currency of the result to the currency type that was submitted.
+              $params['fee_currency'] = $this->data['contribution'][$n]['currency'];
               $result = $this->utils->wf_civicrm_api('participant', 'create', $params);
               $this->ent['participant'][$n]['id'] = $result['id'];
 
