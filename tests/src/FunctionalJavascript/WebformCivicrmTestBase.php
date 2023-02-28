@@ -11,6 +11,7 @@ use Drupal\Core\Url;
 abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
 
   use WebformBrowserTestTrait;
+  use \Drupal\Tests\mink_civicrm_helpers\Traits\Utils;
 
   /**
    * {@inheritdoc}
@@ -21,6 +22,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     'webform_civicrm',
     'token',
     'ckeditor5',
+    'mink_civicrm_helpers',
   ];
 
   /**

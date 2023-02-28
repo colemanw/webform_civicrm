@@ -19,10 +19,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
   protected function setUp(): void {
     parent::setUp();
 
-    // Download installs and enables!
-    $result = civicrm_api3('Extension', 'download', [
-      'key' => "com.iatspayments.civicrm",
-    ]);
+    $this->setUpExtension('com.iatspayments.civicrm');
 
     // Legacy CC
     $params = [
