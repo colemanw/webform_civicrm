@@ -110,7 +110,7 @@ jobs:
       - name: Install token
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/token:^1.9
+          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/token:^1.11
       - name: Set identity
         # Needed for `git am` but otherwise irrelevant
         run: |
