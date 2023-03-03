@@ -83,6 +83,10 @@ jobs:
         run: |
           cd ~/drupal
           COMPOSER_MEMORY_LIMIT=-1 composer require drupal/token:^1.11
+      - name: Download some test helpers
+        run: |
+          cd ~/drupal
+          COMPOSER_MEMORY_LIMIT=-1 composer require semperit/minkcivicrmhelpers
       - name: Set identity
         # Needed for `git am` but otherwise irrelevant
         run: |
@@ -94,6 +98,31 @@ jobs:
           cd  ~/drupal/vendor/civicrm/civicrm-core
           curl -L -o prpatch.patch ${{ github.event.inputs.coreprurl }}.patch
           git am prpatch.patch
+      - name: Do a fake temp install
+        # so that we can use civi api to get extensions with a version appropriate to the installed civi version
+        run: |
+          cd ~/drupal
+          composer require drush/drush
+          mkdir -p /home/runner/civicrm-cv
+          curl -L https://download.civicrm.org/cv/cv.phar -o /home/runner/civicrm-cv/cv
+          chmod +x /home/runner/civicrm-cv/cv
+          ./vendor/drush/drush/drush -y -l http://civi.localhost site-install standard --db-url='mysql://root:@127.0.0.1:${{ job.services.mysql.ports[3306] }}/fakedb' --site-name=FakeCivi
+          chmod +w web/sites/default
+          /home/runner/civicrm-cv/cv core:install --cms-base-url=http://civi.localhost
+      - name: Download Civi extensions
+        run: |
+          mkdir -p ~/drupal/web/sites/default/files/civicrm/ext
+          cd ~/drupal/web/sites/default/files/civicrm/ext
+          /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.aghstrategies.uscounties
+          # Let's get latest git versions of these
+          git clone https://lab.civicrm.org/extensions/mjwshared.git
+          git clone https://lab.civicrm.org/extensions/firewall.git
+          git clone https://lab.civicrm.org/extensions/stripe.git
+          git clone https://github.com/iATSPayments/com.iatspayments.civicrm.git
+          # And temp patch for iats
+          cd com.iatspayments.civicrm
+          curl -L -O https://patch-diff.githubusercontent.com/raw/iATSPayments/com.iatspayments.civicrm/pull/407.patch
+          git apply 407.patch
       - uses: nanasess/setup-chromedriver@master
       - name: Run chromedriver
         run: chromedriver &
@@ -110,6 +139,8 @@ jobs:
           SIMPLETEST_BASE_URL: http://127.0.0.1:8080
           MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","chromeOptions":{"args":["--disable-gpu", "--no-sandbox", "--headless"]}}, "http://127.0.0.1:9515"]'
           BROWSERTEST_OUTPUT_DIRECTORY: '${{ runner.temp }}/browser_output'
+          DEV_EXTENSION_DIR: /home/runner/drupal/web/sites/default/files/civicrm/ext
+          DEV_EXTENSION_URL: http://127.0.0.1:8080/sites/default/files/civicrm/ext
       - uses: actions/upload-artifact@v3
         if: ${{ failure() || success() }}
         with:
