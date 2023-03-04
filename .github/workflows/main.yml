@@ -22,12 +22,19 @@ jobs:
         include:
           - drupal: '9.4.*'
             civicrm: '5.57.*'
+            php: '7.4'
           - drupal: '9.5.*'
             civicrm: '5.58.*'
+            php: '7.4'
           - drupal: '9.5.*'
             civicrm: '5.60.x-dev'
+            php: '7.4'
           - drupal: '9.5.*'
             civicrm: 'dev-master'
+            php: '7.4'
+          - drupal: '10.0.*'
+            civicrm: 'dev-master'
+            php: '8.1'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
     services:
       mysql:
@@ -42,7 +49,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: shivammathur/setup-php@v2
         with:
-            php-version: 7.4
+            php-version: ${{ matrix.php }}
             extensions: dom, curl, libxml, mbstring, zip, pdo, mysql, pdo_mysql, bcmath, soap, intl, gd, exif, iconv
             coverage: none
             tools: composer:v2
@@ -91,7 +98,13 @@ jobs:
         run: |
           cd ~/drupal
           COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} --prefer-dist -W
+      - name: Ensure Webform ^6.2
+        if: ${{ matrix.drupal == '10.0.*' }}
+        run: |
+          cd ~/drupal
+          COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:^6.2@beta'
       - name: Ensure Webform ^6.0
+        if: ${{ matrix.drupal != '10.0.*' }}
         run: |
           cd ~/drupal
           #COMPOSER_MEMORY_LIMIT=-1 composer require cweagans/composer-patches
@@ -105,7 +118,7 @@ jobs:
       - name: Install token
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/token:^1.9
+          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/token:^1.11
       - name: Download some test helpers
         run: |
           cd ~/drupal
@@ -131,13 +144,28 @@ jobs:
           chmod +x /home/runner/civicrm-cv/cv
           ./vendor/drush/drush/drush -y -l http://civi.localhost site-install standard --db-url='mysql://root:@127.0.0.1:${{ job.services.mysql.ports[3306] }}/fakedb' --site-name=FakeCivi
           chmod +w web/sites/default
-          /home/runner/civicrm-cv/cv core:install --cms-base-url=http://civi.localhost -m loadGenerated=1
-      - name: Download Civi extensions
+          /home/runner/civicrm-cv/cv core:install --cms-base-url=http://civi.localhost
+      - name: Download Civi extensions from git
+        if: ${{ matrix.drupal == '10.0.*' }}
         run: |
           mkdir -p ~/drupal/web/sites/default/files/civicrm/ext
           cd ~/drupal/web/sites/default/files/civicrm/ext
-          # We could add an `if` here that depends on the matrix if we wanted e.g. to use git to download a dev version for a given run.
-          # But normally we'll just let civi decide which version to download.
+          /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.aghstrategies.uscounties
+          # Let's get latest git versions of these
+          git clone https://lab.civicrm.org/extensions/mjwshared.git
+          git clone https://lab.civicrm.org/extensions/firewall.git
+          git clone https://lab.civicrm.org/extensions/stripe.git
+          git clone https://github.com/iATSPayments/com.iatspayments.civicrm.git
+          # And temp patch for iats
+          cd com.iatspayments.civicrm
+          curl -L -O https://patch-diff.githubusercontent.com/raw/iATSPayments/com.iatspayments.civicrm/pull/407.patch
+          git apply 407.patch
+      - name: Download Civi extensions normal
+        if: ${{ matrix.drupal != '10.0.*' }}
+        run: |
+          mkdir -p ~/drupal/web/sites/default/files/civicrm/ext
+          cd ~/drupal/web/sites/default/files/civicrm/ext
+          # Normally we'll just let civi decide which version to download.
           # Apparently we have to install it, otherwise stripe gives a dependency error even with install=0. I think that's a bug, but let's just do it. This is a fake install anyway.
           /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=mjwshared
           /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=firewall
