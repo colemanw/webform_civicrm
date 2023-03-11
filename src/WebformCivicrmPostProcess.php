@@ -528,14 +528,14 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         'return' => ["id"],
         'name' => "Event Fee",
         'is_active' => 1,
-      ])[0];
+      ])[0]['id'] ?? NULL;
       if (empty($eventFTId)) {
         $eventFTId = $this->utils->wf_crm_apivalues('FinancialType', 'get', [
           'sequential' => 1,
           'return' => ["id"],
           'is_active' => 1,
           'options' => ['limit' => 1],
-        ])[0];
+        ])[0]['id'];
       }
     }
     foreach ($this->line_items as &$item) {
