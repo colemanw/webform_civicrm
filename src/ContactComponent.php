@@ -357,6 +357,7 @@ class ContactComponent implements ContactComponentInterface {
       if ($key === 'relationship') {
         foreach ($filter as $val) {
           $filterVal = $contact_element->getElementProperty($component, "filter_relationship_{$val}");
+          $this->wf_crm_search_filterArray($filterVal);
           if ($filterVal) {
             $params['relationship'][$val] = $filterVal;
           }
@@ -364,6 +365,7 @@ class ContactComponent implements ContactComponentInterface {
       }
       else {
         $filterVal = $contact_element->getElementProperty($component, $filter);
+        $this->wf_crm_search_filterArray($filterVal);
         if ($filterVal) {
           $op = '=';
           if (in_array($filter, ['group', 'tag'])) {
@@ -375,6 +377,15 @@ class ContactComponent implements ContactComponentInterface {
       }
     }
     return $params;
+  }
+
+  /**
+   * Remove blank values in the array.
+   */
+  function wf_crm_search_filterArray(&$filterVal) {
+    if (is_array($filterVal)) {
+      $filterVal = array_filter($filterVal);
+    }
   }
 
 }
