@@ -38,6 +38,11 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
       'label' => 'Advisor Name',
       'html_type' => "Text",
     ])['id'];
+    $this->cfID2 = $this->utils->wf_civicrm_api('CustomField', 'create', [
+      'custom_group_id' => $this->cgID,
+      'label' => 'CertificateID',
+      'html_type' => "Text",
+    ])['id'];
   }
 
   private function createDedupeRule() {
@@ -75,6 +80,41 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     ]);
   }
 
+  private function createAnotherDedupeRule() {
+    $result = (array) civicrm_api4('DedupeRuleGroup', 'create', [
+      'values' => [
+        'contact_type' => 'Individual',
+        'threshold' => 10,
+        'used' => 'General',
+        'name' => 'FirstCertificateID',
+        'title' => 'FirstCertificateID',
+        'is_reserved' => FALSE,
+      ],
+    ]);
+    $result_DedupeRuleGroup = reset($result);
+    $this->dedupeRuleGroupId = $result_DedupeRuleGroup['id'];
+
+    $result = civicrm_api4('DedupeRule', 'create', [
+      'values' => [
+        'dedupe_rule_group_id' => $this->dedupeRuleGroupId,
+        'rule_table' => 'civicrm_contact',
+        'rule_field' => 'first_name',
+        'rule_length' => '',
+        'rule_weight' => 5,
+      ],
+    ]);
+
+    $result = civicrm_api4('DedupeRule', 'create', [
+      'values' => [
+        'dedupe_rule_group_id' => $this->dedupeRuleGroupId,
+        'rule_table' => 'civicrm_custom',
+        'rule_field' => 'custom_2',
+        'rule_length' => '',
+        'rule_weight' => 5,
+      ],
+    ]);
+  }
+
   /**
    * Test submitting Contact - Matching Rule
    */
@@ -97,7 +137,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->drupalLogin($this->adminUser);
 
     $this->createContactSubtype();
-    $this->createDedupeRule();
+    $this->createAnotherDedupeRule();
 
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
@@ -112,9 +152,10 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('Enable Student Extras Fields', 'Yes');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->checkField('Advisor Name');
+    $this->getSession()->getPage()->checkField('CertificateID');
 
-    // Select our Custom Rule FirstPhone
-    $this->getSession()->getPage()->selectFieldOption('contact_1_settings_matching_rule', 'FirstPhone');
+    // Select our Custom Rule FirstPhone or FirstCertificateID
+    $this->getSession()->getPage()->selectFieldOption('contact_1_settings_matching_rule', 'FirstCertificateID');
     // We do need Phone then!
     $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_phone', 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
@@ -142,6 +183,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Email', 'frederick@pabst.io');
     $this->getSession()->getPage()->fillField('Phone', '4031234567');
     $this->getSession()->getPage()->fillField('Advisor Name', 'Professor Jane Smith');
+    $this->getSession()->getPage()->fillField('CertificateID', '1234567');
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertPageNoErrorMessages();
@@ -152,12 +194,13 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
       'sequential' => 1,
       'first_name' => 'Frederick',
       'last_name' => 'Pabst',
-      'return' => ["custom_{$this->cfID}", 'contact_sub_type'],
+      'return' => ["custom_{$this->cfID}", "custom_{$this->cfID2}", 'contact_sub_type'],
     ]);
     $this->assertEquals(1, $api_result['count']);
     $contact = reset($api_result['values']);
     $this->assertEquals('Student', implode($contact['contact_sub_type']));
     $this->assertEquals('Professor Jane Smith', $contact["custom_{$this->cfID}"]);
+    $this->assertEquals('1234567', $contact["custom_{$this->cfID2}"]);
 
     $api_result = $this->utils->wf_civicrm_api('Email', 'get', [
       'contact_id' => $contact['id'],
