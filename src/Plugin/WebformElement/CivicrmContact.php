@@ -340,7 +340,7 @@ class CivicrmContact extends WebformElementBase {
     ];
     $cid = $element_properties['default_contact_id'];
     $contactComponent = \Drupal::service('webform_civicrm.contact_component');
-    if ($cid && $name = $contactComponent->wf_crm_contact_access($element_properties, ['check_permissions' => 1], $cid)) {
+    if ($cid && $name = $contactComponent->wf_crm_contact_access($element_properties, ['checkPermissions' => 1], $cid)) {
       $form['contact_defaults']['default_contact_id']['#default_value'] = $cid;
       $form['contact_defaults']['default_contact_id']['#attributes'] = [
         'data-civicrm-name' => $name,
