@@ -2180,6 +2180,25 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
         }
       }
+      else {
+        // sets price field and price field value for non membership line items.
+        $priceFieldID = wf_civicrm_api('PriceField', 'get', [
+            'sequential' => 1,
+            'price_set_id' => 'default_contribution_amount',
+            'options' => ['limit' => 1],
+          ])['id'] ?? NULL;
+        $item['price_field_id'] = $priceFieldID;
+
+        if (!empty($priceFieldID)) {
+          $priceFieldValueID = wf_civicrm_api('PriceFieldValue', 'get', [
+              'sequential' => 1,
+              'price_field_id' => $priceFieldID,
+              'options' => ['limit' => 1],
+            ])['id'] ?? NULL;
+
+          $item['price_field_value_id'] = $priceFieldValueID;
+        }
+      }
 
       // Save the line_item
       $line_result = wf_civicrm_api('line_item', 'create', $item);
