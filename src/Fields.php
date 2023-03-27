@@ -1099,7 +1099,7 @@ class Fields implements FieldsInterface {
         $fields[$id]['name'] = $custom_field['label'];
         $fields[$id]['required'] = (int) !empty($custom_field['is_required']);
         if (!empty($custom_field['default_value'])) {
-          $fields[$id]['value'] = implode(',', $this->utils->wf_crm_explode_multivalue_str($custom_field['default_value']));
+          $fields[$id]['default_value'] = implode(',', $this->utils->wf_crm_explode_multivalue_str($custom_field['default_value']));
         }
         $fields[$id]['data_type'] = $custom_field['data_type'];
         if (!empty($custom_field['help_pre']) || !empty($custom_field['help_post'])) {

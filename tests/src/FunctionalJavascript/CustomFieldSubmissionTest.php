@@ -250,7 +250,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
       'name' => "Option A",
       'label' => "Option A",
       'value' => 'OptionA',
-      'is_default' => 0,
+      'is_default' => 1,
       'weight' => 1,
       'is_active' => 1,
     ]);
@@ -277,6 +277,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
       'name' => 'select_list',
       'html_type' => "Select",
       'data_type' => "String",
+      'default_value' => 'OptionA',
       'option_group_id' => "list_1",
       'is_active' => 1,
     ]);
@@ -568,9 +569,38 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', 'Frederick');
 
     $this->htmlOutput();
-    $this->createScreenshot($this->htmlOutputDirectory . '/ajaxvalues.png');
 
     // Ensure all fields are loaded correctly.
+    $this->verifyDefaults();
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+    $params = [
+      'first_name' => 'Frederick',
+      'last_name' => 'Pabst',
+    ];
+    $contactID = $this->utils->wf_civicrm_api('Contact', 'get', $params)['id'];
+
+    $this->utils->wf_civicrm_api('Contact', 'create', [
+      'id' => $contactID,
+      "custom_{$this->_customFields['select_list']}" => "",
+    ]);
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $contactID]]));
+    $this->htmlOutput();
+    $this->assertPageNoErrorMessages();
+
+    // Select OptionB and submit the webform
+    $this->getSession()->getPage()->selectFieldOption("civicrm_1_contact_1_cg1_custom_{$this->_customFields['select_list']}", 'OptionB');
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $contactID]]));
+    $this->htmlOutput();
+    $this->assertPageNoErrorMessages();
+    $this->verifyDefaults();
+  }
+
+  public function verifyDefaults() {
     $this->assertFieldValue('edit-civicrm-1-contact-1-contact-first-name', 'Frederick');
     $this->assertFieldValue('edit-civicrm-1-contact-1-contact-last-name', 'Pabst');
     $this->assertFieldValue("edit-civicrm-1-contact-1-cg1-custom-{$this->_customFields['text']}", 'Lorem Ipsum');
