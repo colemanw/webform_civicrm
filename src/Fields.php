@@ -253,7 +253,7 @@ class Fields implements FieldsInterface {
       $fields['contact_preferred_language'] = [
         'name' => t('Preferred Language'),
         'type' => 'select',
-        'value' => $this->utils->wf_crm_get_civi_setting('lcMessages', 'en_US'),
+        'default_value' => $this->utils->wf_crm_get_civi_setting('lcMessages', 'en_US'),
       ];
       $default_communication_style = $this->utils->wf_crm_apivalues('OptionValue', 'get', [
         'sequential' => 1,
@@ -423,13 +423,13 @@ class Fields implements FieldsInterface {
             'name' => $label,
             'type' => 'select',
             'expose_list' => TRUE,
-            'value' => '1',
+            'default_value' => '1',
           ];
           $fields[$key . '_is_primary'] = [
             'name' => 'Is Primary',
             'type' => 'select',
             'expose_list' => TRUE,
-            'value' => '1',
+            'default_value' => '1',
           ];
         }
       }
@@ -531,7 +531,7 @@ class Fields implements FieldsInterface {
           'extra' => ['required' => 1, 'multiple' => $this->utils->wf_crm_get_civi_setting('civicaseAllowMultipleClients', 0)],
           'data_type' => 'ContactReference',
           'set' => 'caseRoles',
-          'value' => 1,
+          'default_value' => 1,
         ];
         $fields['case_status_id'] = [
           'name' => t('Case # Status'),
@@ -774,7 +774,7 @@ class Fields implements FieldsInterface {
           'name' => t('Frequency of Installments'),
           'type' => 'select',
           'expose_list' => TRUE,
-          'value' => 0,
+          'default_value' => 0,
           'exposed_empty_option' => '- ' . t('No Installments') . ' -',
           'set' => 'contributionRecur',
         ];
@@ -850,14 +850,14 @@ class Fields implements FieldsInterface {
           'name' => t('Participant Role'),
           'type' => 'select',
           'expose_list' => TRUE,
-          'value' => '1',
+          'default_value' => '1',
           'extra' => ['multiple' => 1, 'required' => 1],
         ];
         $fields['participant_status_id'] = [
           'name' => t('Registration Status'),
           'type' => 'select',
           'expose_list' => TRUE,
-          'value' => 0,
+          'default_value' => 0,
           'exposed_empty_option' => '- ' . t('Automatic') . ' -',
         ];
         $fields['participant_note'] = [
@@ -887,7 +887,7 @@ class Fields implements FieldsInterface {
           'name' => t('Override Status'),
           'type' => 'select',
           'expose_list' => TRUE,
-          'value' => 0,
+          'default_value' => 0,
           'exposed_empty_option' => '- ' . t('No') . ' -',
         ];
         $fields['membership_status_override_end_date'] = [
@@ -908,7 +908,7 @@ class Fields implements FieldsInterface {
           'name' => t('Number of Terms'),
           'type' => 'select',
           'expose_list' => TRUE,
-          'value' => 1,
+          'default_value' => 1,
           'empty_option' => t('Enter Dates Manually'),
         ];
         if (isset($sets['contribution'])) {
@@ -972,7 +972,7 @@ class Fields implements FieldsInterface {
           'name' => t('Grant Status'),
           'type' => 'select',
           'expose_list' => TRUE,
-          'value' => 0,
+          'default_value' => 0,
           'exposed_empty_option' => '- ' . t('Automatic') . ' -',
         ];
         $fields['grant_application_received_date'] = [
