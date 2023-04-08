@@ -2117,7 +2117,8 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       $paymentProcessor = \Civi\Payment\System::singleton()->getByName($processor_type['name'], TRUE);
     }
     // Add contact details to params (most processors want a first_name and last_name)
-    $contact = $this->utils->wf_civicrm_api('contact', 'getsingle', ['id' => $this->ent['contact'][1]['id']]);
+    $i = $this->getContributionContactIndex();
+    $contact = $this->utils->wf_civicrm_api('contact', 'getsingle', ['id' => $this->ent['contact'][$i]['id']]);
     $params += $contact;
     $params['contributionID'] = $params['id'] = $this->ent['contribution'][1]['id'];
     if (!empty($this->ent['contribution_recur'][1]['id'])) {
