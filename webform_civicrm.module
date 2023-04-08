@@ -194,6 +194,10 @@ function _fillCiviCRMData($data, $webformSubmission) {
   $webform = $webformSubmission->getWebform();
   foreach ($data as $key => $val) {
     $element = $webform->getElement($key);
+    // Element no longer exists so skip.
+    if (!$element) {
+      continue;
+    }
     if (!empty($val) && $element['#type'] == 'civicrm_options') {
       if (!empty($element['#webform_multiple'])) {
         foreach ($val as $k => $v) {
