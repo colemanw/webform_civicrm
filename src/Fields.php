@@ -573,6 +573,9 @@ class Fields implements FieldsInterface {
         // Fetch case roles
         $sets['caseRoles'] = ['entity_type' => 'case', 'label' => t('Case Roles')];
         foreach ($this->utils->wf_crm_apivalues('case_type', 'get') as $case_type) {
+          if (!$case_type['is_active'] || !isset($case_type['definition']['caseRoles'])) {
+            continue;
+          }
           foreach ($case_type['definition']['caseRoles'] as $role) {
             foreach ($this->utils->wf_crm_get_relationship_types() as $rel_type) {
               if (in_array($role['name'], [$rel_type['name_b_a'], $rel_type['label_b_a']])) {
