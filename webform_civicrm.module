@@ -252,6 +252,7 @@ function _fillCiviCRMData($data, $webformSubmission) {
   }
   if ($contacts) {
     // Retrieve contact names and add to submission objects
+    \Drupal::service('civicrm')->initialize();
     $contacts = $utils->wf_crm_apivalues('contact', 'get', ['id' => ['IN' => array_keys($contacts)]], 'display_name') + $contacts;
     if (!empty($data['civicrm']['contact'][1]['id'])) {
       $data['civicrm']['contact'][1]['display_name'] = $contacts[$data['civicrm']['contact'][1]['id']];
