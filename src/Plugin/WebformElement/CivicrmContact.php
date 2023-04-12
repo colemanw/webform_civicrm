@@ -130,6 +130,9 @@ class CivicrmContact extends WebformElementBase {
       $element['#options'] = [];
       $element['#attributes']['data-is-select'] = 1;
     }
+    elseif ($element['#widget'] === 'autocomplete') {
+      $element['#attributes']['data-is-autocomplete'] = 1;
+    }
     // get translated properties used for autocomplete widget
     $element['#attributes']['data-search-prompt'] = $this->getTranslatedElementProperty($element, 'search_prompt') ?? t('- Choose existing -');
     $element['#attributes']['data-none-prompt'] = $this->getTranslatedElementProperty($element, 'none_prompt') ?? t('+ Create new +');

@@ -9,7 +9,8 @@
         }
         var autocompleteUrl = D.url('webform-civicrm/js/' + field.data('form-id') + '/' + field.data('civicrm-field-key'));
         var isSelect = field.data('is-select');
-        if (!isSelect) {
+        var isAutocomplete = field.data('is-autocomplete');
+        if (isAutocomplete) {
           wfCivi.existingInit(
             field,
             field.data('civicrm-contact'),
