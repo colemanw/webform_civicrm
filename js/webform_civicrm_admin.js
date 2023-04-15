@@ -458,7 +458,7 @@ var wfCiviAdmin = (function (D, $, once) {
               var icon_name = cl[2];
               if (cl[0] === 'contact') {
                 name = 'name="' + (i + 1) + '_contact_type"';
-                var type = $('select[name="' + (i + 1) + '_contact_type"', '#webform-civicrm-settings-form').val();
+                var type = $('select[name="' + (i + 1) + '_contact_type"]', '#webform-civicrm-settings-form').val();
                 icon_name = getContactIcon(type);
               }
               $('#webform-civicrm-settings-form .vertical-tabs__menu-item').eq(i).find('a strong').first().before('<i class="crm-i ' + icon_name + '" ' + name + '> </i> ');
