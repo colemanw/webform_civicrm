@@ -64,6 +64,25 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertEquals('10.00', $contribution['total_amount']);
     $this->assertEquals('Completed', $contribution['contribution_status']);
     $this->assertEquals('USD', $contribution['currency']);
+
+    $sid = $this->getLastSubmissionId($this->webform);
+    $this->drupalGet(Url::fromRoute('entity.webform_submission.canonical', [
+      'webform' => $this->webform->id(),
+      'webform_submission' => $sid,
+    ]));
+    $this->htmlOutput();
+    $title = $this->webform->label();
+    $contact = $this->utils->wf_civicrm_api('contact', 'get', [
+      'sequential' => 1,
+      'first_name' => 'Frederick',
+    ]);
+    $displayName = $contact['values'][0]['display_name'];
+
+    $this->assertSession()->pageTextContains("{$title}: Submission #{$sid} by {$displayName}");
+    $this->assertLink("View {$displayName}");
+    $this->assertNoLink("View Activity");
+    $this->assertLink('View Contribution');
+    $this->assertNoLink('View Participant');
   }
 
   public function testSubmitContribution() {

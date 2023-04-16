@@ -33,17 +33,9 @@ final class SubmissionEditTest extends WebformCivicrmTestBase {
     // Should have created one contact
     $newMax = $this->getMaxId();
     $this->assertEquals($oldMax + 1, $newMax);
-
     $this->assertEquals('Dummy', civicrm_api3('Contact', 'get', ['id' => $newMax])['values'][$newMax]['first_name']);
 
-    // Get submission id
-    $database = \Drupal::database();
-    $query = $database->query("SELECT MAX(sid) AS maxsid FROM {webform_submission} WHERE webform_id = :wfid", [
-      ':wfid' => $this->webform->id(),
-    ]);
-    $sid = $query->fetchAll()[0]->maxsid;
-    $submission = WebformSubmission::load($sid);
-
+    $submission = WebformSubmission::load($this->getLastSubmissionId($this->webform));
     // Edit submission and save
     $this->drupalGet($submission->toUrl('edit-form'));
     $this->getSession()->getPage()->fillField('First Name', 'Smarty');

@@ -140,9 +140,11 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     for ($i = 1; $i <= $num; $i++) {
       // In this test: contact_id 1 = Default Organization; contact_id 2 = Drupal User; contact_id 3 = Frederick
       $contact = $this->utils->wf_civicrm_api('Contact', 'get', [
+        'sequential' => 1,
         'first_name' => $this->_contacts[$i]['first_name'],
         'last_name' => $this->_contacts[$i]['last_name'],
       ]);
+      $this->_contacts[$i]['display_name'] = $contact['values'][0]['display_name'];
       $this->assertEquals(1, $contact['count']);
       $this->assertTrue(in_array($contact['id'], $activityContacts));
     }
@@ -170,6 +172,21 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals('Awesome Activity', $activity['subject']);
     $this->assertEquals('1', $activity['activity_type_id']);
     $this->assertTrue(strtotime($today) -  strtotime($activity['activity_date_time']) < 120);
+
+    $sid = $this->getLastSubmissionId($this->webform);
+    $this->drupalGet(Url::fromRoute('entity.webform_submission.canonical', [
+      'webform' => $this->webform->id(),
+      'webform_submission' => $sid,
+    ]));
+    $this->htmlOutput();
+
+    $title = $this->webform->label();
+    $displayName = $this->_contacts[1]['display_name'];
+    $this->assertSession()->pageTextContains("{$title}: Submission #{$sid} by {$displayName}");
+    $this->assertLink("View {$displayName}");
+    $this->assertLink("View Activity");
+    $this->assertNoLink('View Contribution');
+    $this->assertNoLink('View Participant');
   }
 
 }
