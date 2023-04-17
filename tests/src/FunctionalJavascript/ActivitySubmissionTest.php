@@ -12,6 +12,22 @@ use Drupal\Core\Url;
 final class ActivitySubmissionTest extends WebformCivicrmTestBase {
 
   /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
+    parent::setUp();
+    $this->_contacts = [
+      1 => [
+        'first_name' => 'Frederick',
+        'last_name' => 'Pabst',
+      ],
+      2 => [
+        'first_name' => 'Mark',
+        'last_name' => 'Wood',
+      ],
+    ];
+  }
+  /**
    * Test submitting an activity
    */
   public function testSubmitWebform() {
@@ -85,7 +101,6 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
    * @param int $num
    */
   private function submitWebform($num = 1) {
-    $this->_contacts = [];
     $this->drupalLogout();
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
@@ -93,10 +108,6 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->waitForField('civicrm_1_contact_1_contact_first_name');
 
     for ($i = 1; $i <= $num; $i++) {
-      $this->_contacts[$i] = [
-        'first_name' => 'Frederick' . substr(sha1(rand()), 0, 7),
-        'last_name' => 'Pabst' . substr(sha1(rand()), 0, 7),
-      ];
       $this->getSession()->getPage()->fillField("civicrm_{$i}_contact_1_contact_first_name", $this->_contacts[$i]['first_name']);
       $this->getSession()->getPage()->fillField("civicrm_{$i}_contact_1_contact_last_name", $this->_contacts[$i]['last_name']);
     }
@@ -144,13 +155,26 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
         'first_name' => $this->_contacts[$i]['first_name'],
         'last_name' => $this->_contacts[$i]['last_name'],
       ]);
-      $this->_contacts[$i]['display_name'] = $contact['values'][0]['display_name'];
       $this->assertEquals(1, $contact['count']);
       $this->assertTrue(in_array($contact['id'], $activityContacts));
     }
 
     // Ok now let's log back in and retrieve the Activity we just stored - so that we can update it.
     $this->drupalLogin($this->adminUser);
+    $sid = $this->getLastSubmissionId($this->webform);
+    $this->drupalGet(Url::fromRoute('entity.webform_submission.canonical', [
+      'webform' => $this->webform->id(),
+      'webform_submission' => $sid,
+    ]));
+    $this->htmlOutput();
+
+    $title = $this->webform->label();
+    $this->assertSession()->pageTextContains("{$title}: Submission #{$sid} by Frederick Pabst");
+    $this->assertLink("View Frederick Pabst");
+    $this->assertLink("View Activity");
+    $this->assertNoLink('View Contribution');
+    $this->assertNoLink('View Participant');
+
     $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $contact['id'], 'aid' => $activity['id']]]));
     $this->assertPageNoErrorMessages();
 
@@ -172,21 +196,6 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals('Awesome Activity', $activity['subject']);
     $this->assertEquals('1', $activity['activity_type_id']);
     $this->assertTrue(strtotime($today) -  strtotime($activity['activity_date_time']) < 120);
-
-    $sid = $this->getLastSubmissionId($this->webform);
-    $this->drupalGet(Url::fromRoute('entity.webform_submission.canonical', [
-      'webform' => $this->webform->id(),
-      'webform_submission' => $sid,
-    ]));
-    $this->htmlOutput();
-
-    $title = $this->webform->label();
-    $displayName = $this->_contacts[1]['display_name'];
-    $this->assertSession()->pageTextContains("{$title}: Submission #{$sid} by {$displayName}");
-    $this->assertLink("View {$displayName}");
-    $this->assertLink("View Activity");
-    $this->assertNoLink('View Contribution');
-    $this->assertNoLink('View Participant');
   }
 
 }
