@@ -170,10 +170,10 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
 
     $title = $this->webform->label();
     $this->assertSession()->pageTextContains("{$title}: Submission #{$sid} by Frederick Pabst");
-    $this->assertLink("View Frederick Pabst");
-    $this->assertLink("View Activity");
-    $this->assertNoLink('View Contribution');
-    $this->assertNoLink('View Participant');
+    $this->assertSession()->linkExists("View Frederick Pabst");
+    $this->assertSession()->linkExists("View Activity");
+    $this->assertSession()-> linkNotExists('View Contribution');
+    $this->assertSession()-> linkNotExists('View Participant');
 
     $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $contact['id'], 'aid' => $activity['id']]]));
     $this->assertPageNoErrorMessages();

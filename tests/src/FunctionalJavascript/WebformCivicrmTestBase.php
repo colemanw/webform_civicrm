@@ -759,6 +759,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
    */
   protected function getLastSubmissionId(WebformInterface $webform) {
     $submission_ids = \Drupal::entityQuery('webform_submission')
+      ->accessCheck(TRUE)
       ->condition('webform_id', $webform->id())
       ->sort('created', 'DESC')
       ->range(0, 1)

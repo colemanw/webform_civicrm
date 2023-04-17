@@ -79,10 +79,10 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $displayName = $contact['values'][0]['display_name'];
 
     $this->assertSession()->pageTextContains("{$title}: Submission #{$sid} by {$displayName}");
-    $this->assertLink("View {$displayName}");
-    $this->assertNoLink("View Activity");
-    $this->assertLink('View Contribution');
-    $this->assertNoLink('View Participant');
+    $this->assertSession()->linkExists("View {$displayName}");
+    $this->assertSession()-> linkNotExists("View Activity");
+    $this->assertSession()->linkExists('View Contribution');
+    $this->assertSession()-> linkNotExists('View Participant');
   }
 
   public function testSubmitContribution() {
