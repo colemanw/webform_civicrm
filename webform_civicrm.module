@@ -190,6 +190,7 @@ function _fillCiviCRMData($data, $webformSubmission) {
     return $data;
   }
 
+  \Drupal::service('civicrm')->initialize();
   $utils = \Drupal::service('webform_civicrm.utils');
   $webform = $webformSubmission->getWebform();
   foreach ($data as $key => $val) {
