@@ -7,6 +7,7 @@ use Drupal\Tests\webform\Traits\WebformBrowserTestTrait;
 use Behat\Mink\Exception\ElementNotFoundException;
 use Behat\Mink\Exception\ExpectationException;
 use Drupal\Core\Url;
+use Drupal\webform\WebformInterface;
 
 abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
 
@@ -744,6 +745,26 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->fillCKEditor('settings[body_custom_html][value]', $params['body']);
     $this->getSession()->getPage()->pressButton('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();
+  }
+
+  /**
+   * Returns the ID of the last submission on a given webform.
+   *
+   * @param \Drupal\webform\WebformInterface $webform
+   *   The webform entity object.
+   *
+   * @return int|null
+   *   The ID of the last submission on the webform, or null if there are no
+   *   submissions.
+   */
+  protected function getLastSubmissionId(WebformInterface $webform) {
+    $submission_ids = \Drupal::entityQuery('webform_submission')
+      ->accessCheck(TRUE)
+      ->condition('webform_id', $webform->id())
+      ->sort('created', 'DESC')
+      ->range(0, 1)
+      ->execute();
+    return reset($submission_ids);
   }
 
 }

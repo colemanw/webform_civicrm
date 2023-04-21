@@ -28,3 +28,7 @@ services:
   webform_civicrm.confirmform:
       class: Drupal\webform_civicrm\WebformCivicrmConfirmForm
       arguments: ['@webform_civicrm.utils']
+  webform_civicrm.route_subscriber:
+    class: Drupal\webform_civicrm\WebformCivicrmRouteSubscriber
+    tags:
+      - { name: event_subscriber }

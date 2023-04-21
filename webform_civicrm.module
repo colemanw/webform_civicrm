@@ -13,6 +13,7 @@ use Drupal\webform\Entity\WebformSubmission;
 use Drupal\node\Entity\Node;
 use Drupal\Core\Template\Attribute;
 use Drupal\Core\Url;
+use Drupal\Core\Link;
 
 /**
  * The versions of CiviCRM and WebForm. Min is >=.  Max is <. FALSE = no MAX
@@ -261,56 +262,45 @@ function _fillCiviCRMData($data, $webformSubmission) {
 }
 
 /**
- * Implements hook_webform_submission_render_alter().
+ * Implements hook_webform_submission_view_alter().
+ *
  * Add display name to title while viewing a submission.
  */
-function webform_civicrm_webform_submission_render_alter(&$sub) {
-  if (!empty($sub['#submission']->civicrm['contact'][1]['display_name']) && empty($sub['#email']) && $sub['#format'] == 'html') {
-    drupal_set_title(t('Submission #@num by @name', ['@num' => $sub['#submission']->sid, '@name' => $sub['#submission']->civicrm['contact'][1]['display_name']]));
-  }
-}
-
-/**
- * Implements hook_webform_submission_actions().
- * Add links to view contact & activity.
- */
-function webform_civicrm_webform_submission_actions($node, $submission) {
-  $actions = [];
-  if (!empty($node->webform_civicrm)
-    && !empty($submission->civicrm)
-    && webform_results_access($node)
-    && user_access('access CiviCRM')) {
-    $data = $submission->civicrm;
-    if (!empty($data['contact'][1]['display_name'])) {
-      $actions['civicrm_action contact_view'] = [
-        'title' => t('View @name', ['@name' => $data['contact'][1]['display_name']]),
-        'href' => 'civicrm/contact/view',
-        'query' => ['reset' => 1, 'cid' => $data['contact'][1]['id']],
-      ];
-      if (!empty($data['activity'][1]['id'])) {
-        $actions['civicrm_action activity_view'] = [
-          'title' => t('View Activity'),
-          'href' => 'civicrm/activity',
-          'query' => ['action' => 'view', 'reset' => 1, 'cid' => $data['contact'][1]['id'], 'id' => $data['activity'][1]['id']],
-        ];
-      }
-      if (!empty($data['contribution'][1]['id'])) {
-        $actions['civicrm_action contribution_view'] = [
-          'title' => t('View Contribution'),
-          'href' => 'civicrm/contact/view/contribution',
-          'query' => ['action' => 'view', 'reset' => 1, 'cid' => $data['contact'][1]['id'], 'id' => $data['contribution'][1]['id']],
-        ];
-      }
-      if (!empty($data['participant'][1]['id'])) {
-        $actions['civicrm_action participant_view'] = [
-          'title' => t('View Participant'),
-          'href' => 'civicrm/contact/view/participant',
-          'query' => ['action' => 'view', 'reset' => 1, 'cid' => $data['contact'][1]['id'], 'id' => $data['participant'][1]['id']],
-        ];
+function webform_civicrm_webform_submission_view_alter(array &$build, WebformSubmission $submission) {
+  $webform = $submission->getWebform();
+  $config = $webform->getHandlers('webform_civicrm')->getConfiguration();
+  if (!empty($config['webform_civicrm']) && !empty($submission->getData()['civicrm']) && \Drupal::currentUser()->hasPermission('access CiviCRM')) {
+    $data = $submission->getData()['civicrm'];
+    $links = [];
+    $entity_links = [
+      'contact' => 'contact/view',
+      'activity' => 'activity',
+      'contribution' => 'contact/view/contribution',
+      'participant' => 'contact/view/participant'
+    ];
+    foreach ($entity_links as $entity => $link) {
+      if (!empty($data[$entity][1]['id'])) {
+        $query = ['action' => 'view', 'reset' => 1, 'cid' => $data['contact'][1]['id'], 'id' => $data[$entity][1]['id']];
+        $name = ucfirst($entity);
+        if ($entity == 'contact') {
+          $query = ['reset' => 1, 'cid' => $data['contact'][1]['id']];
+          $name = $data['contact'][1]['display_name'];
+        }
+        $url = Url::fromUri('internal:/civicrm/' . $link, ['query' => $query, 'absolute' => TRUE]);
+        $links[$entity] = Link::fromTextAndUrl(t('View @entity', ['@entity' => $name]), $url)->toRenderable();
       }
     }
+    if (!empty($links)) {
+      $links_markup = '';
+      foreach ($links as $link) {
+        $links_markup .= '<li>' . \Drupal::service('renderer')->renderPlain($link) . '</li>';
+      }
+      $build['civicrm_actions'] = [
+        '#markup' => '<ul class="inline">' . $links_markup . '</ul>',
+        '#weight' => -10,
+      ];
+    }
   }
-  return $actions;
 }
 
 /**
