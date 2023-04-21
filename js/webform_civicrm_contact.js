@@ -9,19 +9,21 @@
         }
         var autocompleteUrl = D.url('webform-civicrm/js/' + field.data('form-id') + '/' + field.data('civicrm-field-key'));
         var isSelect = field.data('is-select');
-        var isAutocomplete = field.data('is-autocomplete');
-        if (isAutocomplete) {
+        if (!isSelect) {
+          var tokenValues = field.data('is-contactid') ? false : {
+            hintText: field.data('search-prompt'),
+            noResultsText: field.data('none-prompt'),
+            resultsFormatter: formatChoices,
+            searchingText: "Searching..."
+          };
           wfCivi.existingInit(
             field,
             field.data('civicrm-contact'),
             field.data('form-id'),
             autocompleteUrl,
-            toHide, {
-            hintText: field.data('search-prompt'),
-            noResultsText: field.data('none-prompt'),
-            resultsFormatter: formatChoices,
-            searchingText: "Searching..."
-          });
+            toHide,
+            tokenValues
+          );
         }
 
         field.change(function () {
