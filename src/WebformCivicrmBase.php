@@ -373,7 +373,7 @@ abstract class WebformCivicrmBase {
     // Go through the array and match up locations by type
     // Put placeholder 'user-select' where location_type_id is empty for second pass
     foreach ($settingsArray[$ent] as $setting) {
-      $valueFound = TRUE;
+      $valueFound = FALSE;
       foreach ($values as $key => $value) {
         if ((in_array($ent, ['address', 'email']) && $value['location_type_id'] == $setting['location_type_id'])
           || (
