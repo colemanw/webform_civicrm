@@ -365,7 +365,7 @@ abstract class WebformCivicrmBase {
    * @param array $values
    * @return array $reorderedArray
    */
-  protected function matchLocationTypes($c, $ent, &$values){
+  protected function matchLocationTypes($c, $ent, &$values) {
     // create temporary settings array to include 'user-select' fields
     // on the right place in array
     $settingsArray = $this->add_user_select_field_placeholder($ent, $this->settings['data']['contact'][$c]);
@@ -373,34 +373,34 @@ abstract class WebformCivicrmBase {
     // Go through the array and match up locations by type
     // Put placeholder 'user-select' where location_type_id is empty for second pass
     foreach ($settingsArray[$ent] as $setting) {
-      $valueFound = false;
-      foreach($values as $key => $value) {
+      $valueFound = FALSE;
+      foreach ($values as $key => $value) {
         if ((in_array($ent, ['address', 'email']) && $value['location_type_id'] == $setting['location_type_id'])
-            || (
-              isset($setting['location_type_id']) && $value['location_type_id'] == $setting['location_type_id'] &&
-              (
-                !isset($setting[$ent.'_type_id']) ||
-                (isset($value[$ent.'_type_id'])) && $value[$ent.'_type_id'] == $setting[$ent.'_type_id']
-              )
+          || (
+            isset($setting['location_type_id']) && $value['location_type_id'] == $setting['location_type_id'] &&
+            (
+              !isset($setting[$ent . '_type_id']) ||
+              (isset($value[$ent . '_type_id'])) && $value[$ent . '_type_id'] == $setting[$ent . '_type_id']
             )
+          )
         ) {
-            $reorderedArray[$key] = $value;
-            $valueFound = true;
-            unset($values[$key]);
-            break;
+          $reorderedArray[$key] = $value;
+          $valueFound = TRUE;
+          unset($values[$key]);
+          break;
         }
         // For 'user-select' fields
-        else if (empty($setting['location_type_id'])) {
-          $valueFound = true;
-          $reorderedArray['us'.$userSelectIndex] = 'user-select';
-          $userSelectIndex ++;
+        elseif (empty($setting['location_type_id'])) {
+          $valueFound = TRUE;
+          $reorderedArray['us' . $userSelectIndex] = 'user-select';
+          $userSelectIndex++;
           break;
         }
       }
 
       // always keep number of returned values equal to chosen settings
       // if value is not found then set an empty array
-      if (!$valueFound){
+      if (!$valueFound) {
         $reorderedArray[] = [];
       }
     }
