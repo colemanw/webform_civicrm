@@ -370,10 +370,10 @@ var wfCivi = (function (D, $, drupalSettings, once) {
       if (typeof setting.billing_values != "undefined") {
         $.each(setting.billing_values, function(k, v) {
           if (state_only && k == 'state_province_id') {
-            $('[name=civicrm_1_contribution_1_contribution_billing_address_' + k).val(v);
+            $('[name=civicrm_1_contribution_1_contribution_billing_address_' + k + ']').val(v);
           }
           else if (!state_only) {
-            $('[name=civicrm_1_contribution_1_contribution_billing_address_' + k).val(v).change();
+            $('[name=civicrm_1_contribution_1_contribution_billing_address_' + k + ']').val(v).change();
           }
         });
       }
@@ -381,12 +381,14 @@ var wfCivi = (function (D, $, drupalSettings, once) {
         // Address fields are on same page.
         var billing_fields = state_only ? ['state_province_id'] : ['street_address', 'city', 'postal_code', 'state_province_id', 'country_id', 'first_name', 'middle_name', 'last_name'];
         $.each(billing_fields, function(key, field_name) {
-          var v = (key < 5) ? $('[name=civicrm_1_contact_1_address_' + field_name).val() : $('[name=civicrm_1_contact_1_contact_' + field_name).val();
-          if (state_only && field_name == 'state_province_id') {
-            $('[name=civicrm_1_contribution_1_contribution_billing_address_' + field_name).val(v);
-          }
-          else if (!state_only) {
-            $('[name=civicrm_1_contribution_1_contribution_billing_address_' + field_name).val(v).change();
+          if ($('[name=civicrm_1_contact_1_address_' + field_name).length > 0) {
+            var v = (key < 5) ? $('[name=civicrm_1_contact_1_address_' + field_name).val() : $('[name=civicrm_1_contact_1_contact_' + field_name).val();
+            if (state_only && field_name == 'state_province_id') {
+              $('[name=civicrm_1_contribution_1_contribution_billing_address_' + field_name + ']').val(v);
+            }
+            else if (!state_only) {
+              $('[name=civicrm_1_contribution_1_contribution_billing_address_' + field_name + ']').val(v).change();
+            }
           }
         });
       }

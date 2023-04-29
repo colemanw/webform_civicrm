@@ -221,6 +221,9 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
         foreach ($billing_fields as $value) {
           $addressKey = 'civicrm_1_contact_1_address_' . $value;
           $contactKey = 'civicrm_1_contact_1_contact_' . $value;
+          if (empty($this->node->getElement($addressKey)) && empty($this->node->getElement($contactKey))) {
+            continue;
+          }
           $billing_values[$value] = $form_data[$addressKey] ?? $form_data[$contactKey] ?? NULL;
         }
         $this->form['#attached']['drupalSettings']['webform_civicrm']['billing_values'] = $billing_values;

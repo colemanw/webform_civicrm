@@ -116,13 +116,24 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
+    $countryID = $this->utils->wf_civicrm_api4('Country', 'get', [
+      'where' => [
+        ['name', '=', 'United States'],
+      ],
+    ], 0)['id'];
+    $stateProvinceID = $this->utils->wf_civicrm_api4('StateProvince', 'get', [
+      'where' => [
+        ['abbreviation', '=', 'NJ'],
+        ['country_id', '=', $countryID],
+      ],
+    ], 0)['id'];
     $billingValues = [
       'first_name' => 'Frederick',
       'last_name' => 'Pabst',
       'street_address' => '123 Milwaukee Ave',
       'city' => 'Milwaukee',
-      'country_id' => '1228',
-      'state_province_id' => $this->utils->wf_crm_state_abbr('NJ', 'id'),
+      'country_id' => $countryID,
+      'state_province_id' => $stateProvinceID,
       'postal_code' => '53177',
     ];
     $this->getSession()->getPage()->fillField('First Name', $billingValues['first_name']);
