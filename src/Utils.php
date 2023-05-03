@@ -448,7 +448,8 @@ class Utils implements UtilsInterface {
               $enabled[$lobo . '_' . $i . '_' . $ent . '_' . $n . '_' . $customGroupFieldsetKey . '_createmode'] = 1;
             }
           }
-          if ((isset($fields[$id]) || $id == 'fieldset_fieldset' || $id == $customGroupFieldsetKey . '_fieldset') && is_numeric($i) && is_numeric($n)) {
+          $fieldSetIds = ['fieldset_fieldset', "{$customGroupFieldsetKey}_fieldset", "number_of_billing_1_fieldset_fieldset"];
+          if ((isset($fields[$id]) || (in_array($id, $fieldSetIds))) && is_numeric($i) && is_numeric($n)) {
             if (!$show_all && ($ent == 'contact' || $ent == 'participant') && empty($handler_configuration['settings']['data']['contact'][$i])) {
               continue;
             }

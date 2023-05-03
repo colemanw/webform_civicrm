@@ -169,6 +169,12 @@ class AdminHelp implements AdminHelpInterface {
       '</p>';
   }
 
+  protected function contribution_billing_address_same_as() {
+    return '<p>' .
+      t('Provides a checkbox on the webform which copies the values from first address of Contact 1 to Billing section.') .
+      '</p>';
+  }
+
   protected function contribution_frequency_interval() {
     return '<p>' .
       t('Interval of Installments. ') .

@@ -795,6 +795,12 @@ class Fields implements FieldsInterface {
           'set' => 'contributionRecur',
         ];
         $sets['billing_1_number_of_billing'] = ['entity_type' => 'contribution', 'label' => t('Billing Address')];
+        $fields['contribution_billing_address_same_as'] = [
+          'name' => t('Same As'),
+          'type' => 'checkbox',
+          'set' => 'billing_1_number_of_billing',
+          'parent' => 'contribution_pagebreak',
+        ];
         $billingFields = [
           'first_name' => t('Billing First Name'),
           'middle_name' => t('Billing Middle Name'),

@@ -666,8 +666,11 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
 
   /**
    * Fill Card Details and submit.
+   *
+   * @param array $billingValues
+   *  Assert values populated in billing address fields after sameas checkbox is enabled.
    */
-  protected function fillCardAndSubmit() {
+  protected function fillCardAndSubmit($billingValues = []) {
     // Wait for the credit card form to load in.
     $this->assertSession()->waitForField('credit_card_number');
     $this->getSession()->getPage()->fillField('Card Number', '4222222222222220');
@@ -675,22 +678,34 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[M]', '11');
     $this_year = date('Y');
     $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[Y]', $this_year + 1);
-    $billingValues = [
-      'first_name' => 'Frederick',
-      'last_name' => 'Pabst',
-      'street_address' => '123 Milwaukee Ave',
-      'city' => 'Milwaukee',
-      'country' => '1228',
-      'state_province' => '1048',
-      'postal_code' => '53177',
-    ];
-    $this->fillBillingFields($billingValues);
+    if (!empty($billingValues)) {
+      $this->getSession()->getPage()->checkField("civicrm_1_contribution_1_contribution_billing_address_same_as");
+      $this->assertSession()->assertWaitOnAjaxRequest();
+      $this->getSession()->wait(1000);
+
+      // Verify populated values for billing fields.
+      foreach ($billingValues as $key => $val) {
+        $billingKey = 'civicrm_1_contribution_1_contribution_billing_address_' . $key;
+        $this->assertSession()->fieldValueEquals($billingKey, $val);
+      }
+    }
+    else {
+      $billingValues = [
+        'first_name' => 'Frederick',
+        'last_name' => 'Pabst',
+        'street_address' => '123 Milwaukee Ave',
+        'city' => 'Milwaukee',
+        'country' => '1228',
+        'state_province' => '1048',
+        'postal_code' => '53177',
+      ];
+      $this->fillBillingFields($billingValues);
+    }
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->htmlOutput();
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
-
   }
 
   /**
