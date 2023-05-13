@@ -32,25 +32,18 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     // $this->createScreenshot($this->htmlOutputDirectory . '/membership_page_settings.png');
 
     // Configure Contribution tab and enable recurring.
-    $this->getSession()->getPage()->clickLink('Contribution');
-    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertSession()->pageTextContains('You must enable an email field for Contact 1 in order to process transactions.');
-    $this->getSession()->getPage()->pressButton('Enable It');
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
-    $this->getSession()->getPage()->selectFieldOption('Financial Type', 1);
+    $params = [
+      'payment_processor_id' => $payment_processor['id'],
+    ];
+    $this->configureContributionTab($params);
     $this->getSession()->getPage()->selectFieldOption('Frequency of Installments', 'year');
 
-    $this->getSession()->getPage()->selectFieldOption('Payment Processor', $payment_processor['id']);
-    // $this->createScreenshot($this->htmlOutputDirectory . '/membership_page_settings_before_save.png');
     $this->enableBillingSection();
 
     $this->saveCiviCRMSettings();
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
-    // $this->createScreenshot($this->htmlOutputDirectory . '/membership_page1.png');
 
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
@@ -58,6 +51,8 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_membership_1_membership_membership_type_id', '1');
 
     $this->getSession()->getPage()->pressButton('Next >');
+    $this->assertSession()->waitForField('wf-crm-billing-items');
+    $this->htmlOutput();
 
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->htmlOutput();
@@ -348,6 +343,9 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     // $this->createScreenshot($this->htmlOutputDirectory . 'KG.png');
 
     $this->getSession()->getPage()->pressButton('Next >');
+    $this->assertSession()->waitForField('wf-crm-billing-items');
+    $this->htmlOutput();
+
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->assertSession()->elementTextContains('css', '.civicrm_1_membership_1', "Basic: {$province}_first {$province}_last");
 
