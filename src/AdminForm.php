@@ -233,7 +233,7 @@ class AdminForm implements AdminFormInterface {
       '#type' => 'select',
       '#title' => t('Number of Contacts'),
       '#default_value' => count($this->data['contact']),
-      '#options' => array_combine(range(1, 30), range(1, 30)),
+      '#options' => array_combine(range(1, 40), range(1, 40)),
     ];
     $this->form['change_form_settings'] = [
       '#type' => 'button',
