@@ -31,7 +31,7 @@ var wfCivi = (function (D, $, drupalSettings, once) {
         }
         names.organization = names.household = names.first + (names.last ? ' ' : '') + names.last;
         for (i in names) {
-          $(':input[name$="civicrm_'+num+'_contact_1_contact_'+i+'_name"]', formClass).val(names[i]);
+          $(':input[name$="civicrm_' + num + '_contact_1_contact_' + i + '_name"]', formClass).val(names[i]);
         }
       }
       return;
@@ -232,7 +232,7 @@ var wfCivi = (function (D, $, drupalSettings, once) {
         pub.initFileField(fid, this);
         return;
       }
-      var $wrapper = $(formClass +' div.form-item[class*="-'+(fid.replace(/_/g, '-'))+'"]');
+      var $wrapper = $(formClass + ' div.form-item[class*="-' + (fid.replace(/_/g, '-')) + '"]');
       if (this.data_type === 'Date') {
         var vals = val.split(' ');
         var $date_el = $('input[name="' + fid + '[date]"]', $wrapper);
@@ -271,8 +271,9 @@ var wfCivi = (function (D, $, drupalSettings, once) {
       // Next go after the wrapper - for radios & checkboxes
       else {
         $.each($.makeArray(val), function(k, v) {
-          $('input[value="'+v+'"]', $wrapper).prop('checked', true).trigger('change', 'webform_civicrm:autofill');
+          $('input[value="' + v + '"]', $wrapper).prop('checked', true).trigger('change', 'webform_civicrm:autofill');
         });
+        $('input[type="checkbox"]:first-child', $wrapper).removeAttr('required');
       }
     });
   }
