@@ -329,8 +329,12 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
    * @param bool $default
    * @param string $type
    *  possible values - checkboxes, radios, select, civicrm-options
+   * @param string $singleOption
+   *  TRUE if only one option is enabled on the element.
+   * @param string $asList
+   *  TRUE if element need to be rendered as select element.
    */
-  protected function editCivicrmOptionElement($selector, $multiple = TRUE, $enableStatic = FALSE, $default = NULL, $type = NULL) {
+  protected function editCivicrmOptionElement($selector, $multiple = TRUE, $enableStatic = FALSE, $default = NULL, $type = NULL, $singleOption = FALSE, $asList = FALSE) {
     $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="' . $selector . '"] a.webform-ajax-link');
     $checkbox_edit_button->click();
     $this->assertSession()->waitForField('drupal-off-canvas');
@@ -345,14 +349,32 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     if ($enableStatic) {
       $this->getSession()->getPage()->selectFieldOption("properties[civicrm_live_options]", 0);
       $this->assertSession()->waitForField('properties[options][options][civicrm_option_1][enabled]', 5000);
+
+      if ($singleOption) {
+        $select_all_checkbox = $this->assertSession()->elementExists('css', '.select-all input.form-checkbox');
+        $select_all_checkbox->click();
+        $this->getSession()->wait(1000);
+        $select_all_checkbox->click();
+        $this->getSession()->wait(1000);
+
+        $this->getSession()->getPage()->checkField('properties[options][options][civicrm_option_1][enabled]');
+        $this->assertSession()->checkboxChecked('properties[options][options][civicrm_option_1][enabled]');
+      }
     }
     if ($default) {
       $this->getSession()->getPage()->selectFieldOption("properties[options][default]", $default);
     }
     if (!$type || $type == 'civicrm-options') {
-      $this->getSession()->getPage()->uncheckField('properties[extra][aslist]');
-      $this->assertSession()->checkboxNotChecked('properties[extra][aslist]');
-      $this->htmlOutput();
+      if ($asList) {
+        $this->getSession()->getPage()->checkField('properties[extra][aslist]');
+        $this->assertSession()->checkboxChecked('properties[extra][aslist]');
+        $this->htmlOutput();
+      }
+      else {
+        $this->getSession()->getPage()->uncheckField('properties[extra][aslist]');
+        $this->assertSession()->checkboxNotChecked('properties[extra][aslist]');
+        $this->htmlOutput();
+      }
       if (!$multiple) {
         $this->getSession()->getPage()->uncheckField('properties[extra][multiple]');
         $this->assertSession()->checkboxNotChecked('properties[extra][multiple]');
