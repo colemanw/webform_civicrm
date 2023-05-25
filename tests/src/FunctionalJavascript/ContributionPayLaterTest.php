@@ -90,7 +90,13 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $sent_email = $this->getMostRecentEmail();
     $this->assertStringContainsString('From: Pay Laterers <pay.later@example.org>', $sent_email);
     $this->assertStringContainsString('To: Frederick Pabst <fred@example.com>', $sent_email);
-    $this->assertStringContainsString('Subject: Invoice - Contribution - Frederick Pabst', $sent_email);
+    // Adjust for fix in core - since status is now completed, it shouldn't say invoice.
+    if (version_compare(\CRM_Core_BAO_Domain::version(), '5.63.alpha1', '<')) {
+      $this->assertStringContainsString('Subject: Invoice - Contribution - Frederick Pabst', $sent_email);
+    }
+    else {
+      $this->assertStringContainsString('Subject: Receipt - Contribution - Frederick Pabst', $sent_email);
+    }
   }
 
   public function testSubmitContribution() {
