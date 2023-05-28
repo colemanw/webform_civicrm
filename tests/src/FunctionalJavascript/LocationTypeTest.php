@@ -42,10 +42,7 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
     ]);
   }
 
-  /**
-   * Submit address with primary flag set to 0.
-   */
-  public function testAddressSubmissionNoPrimary() {
+  public function createWebformWithAddress($locType = 'Home') {
     $this->drupalLogin($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
@@ -57,11 +54,13 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
 
     $this->getSession()->getPage()->checkField('Country');
-    $this->getSession()->getPage()->selectFieldOption('Address Location', 'Home');
+    $this->getSession()->getPage()->selectFieldOption('Address Location',$locType);
     $this->getSession()->getPage()->selectFieldOption('Is Primary', 'No');
 
     $this->saveCiviCRMSettings();
+  }
 
+  public function submitAndVerifyAddressSubmission() {
     //Submit the form.
     $this->drupalGet($this->webform->toUrl('canonical'));
 
@@ -100,25 +99,26 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
   }
 
   /**
+   * Submit address with primary flag set to 0.
+   */
+  public function testAddressSubmissionNoPrimary() {
+    $this->createWebformWithAddress('Home');
+    $this->submitAndVerifyAddressSubmission();
+  }
+
+  /**
+   * Test submission of billing address without enabling contribution.
+   */
+  public function testBillingAddressWithoutContribution() {
+    $this->createWebformWithAddress('Billing');
+    $this->submitAndVerifyAddressSubmission();
+  }
+
+  /**
    * Test webform submission with locked address fields.
    */
   public function testLockedAddressSubmission() {
-    $this->drupalLogin($this->rootUser);
-    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
-      'webform' => $this->webform->id(),
-    ]));
-    $this->enableCivicrmOnWebform();
-
-    $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_address', 1);
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->htmlOutput();
-
-    $this->getSession()->getPage()->checkField('Country');
-    $this->getSession()->getPage()->selectFieldOption('Address Location', 'Main');
-    $this->getSession()->getPage()->selectFieldOption('Is Primary', 'No');
-
-    $this->saveCiviCRMSettings();
-
+    $this->createWebformWithAddress('Main');
     $this->drupalGet($this->webform->toUrl('edit-form'));
 
     // Edit contact element and enable select widget.
@@ -226,7 +226,6 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
       'id' => $contact['id'],
     ]);
     $result_debug = var_export($contact_result, TRUE);
-
     $this->assertArrayHasKey('count', $contact_result, $result_debug);
     $this->assertEquals(1, $contact_result['count'], $result_debug);
 

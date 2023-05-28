@@ -812,9 +812,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     // Check which location_type_id is to be set as is_primary=1;
     $is_primary_address_location_type = wf_crm_aval($contact, 'address:1:location_type_id');
     $is_primary_email_location_type = wf_crm_aval($contact, 'email:1:location_type_id');
-    $billingLocTypeID = $this->utils->wf_civicrm_api('LocationType', 'get', [
-      'name' => "Billing",
-    ])['id'] ?? NULL;
 
     foreach ($this->utils->wf_crm_location_fields() as $location) {
       if (!empty($contact[$location])) {
@@ -822,6 +819,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         $params = ['contact_id' => $cid];
         if ($location != 'website') {
           $params['options'] = ['sort' => 'is_primary DESC'];
+        }
+        // If billing address is submitted during validation phase, ignore updating that value.
+        if ($location == 'address' && !empty($this->billing_params['billing_address_id'])) {
+          $params['id'] = ['!=' => $this->billing_params['billing_address_id']];
         }
         $result = $this->utils->wf_civicrm_api($location, 'get', $params);
         if (!empty($result['values'])) {
@@ -1926,10 +1927,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       $address['contact_id'] = $email['contact_id'] = $this->ent['contact'][$i]['id'] = $cid;
       // Don't create a blank billing address.
       if ($address['street_address'] || $address['city'] || $address['country_id'] || $address['state_province_id'] || $address['postal_code']) {
-        $this->utils->wf_civicrm_api('address', 'create', $address);
+        $this->billing_params['billing_address_id'] = $this->utils->wf_civicrm_api('address', 'create', $address)['id'] ?? NULL;
       }
       if ($email['email'] ?? FALSE) {
-        $this->utils->wf_civicrm_api('email', 'create', $email);
+        $this->billing_params['billing_email_id'] = $this->utils->wf_civicrm_api('email', 'create', $email)['id'] ?? NULL;
       }
     }
     return $cid;
