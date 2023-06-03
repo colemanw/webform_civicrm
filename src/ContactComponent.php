@@ -367,10 +367,19 @@ class ContactComponent implements ContactComponentInterface {
         $filterVal = $contact_element->getElementProperty($component, $filter);
         $this->wf_crm_search_filterArray($filterVal);
         if ($filterVal) {
-          $op = '=';
-          if (in_array($filter, ['group', 'tag'])) {
-            $filter .= 's';
-            $op = 'IN';
+          switch ($filter) {
+            case 'group':
+            case 'tag':
+              $filter .= 's';
+              $op = 'IN';
+              break;
+
+            case 'contact_sub_type':
+              $op = 'CONTAINS';
+              break;
+
+            default:
+              $op = '=';
           }
           $params['where'][] = [$filter, $op, $filterVal];
         }
