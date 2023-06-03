@@ -170,6 +170,19 @@ function webform_civicrm_theme() {
 }
 
 /**
+ * Implements hook_entity_load()
+ * Display entity links on submission page.
+ *
+ * @param array $entities
+ */
+function webform_civicrm_webform_submission_load($entities) {
+  foreach ($entities as $entity) {
+    $data = _fillCiviCRMData($entity->getData(), $entity);
+    $entity->setData($data);
+  }
+}
+
+/**
  * Fill civicrm data to the submission object.
  *
  * @param array $data
