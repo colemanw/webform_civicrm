@@ -170,17 +170,6 @@ function webform_civicrm_theme() {
 }
 
 /**
- * Implements hook_entity_load()
- * Display labels for civicrm option element.
- */
-function webform_civicrm_webform_submission_load($entities) {
-  foreach ($entities as $entity) {
-    $data = _fillCiviCRMData($entity->getData(), $entity);
-    $entity->setData($data);
-  }
-}
-
-/**
  * Fill civicrm data to the submission object.
  *
  * @param array $data
