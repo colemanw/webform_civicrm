@@ -693,13 +693,6 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
    *  Assert values populated in billing address fields after sameas checkbox is enabled.
    */
   protected function fillCardAndSubmit($billingValues = []) {
-    // Wait for the credit card form to load in.
-    $this->assertSession()->waitForField('credit_card_number');
-    $this->getSession()->getPage()->fillField('Card Number', '4222222222222220');
-    $this->getSession()->getPage()->fillField('Security Code', '123');
-    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[M]', '11');
-    $this_year = date('Y');
-    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[Y]', $this_year + 1);
     if (!empty($billingValues)) {
       $this->getSession()->getPage()->checkField("civicrm_1_contribution_1_contribution_billing_address_same_as");
       $this->assertSession()->assertWaitOnAjaxRequest();
@@ -723,6 +716,13 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       ];
       $this->fillBillingFields($billingValues);
     }
+    // Wait for the credit card form to load in.
+    $this->assertSession()->waitForField('credit_card_number');
+    $this->getSession()->getPage()->fillField('credit_card_number', '4222222222222220');
+    $this->getSession()->getPage()->fillField('cvv2', '123');
+    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[M]', '11');
+    $this_year = date('Y');
+    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[Y]', $this_year + 1);
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->htmlOutput();
