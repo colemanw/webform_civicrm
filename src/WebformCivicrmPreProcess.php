@@ -591,6 +591,11 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
               $element['#default_value'] = $val;
             }
           }
+          // If the default value is different (because we're in a variant) set it.
+          if (($this->node->getElementsDefaultData()[$eid] ?? FALSE)
+            && !(isset($element['#form_key']) && isset($submitted[$element['#form_key']]))) {
+            $element['#default_value'] = $this->node->getElementsDefaultData()[$eid];
+          }
           if (in_array($name, ['state_province_id', 'county_id', 'billing_address_state_province_id', 'billing_address_county_id'])) {
             $element['#attributes']['data-val'] = $element['#default_value'] ?? NULL;
           }
