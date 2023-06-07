@@ -1846,9 +1846,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       $valid = FALSE;
     }
     // Email
-    for ($i = 1; $i <= $this->data['contact'][1]['number_of_email']; ++$i) {
-      if (!empty($this->crmValues["civicrm_1_contact_{$i}_email_email"])) {
-        $c = $this->getContributionContactIndex();
+    $c = $this->getContributionContactIndex();
+    for ($i = 1; $i <= $this->data['contact'][$c]['number_of_email']; ++$i) {
+      if (!empty($this->crmValues["civicrm_{$c}_contact_{$i}_email_email"])) {
         $params['email'] = $this->crmValues["civicrm_{$c}_contact_{$i}_email_email"];
         break;
       }
