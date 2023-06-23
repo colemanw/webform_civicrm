@@ -77,7 +77,6 @@ jobs:
           composer config extra.compile-mode all
           composer config minimum-stability dev
           composer config prefer-stable true
-          composer config preferred-install dist
           composer config allow-plugins.civicrm/composer-compile-plugin true
           composer config allow-plugins.civicrm/composer-downloads-plugin true
           composer config allow-plugins.civicrm/civicrm-asset-plugin true
