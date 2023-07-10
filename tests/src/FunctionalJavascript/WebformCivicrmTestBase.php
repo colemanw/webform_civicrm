@@ -807,7 +807,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   /**
    * Can remove this once only testing 5.65+
    */
-  private function getCreditCardMonthFieldName(): string {
+  protected function getCreditCardMonthFieldName(): string {
     if (version_compare(\CRM_Core_BAO_Domain::version(), '5.65.alpha1', '<')) {
       return 'credit_card_exp_date[M]';
     }
