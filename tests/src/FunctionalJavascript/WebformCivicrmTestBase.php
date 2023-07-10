@@ -720,7 +720,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->assertSession()->waitForField('credit_card_number');
     $this->getSession()->getPage()->fillField('credit_card_number', '4222222222222220');
     $this->getSession()->getPage()->fillField('cvv2', '123');
-    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[M]', '11');
+    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[m]', '11');
     $this_year = date('Y');
     $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[Y]', $this_year + 1);
 
