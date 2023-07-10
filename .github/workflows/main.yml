@@ -77,6 +77,7 @@ jobs:
           composer config extra.compile-mode all
           composer config minimum-stability dev
           composer config prefer-stable true
+          composer config preferred-install auto
           composer config allow-plugins.civicrm/composer-compile-plugin true
           composer config allow-plugins.civicrm/composer-downloads-plugin true
           composer config allow-plugins.civicrm/civicrm-asset-plugin true
@@ -96,7 +97,7 @@ jobs:
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} --prefer-dist -W
+          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} -W
       - name: Ensure Webform ^6.2
         if: ${{ matrix.drupal == '10.0.*' }}
         run: |
