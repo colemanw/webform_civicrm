@@ -720,7 +720,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->assertSession()->waitForField('credit_card_number');
     $this->getSession()->getPage()->fillField('credit_card_number', '4222222222222220');
     $this->getSession()->getPage()->fillField('cvv2', '123');
-    $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[m]', '11');
+    $this->getSession()->getPage()->selectFieldOption($this->getCreditCardMonthFieldName(), '11');
     $this_year = date('Y');
     $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[Y]', $this_year + 1);
 
@@ -802,6 +802,16 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       ->range(0, 1)
       ->execute();
     return reset($submission_ids);
+  }
+
+  /**
+   * Can remove this once only testing 5.65+
+   */
+  private function getCreditCardMonthFieldName(): string {
+    if (version_compare(\CRM_Core_BAO_Domain::version(), '5.65.alpha1', '<')) {
+      return 'credit_card_exp_date[M]';
+    }
+    return 'credit_card_exp_date[m]';
   }
 
 }
