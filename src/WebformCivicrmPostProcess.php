@@ -2709,6 +2709,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     }
     else {
       $data = $this->submission->getData();
+      $webform_submission = $this->submission;
     }
 
     if (!isset($data[$fid])) {
