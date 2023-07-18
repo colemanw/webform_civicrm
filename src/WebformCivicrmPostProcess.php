@@ -164,7 +164,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $webform = $webform_submission->getWebform();
     foreach ($data as $field_key => $val) {
       $element = $webform->getElement($field_key);
-      if ($element['#type'] == 'civicrm_options' && is_array($val) && count(array_filter(array_keys($val), 'is_string')) > 0) {
+      if ($element && $element['#type'] == 'civicrm_options' && is_array($val) && count(array_filter(array_keys($val), 'is_string')) > 0) {
         $data[$field_key] = array_values($val);
       }
     }
