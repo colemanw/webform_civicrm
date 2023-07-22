@@ -2514,6 +2514,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           }
           if (substr($name, 0, 6) === 'custom' || ($table == 'other' && in_array($name, ['group', 'tag']))) {
             $val = array_filter($val);
+            if ($name === 'group') {
+              unset($val['public_groups']);
+            }
           }
 
           // We need to handle items being de-selected too and provide an array to pass to Entity.create API

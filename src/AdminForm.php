@@ -1548,6 +1548,9 @@ class AdminForm implements AdminFormInterface {
       if ($field['type'] != 'hidden') {
         $options += ['create_civicrm_webform_element' => t('- User Select -')];
       }
+      if ($name == 'group') {
+        $options += ['public_groups' => t('- User Select - (public groups)')];
+      }
       $options += $this->utils->wf_crm_field_options($field, 'config_form', $this->data);
       $item += [
         '#type' => 'select',
@@ -1918,7 +1921,9 @@ class AdminForm implements AdminFormInterface {
         }
         elseif (!isset($enabled[$key])) {
           $val = (array) $val;
-          if (in_array('create_civicrm_webform_element', $val, TRUE) || (!empty($val[0]) && $field['type'] == 'hidden')) {
+          if (in_array('create_civicrm_webform_element', $val, TRUE)
+          || (!empty($val[0]) && $field['type'] == 'hidden')
+          || (preg_match('/_group$/', $key) && in_array('public_groups', $val, TRUE))) {
             // Restore disabled component
             if (isset($disabled[$key])) {
               webform_component_update($disabled[$key]);
@@ -2194,7 +2199,7 @@ class AdminForm implements AdminFormInterface {
     // Find fields to delete
     foreach ($fields as $key => $val) {
       $val = (array) wf_crm_aval($this->settings, $key);
-      if (((in_array('create_civicrm_webform_element', $val, TRUE)) && $this->settings['nid'])
+      if (((in_array('create_civicrm_webform_element', $val, TRUE) || in_array('public_groups', $val, TRUE)) && $this->settings['nid'])
         || strpos($key, 'fieldset') !== FALSE) {
         unset($fields[$key]);
       }
