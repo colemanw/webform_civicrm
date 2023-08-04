@@ -68,7 +68,13 @@ jobs:
       # - CiviCRM requires `compile-mode: all`
       - name: Setup sendmail
         run: |
+          sudo apt-get update
           sudo apt-get install sendmail
+      # This shouldn't be needed but if there's a mismatch with chromedriver
+      # then it can't find a version. Stable should be ... more stable.
+      - name: Setup chrome
+        run: |
+          sudo apt-get install google-chrome-stable
       - name: Setup Drupal
         run: |
           COMPOSER_MEMORY_LIMIT=-1 composer create-project drupal/recommended-project:${{ matrix.drupal }} ~/drupal --no-interaction --no-install
