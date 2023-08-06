@@ -1138,7 +1138,7 @@ class AdminForm implements AdminFormInterface {
     $this->form['contribution']['sets']['contribution']['contribution_1_settings_currency'] = [
       '#type' => 'select',
       '#title' => t('Currency'),
-      '#default_value' => wf_crm_aval($this->data, "contribution:1:currency"),
+      '#default_value' => wf_crm_aval($this->data, "contribution:1:currency", $this->utils->wf_crm_get_civi_setting('defaultCurrency')),
       '#options' => \CRM_Core_OptionGroup::values('currencies_enabled'),
       '#required' => TRUE,
     ];
