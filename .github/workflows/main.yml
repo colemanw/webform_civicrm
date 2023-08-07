@@ -21,13 +21,13 @@ jobs:
       matrix:
         include:
           - drupal: '9.4.*'
-            civicrm: '5.57.*'
+            civicrm: '5.63.*'
             php: '7.4'
           - drupal: '9.5.*'
-            civicrm: '5.58.*'
+            civicrm: '5.64.*'
             php: '7.4'
           - drupal: '9.5.*'
-            civicrm: '5.60.x-dev'
+            civicrm: '5.65.x-dev'
             php: '7.4'
           - drupal: '9.5.*'
             civicrm: 'dev-master'
