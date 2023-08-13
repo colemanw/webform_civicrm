@@ -1781,6 +1781,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       'location_type_id' => 'Billing',
     ];
     if (!$cid) {
+      // Current employer must wait for ContactRef ids to be filled
+      unset($contact['contact'][1]['employer_id']);
       $cid = $this->createContact($contact);
     }
     else {
