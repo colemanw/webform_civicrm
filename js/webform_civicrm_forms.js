@@ -174,7 +174,7 @@ var wfCivi = (function (D, $, drupalSettings, once) {
             });
             $('.civicrm-remove-file', this).click();
             $('input:checkbox, input:radio', this).each(function() {
-              $(this).removeAttr('checked').trigger('change', 'webform_civicrm:reset');
+              $(this).prop('checked', false).trigger('change', 'webform_civicrm:reset');
             });
           }
         }
