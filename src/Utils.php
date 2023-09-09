@@ -1021,4 +1021,45 @@ class Utils implements UtilsInterface {
     return FALSE;
   }
 
+
+  /**
+   * @inheritDoc
+   */
+  public function checksumUserAccess($c, $cid) {
+    $request = \Drupal::request();
+    $session = \CRM_Core_Session::singleton();
+    $urlCid1 = $request->query->get('cid');
+    $urlChecksum1 = $request->query->get('cs');
+
+    $urlCidN = $request->query->get("cid$c");
+    $urlChecksumN = $request->query->get("cs$c");
+
+    $cs = NULL;
+    if ($c == 1 && !empty($urlChecksum1)) {
+      $cs = $urlChecksum1;
+    }
+    elseif (!empty($urlChecksumN)) {
+      $cs = $urlChecksumN;
+    }
+    if ($cs && (($c == 1 && $urlCid1 == $cid) || $urlCidN == $cid)) {
+      $check_access = $this->wf_civicrm_api4('Contact', 'validateChecksum', [
+        'contactId' => $cid,
+        'checksum' => $cs,
+      ])[0] ?? [];
+      if ($check_access['valid']) {
+        if ($c == 1) {
+          $session->set('userID', $cid);
+        }
+        else {
+          return TRUE;
+        }
+      }
+    }
+    // If no checksum is passed and user is anonymous, reset prev checksum session values if any.
+    if (\Drupal::currentUser()->isAnonymous() && $session->get('userID') && $c == 1 && empty($urlChecksum1)) {
+      $session->reset();
+    }
+    return FALSE;
+  }
+
 }

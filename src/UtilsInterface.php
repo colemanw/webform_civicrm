@@ -318,4 +318,15 @@ interface UtilsInterface {
    */
   function wf_crm_get_civi_setting($setting_name, $default_value = NULL);
 
+  /**
+   * Set checksum user in the session.
+   *
+   * @param int $c
+   * @param int $cid
+   *
+   * @return boolean
+   *   TRUE if checksum is valid.
+   */
+  function checksumUserAccess($c, $cid);
+
 }
