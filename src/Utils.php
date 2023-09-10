@@ -603,19 +603,7 @@ class Utils implements UtilsInterface {
   }
 
   /**
-   * Wrapper for all CiviCRM APIv4 calls
-   *
-   * @param string $entity
-   *   API entity
-   * @param string $operation
-   *   API operation
-   * @param array $params
-   *   API params
-   * @param string|int|array $index
-   *   Controls the Result array format.
-   *
-   * @return array
-   *   Result of API call
+   * @inheritDoc
    */
   function wf_civicrm_api4($entity, $operation, $params, $index = NULL) {
     if (!$entity) {
@@ -1050,9 +1038,7 @@ class Utils implements UtilsInterface {
         if ($c == 1) {
           $session->set('userID', $cid);
         }
-        else {
-          return TRUE;
-        }
+        return TRUE;
       }
     }
     // If no checksum is passed and user is anonymous, reset prev checksum session values if any.

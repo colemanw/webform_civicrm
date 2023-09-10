@@ -319,6 +319,7 @@ interface UtilsInterface {
   function wf_crm_get_civi_setting($setting_name, $default_value = NULL);
 
   /**
+   * Check if user checksum is available in the URL.
    * Set checksum user in the session.
    *
    * @param int $c
@@ -328,5 +329,22 @@ interface UtilsInterface {
    *   TRUE if checksum is valid.
    */
   function checksumUserAccess($c, $cid);
+
+  /**
+   * Wrapper for all CiviCRM APIv4 calls
+   *
+   * @param string $entity
+   *   API entity
+   * @param string $operation
+   *   API operation
+   * @param array $params
+   *   API params
+   * @param string|int|array $index
+   *   Controls the Result array format.
+   *
+   * @return array|\Civi\Api4\Generic\Result
+   *   Result of API call
+   */
+  function wf_civicrm_api4($entity, $operation, $params, $index = NULL);
 
 }
