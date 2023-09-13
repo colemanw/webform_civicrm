@@ -170,9 +170,6 @@ jobs:
           /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.iatspayments.civicrm
           /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.aghstrategies.uscounties
       - uses: nanasess/setup-chromedriver@master
-        with:
-          # This is temporary until the repo catches up with the right version
-          chromedriver-version: '115.0.5790.102'
       - name: Run chromedriver
         run: chromedriver &
       - name: Run php built-in server
