@@ -2317,13 +2317,12 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       }
     }
     // Save honoree
-    // FIXME: these api params were deprecated in 4.5, should be switched to use soft-credits when we drop support for 4.4
     if (!empty($contribution['honor_contact_id']) && !empty($contribution['honor_type_id'])) {
-      $this->utils->wf_civicrm_api('contribution', 'create', [
-        'id' => $id,
-        'total_amount' => $contribution['total_amount'],
-        'honor_contact_id' => $contribution['honor_contact_id'],
-        'honor_type_id' => $contribution['honor_type_id'],
+      $this->utils->wf_civicrm_api('contribution_soft', 'create', [
+        'contribution_id' => $id,
+        'amount' => $contribution['total_amount'],
+        'contact_id' => $contribution['honor_contact_id'],
+        'soft_credit_type_id' => $contribution['honor_type_id'],
       ]);
     }
 
