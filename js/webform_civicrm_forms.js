@@ -164,6 +164,9 @@ var wfCivi = (function (D, $, drupalSettings, once) {
               $(':input[id$="month"]', $wrapper).val(parseInt(date[1], 10)).trigger('change', 'webform_civicrm:autofill');
               $(':input[id$="day"]', $wrapper).val(parseInt(date[2], 10)).trigger('change', 'webform_civicrm:autofill');
             }
+            else {
+              $(':input', this).val('').trigger('change', 'webform_civicrm:reset');;
+            }
           }
           else {
             $(':input', this).not(':radio, :checkbox, :button, :submit, :file, .form-file').each(function() {
