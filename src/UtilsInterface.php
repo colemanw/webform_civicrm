@@ -347,4 +347,15 @@ interface UtilsInterface {
    */
   function wf_civicrm_api4($entity, $operation, $params, $index = NULL);
 
+  /**
+   * Check if logged in user or the checksum user
+   * is allowed to view a contact.
+   *
+   * @param int $cid
+   *
+   * @return boolean
+   *   TRUE if checksum user is allowed to view $cid.
+   */
+  function isContactAccessible($cid);
+
 }

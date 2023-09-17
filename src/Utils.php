@@ -8,9 +8,27 @@ namespace Drupal\webform_civicrm;
  */
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Render\Markup;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\webform\WebformInterface;
 
 class Utils implements UtilsInterface {
+
+  /**
+   * The related request stack.
+   *
+   * @var \Symfony\Component\HttpFoundation\RequestStack
+   */
+  private $requestStack;
+
+  /**
+   * Constructs a utils object.
+   *
+   * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
+   *   The request stack.
+   */
+  function __construct(RequestStack $requestStack) {
+    $this->requestStack = $requestStack;
+  }
 
   /**
    * Explodes form key into an array and verifies that it is in the right format
@@ -1014,7 +1032,8 @@ class Utils implements UtilsInterface {
    * @inheritDoc
    */
   public function checksumUserAccess($c, $cid) {
-    $request = \Drupal::request();
+    $request = $this->requestStack->getCurrentRequest();
+    $urlCidN = $urlChecksumN = NULL;
     $session = \CRM_Core_Session::singleton();
     $urlCid1 = $request->query->get('cid');
     $urlChecksum1 = $request->query->get('cs');
@@ -1041,9 +1060,46 @@ class Utils implements UtilsInterface {
         return TRUE;
       }
     }
+    // If access is checked for non primary contact, check if c1 has access to view it.
+    elseif ($c != 1 && $this->isContactAccessible($cid)) {
+      return TRUE;
+    }
     // If no checksum is passed and user is anonymous, reset prev checksum session values if any.
     if (\Drupal::currentUser()->isAnonymous() && $session->get('userID') && $c == 1 && empty($urlChecksum1)) {
       $session->reset();
+    }
+    return FALSE;
+  }
+
+  /**
+   * @inheritDoc
+   */
+  public function isContactAccessible($cid) {
+    $access = $this->wf_civicrm_api4('Contact', 'checkAccess', [
+      'action' => 'get',
+      'values' => [
+        'id' => $cid,
+      ],
+    ], 0);
+    if (!empty($access['access'])) {
+      return TRUE;
+    }
+
+    $request = $this->requestStack->getCurrentRequest();
+    $urlCid1 = $request->query->get('cid') ?? $request->query->get('cid1') ?? NULL;
+    $urlChecksum1 = $request->query->get('cs') ?? $request->query->get('cs1') ?? NULL;
+
+    if (!empty($urlChecksum1) && !empty($urlCid1)) {
+      $valid = $this->wf_civicrm_api4('Contact', 'validateChecksum', [
+        'contactId' => $urlCid1,
+        'checksum' => $urlChecksum1,
+      ])[0] ?? [];
+      if ($valid['valid']) {
+        // checkAccess v4 api does not check for access via relationship.
+        if (\CRM_Contact_BAO_Contact_Permission::allow($cid)) {
+          return TRUE;
+        }
+      }
     }
     return FALSE;
   }

@@ -184,6 +184,20 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
       'state_province_id' => "Alberta",
       'postal_code' => 11111,
     ]);
+    $household = $this->createHousehold([
+      'household_name' => 'Anthony Family',
+    ]);
+    // Add relationship b/w the above 2 contacts and ensure
+    // contact has ability to view the household.
+    $this->utils->wf_civicrm_api4('Relationship', 'create', [
+      'values' => [
+        'contact_id_a' => $contact['id'],
+        'relationship_type_id:name' => 'Household Member of',
+        'contact_id_b' => $household['id'],
+        'is_permission_a_b' => 2,
+      ],
+    ]);
+
     $contact_cs = $this->utils->wf_civicrm_api4('Contact', 'getChecksum', [
       'contactId' => $contact['id']
     ], 0)['checksum'];
@@ -195,6 +209,9 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
     $this->assertSession()->fieldValueEquals('First Name', $contact['first_name']);
     $this->assertSession()->fieldValueEquals('Last Name', $contact['last_name']);
     $this->assertSession()->fieldValueEquals('Email', 'anthony.pabst@example.com');
+
+    // Verify if relationship contact is loaded on the form.
+    $this->assertSession()->fieldValueEquals('Household Name', 'Anthony Family');
 
     // Update last name & email
     $this->getSession()->getPage()->fillField('Last Name', 'Morissette');
