@@ -498,7 +498,7 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
         $js = "$onChange wfCivi.existingInit(field, $c, {$node->nid}, $callback_path, toHide);";
       }
       // Display empty option unless there are no results
-      if (!$component['extra']['allow_create'] || count($element['#options']) > 1) {
+      if (!$component['extra']['allow_create'] || (!empty($element['#options']) && is_array($element['#options']) && count($element['#options']) > 1)) {
         $element['#empty_option'] = $component['extra'][$element['#options'] ? 'search_prompt' : 'none_prompt'];
       }
 
