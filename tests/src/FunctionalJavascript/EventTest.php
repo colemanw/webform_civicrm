@@ -141,6 +141,99 @@ final class EventTest extends WebformCivicrmTestBase {
   }
 
   /**
+   * Submit the form with values.
+   */
+  function submitWebform() {
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+    $edit = [
+      'civicrm_1_contact_1_contact_first_name' => 'Frederick',
+      'civicrm_1_contact_1_contact_last_name' => 'Pabst',
+      'civicrm_2_contact_1_contact_first_name' => 'Mark',
+      'civicrm_2_contact_1_contact_last_name' => 'Anthony'
+    ];
+    $this->postSubmission($this->webform, $edit);
+  }
+
+  /**
+   * Verify submission results.
+   *
+   * @param boolean $primary
+   *   false if primary participant setting is disabled on the webform.
+   */
+  function verifyResults($primary = true) {
+    // Ensure both contacts are added to the event.
+    $api_result = $this->utils->wf_civicrm_api('participant', 'get', [
+      'sequential' => 1,
+    ]);
+    $this->assertEquals(0, $api_result['is_error']);
+    $this->assertEquals(2, $api_result['count']);
+
+    $values = $api_result['values'];
+    $this->assertEquals($this->_event['id'], $values[0]['event_id']);
+    $this->assertEquals($this->_event['id'], $values[1]['event_id']);
+    if ($primary) {
+      $this->assertEquals($values[0]['id'], $values[1]['participant_registered_by_id']);
+    }
+    else {
+      $this->assertEmpty($values[0]['participant_registered_by_id']);
+      $this->assertEmpty($values[1]['participant_registered_by_id']);
+    }
+    // Delete participants.
+    $this->utils->wf_civicrm_api('participant', 'delete', [
+      'id' => $values[0]['id'],
+    ]);
+    $this->utils->wf_civicrm_api('participant', 'delete', [
+      'id' => $values[1]['id'],
+    ]);
+  }
+
+  /**
+   * Verify the submission of multiple participants.
+   */
+  function testMultipleParticipants() {
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+
+    $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 2);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+
+    $this->getSession()->getPage()->clickLink('Event Registration');
+
+    // Configure Event tab.
+    $this->getSession()->getPage()->selectFieldOption('participant_reg_type', 'all');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->selectFieldOption('participant_1_number_of_participant', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_participant_1_participant_event_id[]', 'Test Event');
+
+    $this->saveCiviCRMSettings();
+
+    $this->submitWebform();
+
+    // Ensure both contacts are added to the event.
+    $this->verifyResults();
+
+    // Disable primary participant on the webform.
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->getSession()->getPage()->clickLink('Event Registration');
+    $this->getSession()->getPage()->checkField('Disable Contact 1 to be stored as Primary Participant');
+    $this->saveCiviCRMSettings();
+
+    // Resubmit the form and verify the results.
+    $this->submitWebform();
+    $this->verifyResults(false);
+  }
+
+  /**
    * Event Participant submission.
    */
   function testSubmitEventParticipant() {
@@ -207,8 +300,7 @@ final class EventTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     //Assert if recur is attached to the created membership.
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $api_result = $utils->wf_civicrm_api('participant', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('participant', 'get', [
       'sequential' => 1,
     ]);
     $this->assertEquals(0, $api_result['is_error']);

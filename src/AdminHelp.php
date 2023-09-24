@@ -269,6 +269,15 @@ class AdminHelp implements AdminHelpInterface {
       '/{node.nid}?c1event1={event1.event_id},{event2.event_id}&amp;c2event1={event3.event_id}</code></p>';
   }
 
+  /**
+   * Help text for disable primary setting.
+   */
+  protected function reg_options_disable_primary_participant() {
+    return '<p>' .
+      t('If enabled, Contact 1 will not be stored as primary participant for multiple registrations.') .
+      '</p>';
+  }
+
   protected function reg_options_show_past_events() {
     return '<p>' .
       t('To also display events that have ended, choose an option for how far in the past to search.') .

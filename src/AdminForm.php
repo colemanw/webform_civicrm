@@ -938,9 +938,15 @@ class AdminForm implements AdminFormInterface {
       '#title' => t('Allow events to be autoloaded from URL'),
       '#default_value' => (bool) wf_crm_aval($this->data, 'reg_options:allow_url_load'),
     ];
+    $this->form['participant']['reg_options']['disable_primary_participant'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Disable Contact 1 to be stored as Primary Participant'),
+      '#default_value' => (bool) wf_crm_aval($this->data, 'reg_options:disable_primary_participant'),
+    ];
     $this->help($this->form['participant']['reg_options']['block_form'], 'reg_options_block_form');
     $this->help($this->form['participant']['reg_options']['disable_unregister'], 'reg_options_disable_unregister');
     $this->help($this->form['participant']['reg_options']['allow_url_load'], 'reg_options_allow_url_load');
+    $this->help($this->form['participant']['reg_options']['disable_primary_participant'], 'reg_options_disable_primary_participant');
     $this->addAjaxItem('participant', 'participant_reg_type', 'participants');
     $this->addAjaxItem('participant', 'event_type', 'participants');
     $this->addAjaxItem('participant', 'show_past_events', 'participants');
