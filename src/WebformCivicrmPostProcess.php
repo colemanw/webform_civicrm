@@ -2712,6 +2712,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       $data = $webform_submission->getData();
     }
     else {
+      $webform_submission = $this->submission;
       $data = $this->submission->getData();
       $webform_submission = $this->submission;
     }
