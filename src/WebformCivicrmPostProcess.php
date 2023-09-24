@@ -1190,7 +1190,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
                 unset($params['status_id']);
               }
               // Set the currency of the result to the currency type that was submitted.
-              $params['fee_currency'] = $this->data['contribution'][$n]['currency'];
+              if (isset($this->data['contribution'][$n]['currency'])) {
+                $params['fee_currency'] = $this->data['contribution'][$n]['currency'];
+              }
               $result = $this->utils->wf_civicrm_api('participant', 'create', $params);
               $this->ent['participant'][$n]['id'] = $result['id'];
 
@@ -1205,7 +1207,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
                 }
               }
               // When registering contact 1, store id to apply to other contacts
-              if ($c == 1) {
+              if ($c == 1 && empty($this->data['reg_options']['disable_primary_participant'])) {
                 $registered_by_id[$e][$i] = $result['id'];
               }
             }
