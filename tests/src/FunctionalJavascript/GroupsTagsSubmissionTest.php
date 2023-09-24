@@ -23,6 +23,42 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     }
   }
 
+  /**
+   * Test the display of public groups on webform.
+   */
+  public function testPublicGroups() {
+    // Make GroupA and GroupB as public
+    $this->utils->wf_civicrm_api('Group', 'create', [
+      'id' => $this->groups['GroupA'],
+      'visibility' => "Public Pages",
+    ]);
+    $this->utils->wf_civicrm_api('Group', 'create', [
+      'id' => $this->groups['GroupB'],
+      'visibility' => "Public Pages",
+    ]);
+
+    $this->drupalLogin($this->rootUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+
+    // Enable Groups Field and then set it to -User Select (Public Group)-
+    $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_other', 'Yes');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption("civicrm_1_contact_1_other_group[]", 'public_groups');
+    $this->htmlOutput();
+    $this->saveCiviCRMSettings();
+
+    // Visit the form.
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+
+    $this->assertSession()->pageTextContains('GroupA');
+    $this->assertSession()->pageTextContains('GroupB');
+    $this->assertSession()->pageTextNotContains('GroupC');
+  }
+
   public function testSubmitWebform() {
     $this->drupalLogin($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
@@ -54,7 +90,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalGet($this->webform->toUrl('edit-form'));
     $this->htmlOutput();
 
-    //Change type of group field to checkbox.
+    // Change type of group field to checkbox.
     $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contact-1-other-group-operations', FALSE, FALSE, NULL, 'checkboxes');
 
     $majorDonorTagID = $this->utils->wf_civicrm_api('Tag', 'get', [
