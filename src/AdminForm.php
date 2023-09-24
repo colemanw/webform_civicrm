@@ -525,6 +525,7 @@ class AdminForm implements AdminFormInterface {
           'entire_result' => t('Include <em>entire</em> webform submission in activity details'),
           'view_link' => t('Include link to <em>view</em> webform submission in activity details'),
           'edit_link' => t('Include link to <em>edit</em> webform submission in activity details'),
+          'view_link_secure' => t('Include secure (tokenised) link to <em>view</em> webform submission in activity details'),
           'update_existing' => t('Update the details when an existing activity is updated'),
         ],
         '#default_value' => wf_crm_aval($this->data, "activity:$n:details", ['view_link'], TRUE),
