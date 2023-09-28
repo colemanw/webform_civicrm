@@ -346,7 +346,7 @@ var wfCivi = (function (D, $, drupalSettings, once) {
 
   function sharedAddress(item, action, speed) {
     var name = parseName($(item).attr('name'));
-    var fields = $(item).parents('form.webform-submission-form').find('[name*="'+(name.replace(/master_id.*$/, ''))+'"').not('[name*=location_type_id]').not('[name*=master_id]').not('[type="hidden"]');
+    var fields = $(item).parents('form.webform-submission-form').find('[name*="'+(name.replace(/master_id.*$/, ''))+'"]').not('[name*=location_type_id]').not('[name*=master_id]').not('[type="hidden"]');
     if (action === 'hide') {
       fields.parent().hide(speed, function() {$(this).css('display', 'none');});
       fields.prop('disabled', true);
