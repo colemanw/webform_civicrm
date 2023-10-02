@@ -381,7 +381,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     // Wait for the ACHEFT form to load in.
     $this->assertSession()->waitForField('account_holder');
     $this->getSession()->getPage()->fillField('Account Holder', 'CiviCRM user');
-    $this->getSession()->getPage()->fillField('Bank Account Number', '12345678');
+    $this->getSession()->getPage()->fillField('Account No.', '12345678');
     $this->getSession()->getPage()->fillField('Bank Identification Number', '111111111');
     $this->getSession()->getPage()->fillField('Bank Name', 'Bank of CiviCRM');
     $this->getSession()->getPage()->selectFieldOption('bank_account_type', 'Savings');
