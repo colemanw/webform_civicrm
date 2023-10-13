@@ -12,6 +12,9 @@ on:
       coreprurl:
         description: (optional) Core PR URL
         required: false
+      drupal8prurl:
+        description: (optional) Drupal 8 PR URL
+        required: false
 
 jobs:
   phpunit:
@@ -134,6 +137,12 @@ jobs:
         run: |
           cd  ~/drupal/vendor/civicrm/civicrm-core
           curl -L -o prpatch.patch ${{ github.event.inputs.coreprurl }}.patch
+          git am prpatch.patch
+      - name: Optionally Apply Drupal 8 PR
+        if: ${{ github.event.inputs.drupal8prurl != 0 }}
+        run: |
+          cd  ~/drupal/web/modules/contrib/civicrm
+          curl -L -o prpatch.patch ${{ github.event.inputs.drupal8prurl }}.patch
           git am prpatch.patch
       - name: Do a fake temp install
         # so that we can use civi api to get extensions with a version appropriate to the installed civi version
