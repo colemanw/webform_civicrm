@@ -94,7 +94,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contact-1-other-group-operations', FALSE, FALSE, NULL, 'checkboxes');
 
     $majorDonorTagID = $this->utils->wf_civicrm_api('Tag', 'get', [
-      'name' => "Major Donor",
+      'name' => (version_compare(\CRM_Core_BAO_Domain::version(), '5.68.alpha1', '<') ? "Major Donor" : "Major_Donor"),
     ])['id'];
     // Make Major Donor as the default option.
     $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contact-1-other-tag-operations', TRUE, FALSE, $majorDonorTagID);
@@ -146,7 +146,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
 
     $this->assertTrue(in_array($this->groups['GroupB'], $contactGroups));
     $this->assertTrue(in_array($this->groups['GroupC'], $contactGroups));
-    $this->assertTrue(in_array('Major Donor', $contactTags));
+    $this->assertTrue(in_array(version_compare(\CRM_Core_BAO_Domain::version(), '5.68.alpha1', '<') ? "Major Donor" : "Major_Donor", $contactTags));
     $this->assertTrue(in_array('Volunteer', $contactTags));
 
     // Ensure option labels are present on result page.
@@ -197,7 +197,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     ])['values'][0];
     $contactTags = explode(',', $contact['tags']);
     $contactGroups = explode(',', $contact['groups']);
-    $this->assertTrue(in_array('Major Donor', $contactTags));
+    $this->assertTrue(in_array(version_compare(\CRM_Core_BAO_Domain::version(), '5.68.alpha1', '<') ? "Major Donor" : "Major_Donor", $contactTags));
     $this->assertFalse(in_array('Volunteer', $contactTags));
 
     $this->assertTrue(in_array($this->groups['GroupA'], $contactGroups));

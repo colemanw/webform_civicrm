@@ -226,14 +226,15 @@ class Utils implements UtilsInterface {
       'parent_id' => $parent_id ?: ['IS NULL' => 1],
       'options' => ['sort' => 'name'],
     ];
-    $tags = $this->wf_crm_apivalues('Tag', 'get', $params, 'name');
+    $tag_display_field = $this->tag_display_field();
+    $tags = $this->wf_crm_apivalues('Tag', 'get', $params, $tag_display_field);
     // Tagsets cannot be nested so no need to fetch children
     if ($parent_id || !$tags) {
       return $tags;
     }
     // Fetch child tags
     unset($params['parent_id']);
-    $params += ['return' => ['name', 'parent_id'], 'parent_id.is_tagset' => 0, 'parent_id.is_selectable' => 1, 'parent_id.used_for' => $params['used_for']];
+    $params += ['return' => [$tag_display_field, 'parent_id'], 'parent_id.is_tagset' => 0, 'parent_id.is_selectable' => 1, 'parent_id.used_for' => $params['used_for']];
     $unsorted = $this->wf_crm_apivalues('Tag', 'get', $params);
     $parents = array_fill_keys(array_keys($tags), ['depth' => 1]);
     // Place children under their parents.
@@ -244,7 +245,7 @@ class Utils implements UtilsInterface {
       foreach ($unsorted as $id => $tag) {
         $parent = $tag['parent_id'];
         if (isset($parents[$parent])) {
-          $name = str_repeat('- ', $parents[$parent]['depth']) . $tag['name'];
+          $name = str_repeat('- ', $parents[$parent]['depth']) . $tag[$tag_display_field];
           $pos = array_search($parents[$parent]['child'] ?? $parent, array_keys($tags)) + 1;
           $tags = array_slice($tags, 0, $pos, TRUE) + [$id => $name] + array_slice($tags, $pos, NULL, TRUE);
           $parents[$id] = ['depth' => $parents[$parent]['depth'] + 1];
@@ -1019,6 +1020,16 @@ class Utils implements UtilsInterface {
       return TRUE;
     }
     return FALSE;
+  }
+
+  /**
+   * @return string Which field is the tag display field in this version of civi?
+   */
+  private function tag_display_field(): string {
+    if (version_compare(\CRM_Core_BAO_Domain::version(), '5.68.alpha1', '>=')) {
+      return 'label';
+    }
+    return 'name';
   }
 
 }
