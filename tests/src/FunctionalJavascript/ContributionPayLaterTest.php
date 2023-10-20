@@ -99,7 +99,45 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     }
   }
 
+  /**
+   * Test webform submission with hidden contribution amount.
+   */
+  public function testHiddenAmount() {
+    $this->setupWebform();
+
+    // Change widget of Amount element to radios.
+    $this->changeTypeOfAmountElement('hidden');
+    $this->submitWebform('hidden');
+    $this->verifyResult();
+  }
+
+  /**
+   * Test webform submission with checkbox, radio amount.
+   */
   public function testSubmitContribution() {
+    $this->setupWebform();
+    // Change widget of Amount element to checkbox.
+    $this->changeTypeOfAmountElement('checkboxes', TRUE);
+    $this->submitWebform('checkboxes');
+    $this->verifyResult();
+
+    // Change widget of Amount element to radios.
+    $this->changeTypeOfAmountElement('radios');
+    $this->submitWebform('radios');
+    $this->verifyResult();
+
+    $this->country = 'Malaysia';
+    $this->state = 'Selangor';
+    // Change widget of Amount element to radio + other.
+    $this->changeTypeOfAmountElement('webform-radios-other');
+    $this->submitWebform('webform_radios_other');
+    $this->verifyResult();
+  }
+
+  /**
+   * Setup webform with contribution.
+   */
+  public function setUpWebform() {
     $this->createFinancialCustomGroup();
     $this->createFinancialCustomGroup('Donation');
     $this->createFinancialCustomGroup('Member Dues');
@@ -138,22 +176,6 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
 
     $this->country = 'United Kingdom';
     $this->state = 'Newport';
-    // Change widget of Amount element to checkbox.
-    $this->changeTypeOfAmountElement('checkboxes', TRUE);
-    $this->submitWebform('checkboxes');
-    $this->verifyResult();
-
-    // Change widget of Amount element to radios.
-    $this->changeTypeOfAmountElement('radios');
-    $this->submitWebform('radios');
-    $this->verifyResult();
-
-    $this->country = 'Malaysia';
-    $this->state = 'Selangor';
-    // Change widget of Amount element to radio + other.
-    $this->changeTypeOfAmountElement('webform-radios-other');
-    $this->submitWebform('webform_radios_other');
-    $this->verifyResult();
   }
 
   /**
@@ -183,7 +205,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
       $this->assertSession()->waitForField('civicrm_1_contribution_1_contribution_total_amount[other]');
       $this->getSession()->getPage()->fillField('civicrm_1_contribution_1_contribution_total_amount[other]', '30');
     }
-    else {
+    elseif ($amountType != 'hidden') {
       $this->getSession()->getPage()->checkField('10');
       $this->getSession()->getPage()->checkField('20');
     }
@@ -278,14 +300,19 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
 
   /**
    * Change contribution amount widget
-   * to radio or checkbox.
+   * to radio, checkbox or hidden field.
+   *
+   * @param string $type
+   * @param boolean $changeTypeToOption
+   *  TRUE, if element type should be changed back to CiviCRM Options widget.
    */
   private function changeTypeOfAmountElement($type, $changeTypeToOption = FALSE) {
     $this->drupalGet($this->webform->toUrl('edit-form'));
     $this->assertPageNoErrorMessages();
 
-    if ($type == 'webform-radios-other' && !$changeTypeToOption) {
-      $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contribution-1-contribution-total-amount-operations', FALSE, FALSE, NULL, 'webform-radios-other');
+    if (in_array($type, ['hidden', 'webform-radios-other']) && !$changeTypeToOption) {
+      $default = ($type == 'hidden') ? 30 : NULL;
+      $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contribution-1-contribution-total-amount-operations', FALSE, FALSE, $default, $type);
       return;
     }
 

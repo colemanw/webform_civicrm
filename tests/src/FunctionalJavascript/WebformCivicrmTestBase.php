@@ -362,7 +362,12 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       }
     }
     if ($default) {
-      $this->getSession()->getPage()->selectFieldOption("properties[options][default]", $default);
+      if ($type == 'hidden') {
+        $this->getSession()->getPage()->fillField("properties[default_value]", $default);
+      }
+      else {
+        $this->getSession()->getPage()->selectFieldOption("properties[options][default]", $default);
+      }
     }
     if (!$type || $type == 'civicrm-options') {
       if ($asList) {
