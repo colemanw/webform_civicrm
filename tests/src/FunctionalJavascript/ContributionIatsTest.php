@@ -381,12 +381,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     // Wait for the ACHEFT form to load in.
     $this->assertSession()->waitForField('account_holder');
     $this->getSession()->getPage()->fillField('Account Holder', 'CiviCRM user');
-    // remove this if block and use the first version after next IATS release
-    if (version_compare(\Drupal::VERSION, '10', '>=')) {
-      $this->getSession()->getPage()->fillField('Account No.', '12345678');
-    } else {
-      $this->getSession()->getPage()->fillField('Bank Account Number', '12345678');
-    }
+    $this->getSession()->getPage()->fillField('Account No.', '12345678');
     $this->getSession()->getPage()->fillField('Bank Identification Number', '111111111');
     $this->getSession()->getPage()->fillField('Bank Name', 'Bank of CiviCRM');
     $this->getSession()->getPage()->selectFieldOption('bank_account_type', 'Savings');
