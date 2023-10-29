@@ -1025,7 +1025,7 @@ class Utils implements UtilsInterface {
   /**
    * @return string Which field is the tag display field in this version of civi?
    */
-  private function tag_display_field(): string {
+  public function tag_display_field(): string {
     if (version_compare(\CRM_Core_BAO_Domain::version(), '5.68.alpha1', '>=')) {
       return 'label';
     }
