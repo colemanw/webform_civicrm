@@ -17,8 +17,8 @@
  */
 #}
 <div{{ title_attributes }}>
-{% if attributes['type'] == 'hidden' and attributes['title'] %}
-  <label><b>{{ attributes['title'] }}</b></label>
+{% if attributes['type'] == 'hidden' and attributes['title'] and element['#title_display'] != 'none' %}
+  <label{% if element['#title_display'] == 'invisible' %} hidden{% endif %}><b>{{ attributes['title'] }}</b></label>
 {% endif %}
 
 {% if description_display == 'before' and description.content %}
