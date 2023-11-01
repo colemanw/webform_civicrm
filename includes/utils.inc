@@ -136,14 +136,15 @@ function wf_crm_get_tags($used_for, $parent_id = NULL) {
     'parent_id' => $parent_id ?: ['IS NULL' => 1],
     'options' => ['sort' => 'name'],
   ];
-  $tags = wf_crm_apivalues('Tag', 'get', $params, 'name');
+  $tag_display_field = wf_crm_tag_display_field();
+  $tags = wf_crm_apivalues('Tag', 'get', $params, $tag_display_field);
   // Tagsets cannot be nested so no need to fetch children
   if ($parent_id || !$tags) {
     return $tags;
   }
   // Fetch child tags
   unset($params['parent_id']);
-  $params += ['return' => ['name', 'parent_id'], 'parent_id.is_tagset' => 0, 'parent_id.is_selectable' => 1, 'parent_id.used_for' => $params['used_for']];
+  $params += ['return' => [$tag_display_field, 'parent_id'], 'parent_id.is_tagset' => 0, 'parent_id.is_selectable' => 1, 'parent_id.used_for' => $params['used_for']];
   $unsorted = wf_crm_apivalues('Tag', 'get', $params);
   $parents = array_fill_keys(array_keys($tags), ['depth' => 1]);
   // Place children under their parents.
@@ -154,7 +155,7 @@ function wf_crm_get_tags($used_for, $parent_id = NULL) {
     foreach ($unsorted as $id => $tag) {
       $parent = $tag['parent_id'];
       if (isset($parents[$parent])) {
-        $name = str_repeat('- ', $parents[$parent]['depth']) . $tag['name'];
+        $name = str_repeat('- ', $parents[$parent]['depth']) . $tag[$tag_display_field];
         $pos = array_search($parents[$parent]['child'] ?? $parent, array_keys($tags)) + 1;
         $tags = array_slice($tags, 0, $pos, TRUE) + [$id => $name] + array_slice($tags, $pos, NULL, TRUE);
         $parents[$id] = ['depth' => $parents[$parent]['depth'] + 1];
@@ -164,6 +165,16 @@ function wf_crm_get_tags($used_for, $parent_id = NULL) {
     }
   }
   return $tags;
+}
+
+/**
+ * @return string Which field is the tag display field in this version of civi?
+ */
+function wf_crm_tag_display_field(): string {
+  if (version_compare(\CRM_Core_BAO_Domain::version(), '5.68.alpha1', '>=')) {
+    return 'label';
+  }
+  return 'name';
 }
 
 /**
@@ -988,8 +999,9 @@ function wf_crm_get_fields($var = 'fields') {
         }
       }
     }
+    $tag_display_field = wf_crm_tag_display_field();
     $all_tagsets = wf_crm_apivalues('tag', 'get', [
-      'return' => ['id', 'name', 'used_for'],
+      'return' => ['id', $tag_display_field, 'used_for'],
       'is_tagset' => 1,
       'parent_id' => ['IS NULL' => 1],
     ]);
@@ -998,7 +1010,7 @@ function wf_crm_get_fields($var = 'fields') {
       $tagsets = ['' => t('Tag(s)')];
       foreach ($all_tagsets as $set) {
         if (strpos($set['used_for'], $table_name) !== FALSE) {
-          $tagsets[$set['id']] = $set['name'];
+          $tagsets[$set['id']] = $set[$tag_display_field];
         }
       }
       foreach ($tagsets as $pid => $name) {
