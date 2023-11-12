@@ -142,6 +142,9 @@ class ContactComponent implements ContactComponentInterface {
     if ($str) {
       $searchFields = [];
       foreach ($display_fields as $fld) {
+        if ($fld == 'id' && !is_numeric($str)) {
+          continue;
+        }
         $searchFields[] = [$fld, 'CONTAINS', $str];
       }
       $params['where'][] = ['OR', $searchFields];
