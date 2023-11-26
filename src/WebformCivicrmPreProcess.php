@@ -103,6 +103,14 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
     $this->form['#attributes']['data-form-defaults'] = Json::encode($this->getWebformDefaults());
     // Early return if the form (or page) was already submitted
     $triggering_element = $this->form_state->getTriggeringElement();
+
+    // When user uploads a file using a managed_file element, avoid making any change to $this->form.
+    if ($this->form_state->hasFileElement()
+      && is_array($triggering_element['#submit'])
+      && in_array('file_managed_file_submit', $triggering_element['#submit'], TRUE)) {
+      return;
+    }
+
     if ($triggering_element && $triggering_element['#id'] == 'edit-wizard-prev'
       || (empty($this->form_state->isRebuilding()) && !empty($this->form_state->getValues()) && empty($this->form['#submission']->is_draft))
       // When resuming from a draft
@@ -556,6 +564,19 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
             if ($element['#type'] == 'autocomplete' && is_string($val) && strlen($val)) {
               $options = $this->utils->wf_crm_field_options($element, '', $this->data);
               $val = wf_crm_aval($options, $val);
+            }
+            //Ensure value from webform default is loaded when the field is null in civicrm.
+            if (!empty($element['#options']) && isset($val)) {
+              if (!is_array($val) && !isset($element['#options'][$val])) {
+                $val = NULL;
+              }
+              if ((empty($val) || (is_array($val) && empty(array_filter($val)))) && !empty($this->form['#attributes']['data-form-defaults'])) {
+                $formDefaults = Json::decode($this->form['#attributes']['data-form-defaults']);
+                $key = str_replace('_', '-', $element['#form_key']);
+                if (isset($formDefaults[$key])) {
+                  $val = $formDefaults[$key];
+                }
+              }
             }
             // Contact image & custom file fields
             if ($dt == 'File') {

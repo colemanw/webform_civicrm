@@ -164,6 +164,9 @@ var wfCivi = (function (D, $, drupalSettings, once) {
               $(':input[id$="month"]', $wrapper).val(parseInt(date[1], 10)).trigger('change', 'webform_civicrm:autofill');
               $(':input[id$="day"]', $wrapper).val(parseInt(date[2], 10)).trigger('change', 'webform_civicrm:autofill');
             }
+            else {
+              $(':input', this).val('').trigger('change', 'webform_civicrm:reset');;
+            }
           }
           else {
             $(':input', this).not(':radio, :checkbox, :button, :submit, :file, .form-file').each(function() {
@@ -174,7 +177,7 @@ var wfCivi = (function (D, $, drupalSettings, once) {
             });
             $('.civicrm-remove-file', this).click();
             $('input:checkbox, input:radio', this).each(function() {
-              $(this).removeAttr('checked').trigger('change', 'webform_civicrm:reset');
+              $(this).prop('checked', false).trigger('change', 'webform_civicrm:reset');
             });
           }
         }
@@ -348,7 +351,7 @@ var wfCivi = (function (D, $, drupalSettings, once) {
 
   function sharedAddress(item, action, speed) {
     var name = parseName($(item).attr('name'));
-    var fields = $(item).parents('form.webform-submission-form').find('[name*="'+(name.replace(/master_id.*$/, ''))+'"').not('[name*=location_type_id]').not('[name*=master_id]').not('[type="hidden"]');
+    var fields = $(item).parents('form.webform-submission-form').find('[name*="'+(name.replace(/master_id.*$/, ''))+'"]').not('[name*=location_type_id]').not('[name*=master_id]').not('[type="hidden"]');
     if (action === 'hide') {
       fields.parent().hide(speed, function() {$(this).css('display', 'none');});
       fields.prop('disabled', true);

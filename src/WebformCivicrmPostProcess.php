@@ -164,7 +164,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $webform = $webform_submission->getWebform();
     foreach ($data as $field_key => $val) {
       $element = $webform->getElement($field_key);
-      if ($element['#type'] == 'civicrm_options' && is_array($val) && count(array_filter(array_keys($val), 'is_string')) > 0) {
+      if ($element && $element['#type'] == 'civicrm_options' && is_array($val) && count(array_filter(array_keys($val), 'is_string')) > 0) {
         $data[$field_key] = array_values($val);
       }
     }
@@ -1190,7 +1190,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
                 unset($params['status_id']);
               }
               // Set the currency of the result to the currency type that was submitted.
-              $params['fee_currency'] = $this->data['contribution'][$n]['currency'];
+              if (isset($this->data['contribution'][$n]['currency'])) {
+                $params['fee_currency'] = $this->data['contribution'][$n]['currency'];
+              }
               $result = $this->utils->wf_civicrm_api('participant', 'create', $params);
               $this->ent['participant'][$n]['id'] = $result['id'];
 
@@ -1205,7 +1207,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
                 }
               }
               // When registering contact 1, store id to apply to other contacts
-              if ($c == 1) {
+              if ($c == 1 && empty($this->data['reg_options']['disable_primary_participant'])) {
                 $registered_by_id[$e][$i] = $result['id'];
               }
             }
@@ -1614,7 +1616,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     if (!empty($this->data['activity'][$activity_number]['details']['view_link'])) {
       $params['details'] .= '<p>' . $this->submission->toLink(t('View Webform Submission'), 'canonical', [
         'absolute' => TRUE,
-      ])->toString() . '</p>';
+      ])->toString() . '</p>' . \Drupal\Core\Link::fromTextAndUrl('View Webform Submission', $this->submission->getTokenUrl('view'))->toString();
+    }
+    if (!empty($this->data['activity'][$activity_number]['details']['view_link_secure'])) {
+      $params['details'] .= '<p>' . \Drupal\Core\Link::fromTextAndUrl('View Webform Submission', $this->submission->getTokenUrl('view'))->toString() . '</p>';
     }
     if (!empty($this->data['activity'][$activity_number]['details']['edit_link'])) {
       $params['details'] .= '<p>' . $this->submission->toLink(t('Edit Submission'), 'edit-form', [
@@ -2317,13 +2322,12 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       }
     }
     // Save honoree
-    // FIXME: these api params were deprecated in 4.5, should be switched to use soft-credits when we drop support for 4.4
     if (!empty($contribution['honor_contact_id']) && !empty($contribution['honor_type_id'])) {
-      $this->utils->wf_civicrm_api('contribution', 'create', [
-        'id' => $id,
-        'total_amount' => $contribution['total_amount'],
-        'honor_contact_id' => $contribution['honor_contact_id'],
-        'honor_type_id' => $contribution['honor_type_id'],
+      $this->utils->wf_civicrm_api('contribution_soft', 'create', [
+        'contribution_id' => $id,
+        'amount' => $contribution['total_amount'],
+        'contact_id' => $contribution['honor_contact_id'],
+        'soft_credit_type_id' => $contribution['honor_type_id'],
       ]);
     }
 
@@ -2514,6 +2518,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           }
           if (substr($name, 0, 6) === 'custom' || ($table == 'other' && in_array($name, ['group', 'tag']))) {
             $val = array_filter($val);
+            if ($name === 'group') {
+              unset($val['public_groups']);
+            }
           }
 
           // We need to handle items being de-selected too and provide an array to pass to Entity.create API
@@ -2708,7 +2715,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       $data = $webform_submission->getData();
     }
     else {
+      $webform_submission = $this->submission;
       $data = $this->submission->getData();
+      $webform_submission = $this->submission;
     }
 
     if (!isset($data[$fid])) {

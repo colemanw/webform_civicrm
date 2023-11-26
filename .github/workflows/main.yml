@@ -12,6 +12,9 @@ on:
       coreprurl:
         description: (optional) Core PR URL
         required: false
+      drupal8prurl:
+        description: (optional) Drupal 8 PR URL
+        required: false
 
 jobs:
   phpunit:
@@ -20,18 +23,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - drupal: '9.4.*'
-            civicrm: '5.57.*'
+          - drupal: '9.5.*'
+            civicrm: '5.65.*'
             php: '7.4'
           - drupal: '9.5.*'
-            civicrm: '5.58.*'
+            civicrm: '5.66.*'
             php: '7.4'
           - drupal: '9.5.*'
-            civicrm: '5.60.x-dev'
-            php: '7.4'
+            civicrm: '5.67.x-dev'
+            php: '8.1'
           - drupal: '9.5.*'
             civicrm: 'dev-master'
-            php: '7.4'
+            php: '8.1'
           - drupal: '10.0.*'
             civicrm: 'dev-master'
             php: '8.1'
@@ -68,6 +71,7 @@ jobs:
       # - CiviCRM requires `compile-mode: all`
       - name: Setup sendmail
         run: |
+          sudo apt-get update
           sudo apt-get install sendmail
       - name: Setup Drupal
         run: |
@@ -133,6 +137,12 @@ jobs:
         run: |
           cd  ~/drupal/vendor/civicrm/civicrm-core
           curl -L -o prpatch.patch ${{ github.event.inputs.coreprurl }}.patch
+          git am prpatch.patch
+      - name: Optionally Apply Drupal 8 PR
+        if: ${{ github.event.inputs.drupal8prurl != 0 }}
+        run: |
+          cd  ~/drupal/web/modules/contrib/civicrm
+          curl -L -o prpatch.patch ${{ github.event.inputs.drupal8prurl }}.patch
           git am prpatch.patch
       - name: Do a fake temp install
         # so that we can use civi api to get extensions with a version appropriate to the installed civi version

@@ -2,7 +2,6 @@
 
 namespace Drupal\webform_civicrm\Plugin\WebformElement;
 
-use CRM_Core_BAO_Tag;
 use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Form\FormStateInterface;
@@ -400,12 +399,11 @@ class CivicrmContact extends WebformElementBase {
       '#default_value' => $element_properties['group'],
       '#description' => $this->t('Listed contacts must be members of at least one of the selected groups (leave blank to not filter by group).'),
     ];
-    $tags = [];
     $form['filters']['tag'] = [
       '#type' => 'select',
       '#multiple' => TRUE,
       '#title' => $this->t('Tags'),
-      '#options' => ['' => '- ' . $this->t('None') . ' -'] + CRM_Core_BAO_Tag::getTags('civicrm_contact', $tags, NULL, '- '),
+      '#options' => ['' => '- ' . $this->t('None') . ' -'] + $utils->wf_crm_get_tags('contact'),
       '#default_value' => $element_properties['tag'],
       '#description' => $this->t('Listed contacts must be have at least one of the selected tags (leave blank to not filter by tag).'),
     ];

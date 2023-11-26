@@ -277,13 +277,13 @@ class ContactComponent implements ContactComponentInterface {
         // Put current employer first in the list
         if ($type == $employer_type && $current) {
           $search_key = $a == 'b' ? 'id' : 'employer_id';
-          // Note: inconsistency in api3 - search key is "employer_id" but return key is "current_employer_id"
-          $employer = $this->utils->wf_crm_apivalues('contact', 'get', [
-            $search_key => $cid,
-            'sequential' => 1,
-          ], $a == 'b' ? 'current_employer_id' : 'id');
+          $employer = $this->utils->wf_civicrm_api4('Contact', 'get', [
+            'where' => [
+              [$search_key, '=', $cid],
+            ],
+          ])->first()[$a == 'b' ? 'employer_id' : 'id'] ?? NULL;
           if ($employer) {
-            $found[$employer[0]] = $employer[0];
+            $found[$employer] = $employer;
           }
         }
         $type_ids[] = $type;

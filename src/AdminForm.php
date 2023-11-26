@@ -525,6 +525,7 @@ class AdminForm implements AdminFormInterface {
           'entire_result' => t('Include <em>entire</em> webform submission in activity details'),
           'view_link' => t('Include link to <em>view</em> webform submission in activity details'),
           'edit_link' => t('Include link to <em>edit</em> webform submission in activity details'),
+          'view_link_secure' => t('Include secure (tokenised) link to <em>view</em> webform submission in activity details'),
           'update_existing' => t('Update the details when an existing activity is updated'),
         ],
         '#default_value' => wf_crm_aval($this->data, "activity:$n:details", ['view_link'], TRUE),
@@ -938,9 +939,15 @@ class AdminForm implements AdminFormInterface {
       '#title' => t('Allow events to be autoloaded from URL'),
       '#default_value' => (bool) wf_crm_aval($this->data, 'reg_options:allow_url_load'),
     ];
+    $this->form['participant']['reg_options']['disable_primary_participant'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Disable Contact 1 to be stored as Primary Participant'),
+      '#default_value' => (bool) wf_crm_aval($this->data, 'reg_options:disable_primary_participant'),
+    ];
     $this->help($this->form['participant']['reg_options']['block_form'], 'reg_options_block_form');
     $this->help($this->form['participant']['reg_options']['disable_unregister'], 'reg_options_disable_unregister');
     $this->help($this->form['participant']['reg_options']['allow_url_load'], 'reg_options_allow_url_load');
+    $this->help($this->form['participant']['reg_options']['disable_primary_participant'], 'reg_options_disable_primary_participant');
     $this->addAjaxItem('participant', 'participant_reg_type', 'participants');
     $this->addAjaxItem('participant', 'event_type', 'participants');
     $this->addAjaxItem('participant', 'show_past_events', 'participants');
@@ -1138,7 +1145,7 @@ class AdminForm implements AdminFormInterface {
     $this->form['contribution']['sets']['contribution']['contribution_1_settings_currency'] = [
       '#type' => 'select',
       '#title' => t('Currency'),
-      '#default_value' => wf_crm_aval($this->data, "contribution:1:currency"),
+      '#default_value' => wf_crm_aval($this->data, "contribution:1:currency", $this->utils->wf_crm_get_civi_setting('defaultCurrency')),
       '#options' => \CRM_Core_OptionGroup::values('currencies_enabled'),
       '#required' => TRUE,
     ];
@@ -1548,6 +1555,9 @@ class AdminForm implements AdminFormInterface {
       if ($field['type'] != 'hidden') {
         $options += ['create_civicrm_webform_element' => t('- User Select -')];
       }
+      if ($name == 'group') {
+        $options += ['public_groups' => t('- User Select - (public groups)')];
+      }
       $options += $this->utils->wf_crm_field_options($field, 'config_form', $this->data);
       $item += [
         '#type' => 'select',
@@ -1918,7 +1928,9 @@ class AdminForm implements AdminFormInterface {
         }
         elseif (!isset($enabled[$key])) {
           $val = (array) $val;
-          if (in_array('create_civicrm_webform_element', $val, TRUE) || (!empty($val[0]) && $field['type'] == 'hidden')) {
+          if (in_array('create_civicrm_webform_element', $val, TRUE)
+          || (!empty($val[0]) && $field['type'] == 'hidden')
+          || (preg_match('/_group$/', $key) && in_array('public_groups', $val, TRUE))) {
             // Restore disabled component
             if (isset($disabled[$key])) {
               webform_component_update($disabled[$key]);
@@ -2194,7 +2206,7 @@ class AdminForm implements AdminFormInterface {
     // Find fields to delete
     foreach ($fields as $key => $val) {
       $val = (array) wf_crm_aval($this->settings, $key);
-      if (((in_array('create_civicrm_webform_element', $val, TRUE)) && $this->settings['nid'])
+      if (((in_array('create_civicrm_webform_element', $val, TRUE) || in_array('public_groups', $val, TRUE)) && $this->settings['nid'])
         || strpos($key, 'fieldset') !== FALSE) {
         unset($fields[$key]);
       }

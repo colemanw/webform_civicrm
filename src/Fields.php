@@ -597,8 +597,9 @@ class Fields implements FieldsInterface {
           }
         }
       }
+      $tag_display_field = $this->utils->tag_display_field();
       $all_tagsets = $this->utils->wf_crm_apivalues('tag', 'get', [
-        'return' => ['id', 'name', 'used_for'],
+        'return' => ['id', $tag_display_field, 'used_for'],
         'is_tagset' => 1,
         'parent_id' => ['IS NULL' => 1],
       ]);
@@ -607,7 +608,7 @@ class Fields implements FieldsInterface {
         $tagsets = ['' => t('Tag(s)')];
         foreach ($all_tagsets as $set) {
           if (strpos($set['used_for'], $table_name) !== FALSE) {
-            $tagsets[$set['id']] = $set['name'];
+            $tagsets[$set['id']] = $set[$tag_display_field];
           }
         }
         foreach ($tagsets as $pid => $name) {
