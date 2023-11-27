@@ -1102,7 +1102,8 @@ class Utils implements UtilsInterface {
       }
     }
     return FALSE;
-
+  }
+  
   /**
    * @return string Which field is the tag display field in this version of civi?
    */
@@ -1111,7 +1112,6 @@ class Utils implements UtilsInterface {
       return 'label';
     }
     return 'name';
-
   }
 
 }
