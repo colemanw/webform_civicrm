@@ -23,18 +23,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - drupal: '9.5.*'
-            civicrm: '5.65.*'
-            php: '7.4'
-          - drupal: '9.5.*'
-            civicrm: '5.66.*'
-            php: '7.4'
-          - drupal: '9.5.*'
-            civicrm: '5.67.x-dev'
-            php: '8.1'
-          - drupal: '9.5.*'
-            civicrm: 'dev-master'
-            php: '8.1'
           - drupal: '10.0.*'
             civicrm: 'dev-master'
             php: '8.1'
@@ -166,6 +154,10 @@ jobs:
           git clone https://lab.civicrm.org/extensions/firewall.git
           git clone https://lab.civicrm.org/extensions/stripe.git
           git clone https://github.com/iATSPayments/com.iatspayments.civicrm.git
+          cd com.iatspayments.civicrm
+          git revert 85f0a9dd73e33f1597fb5456a1c9db55e02dd91c
+          curl -L -O https://github.com/iATSPayments/com.iatspayments.civicrm/pull/440.patch
+          git apply 440.patch
       - name: Download Civi extensions normal
         if: ${{ matrix.drupal != '10.0.*' }}
         run: |
