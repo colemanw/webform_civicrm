@@ -2,11 +2,11 @@ uuid: null
 langcode: en
 status: open
 dependencies:
+  module:
+    - webform_civicrm
   enforced:
     module:
       - webform_civicrm_test
-  module:
-    - webform_civicrm_test
 weight: 0
 open: null
 close: null
@@ -16,7 +16,7 @@ archive: false
 id: update_contact_details
 title: 'Update Contact Details'
 description: ''
-category: ''
+categories: {  }
 elements: |-
   basic_information:
     '#type': webform_wizard_page
@@ -59,6 +59,47 @@ elements: |-
           width: 20
         '#parent': civicrm_1_contact_1_fieldset_fieldset
         '#title': 'Last Name'
+      civicrm_1_contact_1_email_email:
+        '#type': email
+        '#form_key': civicrm_1_contact_1_email_email
+        '#extra':
+          width: 20
+        '#parent': civicrm_1_contact_1_fieldset_fieldset
+        '#title': Email
+  civicrm_2_contact_1_fieldset_fieldset:
+    '#type': fieldset
+    '#title': 'Contact 2'
+    '#form_key': civicrm_2_contact_1_fieldset_fieldset
+    civicrm_2_contact_1_contact_existing:
+      '#type': civicrm_contact
+      '#title': 'Existing Contact'
+      '#widget': hidden
+      '#none_prompt': '+ Create new +'
+      '#results_display':
+        display_name: display_name
+      '#default': relationship
+      '#default_relationship_to': '1'
+      '#default_relationship':
+        8_b: 8_b
+      '#filter_relationship_contact': '1'
+      '#filter_relationship_types':
+        8_b: 8_b
+      '#allow_create': 1
+      '#contact_type': household
+      '#form_key': civicrm_2_contact_1_contact_existing
+      '#parent': civicrm_2_contact_1_fieldset_fieldset
+      '#extra': {  }
+    civicrm_2_contact_1_contact_household_name:
+      '#type': textfield
+      '#counter_type': character
+      '#counter_maximum': 128
+      '#counter_maximum_message': ' '
+      '#contact_type': household
+      '#form_key': civicrm_2_contact_1_contact_household_name
+      '#extra':
+        width: 20
+      '#parent': civicrm_2_contact_1_fieldset_fieldset
+      '#title': 'Household Name'
   address_information:
     '#type': webform_wizard_page
     '#title': 'Address Information'
@@ -469,12 +510,12 @@ elements: |-
         1111: Kazakhstan
         1112: Kenya
         1113: Kiribati
-        1114: 'Korea, Democratic People''s Republic of'
+        1114: "Korea, Democratic People's Republic of"
         1115: 'Korea, Republic of'
         1251: Kosovo
         1116: Kuwait
         1117: Kyrgyzstan
-        1118: 'Lao People''s Democratic Republic'
+        1118: "Lao People's Democratic Republic"
         1119: Latvia
         1120: Lebanon
         1121: Lesotho
@@ -822,11 +863,10 @@ handlers:
     weight: null
     settings:
       nid: 1
-      number_of_contacts: '1'
+      number_of_contacts: '2'
       1_contact_type: individual
       1_webform_label: 'Contact 1'
-      civicrm_1_contact_1_contact_contact_sub_type:
-        '': ''
+      civicrm_1_contact_1_contact_contact_sub_type: {  }
       civicrm_1_contact_1_contact_existing: create_civicrm_webform_element
       civicrm_1_contact_1_contact_prefix_id: 0
       civicrm_1_contact_1_contact_first_name: create_civicrm_webform_element
@@ -867,20 +907,45 @@ handlers:
       civicrm_1_contact_1_address_country_id: create_civicrm_webform_element
       civicrm_1_contact_1_address_state_province_id: create_civicrm_webform_element
       civicrm_1_contact_1_address_county_id: 0
+      civicrm_1_contact_1_address_master_id: 0
       civicrm_1_contact_1_address_location_type_id: '1'
       civicrm_1_contact_1_address_is_primary: '1'
       contact_1_number_of_phone: '0'
-      contact_1_number_of_email: '0'
+      contact_1_number_of_email: '1'
+      civicrm_1_contact_1_email_email: create_civicrm_webform_element
+      civicrm_1_contact_1_email_location_type_id: '1'
+      civicrm_1_contact_1_email_is_primary: '1'
       contact_1_number_of_website: '0'
       contact_1_number_of_im: '0'
-      contact_1_number_of_cg1: '0'
-      contact_1_number_of_cg2: '0'
+      2_contact_type: household
+      2_webform_label: 'Contact 2'
+      civicrm_2_contact_1_contact_contact_sub_type: {  }
+      civicrm_2_contact_1_contact_existing: create_civicrm_webform_element
+      civicrm_2_contact_1_contact_household_name: create_civicrm_webform_element
+      civicrm_2_contact_1_contact_nick_name: 0
+      civicrm_2_contact_1_contact_preferred_communication_method: 0
+      civicrm_2_contact_1_contact_privacy: 0
+      civicrm_2_contact_1_contact_preferred_language: 0
+      civicrm_2_contact_1_contact_communication_style_id: 0
+      civicrm_2_contact_1_contact_image_url: 0
+      civicrm_2_contact_1_contact_contact_id: 0
+      civicrm_2_contact_1_contact_user_id: 0
+      civicrm_2_contact_1_contact_external_identifier: 0
+      civicrm_2_contact_1_contact_source: 0
+      civicrm_2_contact_1_contact_cs: 0
+      contact_2_settings_matching_rule: Unsupervised
+      contact_2_number_of_other: '0'
+      contact_2_number_of_address: '0'
+      contact_2_number_of_phone: '0'
+      contact_2_number_of_email: '0'
+      contact_2_number_of_website: '0'
+      contact_2_number_of_im: '0'
+      contact_2_number_of_relationship: '0'
       prefix_known: ''
       prefix_unknown: ''
       toggle_message: 0
       message: ''
       activity_number_of_activity: '0'
-      case_number_of_case: '0'
       participant_reg_type: '0'
       reg_options:
         event_type:
@@ -897,8 +962,8 @@ handlers:
         disable_unregister: 0
         allow_url_load: 0
       membership_1_number_of_membership: '0'
+      membership_2_number_of_membership: '0'
       civicrm_1_contribution_1_contribution_enable_contribution: '0'
-      grant_number_of_grant: '0'
       checksum_text: ''
       create_fieldsets: 1
       confirm_subscription: 1
@@ -918,24 +983,38 @@ handlers:
             number_of_other: '0'
             number_of_address: '1'
             number_of_phone: '0'
-            number_of_email: '0'
+            number_of_email: '1'
             number_of_website: '0'
             number_of_im: '0'
-            number_of_cg1: '0'
-            number_of_cg2: '0'
             address:
               1:
                 location_type_id: '1'
                 is_primary: '1'
+            email:
+              1:
+                location_type_id: '1'
+                is_primary: '1'
+          2:
+            contact:
+              1:
+                contact_type: household
+                contact_sub_type: {  }
+                webform_label: 'Contact 2'
+            matching_rule: Unsupervised
+            number_of_other: '0'
+            number_of_address: '0'
+            number_of_phone: '0'
+            number_of_email: '0'
+            number_of_website: '0'
+            number_of_im: '0'
+            number_of_relationship: '0'
         activity:
           number_of_activity: '0'
-        case:
-          number_of_case: '0'
         membership:
           1:
             number_of_membership: '0'
-        grant:
-          number_of_grant: '0'
+          2:
+            number_of_membership: '0'
         participant_reg_type: '0'
         reg_options:
           event_type:

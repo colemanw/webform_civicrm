@@ -1,6 +1,7 @@
 services:
   webform_civicrm.utils:
     class: Drupal\webform_civicrm\Utils
+    arguments: ['@request_stack']
   webform_civicrm.fields:
     class: Drupal\webform_civicrm\Fields
     arguments: ['@webform_civicrm.utils']

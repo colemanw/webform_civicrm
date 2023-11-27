@@ -170,7 +170,11 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
       'first_name' => 'Pabst',
       'last_name' => 'Anthony',
     ]);
-    $address = $this->utils->wf_civicrm_api('Address', 'create', [
+    $this->utils->wf_civicrm_api('Email', 'create', [
+      'contact_id' => $contact['id'],
+      'email' => "anthony.pabst@example.com",
+    ]);
+    $this->utils->wf_civicrm_api('Address', 'create', [
       'contact_id' => $contact['id'],
       'location_type_id' => "Home",
       'is_primary' => 1,
@@ -180,7 +184,23 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
       'state_province_id' => "Alberta",
       'postal_code' => 11111,
     ]);
-    $contact_cs = \CRM_Contact_BAO_Contact_Utils::generateChecksum($contact['id']);
+    $household = $this->createHousehold([
+      'household_name' => 'Anthony Family',
+    ]);
+    // Add relationship b/w the above 2 contacts and ensure
+    // contact has ability to view the household.
+    $this->utils->wf_civicrm_api4('Relationship', 'create', [
+      'values' => [
+        'contact_id_a' => $contact['id'],
+        'relationship_type_id:name' => 'Household Member of',
+        'contact_id_b' => $household['id'],
+        'is_permission_a_b' => 2,
+      ],
+    ]);
+
+    $contact_cs = $this->utils->wf_civicrm_api4('Contact', 'getChecksum', [
+      'contactId' => $contact['id']
+    ], 0)['checksum'];
 
     $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $contact['id'], 'cs' => $contact_cs]]));
     $this->assertPageNoErrorMessages();
@@ -188,9 +208,14 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
     // Check if name fields are pre populated with existing values.
     $this->assertSession()->fieldValueEquals('First Name', $contact['first_name']);
     $this->assertSession()->fieldValueEquals('Last Name', $contact['last_name']);
+    $this->assertSession()->fieldValueEquals('Email', 'anthony.pabst@example.com');
 
-    // Update the last name
+    // Verify if relationship contact is loaded on the form.
+    $this->assertSession()->fieldValueEquals('Household Name', 'Anthony Family');
+
+    // Update last name & email
     $this->getSession()->getPage()->fillField('Last Name', 'Morissette');
+    $this->getSession()->getPage()->fillField('Email', 'anthony.pabst1@example.com');
     $this->getSession()->getPage()->pressButton('Next >');
     $this->assertPageNoErrorMessages();
     $canada_id = $this->utils->wf_civicrm_api('Country', 'getvalue', [
@@ -210,10 +235,6 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
     $this->assertSession()->fieldValueEquals('Postal Code', 11111);
 
     // Change the street & city value in the address fields.
-    $address = [
-      'Street Address' => '123 Defence Colony Updated',
-      'City' => 'Calgary',
-    ];
     $this->getSession()->getPage()->fillField('Street Address', '123 Defence Colony Updated');
     $this->getSession()->getPage()->fillField('City', 'Calgary');
 
@@ -232,6 +253,7 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
     $expected_values = [
       'first_name' => 'Pabst',
       'last_name' => 'Morissette',
+      'email' => 'anthony.pabst1@example.com',
       'street_address' => "123 Defence Colony Updated",
       'city' => "Calgary",
       'country_id' => $canada_id,
