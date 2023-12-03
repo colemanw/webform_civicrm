@@ -127,7 +127,7 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
       'widget' => 'Autocomplete',
       'hide_fields' => 'address',
       'filter' => [
-        'group' => '- None -',
+        'crmgroup' => '- None -',
       ],
     ];
     $this->editContactElement($editContact);

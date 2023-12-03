@@ -80,7 +80,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
       'selector' => 'edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations',
       'widget' => 'Autocomplete',
       'filter' => [
-        'group' => $this->group['id'],
+        'crmgroup' => $this->group['id'],
       ],
     ];
     $this->editContactElement($editContact);
@@ -123,7 +123,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
       'selector' => 'edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations',
       'widget' => 'Select List',
       'filter' => [
-        'group' => $this->group['id'],
+        'crmgroup' => $this->group['id'],
       ],
     ];
     $this->editContactElement($editContact);
