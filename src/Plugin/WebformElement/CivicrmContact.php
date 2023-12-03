@@ -62,7 +62,7 @@ class CivicrmContact extends WebformElementBase {
         'filter_relationship_types' => [],
         'filter_relationship_contact' => [],
         'contact_sub_type' => '',
-        'group' => [],
+        'crmgroup' => [],
         'tag' => [],
         'check_permissions' => 1,
         // Set for custom fields.
@@ -81,15 +81,6 @@ class CivicrmContact extends WebformElementBase {
     \Drupal::service('civicrm')->initialize();
     $element['#form_key'] = $element['#form_key'] ?? $element['#webform_key'];
 
-    // Avoid call to Drupal\Core\Render\Element\RenderElement::processGroup() as this module uses the
-    // 'group' property key to filter the contacts loaded in the autocomplete field.
-    if ($element['#widget'] === 'autocomplete') {
-      $element['#process'] = [
-        ['Drupal\Core\Render\Element\Textfield', 'processAutocomplete'],
-        ['Drupal\Core\Render\Element\Textfield', 'processAjaxForm'],
-        ['Drupal\Core\Render\Element\Textfield', 'processPattern'],
-      ];
-    }
     // Webform removes values which equal their defaults but does not populate
     // they keys.
     $ensure_keys_have_values = [
@@ -391,12 +382,12 @@ class CivicrmContact extends WebformElementBase {
         '#default_value' => $element_properties['contact_sub_type'],
       ];
     }
-    $form['filters']['group'] = [
+    $form['filters']['crmgroup'] = [
       '#type' => 'select',
       '#multiple' => TRUE,
       '#title' => $this->t('Groups'),
       '#options' => ['' => '- ' . $this->t('None') . ' -'] + $utils->wf_crm_apivalues('group_contact', 'getoptions', ['field' => 'group_id']),
-      '#default_value' => $element_properties['group'],
+      '#default_value' => $element_properties['crmgroup'],
       '#description' => $this->t('Listed contacts must be members of at least one of the selected groups (leave blank to not filter by group).'),
     ];
     $form['filters']['tag'] = [
@@ -648,10 +639,7 @@ class CivicrmContact extends WebformElementBase {
       $args = [
         '%name' => empty($element['#title']) ? $element['#parents'][0] : $element['#title'],
       ];
-      // Avoid error while calling form_state which expects '#group' as a string value :(.
-      $static_element = $element;
-      unset($static_element['#group']);
-      $form_state->setError($static_element, t('%name field is required.', $args));
+      $form_state->setError($element, t('%name field is required.', $args));
     }
   }
 

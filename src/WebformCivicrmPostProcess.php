@@ -2516,9 +2516,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           if (!empty($this->data[$ent][$c][$table][$n][$name]) && is_array($this->data[$ent][$c][$table][$n][$name])) {
             $val = array_unique(array_merge($val, $this->data[$ent][$c][$table][$n][$name]));
           }
-          if (substr($name, 0, 6) === 'custom' || ($table == 'other' && in_array($name, ['group', 'tag']))) {
+          if (substr($name, 0, 6) === 'custom' || ($table == 'other' && in_array($name, ['crmgroup', 'tag']))) {
             $val = array_filter($val);
-            if ($name === 'group') {
+            if ($name === 'crmgroup') {
               unset($val['public_groups']);
             }
           }

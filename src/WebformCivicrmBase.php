@@ -215,6 +215,7 @@ abstract class WebformCivicrmBase {
         if (strpos($fid, $prefix . 'other') !== FALSE) {
           list(, , , , , $ent) = explode('_', $fid);
           list(, , , , , $field) = explode('_', $fid, 6);
+          $ent = ($ent === 'crmgroup') ? 'group' : $ent;
           // Cheap way to avoid fetching the same data twice from the api
           if (!is_array($api[$ent])) {
             $api[$ent] = $this->utils->wf_civicrm_api($api[$ent], 'get', ['contact_id' => $cid]);

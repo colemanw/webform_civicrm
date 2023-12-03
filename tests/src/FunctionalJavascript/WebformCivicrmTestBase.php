@@ -475,7 +475,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
    *     'widget' => 'Static',
    *     'default' => 'relationship',
    *     'filter' => [
-   *        'group' => group_id,
+   *        'crmgroup' => group_id,
    *      ],
    *     'default_relationship' => [
    *       'default_relationship_to' => 'Contact 3',
@@ -550,8 +550,8 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     // Apply contact filter.
     if (!empty($params['filter'])) {
       $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-filters"]')->click();
-      if (!empty($params['filter']['group'])) {
-        $this->getSession()->getPage()->selectFieldOption('Groups', $params['filter']['group']);
+      if (!empty($params['filter']['crmgroup'])) {
+        $this->getSession()->getPage()->selectFieldOption('Groups', $params['filter']['crmgroup']);
       }
       if (!empty($params['filter']['filter_relationship_types'])) {
         $this->getSession()->getPage()->selectFieldOption('properties[filter_relationship_types][]', $params['filter']['filter_relationship_types']);
