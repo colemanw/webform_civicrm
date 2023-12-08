@@ -29,10 +29,10 @@ jobs:
           - drupal: '9.5.*'
             civicrm: '5.66.*'
             php: '7.4'
-          - drupal: '10.1.*'
-            civicrm: '5.67.x-dev'
+          - drupal: '10.0.*'
+            civicrm: '5.69.x-dev'
             php: '8.1'
-          - drupal: '10.1.*'
+          - drupal: '10.0.*'
             civicrm: 'dev-master'
             php: '8.1'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
@@ -100,12 +100,12 @@ jobs:
           cd ~/drupal
           COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} -W
       - name: Ensure Webform ^6.2
-        if: ${{ matrix.drupal == '10.1.*' }}
+        if: ${{ matrix.drupal == '10.0.*' }}
         run: |
           cd ~/drupal
           COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:^6.2@beta'
       - name: Ensure Webform ^6.0
-        if: ${{ matrix.drupal != '10.1.*' }}
+        if: ${{ matrix.drupal != '10.0.*' }}
         run: |
           cd ~/drupal
           #COMPOSER_MEMORY_LIMIT=-1 composer require cweagans/composer-patches
