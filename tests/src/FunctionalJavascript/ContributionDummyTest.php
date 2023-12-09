@@ -144,7 +144,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('City', $billingValues['city']);
     $this->getSession()->getPage()->fillField('Postal Code', $billingValues['postal_code']);
     $this->getSession()->getPage()->selectFieldOption('Country', $billingValues['country_id']);
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->wait(1000);
     $this->getSession()->getPage()->selectFieldOption('State/Province', $billingValues['state_province_id']);
     $this->getSession()->getPage()->pressButton('Next >');
 
@@ -191,7 +191,6 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->enableCivicrmOnWebform();
 
     $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 2);
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
     $this->getSession()->getPage()->clickLink('2. Contact 2');
     $this->getSession()->getPage()->checkField("civicrm_2_contact_1_contact_existing");
@@ -361,7 +360,6 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->enableCivicrmOnWebform();
 
     $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 2);
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
     $this->getSession()->getPage()->clickLink('2. Contact 2');
     $this->getSession()->getPage()->selectFieldOption('2_contact_type', 'organization');
@@ -643,7 +641,6 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
 
     // Enable email field for contact 2.
     $this->getSession()->getPage()->clickLink("Contact 2");
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->selectFieldOption('contact_2_number_of_email', 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
 
@@ -691,7 +688,6 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '10.00');
 
     $this->htmlOutput();
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->fillCardAndSubmit();
 
     $api_result_contribution = $this->utils->wf_civicrm_api('contribution', 'get', [

@@ -47,7 +47,6 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->enableCivicrmOnWebform();
 
     $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 2);
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
     $this->getSession()->getPage()->clickLink('2. Contact 2');
@@ -171,7 +170,6 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->enableCivicrmOnWebform();
 
     $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 2);
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
     // Configuring Contact 1 - Student
@@ -331,11 +329,9 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->enableCivicrmOnWebform();
 
     $this->getSession()->getPage()->selectFieldOption("number_of_contacts", 3);
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
     foreach ([1, 2, 3] as $c) {
       $this->getSession()->getPage()->clickLink("Contact {$c}");
-      $this->assertSession()->assertWaitOnAjaxRequest();
       $this->getSession()->getPage()->selectFieldOption("{$c}_contact_type", 'Organization');
       $this->assertSession()->assertWaitOnAjaxRequest();
 

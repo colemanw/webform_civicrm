@@ -195,7 +195,6 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
     $this->enableCivicrmOnWebform();
 
     $this->getSession()->getPage()->selectFieldOption("number_of_contacts", $this->_totalMV);
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
     $this->enableCustomFields(1);
@@ -257,7 +256,6 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
     $this->enableCivicrmOnWebform();
 
     $this->getSession()->getPage()->selectFieldOption("number_of_contacts", $this->_totalMV);
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
     $this->enableCustomFields(1);

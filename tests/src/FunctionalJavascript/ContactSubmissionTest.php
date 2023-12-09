@@ -284,7 +284,6 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
     $this->getSession()->getPage()->selectFieldOption("draft", 'authenticated');
     $this->getSession()->getPage()->pressButton('Save');
-    $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
@@ -479,7 +478,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
           foreach ($field_value as $key => $value) {
             $selector = "civicrm_1_contact_1_{$entity_type}_{$key}";
             $this->addFieldValue($selector, $value);
-            $this->assertSession()->assertWaitOnAjaxRequest();
+            $this->getSession()->wait(1000);
           }
         }
         else {

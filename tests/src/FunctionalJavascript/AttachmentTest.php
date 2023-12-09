@@ -23,6 +23,9 @@ final class AttachmentTest extends WebformCivicrmTestBase {
     'file',
   ];
 
+  private $_cg = [];
+  private $_cf = [];
+
   protected function setUp(): void {
     parent::setUp();
     $this->cleanupFiles();
@@ -101,11 +104,11 @@ final class AttachmentTest extends WebformCivicrmTestBase {
     ]));
     $this->enableCivicrmOnWebform();
     $this->getSession()->getPage()->selectFieldOption("contact_1_number_of_cg{$this->_cg[1]['id']}", 'Yes');
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->wait(1000);
     $this->htmlOutput();
 
     $this->getSession()->getPage()->selectFieldOption("contact_1_number_of_cg{$this->_cg[2]['id']}", 'Yes');
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->wait(1000);
     $this->htmlOutput();
 
     // Enable custom fields.
@@ -119,7 +122,7 @@ final class AttachmentTest extends WebformCivicrmTestBase {
     $this->assertPageNoErrorMessages();
 
     // Ensure all files are loaded on the form.
-    foreach ($this->fileParams as $name => $file) {
+    foreach ($this->fileParams as $file) {
       $this->assertSession()->pageTextContains($file['name']);
     }
 

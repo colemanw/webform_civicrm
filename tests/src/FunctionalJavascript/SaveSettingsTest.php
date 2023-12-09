@@ -60,7 +60,6 @@ final class SaveSettingsTest extends WebformCivicrmTestBase {
     // Ensure no webform parent is added to the source yaml.
     $this->drupalGet($this->webform->toUrl('edit-form'));
     $this->getSession()->getPage()->clickLink('Source');
-    $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->assertSession()->pageTextNotContains('contact_pagebreak');
     $this->assertSession()->pageTextNotContains('webform_parents');
@@ -82,7 +81,6 @@ final class SaveSettingsTest extends WebformCivicrmTestBase {
     $this->assertElementsOnBuildForm($elements);
     $this->drupalGet($this->webform->toUrl('edit-form'));
     $this->getSession()->getPage()->clickLink('Source');
-    $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->assertSession()->pageTextContains('contact_pagebreak');
   }
@@ -97,7 +95,6 @@ final class SaveSettingsTest extends WebformCivicrmTestBase {
     ]));
 
     $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 2);
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
     $this->getSession()->getPage()->clickLink('Activities');
@@ -113,7 +110,6 @@ final class SaveSettingsTest extends WebformCivicrmTestBase {
 
     // Cancel this action.
     $this->getSession()->getPage()->pressButton('edit-cancel');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertSession()->waitForField('nid');
     $this->htmlOutput();
 
@@ -124,7 +120,6 @@ final class SaveSettingsTest extends WebformCivicrmTestBase {
 
     // Repeat the step and delete activity type element from the page.
     $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 2);
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
     $this->getSession()->getPage()->clickLink('Activities');
@@ -135,7 +130,6 @@ final class SaveSettingsTest extends WebformCivicrmTestBase {
     $this->assertSession()->waitForField('edit-delete');
 
     $this->getSession()->getPage()->pressButton('edit-delete');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertSession()->waitForField('nid');
     $this->htmlOutput();
 
