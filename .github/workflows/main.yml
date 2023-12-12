@@ -163,6 +163,9 @@ jobs:
           git clone https://lab.civicrm.org/extensions/firewall.git
           git clone https://lab.civicrm.org/extensions/stripe.git
           git clone https://github.com/iATSPayments/com.iatspayments.civicrm.git
+          cd com.iatspayments.civicrm
+          curl -L -O https://github.com/iATSPayments/com.iatspayments.civicrm/pull/444.patch
+          git apply 444.patch
       - name: Download Civi extensions normal
         if: ${{ matrix.drupal != '10.0.*' }}
         run: |
