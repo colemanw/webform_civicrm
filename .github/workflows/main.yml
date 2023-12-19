@@ -152,26 +152,17 @@ jobs:
           ./vendor/drush/drush/drush -y -l http://civi.localhost site-install standard --db-url='mysql://root:@127.0.0.1:${{ job.services.mysql.ports[3306] }}/fakedb' --site-name=FakeCivi
           chmod +w web/sites/default
           /home/runner/civicrm-cv/cv core:install --cms-base-url=http://civi.localhost
-      - name: Download Civi extensions from git
-        if: ${{ matrix.drupal == '10.0.*' }}
+      - name: Download Civi extensions
         run: |
           mkdir -p ~/drupal/web/sites/default/files/civicrm/ext
           cd ~/drupal/web/sites/default/files/civicrm/ext
-          /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.aghstrategies.uscounties
-          # Let's get latest git versions of these
-          git clone https://lab.civicrm.org/extensions/mjwshared.git
-          git clone https://lab.civicrm.org/extensions/firewall.git
-          git clone https://lab.civicrm.org/extensions/stripe.git
-          git clone https://github.com/iATSPayments/com.iatspayments.civicrm.git
-      - name: Download Civi extensions normal
-        if: ${{ matrix.drupal != '10.0.*' }}
-        run: |
-          mkdir -p ~/drupal/web/sites/default/files/civicrm/ext
-          cd ~/drupal/web/sites/default/files/civicrm/ext
-          # Normally we'll just let civi decide which version to download.
+          # Allow "unapproved" extensions
+          /home/runner/civicrm-cv/cv ev '\Civi::settings()->set("ext_repo_url", "https://civicrm.org/extdir/ver={ver}|cms={uf}|ready=");'
+          /home/runner/civicrm-cv/cv ev '\Civi::settings()->set("http_timeout", 60);'
           # Apparently we have to install it, otherwise stripe gives a dependency error even with install=0. I think that's a bug, but let's just do it. This is a fake install anyway.
           /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=mjwshared
           /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=firewall
+          /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=mjwpaymentapi
           /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=com.drastikbydesign.stripe
           /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.iatspayments.civicrm
           /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.aghstrategies.uscounties
