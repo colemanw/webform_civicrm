@@ -160,6 +160,7 @@ jobs:
           /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.aghstrategies.uscounties
           # Let's get latest git versions of these
           git clone https://lab.civicrm.org/extensions/mjwshared.git
+          git clone https://lab.civicrm.org/extensions/mjwpaymentapi.git
           git clone https://lab.civicrm.org/extensions/firewall.git
           git clone https://lab.civicrm.org/extensions/stripe.git
           git clone https://github.com/iATSPayments/com.iatspayments.civicrm.git
@@ -171,6 +172,7 @@ jobs:
           # Normally we'll just let civi decide which version to download.
           # Apparently we have to install it, otherwise stripe gives a dependency error even with install=0. I think that's a bug, but let's just do it. This is a fake install anyway.
           /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=mjwshared
+          /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=mjwpaymentapi
           /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=firewall
           /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=com.drastikbydesign.stripe
           /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.iatspayments.civicrm
