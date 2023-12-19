@@ -99,18 +99,10 @@ jobs:
         run: |
           cd ~/drupal
           COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} -W
-      - name: Ensure Webform ^6.2
-        if: ${{ matrix.drupal == '10.0.*' }}
+      - name: Download Webform
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:^6.2@beta'
-      - name: Ensure Webform ^6.0
-        if: ${{ matrix.drupal != '10.0.*' }}
-        run: |
-          cd ~/drupal
-          #COMPOSER_MEMORY_LIMIT=-1 composer require cweagans/composer-patches
-          #jq '.extra.patches = {"drupal/webform": {"Regression": "https://www.drupal.org/files/issues/2021-12-13/3254028-2.patch"}}' composer.json > temp.json && mv temp.json composer.json
-          COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:6.x-dev@dev'
+          COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:^6.2'
       - name: Install webform_civicrm
         run: |
           cd ~/drupal
