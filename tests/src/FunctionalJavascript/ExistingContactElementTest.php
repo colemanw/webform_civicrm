@@ -356,8 +356,7 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
     $this->assertStringContainsString('frederick@pabst.io', $sent_email[0]['to']);
 
     // Verify tokens are rendered correctly.
-    if (version_compare(\Drupal::VERSION, '10', '>=')) {
-      $this->assertEquals("Submitted Values Are -
+    $this->assertEquals("Submitted Values Are -
 
 -------- Contact 1 
 -----------------------------------------------------------
@@ -376,28 +375,6 @@ Webform CiviCRM Contacts IDs - {$this->rootUserCid}. Webform CiviCRM Contacts Li
 
 [1] mailto:frederick@pabst.io
 ", $sent_email[0]['body']);
-    }
-    else {
-      // Verify tokens are rendered correctly.
-      $this->assertEquals("Submitted Values Are -
--------- Contact 1 
------------------------------------------------------------
-
-*Existing Contact*
-Frederick Pabst
-*First Name*
-Frederick
-*Last Name*
-Pabst
-*Email*
-frederick@pabst.io [1]
-Existing Contact - Frederick Pabst. Activity 1 ID - {$actID1}. Activity 2 ID - {$actID2}.
-Webform CiviCRM Contacts IDs - {$this->rootUserCid}. Webform CiviCRM Contacts Links -
-{$cidURL}.
-
-[1] mailto:frederick@pabst.io
-", $sent_email[0]['body']);
-    }
   }
 
 }
