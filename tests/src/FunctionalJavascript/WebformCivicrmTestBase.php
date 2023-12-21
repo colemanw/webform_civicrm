@@ -752,18 +752,13 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     }
 
     // Fill value on the wysiwyg editor.
-    if (version_compare(\Drupal::VERSION, '10', '>=')) {
-      $this->getSession()->executeScript("
-        const element = document.getElementById(\"$fieldId\");
-        const editor = Drupal.CKEditor5Instances.get(
-          element.getAttribute('data-ckeditor5-id'),
-        );
-        editor.setData(\"$value\");
-      ");
-    }
-    else {
-      $this->getSession()->executeScript("CKEDITOR.instances[\"$fieldId\"].setData(\"$value\");");
-    }
+    $this->getSession()->executeScript("
+      const element = document.getElementById(\"$fieldId\");
+      const editor = Drupal.CKEditor5Instances.get(
+        element.getAttribute('data-ckeditor5-id'),
+      );
+      editor.setData(\"$value\");
+    ");
   }
 
   /**
