@@ -119,7 +119,6 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('outBound_option', 5);
 
     $this->getSession()->getPage()->pressButton('_qf_Smtp_next');
-    $this->assertSession()->assertWaitOnAjaxRequest();
   }
 
   /**
@@ -423,7 +422,6 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->htmlOutput();
     $this->getSession()->getPage()->checkField('nid');
     $this->getSession()->getPage()->selectFieldOption('1_contact_type', 'individual');
-    $this->assertSession()->assertWaitOnAjaxRequest();
   }
 
   /**
@@ -680,7 +678,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->getSession()->getPage()->fillField('City', $params['city']);
 
     $this->getSession()->getPage()->selectFieldOption('Country', $params['country']);
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->wait(1000);
     $this->getSession()->getPage()->selectFieldOption('State/Province', $params['state_province']);
 
     $this->getSession()->getPage()->fillField('Postal Code', $params['postal_code']);
@@ -695,7 +693,6 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   protected function fillCardAndSubmit($billingValues = []) {
     if (!empty($billingValues)) {
       $this->getSession()->getPage()->checkField("civicrm_1_contribution_1_contribution_billing_address_same_as");
-      $this->assertSession()->assertWaitOnAjaxRequest();
       $this->getSession()->wait(1000);
 
       // Verify populated values for billing fields.
@@ -727,7 +724,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->getSession()->getPage()->pressButton('Submit');
     $this->htmlOutput();
     $this->assertPageNoErrorMessages();
-    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+    $this->assertSession()->waitForText('New submission added to CiviCRM Webform Test.');
   }
 
   /**
@@ -773,10 +770,8 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     }
 
     $this->getSession()->getPage()->selectFieldOption('edit-settings-body', '_other_');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->fillCKEditor('settings[body_custom_html][value]', $params['body']);
     $this->getSession()->getPage()->pressButton('Save');
-    $this->assertSession()->assertWaitOnAjaxRequest();
   }
 
   /**

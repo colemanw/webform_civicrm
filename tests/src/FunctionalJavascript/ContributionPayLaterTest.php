@@ -4,7 +4,6 @@ namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Civi\Api4\Contribution;
 use Drupal\Core\Url;
-use Drupal\webform\Entity\Webform;
 
 /**
  * Tests submitting a Webform with CiviCRM: Contribution with Pay later
@@ -12,6 +11,9 @@ use Drupal\webform\Entity\Webform;
  * @group webform_civicrm
  */
 final class ContributionPayLaterTest extends WebformCivicrmTestBase {
+
+  private $_customGroup = [];
+  private $_customFields = [];
 
   public function testReceiptParams() {
     $this->drupalLogin($this->rootUser);

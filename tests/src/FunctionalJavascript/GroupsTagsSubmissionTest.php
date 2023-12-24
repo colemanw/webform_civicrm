@@ -11,6 +11,9 @@ use Drupal\Core\Url;
  */
 final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
 
+  private $groups = [];
+  private $tags = [];
+
   /**
    * {@inheritdoc}
    */
@@ -185,11 +188,6 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     $contactID = $this->utils->wf_civicrm_api('Contact', 'get', $params)['id'];
-    $contactVal = $this->utils->wf_civicrm_api('Contact', 'get', [
-      'sequential' => 1,
-      'return' => ["tag", "group"],
-      'contact_id' => $contactID,
-    ]);
     $contact = $this->utils->wf_civicrm_api('Contact', 'get', [
       'sequential' => 1,
       'return' => ["tag", "group"],

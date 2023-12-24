@@ -10,7 +10,7 @@ use Drupal\Core\Url;
  * @group webform_civicrm
  */
 final class StripeTest extends WebformCivicrmTestBase {
-
+  protected $failOnJavascriptConsoleErrors = TRUE;
   /**
    * {@inheritdoc}
    */
@@ -59,12 +59,10 @@ final class StripeTest extends WebformCivicrmTestBase {
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->htmlOutput();
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '59.50');
-    $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->fillStripeCardWidget();
 
     $this->getSession()->getPage()->pressButton('Submit');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertPageNoErrorMessages();
     $this->htmlOutput();
 
@@ -79,6 +77,9 @@ final class StripeTest extends WebformCivicrmTestBase {
    * Test webform submission using stripe processor with AJAX enabled.
    */
   public function testAjaxSubmitContribution() {
+    // Stripe payment logs a console ajax error.
+    $this->failOnJavascriptConsoleErrors = FALSE;
+
     $this->drupalLogin($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
@@ -103,12 +104,10 @@ final class StripeTest extends WebformCivicrmTestBase {
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->htmlOutput();
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '59.50');
-    $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->fillStripeCardWidget();
 
     $this->getSession()->getPage()->pressButton('Submit');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertPageNoErrorMessages();
     $this->htmlOutput();
 
@@ -128,17 +127,13 @@ final class StripeTest extends WebformCivicrmTestBase {
     $stripeCardElement = $this->assertSession()->waitForElementVisible('xpath', '//div[contains(@class, "StripeElement")]/div/iframe');
     $this->assertNotEmpty($stripeCardElement);
     $this->getSession()->switchToIFrame($stripeCardElement->getAttribute('name'));
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->wait(3000);
 
     $this->assertSession()->waitForElementVisible('css', 'input[name="cardnumber"]');
     $this->getSession()->getPage()->fillField('cardnumber', '4111 1111 1111 1111');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->fillField('exp-date', '11 / ' . $expYear);
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->fillField('cvc', '123');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->fillField('postal', '12345');
-    $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->getSession()->switchToIFrame();
   }

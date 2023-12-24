@@ -3,7 +3,6 @@
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Drupal\Core\Url;
-use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
 
 /**
  * Tests submitting a Webform with CiviCRM: Contact with Event.
@@ -11,6 +10,8 @@ use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
  * @group webform_civicrm
  */
 final class EventTest extends WebformCivicrmTestBase {
+
+  private $_customFields = [];
 
   protected function setUp(): void {
     parent::setUp();
@@ -75,7 +76,6 @@ final class EventTest extends WebformCivicrmTestBase {
     ]));
     $this->enableCivicrmOnWebform();
     $this->getSession()->getPage()->selectFieldOption('Number of Contacts', 2);
-    $this->assertSession()->assertWaitOnAjaxRequest();
 
     //Configure Event tab.
     $this->getSession()->getPage()->clickLink('Event Registration');
@@ -94,7 +94,6 @@ final class EventTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('Payment Processor', 'Pay Later');
 
     $this->saveCiviCRMSettings();
-    $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->htmlOutput();
@@ -115,7 +114,6 @@ final class EventTest extends WebformCivicrmTestBase {
     $refName = 'civicrm_1_participant_1_cg' . $this->cg['id'] . '_custom_' . $this->_customFields['participant_contact_ref']['id'];
     $this->getSession()->getPage()->selectFieldOption($refName, 2);
     $this->getSession()->getPage()->pressButton('Next >');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertPageNoErrorMessages();
     $this->htmlOutput();
 
@@ -124,7 +122,6 @@ final class EventTest extends WebformCivicrmTestBase {
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '40.00');
 
     $this->getSession()->getPage()->pressButton('Submit');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertPageNoErrorMessages();
     $this->htmlOutput();
 
@@ -199,7 +196,6 @@ final class EventTest extends WebformCivicrmTestBase {
     $this->enableCivicrmOnWebform();
 
     $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 2);
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
     $this->getSession()->getPage()->clickLink('Event Registration');
@@ -370,7 +366,6 @@ final class EventTest extends WebformCivicrmTestBase {
     ]));
     $this->enableCivicrmOnWebform();
     $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 1);
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
 
     // Configure Event tab.
