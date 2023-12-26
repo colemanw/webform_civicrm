@@ -1875,7 +1875,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    * Return index value of contribution contact.
    */
   private function getContributionContactIndex() {
-    return wf_crm_aval($this->settings, "data:contribution:1:contribution:1:contact_id") ?? wf_crm_aval($this->submissionValue("civicrm_1_contribution_1_contribution_contact_id"), 0) ?? 1;
+    return wf_crm_aval($this->settings, "data:contribution:1:contribution:1:contact_id") ?? $this->crmValues["civicrm_1_contribution_1_contribution_contact_id"] ?? 1;
   }
 
   /**
