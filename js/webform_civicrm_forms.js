@@ -328,20 +328,21 @@ var wfCivi = (function (D, $, drupalSettings, once) {
   }
 
   function fillOptions(element, data) {
+    var sortedData = Object.entries(data).sort(([,a],[,b]) => a > b);
     var $el = $(element),
       value = $el.attr('data-val') ? $el.attr('data-val') : $el.val();
     $el.find('option').remove();
-    if (!$.isEmptyObject(data || [])) {
+    if (!sortedData.length == 0) {
       if (!data['']) {
         var text = $el.hasClass('required') ? Drupal.t('- Select -') : Drupal.t('- None -');
         $el.append('<option value="">'+text+'</option>');
       }
-      $.each(data, function(key, val) {
-        $el.append('<option value="'+key+'">'+val+'</option>');
-      });
-      if (value in data) {
-        $el.val(value);
-      }
+      for (let i = 0; i < sortedData.length; i++) {
+        $el.append('<option value="'+sortedData[i][0]+'">'+sortedData[i][1]+'</option>');
+        if (sortedData[i][0] == value) {
+          $el.val(value);
+        }
+      };
     }
     else {
       $el.append('<option value="-">'+Drupal.t('- N/A -')+'</option>');
