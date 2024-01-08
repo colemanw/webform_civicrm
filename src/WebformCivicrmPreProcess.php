@@ -21,7 +21,7 @@ use Drupal\webform_civicrm\WebformCivicrmBase;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\webform\Utility\WebformHtmlHelper;
 use Drupal\webform\Utility\WebformXss;
-
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivicrmPreProcessInterface {
 
@@ -162,8 +162,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
       }
       if ($this->settings['block_unknown_users']) {
         $this->form['submitted']['#access'] = $this->form['actions']['#access'] = FALSE;
-        $this->setMessage(t('Sorry, you do not have permission to access this form.'), 'warning');
-        return;
+        throw new AccessDeniedHttpException();
       }
     }
     if (!empty($this->data['participant_reg_type'])) {
