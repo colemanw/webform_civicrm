@@ -660,10 +660,8 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
 
       if ($itemTaxRate !== NULL) {
         // Change the line item label to display the tax rate it contains
-        $taxSettings = $this->utils->wf_crm_get_civi_setting('contribution_invoice_settings');
-
-        if (($itemTaxRate !== 0) && ($taxSettings['tax_display_settings'] !== 'Do_not_show')) {
-          $item['label'] .= ' (' . t('includes @rate @tax', ['@rate' => (float) $itemTaxRate . '%', '@tax' => $taxSettings['tax_term']]) . ')';
+        if (($itemTaxRate !== 0) && (\Civi::settings()->get('tax_display_settings') !== 'Do_not_show')) {
+          $item['label'] .= ' (' . t('includes @rate @tax', ['@rate' => (float) $itemTaxRate . '%', '@tax' => \Civi::settings()->get('tax_term')]) . ')';
         }
 
         // Add calculation for financial type that contains tax

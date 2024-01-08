@@ -59,8 +59,7 @@ abstract class WebformCivicrmBase {
         return $this->_payment_processor;
 
       case 'tax_rate':
-        $taxSettings = $this->utils->wf_crm_get_civi_setting('contribution_invoice_settings');
-        if (is_array($taxSettings) && !empty($taxSettings['invoicing'])) {
+        if (\Civi::settings()->get('invoicing')) {
           $contribution_enabled = wf_crm_aval($this->data, 'contribution:1:contribution:1:enable_contribution');
           if ($contribution_enabled) {
             // tax integration
