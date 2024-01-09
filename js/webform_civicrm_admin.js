@@ -536,21 +536,26 @@ var wfCiviAdmin = (function ($, D) {
         }
       });
 
+      var $contributionContact = $('[name=civicrm_1_contribution_1_contribution_contribution_contact_id]');
+
       function billingMessages() {
         var $pageSelect = $('[name=civicrm_1_contribution_1_contribution_contribution_page_id]');
+        var contributionContactVal = $.isNumeric($contributionContact.val()) ? $contributionContact.val() : 0;
         // Warning about contribution page with no email
-        if ($pageSelect.val() !== '0' && ($('[name=civicrm_1_contact_1_email_email]:checked').length < 1 || $('[name=contact_1_number_of_email]').val() == '0')) {
-          var msg = Drupal.t('You must enable an email field for !contact in order to process transactions.', {'!contact': getContactLabel(1)});
-          if (!$('.wf-crm-billing-email-alert').length) {
-            $pageSelect.after('<div class="messages error wf-crm-billing-email-alert">' + msg + ' <button>' + Drupal.t('Enable It') + '</button></div>');
-            $('.wf-crm-billing-email-alert button').click(function() {
-              $('input[name=civicrm_1_contact_1_email_email]').prop('checked', true).change();
-              $('select[name=contact_1_number_of_email]').val('1').change();
-              return false;
-            });
-            if ($('.wf-crm-billing-email-alert').is(':hidden')) {
-              billingEmailMsg = CRM.alert(msg, Drupal.t('Email Required'), 'error');
-            }
+        if (contributionContactVal && $pageSelect.val() !== '0' && ($(`[name=civicrm_${contributionContactVal}_contact_1_email_email]:checked`).length < 1 || $(`[name=contact_${contributionContactVal}_number_of_email]`).val() == '0')) {
+          var msg = Drupal.t('You must enable an email field for !contact in order to process transactions.', {'!contact': getContactLabel(contributionContactVal)});
+          // Remove older error message.
+          if ($('.wf-crm-billing-email-alert').length) {
+            $('.wf-crm-billing-email-alert').remove();
+          }
+          $pageSelect.after('<div class="messages error wf-crm-billing-email-alert">' + msg + ' <button>' + Drupal.t('Enable It') + '</button></div>');
+          $('.wf-crm-billing-email-alert button').click(function() {
+            $(`input[name=civicrm_${contributionContactVal}_contact_1_email_email]`).prop('checked', true).change();
+            $(`select[name=contact_${contributionContactVal}_number_of_email]`).val('1').change();
+            return false;
+          });
+          if ($('.wf-crm-billing-email-alert').is(':hidden')) {
+            billingEmailMsg = CRM.alert(msg, Drupal.t('Email Required'), 'error');
           }
         }
         else {
@@ -564,8 +569,41 @@ var wfCiviAdmin = (function ($, D) {
           $('#edit-participant').prepend('<div class="wf-crm-paid-entities-info messages status">' + Drupal.t('Configure the Contribution settings to enable paid events.') + '</div>');
         }
       }
-      $('[name=civicrm_1_contribution_1_contribution_contribution_page_id], [name=civicrm_1_contact_1_email_email]', context).once('email-alert').change(billingMessages);
+
+      // Contribution contact field error message handling for user select option.
+      function billingMessagesUserSelect() {
+        if ($contributionContact.val() === 'create_civicrm_webform_element') {
+          var $numberOfContacts = $('[name=number_of_contacts]').val();
+          var $pageSelect = $('[name=civicrm_1_contribution_1_contribution_contribution_page_id]');
+          // Process for all the selected contacts.
+          for (var c = $numberOfContacts; c >= 1; c--) {
+            if ($pageSelect.val() !== '0' && ($(`[name=civicrm_${c}_contact_1_email_email]:checked`).length < 1 || $(`[name=contact_${c}_number_of_email]`).val() == '0')) {
+              var msg = Drupal.t('You must enable an email field for !contact in order to process transactions.', {'!contact': getContactLabel(c)});
+              // Remove older error message.
+              if ($('.wf-crm-billing-email-alert-' + c).length) {
+                $('.wf-crm-billing-email-alert-' + c).remove();
+              }
+              $pageSelect.after('<div class="messages error wf-crm-billing-email-alert wf-crm-billing-email-alert-' + c + '">' + msg + ' <button data-contact="' + c + '">' + Drupal.t('Enable It') + '</button></div>');
+              $('.wf-crm-billing-email-alert-' + c + ' button').click(function() {
+                var contact = $(this).data('contact');
+                $(`input[name=civicrm_${contact}_contact_1_email_email]`).prop('checked', true).change();
+                $(`select[name=contact_${contact}_number_of_email]`).val('1').change();
+                $(this).parent().remove();
+                return false;
+              });
+            }
+            else {
+              $('.wf-crm-billing-email-alert-' + c).remove();
+            }
+          }
+        }
+      }
+
+      var contributionContactVal = $.isNumeric($contributionContact.val()) ? $contributionContact.val() : 1;
+      $(`[name=civicrm_1_contribution_1_contribution_contribution_page_id], [name=civicrm_${contributionContactVal}_contact_1_email_email], [name=civicrm_1_contribution_1_contribution_contribution_contact_id]`, context).once('email-alert').change(billingMessages);
+      $(`[name=civicrm_1_contribution_1_contribution_contribution_page_id], [name$=_contact_1_email_email], [name=civicrm_1_contribution_1_contribution_contribution_contact_id]`, context).once('email-alert-user-select').change(billingMessagesUserSelect);
       billingMessages();
+      billingMessagesUserSelect();
 
       // Handlers for submit-limit & tracking-mode mini-forms
       $('#configure-submit-limit', context).once('wf-civi').click(function() {

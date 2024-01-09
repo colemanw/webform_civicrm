@@ -94,6 +94,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         if ($this->isLivePaymentProcessor() && $this->isPaymentPage() && !form_get_errors()) {
           if ($this->validateBillingFields()) {
             if ($this->createBillingContact()) {
+              $this->createLiveContributionContact();
               $this->submitLivePayment();
             }
           }
@@ -568,6 +569,27 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
     }
     return TRUE;
+  }
+
+  /**
+   * Create new contact in case of live payment.
+   * This will be useful in contributionParams method to assign
+   * correct contribution contact.
+   */
+  private function createLiveContributionContact() {
+    $cc = $this->data['contribution'][1]['contribution'][1]['contribution_contact_id'];
+    $ccid = $this->ent['contact'][$cc]['id'];
+    if (empty($ccid)) {
+      $contact = $this->data['contact'][$cc];
+      $ccid = $this->findDuplicateContact($contact);
+      // Create new contact if empty.
+      if (empty($ccid)) {
+        $email = $contact['email'][1];
+        $ccid = $email['contact_id'] = $this->createContact($contact);
+        wf_civicrm_api('email', 'create', $email);
+      }
+      $this->ent['contact'][$cc]['id'] = $ccid;
+    }
   }
 
   /**
@@ -2002,7 +2024,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $paymentProcessor = \Civi\Payment\System::singleton()->getById($params['payment_processor_id']);
 
     // Add contact details to params (most processors want a first_name and last_name)
-    $contact = wf_civicrm_api('contact', 'getsingle', ['id' => $this->ent['contact'][1]['id']]);
+    $contactId = $params['contact_id'] ?? $this->ent['contact'][1]['id'];
+    $contact = wf_civicrm_api('contact', 'getsingle', ['id' => $contactId]);
     $params += $contact;
     $params['contributionID'] = $params['id'] = $this->ent['contribution'][1]['id'];
 
@@ -2099,7 +2122,23 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['financial_type_id'] = $this->contribution_page['financial_type_id'];
     $params['currency'] = $params['currencyID'] = $this->contribution_page['currency'];
     $params['skipRecentView'] = $params['skipLineItem'] = 1;
-    $params['contact_id'] = $this->ent['contact'][1]['id'];
+    // Get contribution contact id.
+    $contribution_contact_id = $params['contribution_contact_id'];
+    // Set default contact 1 if contribution contact is empty.
+    // This is specifically added for user select option.
+    // If user do not choose any option from contribution contact field,
+    // then assign default contact 1 as contribution contact.
+    if (empty($contribution_contact_id)) {
+      $contribution_contact_cid = $this->ent['contact'][1]['id'];
+    }
+    // Pay later option, where payment processor is not selected.
+    elseif (empty($params['payment_processor_id'])) {
+      $contribution_contact_cid = $contribution_contact_id;
+    }
+    else {
+      $contribution_contact_cid = $this->ent['contact'][$contribution_contact_id]['id'];
+    }
+    $params['contact_id'] = $contribution_contact_cid;
     $params['total_amount'] = round($this->totalContribution, 2);
 
     // Most payment processors expect this (normally be set by contribution page processConfirm)

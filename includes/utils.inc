@@ -1115,6 +1115,13 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Contribution Source'),
         'type' => 'textfield',
       ];
+      $fields['contribution_contribution_contact_id'] = [
+        'name' => t('Contribution Contact'),
+        'type' => 'select',
+        'expose_list' => TRUE,
+        'default' => 1,
+        'data_type' => 'ContactReference',
+      ];
       // Line items
       $fields['contribution_line_total'] = [
           'name' => t('Line Item Amount'),
