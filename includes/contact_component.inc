@@ -711,7 +711,7 @@ function wf_crm_contact_search($node, $component, $params, $contacts, $str = NUL
     }
     if (count($ret) < $limit && $component['extra']['allow_create']) {
       // HTML hack to get prompt to show up different than search results
-      $ret[] = ['id' => "-$str", 'name' => '<em><i>' . filter_xss($component['extra']['none_prompt']) . '</i></em>'];
+      $ret[] = ['id' => "-$str", 'name' => filter_xss($component['extra']['none_prompt'])];
     }
   }
   // Select results
