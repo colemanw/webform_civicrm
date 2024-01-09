@@ -501,6 +501,11 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
                 $val = array_pop($val);
               }
             }
+            if ($component['type'] == 'date') {
+              if (empty($val) && !empty($element['#default_value'])) {
+                $val = $element['#default_value'];
+              }
+            }
             if ($component['type'] == 'autocomplete' && is_string($val) && strlen($val)) {
               $options = wf_crm_field_options($component, '', $this->data);
               $val = wf_crm_aval($options, $val);
@@ -516,7 +521,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             }
             // Set value for "secure value" elements
             elseif ($element['#type'] == 'value') {
-              $element['#value'] = $val;
+              $element['#value'] = ($component['type'] !== 'hidden') ? $val : $element['#value'];
             }
             // Set default value
             else {
