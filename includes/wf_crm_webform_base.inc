@@ -249,7 +249,7 @@ abstract class wf_crm_webform_base {
       switch ($component['extra']['default']) {
         case 'user':
           $cid = wf_crm_user_cid();
-          $found = ($c == 1 && $cid) ? [$cid] : [];
+          $found = ($cid) ? [$cid] : [];
           break;
         case 'contact_id':
           if ($component['extra']['default_contact_id']) {
