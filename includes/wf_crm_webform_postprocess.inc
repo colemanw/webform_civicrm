@@ -1845,7 +1845,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * This happens during form validation and sets a form error if unsuccessful
    */
   private function submitLivePayment() {
-    $contributionParams = $this->contributionParams();
+    $contributionParams = $this->contributionParams(TRUE);
 
     // Only if #installments = 1, do we process a single transaction/contribution. #installments = 0 (or not set) in CiviCRM Core means open ended commitment;
     $numInstallments = wf_crm_aval($contributionParams, 'installments', NULL, TRUE);
@@ -1978,7 +1978,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       }
     }
 
-    $params = $this->contributionParams();
+    $params = $this->contributionParams(FALSE);
     $params['contribution_status_id'] = 'Pending';
     $params['is_pay_later'] = $this->contributionIsPayLater;
 
@@ -2115,9 +2115,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
   /**
    * Format contribution params for transact/pay-later
+   * @param bool $isLivePayment
    * @return array
    */
-  private function contributionParams() {
+  private function contributionParams($isLivePayment) {
     $params = $this->billing_params + $this->data['contribution'][1]['contribution'][1];
     $params['financial_type_id'] = $this->contribution_page['financial_type_id'];
     $params['currency'] = $params['currencyID'] = $this->contribution_page['currency'];
@@ -2131,8 +2132,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     if (empty($contribution_contact_id)) {
       $contribution_contact_cid = $this->ent['contact'][1]['id'];
     }
-    // Pay later option, where payment processor is not selected.
-    elseif (empty($params['payment_processor_id'])) {
+    // Pay later option, where payment processor is not selected or non-live payment processor (like GoCardless).
+    elseif (empty($params['payment_processor_id']) || !$isLivePayment) {
       $contribution_contact_cid = $contribution_contact_id;
     }
     else {
