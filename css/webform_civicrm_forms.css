@@ -20,3 +20,8 @@
 #wf-crm-billing-items td + td {
   text-align: right;
 }
+
+form.webform-client-form input:read-only {
+  background-color: rgb(245 245 245);
+  border-color: #ccc;
+}

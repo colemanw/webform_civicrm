@@ -167,7 +167,7 @@ function _webform_edit_civicrm_contact($component) {
     '#type' => 'select',
     '#multiple' => TRUE,
     '#title' => t('Fields to Lock'),
-    '#description' => t('Prevent editing by disabling or hiding fields when a contact already exists.'),
+    '#description' => t('Prevent editing by disabling, hiding, or setting fields to read-only when a contact already exists.'),
     '#default_value' => $component['extra']['hide_fields'],
     '#options' => ['' => '- ' . t('None') . ' -'] + wf_crm_contact_fields($node, $c),
     '#parents' => ['extra', 'hide_fields'],
@@ -176,7 +176,7 @@ function _webform_edit_civicrm_contact($component) {
     '#type' => 'select',
     '#title' => t('Locked fields should be'),
     '#default_value' => $component['extra']['hide_method'],
-    '#options' => ['hide' => t('Hidden'), 'disable' => t('Disabled')],
+    '#options' => ['hide' => t('Hidden'), 'disable' => t('Disabled'), 'readonly' => t('Read-only')],
     '#parents' => ['extra', 'hide_method'],
   ];
   $form['field_handling']['no_hide_blank'] = [

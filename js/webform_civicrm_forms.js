@@ -156,8 +156,16 @@ var wfCivi = (function ($, D) {
         var type = (n[6] === 'name') ? 'name' : n[4];
         if ($.inArray(type, toHide) >= 0) {
           var fn = (op === 'hide' && (!showEmpty || !isFormItemBlank($el))) ? 'hide' : 'show';
-          $(':input', $el).webformProp('disabled', fn === 'hide');
-          $(':input', $el).webformProp('readonly', fn === 'hide');
+          switch (hideOrDisable) {
+            case 'disable':
+            case 'hide':
+              $(':input', $el).webformProp('disabled', fn === 'hide');
+              $(':input', $el).webformProp('readonly', fn === 'hide');
+              break;
+            case 'readonly':
+              $(':input', $el).webformProp('readonly', fn === 'hide');
+              break;
+          }
           $('select.civicrm-enabled[name*="_address_state_province_id"]').each(function() {
             $(this).webformProp('disabled', fn === 'hide');
             $(this).webformProp('readonly', fn === 'hide');
