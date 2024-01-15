@@ -408,10 +408,10 @@ function wf_crm_get_relationship_types() {
   static $types = [];
   if (!$types) {
     foreach (wf_crm_apivalues('relationship_type', 'get', ['is_active' => 1]) as $r) {
-      $r['type_a'] = strtolower(wf_crm_aval($r, 'contact_type_a'));
-      $r['type_b'] = strtolower(wf_crm_aval($r, 'contact_type_b'));
-      $r['sub_type_a'] = wf_crm_aval($r, 'contact_sub_type_a');
-      $r['sub_type_b'] = wf_crm_aval($r, 'contact_sub_type_b');
+      $r['type_a'] = strtolower($r['contact_type_a'] ?? '');
+      $r['type_b'] = strtolower($r['contact_type_b'] ?? '');
+      $r['sub_type_a'] = $r['contact_sub_type_a'] ?? '';
+      $r['sub_type_b'] = $r['contact_sub_type_a'] ?? '';
       $types[$r['id']] = $r;
     }
   }
