@@ -36,6 +36,13 @@ function webform_civicrm_requirements($phase) {
 }
 
 /**
+ * Implements hook_install().
+ */
+function webform_civicrm_install() {
+  _webform_civicrm_generatePriceFields(100);
+}
+
+/**
  * Implements hook_schema().
  */
 function webform_civicrm_schema() {
@@ -831,4 +838,52 @@ function webform_civicrm_update_7403() {
     'default' => 0,
   ];
   db_add_field('webform_civicrm_forms', 'create_new_relationship', $field);
+}
+
+function webform_civicrm_update_7404() {
+  _webform_civicrm_generatePriceFields(50);
+}
+
+/**
+ * Create "Price fields" for "additional line items" functionality.
+ */
+function _webform_civicrm_generatePriceFields($numberOfFieldsToCreate) {
+  civicrm_initialize();
+  $priceField = civicrm_api3('PriceField',
+    'getsingle',
+    [
+      'price_set_id' => civicrm_api3('PriceSet', 'getvalue', ['name' => 'default_contribution_amount', 'return' => 'id']),
+      'options' => ['limit' => 1],
+    ]
+  );
+  $priceFieldParams = $priceField;
+  unset($priceFieldParams['id'], $priceFieldParams['name'], $priceFieldParams['weight'], $priceFieldParams['is_required']);
+  $priceFieldValue = civicrm_api3('PriceFieldValue',
+    'getsingle',
+    [
+      'price_field_id' => $priceField['id'],
+      'options' => ['limit' => 1],
+    ]
+  );
+  $priceFieldValueParams = $priceFieldValue;
+  unset($priceFieldValueParams['id'], $priceFieldValueParams['name'], $priceFieldValueParams['weight']);
+  for ($i = 1; $i <= $numberOfFieldsToCreate; ++$i) {
+    $name = 'webform_additional_line_item_' . $i;
+    $params = array_merge($priceFieldParams, ['label' => ts('Webform Additional Line Item') . " $i", 'name' => $name]);
+    $priceField = civicrm_api3('PriceField', 'get', $params)['values'];
+    if (empty($priceField)) {
+      $p = civicrm_api3('PriceField', 'create', $params);
+      civicrm_api3('PriceFieldValue', 'create', array_merge(
+        $priceFieldValueParams,
+        [
+          'label' => ts('Webform Additional Item') . " $i",
+          'name' => $name,
+          'price_field_id' => $p['id'],
+        ]
+      ));
+    }
+    else {
+      civicrm_api3('PriceField', 'create', ['id' => key($priceField), 'is_active' => TRUE]);
+    }
+  }
 }

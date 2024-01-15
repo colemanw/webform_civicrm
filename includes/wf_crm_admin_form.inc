@@ -1041,7 +1041,7 @@ class wf_crm_admin_form {
       '#type' => 'select',
       '#title' => t('Additional Line items'),
       '#default_value' => $num,
-      '#options' => range(0, 9),
+      '#options' => range(0, 49),
       '#prefix' => '<div class="number-of">',
       '#suffix' => '</div>',
     ];

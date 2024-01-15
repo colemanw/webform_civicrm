@@ -2254,7 +2254,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $contributionResult = CRM_Contribute_BAO_Contribution::getValues(['id' => $id], CRM_Core_DAO::$_nullArray, CRM_Core_DAO::$_nullArray);
 
     // Save line-items
+    $lineItemNumber = 0;
     foreach ($this->line_items as &$item) {
+      $lineItemNumber++;
       if (empty($item['line_total'])) {
         continue;
       }
@@ -2291,6 +2293,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $priceFieldID = wf_civicrm_api('PriceField', 'get', [
           'sequential' => 1,
           'price_set_id' => 'default_contribution_amount',
+          'name' => 'webform_additional_line_item_' . $lineItemNumber,
           'options' => ['limit' => 1],
         ])['id'] ?? NULL;
         $item['price_field_id'] = $priceFieldID;
