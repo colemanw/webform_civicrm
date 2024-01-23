@@ -345,7 +345,7 @@ var wfCivi = (function (D, $, drupalSettings, once) {
       };
     }
     else {
-      $el.append('<option value="">'+Drupal.t('- N/A -')+'</option>');
+      $el.append('<option value="-">'+Drupal.t('- N/A -')+'</option>');
     }
     $el.removeAttr('disabled').trigger('change', 'webform_civicrm:chainselect');
   }
