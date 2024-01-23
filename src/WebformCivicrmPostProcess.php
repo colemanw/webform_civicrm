@@ -835,6 +835,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           if (isset($params['county_id']) && $params['county_id'] === '-') {
             $params['county_id'] = '';
           }
+          // Substitute state stub ('-' is a hack to get around required field when there are no available states)
+          if (isset($params['state_province_id']) && $params['state_province_id'] === '-') {
+            $params['state_province_id'] = '';
+          }
           // Check if anything was changed, else skip the update
           if (!empty($existing[$i])) {
             $same = TRUE;
