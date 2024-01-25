@@ -1227,6 +1227,15 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         unset($params['auto_renew']);
       }
 
+      // When the membership on the Webform is configured with "Enter Dates Manually" option
+      // then the "Number Of Terms" will be 0 (empty), but having the "Number Of terms" set to
+      // 0 prevent CiviCRM from calculating the membership dates correctly, specially the end
+      // date if it is not ticked on the membership configuration tab, and it might result
+      // in problems in other areas (like renewal).
+      if (empty($params['num_terms'])) {
+        $params['num_terms'] = 1;
+      }
+
       $result = wf_civicrm_api('membership', 'create', $params);
 
       if (!empty($result['id'])) {
