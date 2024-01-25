@@ -597,7 +597,7 @@ abstract class wf_crm_webform_base {
     $active = $expired = [];
     foreach ($existing as $membership) {
       $membership['is_active'] = $status_types[$membership['status_id']]['is_current_member'];
-      $membership['status'] = $status_types[$membership['status_id']]['label'];
+      $membership['status'] = $status_types[$membership['status_id']]['name'];
       $list = $membership['is_active'] ? 'active' : 'expired';
       array_unshift($$list, $membership);
     }
