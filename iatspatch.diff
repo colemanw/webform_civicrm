@@ -1,0 +1,12 @@
+diff --git a/iats.php b/iats.php
+index 0316e6c..c0cd7b5 100644
+--- a/iats.php
++++ b/iats.php
+@@ -258,6 +258,7 @@ function iats_civicrm_buildForm_CRM_Financial_Form_Payment(&$form) {
+   // If future public start dates are enabled on a recurring-enabled page ...
+   // Uses javascript to hide/reset unless they have recurring contributions checked.
+   $settings = Civi::settings()->get('iats_settings');
++  throw new \Exception('Do we ever reach here?');
+   if (!empty($settings['enable_public_future_recurring_start'])
+     && $form->_paymentObject->supports('FutureRecurStartDate')
+   ) {
