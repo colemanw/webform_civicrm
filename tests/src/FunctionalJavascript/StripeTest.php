@@ -38,6 +38,7 @@ final class StripeTest extends WebformCivicrmTestBase {
    * Verifies the payment with 1 contribution and 2 line item amounts.
    */
   public function testSubmitContribution() {
+    $this->markTestSkipped('Test Keys Expired.');
     $this->drupalLogin($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
@@ -77,6 +78,7 @@ final class StripeTest extends WebformCivicrmTestBase {
    * Test webform submission using stripe processor with AJAX enabled.
    */
   public function testAjaxSubmitContribution() {
+    $this->markTestSkipped('Test Keys Expired.');
     // Stripe payment logs a console ajax error.
     $this->failOnJavascriptConsoleErrors = FALSE;
 
