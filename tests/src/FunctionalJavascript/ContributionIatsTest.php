@@ -136,7 +136,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->filliATSCryptogram();
     $billingValues = [
       'first_name' => 'Frederick',
-      'last_name' => 'Pabst',
+      'last_name' => "O'Pabst-Kelly",
       'street_address' => '123 Milwaukee Ave',
       'city' => 'Milwaukee',
       'country' => '1228',
