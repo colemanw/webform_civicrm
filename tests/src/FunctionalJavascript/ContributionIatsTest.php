@@ -136,7 +136,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->filliATSCryptogram();
     $billingValues = [
       'first_name' => 'Frederick',
-      'last_name' => "O'Pabst-Kelly",
+      'last_name' => 'Pabst',
       'street_address' => '123 Milwaukee Ave',
       'city' => 'Milwaukee',
       'country' => '1228',
@@ -261,7 +261,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[Y]', $this_year + 1);
     $billingValues = [
       'first_name' => 'Frederick',
-      'last_name' => 'Pabst',
+      'last_name' => "O'Pabst-Kelly",
       'street_address' => '123 Milwaukee Ave',
       'city' => 'Milwaukee',
       'country' => '1228',
@@ -272,7 +272,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->pressButton('Submit');
     // throw new \Exception(var_export($this->htmlOutputDirectory, TRUE));
 
-    $this->createScreenshot($this->htmlOutputDirectory . '/legacy289.png');
+    $this->createScreenshot($this->htmlOutputDirectory . '/legacy_billingfields.png');
     $this->htmlOutput();
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
