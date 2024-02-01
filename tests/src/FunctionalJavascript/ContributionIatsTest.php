@@ -269,10 +269,11 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
       'postal_code' => '53177',
     ];
     $this->fillBillingFields($billingValues);
+    $this->createScreenshot($this->htmlOutputDirectory . '/legacy_billingfields.png');
+
     $this->getSession()->getPage()->pressButton('Submit');
     // throw new \Exception(var_export($this->htmlOutputDirectory, TRUE));
 
-    $this->createScreenshot($this->htmlOutputDirectory . '/legacy_billingfields.png');
     $this->htmlOutput();
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
