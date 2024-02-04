@@ -674,6 +674,9 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   protected function fillBillingFields($params) {
     $this->getSession()->getPage()->fillField('Billing First Name', $params['first_name']);
     $this->getSession()->getPage()->fillField('Billing Last Name', $params['last_name']);
+    
+    $this->createScreenshot($this->htmlOutputDirectory . '/legacy_billingfields.png');
+
     $this->getSession()->getPage()->fillField('Street Address', $params['street_address']);
     $this->getSession()->getPage()->fillField('City', $params['city']);
 
