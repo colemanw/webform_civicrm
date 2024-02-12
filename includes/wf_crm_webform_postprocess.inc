@@ -1820,6 +1820,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $result = $this->contributionRecur($contributionParams);
     }
     else {
+      // Not a recur payment, remove any recur fields if present.
+      unset($contributionParams['frequency_unit'], $contributionParams['frequency_interval'], $contributionParams['is_recur']);
       $result = wf_civicrm_api('contribution', 'transact', $contributionParams);
     }
 
@@ -1971,6 +1973,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['total_amount'] = round($this->totalContribution, 2);
     // Some processors want this one way, some want it the other
     $params['amount'] = $params['total_amount'];
+    $numInstallments = wf_crm_aval($params, 'installments', NULL, TRUE);
+    $frequencyInterval = wf_crm_aval($params, 'frequency_unit');
+    if ($numInstallments == 1 || empty($frequencyInterval)) {
+      unset($params['frequency_unit'], $params['frequency_interval'], $params['is_recur']);
+    }
 
     $params['financial_type_id'] = $this->contribution_page['financial_type_id'];
 
