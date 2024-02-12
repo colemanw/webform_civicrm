@@ -1643,13 +1643,18 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             $type = $item['membership_type_id'];
             $price = $this->getMembershipTypeField($type, 'minimum_fee');
 
-            //if number of terms is set, regard membership fee field as price per term
-            //if you choose to set dates manually while membership fee field is enabled, take the membership fee as total cost of this membership
             if (isset($item['fee_amount'])) {
               $price = $item['fee_amount'];
-              if (empty($item['num_terms'])) {
-                $item['num_terms'] = 1;
-              }
+            }
+
+            // 'Webform_civicrm' module default behaviour is assuming
+            // that if "Enter Dates Manually" option is selected
+            // then "Membership Fees" option should be enabled or otherwise
+            // the membership should be free.
+            // This is changed below so such memberships are no longer
+            // free and their price is the price of one membership term.
+            if (empty($item['num_terms'])) {
+              $item['num_terms'] = 1;
             }
 
             $membership_financialtype = $this->getMembershipTypeField($type, 'financial_type_id');
