@@ -334,7 +334,7 @@ class CivicrmOptions extends OptionsBase {
       $state_id = $value;
     }
     else {
-      $state_id = $value['#plain_text'] ?? NULL;
+      $state_id = $value['#plain_text'] ?? $value['#markup'] ?? NULL;
     }
     if ($format === 'raw' || empty($state_id) || !is_numeric($state_id)) {
       return $value;
