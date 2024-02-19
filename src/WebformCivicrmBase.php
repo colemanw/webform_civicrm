@@ -554,9 +554,13 @@ abstract class WebformCivicrmBase {
   protected function getExposedOptions($field_key, $exclude = []) {
     $field = $this->getComponent($field_key);
 
-    if ($field && $field['#type'] == 'hidden') {
+    if ($field && ($field['#type'] == 'hidden' || !empty($field['#civicrm_live_options']))) {
       // Fetch live options
-      $exposed = $this->utils->wf_crm_field_options($field, 'civicrm_live_options', $this->data);
+      $params = [
+        'extra' => wf_crm_aval($field, 'extra', []) + wf_crm_aval($field, '#extra', []),
+        'form_key' => $field['#form_key'],
+      ];
+      $exposed = $this->utils->wf_crm_field_options($params, 'civicrm_live_options', $this->data);
       foreach ($exclude as $i) {
         unset($exposed[$i]);
       }
