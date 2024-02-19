@@ -435,7 +435,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
         else {
           $urlParam = "c{$c}event{$e}";
         }
-        foreach (explode(',', wf_crm_aval($_GET, $urlParam)) as $url_param_value) {
+        foreach (explode(',', wf_crm_aval($_GET, $urlParam, '')) as $url_param_value) {
           if (isset($eids[$url_param_value])) {
             $event_ids[] = $eids[$url_param_value];
           }
