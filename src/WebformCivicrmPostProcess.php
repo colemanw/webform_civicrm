@@ -2249,27 +2249,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         $params[$key] = $value;
       }
     }
-
-    // Fix bug for testing.
-    // @todo Pay Later causes issues as it returns `0`.
-    if ($params['is_test'] == 1 && $params['payment_processor_id'] !== '0') {
-      $liveProcessorName = $this->utils->wf_civicrm_api('payment_processor', 'getvalue', [
-        'id' => $params['payment_processor_id'],
-        'return' => 'name',
-      ]);
-      // Lookup current domain for multisite support
-      static $domain = 0;
-      if (!$domain) {
-        $domain = $this->utils->wf_civicrm_api('domain', 'get', ['current_domain' => 1, 'return' => 'id']);
-        $domain = wf_crm_aval($domain, 'id', 1);
-      }
-      $params['payment_processor_id'] = $this->utils->wf_civicrm_api('payment_processor', 'getvalue', [
-        'return' => 'id',
-        'name' => $liveProcessorName,
-        'is_test' => 1,
-        'domain_id' => $domain,
-      ]);
-    }
     if (empty($params['payment_instrument_id']) && !empty($params['payment_processor_id'])) {
       $params['payment_instrument_id'] = $this->getPaymentInstrument($params['payment_processor_id']);
     }
