@@ -76,6 +76,10 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
    * Set webform default values.
    */
   public function alterForm() {
+    if (!empty($this->data['contribution'])) {
+      $this->data['contribution'][1]['contribution'][1]['is_test'] = (int) $this->node->isTest();
+    }
+
     // Add css & js
     $this->addResources();
     // Add validation handler
