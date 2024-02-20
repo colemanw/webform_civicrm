@@ -581,17 +581,28 @@ function webform_civicrm_preprocess_webform_results_submissions(&$vars) {
     foreach ($vars['table']['#rows'] as &$row) {
       $name = '';
       // Get submission id from url
-      preg_match('#/submission/(\d+)#', $row[4], $preg);
-      $sid = $preg[1];
-      if (!empty($vars['submissions'][$sid]->civicrm['contact'][1])) {
-        $data = $vars['submissions'][$sid]->civicrm;
-        $name = $data['contact'][1]['display_name'];
-        if ($name !== '' && $access) {
-          $name = l($name, 'civicrm/contact/view', [
-            'query' => ['reset' => 1, 'cid' => $data['contact'][1]['id']],
-            'attributes' => ['title' => t('View CiviCRM contact')],
-            'alias' => TRUE,
-          ]);
+      // Where a user doesn't have edit or delete access, we might need to get
+      // it from an array.
+      $linkURL = '';
+      if (is_array($row[4]) && !empty($row[4]['data'])) {
+        $linkURL = $row[4]['data'];
+      }
+      elseif (is_string($row[4])) {
+        $linkURL = $row[4];
+      }
+      if (!empty($linkURL)) {
+        preg_match('#/submission/(\d+)#', $linkURL, $preg);
+        $sid = $preg[1];
+        if (!empty($vars['submissions'][$sid]->civicrm['contact'][1])) {
+          $data = $vars['submissions'][$sid]->civicrm;
+          $name = $data['contact'][1]['display_name'];
+          if ($name !== '' && $access) {
+            $name = l($name, 'civicrm/contact/view', [
+              'query' => ['reset' => 1, 'cid' => $data['contact'][1]['id']],
+              'attributes' => ['title' => t('View CiviCRM contact')],
+              'alias' => TRUE,
+            ]);
+          }
         }
       }
       $temp = $row;
