@@ -2301,6 +2301,22 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             $item['id'] = $firstLineItem['id'];
           }
         }
+
+        if (empty($item['price_field_id'])) {
+          $membershipTypeId = wf_civicrm_api('Membership', 'getvalue', [
+            'return' => 'membership_type_id',
+            'id' => $item['membership_id'],
+          ]);
+          $priceFieldValue = wf_civicrm_api('PriceFieldValue', 'get', [
+            'sequential' => 1,
+            'membership_type_id' => $membershipTypeId,
+            'options' => ['sort' => 'id asc', 'limit' => 1],
+          ]);
+          if ($priceFieldValue['count'] > 0) {
+            $item['price_field_id'] = $priceFieldValue['values'][0]['price_field_id'];
+            $item['price_field_value_id'] = $priceFieldValue['values'][0]['id'];
+          }
+        }
       }
       else {
         // sets price field and price field value for non membership line items.
