@@ -46,7 +46,7 @@ jobs:
           - 3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
             php-version: ${{ matrix.php }}
@@ -56,7 +56,7 @@ jobs:
       - name: Get composer cache directory
         id: composercache
         run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
             path: ${{ steps.composercache.outputs.dir }}
             key: ${{ runner.os }}-${{ matrix.drupal }}-composer-${{ hashFiles('**/composer.json') }}
@@ -176,10 +176,17 @@ jobs:
           BROWSERTEST_OUTPUT_DIRECTORY: '${{ runner.temp }}/browser_output'
           DEV_EXTENSION_DIR: /home/runner/drupal/web/sites/default/files/civicrm/ext
           DEV_EXTENSION_URL: http://127.0.0.1:8080/sites/default/files/civicrm/ext
-      - uses: actions/upload-artifact@v3
+      - name: Helper to make unique name for upload
+        run: |
+          # doing this on multiple lines to avoid quote-hell
+          cd ${{ runner.temp }}
+          echo '${{ matrix.drupal }}_${{ matrix.civicrm }}_${{ matrix.php }}' > upload_helper.txt
+          sed -i -e 's/[^0-9a-zA-Z_.\-]//g' upload_helper.txt
+          echo "UPLOADNAME=$(cat upload_helper.txt)" >> $GITHUB_ENV
+      - uses: actions/upload-artifact@v4
         if: ${{ failure() || success() }}
         with:
-          name: phpunit_browser_output
+          name: screenshots.${{ env.UPLOADNAME }}
           # For some reason Drupal prints here and not our specified BROWSERTEST_OUTPUT_DIRECTORY.
           path: '/home/runner/drupal/web/sites/simpletest/browser_output'
           retention-days: 7
