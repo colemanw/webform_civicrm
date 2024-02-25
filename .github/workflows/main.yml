@@ -176,10 +176,17 @@ jobs:
           BROWSERTEST_OUTPUT_DIRECTORY: '${{ runner.temp }}/browser_output'
           DEV_EXTENSION_DIR: /home/runner/drupal/web/sites/default/files/civicrm/ext
           DEV_EXTENSION_URL: http://127.0.0.1:8080/sites/default/files/civicrm/ext
+      - name: Helper to make unique name for upload
+        run: |
+          # doing this on multiple lines to avoid quote-hell
+          cd ${{ runner.temp }}
+          echo '${{ matrix.drupal }}_${{ matrix.civicrm }}_${{ matrix.php }}' > upload_helper.txt
+          sed -i -e 's/[^0-9a-zA-Z_.\-]//g' upload_helper.txt
+          echo "UPLOADNAME=$(cat upload_helper.txt)" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v4
         if: ${{ failure() || success() }}
         with:
-          name: phpunit_browser_output
+          name: screenshots.${{ env.UPLOADNAME }}
           # For some reason Drupal prints here and not our specified BROWSERTEST_OUTPUT_DIRECTORY.
           path: '/home/runner/drupal/web/sites/simpletest/browser_output'
           retention-days: 7
