@@ -741,6 +741,24 @@ class Fields implements FieldsInterface {
           'type' => 'textfield',
           'parent' => 'contribution_pagebreak',
         ];
+        $fields['contribution_receive_date'] = [
+          'name' => t('Contribution Receive Date'),
+          'type' => 'datetime',
+          'parent' => 'contribution_pagebreak',
+          'default_value' => 'now',
+          'date_date_min' => 'today',
+          'date_time_element' => 'timepicker',
+          'civicrm_condition' => [
+            'andor' => 'or',
+            'action' => 'show',
+            'rules' => [
+              'contribution_payment_processor_id' => [
+                'values' => '0',
+                'operator' => 'equal',
+              ],
+            ],
+          ],
+        ];
         $donationFinancialType = current($this->utils->wf_crm_apivalues('FinancialType', 'get', [
           'return' => 'id',
           'name' => 'Donation',

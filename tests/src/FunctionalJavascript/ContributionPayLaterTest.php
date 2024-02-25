@@ -39,6 +39,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('Enable Billing Address?', 'No');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->checkField('Contribution Amount');
+    $this->getSession()->getPage()->checkField('Contribution Receive Date');
 
     $this->saveCiviCRMSettings();
 
@@ -51,6 +52,9 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->pressButton('Next >');
     $this->assertPageNoErrorMessages();
     $this->getSession()->getPage()->fillField('Contribution Amount', '30');
+    $futureReceiveDate = date('d-m-Y', strtotime('+3 days'));
+    $this->getSession()->getPage()->fillField('Contribution Receive Date', $futureReceiveDate);
+    $this->getSession()->getPage()->fillField('civicrm_1_contribution_1_contribution_receive_date[time]', '07:15:00');
 
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->htmlOutput();
@@ -62,7 +66,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     $contribution = Contribution::get()
-      ->addSelect('source', 'total_amount', 'contribution_status_id:label', 'currency', 'financial_type_id:label')
+      ->addSelect('source', 'total_amount', 'contribution_status_id:label', 'currency', 'financial_type_id:label', 'receive_date')
       ->setLimit(1)
       ->execute()
       ->first();
@@ -70,6 +74,8 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->assertEquals('Pending', $contribution['contribution_status_id:label']);
     $this->assertEquals('Member Dues', $contribution['financial_type_id:label']);
     $this->assertEquals('USD', $contribution['currency']);
+    $verifyDate = date('Y-m-d', strtotime($futureReceiveDate));
+    $this->assertEquals("{$verifyDate} 07:15:00", $contribution['receive_date']);
 
     $sent_email = $this->getMostRecentEmail();
     $this->assertStringContainsString('From: Admin <admin@example.com>', $sent_email);
