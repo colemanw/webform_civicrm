@@ -717,7 +717,7 @@ class Utils implements UtilsInterface {
     $order = civicrm_api3('Order', 'create', $params);
     try {
       $params['amount'] = $params['total_amount'];
-      $params['contribution_id'] = $order['id'];
+      $params['contribution_id'] = $params['contributionID'] = $order['id'];
       $payParams = $params;
       $payResult = reset(civicrm_api3('PaymentProcessor', 'pay', $payParams)['values']);
 
