@@ -714,6 +714,11 @@ class Fields implements FieldsInterface {
           'type' => 'textarea',
           'parent' => 'contribution_pagebreak',
         ];
+        $fields['enable_cividiscount'] = [
+          'name' => t('Enable CiviDiscount'),
+          'type' => 'checkbox',
+          'parent'=> 'contribution_pagebreak',
+        ];
         $fields['contribution_soft'] = [
           'name' => t('Soft Credit To'),
           'type' => 'select',
