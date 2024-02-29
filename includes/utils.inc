@@ -1124,6 +1124,12 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Contribution Source'),
         'type' => 'textfield',
       ];
+      // TODO: check that CiviDiscount is installed and enabled
+      $fields['cividiscount_enable'] = [
+        'name' => t('Enable CiviDiscount'),
+        'type' => 'textfield',
+        'set' => 'contribution',
+      ];
       // Line items
       $fields['contribution_line_total'] = [
           'name' => t('Line Item Amount'),
