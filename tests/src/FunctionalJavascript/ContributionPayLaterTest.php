@@ -3,6 +3,7 @@
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Civi\Api4\Contribution;
+use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Url;
 
 /**
@@ -52,8 +53,9 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->pressButton('Next >');
     $this->assertPageNoErrorMessages();
     $this->getSession()->getPage()->fillField('Contribution Amount', '30');
-    $futureReceiveDate = date('d-m-Y', strtotime('+3 days'));
-    $this->getSession()->getPage()->fillField('Contribution Receive Date', $futureReceiveDate);
+
+    $futureReceiveDate = new DrupalDateTime('+1 month');
+    $this->getSession()->getPage()->fillField('civicrm_1_contribution_1_contribution_receive_date[date]', $futureReceiveDate->format('m-d-Y'));
     $this->getSession()->getPage()->fillField('civicrm_1_contribution_1_contribution_receive_date[time]', '07:15:00');
 
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
@@ -74,8 +76,9 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->assertEquals('Pending', $contribution['contribution_status_id:label']);
     $this->assertEquals('Member Dues', $contribution['financial_type_id:label']);
     $this->assertEquals('USD', $contribution['currency']);
-    $verifyDate = date('Y-m-d', strtotime($futureReceiveDate));
-    $this->assertEquals("{$verifyDate} 07:15:00", $contribution['receive_date']);
+    $verifyDate = $futureReceiveDate->format('Y-m-d');
+    $contributionDate = date('Y-m-d', strtotime($contribution['receive_date']));
+    $this->assertEquals("{$verifyDate} 07:15:00", "{$contributionDate} 07:15:00");
 
     $sent_email = $this->getMostRecentEmail();
     $this->assertStringContainsString('From: Admin <admin@example.com>', $sent_email);
