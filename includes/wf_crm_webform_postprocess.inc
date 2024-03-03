@@ -473,6 +473,26 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
       }
     }
+
+    // CiviDiscount pre-validation:
+    // check that the discount code is valid and has enough uses left
+    // do not adjust the line items unit price at this point in time
+    // DOES NOT WORK as no line items yet
+/*
+    $discount_code = $this->data['contribution'][1]['contribution'][1]['discount_code'] ?? '';
+    if ($discount_code && class_exists('\Civi\Api4\DiscountCode')) {
+      $valid = false;
+      // Try all line items until we find one for which the discount applies
+      foreach ($this->line_items as $k => &$item) {
+        // Call Api4
+        if (true) $valid = true;
+      }
+      // We could not find a line item that is discountable
+      if ($valid != true) {
+        form_set_error($eid, 'This discount code is not applicable');
+      }
+    }
+*/
   }
 
   /**
@@ -1087,6 +1107,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
               if (empty($params['status_id'])) {
                 unset($params['status_id']);
               }
+
               $result = wf_civicrm_api('participant', 'create', $params);
               $this->ent['participant'][$n]['id'] = $result['id'];
 
@@ -1104,6 +1125,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
               if ($c == 1) {
                 $registered_by_id[$e][$i] = $result['id'];
               }
+
+              // CiviDiscount integration
+              // Update Participant.fee_amount with the sum of discounted amounts
+              $result['fee_amount'] = $params['fee_amount'] - 10;
             }
           }
         }
@@ -1635,6 +1660,29 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         }
       }
     }
+
+    // CiviDiscount integration
+    if (class_exists('\Civi\Api4\DiscountCode')) {
+      $discount_code = $this->data['contribution'][1]['contribution'][1]['discount_code'] ?? '';
+      if ($discount_code) {
+        foreach ($this->line_items as $k => &$item) {
+          // Validate that the discount code is valid and has enough use left
+          $res = \Civi\Api4\DiscountCode::verify()
+                 ->setDiscountCode($discount_code)
+                 ->setAmount(strval($item['unit_price']))    // Yeah ... Api4 will complaint it is NOT a string!
+             //  ->setQuantity($item['qty'])
+                 ->execute()->first();
+          if ($res['verify'] == 'success') {
+            $item['discount_code'] = $discount_code;        // TEST
+            $item['label'] .= " (discount code: $discount_code)";
+            $item['unit_price'] = $res['discountedAmount'];
+          } else {
+            $item['label'] .= " (invalid or expired discount code)";
+          }
+        }
+      }
+    }
+
     // Calculate totals
     $this->totalContribution = 0;
     $taxRates = CRM_Core_PseudoConstant::getTaxRates();
@@ -2241,6 +2289,26 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           'contribution_id' => $id,
         ]);
       }
+
+      // CiviDiscount integration
+      if (!empty($item['discount_code']) && class_exists('\Civi\Api4\DiscountCode')) {
+        // Record confirmed use of discount code
+        $discountCode = \Civi\Api4\DiscountCode::get()
+                        ->addWhere('code', '=', $item['discount_code'])
+                        ->execute()->first();
+        if (!empty($discountCode['id'])) {
+          // TODO: use _cividiscount_consume_discount_code_for_online_event($participant_ids, $discountParams)
+        }
+        // Update participant fee_amount field with line item value
+        if ($type == 'participant') {
+          wf_civicrm_api("{$type}", 'create', [
+            'id' => $item["{$type}_id"],
+            'fee_level' => "(discount code: $item[discount_code])",
+            'fee_amount' => $item['total_price'],
+          ]);
+        }
+      }
+//*/
     }
   }
 
