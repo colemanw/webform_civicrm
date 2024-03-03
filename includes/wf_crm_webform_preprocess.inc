@@ -558,6 +558,22 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       }
     }
 
+    // CiviDiscount integration *** NOPE NOT HERE ***
+/*
+    foreach ($this->line_items as &$item) {
+      if (in_array($item['entity_table'], ['civicrm_participant', 'civicrm_membership'])
+          && true ) {     // TODO: CiviDiscount extension is enabled AND a discount code is present
+        // Call the CiviDiscount API
+//        $result = \Civi\Api4\DiscountCode::validate(TRUE)
+//           ->setEvent_id] => 420 [contact_ids] => Array ( [0] => 2 ) [unit_price] => 150 [financial_type_id] => 151 
+        // [element] => civicrm_1_participant_1_participant_420-9 
+        // Change the line item label to display the tax rate it contains
+
+        $item['label'] .= ' (' . t('Discount code') . ': TEST)';
+        $item['unit_price'] = $item['unit_price'] / 2;
+      }
+    }
+*/
     $taxRates = CRM_Core_PseudoConstant::getTaxRates();
     foreach ($this->line_items as $item) {
       $total += $item['line_total'];
