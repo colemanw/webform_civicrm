@@ -720,8 +720,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $this->submissionValue($this->enabled[$fid . 'external_identifier'], wf_crm_aval($exid, "values:$cid:external_identifier"));
     }
     if (!empty($this->enabled[$fid . 'cs'])) {
-      $cs = $this->submissionValue($this->enabled[$fid . 'cs']);
-      $life = !empty($cs[0]) ? intval(24 * $cs[0]) : 'inf';
+      $cs = $this->getComponent($fid . 'cs')['value'] ?? NULL;
+      $life = !empty($cs) ? intval(24 * $cs) : 'inf';
       $cs = CRM_Contact_BAO_Contact_Utils::generateChecksum($cid, NULL, $life);
       $this->submissionValue($this->enabled[$fid . 'cs'], $cs);
     }
