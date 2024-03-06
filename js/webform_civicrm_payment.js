@@ -106,6 +106,9 @@
     if (input === 'radio' || input === 'checkbox') {
       label = $(this).closest('fieldset.form-item').find('legend').text() || label;
     }
+    if (typeof input === 'undefined' && $(this).is('fieldset')) {
+      label = $(this).find('legend').text() || label;
+    }
     updateLineItem(lineKey, amount, label);
   }
 
@@ -124,7 +127,7 @@
 
       loadBillingBlock();
 
-      $('.civicrm-enabled.contribution-line-item:not(fieldset)')
+      $('.civicrm-enabled.contribution-line-item')
         .each(calculateLineItemAmount)
         .on('change keyup', calculateLineItemAmount)
         .each(function() {
