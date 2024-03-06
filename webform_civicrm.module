@@ -922,3 +922,72 @@ function webform_civicrm_civicrm_pre($op, $objectName, $id, &$params) {
     }
   }
 }
+
+/**
+ * Define hook_preprocess_webform_confirmation().
+ *
+ * @param [type] $vars
+ * @return void
+ */
+function webform_civicrm_preprocess_webform_confirmation(&$vars) {
+
+  // Condition to execute when is incoming from paypal express checkout
+  if (!empty($_GET['sid']) && !empty($_GET['token']) && !empty($_GET['PayerID'])) {
+    $webform_submission = \Drupal\webform\Entity\WebformSubmission::load($_GET['sid']);
+    $data = $webform_submission->getData();
+
+    // ToDo verifiy if if cant be filled different thant 1
+    if ($data['civicrm']['contribution'][1]['id']) {
+      $contribution = \Civi\Api4\Contribution::get(FALSE)
+        ->addWhere('id', '=', $data['civicrm']['contribution'][1]['id'] )
+        ->setLimit(1)
+        ->execute()->first();
+
+      $contribution['payer_id'] = $_GET['PayerID'];
+      $contribution['token'] = $_GET['token'];
+      $contribution['amount'] = $contribution['total_amount'];
+
+      $config = \CRM_Core_Config::singleton();
+      $contribution['currencyID'] = \CRM_Utils_Array::value('currency',
+        $contribution,
+        $config->defaultCurrency
+      );
+
+      // Get if payment processor is test or prod
+      $webform = $webform_submission->getWebform();
+
+      $handler_collection = $webform->getHandlers('webform_civicrm');
+      $instance_ids = $handler_collection->getInstanceIds();
+      $handler = $handler_collection->get(reset($instance_ids));
+      $settings = $handler->getConfiguration()['settings'];
+      $paymentProcessorMode = $settings['civicrm_1_contribution_1_contribution_is_test'] == 1 ? 'test' : 'live';
+
+      $paymentProcessor = \CRM_Financial_BAO_PaymentProcessor::getPayment($data['civicrm_1_contribution_1_contribution_payment_processor_id_raw'], $paymentProcessorMode);
+      $payment = \Civi\Payment\System::singleton()->getByProcessor($paymentProcessor);
+      $result = $payment->doPayment($contribution);
+
+      // Use same workflow than in civicrm-core/CRM/Contribute/Form/Contribution/Confirm.php
+      if (($result['payment_status_id'] ?? NULL) == 1) {
+        try {
+          civicrm_api3('contribution', 'completetransaction', [
+            'id' => $result['id'],
+            'trxn_id' => $result['trxn_id'] ?? NULL,
+            'payment_processor_id' => $result['payment_processor_id'] ?? $data['civicrm_1_contribution_1_contribution_payment_processor_id_raw'],
+            'is_transactional' => FALSE,
+            'fee_amount' => $result['fee_amount'] ?? NULL,
+            'receive_date' => $result['receive_date'] ?? NULL,
+            'card_type_id' => $paymentParams['card_type_id'] ?? NULL,
+            'pan_truncation' => $paymentParams['pan_truncation'] ?? NULL,
+          ]);
+        }
+        catch (CRM_Core_Exception $e) {
+          if ($e->getErrorCode() != 'contribution_completed') {
+            \Civi::log()->error('CRM_Contribute_Form_Contribution_Confirm::completeTransaction CRM_Core_Exception: ' . $e->getMessage());
+            throw new CRM_Core_Exception('Failed to update contribution in database');
+          }
+        }
+      }
+    }
+  }
+
+}

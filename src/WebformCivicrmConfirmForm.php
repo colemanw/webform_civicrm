@@ -46,6 +46,14 @@ class WebformCivicrmConfirmForm  implements WebformCivicrmConfirmFormInterface {
       if (method_exists($paymentProcessor, 'setSuccessUrl')) {
         $paymentProcessor->setSuccessUrl($paramsDoPayment['successURL']);
         $paymentProcessor->setCancelUrl($paramsDoPayment['cancelURL']);
+
+        if ($paymentProcessor->supports('preApproval')) {
+          $preApprovalParams = $paymentProcessor->doPreApproval($paramsDoPayment);
+
+          $paramsDoPayment['token'] = $preApprovalParams['pre_approval_parameters']['token'];
+
+          \CRM_Utils_System::redirect($preApprovalParams['redirect_url']);
+        }
       }
       try {
         $paymentProcessor->doPayment($paramsDoPayment);
