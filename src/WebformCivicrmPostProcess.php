@@ -76,7 +76,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     }
 
     $this->node = $webform_submission->getWebform();
-
+    $this->node->applyVariants($webform_submission);
     $handler_collection = $this->node->getHandlers('webform_civicrm');
     $instance_ids = $handler_collection->getInstanceIds();
     $handler = $handler_collection->get(reset($instance_ids));
