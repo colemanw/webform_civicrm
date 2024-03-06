@@ -62,10 +62,11 @@
     var $lineItem = $('.line-item.' + item, '#wf-crm-billing-items');
     if (!$lineItem.length) {
       var oe = $('#wf-crm-billing-items tbody tr:first').hasClass('odd') ? ' even' : ' odd';
-      $('#wf-crm-billing-items tbody').prepend('<tr class="line-item ' + item + oe + '" data-amount="' + amount + '">' +
+      let newItem = $('<tr class="line-item ' + item + oe + '" data-amount="' + amount + '">' +
         '<td>' + label + '</td>' +
         '<td>' + CRM.formatMoney(amount) + '</td>' +
       '</tr>');
+      newItem.insertBefore('#wf-crm-billing-total');
     }
     else {
       var taxPara = 1;
@@ -98,8 +99,13 @@
   function calculateLineItemAmount() {
     var fieldKey = $(this).data('civicrmFieldKey'),
       amount = getFieldAmount(fieldKey),
+      input = $(this).attr('type'),
       label = $(this).closest('div.form-item').find('label').text() || Drupal.t('Contribution'),
       lineKey = fieldKey.split('_').slice(0, 4).join('_');
+
+    if (input === 'radio' || input === 'checkbox') {
+      label = $(this).closest('fieldset.form-item').find('legend').text() || label;
+    }
     updateLineItem(lineKey, amount, label);
   }
 
@@ -118,7 +124,7 @@
 
       loadBillingBlock();
 
-      $('.civicrm-enabled.contribution-line-item')
+      $('.civicrm-enabled.contribution-line-item:not(fieldset)')
         .each(calculateLineItemAmount)
         .on('change keyup', calculateLineItemAmount)
         .each(function() {
