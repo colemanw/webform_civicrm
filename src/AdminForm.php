@@ -2,7 +2,6 @@
 
 namespace Drupal\webform_civicrm;
 
-
 use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\webform\Entity\Webform;
 use Drupal\Component\Render\FormattableMarkup;
@@ -1563,7 +1562,7 @@ class AdminForm implements AdminFormInterface {
       if ($field['type'] != 'hidden') {
         $options += ['create_civicrm_webform_element' => t('- User Select -')];
       }
-      if ($name == 'group') {
+      if ($name == 'crmgroup') {
         $options += ['public_groups' => t('- User Select - (public groups)')];
       }
       $options += $this->utils->wf_crm_field_options($field, 'config_form', $this->data);
@@ -1938,7 +1937,7 @@ class AdminForm implements AdminFormInterface {
           $val = (array) $val;
           if (in_array('create_civicrm_webform_element', $val, TRUE)
           || (!empty($val[0]) && $field['type'] == 'hidden')
-          || (preg_match('/_group$/', $key) && in_array('public_groups', $val, TRUE))) {
+          || (preg_match('/_crmgroup$/', $key) && in_array('public_groups', $val, TRUE))) {
             // Restore disabled component
             if (isset($disabled[$key])) {
               webform_component_update($disabled[$key]);

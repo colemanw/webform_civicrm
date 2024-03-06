@@ -49,7 +49,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     // Enable Groups Field and then set it to -User Select (Public Group)-
     $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_other', 'Yes');
     $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->getSession()->getPage()->selectFieldOption("civicrm_1_contact_1_other_group[]", 'public_groups');
+    $this->getSession()->getPage()->selectFieldOption("civicrm_1_contact_1_other_crmgroup[]", 'public_groups');
     $this->htmlOutput();
     $this->saveCiviCRMSettings();
 
@@ -85,7 +85,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     // Enable Tags and Groups Fields and then set Tag(s) to -User Select-
     $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_other', 'Yes');
     $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->getSession()->getPage()->selectFieldOption("civicrm_1_contact_1_other_group[]", 'create_civicrm_webform_element');
+    $this->getSession()->getPage()->selectFieldOption("civicrm_1_contact_1_other_crmgroup[]", 'create_civicrm_webform_element');
     $this->getSession()->getPage()->selectFieldOption("civicrm_1_contact_1_other_tag[]", 'create_civicrm_webform_element');
     $this->htmlOutput();
     $this->saveCiviCRMSettings();
@@ -94,7 +94,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
 
     // Change type of group field to checkbox.
-    $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contact-1-other-group-operations', FALSE, FALSE, NULL, 'checkboxes');
+    $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contact-1-other-crmgroup-operations', FALSE, FALSE, NULL, 'checkboxes');
 
     $majorDonorTagID = $this->utils->wf_civicrm_api('Tag', 'get', [
       'name' => (version_compare(\CRM_Core_BAO_Domain::version(), '5.68.alpha1', '<') ? "Major Donor" : "Major_Donor"),

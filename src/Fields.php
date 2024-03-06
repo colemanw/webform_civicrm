@@ -443,7 +443,7 @@ class Fields implements FieldsInterface {
         'type' => 'select',
         'expose_list' => TRUE,
       ];
-      $fields['other_group'] = [
+      $fields['other_crmgroup'] = [
         'name' => t('Group(s)'),
         'type' => 'select',
         'civicrm_live_options' => 1,

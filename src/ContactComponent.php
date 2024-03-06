@@ -338,7 +338,7 @@ class ContactComponent implements ContactComponentInterface {
       'contact_type',
       'contact_sub_type',
       'tag',
-      'group',
+      'crmgroup',
       'relationship' => [
         'contact',
         'types',
@@ -364,9 +364,13 @@ class ContactComponent implements ContactComponentInterface {
         $this->wf_crm_search_filterArray($filterVal);
         if ($filterVal) {
           switch ($filter) {
-            case 'group':
+            case 'crmgroup':
+              $filter = 'groups';
+              $op = 'IN';
+              break;
+
             case 'tag':
-              $filter .= 's';
+              $filter = 'tags';
               $op = 'IN';
               break;
 
