@@ -317,6 +317,12 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
     $this->assertSession()->checkboxChecked("civicrm_1_contact_1_email_email");
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contact_1_email_location_type_id', 'Main');
 
+    // Enable Address fields.
+    $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_address', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->checkField('Country');
+    $this->assertSession()->checkboxChecked('Country');
+
     $this->getSession()->getPage()->clickLink('Activities');
     $this->getSession()->getPage()->selectFieldOption('activity_number_of_activity', 2);
     $this->assertSession()->assertWaitOnAjaxRequest();
@@ -326,7 +332,7 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
 
     $email = [
       'to_mail' => '[webform_submission:values:civicrm_1_contact_1_email_email:raw]',
-      'body' => 'Submitted Values Are - [webform_submission:values] Existing Contact - [webform_submission:values:civicrm_1_contact_1_contact_existing]. Activity 1 ID - [webform_submission:activity-id:1]. Activity 2 ID - [webform_submission:activity-id:2]. Webform CiviCRM Contacts IDs - [webform_submission:contact-id:1]. Webform CiviCRM Contacts Links - [webform_submission:contact-link:1].',
+      'body' => 'Submitted Values Are - [webform_submission:values] Existing Contact - [webform_submission:values:civicrm_1_contact_1_contact_existing]. Activity 1 ID - [webform_submission:activity-id:1]. Activity 2 ID - [webform_submission:activity-id:2]. Webform CiviCRM Contacts IDs - [webform_submission:contact-id:1]. Webform CiviCRM Contacts Links - [webform_submission:contact-link:1] Country - [webform_submission:values:civicrm_1_contact_1_address_country_id]. State/Province - [webform_submission:values:civicrm_1_contact_1_address_state_province_id].',
     ];
     $this->addEmailHandler($email);
     $this->drupalGet($this->webform->toUrl('handlers'));
@@ -341,6 +347,24 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'frederick@pabst.io');
+
+    $countryID = $this->utils->wf_civicrm_api4('Country', 'get', [
+      'where' => [
+        ['name', '=', 'United States'],
+      ],
+    ], 0)['id'];
+    $stateProvinceID = $this->utils->wf_civicrm_api4('StateProvince', 'get', [
+      'where' => [
+        ['abbreviation', '=', 'NJ'],
+        ['country_id', '=', $countryID],
+      ],
+    ], 0)['id'];
+    $this->getSession()->getPage()->fillField('Street Address', '123 Milwaukee Ave');
+    $this->getSession()->getPage()->fillField('City', 'Milwaukee');
+    $this->getSession()->getPage()->fillField('Postal Code', '53177');
+    $this->getSession()->getPage()->selectFieldOption('Country', $countryID);
+    $this->getSession()->wait(1000);
+    $this->getSession()->getPage()->selectFieldOption('State/Province', $stateProvinceID);
 
     $this->getSession()->getPage()->pressButton('Submit');
     $this->assertPageNoErrorMessages();
@@ -366,11 +390,22 @@ Frederick Pabst
 Frederick
 *Last Name*
 Pabst
+*Street Address*
+123 Milwaukee Ave
+*City*
+Milwaukee
+*Postal Code*
+53177
+*Country*
+United States
+*State/Province*
+New Jersey
 *Email*
 frederick@pabst.io [1]
 Existing Contact - Frederick Pabst. Activity 1 ID - {$actID1}. Activity 2 ID - {$actID2}.
 Webform CiviCRM Contacts IDs - {$this->rootUserCid}. Webform CiviCRM Contacts Links -
-{$cidURL}.
+{$cidURL} Country - United
+States. State/Province - New Jersey.
 
 [1] mailto:frederick@pabst.io
 ", $sent_email[0]['body']);
