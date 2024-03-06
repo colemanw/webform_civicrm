@@ -2324,32 +2324,40 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       if (empty($item['contribution_id'])) {
         $item['contribution_id'] = $id;
       }
-      $priceSetId = 'default_contribution_amount';
+
       // Membership
       if (!empty($item['membership_id'])) {
-        $priceSetId = 'default_membership_type_amount';
         $item['entity_id'] = $item['membership_id'];
-        $lineItemArray = $this->utils->wf_civicrm_api('LineItem', 'get', [
-          'entity_table' => "civicrm_membership",
-          'entity_id' => $item['entity_id'],
-        ]);
-        if ($lineItemArray['count'] != 0) {
-          // We only require first membership (signup) entry to make this work.
-          $firstLineItem = array_shift($lineItemArray['values']);
-
+        // We only require first membership (signup) entry to make this work.
+        $firstMembershipLineItem = $this->utils->wf_civicrm_api4('LineItem', 'get', [
+            'where' => [
+              ['entity_table', '=', 'civicrm_membership'],
+              ['entity_id', '=', $item['entity_id']],
+            ],
+          ],
+          0,
+        );
+        if (!empty($firstMembershipLineItem)) {
           // Membership signup line item entry.
           // Line Item record is already present for membership by this stage.
           // Just need to upgrade contribution_id column in the record.
-          if (!isset($firstLineItem['contribution_id'])) {
-            $item['id'] = $firstLineItem['id'];
+          if (!isset($firstMembershipLineItem['contribution_id'])) {
+            $item['id'] = $firstMembershipLineItem['id'];
           }
+          $item['price_field_id'] = $firstMembershipLineItem['price_field_id'];
+          $item['price_field_value_id'] = $firstMembershipLineItem['price_field_value_id'];
         }
       }
-      $item['price_field_id'] = $this->utils->wf_civicrm_api('PriceField', 'get', [
-        'sequential' => 1,
-        'price_set_id' => $priceSetId,
-        'options' => ['limit' => 1],
-      ])['id'] ?? NULL;
+      if (!isset($item['price_field_id'])) {
+        $priceFieldParams['where'][] = ['name', '=', 'contribution_amount'];
+        $priceFieldParams['where'][] = ['price_set_id.name', '=', 'default_contribution_amount'];
+        $item['price_field_id'] = $this->utils->wf_civicrm_api4('PriceField', 'get', $priceFieldParams, 0)['id'];
+
+        // We can't do this if we have multiple lineitems as it will cause a DB duplicate error
+        // $priceFieldValueParams['where'][] = ['name', '=', 'contribution_amount'];
+        // $priceFieldValueParams['where'][] = ['price_field_id', '=', $item['price_field_id']];
+        // $item['price_field_value_id'] = $this->utils->wf_civicrm_api4('PriceFieldValue', 'get', $priceFieldValueParams, 0)['id'];
+      }
 
       // Save the line_item
       $line_result = $this->utils->wf_civicrm_api('line_item', 'create', $item);
