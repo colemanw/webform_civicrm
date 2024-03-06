@@ -1361,8 +1361,8 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       if (is_array($data) && !empty($data['case'][1]['client_id'])) {
         $params = $data['case'][1];
         //Check if webform is set to update the existing case on contact.
-        if (!empty($this->data['case'][$n]['existing_case_status']) && empty($this->ent['case'][$n]['id']) && !empty($this->ent['contact'][$n]['id'])) {
-          $existingCase = $this->findCaseForContact($this->ent['contact'][$n]['id'], [
+        if (!empty($this->data['case'][$n]['existing_case_status']) && empty($this->ent['case'][$n]['id'])) {
+          $existingCase = $this->findCaseForContact($data['case'][1]['client_id'], [
             'case_type_id' => wf_crm_aval($this->data['case'][$n], 'case:1:case_type_id'),
             'status_id' => $this->data['case'][$n]['existing_case_status']
           ]);

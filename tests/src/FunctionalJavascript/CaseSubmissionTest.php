@@ -76,20 +76,79 @@ final class CaseSubmissionTest extends WebformCivicrmTestBase {
     $this->submitCaseAndVerifyResult($caseSubject, FALSE);
   }
 
+
+  /**
+   * Test Case Submission for contact 2.
+   */
+  public function testCaseSubmissionForSecondContact() {
+    $this->drupalLogin($this->rootUser);
+    $this->enableComponent('CiviCase');
+    $this->_caseContact = $this->createIndividual();
+
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+
+    $this->getSession()->getPage()->selectFieldOption("number_of_contacts", 3);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+
+    $this->getSession()->getPage()->clickLink("Contact 2");
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->checkField("civicrm_2_contact_1_contact_existing");
+    $this->assertSession()->checkboxChecked("civicrm_2_contact_1_contact_existing");
+
+    $this->getSession()->getPage()->clickLink("Contact 3");
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->checkField("civicrm_3_contact_1_contact_existing");
+    $this->assertSession()->checkboxChecked("civicrm_3_contact_1_contact_existing");
+
+    // Configure Case tab.
+    $this->getSession()->getPage()->clickLink('Cases');
+    $this->getSession()->getPage()->selectFieldOption('case_number_of_case', 2);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->selectFieldOption('case_1_settings_existing_case_status[]', 'Ongoing');
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_case_1_case_client_id', 'Contact 2');
+    $this->getSession()->getPage()->selectFieldOption('Case Type', 'Housing Support');
+    $this->getSession()->getPage()->checkField('Case Subject');
+    $this->getSession()->getPage()->checkField('Case Start Date');
+
+    $this->saveCiviCRMSettings();
+
+    //Edit contact element and remove default section.
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+    $editContact = [
+      'selector' => "edit-webform-ui-elements-civicrm-2-contact-1-contact-existing-operations",
+      'widget' => 'Autocomplete',
+      'default' => '- None -',
+    ];
+    $this->editContactElement($editContact);
+    $editContact = [
+      'selector' => "edit-webform-ui-elements-civicrm-3-contact-1-contact-existing-operations",
+      'widget' => 'Autocomplete',
+      'default' => '- None -',
+    ];
+    $this->editContactElement($editContact);
+
+    $this->submitCaseAndVerifyResult('Test Create Case on second contact', TRUE, 2);
+    $this->submitCaseAndVerifyResult('Test Update Case on second contact', TRUE, 2);
+  }
+
   /**
    * Submit Case and verify the result.
    *
    * @param string $caseSubject
    * @param bool $fillAutocomplete
    */
-  protected function submitCaseAndVerifyResult($caseSubject, $fillAutocomplete = TRUE) {
+  protected function submitCaseAndVerifyResult($caseSubject, $fillAutocomplete = TRUE, $c = 1) {
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
 
     if ($fillAutocomplete) {
-      $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', $this->_caseContact['first_name']);
-      $this->assertFieldValue('edit-civicrm-1-contact-1-contact-first-name', $this->_caseContact['first_name']);
-      $this->assertFieldValue('edit-civicrm-1-contact-1-contact-last-name', $this->_caseContact['last_name']);
+      $this->fillContactAutocomplete("token-input-edit-civicrm-{$c}-contact-1-contact-existing", $this->_caseContact['first_name']);
+      $this->assertFieldValue("edit-civicrm-{$c}-contact-1-contact-first-name", $this->_caseContact['first_name']);
+      $this->assertFieldValue("edit-civicrm-{$c}-contact-1-contact-last-name", $this->_caseContact['last_name']);
     }
 
     $this->getSession()->getPage()->fillField('Case Subject', $caseSubject);
