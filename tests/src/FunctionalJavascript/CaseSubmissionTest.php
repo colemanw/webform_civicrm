@@ -30,7 +30,68 @@ final class CaseSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField('Case Subject');
     $this->getSession()->getPage()->checkField('Case Start Date');
 
+    // Configure Activity Tab
+    $this->getSession()->getPage()->clickLink('Activities');
+    $this->getSession()->getPage()->selectFieldOption('activity_number_of_activity', 1);
+    $this->assertSession()->waitForField('civicrm_1_activity_1_activity_subject');
+    $this->htmlOutput();
+    $this->getSession()->getPage()->selectFieldOption('Update Existing Activity', 'Scheduled');
+    $this->getSession()->getPage()->selectFieldOption('File On Case', 'Case 1');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $this->getSession()->getPage()->checkField('Activity Subject');
+    $this->getSession()->getPage()->selectFieldOption('Activity Type', 'Follow up');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
     $this->saveCiviCRMSettings();
+  }
+
+  /**
+   * Verify correct Case and related Activity
+   * is loaded on the webform by default.
+   */
+  public function testCaseActivityDefaults() {
+    $cases = [
+      [
+        'subject' => 'Case 1 subject',
+        'status' => 'Closed',
+        'activity_subject' => 'Followup Activity from Case 1',
+      ],
+      [
+        'subject' => 'Case 2 subject',
+        'status' => 'Open',
+        'activity_subject' => 'Followup Activity from Case 2',
+      ],
+    ];
+    // Create case 1 with status=Resolved
+    // Create case 2 with status=Ongoing
+    foreach ($cases as $params) {
+      $case = \Civi\Api4\CiviCase::create(TRUE)
+        ->addValue('case_type_id.name', 'housing_support')
+        ->addValue('status_id:name', $params['status'])
+        ->addValue('contact_id', $this->rootUserCid)
+        ->addValue('subject', $params['subject'])
+        ->addValue('creator_id', $this->rootUserCid)
+        ->execute()
+        ->first();
+
+      // Add subject to the followup activity
+      \Civi\Api4\Activity::update(TRUE)
+        ->addValue('subject', $params['activity_subject'])
+        ->addWhere('case_id', '=',  $case['id'])
+        ->addWhere('activity_type_id:name', '=', 'Follow up')
+        ->execute()
+        ->first();
+    }
+
+    // Load the webform
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->htmlOutput();
+    $this->assertPageNoErrorMessages();
+
+    // Ensure case subject and activity subject is populated correctly.
+    $this->assertSession()->fieldValueEquals('civicrm_1_case_1_case_subject', 'Case 2 subject');
+    $this->assertSession()->fieldValueEquals('civicrm_1_activity_1_activity_subject', 'Followup Activity from Case 2');
   }
 
   /**

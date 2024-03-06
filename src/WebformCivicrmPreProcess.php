@@ -781,8 +781,15 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
                 'is_deleted' => '0',
                 'is_current_revision' => '1',
                 'options' => ['limit' => 1],
+                'activity_type_id' => $this->data['activity'][$n]['activity'][1]['activity_type_id'],
               ];
-              $params['activity_type_id'] = $this->data['activity'][$n]['activity'][1]['activity_type_id'];
+              $caseType = $this->data['activity'][$n]['case_type_id'] ?? NULL;
+              if (!empty($caseType) && $caseType[0] === '#') {
+                $case_num = substr($caseType, 1);
+                if (!empty($this->ent['case'][$case_num]['id'])) {
+                  $params['case_id'] = $this->ent['case'][$case_num]['id'];
+                }
+              }
               $items = $this->utils->wf_crm_apivalues('activity', 'get', $params);
               if (isset($items[0]['id'])) {
                 $this->ent['activity'][$n] = ['id' => $items[0]['id']];
