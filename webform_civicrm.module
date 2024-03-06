@@ -193,9 +193,13 @@ function _fillCiviCRMData($data, $webformSubmission) {
     return $data;
   }
 
+  $webform = $webformSubmission->getWebform();
+  $has_webform_civicrm_handler = $webform->getHandlers(NULL, TRUE)->has('webform_civicrm');
+  if (!$has_webform_civicrm_handler) {
+    return $data;
+  }
   \Drupal::service('civicrm')->initialize();
   $utils = \Drupal::service('webform_civicrm.utils');
-  $webform = $webformSubmission->getWebform();
   foreach ($data as $key => $val) {
     $element = $webform->getElement($key);
     if ($element && !empty($val) && $element['#type'] == 'civicrm_options') {
