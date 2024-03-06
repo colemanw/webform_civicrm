@@ -702,13 +702,6 @@ class Fields implements FieldsInterface {
           // Removed due to error, when a custom element is made, revisit.
           // 'value_callback' => TRUE,
         ];
-        $fields['contribution_is_test'] = [
-          'name' => t('Payment Processor Mode'),
-          'type' => 'hidden',
-          'expose_list' => TRUE,
-          'value' => 0,
-          'weight' => 9996,
-        ];
         $fields['contribution_note'] = [
           'name' => t('Contribution Note'),
           'type' => 'textarea',
