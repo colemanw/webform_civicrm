@@ -178,7 +178,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals($today,  $membership['join_date']);
     $this->assertEquals($today,  $membership['start_date']);
 
-    $this->assertEquals(date('Y-m-d', strtotime($today. ' +365 days')),  $membership['end_date']);
+    $this->assertEquals(date('Y-m-d', strtotime('+1 year -1 day')), $membership['end_date']);
   }
 
   /**
