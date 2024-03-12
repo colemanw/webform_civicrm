@@ -750,11 +750,14 @@ abstract class wf_crm_webform_base {
       $config = CRM_Core_Config::singleton();
       $path = file_unmanaged_copy($file->uri, $config->customFileUploadDir);
       if ($path) {
-        $result = wf_civicrm_api('file', 'create', [
-          'uri' => str_replace($config->customFileUploadDir, '', $path),
-          'mime_type' => $file->filemime,
+        $result = civicrm_api4('File', 'create', [
+          'values' => [
+            'uri' => str_replace($config->customFileUploadDir, '', $path),
+            'mime_type' => $file->filemime,
+          ],
+          'checkPermissions' => FALSE,
         ]);
-        return wf_crm_aval($result, 'id');
+        return wf_crm_aval($result->first(), 'id');
       }
     }
     return NULL;
