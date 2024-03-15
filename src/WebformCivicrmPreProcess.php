@@ -658,10 +658,12 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
         }
       }
     }
+    // Merge remaining values.
+    $displayLineItems = array_values(array_replace($displayLineItems, $this->line_items));
     $submittedFormValues = $this->form_state->getUserInput();
     foreach ($displayLineItems as $item) {
       // Load the rows for only submitted items. Final page items will be displayed on the payment table using js.
-      if (!empty($submittedFormValues) && isset($item['fid']) && !isset($submittedFormValues[$item['fid']])) {
+      if (!empty($submittedFormValues) && isset($item['fid']) && !isset($submittedFormValues[$item['fid']]) && isset($this->enabled[$item['fid']])) {
         continue;
       }
       $total += $item['line_total'];
