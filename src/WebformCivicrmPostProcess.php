@@ -1743,11 +1743,14 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
               }
               $fee_amount_id = "civicrm_{$c}_membership_{$n}_membership_fee_amount";
               $membership_label = $this->getMembershipTypeField($type, 'name') . ": " . $member_name;
+              if (isset($this->enabled[$fee_amount_id])) {
+                $membership_label = wf_crm_aval($webform_elements, $this->enabled[$fee_amount_id] . ':#title', $membership_label);
+              }
               $this->line_items[] = [
                 'qty' => $membership_item['num_terms'],
                 'unit_price' => $price,
                 'financial_type_id' => $membership_financialtype,
-                'label' => wf_crm_aval($webform_elements, $this->enabled[$fee_amount_id] . ':#title', $membership_label),
+                'label' => $membership_label,
                 'element' => "civicrm_{$c}_membership_{$n}",
                 'entity_table' => 'civicrm_membership',
                 'fid' => $fee_amount_id,
