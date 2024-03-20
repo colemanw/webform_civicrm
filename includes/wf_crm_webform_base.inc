@@ -750,9 +750,11 @@ abstract class wf_crm_webform_base {
       $config = CRM_Core_Config::singleton();
       $path = file_unmanaged_copy($file->uri, $config->customFileUploadDir);
       if ($path) {
+        $name = str_replace($config->customFileUploadDir, '', $path);
+        $file_uri = CRM_Utils_File::makeFileName($name);
         $result = civicrm_api4('File', 'create', [
           'values' => [
-            'uri' => str_replace($config->customFileUploadDir, '', $path),
+            'uri' => $file_uri,
             'mime_type' => $file->filemime,
           ],
           'checkPermissions' => FALSE,
