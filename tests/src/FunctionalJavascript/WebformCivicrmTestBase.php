@@ -173,7 +173,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       'tax_rate' => $tax_rate,
       'is_active' => 1,
     ], $accountParams);
-    $account = \CRM_Financial_BAO_FinancialAccount::add($params);
+    $account = \CRM_Financial_BAO_FinancialAccount::writeRecord($params);
     $entityParams = [
       'entity_table' => 'civicrm_financial_type',
       'entity_id' => $financialTypeId,
