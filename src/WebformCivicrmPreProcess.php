@@ -647,7 +647,25 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
     }
 
     $taxRates = \CRM_Core_PseudoConstant::getTaxRates();
-    foreach ($this->line_items as $item) {
+    // Ensure the display of line items respects
+    // the ordering set on the component page.
+    $displayLineItems = [];
+    foreach ($this->enabled as $fid => $v) {
+      foreach ($this->line_items as $k => $item) {
+        if (!empty($item['fid']) && $fid == $item['fid']) {
+          $displayLineItems[$k] = $item;
+          continue 2;
+        }
+      }
+    }
+    // Merge remaining values.
+    $displayLineItems = array_values(array_replace($displayLineItems, $this->line_items));
+    $submittedFormValues = $this->form_state->getUserInput();
+    foreach ($displayLineItems as $item) {
+      // Load the rows for only submitted items. Final page items will be displayed on the payment table using js.
+      if (!empty($submittedFormValues) && isset($item['fid']) && !isset($submittedFormValues[$item['fid']]) && isset($this->enabled[$item['fid']])) {
+        continue;
+      }
       $total += $item['line_total'];
       // Sales Tax integration
       if (!empty($item['financial_type_id'])) {

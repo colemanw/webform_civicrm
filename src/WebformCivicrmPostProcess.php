@@ -487,6 +487,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
               'unit_price' => $p['fee_amount'] ?? 0,
               'element' => "civicrm_{$c}_participant_{$n}_participant_{$id_and_type}",
               'contact_label' => $participantName,
+              'fid' => "civicrm_{$c}_participant_{$n}_participant_fee_amount",
             ];
           }
         }
@@ -1675,6 +1676,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    * Calculate line-items for this webform submission
    */
   private function tallyLineItems() {
+    $webform_elements = $this->node->getElementsDecodedAndFlattened();
     // Contribution
     $fid = 'civicrm_1_contribution_1_contribution_total_amount';
     if (isset($this->enabled[$fid]) || $this->getData($fid) > 0) {
@@ -1682,9 +1684,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         'qty' => 1,
         'unit_price' => $this->getData($fid),
         'financial_type_id' => wf_crm_aval($this->data, 'contribution:1:contribution:1:financial_type_id'),
-        'label' => wf_crm_aval($this->node->getElementsDecodedAndFlattened(), $this->enabled[$fid] . ':#title', t('Contribution')),
+        'label' => wf_crm_aval($webform_elements, $this->enabled[$fid] . ':#title', t('Contribution')),
         'element' => 'civicrm_1_contribution_1',
         'entity_table' => 'civicrm_contribution',
+        'fid' => $fid,
       ];
     }
     // LineItems
@@ -1697,9 +1700,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
             'qty' => 1,
             'unit_price' => $lineitem['line_total'],
             'financial_type_id' => $lineitem['financial_type_id'],
-            'label' => wf_crm_aval($this->node->getElementsDecodedAndFlattened(), $this->enabled[$fid] . ':#title', t('Line Item')),
+            'label' => wf_crm_aval($webform_elements, $this->enabled[$fid] . ':#title', t('Line Item')),
             'element' => "civicrm_1_lineitem_{$n}",
             'entity_table' => 'civicrm_contribution',
+            'fid' => $fid,
           ];
         }
       }
@@ -1737,13 +1741,19 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
               if (empty($member_name)) {
                 $member_name = $this->utils->wf_crm_display_name($this->existing_contacts[$c]);
               }
+              $fee_amount_id = "civicrm_{$c}_membership_{$n}_membership_fee_amount";
+              $membership_label = $this->getMembershipTypeField($type, 'name') . ": " . $member_name;
+              if (isset($this->enabled[$fee_amount_id])) {
+                $membership_label = wf_crm_aval($webform_elements, $this->enabled[$fee_amount_id] . ':#title', $membership_label);
+              }
               $this->line_items[] = [
                 'qty' => $membership_item['num_terms'],
                 'unit_price' => $price,
                 'financial_type_id' => $membership_financialtype,
-                'label' => $this->getMembershipTypeField($type, 'name') . ": " . $member_name,
+                'label' => $membership_label,
                 'element' => "civicrm_{$c}_membership_{$n}",
                 'entity_table' => 'civicrm_membership',
+                'fid' => $fee_amount_id,
               ];
             }
           }
