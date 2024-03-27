@@ -2569,6 +2569,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           $options = $this->utils->wf_crm_field_options($component, '', $this->data);
           $val = array_search($val, $options);
         }
+        // Don't pass FALSE as a string value.
+        if ($val === FALSE && $field['data_type'] === 'String') {
+          $val = '';
+        }
 
         // Only known contacts are allowed to empty a field
         if (($val !== '' && $val !== NULL && $val !== []) || !empty($this->existing_contacts[$c])) {
