@@ -141,7 +141,7 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
 
     $billingValues = [
       'first_name' => 'The',
-      'last_name' => 'Weeknd',
+      'last_name' => "O'Week-nd",
       'street_address' => 'Raymond James Stadium',
       'city' => 'Tampa',
       'country' => '1228',
