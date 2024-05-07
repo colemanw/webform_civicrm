@@ -43,7 +43,7 @@
             true,
             field.data('form-defaults'),
           );
-        });
+        }).change();
 
         //In case of error, highlight the token-input field.
         if (field.hasClass('error')) {
