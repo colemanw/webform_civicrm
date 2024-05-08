@@ -9,8 +9,9 @@
         }
         var autocompleteUrl = D.url('webform-civicrm/js/' + field.data('form-id') + '/' + field.data('civicrm-field-key'));
         var isSelect = field.data('is-select');
-        if (!isSelect) {
-          var tokenValues = field.data('is-contactid') ? false : {
+        var tokenValues = false;
+        if (!isSelect && !field.data('is-contactid')) {
+          tokenValues = {
             hintText: field.data('search-prompt'),
             noResultsText: field.data('none-prompt'),
             resultsFormatter: formatChoices,
@@ -18,10 +19,7 @@
             enableHTML: true
           };
         }
-        else {
-          var tokenValues = false;
-        }
-        
+
         wfCivi.existingInit(
           field,
           field.data('civicrm-contact'),
@@ -43,7 +41,7 @@
             true,
             field.data('form-defaults'),
           );
-        }).change();
+        });
 
         //In case of error, highlight the token-input field.
         if (field.hasClass('error')) {
