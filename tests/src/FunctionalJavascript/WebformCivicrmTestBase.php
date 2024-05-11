@@ -681,12 +681,11 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->getSession()->getPage()->fillField('Billing Last Name', $params['last_name']);
     $this->getSession()->getPage()->fillField('Street Address', $params['street_address']);
     $this->getSession()->getPage()->fillField('City', $params['city']);
+    $this->getSession()->getPage()->fillField('Postal Code', $params['postal_code']);
 
     $this->getSession()->getPage()->selectFieldOption('Country', $params['country']);
     $this->getSession()->wait(1000);
     $this->getSession()->getPage()->selectFieldOption('State/Province', $params['state_province']);
-
-    $this->getSession()->getPage()->fillField('Postal Code', $params['postal_code']);
   }
 
   /**
@@ -719,7 +718,9 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       $this->fillBillingFields($billingValues);
     }
     // Wait for the credit card form to load in.
+    $this->getSession()->wait(5000);
     $this->assertSession()->waitForField('credit_card_number');
+    $this->createScreenshot($this->htmlOutputDirectory . '/credit_card.png');
     $this->getSession()->getPage()->fillField('credit_card_number', '4222222222222220');
     $this->getSession()->getPage()->fillField('cvv2', '123');
     $this->getSession()->getPage()->selectFieldOption($this->getCreditCardMonthFieldName(), '11');
