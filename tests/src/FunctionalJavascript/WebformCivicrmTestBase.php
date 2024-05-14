@@ -718,7 +718,8 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       $this->fillBillingFields($billingValues);
     }
     // Wait for the credit card form to load in.
-    $this->getSession()->wait(5000);
+    $this->waitUntilStyleChange('#billing-payment-block', 'display', 'block');
+
     $this->assertSession()->waitForField('credit_card_number');
     $this->createScreenshot($this->htmlOutputDirectory . '/credit_card.png');
     $this->getSession()->getPage()->fillField('credit_card_number', '4222222222222220');
@@ -809,5 +810,24 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     }
     return 'credit_card_exp_date[m]';
   }
+
+  /**
+   * Wait until a specified style property of an element changes to a specified value.
+   *
+   * @param string $selector
+   * @param string $prop
+   *   The style property
+   * @param string $value
+   *   The style value.
+   */
+  public function waitUntilStyleChange($selector, $prop, $value) {
+    $this->getSession()->wait(10000, sprintf(
+      'document.querySelector("%s").style.%s === "%s"',
+      $selector,
+      $prop,
+      $value
+    ));
+  }
+
 
 }

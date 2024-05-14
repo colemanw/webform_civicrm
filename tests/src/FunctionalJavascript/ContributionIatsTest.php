@@ -266,7 +266,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->fillBillingFields($billingValues);
     $this->getSession()->getPage()->pressButton('Submit');
     // throw new \Exception(var_export($this->htmlOutputDirectory, TRUE));
-    // $this->createScreenshot($this->htmlOutputDirectory . '/legacy289.png');
+    $this->createScreenshot($this->htmlOutputDirectory . '/legacy289.png');
     $this->htmlOutput();
     $this->assertPageNoErrorMessages();
     $this->assertSession()->waitForText('New submission added to CiviCRM Webform Test.');
@@ -402,9 +402,8 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     ];
     $this->fillBillingFields($billingValues);
     // Wait for the ACHEFT form to load in.
-    $this->getSession()->wait(5000);
+    $this->waitUntilStyleChange('#billing-payment-block', 'display', 'block');
     $this->assertSession()->waitForElementVisible('css', '#account_holder');
-    $this->createScreenshot($this->htmlOutputDirectory . '/acheft_iats.png');
 
     $this->getSession()->getPage()->fillField('bank_account_number', '12345678');
     $this->getSession()->getPage()->fillField('bank_identification_number', '111111111');
