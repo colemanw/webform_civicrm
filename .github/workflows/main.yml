@@ -165,15 +165,15 @@ jobs:
         run: php -S 127.0.0.1:8080 -t ~/drupal/web &
       - name: Run PHPUnit
         run: |
-          mkdir $BROWSERTEST_OUTPUT_DIRECTORY
+          mkdir -p $BROWSERTEST_OUTPUT_DIRECTORY
           cd ~/drupal/web
           ../vendor/bin/phpunit -c core modules/contrib/webform_civicrm
         env:
           SYMFONY_DEPRECATIONS_HELPER: 999999
           SIMPLETEST_DB: mysql://root:@127.0.0.1:${{ job.services.mysql.ports[3306] }}/db
           SIMPLETEST_BASE_URL: http://127.0.0.1:8080
-          MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","chromeOptions":{"args":["--disable-gpu", "--no-sandbox", "--headless"]}}, "http://127.0.0.1:9515"]'
-          BROWSERTEST_OUTPUT_DIRECTORY: '${{ runner.temp }}/browser_output'
+          MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","goog:chromeOptions":{"args":["--disable-gpu", "--no-sandbox", "--headless"]}}, "http://127.0.0.1:9515"]'
+          BROWSERTEST_OUTPUT_DIRECTORY: '/home/runner/drupal/web/sites/simpletest/browser_output'
           DEV_EXTENSION_DIR: /home/runner/drupal/web/sites/default/files/civicrm/ext
           DEV_EXTENSION_URL: http://127.0.0.1:8080/sites/default/files/civicrm/ext
       - name: Helper to make unique name for upload
