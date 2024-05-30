@@ -821,11 +821,17 @@ abstract class WebformCivicrmBase {
     }
     $file = $this->utils->wf_crm_apivalues('Attachment', 'get', $val);
     if (!empty($file[$val])) {
+      if (function_exists('file_icon_class')) {
+        $icon_class = file_icon_class($file[$val]['mime_type']);
+      }
+      else {
+        $icon_class = \Drupal\file\IconMimeTypes::getIconClass($file[$val]['mime_type']);
+      }
       return [
         'data_type' => 'File',
         'name' => $file[$val]['name'],
         'file_url'=> $file[$val]['url'],
-        'icon' => file_icon_class($file[$val]['mime_type']),
+        'icon' => $icon_class,
       ];
     }
     return NULL;
