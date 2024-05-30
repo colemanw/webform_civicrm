@@ -616,7 +616,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
    * @return \Generator
    *   The test data.
    */
-  public function dataContactValues() {
+  public static function dataContactValues() {
     yield [
       'Individual',
       [
