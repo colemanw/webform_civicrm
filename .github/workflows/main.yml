@@ -27,12 +27,15 @@ jobs:
             civicrm: '5.78.*'
             php: '8.2'
           - drupal: '10.3.*'
-            civicrm: '6.1.*'
+            civicrm: '6.3.*'
             php: '8.2'
-          - drupal: '10.3.*'
-            civicrm: '6.2.x-dev'
-            php: '8.2'
-          - drupal: '10.3.*'
+          - drupal: '10.4.*'
+            civicrm: '6.4.x-dev'
+            php: '8.3'
+          - drupal: '10.4.*'
+            civicrm: 'dev-master'
+            php: '8.3'
+          - drupal: '11.x-dev'
             civicrm: 'dev-master'
             php: '8.3'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
@@ -96,12 +99,19 @@ jobs:
           composer config repositories.1 path $GITHUB_WORKSPACE
           composer install --no-interaction
           COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:${{ matrix.drupal }}
+      # This is done differently in drupal 11. See BROWSERTEST_OUTPUT_VERBOSE below.
       - name: Suppress links to screenshots
         # There's so many! They can be useful locally if running one test, but they aren't useful here and cause massive scrolling.
         run: |
           cd ~/drupal
-          curl -L -O https://raw.githubusercontent.com/colemanw/webform_civicrm/def72b3dce1ea4bc7dd2cdd28a72844885727789/DrupalHtmlOutputTrait.diff
-          git apply DrupalHtmlOutputTrait.diff
+          DRUPAL11=`grep "const VERSION" web/core/lib/Drupal.php | cut -f 2 -d "'" | php -r 'echo (int) version_compare(stream_get_contents(STDIN), "11", ">=");'`
+          if [ "$DRUPAL11" == "1" ]; then
+            echo "ISDRUPAL11=1" >> $GITHUB_ENV
+          else
+            echo "ISDRUPAL11=0" >> $GITHUB_ENV
+            curl -L -O https://raw.githubusercontent.com/colemanw/webform_civicrm/def72b3dce1ea4bc7dd2cdd28a72844885727789/DrupalHtmlOutputTrait.diff
+            git apply DrupalHtmlOutputTrait.diff
+          fi
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
@@ -109,7 +119,11 @@ jobs:
       - name: Download Webform
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:^6.2'
+          if [ "${{ env.ISDRUPAL11 }}" == "1" ]; then
+            COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:6.3.x-dev@dev'
+          else
+            COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:^6.2'
+          fi
       - name: Install webform_civicrm
         run: |
           cd ~/drupal
@@ -190,6 +204,8 @@ jobs:
           SIMPLETEST_DB: mysql://root:@127.0.0.1:${{ job.services.mysql.ports[3306] }}/db
           SIMPLETEST_BASE_URL: http://127.0.0.1:8080
           MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","goog:chromeOptions":{"args":["--disable-gpu", "--no-sandbox", "--headless"]}}, "http://127.0.0.1:9515"]'
+          BROWSERTEST_OUTPUT_FILE: 'true'
+          BROWSERTEST_OUTPUT_VERBOSE: 'false'
           BROWSERTEST_OUTPUT_DIRECTORY: '/home/runner/drupal/web/sites/simpletest/browser_output'
           DEV_EXTENSION_DIR: /home/runner/drupal/web/sites/default/files/civicrm/ext
           DEV_EXTENSION_URL: http://127.0.0.1:8080/sites/default/files/civicrm/ext
