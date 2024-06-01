@@ -60,6 +60,11 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   protected $utils;
 
   /**
+   * @var int
+   */
+  protected $rootUserCid;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
