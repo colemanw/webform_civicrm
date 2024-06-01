@@ -40,6 +40,10 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
    */
   protected static $configSchemaCheckerExclusions = [
     'webform.webform.civicrm_webform_test',
+    // In drupal 11 the reserved and startIndex fields are saying they have
+    // no schema for them in ckeditor5, but it does, so not sure what the
+    // problem is.
+    'editor.editor.webform_default',
   ];
 
   /**
