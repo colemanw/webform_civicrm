@@ -581,7 +581,7 @@
       }
 
       function add_freetagging_tokens() {
-          var value = $.trim(input_box.val());
+          var value = input_box.val().trim();
           var tokens = value.split($(input).data("settings").tokenDelimiter);
           $.each(tokens, function(i, token) {
             if (!token) {

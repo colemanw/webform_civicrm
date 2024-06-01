@@ -269,7 +269,7 @@ var wfCiviAdmin = (function (D, $, once) {
         if ($('select[name$="_contact_sub_type[]"]', context).val()) {
           var first = true;
           $('select[name$="_contact_sub_type[]"] option:selected', context).each(function() {
-            label += (first ? ' (' : ', ') + $.trim($(this).text());
+            label += (first ? ' (' : ', ') + $(this).text().trim();
             first = false;
           });
           label += ')';
@@ -325,7 +325,7 @@ var wfCiviAdmin = (function (D, $, once) {
       $(once('wf-civi', 'details#edit-additional-options', context)).drupalSetSummary(function (context) {
         var label = [];
         $(':checked', context).each(function() {
-          label.push($.trim($(this).siblings('label').contents().first().text()));
+          label.push($(this).siblings('label').contents().first().text().trim());
         });
         return label.join(', ') || Drupal.t('- None -');
       });
