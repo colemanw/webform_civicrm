@@ -565,7 +565,6 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
 
     if (!empty($params['default'])) {
       $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-contact-defaults"]')->click();
-      $this->assertSession()->assertWaitOnAjaxRequest();
       $this->getSession()->getPage()->selectFieldOption('Set default contact from', $params['default']);
 
       if ($params['default'] == 'Specified Contact') {
@@ -574,7 +573,6 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
 
       if ($params['default'] == 'relationship') {
         $this->getSession()->getPage()->selectFieldOption('properties[default_relationship_to]', $params['default_relationship']['default_relationship_to']);
-        $this->assertSession()->assertWaitOnAjaxRequest();
         $this->getSession()->getPage()->selectFieldOption('properties[default_relationship][]', $params['default_relationship']['default_relationship']);
       }
     }
