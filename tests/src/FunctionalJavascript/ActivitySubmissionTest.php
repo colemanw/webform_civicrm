@@ -12,6 +12,11 @@ use Drupal\Core\Url;
 final class ActivitySubmissionTest extends WebformCivicrmTestBase {
 
   /**
+   * @var array
+   */
+  private $_contacts;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {

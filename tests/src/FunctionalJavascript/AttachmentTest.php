@@ -14,6 +14,11 @@ final class AttachmentTest extends WebformCivicrmTestBase {
   protected static $filePrefix = NULL;
 
   /**
+   * @var array
+   */
+  private $fileParams;
+
+  /**
    * {@inheritdoc}
    */
   protected static $modules = [
