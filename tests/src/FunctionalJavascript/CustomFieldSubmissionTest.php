@@ -329,7 +329,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
       'query' => ['reset' => 1, 'action' => 'update', 'gid' => 1, 'id' => $this->_customFields['color_checkboxes']]
     ])->toString();
     $this->drupalGet($fieldURL);
-    $this->getSession()->getPage()->uncheckField('Active?');
+    $this->getSession()->getPage()->uncheckField(version_compare(\CRM_Core_BAO_Domain::version(), '5.75.alpha1', '<') ? 'Active?' : 'Active');
     // $this->createScreenshot($this->htmlOutputDirectory . '/custom_field.png');
     $this->getSession()->getPage()->pressButton('_qf_Field_done-bottom');
 
@@ -343,7 +343,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     //Re-enable the field.
     $this->drupalGet($fieldURL);
-    $this->getSession()->getPage()->checkField('Active?');
+    $this->getSession()->getPage()->checkField(version_compare(\CRM_Core_BAO_Domain::version(), '5.75.alpha1', '<') ? 'Active?' : 'Active');
     $this->getSession()->getPage()->pressButton('_qf_Field_done-bottom');
 
     $this->drupalGet($this->webform->toUrl('canonical'));
