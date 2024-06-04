@@ -182,7 +182,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->setupSalesTax(5, $accountParams = []);
 
     // Create a second individual contact cid2
-    $this->cid2 = $this->createIndividual(['first_name' => 'Mark', 'last_name' => 'Cooper']);
+    $cid2 = $this->createIndividual(['first_name' => 'Mark', 'last_name' => 'Cooper'])['id'];
 
     $this->drupalLogin($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
@@ -230,7 +230,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
 
     $this->saveCiviCRMSettings();
 
-    $this->drupalGet($this->webform->toUrl('canonical',  ['query' => ['cid2' => $this->cid2['id']]]));
+    $this->drupalGet($this->webform->toUrl('canonical',  ['query' => ['cid2' => $cid2]]));
     $this->assertPageNoErrorMessages();
 
     $this->assertSession()->waitForField('First Name');
@@ -276,7 +276,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertEquals($adminCid, $membership[0]['contact_id']);
     $this->assertEquals('Basic', $membership[0]['membership_name']);
 
-    $this->assertEquals($this->cid2['id'], $membership[1]['contact_id']);
+    $this->assertEquals($cid2, $membership[1]['contact_id']);
     $this->assertEquals('Advanced', $membership[1]['membership_name']);
 
     $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
