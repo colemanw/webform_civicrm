@@ -14,6 +14,22 @@ use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
 final class ContributionIatsTest extends WebformCivicrmTestBase {
 
   /**
+   * @var array
+   */
+  private $payment_processor_legacy;
+
+  /**
+   * @var array
+   */
+  private $payment_processor_legacy_acheft;
+
+  /**
+   * @var array
+   * @todo the test that uses this is commented out. Is it still needed?
+   */
+  private $payment_processor_faps;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
