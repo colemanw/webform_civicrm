@@ -226,7 +226,6 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $contactElementEdit->click();
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
 
     $this->assertSession()->waitForField('properties[widget]');

@@ -248,7 +248,6 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertSession()->pageTextContains('You must enable an email field for Contact 1 in order to process transactions.');
     $this->getSession()->getPage()->pressButton('Enable It');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
     $this->getSession()->getPage()->selectFieldOption('Financial Type', $params['financial_type_id'] ?? 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
@@ -695,7 +694,6 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
    */
   protected function enableBillingSection() {
     $this->getSession()->getPage()->selectFieldOption('Enable Billing Address?', 'Yes');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
     $this->assertSession()->checkboxChecked("Billing First Name");
     $this->assertSession()->checkboxNotChecked("Billing Middle Name");
