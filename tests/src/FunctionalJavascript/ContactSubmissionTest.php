@@ -230,7 +230,6 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
 
     $this->assertSession()->waitForField('properties[widget]');
     $this->getSession()->getPage()->selectFieldOption('Form Widget', 'Autocomplete');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertSession()->waitForElementVisible('css', '[data-drupal-selector="edit-properties-search-prompt"]');
     $this->addFieldValue('Search Prompt', '- Select Contact -');
 

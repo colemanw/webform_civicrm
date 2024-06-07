@@ -269,7 +269,6 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     }
     else {
       $this->getSession()->getPage()->selectFieldOption('Enable Receipt?', 'No');
-      $this->assertSession()->assertWaitOnAjaxRequest();
     }
   }
 

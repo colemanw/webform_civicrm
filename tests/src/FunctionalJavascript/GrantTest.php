@@ -59,7 +59,6 @@ final class GrantTest extends WebformCivicrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
     $this->getSession()->getPage()->selectFieldOption('Grant Type', $this->grant_type_id);
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
     $this->assertSession()->checkboxChecked("Amount Requested");
 
