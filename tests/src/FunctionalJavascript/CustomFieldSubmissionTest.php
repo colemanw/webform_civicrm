@@ -11,6 +11,11 @@ use Drupal\Core\Url;
  */
 final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
+  /**
+   * @var array
+   */
+  private $_customFields;
+
   private function createCustomFields() {
     $this->_customFields = [];
     $result = $this->createCustomGroup();

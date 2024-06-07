@@ -13,6 +13,16 @@ final class EventTest extends WebformCivicrmTestBase {
 
   private $_customFields = [];
 
+  /**
+   * @var array
+   */
+  private $ft;
+
+  /**
+   * @var array
+   */
+  private $_event;
+
   protected function setUp(): void {
     parent::setUp();
     $this->ft = $this->utils->wf_civicrm_api('FinancialType', 'get', [
