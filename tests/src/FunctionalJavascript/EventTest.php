@@ -15,6 +15,13 @@ final class EventTest extends WebformCivicrmTestBase {
 
   /**
    * @var array
+   * custom group
+   */
+  private $cg;
+
+  /**
+   * @var array
+   * financial type
    */
   private $ft;
 
