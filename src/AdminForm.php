@@ -46,6 +46,11 @@ class AdminForm implements AdminFormInterface {
    */
   public static $fieldset_entities = ['contact', 'billing_1_number_of_billing', 'activity', 'case', 'grant'];
 
+  /**
+   * @var bool
+   */
+  public $confirmPage;
+
   public function __construct(UtilsInterface $utils) {
     $this->utils = $utils;
   }
