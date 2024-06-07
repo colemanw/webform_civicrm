@@ -282,7 +282,6 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->utils->wf_civicrm_api('contribution', 'delete', [
       'id' => $contribution['id'],
     ]);
-    $this->contribution_id = $contribution['id'];
 
     $address = $this->utils->wf_civicrm_api('Address', 'get', [
       'sequential' => 1,
