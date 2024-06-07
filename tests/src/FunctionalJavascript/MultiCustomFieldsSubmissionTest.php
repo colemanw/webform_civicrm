@@ -11,6 +11,27 @@ use Drupal\Core\Url;
  */
 final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
 
+  /**
+   * @var int
+   */
+  private $_totalMV;
+
+  /**
+   * @var array
+   */
+  private $_customFields;
+
+  /**
+   * @var int
+   */
+  private $_cgID;
+
+  /**
+   * @var array
+   */
+  private $_contact1;
+  private $_contact2;
+
   private function createMultiValueCustomFields() {
     $this->_customFields = [];
     $params = [
