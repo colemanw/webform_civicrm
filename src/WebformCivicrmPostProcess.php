@@ -1919,7 +1919,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       // Current employer must wait for ContactRef ids to be filled
       unset($contact['contact'][1]['employer_id']);
       $cid = $this->createContact($contact);
-      $this->billing_contact = $cid;
     }
     else {
       foreach (['address', 'email'] as $loc) {
