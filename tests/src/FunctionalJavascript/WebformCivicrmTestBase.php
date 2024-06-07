@@ -513,9 +513,9 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
 
     $contactElementEdit = $this->assertSession()->elementExists('css', "[data-drupal-selector=\"{$params['selector']}\"] a.webform-ajax-link");
     $contactElementEdit->click();
-    $this->htmlOutput();
 
     $this->assertSession()->waitForElementVisible('css', "button.webform-details-toggle-state");
+    $this->htmlOutput();
     $expandLink = $this->cssSelect('button.webform-details-toggle-state')[0];
     if ($expandLink->getText() == 'Expand all') {
       $expandLink->click();
