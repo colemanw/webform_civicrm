@@ -64,9 +64,9 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
       'first_name' => 'Fred',
       'last_name' => 'Pinto',
     ];
-    $this->childContact = $this->createIndividual($childContact);
+    $childContactId = $this->createIndividual($childContact)['id'];
     $this->utils->wf_civicrm_api('Relationship', 'create', [
-      'contact_id_a' => $this->childContact['id'],
+      'contact_id_a' => $childContactId,
       'contact_id_b' => $this->rootUserCid,
       'relationship_type_id' => "Child of",
     ]);
