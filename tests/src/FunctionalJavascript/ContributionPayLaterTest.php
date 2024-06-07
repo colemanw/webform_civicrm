@@ -16,6 +16,11 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
   private $_customGroup = [];
   private $_customFields = [];
 
+  /**
+   * @var string
+   */
+  private $country;
+
   public function testReceiptParams() {
     $this->drupalLogin($this->rootUser);
     $this->redirectEmailsToDB();
