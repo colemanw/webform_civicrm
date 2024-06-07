@@ -575,7 +575,6 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
     //  Assign the contribution to contact "- User Select -"
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_contact_id', 'create_civicrm_webform_element');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
     $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
 
@@ -665,7 +664,6 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
     //  Assign the contribution to contact "- User Select -"
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_contact_id', 'create_civicrm_webform_element');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
     $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
 

@@ -253,7 +253,6 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->elementExists('css', '.token-input-delete-token')->click();
 
     $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', $contact_result['values'][0]['first_name']);
-    $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->assertFieldValue('edit-civicrm-1-contact-1-contact-first-name', $contact_result['values'][0]['first_name']);
     $this->assertFieldValue('edit-civicrm-1-contact-1-contact-last-name', $contact_result['values'][0]['last_name']);
