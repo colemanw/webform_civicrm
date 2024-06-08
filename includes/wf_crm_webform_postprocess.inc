@@ -1345,17 +1345,49 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           // These params aren't allowed in update mode
           unset($params['creator_id']);
 
+          $caseContacts = wf_civicrm_api(
+            'CaseContact',
+            'get',
+            ['case_id' => $params['id'], 'sequential' => TRUE, 'return' => ['contact_id']]
+          );
+          $caseContacts = array_column($caseContacts['values'] ?? [], 'contact_id');
+          $clientId = current((array) $params['client_id']);
           // If orig_contact_id is missing and there's more than one Contact
           // on the Case, set orig_contact_id to the current ID. Otherwise
           // we get a Case.create error "Case is linked with more than one
           // contact id".
-          if (empty($params['orig_contact_id']) && !empty($params['id'])) {
-            $caseContactCount = wf_civicrm_api('CaseContact', 'getcount', ['case_id' => $params['id']]);
-            if ($caseContactCount > 1 && !empty($params['client_id'])) {
-              $params['orig_contact_id'] = current((array) $params['client_id']);
-            }
+          if (empty($params['orig_contact_id']) && !empty($params['id']) && count($caseContacts) > 1 && !empty($clientId)) {
+            $params['orig_contact_id'] = in_array($clientId, $caseContacts) ? $clientId : $caseContacts[0];
           }
 
+          if (user_access('Update cases with user role via webform')) {
+            $allContacts = [];
+            $userHasACaseRole = FALSE;
+            foreach ($this->ent['contact'] as $contact) {
+              if (!empty($contact['id'])) {
+                $allContacts[] = $contact['id'];
+              }
+            }
+
+            $relationships = \Civi\Api4\Relationship::get()
+              ->setCheckPermissions(FALSE)
+              ->setSelect(['contact_id_b'])
+              ->addWhere('is_current', '=', TRUE)
+              ->addWhere('case_id', '=',  $params['id'])
+              ->execute()
+              ->getArrayCopy();
+
+            foreach ($relationships as $relationship) {
+              if (in_array($relationship['contact_id_b'], $allContacts)) {
+                $userHasACaseRole = TRUE;
+                break;
+              }
+            }
+
+            if ($userHasACaseRole) {
+              $params['contact_id'] = $caseContacts;
+            }
+          }
         }
         // Allow "automatic" status to pass-thru
         if (empty($params['status_id'])) {

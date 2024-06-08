@@ -646,10 +646,28 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             if (array_intersect((array) wf_crm_aval($item, 'client_id'), $clients) || user_access('access all cases and activities')) {
               $this->ent['case'][$n] = ['id' => $id];
             }
+            else if (user_access('Update cases with user role via webform')) {
+              civicrm_initialize();
+              $relationships = \Civi\Api4\Relationship::get()
+                ->setCheckPermissions(FALSE)
+                ->setSelect(['contact_id_b'])
+                ->addWhere('is_current', '=', TRUE)
+                ->addWhere('case_id', '=', $id)
+                ->execute()
+                ->getArrayCopy();
+
+              foreach ($relationships as $relationship) {
+                if (in_array($relationship['contact_id_b'], $allContacts)) {
+                  $this->ent['case'][$n] = ['id' => $id];
+                  break;
+                }
+              }
+            }
             else {
               foreach ($item['contacts'] ?? [] as $caseContact) {
                 if (!empty($caseContact['manager']) && in_array($caseContact['contact_id'], $allContacts)) {
                   $this->ent['case'][$n] = ['id' => $id];
+                  break;
                 }
               }
             }
