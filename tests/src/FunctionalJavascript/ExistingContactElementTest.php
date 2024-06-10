@@ -165,7 +165,6 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
 
     // Enter contact 3.
     $this->fillContactAutocomplete('token-input-edit-civicrm-3-contact-1-contact-existing', 'Maarten');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertFieldValue('edit-civicrm-3-contact-1-contact-job-title', 'Accountant');
 
     // Check if related contact is loaded on c4.

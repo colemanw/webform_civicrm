@@ -579,7 +579,6 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
 
     $this->enableBillingSection();
-    $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->htmlOutput();
     $this->saveCiviCRMSettings();
@@ -668,7 +667,6 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
 
     $this->enableBillingSection();
-    $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->htmlOutput();
     $this->saveCiviCRMSettings();
