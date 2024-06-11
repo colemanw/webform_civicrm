@@ -574,7 +574,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
               if (!is_array($val) && !isset($element['#options'][$val])) {
                 $val = NULL;
               }
-              if ((empty($val) || (is_array($val) && empty(array_filter($val)))) && !empty($this->form['#attributes']['data-form-defaults'])) {
+              if ((is_null($val) || (is_array($val) && empty(array_filter($val)))) && !empty($this->form['#attributes']['data-form-defaults'])) {
                 $formDefaults = Json::decode($this->form['#attributes']['data-form-defaults']);
                 $key = str_replace('_', '-', $element['#form_key']);
                 if (isset($formDefaults[$key])) {
