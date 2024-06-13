@@ -57,7 +57,7 @@ cj(function($) {
   function getTotalAmount() {
     var totalAmount = 0.0;
     $('.line-item:visible', '#wf-crm-billing-items').each(function() {
-      totalAmount += parseFloat($(this).data('amount'));
+      totalAmount += parseFloat($(this).attr('data-amount'));
     });
     return totalAmount;
   }
@@ -65,6 +65,7 @@ cj(function($) {
   function tally() {
     var total = 0;
     total = getTotalAmount();
+    $('#wf-crm-billing-total').attr('data-amount', total);
 
     $('td+td', '#wf-crm-billing-total').html(CRM.formatMoney(total));
     if (total > 0) {
@@ -90,7 +91,7 @@ cj(function($) {
         taxPara = 1 + (tax / 100);
       }
       $('td+td', $lineItem).html(CRM.formatMoney(amount * taxPara));
-      $lineItem.data('amount', amount * taxPara);
+      $lineItem.attr('data-amount', amount * taxPara);
     }
     tally();
   }
