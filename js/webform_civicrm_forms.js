@@ -218,7 +218,7 @@ var wfCivi = (function ($, D) {
         return;
       }
       // First try to find a single element - works for textfields and selects
-      var $el = $('.webform-client-form-'+nid+' :input.civicrm-enabled[name$="'+fid+']"]').not(':checkbox, :radio');
+      var $el = $('.webform-client-form-'+nid+' :input.civicrm-enabled[data-civicrm-field-key="'+fid+'"]').not(':checkbox, :radio');
       if ($el.length) {
         // For chain-select fields, store value for later if it's not available
         if ((fid.substr(fid.length - 9) === 'county_id' || fid.substr(fid.length - 11) === 'province_id') && !$('option[value='+val+']', $el).length) {
@@ -230,6 +230,10 @@ var wfCivi = (function ($, D) {
           }
           else if ($el.is('[type=hidden]')) {
             $el.siblings('.token-input-list').find('p').text(this.display);
+          }
+          // If this is overlaid by a CKEditor textarea, set the CKEditor textarea value.
+          else if ($el.is('textarea.ckeditor-mod.civicrm-enabled')) {
+            CKEDITOR.instances[$el[0].id].setData(val);
           }
           $el.val(val).trigger('change', 'webform_civicrm:autofill');
         }
