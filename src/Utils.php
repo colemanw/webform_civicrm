@@ -131,11 +131,15 @@ class Utils implements UtilsInterface {
    * @return array
    */
   function wf_crm_get_events($reg_options, $context) {
-    $ret = [];
+    static $ret = [];
+    if ($ret && $context !== 'config_form') {
+      return $ret;
+    }
     $format = wf_crm_aval($reg_options, 'title_display', 'title');
     $sort_field = wf_crm_aval($reg_options, 'event_sort_field', 'start_date');
     $sort_order = ($context == 'config_form' && $sort_field === 'start_date') ? ' DESC' : '';
     $params = [
+      'return' => ['id', 'title', 'start_date', 'end_date', 'event_type_id', 'max_participants'],
       'is_template' => 0,
       'is_active' => 1,
     ];
