@@ -719,28 +719,6 @@ class Fields implements FieldsInterface {
           'type' => 'textarea',
           'parent' => 'contribution_pagebreak',
         ];
-        $fields['contribution_soft'] = [
-          'name' => t('Soft Credit To'),
-          'type' => 'select',
-          'expose_list' => TRUE,
-          'extra' => ['multiple' => TRUE],
-          'data_type' => 'ContactReference',
-          'parent' => 'contribution_pagebreak',
-        ];
-        $fields['contribution_honor_contact_id'] = [
-          'name' => t('In Honor/Memory of'),
-          'type' => 'select',
-          'expose_list' => TRUE,
-          'empty_option' => t('No One'),
-          'data_type' => 'ContactReference',
-          'parent' => 'contribution_pagebreak',
-        ];
-        $fields['contribution_honor_type_id'] = [
-          'name' => t('Honoree Type'),
-          'type' => 'select',
-          'expose_list' => TRUE,
-          'parent' => 'contribution_pagebreak',
-        ];
         $fields['contribution_source'] = [
           'name' => t('Contribution Source'),
           'type' => 'textfield',
@@ -793,6 +771,28 @@ class Fields implements FieldsInterface {
           'set' => 'line_items',
           'fid' => 'contribution_financial_type_id',
         ];
+
+        // Soft Credit
+        $sets['contributionSoft'] = ['entity_type' => 'contribution', 'label' => t('Soft Credit')];
+        $fields['contribution_soft'] = [
+          'name' => t('Soft Credit To'),
+          'type' => 'select',
+          'expose_list' => TRUE,
+          'extra' => ['multiple' => TRUE],
+          'data_type' => 'ContactReference',
+          'parent' => 'contribution_pagebreak',
+          'set' => 'contributionSoft',
+        ];
+        $fields['contribution_soft_credit_type_id'] = [
+          'name' => t('Soft Credit Type'),
+          'type' => 'select',
+          'expose_list' => TRUE,
+          'civicrm_live_options' => TRUE,
+          'empty_option' => t('None'),
+          'parent' => 'contribution_pagebreak',
+          'set' => 'contributionSoft',
+        ];
+
         $sets['contributionRecur'] = ['entity_type' => 'contribution', 'label' => t('Recurring Contribution')];
         $fields['contribution_frequency_unit'] = [
           'name' => t('Frequency of Installments'),

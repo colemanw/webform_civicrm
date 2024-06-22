@@ -500,25 +500,6 @@ var wfCiviAdmin = (function (D, $, once) {
         changeContactLabel.call(this);
       });
 
-      // Contribution honoree fields
-      $(once('crm-contrib', 'select[name$=contribution_honor_contact_id]', context)).change(function() {
-        if ($(this).val() == '0') {
-          $('.form-item-civicrm-1-contribution-1-contribution-honor-type-id').hide();
-        }
-        else {
-          $('.form-item-civicrm-1-contribution-1-contribution-honor-type-id').show();
-        }
-      }).change();
-      $(once('crm-contrib', 'select[name$=contribution_honor_type_id]', context)).change(function() {
-        var $label = $('.form-item-civicrm-1-contribution-1-contribution-honor-contact-id label');
-        if ($(this).val() == 'create_civicrm_webform_element') {
-          $label.html(Drupal.t('In Honor/Memory of'));
-        }
-        else {
-          $label.html($('option:selected', this).html());
-        }
-      }).change();
-
       // Membership constraints
       $(once('crm-mem-date', 'select[name$=_membership_num_terms]', context)).change(function(e, type) {
         var $dateWrappers = $(this).parent().siblings('[class$="-date"]').not('[class$="-status-override-end-date"]');

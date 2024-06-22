@@ -2273,7 +2273,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     }
 
     // Save this stuff for later
-    unset($params['soft'], $params['honor_contact_id'], $params['honor_type_id']);
+    unset($params['soft'], $params['soft_credit_type_id']);
     return $params;
   }
 
@@ -2302,20 +2302,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           'contribution_id' => $id,
           'amount' => $amount,
           'currency' => wf_crm_aval($this->data, "contribution:1:currency"),
-          'soft_credit_type_id' => $default_soft_credit_type['value'],
+          'soft_credit_type_id' => $contribution['soft_credit_type_id'] ?? $default_soft_credit_type['value'],
         ]);
       }
     }
-    // Save honoree
-    if (!empty($contribution['honor_contact_id']) && !empty($contribution['honor_type_id'])) {
-      $this->utils->wf_civicrm_api('contribution_soft', 'create', [
-        'contribution_id' => $id,
-        'amount' => $contribution['total_amount'],
-        'contact_id' => $contribution['honor_contact_id'],
-        'soft_credit_type_id' => $contribution['honor_type_id'],
-      ]);
-    }
-
     $contributionResult = \CRM_Contribute_BAO_Contribution::getValues(['id' => $id], \CRM_Core_DAO::$_nullArray, \CRM_Core_DAO::$_nullArray);
 
     // Save line-items

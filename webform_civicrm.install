@@ -397,7 +397,7 @@ function webform_civicrm_update_8006() {
         }
       }
     }
-    // Update data key in settings to have the correct case for subtype. 
+    // Update data key in settings to have the correct case for subtype.
     $data = &$settings['data'];
     foreach ($data['contact'] as $key => &$contact) {
       if (!empty($contact['contact'][1]['contact_sub_type'])) {
@@ -412,6 +412,32 @@ function webform_civicrm_update_8006() {
     }
 
     if ($settings_updated) {
+      $handler->setConfiguration($config);
+      $webform->save();
+    }
+  }
+}
+
+/**
+ * Fix old soft credit data.
+ */
+function webform_civicrm_update_8007() {
+  \Drupal::service('civicrm')->initialize();
+  $webforms = Webform::loadMultiple();
+  foreach ($webforms as $webform) {
+    $handler = $webform->getHandlers('webform_civicrm');
+    $config = $handler->getConfiguration();
+    if (empty($config['webform_civicrm'])) {
+      continue;
+    }
+    $data = &$config['webform_civicrm']['settings']['data'];
+    if (empty($data['contribution'][1]['contribution'][1])) {
+      continue;
+    }
+    $contribution = $data['contribution'][1]['contribution'][1];
+    if (!empty($contribution['honor_contact_id']) && !empty($contribution['honor_type_id'])) {
+      $data['contribution'][1]['contribution'][1]['soft'][$contribution['honor_contact_id']] = $contribution['honor_contact_id'];
+      $data['contribution'][1]['contribution'][1]['soft_credit_type_id'] = $contribution['honor_type_id'];
       $handler->setConfiguration($config);
       $webform->save();
     }

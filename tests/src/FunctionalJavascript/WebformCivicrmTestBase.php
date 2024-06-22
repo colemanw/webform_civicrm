@@ -243,6 +243,10 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     if (!empty($params['payment_processor_id'])) {
       $this->getSession()->getPage()->selectFieldOption('Payment Processor', $params['payment_processor_id']);
     }
+    if (!empty($params['soft'])) {
+      $this->getSession()->getPage()->selectFieldOption('Soft Credit To', $params['soft']);
+      $this->getSession()->getPage()->selectFieldOption('Soft Credit Type', $params['soft_credit_type_id']);
+    }
 
     if (!empty($params['receipt'])) {
       $this->getSession()->getPage()->selectFieldOption('Enable Receipt?', 'Yes');

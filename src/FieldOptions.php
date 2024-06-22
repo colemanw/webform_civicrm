@@ -109,12 +109,17 @@ class FieldOptions implements FieldOptionsInterface {
       else {
         $params = ['field' => $name, 'context' => 'create'];
         // Special case for contribution_recur fields
-        if ($table == 'contribution' && strpos($name, 'frequency_') === 0) {
-          $table = 'contribution_recur';
-        }
-        if ($table == 'contribution' && strpos($name, 'billing_address_') === 0) {
-          $table = 'address';
-          $params['field'] = str_replace('billing_address_', '', $params['field']);
+        if ($table === 'contribution') {
+          if (str_starts_with($name, 'frequency_')) {
+            $table = 'contribution_recur';
+          }
+          elseif ($name === 'soft_credit_type_id') {
+            $table = 'contribution_soft';
+          }
+          elseif (str_starts_with($name, 'billing_address_')) {
+            $table = 'address';
+            $params['field'] = str_replace('billing_address_', '', $params['field']);
+          }
         }
         // Use the Contribution table to pull up financial type id-s
         if ($table == 'membership' && $name == 'financial_type_id') {
