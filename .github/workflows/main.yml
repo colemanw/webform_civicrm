@@ -23,22 +23,22 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - drupal: '9.5.*'
-            civicrm: '5.65.*'
-            php: '7.4'
-          - drupal: '9.5.*'
-            civicrm: '5.66.*'
-            php: '7.4'
-          - drupal: '10.2.*'
-            civicrm: '5.69.x-dev'
+          - drupal: '10.1.*'
+            civicrm: '5.69.*'
             php: '8.1'
           - drupal: '10.2.*'
+            civicrm: '5.69.*'
+            php: '8.1'
+          - drupal: '10.2.*'
+            civicrm: '5.75.x-dev'
+            php: '8.2'
+          - drupal: '10.3.*'
             civicrm: 'dev-master'
-            php: '8.1'
+            php: '8.3'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
     services:
       mysql:
-        image: mysql:5.7
+        image: mysql:8.0
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: yes
           MYSQL_DATABASE: db
