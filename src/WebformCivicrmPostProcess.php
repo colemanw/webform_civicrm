@@ -321,12 +321,14 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       ->fields($record)
       ->execute();
 
+    $isEmailReceipt = wf_crm_aval($this->data, "receipt:number_number_of_receipt", FALSE);
+    
     // Calling an IPN payment processor will result in a redirect so this happens after everything else
     if ($this->contributionIsIncomplete && !$this->contributionIsPayLater && !empty($this->ent['contribution'][1]['id']) && !$this->submission->isDraft()) {
 //      webform_submission_send_mail($this->node, $this->submission);
-      $this->submitIPNPayment();
+      $this->submitIPNPayment($isEmailReceipt);
     }
-    $isEmailReceipt = wf_crm_aval($this->data, "receipt:number_number_of_receipt", FALSE);
+
     // Send receipt
     if (empty($this->submission->isDraft())
       && !empty($this->ent['contribution'][1]['id'])
@@ -2101,8 +2103,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
 
   /**
    * Call IPN payment processor to redirect to payment site
+   *
+   * @param int $isEmailReceipt
    */
-  private function submitIPNPayment() {
+  private function submitIPNPayment($isEmailReceipt) {
     $params = $this->data['contribution'][1]['contribution'][1];
     $processor_type = $this->utils->wf_civicrm_api('payment_processor', 'getsingle', ['id' => $params['payment_processor_id']]);
     $paymentProcessor = \Civi\Payment\System::singleton()->getById($params['payment_processor_id']);
@@ -2160,6 +2164,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       $params['cancelURL'] = $this->getIpnRedirectUrl('cancel');
     }
 
+    $params['is_email_receipt'] = $isEmailReceipt;
     $this->form_state->set(['civicrm', 'doPayment'], $params);
 
   }
