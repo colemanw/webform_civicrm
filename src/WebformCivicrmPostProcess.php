@@ -2160,6 +2160,8 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       $params['cancelURL'] = $this->getIpnRedirectUrl('cancel');
     }
 
+    $params['is_email_receipt'] = wf_crm_aval($this->data, "receipt:number_number_of_receipt", FALSE);
+
     $this->form_state->set(['civicrm', 'doPayment'], $params);
 
   }
