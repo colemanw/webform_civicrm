@@ -664,7 +664,7 @@ function wf_crm_contact_search($node, $component, $params, $contacts, $str = NUL
   if (empty($node->webform_civicrm)) {
     return [];
   }
-  $limit = $str ? 12 : 500;
+  $limit = $str ? $node->webform_civicrm['autocomplete_search_results_limit'] : 500;
   $ret = [];
   $display_fields = array_values($component['extra']['results_display']);
   $search_field = 'display_name';

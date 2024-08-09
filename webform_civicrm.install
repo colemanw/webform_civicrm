@@ -114,6 +114,13 @@ function webform_civicrm_schema() {
         'default' => '',
         'description' => 'Source label for newly created contacts',
       ],
+      'autocomplete_search_results_limit' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Search results limit for autocomplete field on webform.',
+      ],
     ],
     'primary key' => ['nid'],
   ];
@@ -886,4 +893,18 @@ function _webform_civicrm_generatePriceFields($numberOfFieldsToCreate) {
       civicrm_api3('PriceField', 'create', ['id' => key($priceField), 'is_active' => TRUE]);
     }
   }
+}
+
+/**
+ * Add column for autocomplete_search_results_limit to webform_civicrm_forms table.
+ */
+function webform_civicrm_update_7405() {
+  $field = [
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'Search results limit for autocomplete field on webform.',
+  ];
+  db_add_field('webform_civicrm_forms', 'autocomplete_search_results_limit', $field);
 }

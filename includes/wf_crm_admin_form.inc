@@ -1185,6 +1185,14 @@ class wf_crm_admin_form {
       '#default_value' => $this->settings['new_contact_source'],
       '#description' => t('Optional "source" label for any new contact/participant/membership created by this webform.'),
     ];
+    $this->form['options']['autocomplete_search_results_limit'] = [
+      '#type' => 'textfield',
+      '#title' => t('Autocomplete Search Results Limit'),
+      '#maxlength' => 255,
+      '#size' => 30,
+      '#default_value' => $this->settings['autocomplete_search_results_limit'],
+      '#description' => t('Search results limit for autocomplete field on webform.'),
+    ];
   }
 
   /**
