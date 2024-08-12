@@ -88,7 +88,8 @@ function _webform_edit_civicrm_contact($component) {
     noResultsText: "' . t('Not found') . '",
     searchingText: "' . t('Searching...') . '",
     tokenLimit: 1,
-    prePopulate: prep
+    prePopulate: prep,
+    enableHTML: true
   }';
   $js = '
   jQuery(function($) {
@@ -458,7 +459,8 @@ function _webform_render_civicrm_contact($component, $value = NULL, $filter = TR
         $settings = '{
           hintText: ' . json_encode(filter_xss($component['extra']['search_prompt'])) . ',
           noResultsText: ' . json_encode(filter_xss($component['extra']['none_prompt'])) . ',
-          searchingText: ' . json_encode(t('Searching...')) . '
+          searchingText: ' . json_encode(t('Searching...')) . ',
+          enableHTML: ' . json_encode('true') . '
         }';
         $js = "wfCivi.existingInit(field, $c, {$node->nid}, $callback_path, toHide, $settings);$onChange";
       }
