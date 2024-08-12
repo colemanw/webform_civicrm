@@ -118,7 +118,7 @@ function webform_civicrm_schema() {
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
-        'default' => '',
+        'default' => 12,
         'description' => 'Search results limit for autocomplete field on webform.',
       ],
     ],
@@ -903,7 +903,7 @@ function webform_civicrm_update_7405() {
     'type' => 'varchar',
     'length' => 255,
     'not null' => TRUE,
-    'default' => '',
+    'default' => 12,
     'description' => 'Search results limit for autocomplete field on webform.',
   ];
   db_add_field('webform_civicrm_forms', 'autocomplete_search_results_limit', $field);

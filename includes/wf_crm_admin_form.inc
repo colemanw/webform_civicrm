@@ -1281,6 +1281,7 @@ class wf_crm_admin_form {
       'confirm_subscription' => 1,
       'create_fieldsets' => 1,
       'new_contact_source' => check_plain($this->node->title),
+      'autocomplete_search_results_limit' => 12,
       'civicrm_1_contact_1_contact_first_name' => 'create_civicrm_webform_element',
       'civicrm_1_contact_1_contact_last_name' => 'create_civicrm_webform_element',
       'civicrm_1_contact_1_contact_existing' => 'create_civicrm_webform_element',
