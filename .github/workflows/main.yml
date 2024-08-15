@@ -187,6 +187,7 @@ jobs:
           DEV_EXTENSION_DIR: /home/runner/drupal/web/sites/default/files/civicrm/ext
           DEV_EXTENSION_URL: http://127.0.0.1:8080/sites/default/files/civicrm/ext
       - name: Helper to make unique name for upload
+        if: ${{ failure() || success() }}
         run: |
           # doing this on multiple lines to avoid quote-hell
           cd ${{ runner.temp }}
