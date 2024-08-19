@@ -378,11 +378,15 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
     // Check if email was sent to contact 1.
     $this->assertStringContainsString('frederick@pabst.io', $sent_email[0]['to']);
 
+    // Something new in 10.3
+    $weirdoExtraSpaces = version_compare(\Drupal::VERSION, '10.3.2', '>=') ? '  ' : '';
+    // And now there is no longer a newline
+    $weirdoNewline = version_compare(\Drupal::VERSION, '10.3.2', '<') ? "\n" : '';
+
     // Verify tokens are rendered correctly.
     $this->assertEquals("Submitted Values Are -
 
--------- Contact 1 
------------------------------------------------------------
+-------- Contact 1 {$weirdoNewline}-----------------------------------------------------------
 
 *Existing Contact*
 Frederick Pabst
@@ -402,9 +406,9 @@ United States
 New Jersey
 *Email*
 frederick@pabst.io [1]
-Existing Contact - Frederick Pabst. Activity 1 ID - {$actID1}. Activity 2 ID - {$actID2}.
-Webform CiviCRM Contacts IDs - {$this->rootUserCid}. Webform CiviCRM Contacts Links -
-{$cidURL} Country - United
+Existing Contact - Frederick Pabst. Activity 1 ID - {$actID1}. Activity 2 ID - {$actID2}.{$weirdoExtraSpaces}
+Webform CiviCRM Contacts IDs - {$this->rootUserCid}. Webform CiviCRM Contacts Links -{$weirdoExtraSpaces}
+{$cidURL} Country - United{$weirdoExtraSpaces}
 States. State/Province - New Jersey.
 
 [1] mailto:frederick@pabst.io
