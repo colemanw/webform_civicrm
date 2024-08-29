@@ -170,7 +170,7 @@ jobs:
           git apply 458.diff
       - uses: nanasess/setup-chromedriver@master
       - name: Run chromedriver
-        run: chromedriver &
+        run: chromedriver --port=9515 &
       - name: Run php built-in server
         run: php -S 127.0.0.1:8080 -t ~/drupal/web &
       - name: Run PHPUnit
