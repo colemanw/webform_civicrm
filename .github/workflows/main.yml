@@ -70,6 +70,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install sendmail
+      # Temp thing
+      - name: Downgrade chrome
+        run: |
+          curl -L -o chrome.deb http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_127.0.6533.119-1_amd64.deb
+          sudo apt-get install libu2f-udev
+          sudo dpkg -i chrome.deb
+          google-chrome-stable --version
       - name: Setup Drupal
         run: |
           COMPOSER_MEMORY_LIMIT=-1 composer create-project drupal/recommended-project:${{ matrix.drupal }} ~/drupal --no-interaction --no-install
@@ -169,6 +176,9 @@ jobs:
           git apply 457.diff
           git apply 458.diff
       - uses: nanasess/setup-chromedriver@master
+        with:
+          # temporary to match downgraded chrome
+          chromedriver-version: '127.0.6533.119'
       - name: Run chromedriver
         run: chromedriver --port=9515 &
       - name: Run php built-in server
