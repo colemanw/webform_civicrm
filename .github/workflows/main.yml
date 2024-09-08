@@ -175,10 +175,6 @@ jobs:
           git apply 456.diff
           git apply 457.diff
           git apply 458.diff
-          # temporary patch for stripe keys
-          cd ../com.drastikbydesign.stripe
-          curl -L -o stripekeys.diff https://lab.civicrm.org/extensions/stripe/-/commit/916668c5e192050997e4fe687e3c053bed6a7fdc.diff
-          git apply stripekeys.diff
       - uses: nanasess/setup-chromedriver@master
         with:
           # temporary to match downgraded chrome
