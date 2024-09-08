@@ -128,6 +128,8 @@ jobs:
         run: |
           git config --global user.email "webform.civicrm@example.org"
           git config --global user.name "Webform CiviCRM"
+          cd ~/drupal/vendor/civicrm/civicrm-core
+          git revert b997399f49a5cd1b919b016075d6d6fbc7d49d23
       - name: Optionally Apply Core PR
         if: ${{ github.event.inputs.coreprurl != 0 }}
         run: |
