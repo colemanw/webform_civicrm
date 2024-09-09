@@ -98,13 +98,18 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       'id' => 'civicrm_webform_test',
       'title' => 'CiviCRM Webform Test.' . $CiviCRM_version,
     ]);
-    $this->rootUserCid = $this->createIndividual()['id'];
-    // Create CiviCRM contact for rootUser.
-    $this->utils->wf_civicrm_api('UFMatch', 'create', [
-      'uf_id' => $this->rootUser->id(),
-      'uf_name' => $this->rootUser->getAccountName(),
-      'contact_id' => $this->rootUserCid,
-    ]);
+    if (version_compare(\CRM_Core_BAO_Domain::version(), '5.79.alpha1', '<')) {
+      $this->rootUserCid = $this->createIndividual()['id'];
+      // Create CiviCRM contact for rootUser.
+      $this->utils->wf_civicrm_api('UFMatch', 'create', [
+        'uf_id' => $this->rootUser->id(),
+        'uf_name' => $this->rootUser->getAccountName(),
+        'contact_id' => $this->rootUserCid,
+      ]);
+    }
+    else {
+      $this->rootUserCid = $this->getUFMatchRecord($this->rootUser->id())['contact_id'];
+    }
   }
 
   protected function tearDown(): void {
