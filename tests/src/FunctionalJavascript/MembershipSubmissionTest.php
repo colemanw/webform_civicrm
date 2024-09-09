@@ -122,11 +122,12 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
     $this->saveCiviCRMSettings();
 
+    $adminUserCid = $this->getUFMatchRecord($this->adminUser->id())['contact_id'];
     // Create two memberships with the same status with the first membership
     // having an end date after the second membership's end date.
     $this->utils->wf_civicrm_api('membership', 'create', [
       'membership_type_id' => 'Basic',
-      'contact_id' => 2,
+      'contact_id' => $adminUserCid,
       'join_date' => '08/10/21',
       'start_date' => '08/10/21',
       'end_date' => '08/10/22',
@@ -136,7 +137,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
     $this->utils->wf_civicrm_api('membership', 'create', [
       'membership_type_id' => 'Basic',
-      'contact_id' => 2,
+      'contact_id' => $adminUserCid,
       'join_date' => '01/01/21',
       'start_date' => '01/01/21',
       'end_date' => '01/01/22',
