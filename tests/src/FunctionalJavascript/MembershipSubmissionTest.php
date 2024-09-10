@@ -234,11 +234,16 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->assertSession()->pageTextContains('Basic Plus');
+    \CRM_Core_Error::debug_log_message('here 1');
     $this->getSession()->getPage()->pressButton('Submit');
+    \CRM_Core_Error::debug_log_message('here 2');
     $this->htmlOutput();
+    \CRM_Core_Error::debug_log_message('here 3');
     $this->assertPageNoErrorMessages();
+    \CRM_Core_Error::debug_log_message('here 4');
 
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+    \CRM_Core_Error::debug_log_message('here 5');
 
     $api_result = $this->utils->wf_civicrm_api('membership', 'get', [
       'sequential' => 1,
