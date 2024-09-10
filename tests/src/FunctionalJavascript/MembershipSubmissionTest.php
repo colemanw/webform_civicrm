@@ -236,7 +236,6 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('Basic Plus');
     $this->getSession()->getPage()->pressButton('Submit');
     $this->htmlOutput();
-    // ToDo ->
     $this->assertPageNoErrorMessages();
 
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
