@@ -48,6 +48,11 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   private $database;
 
   /**
+   * @var \Drupal\webform_civicrm\Plugin\WebformHandler
+   */
+  private $handler;
+
+  /**
    * @var \Drupal\webform\WebformSubmissionInterface
    */
   private $submission;
@@ -85,10 +90,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
 
     $handler_collection = $this->node->getHandlers('webform_civicrm');
     $instance_ids = $handler_collection->getInstanceIds();
-    $handler = $handler_collection->get(reset($instance_ids));
+    $this->handler = $handler_collection->get(reset($instance_ids));
     $this->database = \Drupal::database();
 
-    $this->settings = $handler->getConfiguration()['settings'];
+    $this->settings = $this->handler->getConfiguration()['settings'];
     $this->data = $this->settings['data'];
     $this->enabled = $this->utils->wf_crm_enabled_fields($this->node);
     $this->all_fields = $this->utils->wf_crm_get_fields();
@@ -2523,7 +2528,11 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           }
         }
         elseif ($dataType == 'File') {
-          if (empty($val[0]) || !($val = $this->saveDrupalFileToCivi($val[0]))) {
+          // Replace filename (with tokens) if set.
+          if (isset($component['#file_name']) && $component['#file_name']) {
+            $newFilename = $this->handler->tokenManager->replace($component['#file_name'], $this->submission);
+          }
+          if (empty($val[0]) || !($val = $this->saveDrupalFileToCivi($val[0], $newFilename))) {
             // This field can't be emptied due to the nature of file uploads
             continue;
           }
