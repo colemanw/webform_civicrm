@@ -521,7 +521,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
             }
             // Set value for "secure value" elements
             elseif ($element['#type'] == 'value') {
-              $element['#value'] = ($component['type'] !== 'hidden') ? $val : $element['#value'];
+              $element['#value'] = ($component['type'] !== 'hidden' || $element['#value'] === '') ? $val : $element['#value'];
             }
             // Set default value
             else {
