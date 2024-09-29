@@ -134,6 +134,12 @@ jobs:
           cd  ~/drupal/vendor/civicrm/civicrm-core
           curl -L -o prpatch.patch ${{ github.event.inputs.coreprurl }}.patch
           git am prpatch.patch
+      - name: Temp patch for extdir
+        if: ${{ matrix.civicrm == 'dev-master' }}
+        run: |
+          cd  ~/drupal/vendor/civicrm/civicrm-core
+          curl -L -o prpatch2.patch https://github.com/civicrm/civicrm-core/pull/31169.patch
+          git am prpatch2.patch
       - name: Optionally Apply Drupal 8 PR
         if: ${{ github.event.inputs.drupal8prurl != 0 }}
         run: |
