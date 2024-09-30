@@ -84,6 +84,8 @@ div.token-input-dropdown {
     cursor: default;
     font-size: 12px;
     font-family: Verdana;
+    max-height: 25%;
+    overflow-y: auto;
 }
 
 div.token-input-dropdown p {
