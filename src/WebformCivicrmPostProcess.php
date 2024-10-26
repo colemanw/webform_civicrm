@@ -1686,6 +1686,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    * Calculate line-items for this webform submission
    */
   private function tallyLineItems() {
+    $submittedFormValues = $this->form_state->getUserInput();
     // Contribution
     $fid = 'civicrm_1_contribution_1_contribution_total_amount';
     if (isset($this->enabled[$fid]) || $this->getData($fid) > 0) {
@@ -1703,7 +1704,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     if (isset($this->enabled[$fid])) {
       foreach ($this->data['lineitem'][1]['contribution'] as $n => $lineitem) {
         $fid = "civicrm_1_lineitem_{$n}_contribution_line_total";
-        if ($this->getData($fid) != 0) {
+        if (!isset($submittedFormValues[$fid]) || $this->getData($fid) != 0) {
           $this->line_items[] = [
             'qty' => 1,
             'unit_price' => $lineitem['line_total'],
@@ -1738,6 +1739,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
             };
 
             if ($price) {
+              $member_name = NULL;
               if (!empty($this->data['contact'][$c]['contact'][$n])) {
                 $member_contact = $this->data['contact'][$c]['contact'][$n];
                 if (!empty($member_contact['first_name']) && !empty($member_contact['last_name'])) {
