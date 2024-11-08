@@ -351,9 +351,11 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
    *  TRUE if only one option is enabled on the element.
    * @param string $asList
    *  TRUE if element need to be rendered as select element.
+   * @param string $secondarySelector
+   *  optional secondary selector
    */
-  protected function editCivicrmOptionElement($selector, $multiple = TRUE, $enableStatic = FALSE, $default = NULL, $type = NULL, $singleOption = FALSE, $asList = FALSE) {
-    $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="' . $selector . '"] a.webform-ajax-link');
+  protected function editCivicrmOptionElement($selector, $multiple = TRUE, $enableStatic = FALSE, $default = NULL, $type = NULL, $singleOption = FALSE, $asList = FALSE, $secondarySelector = 'li.edit') {
+    $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="' . $selector . '"] ' . ($secondarySelector ? "$secondarySelector " : '') . 'a.webform-ajax-link');
     $checkbox_edit_button->click();
     $this->assertSession()->waitForField('drupal-off-canvas');
     $this->htmlOutput();
