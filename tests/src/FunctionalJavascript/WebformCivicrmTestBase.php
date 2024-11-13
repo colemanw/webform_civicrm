@@ -13,6 +13,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
 
   use WebformBrowserTestTrait;
   use \Drupal\Tests\mink_civicrm_helpers\Traits\Utils;
+  use \Drupal\Tests\system\Traits\OffCanvasTestTrait;
 
   /**
    * {@inheritdoc}
@@ -23,6 +24,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     'webform_civicrm',
     'token',
     'ckeditor5',
+    'off_canvas_test',
     'mink_civicrm_helpers',
   ];
 
@@ -357,7 +359,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   protected function editCivicrmOptionElement($selector, $multiple = TRUE, $enableStatic = FALSE, $default = NULL, $type = NULL, $singleOption = FALSE, $asList = FALSE, $secondarySelector = 'li.edit') {
     $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="' . $selector . '"] ' . ($secondarySelector ? "$secondarySelector " : '') . 'a.webform-ajax-link');
     $checkbox_edit_button->click();
-    $this->assertSession()->waitForField('drupal-off-canvas');
+    $this->waitForOffCanvasArea();
     $this->htmlOutput();
     if ($type) {
       $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-change-type"]')->click();
