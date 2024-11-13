@@ -23,9 +23,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - drupal: '10.1.*'
-            civicrm: '5.75.*'
-            php: '8.1'
           - drupal: '10.2.*'
             civicrm: '5.78.*'
             php: '8.2'
