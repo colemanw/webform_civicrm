@@ -551,7 +551,12 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalGet($this->webform->toUrl('edit-form'));
 
     $this->setDefaultValue("edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-{$this->_customFields['test_radio_2']}-operations", 3);
+    // Shouldn't be needed, but the element seems to go "missing" after
+    // setDefaultValue (which calls Save which may or may not be relevant), so
+    // reload the page.
+    $this->drupalGet($this->webform->toUrl('edit-form'));
     $this->setDefaultValue("edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-{$this->_customFields['color_checkboxes']}-operations", 2);
+    $this->drupalGet($this->webform->toUrl('edit-form'));
     $this->setDefaultValue("edit-webform-ui-elements-civicrm-1-contact-1-cg1-custom-{$this->_customFields['fruits']}-operations", 'Mango, Orange');
 
     $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $contactID]]));
