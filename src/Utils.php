@@ -632,7 +632,9 @@ class Utils implements UtilsInterface {
     if (!$entity) {
       return [];
     }
-    $params['checkPermissions'] = FALSE;
+    $params += [
+      'checkPermissions' => FALSE,
+    ];
     $result = civicrm_api4($entity, $operation, $params, $index);
     return $result;
   }
@@ -656,7 +658,9 @@ class Utils implements UtilsInterface {
       return [];
     }
 
-    $params['check_permissions'] = FALSE;
+    $params += [
+      'check_permissions' => FALSE,
+    ];
     if ($operation == 'transact') {
       $utils = \Drupal::service('webform_civicrm.utils');
       $result = $utils->wf_civicrm_api3_contribution_transact($params);
