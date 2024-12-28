@@ -1243,6 +1243,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     if (!isset($types)) {
       $types = $this->utils->wf_crm_apivalues('membership_type', 'get');
     }
+    // KG
     $existing = $this->findMemberships($cid);
     foreach (wf_crm_aval($this->data, "membership:$c:membership", []) as $n => $params) {
       $membershipStatus = "";

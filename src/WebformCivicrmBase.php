@@ -592,7 +592,7 @@ abstract class WebformCivicrmBase {
    * @param $cid
    * @return array
    */
-  protected function findMemberships($cid, $mid) {
+  protected function findMemberships($cid, $mid = NULL) {
 
     static $status_types;
     static $membership_types;
