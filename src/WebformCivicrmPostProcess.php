@@ -1567,7 +1567,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
             $this->processAttachments('activity', $n, $activity['id'], empty($params['id']));
           }
           if (!empty($params['assignee_contact_id'])) {
-            if ($this->utils->wf_crm_get_civi_setting('activity_assignee_notification')) {
+            if ($this->utils->wf_crm_get_civi_setting('activity_assignee_notification')
+              && !in_array($params['activity_type_id'], $this->utils->wf_crm_get_civi_setting('do_not_notify_assignees_for'))
+            ) {
               // Send email to assignees. TODO: Move to CiviCRM API?
               $assignees = $this->utils->wf_crm_apivalues('contact', 'get', [
                 'id' => ['IN' => (array) $params['assignee_contact_id']],
