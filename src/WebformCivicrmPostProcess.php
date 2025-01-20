@@ -1030,7 +1030,13 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     // Remove data from entity
     foreach ($remove as $a => $name) {
       $params[$data_type . '_id'] = $a;
-      $this->utils->wf_civicrm_api($api, 'delete', $params);
+      if ($data_type == 'group') {
+        // group_contact.delete is deprecated and it just called create.
+        $this->utils->wf_civicrm_api($api, 'create', array_merge(['status' => 'Removed'], $params));
+      }
+      else {
+        $this->utils->wf_civicrm_api($api, 'delete', $params);
+      }
     }
     if (!empty($remove) && $data_type == 'group') {
       $display_name = $this->utils->wf_civicrm_api('contact', 'get', ['contact_id' => $id, 'return.display_name' => 1]);
