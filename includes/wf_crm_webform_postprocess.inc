@@ -147,6 +147,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // Create new contact
       if ($newContact) {
         $this->ent['contact'][$c]['id'] = $this->createContact($contact);
+        if (!empty($contact['email'][1]['email'])) {
+          $emailParams = $contact['email'][1] + ['contact_id' => $this->ent['contact'][$c]['id'], 'is_primary' => 1];
+          wf_civicrm_api('email', 'create', $emailParams);
+        }
       }
       if ($c == 1) {
         $this->setLoggingContact();
