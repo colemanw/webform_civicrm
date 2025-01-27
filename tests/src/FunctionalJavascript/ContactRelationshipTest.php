@@ -32,7 +32,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $result = civicrm_api3('OptionValue', 'create', [
       'option_group_id' => "checkboxes_1",
       'name' => "Test1",
-      'label' => "Test2",
+      'label' => "Test1",
       'value' => 1,
       'is_default' => 0,
       'weight' => 1,
