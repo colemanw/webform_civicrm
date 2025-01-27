@@ -213,10 +213,10 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   /**
    * Create custom group.
    */
-  protected function createCustomGroup($params = []) {
+  protected function createCustomGroup($params = [], $extends = 'Individual') {
     $params = array_merge([
       'title' => "Custom",
-      'extends' => 'Individual',
+      'extends' => $extends,
     ], $params);
     return $this->utils->wf_civicrm_api('CustomGroup', 'create', $params);
   }

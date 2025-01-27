@@ -11,6 +11,76 @@ use Drupal\Core\Url;
  */
 final class ContactRelationshipTest extends WebformCivicrmTestBase {
 
+  private $_customFields;
+
+  private function createCustomFields() {
+    $this->_customFields = [];
+    $result = $this->createCustomGroup("Relationship");
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+    $customgroup_id = $result['id'];
+
+    $result = civicrm_api3('OptionGroup', 'create', [
+      'name' => "checkboxes_1",
+      'title' => "Checkboxes",
+      'data_type' => "String",
+      'is_active' => 1,
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+
+    $result = civicrm_api3('OptionValue', 'create', [
+      'option_group_id' => "checkboxes_1",
+      'name' => "Test1",
+      'label' => "Test2",
+      'value' => 1,
+      'is_default' => 0,
+      'weight' => 1,
+      'is_active' => 1,
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+
+    $result = civicrm_api3('OptionValue', 'create', [
+      'option_group_id' => "checkboxes_1",
+      'name' => "Test2",
+      'label' => "Test2",
+      'value' => 2,
+      'is_default' => 0,
+      'weight' => 2,
+      'is_active' => 1,
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+
+    $result = civicrm_api3('OptionValue', 'create', [
+      'option_group_id' => "checkboxes_1",
+      'name' => "Test3",
+      'label' => "Test3",
+      'value' => 3,
+      'is_default' => 0,
+      'weight' => 3,
+      'is_active' => 1,
+    ]);
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+
+    $result = civicrm_api3('CustomField', 'create', [
+      'custom_group_id' => $customgroup_id,
+      'label' => "Test Checkboxes",
+      'name' => 'test_checkboxes',
+      'html_type' => "CheckBox",
+      'data_type' => "String",
+      'option_group_id' => "checkboxes_1",
+      'is_active' => 1,
+    ]);
+
+    $this->assertEquals(0, $result['is_error']);
+    $this->assertEquals(1, $result['count']);
+    $this->_customFields['test_checkboxes'] = $result['id'];
+
+  }
+
   private function createContactSubtype() {
     $params = [
       'name' => "Student",
@@ -33,6 +103,80 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $result = $this->utils->wf_civicrm_api('\'RelationshipType', 'create', $params);
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
+  }
+
+  /**
+   * Test whether multiple choice checkboxes work on relationships.
+   */
+  public function testMultipleCheckboxesOnRelationship() {
+    drupal_flush_all_caches();
+    $this->createCustomFields();
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+
+    $this->enableCivicrmOnWebform();
+
+    $this->getSession()->getPage()->selectFieldOption('number_of_contacts', 2);
+    $this->htmlOutput();
+
+    $this->getSession()->getPage()->clickLink('2. Contact 2');
+    $this->getSession()->getPage()->checkField("civicrm_2_contact_1_contact_existing");
+
+    $this->getSession()->getPage()->selectFieldOption('contact_2_number_of_relationship', 'Yes');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->selectFieldOption('civicrm_2_contact_1_relationship_relationship_type_id[]', '1_a');
+    $this->htmlOutput();
+    $this->getSession()->getPage()->checkField("Test Checkboxes");
+
+    $this->createScreenshot($this->htmlOutputDirectory . '/adminscreen.png');
+    $this->saveCiviCRMSettings();
+
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->assertPageNoErrorMessages();
+
+    $this->getSession()->getPage()->fillField('civicrm_1_contact_1_contact_first_name', 'Frederick');
+    $this->getSession()->getPage()->fillField('civicrm_1_contact_1_contact_last_name', 'Pabst');
+
+    $this->getSession()->getPage()->fillField('civicrm_2_contact_1_contact_first_name', 'Mark');
+    $this->getSession()->getPage()->fillField('civicrm_2_contact_1_contact_last_name', 'Anthony');
+
+    $this->getSession()->getPage()->checkField("Test1");
+    $this->getSession()->getPage()->checkField("Test2");
+
+    $this->getSession()->getPage()->pressButton('Submit');
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
+
+    //Assert if relationship was created.
+    $contact1 = $this->utils->wf_civicrm_api('Contact', 'get', [
+      'sequential' => 1,
+      'first_name' => 'Frederick',
+      'last_name' => 'Pabst',
+    ]);
+    $this->assertEquals(1, $contact1['count']);
+
+    $contact2 = $this->utils->wf_civicrm_api('Contact', 'get', [
+      'sequential' => 1,
+      'first_name' => 'Mark',
+      'last_name' => 'Anthony',
+    ]);
+    $this->assertEquals(1, $contact2['count']);
+
+    $contact1 = reset($contact1['values']);
+    $contact2 = reset($contact2['values']);
+
+    // Visit the webform with cid2 id in the url.
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $contact1['id'], 'cid2' => $contact2['id']]]));
+    $this->assertSession()->waitForField('First Name');
+    // $this->createScreenshot($this->htmlOutputDirectory . '/relationship_selection.png');
+
+    //Make sure the checkbox are now enabled by default.
+    $this->assertSession()->checkboxChecked("Test1");
+    $this->assertSession()->checkboxChecked("Test2");
   }
 
   /**
