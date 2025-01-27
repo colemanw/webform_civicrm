@@ -15,7 +15,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
 
   private function createCustomFields() {
     $this->_customFields = [];
-    $result = $this->createCustomGroup("Relationship");
+    $result = $this->createCustomGroup([], "Relationship");
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
     $customgroup_id = $result['id'];
