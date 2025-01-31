@@ -2388,10 +2388,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // Create participant/membership payment records
       if (isset($item['membership_id']) || isset($item['participant_id'])) {
         $type = isset($item['participant_id']) ? 'participant' : 'membership';
+        $daoName = isset($item['participant_id']) ? 'CRM_Event_DAO_ParticipantPayment' : 'CRM_Member_DAO_MembershipPayment';
         wf_civicrm_api("{$type}_payment", 'create', [
           "{$type}_id" => $item["{$type}_id"],
           'contribution_id' => $id,
         ]);
+        unset(CRM_Core_DAO::$_dbColumnValueCache[$daoName]);
       }
     }
   }
