@@ -133,9 +133,12 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
     $this->getSession()->getPage()->checkField("Countries");
 
+    $this->saveCiviCRMSettings();
+
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
 
+    $this->assertSession()->waitForField('First Name');
     $this->getSession()->getPage()->fillField('civicrm_1_contact_1_contact_first_name', 'Peter');
     $this->getSession()->getPage()->fillField('civicrm_1_contact_1_contact_last_name', 'K');
 
