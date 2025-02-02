@@ -534,12 +534,12 @@ abstract class WebformCivicrmBase {
           // Support multi-valued relationship type fields, fudge the rest
           $found['relationship_type_id'][] = in_array("{$type}_r", $r_types) ? "{$type}_r" : "{$type}_$side";
           $found['relationship_permission'] = (!empty($rel['is_permission_a_b']) ? 1 : 0) + (!empty($rel['is_permission_b_a']) ? 2 : 0);
-          // KG - first pass a test that will fail
-          // foreach($rel as $id => $item) {
-          //   if (str_starts_with($id, 'custom_') && is_array($item)) {
-          //     $rel[$id] = array_keys($item);
-          //   }
-          //  }
+          // Fixes https://github.com/colemanw/webform_civicrm/pull/1030
+          foreach($rel as $id => $item) {
+            if (str_starts_with($id, 'custom_') && is_array($item)) {
+              $rel[$id] = array_keys($item);
+            }
+          }
           $found += $rel;
         }
       }
