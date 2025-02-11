@@ -165,8 +165,6 @@ jobs:
           /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=com.drastikbydesign.stripe
           /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.iatspayments.civicrm
           /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.aghstrategies.uscounties
-          # temporary iats patches for undeclared vars
-          # cd com.iatspayments.civicrm
       - uses: nanasess/setup-chromedriver@master
         with:
           # temporary to match downgraded chrome
