@@ -17,7 +17,7 @@ final class StripeTest extends WebformCivicrmTestBase {
   protected function setUp(): void {
     parent::setUp();
 
-    $this->setUpExtension('mjwshared,firewall,mjwpaymentapi,com.drastikbydesign.stripe');
+    $this->setUpExtension('mjwshared,firewall,com.drastikbydesign.stripe');
 
     $this->paymentProcessorID = $this->createStripeProcessor();
 
