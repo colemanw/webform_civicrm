@@ -159,12 +159,25 @@ jobs:
           /home/runner/civicrm-cv/cv ev '\Civi::settings()->set("ext_repo_url", "https://civicrm.org/extdir/ver={ver}|cms={uf}|ready=");'
           /home/runner/civicrm-cv/cv ev '\Civi::settings()->set("http_timeout", 60);'
           # Apparently we have to install it, otherwise stripe gives a dependency error even with install=0. I think that's a bug, but let's just do it. This is a fake install anyway.
-          /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=mjwshared
-          /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=firewall
-          /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=mjwpaymentapi
-          /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=com.drastikbydesign.stripe
-          /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.iatspayments.civicrm
-          /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.aghstrategies.uscounties
+          # /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=mjwshared
+          # /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=firewall
+          # /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=mjwpaymentapi
+          # /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=com.drastikbydesign.stripe
+          # /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.iatspayments.civicrm
+          # /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.aghstrategies.uscounties
+          # Until lab issues are resolved, pretend we're a real site and have old versions of the extensions installed. I.e. these version numbers will only get updated if somebody manually updates them in this file.
+          curl -L -O https://lab.civicrm.org/extensions/mjwshared/-/archive/1.3.3/mjwshared-1.3.3.zip
+          unzip mjwshared-1.3.3.zip
+          curl -L -O https://lab.civicrm.org/extensions/firewall/-/archive/1.5.10/firewall-1.5.10.zip
+          unzip firewall-1.5.10.zip
+          curl -L -O https://lab.civicrm.org/extensions/mjwpaymentapi/-/archive/0.2/mjwpaymentapi-0.2.zip
+          unzip mjwpaymentapi-0.2.zip
+          curl -L -O https://lab.civicrm.org/extensions/stripe/-/archive/6.11.4/stripe-6.11.4.zip
+          unzip stripe-6.11.4.zip
+          curl -L -O https://github.com/iATSPayments/com.iatspayments.civicrm/archive/1.10.0.zip
+          unzip 1.10.0.zip
+          curl -L -O https://github.com/agh1/com.aghstrategies.uscounties/archive/2.1.zip
+          unzip 2.1.zip
       - uses: nanasess/setup-chromedriver@master
         with:
           # temporary to match downgraded chrome
