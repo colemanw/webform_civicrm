@@ -379,7 +379,7 @@ function webform_civicrm_civicrm_buildForm($formName, $form) {
         }
         $elements = $webform->getElementsDecodedAndFlattened();
         foreach (array_keys($elements) as $element_form_key) {
-          if (strpos($element_form_key, "custom_$fid") !== FALSE) {
+          if (str_ends_with($element_form_key, "custom_$fid") !== FALSE) {
             $nodes[] = $webform->toLink()->toString();
           }
         }
