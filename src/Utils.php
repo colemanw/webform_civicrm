@@ -666,6 +666,7 @@ class Utils implements UtilsInterface {
       $result = $utils->wf_civicrm_api3_contribution_transact($params);
     }
     else {
+      civicrm_api3('System', 'flush', array());
       $result = civicrm_api3($entity, $operation, $params);
     }
     // I guess we want silent errors for getoptions b/c we check it for failure separately
