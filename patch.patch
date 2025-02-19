@@ -1,0 +1,13 @@
+diff --git a/CRM/Core/DAO.php b/CRM/Core/DAO.php
+index e114d48145..88b6716c05 100644
+--- a/CRM/Core/DAO.php
++++ b/CRM/Core/DAO.php
+@@ -2938,7 +2938,7 @@ SELECT contact_id
+     }
+     // Legacy handling for hook-based fields from `fields_callback`
+     if (!$entity->getField($fieldName)) {
+-      return CRM_Core_PseudoConstant::get(static::class, $fieldName, [], $context);
++      return CRM_Core_PseudoConstant::get(static::class, $fieldName, [], $context) ?: NULL;
+     }
+     $checkPermissions = (bool) ($values['check_permissions'] ?? ($context == 'create' || $context == 'search'));
+     $includeDisabled = ($context == 'validate' || $context == 'get');
