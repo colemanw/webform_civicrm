@@ -350,6 +350,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalGet($fieldURL);
     $this->getSession()->getPage()->checkField(version_compare(\CRM_Core_BAO_Domain::version(), '5.75.alpha1', '<') ? 'Active?' : 'Active');
     $this->getSession()->getPage()->pressButton('_qf_Field_done-bottom');
+    $this->assertPageNoErrorMessages();
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->htmlOutput();

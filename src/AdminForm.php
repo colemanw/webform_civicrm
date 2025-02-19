@@ -2272,7 +2272,7 @@ class AdminForm implements AdminFormInterface {
       $field['name'] = t('Relationship to :contact', [':contact' => $utils->wf_crm_contact_label($n, $settings['data'])]) . ' ' . $field['name'];
     }
     else {
-      $field['name'] = str_replace(' #', '', $field['name']);
+      $field['name'] = str_replace(' #', '', $field['name'] ?? '');
     }
     if ($name == 'contact_sub_type') {
       list($contact_types) = $utils->wf_crm_get_contact_types();

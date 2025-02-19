@@ -98,7 +98,7 @@ jobs:
           cd ~/drupal
           COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} -W
           cd vendor/civicrm/civicrm-core
-          git apply -vvv $GITHUB_WORKSPACE/patch.patch
+          # git apply -vvv $GITHUB_WORKSPACE/patch.patch
       - name: Download Webform
         run: |
           cd ~/drupal
