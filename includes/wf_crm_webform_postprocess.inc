@@ -1050,6 +1050,17 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function processParticipants($c, $cid) {
     static $registered_by_id = [];
+    static $eventTaxRates = [];
+    $taxRates = CRM_Core_PseudoConstant::getTaxRates();
+
+    if (empty($eventTaxRates)) {
+      foreach ($this->events as $event) {
+        if (isset($event['financial_type_id']) && isset($taxRates[$event['financial_type_id']])) {
+          $eventTaxRates[$event['id']] = $taxRates[$event['financial_type_id']];
+        }
+      }
+    }
+
     $n = $this->data['participant_reg_type'] == 'separate' ? $c : 1;
     if ($p = wf_crm_aval($this->data, "participant:$n:participant")) {
       // Fetch existing participant records
@@ -1099,6 +1110,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
                 }
                 if ($c > 1 && !empty($registered_by_id[$e][$i])) {
                   $params['registered_by_id'] = $registered_by_id[$e][$i];
+                }
+                if (isset($eventTaxRates[$eid]) && isset($params['fee_amount'])) {
+                  $params['fee_amount'] = $params['fee_amount'] + (($eventTaxRates[$eid] / 100) * $params['fee_amount']);
                 }
               }
               // Automatic status
