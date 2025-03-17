@@ -2579,6 +2579,24 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
             $time = substr($time, -6);
           }
           $val .= $time;
+          $timestamp = $val . $time;
+          // Check if the $timestamp is not empty
+          if (!empty($timestamp)) {
+            // Remove the time portion if present (everything after 'T')
+            $timestamp = preg_replace('/T.*/', '', $timestamp);
+
+            // Check if the length of the remaining timestamp is exactly 8 characters (YYYYMMDD format)
+            if (strlen($timestamp) === 8) {
+                // Create a DateTime object from the timestamp using 'Ymd' format (YYYYMMDD)
+                $formatted_date = \DateTime::createFromFormat('Ymd', $timestamp);
+            } else {
+                // If the length is not 8, set $formatted_date to false
+                $formatted_date = false;
+            }
+
+            // If the $formatted_date is valid, format it as 'Y-m-d' (YYYY-MM-DD), otherwise set $val to an empty string
+            $val = $formatted_date ? $formatted_date->format('Y-m-d') : '';
+            
         }
         // The admin can change a number field to use checkbox/radio/select/grid widget and we'll sum the result
         elseif ($field['type'] === 'number' || $field['type'] === 'civicrm_number') {
