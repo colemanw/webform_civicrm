@@ -223,7 +223,7 @@ class Utils implements UtilsInterface {
       // Avoid showing redundant end-date if it is the same as the start date
       $same_day = substr($event['start_date'], 0, 10) == substr($event['end_date'], 0, 10);
       if (!$same_day || in_array('dateformatDatetime', $format) || in_array('dateformatTime', $format)) {
-        $end_format = (in_array('dateformatDatetime', $format) && $same_day) ? wf_crm_get_civi_setting('dateformatTime') : $date_format;
+        $end_format = (in_array('dateformatDatetime', $format) && $same_day) ? $this->wf_crm_get_civi_setting('dateformatTime') : $date_format;
         $title[] = \CRM_Utils_Date::customFormat($event['end_date'], $end_format);
       }
     }
