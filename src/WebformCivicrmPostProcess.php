@@ -2595,8 +2595,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
             }
 
             // If the $formatted_date is valid, format it as 'Y-m-d' (YYYY-MM-DD), otherwise set $val to an empty string
-            $val = $formatted_date ? $formatted_date->format('Y-m-d') : '';
-            
+            $val = $formatted_date ? $formatted_date->format('Y-m-d') : '';            
         }
         // The admin can change a number field to use checkbox/radio/select/grid widget and we'll sum the result
         elseif ($field['type'] === 'number' || $field['type'] === 'civicrm_number') {
