@@ -22,6 +22,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
       'webform' => $this->webform->id(),
     ]));
     $this->enableCivicrmOnWebform();
+    $this->getSession()->getPage()->checkField("Birth Date");
 
     $params = [
       'payment_processor_id' => $payment_processor['id'],
@@ -44,6 +45,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
+    $this->getSession()->getPage()->fillField('Birth Date', '1970-01-01');
 
     $this->getSession()->getPage()->fillField('Contribution Amount', '10.00');
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
@@ -52,6 +54,13 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-items .civicrm_1_contribution_1', 'Contribution Amount');
 
     $this->fillCardAndSubmit();
+
+    $api_result = $this->utils->wf_civicrm_api('contact', 'get', [
+      'sequential' => 1,
+    ]);
+    $this->assertEquals(1, $api_result['count']);
+    $contact = reset($api_result['values']);
+    $this->assertEquals('1970-01-01', $contact['birth_date']);
 
     $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
       'sequential' => 1,
