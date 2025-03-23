@@ -55,13 +55,6 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
 
     $this->fillCardAndSubmit();
 
-    $api_result = $this->utils->wf_civicrm_api('contact', 'get', [
-      'sequential' => 1,
-    ]);
-    $this->assertEquals(1, $api_result['count']);
-    $contact = reset($api_result['values']);
-    $this->assertEquals('1970-01-01', $contact['birth_date']);
-
     $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
       'sequential' => 1,
     ]);
@@ -73,6 +66,14 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertEquals('10.00', $contribution['total_amount']);
     $this->assertEquals('Completed', $contribution['contribution_status']);
     $this->assertEquals('USD', $contribution['currency']);
+
+    $api_result = $this->utils->wf_civicrm_api('contact', 'get', [
+      'sequential' => 1,
+      'id' => $contribution['contact_id'],
+    ]);
+    $this->assertEquals(1, $api_result['count']);
+    $contact = reset($api_result['values']);
+    $this->assertEquals('1970-01-01', $contact['birth_date']);
 
     $sid = $this->getLastSubmissionId($this->webform);
     $this->drupalGet(Url::fromRoute('entity.webform_submission.canonical', [
