@@ -46,6 +46,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
     $this->getSession()->getPage()->fillField('Birth Date', '1970-01-01');
+    $this->createScreenshot($this->htmlOutputDirectory . '/filled_dob.png');
 
     $this->getSession()->getPage()->fillField('Contribution Amount', '10.00');
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
