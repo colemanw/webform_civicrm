@@ -16,6 +16,17 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
   use \Drupal\Tests\system\Traits\OffCanvasTestTrait;
 
   /**
+   * @var bool
+   * TODO:
+   * There are some javascript errors in the parent webform that happen when
+   * you save a field and then edit either it or another field. I think it
+   * has to do with the User autocomplete on the access tab, where it's maybe
+   * re-using the object in a way jquery doesn't like.
+   * "cannot call methods on autocomplete prior to initialization; attempted to call method 'destroy'"
+   */
+  protected $failOnJavascriptConsoleErrors = FALSE;
+
+  /**
    * {@inheritdoc}
    */
   protected static $modules = [
