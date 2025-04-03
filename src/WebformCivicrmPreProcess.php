@@ -509,6 +509,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
           $element['#attributes']['class'][] = 'civicrm-enabled';
           if ($element['#type'] == 'webform_radios_other') {
             $element['other']['#attributes']['class'][] = 'civicrm-enabled';
+            $element['other']['#weight'] = 100;
           }
           $dt = NULL;
           if (!empty($field['data_type'])) {
