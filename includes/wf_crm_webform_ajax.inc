@@ -197,6 +197,22 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
     return TRUE;
   }
 
+  /**
+   * Populate a membership fees data based on membership type.
+   * @param string $input
+   */
+  function getMembershipFees($input) {
+    $data = [];
+    if (!empty($input) && intval($input)) {
+      $minimum_fee = number_format($this->getMembershipTypeField($input, 'minimum_fee'), 2);
+      if ($minimum_fee) {
+        $data = ['fees' => $minimum_fee];
+      }
+    }
+    drupal_json_output($data);
+    exit();
+  }
+
 }
 
 /**
@@ -211,7 +227,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
  */
 function wf_crm_ajax($key, $input = '') {
   $processor = new wf_crm_webform_ajax();
-  if ($key == 'stateProvince' || $key == 'county') {
+  if ($key == 'stateProvince' || $key == 'county' || $key == 'getMembershipFees') {
     $processor->$key($input);
   }
   elseif (strpos($key, '-')) {

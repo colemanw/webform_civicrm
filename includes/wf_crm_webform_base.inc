@@ -598,6 +598,7 @@ abstract class wf_crm_webform_base {
     foreach ($existing as $membership) {
       $membership['is_active'] = $status_types[$membership['status_id']]['is_current_member'];
       $membership['status'] = $status_types[$membership['status_id']]['label'];
+      $membership['fee_amount_from_membership'] = number_format($this->getMembershipTypeField($membership['membership_type_id'], 'minimum_fee'), 2);
       $list = $membership['is_active'] ? 'active' : 'expired';
       array_unshift($$list, $membership);
     }

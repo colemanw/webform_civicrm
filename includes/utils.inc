@@ -1243,6 +1243,9 @@ function wf_crm_get_fields($var = 'fields') {
         $fields['membership_fee_amount'] = [
           'name' => t('Membership Fee'),
         ] + $moneyDefaults;
+        $fields['membership_fee_amount_from_membership'] = [
+          'name' => t('Membership Fee (from Membership Type)'),
+        ] + $moneyDefaults;
       }
       $fields['membership_join_date'] = [
         'name' => t('Member Since'),

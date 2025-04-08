@@ -432,5 +432,53 @@ var wfCivi = (function ($, D) {
       });
     }
   };
+
+  /**
+   * Update membership type fees field based on selected membership.
+   */
+  D.behaviors.membershipTypeFeesUpdate = {
+    attach: function (context, settings) {
+      const membershipSelector = 'select[id*="membership-membership-type-id"]';
+      // Should apply for multiple membership type.
+      $(membershipSelector, context).each(function() {
+        // On change membership type field.
+        $(membershipSelector, context).once('feeAjax').change(function () {
+          const membershipSelect = $(this);
+          // Get name attribute of membership type.
+          var membershipSelectname = membershipSelect.attr('name');
+          // Pregmatch to fetch fieldset name.
+          // Capture fieldset name inside the first pair of square brackets.
+          var membershipSelectMatch = membershipSelectname.match(/\[([^\[\]]+)\]/);
+          // This is fieldset for each contact.
+          var civiContactFieldset = membershipSelectMatch[1];
+
+          const feeField = 'input[id*="membership-fee-amount-from-membership"]';
+          // Filter the fees input which has same fieldset as name.
+          const feeFieldInput = $(feeField).filter(function() {
+            // Safely checks if the name exists and includes the target.
+            return $(this).attr('name')?.includes(civiContactFieldset);
+          });
+
+          // Make ajax request when fees field present.
+          if (feeFieldInput) {
+            const membershipId = membershipSelect.val();
+            $.ajax({
+              url: '/webform-civicrm/js/getMembershipFees/' + membershipId,
+              dataType: 'json',
+              success: function (response) {
+                if (response.fees !== undefined) {
+                  $(feeFieldInput).val(response.fees);
+                }
+              },
+              error: function () {
+                console.log('Failed to fetch fee.');
+              }
+            });
+          }
+        });
+      });
+    }
+  };
+
   return pub;
 })(jQuery, Drupal);
