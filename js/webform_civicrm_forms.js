@@ -14,7 +14,7 @@ var wfCivi = (function (D, $, drupalSettings, once) {
     var formClass = getFormClass(nid);
     var defaults = $(formClass).data('form-defaults') || {};
 
-    if (cid.charAt(0) === '-') {
+    if (cid && cid.charAt(0) === '-') {
       resetFields(num, nid, true, 'show', toHide, hideOrDisable, showEmpty, 500, defaults);
       // Fill name fields with name typed
       if (cid.length > 1) {
