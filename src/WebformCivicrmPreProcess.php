@@ -95,7 +95,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
       foreach ($this->enabled as $k => $v) {
         // @TODO review the usage of the existing element.
         if (substr($k, -8) == 'existing' && $this->form_state->getValue(['submitted', $v])) {
-          list(, $c) = explode('_', $k);
+          [, $c] = explode('_', $k);
           $val = $this->form_state->getValue(['submitted', $v]);
           $cid_data["cid$c"] = $this->ent['contact'][$c]['id'] = (int) (is_array($val) ? $val[0] : $val);
           $submitted_contacts[$c] = TRUE;
@@ -184,8 +184,10 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
           $this->loadParticipants($c);
         }
         // Membership
+        $request = \Drupal::request();
+        $mid = $request->query->get('mid') ?: NULL;
         if (!empty($this->data['membership'][$c]['number_of_membership'])) {
-          $this->loadMemberships($c, $contact['id']);
+          $this->loadMemberships($c, $contact['id'], $mid);
         }
         if ($c == 1 && !empty($this->data['billing']['number_number_of_billing'])) {
           $this->info['contribution'][1]['contribution'][1] = $this->loadBillingAddress($contact['id']);
@@ -330,10 +332,10 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
     foreach ($this->enabled as $field => $fid) {
       if (strpos($field, 'participant_event_id')) {
         foreach ($this->getExposedOptions($field) as $p => $label) {
-          list($eid) = explode('-', $p);
+          [$eid] = explode('-', $p);
           $this->events[$eid]['ended'] = TRUE;
           $this->events[$eid]['title'] = $label;
-          list(, $e, , $n) = explode('_', $field);
+          [, $e, , $n] = explode('_', $field);
           $status_fid = "civicrm_{$e}_participant_{$n}_participant_status_id";
           $this->events[$eid]['form'][] = [
             'contact' => $e,
@@ -455,9 +457,9 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
    * @param int $c
    * @param int $cid
    */
-  private function loadMemberships($c, $cid) {
+  private function loadMemberships($c, $cid, $mid) {
     $today = date('Y-m-d');
-    foreach ($this->findMemberships($cid) as $num => $membership) {
+    foreach ($this->findMemberships($cid, $mid) as $num => $membership) {
       // Only show 1 expired membership, and only if there are no active ones
       if (!$membership['is_active'] && $num) {
         break;
@@ -504,7 +506,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
         continue;
       }
       if (!empty($element['#webform']) && $pieces = $this->utils->wf_crm_explode_key($eid)) {
-        list( , $c, $ent, $n, $table, $name) = $pieces;
+        [ , $c, $ent, $n, $table, $name] = $pieces;
         if ($field = wf_crm_aval($this->all_fields, $table . '_' . $name)) {
           $element['#attributes']['class'][] = 'civicrm-enabled';
           if ($element['#type'] == 'webform_radios_other') {

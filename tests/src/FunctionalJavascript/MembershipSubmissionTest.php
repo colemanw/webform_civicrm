@@ -106,9 +106,11 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
    * Test submitting a Free Membership
    */
   public function testSubmitWebform() {
-    $this->createMembershipType();
+    $this->createMembershipType($amount = 0, $autoRenew = FALSE, $name = 'Basic', $financialTypeId = 'Member Dues');;
+    $this->createMembershipType($amount = 0, $autoRenew = FALSE, $name = 'Plus', $financialTypeId = 'Member Dues');
 
     $this->drupalLogin($this->adminUser);
+
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -125,7 +127,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $adminUserCid = $this->getUFMatchRecord($this->adminUser->id())['contact_id'];
     // Create two memberships with the same status with the first membership
     // having an end date after the second membership's end date.
-    $this->utils->wf_civicrm_api('membership', 'create', [
+    $api_result = $this->utils->wf_civicrm_api('membership', 'create', [
       'membership_type_id' => 'Basic',
       'contact_id' => $adminUserCid,
       'join_date' => '08/10/21',
@@ -134,8 +136,10 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
       'is_override' => 1,
       'status_id' => 'Expired',
     ]);
+    $membership = reset($api_result['values']);
+    $mid1_basic = $membership['id'];
 
-    $this->utils->wf_civicrm_api('membership', 'create', [
+    $api_result = $this->utils->wf_civicrm_api('membership', 'create', [
       'membership_type_id' => 'Basic',
       'contact_id' => $adminUserCid,
       'join_date' => '01/01/21',
@@ -144,6 +148,8 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
       'is_override' => 1,
       'status_id' => 'Expired',
     ]);
+    $membership = reset($api_result['values']);
+    $mid2_basic = $membership['id'];
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertSession()->elementExists('xpath', $this->assertSession()->buildXPathQuery('//div[@data-drupal-messages]//div[contains(., :message)]', [
@@ -176,10 +182,39 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
     $today = date('Y-m-d');
 
-    $this->assertEquals($today,  $membership['join_date']);
-    $this->assertEquals($today,  $membership['start_date']);
+    $this->assertEquals($today, $membership['join_date']);
+    $this->assertEquals($today, $membership['start_date']);
 
     $this->assertEquals(date('Y-m-d', strtotime('+1 year -1 day')), $membership['end_date']);
+
+    // Add test to renew specific mid
+    $api_result = $this->utils->wf_civicrm_api('membership', 'create', [
+      'membership_type_id' => 'Plus',
+      'contact_id' => $adminUserCid,
+      'join_date' => '05/05/21',
+      'start_date' => '05/05/21',
+      'end_date' => '05/05/22',
+      'is_override' => 1,
+      'status_id' => 'Expired',
+    ]);
+    $membership = reset($api_result['values']);
+    $mid1_plus = $membership['id'];
+
+    $this->drupalLogin($this->adminUser);
+
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['id' => $adminUserCid, 'mid' => $mid1_plus]]));
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->waitForField('First Name');
+    $this->createScreenshot($this->htmlOutputDirectory . '/mid_one.png');
+    $this->assertSession()->pageTextContains('Plus membership');
+    $this->assertSession()->pageTextNotContains('Basic membership');
+
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['id' => $adminUserCid, 'mid' => $mid1_basic]]));
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->waitForField('First Name');
+    $this->createScreenshot($this->htmlOutputDirectory . '/mid_two.png');
+    $this->assertSession()->pageTextContains('Basic membership');
+    $this->assertSession()->pageTextNotContains('Plus membership');
   }
 
   /**
@@ -224,7 +259,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Default value', '[current-page:query:membership]');
     $this->getSession()->getPage()->pressButton('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();
-    
+
     $this->getSession()->getPage()->pressButton('Save elements');
 
     $this->drupalLogout();
