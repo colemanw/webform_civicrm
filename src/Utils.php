@@ -172,14 +172,23 @@ class Utils implements UtilsInterface {
         }
       }
     }
-    // A "full" event is one where the maximum participants is less than or equal to the number of registered participants (whose roles count toward the registration cap).
+    // A "full" event is one where the maximum participants is less than or equal to the number of registered participants (whose roles and statuses count toward the registration cap).
     // FIXME: When we move to API4, we should ensure Event.get has a calculated "registered_participants" field tp avoid an API call per event.
     // For now, keep the "show full" check last to minimize the API calls.
     if (!wf_crm_aval($reg_options, 'show_full_events', '1', TRUE)) {
       $rolesThatCount = array_column($this->wf_crm_apivalues('OptionValue', 'get', ['option_group_id' => "participant_role", 'filter' => 1]), 'value');
+      $statusesThatCount = array_column((array) $this->wf_civicrm_api4('ParticipantStatusType', 'get', [
+        'select' => ['id'],
+        'where' => [['is_counted', '=', TRUE]],
+        'checkPermissions' => FALSE,
+      ]), 'id');
       foreach ($values as $key => $value) {
         if (!empty($value['max_participants'])) {
-          $registrationCount = $this->wf_civicrm_api('Participant', 'getcount', ['event_id' => $key, 'role_id' => ['IN' => $rolesThatCount]]);
+          $registrationCount = $this->wf_civicrm_api('Participant', 'getcount', [
+            'event_id' => $key,
+            'role_id' => ['IN' => $rolesThatCount],
+            'status_id' => ['IN' => $statusesThatCount],
+          ]);
           if ($registrationCount >= $value['max_participants']) {
             unset($values[$key]);
           }
