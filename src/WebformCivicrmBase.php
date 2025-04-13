@@ -592,7 +592,7 @@ abstract class WebformCivicrmBase {
    * @param $cid
    * @return array
    */
-  protected function findMemberships($cid, $mid = NULL) {
+  protected function findMemberships($cid) {
 
     static $status_types;
     static $membership_types;
@@ -602,67 +602,20 @@ abstract class WebformCivicrmBase {
       $domain = wf_crm_aval($domain, 'id', 1);
       $membership_types = array_keys($this->utils->wf_crm_apivalues('membershipType', 'get', ['is_active' => 1, 'domain_id' => $domain, 'return' => 'id']));
     }
-    if (!empty($mid)) {
-      // We need to find a specific mid
-      $existing = $this->utils->wf_crm_apivalues('membership', 'get', [
-        'contact_id' => $cid,
-        'id' => $mid,
-        // Limit to only enabled membership types
-        'membership_type_id' => ['IN' => $membership_types],
-        // skip membership through Inheritance.
-        'owner_membership_id' => ['IS NULL' => 1],
-        'options' => ['sort' => 'end_date DESC'],
-      ]);
-    } else {
-      $existing = $this->utils->wf_crm_apivalues('membership', 'get', [
-        'contact_id' => $cid,
-        // Limit to only enabled membership types
-        'membership_type_id' => ['IN' => $membership_types],
-        // skip membership through Inheritance.
-        'owner_membership_id' => ['IS NULL' => 1],
-        'options' => ['sort' => 'end_date DESC'],
-      ]);
-    }
-    if (!$existing) {
-      return [];
-    }
-    if (!$status_types) {
-      $status_types = $this->utils->wf_crm_apivalues('membership_status', 'get');
-    }
-    // Attempt to order memberships by most recent and active
-    $active = $expired = [];
-    foreach ($existing as $membership) {
-      $membership['is_active'] = $status_types[$membership['status_id']]['is_current_member'];
-      $membership['status'] = $status_types[$membership['status_id']]['label'];
-      $list = $membership['is_active'] ? 'active' : 'expired';
-      $$list[] = $membership;
-    }
-
-    return array_merge($active, $expired);
-  }
-  /**
-   * Get SINGLE membership for a contact
-   * @param $cid
-   * @return array
-   */
-  protected function findMembership($cid, $mid) {
-
-    static $status_types;
-    static $membership_types;
-
-    if (!isset($membership_types)) {
-      $domain = $this->utils->wf_civicrm_api('domain', 'get', ['current_domain' => 1, 'return' => 'id']);
-      $domain = wf_crm_aval($domain, 'id', 1);
-      $membership_types = array_keys($this->utils->wf_crm_apivalues('membershipType', 'get', ['is_active' => 1, 'domain_id' => $domain, 'return' => 'id']));
-    }
-    $existing = $this->utils->wf_crm_apivalues('membership', 'get', [
-      'contact_id' => $cid, 'id' => $mid,
+    $mid = \Drupal::request()->query->get('mid') ?: NULL;
+    $params = [
+      'contact_id' => $cid,
       // Limit to only enabled membership types
       'membership_type_id' => ['IN' => $membership_types],
       // skip membership through Inheritance.
       'owner_membership_id' => ['IS NULL' => 1],
       'options' => ['sort' => 'end_date DESC'],
-    ]);
+    ];
+    if (!empty($mid)) {
+      $params['id'] = $mid;
+    }
+    $existing = $this->utils->wf_crm_apivalues('membership', 'get', $params);
+
     if (!$existing) {
       return [];
     }

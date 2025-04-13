@@ -184,10 +184,8 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
           $this->loadParticipants($c);
         }
         // Membership
-        $request = \Drupal::request();
-        $mid = $request->query->get('mid') ?: NULL;
         if (!empty($this->data['membership'][$c]['number_of_membership'])) {
-          $this->loadMemberships($c, $contact['id'], $mid);
+          $this->loadMemberships($c, $contact['id']);
         }
         if ($c == 1 && !empty($this->data['billing']['number_number_of_billing'])) {
           $this->info['contribution'][1]['contribution'][1] = $this->loadBillingAddress($contact['id']);
@@ -457,9 +455,9 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
    * @param int $c
    * @param int $cid
    */
-  private function loadMemberships($c, $cid, $mid) {
+  private function loadMemberships($c, $cid) {
     $today = date('Y-m-d');
-    foreach ($this->findMemberships($cid, $mid) as $num => $membership) {
+    foreach ($this->findMemberships($cid) as $num => $membership) {
       // Only show 1 expired membership, and only if there are no active ones
       if (!$membership['is_active'] && $num) {
         break;
