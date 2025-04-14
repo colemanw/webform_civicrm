@@ -223,6 +223,10 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
     foreach ([2, 3, 4, 5] as $c) {
       $this->getSession()->getPage()->clickLink("Contact {$c}");
       $this->getSession()->getPage()->selectFieldOption("{$c}_contact_type", 'Household');
+      // Check that the progress animation has finished, but we have to first
+      // check that it even started yet.
+      $this->getSession()->wait(10000, 'document.querySelectorAll("div.ajax-progress").length > 0');
+      $this->getSession()->wait(10000, 'document.querySelectorAll("div.ajax-progress").length = 0');
       $this->getSession()->getPage()->checkField("civicrm_{$c}_contact_1_contact_existing");
       $this->assertSession()->checkboxChecked("civicrm_{$c}_contact_1_contact_existing");
     }
