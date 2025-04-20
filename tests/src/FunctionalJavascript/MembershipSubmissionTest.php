@@ -188,6 +188,9 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals(date('Y-m-d', strtotime('+1 year -1 day')), $membership['end_date']);
 
     // Add test to renew specific mid
+    // ToDo - really needs its own test -> to see the submission all the way through (i.e. check for dates).
+    // but key is -> that the mid argument is pulling up the correct mid in this case Plus vs Basic
+    // and that is tested here
     $api_result = $this->utils->wf_civicrm_api('membership', 'create', [
       'membership_type_id' => 'Plus',
       'contact_id' => $adminUserCid,
