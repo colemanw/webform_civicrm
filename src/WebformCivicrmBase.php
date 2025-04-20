@@ -212,8 +212,8 @@ abstract class WebformCivicrmBase {
       foreach (array_keys($this->enabled) as $fid) {
         // This way we support multiple tag fields (for tagsets)
         if (strpos($fid, $prefix . 'other') !== FALSE) {
-          list(, , , , , $ent) = explode('_', $fid);
-          list(, , , , , $field) = explode('_', $fid, 6);
+          [, , , , , $ent] = explode('_', $fid);
+          [, , , , , $field] = explode('_', $fid, 6);
           // Cheap way to avoid fetching the same data twice from the api
           if (!is_array($api[$ent])) {
             $api[$ent] = $this->utils->wf_civicrm_api($api[$ent], 'get', ['contact_id' => $cid]);
@@ -259,7 +259,7 @@ abstract class WebformCivicrmBase {
     $contactComponent = \Drupal::service('webform_civicrm.contact_component');
     $component['#form_key'] = $component['#form_key'] ?? $component['#webform_key'];
 
-    list(, $c,) = explode('_', $component['#form_key'], 3);
+    [, $c,] = explode('_', $component['#form_key'], 3);
     $filters = $contactComponent->wf_crm_search_filters($this->node, $component);
     // Start with the url - that trumps everything.
     $element_manager = \Drupal::getContainer()->get('plugin.manager.webform.element');
@@ -508,7 +508,7 @@ abstract class WebformCivicrmBase {
     if ($r_types && $cid1 && $cid2) {
       $types = [];
       foreach ($r_types as $r_type) {
-        list($type, $side) = explode('_', $r_type);
+        [$type, $side] = explode('_', $r_type);
         $types[$type] = $type;
       }
       $params = [
@@ -593,6 +593,7 @@ abstract class WebformCivicrmBase {
    * @return array
    */
   protected function findMemberships($cid) {
+
     static $status_types;
     static $membership_types;
 
@@ -601,14 +602,20 @@ abstract class WebformCivicrmBase {
       $domain = wf_crm_aval($domain, 'id', 1);
       $membership_types = array_keys($this->utils->wf_crm_apivalues('membershipType', 'get', ['is_active' => 1, 'domain_id' => $domain, 'return' => 'id']));
     }
-    $existing = $this->utils->wf_crm_apivalues('membership', 'get', [
+    $mid = \Drupal::request()->query->get('mid') ?: NULL;
+    $params = [
       'contact_id' => $cid,
       // Limit to only enabled membership types
       'membership_type_id' => ['IN' => $membership_types],
       // skip membership through Inheritance.
       'owner_membership_id' => ['IS NULL' => 1],
       'options' => ['sort' => 'end_date DESC'],
-    ]);
+    ];
+    if (!empty($mid)) {
+      $params['id'] = $mid;
+    }
+    $existing = $this->utils->wf_crm_apivalues('membership', 'get', $params);
+
     if (!$existing) {
       return [];
     }
@@ -663,7 +670,7 @@ abstract class WebformCivicrmBase {
     if (empty($parents)) {
       // Create matching table to sort fields by group
       foreach ($this->utils->wf_crm_get_fields() as $key => $value) {
-        list($group, $field) = explode('_', $key, 2);
+        [$group, $field] = explode('_', $key, 2);
         if (strpos($field, 'custom_') === 0) {
           $parents[$field] = $group;
         }
@@ -709,7 +716,7 @@ abstract class WebformCivicrmBase {
    */
   protected function getData($fid, $default = NULL, $strict = FALSE) {
     if ($pieces = $this->utils->wf_crm_explode_key($fid)) {
-      list( , $c, $ent, $n, $table, $name) = $pieces;
+      [ , $c, $ent, $n, $table, $name] = $pieces;
       return wf_crm_aval($this->data, "{$ent}:{$c}:{$table}:{$n}:{$name}", $default, $strict);
     }
   }
