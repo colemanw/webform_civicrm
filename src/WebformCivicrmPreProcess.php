@@ -539,6 +539,11 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
             }
             $element['#options'] = $new;
           }
+
+          if ($name == 'image_url') {
+            $name = 'image_URL';
+          }
+
           // If the user has already entered a value for this field, don't change it
           if (isset($this->info[$ent][$c][$table][$n][$name])
             && !(isset($element['#form_key']) && isset($submitted[$element['#form_key']]))) {
