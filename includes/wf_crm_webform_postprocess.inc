@@ -2044,7 +2044,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     $params = $this->contributionParams(FALSE);
     $params['contribution_status_id'] = 'Pending';
-    $params['is_pay_later'] = TRUE;
+    $params['is_pay_later'] = $this->contributionIsPayLater;
 
     $numInstallments = wf_crm_aval($params, 'installments', NULL, TRUE);
     $frequencyInterval = wf_crm_aval($params, 'frequency_unit');
