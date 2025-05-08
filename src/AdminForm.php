@@ -1385,7 +1385,7 @@ class AdminForm implements AdminFormInterface {
       '#type' => 'item',
       '#markup' => '<p>' .
         t('To have this form auto-filled for anonymous users, enable the "Existing Contact" field for :contact and send the following link from CiviMail:', [':contact' => $this->utils->wf_crm_contact_label(1, $this->data, 'escape')]) .
-        '<br /><pre>' . Url::fromRoute('entity.webform.canonical', ['webform' => $this->webform->id()], ['query' => ['cid1' => ''], 'absolute' => TRUE])->toString() . '{contact.contact_id}&amp;{contact.checksum}</pre></p>',
+        '<br /><pre>' . Url::fromRoute('entity.webform.canonical', ['webform' => $this->webform->id()], ['query' => ['cid1' => ''], 'absolute' => TRUE])->toString() . '{contact.id}&amp;{contact.checksum}</pre></p>',
     ];
     $this->form['additional_options']['create_fieldsets'] = [
       '#type' => 'checkbox',
