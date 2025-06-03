@@ -165,7 +165,6 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
 
     // Enter contact 3.
     $this->fillContactAutocomplete('token-input-edit-civicrm-3-contact-1-contact-existing', 'Maarten');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertFieldValue('edit-civicrm-3-contact-1-contact-job-title', 'Accountant');
 
     // Check if related contact is loaded on c4.
@@ -204,14 +203,12 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
     // Search on first name and verify if the contact is selected.
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', 'James');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertFieldValue('edit-civicrm-1-contact-1-contact-first-name', 'James');
     $this->assertFieldValue('edit-civicrm-1-contact-1-contact-last-name', 'Doe');
 
     // Search on source value and verify if the contact is selected.
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', 'Webform Testing');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertFieldValue('edit-civicrm-1-contact-1-contact-first-name', 'James');
     $this->assertFieldValue('edit-civicrm-1-contact-1-contact-last-name', 'Doe');
   }

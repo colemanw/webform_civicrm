@@ -255,7 +255,6 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
 
     $this->getSession()->getPage()->clickLink('Advanced');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
     $fieldset = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-default"]');
     $fieldset->click();

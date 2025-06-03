@@ -226,12 +226,10 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $contactElementEdit->click();
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-form"]')->click();
 
     $this->assertSession()->waitForField('properties[widget]');
     $this->getSession()->getPage()->selectFieldOption('Form Widget', 'Autocomplete');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertSession()->waitForElementVisible('css', '[data-drupal-selector="edit-properties-search-prompt"]');
     $this->addFieldValue('Search Prompt', '- Select Contact -');
 
@@ -255,7 +253,6 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->elementExists('css', '.token-input-delete-token')->click();
 
     $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', $contact_result['values'][0]['first_name']);
-    $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->assertFieldValue('edit-civicrm-1-contact-1-contact-first-name', $contact_result['values'][0]['first_name']);
     $this->assertFieldValue('edit-civicrm-1-contact-1-contact-last-name', $contact_result['values'][0]['last_name']);
@@ -616,7 +613,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
    * @return \Generator
    *   The test data.
    */
-  public function dataContactValues() {
+  public static function dataContactValues() {
     yield [
       'Individual',
       [

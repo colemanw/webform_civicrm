@@ -398,11 +398,8 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $contactElementEdit->click();
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-contact-defaults"]')->click();
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->selectFieldOption('Set default contact from', 'Relationship to...');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $loadedRelationshipTypes = $this->getOptions('Specify Relationship(s)');
     $type = array_search('School is Contact 1', $loadedRelationshipTypes);
     $this->getSession()->getPage()->selectFieldOption('Specify Relationship(s)', $type);

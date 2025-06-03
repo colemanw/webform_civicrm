@@ -101,6 +101,9 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     ])['id'];
     // Make Major Donor as the default option.
     $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contact-1-other-tag-operations', TRUE, FALSE, $majorDonorTagID);
+    // This shouldn't be needed but similar to elsewhere the "save" called by
+    // editCivicrmOptionElement seems to make the field "stale", so reload the form.
+    $this->drupalGet($this->webform->toUrl('edit-form'));
     // Ensure default option is loaded.
     $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-other-tag-operations"] a.webform-ajax-link');
     $checkbox_edit_button->click();
