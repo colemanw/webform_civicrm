@@ -853,4 +853,35 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     return 'credit_card_exp_date[m]';
   }
 
+  /**
+   * Copied from https://git.drupalcode.org/project/drupal/-/commit/b709c5ae30c0e839019c64ec7764aa2cc3719978
+   * Helper function to get the options of select field.
+   *
+   * @param \Behat\Mink\Element\NodeElement|string $select
+   *   Name, ID, or Label of select field to assert.
+   * @param \Behat\Mink\Element\Element $container
+   *   (optional) Container element to check against. Defaults to current page.
+   *
+   * @return array
+   *   Associative array of option keys and values.
+   *
+   * @deprecated in drupal:11.2.0 and is removed from drupal:12.0.0. There is
+   *   no direct replacement.
+   *
+   * @see https://www.drupal.org/node/3523039
+   */
+  protected function getOptions($select, ?\Behat\Mink\Element\Element $container = NULL) {
+    if (is_string($select)) {
+      $select = $this->assertSession()->selectExists($select, $container);
+    }
+    $options = [];
+    /** @var \Behat\Mink\Element\NodeElement $option */
+    foreach ($select->findAll('xpath', '//option') as $option) {
+      $label = $option->getText();
+      $value = $option->getAttribute('value') ?: $label;
+      $options[$value] = $label;
+    }
+    return $options;
+  }
+
 }
