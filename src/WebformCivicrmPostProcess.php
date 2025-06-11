@@ -2531,7 +2531,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           if (substr($name, 0, 6) === 'custom' || ($table == 'other' && in_array($name, ['group', 'tag']))) {
             $val = array_filter($val);
             if ($name === 'group') {
-              unset($val['public_groups']);
+              unset($val['public_groups'], $this->data[$ent][$c][$table][$n][$name]['public_groups']);
             }
           }
 
