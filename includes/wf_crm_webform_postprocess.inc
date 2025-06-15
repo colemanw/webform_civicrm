@@ -1781,8 +1781,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       'location_type_id' => 'Billing',
     ];
     if (!$cid) {
-      // Current employer must wait for ContactRef ids to be filled
-      unset($contact['contact'][1]['employer_id']);
       $cid = $this->createContact($contact);
     }
     else {
@@ -1820,8 +1818,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       $result = $this->contributionRecur($contributionParams);
     }
     else {
-      // Not a recur payment, remove any recur fields if present.
-      unset($contributionParams['frequency_unit'], $contributionParams['frequency_interval'], $contributionParams['is_recur']);
       $result = wf_civicrm_api('contribution', 'transact', $contributionParams);
     }
 
@@ -1973,11 +1969,6 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     $params['total_amount'] = round($this->totalContribution, 2);
     // Some processors want this one way, some want it the other
     $params['amount'] = $params['total_amount'];
-    $numInstallments = wf_crm_aval($params, 'installments', NULL, TRUE);
-    $frequencyInterval = wf_crm_aval($params, 'frequency_unit');
-    if ($numInstallments == 1 || empty($frequencyInterval)) {
-      unset($params['frequency_unit'], $params['frequency_interval'], $params['is_recur']);
-    }
 
     $params['financial_type_id'] = $this->contribution_page['financial_type_id'];
 
@@ -2277,7 +2268,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @internal param $depth int
    *   Leave blank - used internally to track recursion level
    */
-  private function fillContactRefs($customOnly = FALSE, $values = NULL, $depth = 0) {
+private function fillContactRefs($customOnly = FALSE, $values = NULL, $depth = 0) {
     $order = ['ent', 'c', 'table', 'n', 'name'];
     static $ent = '';
     static $c = '';
@@ -2311,8 +2302,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           $cgMaxInstance = $this->all_sets[$table]['max_instances'] ?? 1;
           $key = $n;
           if (substr($name, 0, 6) == 'custom' && $cgMaxInstance > 1) {
+            
             // Retrieve name for multi value custom fields.
             $customName = $this->getNameForMultiValueFields($multivaluesCreateMode, $name, $table, $c, $n);
+            
             $key = 1;
           }
           if (!empty($this->ent['contact'][$val]['id'])) {
@@ -2694,24 +2687,37 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    *
    * @return string $name
    */
-  private function getNameForMultiValueFields($multivaluesCreateMode, $name, $table, $c, $n): string {
+
+private function getNameForMultiValueFields($multivaluesCreateMode, $name, $table, $c, $n): string {
+    if (!isset($this->existing_contacts[$c]) && isset($this->ent['contact'][$c]['id'])) {
+        $this->existing_contacts[$c] = $this->ent['contact'][$c]['id'];
+    }
+    
     $existingValue = NULL;
     if (empty($multivaluesCreateMode) && !empty($this->existing_contacts[$c])) {
-      $existingValue = $this->getCustomData($this->existing_contacts[$c], NULL, FALSE)[$table] ?? NULL;
-      if (!empty($existingValue) && is_array($existingValue)) {
-        $existingValue = key(array_slice($existingValue, $n - 1, 1, TRUE));
-        if (!empty($existingValue)) {
-          return "{$name}_{$existingValue}";
+        $customData = $this->getCustomData($this->existing_contacts[$c], NULL, FALSE);
+        $existingValue = $customData[$table] ?? NULL;
+        
+        if (!empty($existingValue) && is_array($existingValue)) {
+            // Fix for deleted records: use the available records, not strict position
+            $values = array_values($existingValue);
+            $keys = array_keys($existingValue);
+            
+            // If we're asking for position beyond available records, use the last available
+            $position = min($n - 1, count($values) - 1);
+            
+            if ($position >= 0 && isset($keys[$position])) {
+                $existingValue = $keys[$position];
+                if (!empty($existingValue)) {
+                    return "{$name}_{$existingValue}";
+                }
+            }
         }
-      }
     }
-
-    // No existing value found, insert a new value.
-    if (empty($existingValue)) {
-      return "{$name}_-{$n}";
-    }
-    return $name;
-  }
+    
+    // No existing value found, insert a new value
+    return "{$name}_-{$n}";
+}
 
   /**
    * Save custom contact reference created
