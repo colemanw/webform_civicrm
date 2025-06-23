@@ -68,7 +68,7 @@ class FieldOptions implements FieldOptionsInterface {
       }
       elseif (isset($field['table']) && $field['table'] === 'group') {
         $params = ['is_hidden' => 0];
-        $options = wf_crm_aval($data, "contact:$c:other:1:group");
+        $options = wf_crm_aval($data, "contact:$c:other:1:crmgroup");
         if (!empty($options) && !empty($options['public_groups'])) {
           $params['visibility'] = "Public Pages";
         }
