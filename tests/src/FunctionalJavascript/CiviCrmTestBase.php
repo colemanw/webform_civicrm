@@ -57,7 +57,7 @@ abstract class CiviCrmTestBase extends WebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function changeDatabasePrefix() {
+  protected function changeDatabasePrefix(): void {
     parent::changeDatabasePrefix();
     $connection_info = Database::getConnectionInfo('default');
     // CiviCRM does not leverage table prefixes, so we unset it. This way any
