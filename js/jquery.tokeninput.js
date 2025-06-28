@@ -379,6 +379,14 @@
                     }
                     break;
               }
+          })
+          // Add input event for iPhone/iOS compatibility
+          .on("input", function(event) {
+              resize_input();
+              // Only trigger do_search if not a blur event
+              if (!$(input).data("settings").disabled) {
+                  setTimeout(function(){ do_search(); }, 5);
+              }
           });
 
       // Keep reference for placeholder
