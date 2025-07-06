@@ -2466,9 +2466,14 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         if (is_array($val)) {
           $this->data[$ent][$c][$table][$n][$name] = [];
           foreach ($val as $v) {
-            if (is_numeric($v) && !empty($this->ent['contact'][$v]['id'])) {
-              $tableName = $isStandardCustom ? $ent : $table;
-              $this->data[$ent][$c][$tableName][$n][$name][] = $this->ent['contact'][$v]['id'];
+            if (is_numeric($v)) {
+              if (!empty($this->ent['contact'][$v]['id'])) {
+                $tableName = $isStandardCustom ? $ent : $table;
+                $this->data[$ent][$c][$tableName][$n][$name][] = $this->ent['contact'][$v]['id'];
+              }
+              elseif ($contactPrefillMode) {
+                $this->data[$ent][$c]['update_contact_ref'][$n][$name] = $v;
+              }
             }
           }
         }
@@ -2898,20 +2903,15 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $updateParams = [
       'id' => $cid,
     ];
-    $skipKeys = [];
+    // Iterate over all contact refs that we should update.
     foreach ($params['update_contact_ref'] as $n => $refKeys) {
       foreach ($refKeys as $refKey => $val) {
-        // Skip contact ref that doesn't have a valid contact ids.
-        if (empty($this->ent['contact'][$val]['id'])) {
+        $contactRefValue = $this->ent['contact'][$val]['id'] ?? NULL;
+        // Skip contact ref that doesn't have a valid contact id.
+        if (!$contactRefValue) {
           continue;
         }
-        foreach ($params['contact'] as $contactParams) {
-          foreach ($contactParams as $key => $value) {
-            if (strpos($key, "{$refKey}_") === 0 && !isset($updateParams[$key]) && !in_array($key, $skipKeys)) {
-              $updateParams[$key] = $value;
-            }
-          }
-        }
+        $updateParams[$refKey] = $contactRefValue;
       }
     }
     if (count($updateParams) > 1) {
