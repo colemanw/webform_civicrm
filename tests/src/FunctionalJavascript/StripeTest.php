@@ -126,7 +126,7 @@ final class StripeTest extends WebformCivicrmTestBase {
     $this->getSession()->wait(3000);
 
     $this->assertSession()->waitForElementVisible('css', 'input[name="cardnumber"]');
-    $this->getSession()->getPage()->fillField('cardnumber', '4111 1111 1111 1111');
+    $this->getSession()->getPage()->fillField('cardnumber', '4242 4242 4242 4242');
     $this->getSession()->getPage()->fillField('exp-date', '11 / ' . $expYear);
     $this->getSession()->getPage()->fillField('cvc', '123');
     $this->getSession()->getPage()->fillField('postal', '12345');
