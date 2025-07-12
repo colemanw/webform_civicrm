@@ -2640,7 +2640,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       $component = $this->node->getElement("civicrm_{$c}_contact_1_contact_existing");
       $existing_contact_val = $this->submissionValue($component['#form_key']);
       // Fields are hidden if value is empty (no selection) or a numeric contact id
-      if (!$existing_contact_val[0] || is_numeric($existing_contact_val[0])) {
+      if (!$existing_contact_val[0] || ((is_numeric($existing_contact_val[0])) && ((int)$existing_contact_val[0] > 0))) {
         $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
         $component += ['#hide_fields' => []];
         if (in_array($type, $component['#hide_fields'])) {
