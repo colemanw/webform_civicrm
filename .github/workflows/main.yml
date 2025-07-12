@@ -5,7 +5,7 @@ on:
     branches:
       - 6.x
   schedule:
-    # Run Monday/Thursday at 12:13 GMT
+    # Run Monday/Thursday at 12:13 GMT.
     - cron: '13 12 * * 1,4'
   workflow_dispatch:
     inputs:
