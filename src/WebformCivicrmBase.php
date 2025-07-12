@@ -801,9 +801,10 @@ abstract class WebformCivicrmBase {
     if ($file) {
       $config = \CRM_Core_Config::singleton();
       $copyTo = $config->customFileUploadDir;
-      if(isset($filename)) {
-        $copyTo .= '/' . $filename;
+      if(!isset($filename)) {
+        $filename = basename($file->getFileUri());
       }
+      $copyTo .= '/' . \CRM_Utils_File::makeFileName($filename, TRUE);
       $path = \Drupal::service('file_system')->copy($file->getFileUri(), $copyTo);
       if ($path) {
         $result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('file', 'create', [
