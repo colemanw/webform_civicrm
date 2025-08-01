@@ -1,3 +1,6 @@
+parameters:
+  webform_civicrm.skip_procedural_hook_scan: false
+
 services:
   webform_civicrm.utils:
     class: Drupal\webform_civicrm\Utils
