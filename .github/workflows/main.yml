@@ -23,7 +23,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - drupal: 'dev-master#a279f0b07d3c05ae5a395983f11444188c3b1466'
+          - drupal: '11.x-dev'
             civicrm: 'dev-master'
             php: '8.3'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
@@ -86,7 +86,7 @@ jobs:
           composer config repositories.0 composer https://packages.drupal.org/8
           composer config repositories.1 path $GITHUB_WORKSPACE
           composer install --no-interaction
-          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:${{ matrix.drupal }}
+          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core:dev-master#a279f0b07d3c05ae5a395983f11444188c3b1466 drupal/core-dev-pinned:${{ matrix.drupal }}
       # This is done differently in drupal 11. See BROWSERTEST_OUTPUT_VERBOSE below.
       - name: Suppress links to screenshots
         # There's so many! They can be useful locally if running one test, but they aren't useful here and cause massive scrolling.
