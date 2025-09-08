@@ -104,37 +104,39 @@ class CivicrmSelectOptions extends FormElement {
       $element['options']['#tabledrag'] = [];
       $element['options']['#tableselect'] = FALSE;
     }
-    if (strpos($element['#form_key'], 'address_state_province_id') !== false || strpos($key, 'address_county_id') !== false) {
+    if (strpos($element['#form_key'], 'address_state_province_id') !== false || strpos($element['#form_key'], 'address_county_id') !== false) {
       $parent_label = (strpos($element['#form_key'], 'address_state_province_id') !== false) ? 'Country' : 'State/Province';
       $element['options']['#empty'] = t('Options are loaded dynamically on the webform based on the value selected in @key field.', ['@key' => $parent_label]);
     }
 
-    $current_options = $element['#default_value'];
     $weight = 0;
     $webform = $form_state->getFormObject()->getWebform();
     $data = $webform->getHandler('webform_civicrm')->getConfiguration()['settings']['data'] ?? [];
-    $field_options = static::getFieldOptions($element['#form_key'], $data);
 
-    // Sort the field options by the current options.
+    // $current_options is an array of [value => webform_label] listed in the order defined in the webform.
+    // Options disabled in the webform are absent from this array.
+    $current_options = $element['#default_value'];
+
     if (!$element['#civicrm_live_options']) {
-      uasort($field_options, function ($a, $b) use ($current_options) {
-        $current_options = array_flip($current_options);
-        $weight_values = array_flip(array_values(array_flip($current_options)));
+      // $all_options is an array of [value => civi_label] listed in the order defined in civicrm.
+      // Options disabed in civi are absent from this array, but it includes options disabled in the webform.
+      $all_options = static::getFieldOptions($element['#form_key'], $data);
 
-        if (!isset($current_options[$b]) && isset($current_options[$a])) {
-          return -1;
-        }
-        if (!isset($current_options[$a]) && isset($current_options[$b])) {
-          return 1;
-        }
+      // build the $field_options array using the order of $current_options, using the labels specified in the webform.
+      foreach ($current_options as $key => $option) {
+        $field_options[$key] = $all_options[$key];
+      }
 
-        $a_weight = $weight_values[$a] ?? 0;
-        $b_weight = $weight_values[$b] ?? 0;
-        if ($a_weight == $b_weight) {
-          return 0;
+      // Add to the $field_options array any options that are disabled in the webform.
+      // The order of the disabled options cannot be changed, and they will always
+      // appear below the enabled options.
+      foreach ($all_options as $key => $option) {
+        if (!isset($field_options[$key])) {
+          $field_options[$key] = $all_options[$key];
         }
-        return ($a_weight < $b_weight) ? -1 : 1;
-      });
+      }
+    } else { // static options
+      $field_options = static::getFieldOptions($element['#form_key'], $data);
     }
 
     foreach ($field_options as $key => $option) {
@@ -183,6 +185,17 @@ class CivicrmSelectOptions extends FormElement {
         '#default_value' => $weight,
         '#attributes' => ['class' => ['weight']],
         '#access' => !$element['#civicrm_live_options'],
+
+        // delta theoretically should control the number of items in the weight dropdown for each option, but
+        // in reality that weight range seems to be fixed at -10 to +10. When there are more than 10 options present,
+        // the weight dropdown therefore cannot be used to move an option below the 10th spot. In addition,
+        // a bug related to this fixed -10 to +10 range prevents dragging options below the 22nd spot.
+        // Therefore, when there are more than 10 options present, it's desireable to switch from a weight
+        // listbox to an integer edit box. This is accomplished by setting
+        // delta to a value greater than Drupal::config('system.site')->get('weight_select_max') (default value 100)
+        // See Drupal\Core\Render\Element\Weight::processWeight()
+        // Other than that threshold, the value specified here for delta is not significent.
+        '#delta' => !$element['#civicrm_live_options'] && sizeof($all_options) > 10 ? '101' : "10",
       ];
       $weight++;
     }

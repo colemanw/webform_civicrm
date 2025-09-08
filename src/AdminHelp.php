@@ -15,6 +15,11 @@ use Drupal\Core\Url;
  */
 class AdminHelp implements AdminHelpInterface {
 
+  /**
+   * @var \Drupal\webform_civicrm\UtilsInterface
+   */
+  protected $utils;
+
   public function __construct(UtilsInterface $utils) {
     $this->utils = $utils;
   }

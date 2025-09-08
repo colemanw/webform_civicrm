@@ -468,7 +468,7 @@
       hiddenInput.val("");
       var li_data = $(input).data("settings").prePopulate || hiddenInput.data("pre");
 
-      if ($(input).data("settings").processPrePopulate && $.isFunction($(input).data("settings").onResult)) {
+      if ($(input).data("settings").processPrePopulate && (typeof $(input).data("settings").onResult === "function")) {
           li_data = $(input).data("settings").onResult.call(hiddenInput, li_data);
       }
 
@@ -581,14 +581,14 @@
       }
 
       function add_freetagging_tokens() {
-          var value = $.trim(input_box.val());
+          var value = input_box.val().trim();
           var tokens = value.split($(input).data("settings").tokenDelimiter);
           $.each(tokens, function(i, token) {
             if (!token) {
               return;
             }
 
-            if ($.isFunction($(input).data("settings").onFreeTaggingAdd)) {
+            if (typeof $(input).data("settings").onFreeTaggingAdd === "function") {
               token = $(input).data("settings").onFreeTaggingAdd.call(hiddenInput, token);
             }
             var object = {};
@@ -684,7 +684,7 @@
           hide_dropdown();
 
           // Execute the onAdd callback if defined
-          if($.isFunction(callback)) {
+          if (typeof callback === "function") {
               callback.call(hiddenInput,item);
           }
       }
@@ -774,7 +774,7 @@
           }
 
           // Execute the onDelete callback if defined
-          if($.isFunction(callback)) {
+          if (typeof callback === "function") {
               callback.call(hiddenInput,token_data);
           }
       }
@@ -973,7 +973,7 @@
           var cache_key = query + computeURL();
           var cached_results = cache.get(cache_key);
           if (cached_results) {
-              if ($.isFunction($(input).data("settings").onCachedResult)) {
+              if (typeof $(input).data("settings").onCachedResult === "function") {
                 cached_results = $(input).data("settings").onCachedResult.call(hiddenInput, cached_results);
               }
               populateDropdown(query, cached_results);
@@ -1022,7 +1022,7 @@
                   // Attach the success callback
                   ajax_params.success = function(results) {
                     cache.add(cache_key, $(input).data("settings").jsonContainer ? results[$(input).data("settings").jsonContainer] : results);
-                    if($.isFunction($(input).data("settings").onResult)) {
+                    if (typeof $(input).data("settings").onResult === "function") {
                         results = $(input).data("settings").onResult.call(hiddenInput, results);
                     }
 
@@ -1046,7 +1046,7 @@
                   });
 
                   cache.add(cache_key, results);
-                  if($.isFunction($(input).data("settings").onResult)) {
+                  if (typeof $(input).data("settings").onResult === "function") {
                       results = $(input).data("settings").onResult.call(hiddenInput, results);
                   }
                   populateDropdown(query, results);

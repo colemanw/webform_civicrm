@@ -11,6 +11,11 @@ class Fields implements FieldsInterface {
    */
   protected $fieldMetadata = [];
 
+  /**
+   * @var \Drupal\webform_civicrm\UtilsInterface
+   */
+  protected $utils;
+
   public function __construct(UtilsInterface $utils) {
     $this->utils = $utils;
   }
@@ -81,7 +86,7 @@ class Fields implements FieldsInterface {
         }
       }
       $conditional_sets = [
-        'CiviCase' => ['entity_type' => 'case', 'label' => t('Case'), 'max_instances' => 30],
+        'CiviCase' => ['entity_type' => 'case', 'label' => t('Case'), 'max_instances' => 50],
         'CiviEvent' => ['entity_type' => 'participant', 'label' => t('Participant'), 'max_instances' => 9],
         'CiviContribute' => ['entity_type' => 'contribution', 'label' => t('Contribution')],
         'CiviMember' => ['entity_type' => 'membership', 'label' => t('Membership'), 'custom_fields' => 'combined'],
@@ -255,11 +260,13 @@ class Fields implements FieldsInterface {
         'type' => 'select',
         'default_value' => $this->utils->wf_crm_get_civi_setting('lcMessages', 'en_US'),
       ];
-      $default_communication_style = $this->utils->wf_crm_apivalues('OptionValue', 'get', [
-        'sequential' => 1,
-        'option_group_id' => "communication_style",
-        'is_default' => 1,
-      ], 'value')[0] ?? NULL;
+      $default_communication_style = $this->utils->wf_civicrm_api4('OptionValue', 'get', [
+	    'where' => [
+          ['option_group_id.name', '=', 'communication_style'],
+          ['is_default', '=', TRUE],
+	    ],
+	    'select' => ['value'],
+      ])->first()['value'] ?? NULL;
       $fields['contact_communication_style_id'] = [
         'name' => t('Communication Style'),
         'type' => 'select',
@@ -572,8 +579,8 @@ class Fields implements FieldsInterface {
         ];
         // Fetch case roles
         $sets['caseRoles'] = ['entity_type' => 'case', 'label' => t('Case Roles')];
-        foreach ($this->utils->wf_crm_apivalues('case_type', 'get') as $case_type) {
-          foreach ($case_type['definition']['caseRoles'] as $role) {
+        foreach ($this->utils->wf_crm_apivalues('case_type', 'get', ['is_active' => 1]) as $case_type) {
+          foreach ($case_type['definition']['caseRoles'] ?? [] as $role) {
             foreach ($this->utils->wf_crm_get_relationship_types() as $rel_type) {
               if (in_array($role['name'], [$rel_type['name_b_a'], $rel_type['label_b_a']])) {
                 $case_role_fields_key = 'case_role_' . $rel_type['id'];
@@ -707,32 +714,28 @@ class Fields implements FieldsInterface {
           'type' => 'textarea',
           'parent' => 'contribution_pagebreak',
         ];
-        $fields['contribution_soft'] = [
-          'name' => t('Soft Credit To'),
-          'type' => 'select',
-          'expose_list' => TRUE,
-          'extra' => ['multiple' => TRUE],
-          'data_type' => 'ContactReference',
-          'parent' => 'contribution_pagebreak',
-        ];
-        $fields['contribution_honor_contact_id'] = [
-          'name' => t('In Honor/Memory of'),
-          'type' => 'select',
-          'expose_list' => TRUE,
-          'empty_option' => t('No One'),
-          'data_type' => 'ContactReference',
-          'parent' => 'contribution_pagebreak',
-        ];
-        $fields['contribution_honor_type_id'] = [
-          'name' => t('Honoree Type'),
-          'type' => 'select',
-          'expose_list' => TRUE,
-          'parent' => 'contribution_pagebreak',
-        ];
         $fields['contribution_source'] = [
           'name' => t('Contribution Source'),
           'type' => 'textfield',
           'parent' => 'contribution_pagebreak',
+        ];
+        $fields['contribution_receive_date'] = [
+          'name' => t('Contribution Receive Date'),
+          'type' => 'datetime',
+          'parent' => 'contribution_pagebreak',
+          'default_value' => 'now',
+          'date_date_min' => 'today',
+          'date_time_element' => 'timepicker',
+          'civicrm_condition' => [
+            'andor' => 'or',
+            'action' => 'show',
+            'rules' => [
+              'contribution_payment_processor_id' => [
+                'values' => '0',
+                'operator' => 'equal',
+              ],
+            ],
+          ],
         ];
         $donationFinancialType = current($this->utils->wf_crm_apivalues('FinancialType', 'get', [
           'return' => 'id',
@@ -763,6 +766,28 @@ class Fields implements FieldsInterface {
           'set' => 'line_items',
           'fid' => 'contribution_financial_type_id',
         ];
+
+        // Soft Credit
+        $sets['contributionSoft'] = ['entity_type' => 'contribution', 'label' => t('Soft Credit')];
+        $fields['contribution_soft'] = [
+          'name' => t('Soft Credit To'),
+          'type' => 'select',
+          'expose_list' => TRUE,
+          'extra' => ['multiple' => TRUE],
+          'data_type' => 'ContactReference',
+          'parent' => 'contribution_pagebreak',
+          'set' => 'contributionSoft',
+        ];
+        $fields['contribution_soft_credit_type_id'] = [
+          'name' => t('Soft Credit Type'),
+          'type' => 'select',
+          'expose_list' => TRUE,
+          'civicrm_live_options' => TRUE,
+          'empty_option' => t('None'),
+          'parent' => 'contribution_pagebreak',
+          'set' => 'contributionSoft',
+        ];
+
         $sets['contributionRecur'] = ['entity_type' => 'contribution', 'label' => t('Recurring Contribution')];
         $fields['contribution_frequency_unit'] = [
           'name' => t('Frequency of Installments'),

@@ -13,6 +13,23 @@ final class EventTest extends WebformCivicrmTestBase {
 
   private $_customFields = [];
 
+  /**
+   * @var array
+   * custom group
+   */
+  private $cg;
+
+  /**
+   * @var array
+   * financial type
+   */
+  private $ft;
+
+  /**
+   * @var array
+   */
+  private $_event;
+
   protected function setUp(): void {
     parent::setUp();
     $this->ft = $this->utils->wf_civicrm_api('FinancialType', 'get', [
@@ -318,7 +335,7 @@ final class EventTest extends WebformCivicrmTestBase {
     ]);
     $this->assertEquals(0, $event['is_error']);
     $this->assertEquals(1, $event['count']);
-    $this->_event2 = reset($event['values']);
+    $event2 = reset($event['values']);
 
     $event = $this->utils->wf_civicrm_api('Event', 'create', [
       'event_type_id' => "Conference",
@@ -328,7 +345,6 @@ final class EventTest extends WebformCivicrmTestBase {
     ]);
     $this->assertEquals(0, $event['is_error']);
     $this->assertEquals(1, $event['count']);
-    $this->_event3 = reset($event['values']);
 
     // Enable waitlist on the event with max participant = 2.
     $this->utils->wf_civicrm_api('Event', 'create', [
@@ -355,7 +371,7 @@ final class EventTest extends WebformCivicrmTestBase {
     // Register only 1 particpant to event 2 so that 1 seat is available.
     $this->utils->wf_civicrm_api('Participant', 'create', [
       'contact_id' => $indiv1,
-      'event_id' => $this->_event2['id'],
+      'event_id' => $event2['id'],
       'status_id' => "Registered",
       'role_id' => "Attendee",
     ]);
@@ -409,7 +425,7 @@ final class EventTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('Test Event 3');
 
     // Ensure URL events are set as default on the event field.
-    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['event1' => $this->_event2['id']]]));
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['event1' => $event2['id']]]));
     $this->assertSession()->checkboxChecked('Test Event 2');
 
     // Create new event and load it from the URL.
@@ -421,9 +437,9 @@ final class EventTest extends WebformCivicrmTestBase {
     ]);
     $this->assertEquals(0, $event['is_error']);
     $this->assertEquals(1, $event['count']);
-    $this->_event4 = reset($event['values']);
+    $event4 = reset($event['values']);
 
-    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['event1' => $this->_event4['id']]]));
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['event1' => $event4['id']]]));
     $this->assertSession()->pageTextContains('Test Event 4');
     $this->assertSession()->checkboxChecked('Test Event 4');
   }

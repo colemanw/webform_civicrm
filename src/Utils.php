@@ -131,11 +131,15 @@ class Utils implements UtilsInterface {
    * @return array
    */
   function wf_crm_get_events($reg_options, $context) {
-    $ret = [];
+    static $ret = [];
+    if ($ret && $context !== 'config_form') {
+      return $ret;
+    }
     $format = wf_crm_aval($reg_options, 'title_display', 'title');
     $sort_field = wf_crm_aval($reg_options, 'event_sort_field', 'start_date');
     $sort_order = ($context == 'config_form' && $sort_field === 'start_date') ? ' DESC' : '';
     $params = [
+      'return' => ['id', 'title', 'start_date', 'end_date', 'event_type_id', 'max_participants'],
       'is_template' => 0,
       'is_active' => 1,
     ];
@@ -219,7 +223,7 @@ class Utils implements UtilsInterface {
       // Avoid showing redundant end-date if it is the same as the start date
       $same_day = substr($event['start_date'], 0, 10) == substr($event['end_date'], 0, 10);
       if (!$same_day || in_array('dateformatDatetime', $format) || in_array('dateformatTime', $format)) {
-        $end_format = (in_array('dateformatDatetime', $format) && $same_day) ? wf_crm_get_civi_setting('dateformatTime') : $date_format;
+        $end_format = (in_array('dateformatDatetime', $format) && $same_day) ? $this->wf_crm_get_civi_setting('dateformatTime') : $date_format;
         $title[] = \CRM_Utils_Date::customFormat($event['end_date'], $end_format);
       }
     }

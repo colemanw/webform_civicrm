@@ -48,9 +48,20 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   private $database;
 
   /**
+   * @var \Drupal\webform_civicrm\Plugin\WebformHandler
+   */
+  private $handler;
+
+  /**
    * @var \Drupal\webform\WebformSubmissionInterface
    */
   private $submission;
+
+  /**
+   * @var \Drupal\webform_civicrm\UtilsInterface
+   */
+  protected $utils;
+
   private $all_fields;
   private $all_sets;
   private $shared_address = [];
@@ -79,10 +90,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
 
     $handler_collection = $this->node->getHandlers('webform_civicrm');
     $instance_ids = $handler_collection->getInstanceIds();
-    $handler = $handler_collection->get(reset($instance_ids));
+    $this->handler = $handler_collection->get(reset($instance_ids));
     $this->database = \Drupal::database();
 
-    $this->settings = $handler->getConfiguration()['settings'];
+    $this->settings = $this->handler->getConfiguration()['settings'];
     $this->data = $this->settings['data'];
     $this->enabled = $this->utils->wf_crm_enabled_fields($this->node);
     $this->all_fields = $this->utils->wf_crm_get_fields();
@@ -1023,7 +1034,13 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     // Remove data from entity
     foreach ($remove as $a => $name) {
       $params[$data_type . '_id'] = $a;
-      $this->utils->wf_civicrm_api($api, 'delete', $params);
+      if ($data_type == 'group') {
+        // group_contact.delete is deprecated and it just called create.
+        $this->utils->wf_civicrm_api($api, 'create', array_merge(['status' => 'Removed'], $params));
+      }
+      else {
+        $this->utils->wf_civicrm_api($api, 'delete', $params);
+      }
     }
     if (!empty($remove) && $data_type == 'group') {
       $display_name = $this->utils->wf_civicrm_api('contact', 'get', ['contact_id' => $id, 'return.display_name' => 1]);
@@ -1560,7 +1577,9 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
             $this->processAttachments('activity', $n, $activity['id'], empty($params['id']));
           }
           if (!empty($params['assignee_contact_id'])) {
-            if ($this->utils->wf_crm_get_civi_setting('activity_assignee_notification')) {
+            if ($this->utils->wf_crm_get_civi_setting('activity_assignee_notification')
+              && !in_array($params['activity_type_id'], $this->utils->wf_crm_get_civi_setting('do_not_notify_assignees_for'))
+            ) {
               // Send email to assignees. TODO: Move to CiviCRM API?
               $assignees = $this->utils->wf_crm_apivalues('contact', 'get', [
                 'id' => ['IN' => (array) $params['assignee_contact_id']],
@@ -1679,6 +1698,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    * Calculate line-items for this webform submission
    */
   private function tallyLineItems() {
+    $submittedFormValues = $this->form_state->getUserInput();
     // Contribution
     $fid = 'civicrm_1_contribution_1_contribution_total_amount';
     if (isset($this->enabled[$fid]) || $this->getData($fid) > 0) {
@@ -1696,7 +1716,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     if (isset($this->enabled[$fid])) {
       foreach ($this->data['lineitem'][1]['contribution'] as $n => $lineitem) {
         $fid = "civicrm_1_lineitem_{$n}_contribution_line_total";
-        if ($this->getData($fid) != 0) {
+        if (!isset($submittedFormValues[$fid]) || $this->getData($fid) != 0) {
           $this->line_items[] = [
             'qty' => 1,
             'unit_price' => $lineitem['line_total'],
@@ -1731,6 +1751,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
             };
 
             if ($price) {
+              $member_name = NULL;
               if (!empty($this->data['contact'][$c]['contact'][$n])) {
                 $member_contact = $this->data['contact'][$c]['contact'][$n];
                 if (!empty($member_contact['first_name']) && !empty($member_contact['last_name'])) {
@@ -1917,7 +1938,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       // Current employer must wait for ContactRef ids to be filled
       unset($contact['contact'][1]['employer_id']);
       $cid = $this->createContact($contact);
-      $this->billing_contact = $cid;
     }
     else {
       foreach (['address', 'email'] as $loc) {
@@ -2121,6 +2141,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         }
       }
     }
+
     // Ideally we would pass the correct id for the test processor through but that seems not to be the
     // case so load it here.
     if (!empty($params['is_test'])) {
@@ -2130,6 +2151,28 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $i = $this->getContributionContactIndex();
     $contact = $this->utils->wf_civicrm_api('contact', 'getsingle', ['id' => $this->ent['contact'][$i]['id']]);
     $params += $contact;
+
+    // contact provides 'country' and 'country_id', but doPayment using PropertyBag expects 'billingCountry' with an iso_code
+    $countryName = $params['country'] ?? NULL;
+    $countryId = $params['country_id'] ?? NULL;
+    // providing country name throws deprecation warnings,
+    // which break the transaction so remove it
+    unset($params['country']);
+
+    // country id seems more reliable, so use that first
+    if ($countryId) {
+      $params['billingCountry'] = $this->utils->wf_civicrm_api4('Country', 'get', [
+        'select' => ['iso_code'],
+        'where' => [['id', '=', $countryId]]
+      ])->first()['iso_code'] ?? '';
+    }
+    elseif ($countryName) {
+      $params['billingCountry'] = $this->utils->wf_civicrm_api4('Country', 'get', [
+        'select' => ['iso_code'],
+        'where' => [['name', '=', $countryName]]
+      ])->first()['iso_code'] ?? '';
+    }
+
     $params['contributionID'] = $params['id'] = $this->ent['contribution'][1]['id'];
     if (!empty($this->ent['contribution_recur'][1]['id'])) {
       $params['is_recur'] = TRUE;
@@ -2271,7 +2314,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     }
 
     // Save this stuff for later
-    unset($params['soft'], $params['honor_contact_id'], $params['honor_type_id']);
+    unset($params['soft'], $params['soft_credit_type_id']);
     return $params;
   }
 
@@ -2300,20 +2343,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           'contribution_id' => $id,
           'amount' => $amount,
           'currency' => wf_crm_aval($this->data, "contribution:1:currency"),
-          'soft_credit_type_id' => $default_soft_credit_type['value'],
+          'soft_credit_type_id' => $contribution['soft_credit_type_id'] ?? $default_soft_credit_type['value'],
         ]);
       }
     }
-    // Save honoree
-    if (!empty($contribution['honor_contact_id']) && !empty($contribution['honor_type_id'])) {
-      $this->utils->wf_civicrm_api('contribution_soft', 'create', [
-        'contribution_id' => $id,
-        'amount' => $contribution['total_amount'],
-        'contact_id' => $contribution['honor_contact_id'],
-        'soft_credit_type_id' => $contribution['honor_type_id'],
-      ]);
-    }
-
     $contributionResult = \CRM_Contribute_BAO_Contribution::getValues(['id' => $id], \CRM_Core_DAO::$_nullArray, \CRM_Core_DAO::$_nullArray);
 
     // Save line-items
@@ -2532,7 +2565,11 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           }
         }
         elseif ($dataType == 'File') {
-          if (empty($val[0]) || !($val = $this->saveDrupalFileToCivi($val[0]))) {
+          // Replace filename (with tokens) if set.
+          if (isset($component['#file_name']) && $component['#file_name']) {
+            $newFilename = $this->handler->tokenManager->replace($component['#file_name'], $this->submission);
+          }
+          if (empty($val[0]) || !($val = $this->saveDrupalFileToCivi($val[0], $newFilename))) {
             // This field can't be emptied due to the nature of file uploads
             continue;
           }

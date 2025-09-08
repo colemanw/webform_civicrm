@@ -13,6 +13,11 @@ use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
  */
 final class GrantTest extends WebformCivicrmTestBase {
 
+  /**
+   * @var int
+   */
+  private $grant_type_id;
+
   protected function setUp(): void {
     parent::setUp();
     $civicrm_version = $this->utils->wf_crm_apivalues('System', 'get')[0]['version'];

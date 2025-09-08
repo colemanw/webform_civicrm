@@ -11,6 +11,11 @@ use Drupal\Core\Url;
  */
 final class CaseSubmissionTest extends WebformCivicrmTestBase {
 
+  /**
+   * @var array
+   */
+  private $_caseContact;
+
   protected function setUp(): void {
     parent::setUp();
     $this->enableComponent('CiviCase');
@@ -58,17 +63,17 @@ final class CaseSubmissionTest extends WebformCivicrmTestBase {
    * Test Case Submission and update with non admin user.
    */
   public function testCaseSubmissionWithNonAdminUser() {
-    $this->testUser = $this->createUser([
+    $testUser = $this->createUser([
       'access content',
     ]);
-    $ufContact = $this->getUFMatchRecord($this->testUser->id());
+    $ufContact = $this->getUFMatchRecord($testUser->id());
     $this->_caseContact = $this->utils->wf_civicrm_api('Contact', 'create', [
       'id' => $ufContact['contact_id'],
       'first_name' => 'Mark',
       'last_name' => 'Gibson',
     ])['values'][$ufContact['contact_id']];
 
-    $this->drupalLogin($this->testUser);
+    $this->drupalLogin($testUser);
     $caseSubject = "Test Case create with authenticated user";
     $this->submitCaseAndVerifyResult($caseSubject, FALSE);
 

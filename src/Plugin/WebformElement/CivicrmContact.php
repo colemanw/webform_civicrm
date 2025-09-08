@@ -523,6 +523,7 @@ class CivicrmContact extends WebformElementBase {
       'state_province' => t("State/Province"),
       'country' => t("Country"),
       'postal_code' => t("Postal Code"),
+      'street_address' => t("Street Address"),
       'phone' => t("Phone"),
     ];
     return $options;

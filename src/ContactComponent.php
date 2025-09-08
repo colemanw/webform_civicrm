@@ -107,6 +107,7 @@ class ContactComponent implements ContactComponentInterface {
       'country' => ['address', 'country_id:label'],
       'county' => ['address', 'county_id:label'],
       'postal_code' => ['address', 'postal_code'],
+      'street_address' => ['address', 'street_address']
     ];
     $joinedTables = [];
     foreach ($fieldMappings as $field => $type) {

@@ -13,7 +13,7 @@
 
   function loadBillingBlock() {
     var type = getPaymentProcessor();
-    if (type && type !== '0') {
+    if (type) {
       $.ajax({
         url: setting.contributionCallback + '&' + setting.processor_id_key + '=' + type,
         success: function(data) {

@@ -11,6 +11,11 @@ use Drupal\Core\Url;
  */
 final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
+  /**
+   * @var array
+   */
+  private $_customFields;
+
   private function createCustomFields() {
     $this->_customFields = [];
     $result = $this->createCustomGroup();
@@ -329,7 +334,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
       'query' => ['reset' => 1, 'action' => 'update', 'gid' => 1, 'id' => $this->_customFields['color_checkboxes']]
     ])->toString();
     $this->drupalGet($fieldURL);
-    $this->getSession()->getPage()->uncheckField('Active?');
+    $this->getSession()->getPage()->uncheckField('Active');
     // $this->createScreenshot($this->htmlOutputDirectory . '/custom_field.png');
     $this->getSession()->getPage()->pressButton('_qf_Field_done-bottom');
 
@@ -343,8 +348,9 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     //Re-enable the field.
     $this->drupalGet($fieldURL);
-    $this->getSession()->getPage()->checkField('Active?');
+    $this->getSession()->getPage()->checkField('Active');
     $this->getSession()->getPage()->pressButton('_qf_Field_done-bottom');
+    $this->assertPageNoErrorMessages();
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->htmlOutput();

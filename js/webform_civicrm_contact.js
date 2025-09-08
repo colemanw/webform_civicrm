@@ -17,15 +17,19 @@
             searchingText: "Searching...",
             enableHTML: true
           };
-          wfCivi.existingInit(
-            field,
-            field.data('civicrm-contact'),
-            field.data('form-id'),
-            autocompleteUrl,
-            toHide,
-            tokenValues
-          );
         }
+        else {
+          var tokenValues = false;
+        }
+        
+        wfCivi.existingInit(
+          field,
+          field.data('civicrm-contact'),
+          field.data('form-id'),
+          autocompleteUrl,
+          toHide,
+          tokenValues
+        );
 
         field.change(function () {
           wfCivi.existingSelect(

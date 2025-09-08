@@ -12,6 +12,11 @@ class WebformCivicrmConfirmForm  implements WebformCivicrmConfirmFormInterface {
   private $form_state;
 
   /**
+   * @var \Drupal\webform_civicrm\UtilsInterface
+   */
+  protected $utils;
+
+  /**
    * Static cache.
    *
    * @var bool

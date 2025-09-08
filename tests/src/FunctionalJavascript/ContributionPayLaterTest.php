@@ -3,6 +3,7 @@
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Civi\Api4\Contribution;
+use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Url;
 
 /**
@@ -14,6 +15,16 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
 
   private $_customGroup = [];
   private $_customFields = [];
+
+  /**
+   * @var string
+   */
+  private $country;
+
+  /**
+   * @var string
+   */
+  private $state;
 
   public function testReceiptParams() {
     $this->drupalLogin($this->rootUser);
@@ -39,6 +50,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('Enable Billing Address?', 'No');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->checkField('Contribution Amount');
+    $this->getSession()->getPage()->checkField('Contribution Receive Date');
 
     $this->saveCiviCRMSettings();
 
@@ -52,6 +64,10 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->assertPageNoErrorMessages();
     $this->getSession()->getPage()->fillField('Contribution Amount', '30');
 
+    $futureReceiveDate = new DrupalDateTime('+1 month');
+    $this->getSession()->getPage()->fillField('civicrm_1_contribution_1_contribution_receive_date[date]', $futureReceiveDate->format('m-d-Y'));
+    $this->getSession()->getPage()->fillField('civicrm_1_contribution_1_contribution_receive_date[time]', '07:15:00');
+
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->htmlOutput();
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '30.00');
@@ -62,7 +78,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     $contribution = Contribution::get()
-      ->addSelect('source', 'total_amount', 'contribution_status_id:label', 'currency', 'financial_type_id:label')
+      ->addSelect('source', 'total_amount', 'contribution_status_id:label', 'currency', 'financial_type_id:label', 'receive_date')
       ->setLimit(1)
       ->execute()
       ->first();
@@ -70,6 +86,9 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->assertEquals('Pending', $contribution['contribution_status_id:label']);
     $this->assertEquals('Member Dues', $contribution['financial_type_id:label']);
     $this->assertEquals('USD', $contribution['currency']);
+    $verifyDate = $futureReceiveDate->format('Y-m-d');
+    $contributionDate = date('Y-m-d', strtotime($contribution['receive_date']));
+    $this->assertEquals("{$verifyDate} 07:15:00", "{$contributionDate} 07:15:00");
 
     $sent_email = $this->getMostRecentEmail();
     $this->assertStringContainsString('From: Admin <admin@example.com>', $sent_email);
@@ -263,7 +282,6 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->utils->wf_civicrm_api('contribution', 'delete', [
       'id' => $contribution['id'],
     ]);
-    $this->contribution_id = $contribution['id'];
 
     $address = $this->utils->wf_civicrm_api('Address', 'get', [
       'sequential' => 1,

@@ -779,13 +779,18 @@ abstract class WebformCivicrmBase {
    * Copies a drupal file into the Civi file system
    *
    * @param int $id: drupal file id
+   * @param string $filename drupal filename
    * @return int|null Civi file id
    */
-  public static function saveDrupalFileToCivi($id) {
+  public static function saveDrupalFileToCivi($id, $filename = NULL) {
     $file = File::load($id);
     if ($file) {
       $config = \CRM_Core_Config::singleton();
-      $path = \Drupal::service('file_system')->copy($file->getFileUri(), $config->customFileUploadDir);
+      $copyTo = $config->customFileUploadDir;
+      if(isset($filename)) {
+        $copyTo .= '/' . $filename;
+      }
+      $path = \Drupal::service('file_system')->copy($file->getFileUri(), $copyTo);
       if ($path) {
         $result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('file', 'create', [
           'uri' => str_replace($config->customFileUploadDir, '', $path),

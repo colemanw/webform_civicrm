@@ -196,42 +196,44 @@ function _fillCiviCRMData($data, $webformSubmission) {
   \Drupal::service('civicrm')->initialize();
   $utils = \Drupal::service('webform_civicrm.utils');
   $webform = $webformSubmission->getWebform();
-  foreach ($data as $key => $val) {
-    $element = $webform->getElement($key);
-    if ($element && !empty($val) && $element['#type'] == 'civicrm_options') {
-      if (!empty($element['#webform_multiple'])) {
-        foreach ($val as $k => $v) {
-          if (isset($element['#options'][$v])) {
-            $data[$key]["{$k}_raw"] = $data[$key][$k];
-            $data[$key][$k] = $element['#options'][$v];
+  if (\Drupal::routeMatch()->getRouteName() == 'entity.webform.results_submissions') {
+    foreach ($data as $key => $val) {
+      $element = $webform->getElement($key);
+      if ($element && !empty($val) && $element['#type'] == 'civicrm_options') {
+        if (!empty($element['#webform_multiple'])) {
+          foreach ($val as $k => $v) {
+            if (isset($element['#options'][$v])) {
+              $data[$key]["{$k}_raw"] = $data[$key][$k];
+              $data[$key][$k] = $element['#options'][$v];
+            }
           }
         }
-      }
-      elseif (isset($element['#options'][$val])) {
-        $data["{$key}_raw"] = $data[$key];
-        $data[$key] = $element['#options'][$val];
-      }
-      elseif (strpos($key, 'state_province_id') !== false) {
-        $country_key = str_replace('state_province_id', 'country_id', $key);
-        $country_id = $data["{$country_key}_raw"] ?? $data[$country_key] ?? NULL;
-        $params = [
-          'sequential' => 1,
-          'country_id' => $country_id,
-        ];
-        $is_abbr = $utils->wf_civicrm_api4('StateProvince', 'get', [
-          'select' => ['row_count'],
-          'where' => [['abbreviation', '=', $val]],
-        ])->count() > 0;
-        if (is_numeric($val)) {
-          $params['id'] = $val;
+        elseif (isset($element['#options'][$val])) {
+          $data["{$key}_raw"] = $data[$key];
+          $data[$key] = $element['#options'][$val];
         }
-        elseif ($is_abbr) {
-          $params['abbreviation'] = $val;
+        elseif (strpos($key, 'state_province_id') !== false) {
+          $country_key = str_replace('state_province_id', 'country_id', $key);
+          $country_id = $data["{$country_key}_raw"] ?? $data[$country_key] ?? NULL;
+          $params = [
+            'sequential' => 1,
+            'country_id' => $country_id,
+          ];
+          $is_abbr = $utils->wf_civicrm_api4('StateProvince', 'get', [
+            'select' => ['row_count'],
+            'where' => [['abbreviation', '=', $val]],
+          ])->count() > 0;
+          if (is_numeric($val)) {
+            $params['id'] = $val;
+          }
+          elseif ($is_abbr) {
+            $params['abbreviation'] = $val;
+          }
+          else {
+            continue;
+          }
+          $data[$key] = $utils->wf_crm_apivalues('StateProvince', 'get', $params, 'name')[0] ?? $data[$key];
         }
-        else {
-          continue;
-        }
-        $data[$key] = $utils->wf_crm_apivalues('StateProvince', 'get', $params, 'name')[0] ?? $data[$key];
       }
     }
   }
@@ -377,7 +379,7 @@ function webform_civicrm_civicrm_buildForm($formName, $form) {
         }
         $elements = $webform->getElementsDecodedAndFlattened();
         foreach (array_keys($elements) as $element_form_key) {
-          if (strpos($element_form_key, "custom_$fid") !== FALSE) {
+          if (str_ends_with($element_form_key, "custom_$fid") !== FALSE) {
             $nodes[] = $webform->toLink()->toString();
           }
         }

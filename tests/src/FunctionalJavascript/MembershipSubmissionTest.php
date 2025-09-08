@@ -122,11 +122,12 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
     $this->saveCiviCRMSettings();
 
+    $adminUserCid = $this->getUFMatchRecord($this->adminUser->id())['contact_id'];
     // Create two memberships with the same status with the first membership
     // having an end date after the second membership's end date.
     $this->utils->wf_civicrm_api('membership', 'create', [
       'membership_type_id' => 'Basic',
-      'contact_id' => 2,
+      'contact_id' => $adminUserCid,
       'join_date' => '08/10/21',
       'start_date' => '08/10/21',
       'end_date' => '08/10/22',
@@ -136,7 +137,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
     $this->utils->wf_civicrm_api('membership', 'create', [
       'membership_type_id' => 'Basic',
-      'contact_id' => 2,
+      'contact_id' => $adminUserCid,
       'join_date' => '01/01/21',
       'start_date' => '01/01/21',
       'end_date' => '01/01/22',
@@ -178,7 +179,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals($today,  $membership['join_date']);
     $this->assertEquals($today,  $membership['start_date']);
 
-    $this->assertEquals(date('Y-m-d', strtotime($today. ' +365 days')),  $membership['end_date']);
+    $this->assertEquals(date('Y-m-d', strtotime('+1 year -1 day')), $membership['end_date']);
   }
 
   /**
@@ -222,11 +223,13 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $fieldset->click();
     $this->getSession()->getPage()->fillField('Default value', '[current-page:query:membership]');
     $this->getSession()->getPage()->pressButton('Save');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    
+    $this->getSession()->getPage()->pressButton('Save elements');
 
     $this->drupalLogout();
     $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['membership' => 2]]));
     $this->htmlOutput();
-    // ToDo ->
     $this->assertPageNoErrorMessages();
 
     $this->assertSession()->waitForField('First Name');
@@ -235,7 +238,6 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('Basic Plus');
     $this->getSession()->getPage()->pressButton('Submit');
     $this->htmlOutput();
-    // ToDo ->
     $this->assertPageNoErrorMessages();
 
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
