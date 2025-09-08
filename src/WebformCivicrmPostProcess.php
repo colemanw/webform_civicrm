@@ -135,10 +135,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       }
     }
 
-    if (!empty($this->data['contribution'])) {
-      $this->data['contribution'][1]['contribution'][1]['is_test'] = (int) $this->node->isTest();
-    }
-
     $this->validateThisPage($this->form);
 
     if (!empty($this->data['participant']) && !empty($this->data['participant_reg_type'])) {
