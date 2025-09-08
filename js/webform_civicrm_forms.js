@@ -438,44 +438,177 @@ var wfCivi = (function ($, D) {
    */
   D.behaviors.membershipTypeFeesUpdate = {
     attach: function (context, settings) {
-      const membershipSelector = 'select[id*="membership-membership-type-id"]';
-      // Should apply for multiple membership type.
-      $(membershipSelector, context).each(function() {
-        // On change membership type field.
-        $(membershipSelector, context).once('feeAjax').change(function () {
-          const membershipSelect = $(this);
-          // Get name attribute of membership type.
-          var membershipSelectname = membershipSelect.attr('name');
-          // Pregmatch to fetch fieldset name.
-          // Capture fieldset name inside the first pair of square brackets.
-          var membershipSelectMatch = membershipSelectname.match(/\[([^\[\]]+)\]/);
-          // This is fieldset for each contact.
-          var civiContactFieldset = membershipSelectMatch[1];
+      const membershipSelector = '[id*="membership-membership-type-id"]';
 
-          const feeField = 'input[id*="membership-fee-amount-from-membership"]';
-          // Filter the fees input which has same fieldset as name.
-          const feeFieldInput = $(feeField).filter(function() {
-            // Safely checks if the name exists and includes the target.
-            return $(this).attr('name')?.includes(civiContactFieldset);
-          });
+      // Function to get membership value from Drupal settings.
+      function getMembershipValue(fieldsetName) {
+        // Solution 1: Check Drupal settings.
+        if (typeof Drupal.settings.webform !== 'undefined' &&
+            typeof Drupal.settings.webform.membershipValues !== 'undefined') {
+          return Drupal.settings.webform.membershipValues[fieldsetName] || '';
+        }
+        return '';
+      }
 
-          // Make ajax request when fees field present.
-          if (feeFieldInput) {
-            const membershipId = membershipSelect.val();
-            $.ajax({
-              url: '/webform-civicrm/js/getMembershipFees/' + membershipId,
-              dataType: 'json',
-              success: function (response) {
-                if (response.fees !== undefined) {
-                  $(feeFieldInput).val(response.fees);
-                }
-              },
-              error: function () {
-                console.log('Failed to fetch fee.');
-              }
-            });
+      // Function to update fee field with AJAX call.
+      function updateFeeField(membershipId, feeFieldInput) {
+        if (!membershipId || feeFieldInput.length === 0) {
+          return;
+        }
+
+        $.ajax({
+          url: '/webform-civicrm/js/getMembershipFees/' + membershipId,
+          dataType: 'json',
+          success: function (response) {
+            if (response.fees !== undefined) {
+              $(feeFieldInput).val(response.fees);
+            }
+          },
+          error: function () {
+            console.log('Failed to fetch fee.');
           }
         });
+      }
+
+      // Function to extract core membership pattern from field name.
+      function extractMembershipPattern(elementName) {
+        // Extract civicrm_X_membership_Y_membership from both structures:
+        // 1. submitted[civicrm_1_membership_1_membership_membership_type_id]
+        // 2. submitted[...][civicrm_1_membership_1_membership_membership_type_id]
+        const match = elementName.match(/(civicrm_\d+_membership_\d+_membership)_membership_type_id/);
+        return match ? match[1] : null;
+      }
+
+      // Function to find corresponding fee field.
+      function findCorrespondingFeeField(membershipPattern, context) {
+        // Look for fee field with the same pattern.
+        const feeFields = $('input[id*="membership-fee-amount-from-membership"]', context);
+        return feeFields.filter(function() {
+          const feeFieldName = $(this).attr('name');
+          if (!feeFieldName) {
+            return false;
+          }
+
+          // Check if this fee field contains the same membership pattern.
+          const feePattern = membershipPattern + '_fee_amount_from_membership';
+          return feeFieldName.includes(feePattern);
+        });
+      }
+
+      // Function to get current membership type value from the form.
+      function getCurrentMembershipValue(membershipPattern, context) {
+        const membershipFields = $(membershipSelector, context).filter(function() {
+          const fieldName = $(this).attr('name');
+          if (!fieldName) {
+            return false;
+          }
+
+          const fieldPattern = extractMembershipPattern(fieldName);
+          return fieldPattern === membershipPattern;
+        });
+
+        if (membershipFields.length === 0) {
+          return '';
+        }
+
+        const field = membershipFields.first();
+        if (field.is('input[type="radio"]')) {
+          const radioName = field.attr('name');
+          const checkedRadio = $('input[type="radio"][name="' + radioName + '"]:checked', context);
+          return checkedRadio.length > 0 ? checkedRadio.val() : '';
+        } else {
+          return field.val() || '';
+        }
+      }
+
+      // Handle each membership field individually.
+      $(membershipSelector, context).each(function() {
+        const $element = $(this);
+        const isRadio = $element.is('input[type="radio"]');
+        const isSelect = $element.is('select');
+
+        if (!isRadio && !isSelect) {
+          return;
+        }
+
+        const elementName = $element.attr('name');
+        const membershipPattern = extractMembershipPattern(elementName);
+
+        if (!membershipPattern) {
+          return;
+        }
+
+        // Set up change handler for this specific membership instance.
+        $element.once('feeAjax-' + membershipPattern).on('change', function () {
+          let selectedValue;
+
+          // Get selected value based on element type.
+          if (isRadio) {
+            const radioName = $(this).attr('name');
+            const checkedRadio = $('input[type="radio"][name="' + radioName + '"]:checked', context);
+            if (checkedRadio.length === 0) {
+              return;
+            }
+            selectedValue = checkedRadio.val();
+          } else {
+            selectedValue = $(this).val();
+          }
+
+          // Find the corresponding fee field.
+          const feeFieldInput = findCorrespondingFeeField(membershipPattern, context);
+          // Update fee field.
+          updateFeeField(selectedValue, feeFieldInput);
+        });
+
+        // Check for stored values on page load for this membership instance.
+        const storedValue = getMembershipValue(membershipPattern);
+        if (storedValue) {
+          // Find the corresponding fee field.
+          const feeFieldInput = findCorrespondingFeeField(membershipPattern, context);
+          // If fee field exists and is empty, update it.
+          if (feeFieldInput.length > 0) {
+            updateFeeField(storedValue, feeFieldInput);
+          }
+        }
+      });
+
+      // Also check for fee fields that might exist without corresponding membership fields on current step.
+      const feeFields = $('input[id*="membership-fee-amount-from-membership"]', context);
+      feeFields.each(function() {
+        const feeInput = $(this);
+        const feeInputName = feeInput.attr('name');
+
+        if (!feeInputName) {
+          return;
+        }
+
+        // Extract membership pattern from fee field name.
+        const match = feeInputName.match(/(civicrm_\d+_membership_\d+_membership)_fee_amount_from_membership/);
+        const membershipPattern = match ? match[1] : null;
+
+        if (!membershipPattern) {
+          return;
+        }
+
+        // Check if corresponding membership field exists on current step.
+        const correspondingMembershipField = $(membershipSelector).filter(function() {
+          const membershipFieldName = $(this).attr('name');
+          if (!membershipFieldName) {
+            return false;
+          }
+          const fieldPattern = extractMembershipPattern(membershipFieldName);
+          return fieldPattern === membershipPattern;
+        });
+
+        // Only process if no corresponding membership field exists on current step.
+        if (correspondingMembershipField.length === 0) {
+          // Check stored value from Drupal settings.
+          const membershipValue = getMembershipValue(membershipPattern);
+          // If we have a stored value and fee field is empty, update it.
+          if (membershipValue) {
+            updateFeeField(membershipValue, feeInput);
+          }
+        }
       });
     }
   };

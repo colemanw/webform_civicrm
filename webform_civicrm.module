@@ -95,6 +95,9 @@ function webform_civicrm_form_alter(&$form, &$form_state, $form_id) {
       wf_crm_admin_component::checkBillingPagination($form['#node']);
     }
   }
+
+  // Store membership value on every steps and pass
+  _webform_civicrm_form_alter_helper($form, $form_state, $form_id);
 }
 
 /**
@@ -1092,4 +1095,51 @@ function webform_civicrm_civicrm_alterPaymentProcessorParams($paymentObj, $rawPa
     $cookedParams['return'] = $rawParams['webform_redirect_success'];
     $cookedParams['cancel_return'] = $rawParams['webform_redirect_cancel'];
   }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function _webform_civicrm_form_alter_helper(&$form, &$form_state, $form_id) {
+  // Early return if not a webform client form.
+  if (strpos($form_id, 'webform_client_form_') !== 0) {
+    return;
+  }
+
+  // Early return if no stored values from previous steps.
+  if (!isset($form_state['storage']['submitted'])) {
+    return;
+  }
+
+  $membership_values = [];
+
+  // Find membership type values in stored submissions.
+  foreach ($form_state['storage']['submitted'] as $cid => $value) {
+    $component = $form['#node']->webform['components'][$cid];
+
+    // Check if this is a membership type field.
+    if (strpos($component['form_key'], 'membership_membership_type_id') === FALSE) {
+      continue;
+    }
+
+    // Extract membership pattern from form_key.
+    // Form key: 'civicrm_X_membership_Y_membership_membership_type_id'.
+    // We want: 'civicrm_X_membership_Y_membership'.
+    if (preg_match('/(civicrm_\d+_membership_\d+_membership)_membership_type_id$/', $component['form_key'], $matches)) {
+      $membership_pattern = $matches[1];
+      $membership_values[$membership_pattern] = $value;
+    }
+  }
+
+  // Early return if no membership values found.
+  if (empty($membership_values)) {
+    return;
+  }
+
+  // Pass the values to JavaScript.
+  drupal_add_js([
+    'webform' => [
+      'membershipValues' => $membership_values,
+    ],
+  ], 'setting');
 }
