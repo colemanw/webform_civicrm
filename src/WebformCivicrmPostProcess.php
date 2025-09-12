@@ -1512,12 +1512,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         // Update mode
         else {
           $params['id'] = $this->ent['activity'][$n]['id'];
-
-          // Update details when user has selected he wants to update the details
-          if (!empty($data['details']['update_existing'])) {
-            // Format details as html
-            $this->formatSubmissionDetails($params, $n);
-          }
         }
         // Allow "automatic" values to pass-thru if empty
         foreach ($params as $field => $value) {
