@@ -1635,7 +1635,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     if (!empty($this->data['activity'][$activity_number]['details']['view_link'])) {
       $params['details'] .= '<p>' . $this->submission->toLink(t('View Webform Submission'), 'canonical', [
         'absolute' => TRUE,
-      ])->toString() . '</p>' . \Drupal\Core\Link::fromTextAndUrl('View Webform Submission', $this->submission->getTokenUrl('view'))->toString();
+      ])->toString() . '</p>';
     }
     if (!empty($this->data['activity'][$activity_number]['details']['view_link_secure'])) {
       $params['details'] .= '<p>' . \Drupal\Core\Link::fromTextAndUrl('View Webform Submission', $this->submission->getTokenUrl('view'))->toString() . '</p>';
