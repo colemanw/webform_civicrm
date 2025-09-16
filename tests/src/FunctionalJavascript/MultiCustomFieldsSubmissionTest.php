@@ -176,7 +176,7 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption($this->getCreditCardMonthFieldName(), '11');
     $this_year = date('Y');
     $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[Y]', $this_year + 1);
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->htmlOutput();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
@@ -424,7 +424,7 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
       }
     }
 
-    $this->getSession()->getPage()->pressButton($submit);
+    $this->pressButtonOverride($submit);
     $this->assertPageNoErrorMessages();
     if ($submit == 'Submit') {
       $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');

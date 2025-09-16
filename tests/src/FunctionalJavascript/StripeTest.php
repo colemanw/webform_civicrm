@@ -58,7 +58,7 @@ final class StripeTest extends WebformCivicrmTestBase {
 
     $this->fillStripeCardWidget();
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->htmlOutput();
 
@@ -103,7 +103,7 @@ final class StripeTest extends WebformCivicrmTestBase {
 
     $this->fillStripeCardWidget();
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->htmlOutput();
 
@@ -192,7 +192,7 @@ final class StripeTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertSession()->pageTextContains('You must enable an email field for Contact 1 in order to process transactions.');
-    $this->getSession()->getPage()->pressButton('Enable It');
+    $this->pressButtonOverride('Enable It');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->checkField('Contribution Amount');
     $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');

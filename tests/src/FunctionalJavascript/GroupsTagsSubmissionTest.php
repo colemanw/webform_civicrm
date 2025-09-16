@@ -137,7 +137,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->checkboxChecked("Volunteer");
     $this->htmlOutput();
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
@@ -170,7 +170,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     ]));
     $this->getSession()->getPage()->checkField('Existing Contact');
     $this->assertSession()->checkboxChecked('Existing Contact');
-    $this->getSession()->getPage()->pressButton('Save Settings');
+    $this->pressButtonOverride('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
     $this->assertPageNoErrorMessages();
 
@@ -186,7 +186,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->uncheckField('Volunteer');
     $this->assertSession()->checkboxNotChecked('Volunteer');
     $this->htmlOutput();
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
@@ -259,7 +259,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField("- Child Tag A");
     $this->assertSession()->checkboxChecked("- Child Tag A");
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 

@@ -152,7 +152,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     // Check if we can replace/overwrite the currently loaded values for First Name and Last Name
     $this->addFieldValue('First Name', 'Jann');
     $this->addFieldValue('Last Name', 'Arden');
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     // Verify if the modified value is updated for the contact.
@@ -196,7 +196,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     // Update the name to some other value.
     $this->addFieldValue('First Name', 'Alanis');
     $this->addFieldValue('Last Name', 'Morissette');
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     // Verify if the modified value is updated for the contact.
@@ -220,7 +220,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->elementNotExists('css', '[data-drupal-selector="edit-elements-civicrm-contact"]');
     $this->assertSession()->elementNotExists('css', '[data-drupal-selector="edit-elements-civicrm-options"]');
     $this->assertSession()->elementNotExists('css', '[data-drupal-selector="edit-elements-civicrm-select"]');
-    $this->getSession()->getPage()->pressButton('Close');
+    $this->pressButtonOverride('Close');
 
     $contactElementEdit = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations"] a.webform-ajax-link');
     $contactElementEdit->click();
@@ -233,7 +233,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->waitForElementVisible('css', '[data-drupal-selector="edit-properties-search-prompt"]');
     $this->addFieldValue('Search Prompt', '- Select Contact -');
 
-    $this->getSession()->getPage()->pressButton('Save');
+    $this->pressButtonOverride('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertSession()->pageTextContains('Existing Contact has been updated');
 
@@ -260,7 +260,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     // Update the name to some other value.
     $this->addFieldValue('First Name', 'Frederick-Edited');
     $this->addFieldValue('Last Name', 'Pabst-Edited');
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     // Verify if the modified value is updated for the contact.
@@ -290,13 +290,13 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalGet($this->webform->toUrl('settings-submissions'));
     $this->htmlOutput();
     $this->getSession()->getPage()->selectFieldOption("draft", 'authenticated');
-    $this->getSession()->getPage()->pressButton('Save');
+    $this->pressButtonOverride('Save');
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
     $this->getSession()->getPage()->fillField('Nickname', 'Nick');
 
-    $this->getSession()->getPage()->pressButton('Save Draft');
+    $this->pressButtonOverride('Save Draft');
     $this->assertSession()->pageTextContains('Submission saved. You may return to this form later and it will restore the current values.');
     $this->assertPageNoErrorMessages();
 
@@ -352,7 +352,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->waitForField('First Name');
     $this->assertSession()->fieldValueEquals('First Name','Admin');
     $this->assertSession()->fieldValueEquals('Last Name', 'User');
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
     $this->assertPageNoErrorMessages();
 
@@ -362,7 +362,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     // Empty static widget should throw an error on submission.
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertSession()->pageTextContains('Existing Contact field is required');
   }
 
@@ -398,7 +398,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
@@ -444,7 +444,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
 
     // Make sure the "sticky" AJAX works.
@@ -542,7 +542,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
         }
       }
     }
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
     $contact_result = $this->utils->wf_civicrm_api('contact', 'get', [
       'sequential' => 1,

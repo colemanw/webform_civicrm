@@ -131,7 +131,7 @@ final class AttachmentTest extends WebformCivicrmTestBase {
       $this->assertSession()->pageTextContains($file['name']);
     }
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
   }
