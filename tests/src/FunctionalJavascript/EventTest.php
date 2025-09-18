@@ -130,7 +130,7 @@ final class EventTest extends WebformCivicrmTestBase {
     }
     $refName = 'civicrm_1_participant_1_cg' . $this->cg['id'] . '_custom_' . $this->_customFields['participant_contact_ref']['id'];
     $this->getSession()->getPage()->selectFieldOption($refName, 2);
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
     $this->assertPageNoErrorMessages();
     $this->htmlOutput();
 
@@ -138,7 +138,7 @@ final class EventTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '40.00');
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->htmlOutput();
 
@@ -308,7 +308,7 @@ final class EventTest extends WebformCivicrmTestBase {
       'postal_code' => '53177',
     ];
     $this->fillBillingFields($billingValues);
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->htmlOutput();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 

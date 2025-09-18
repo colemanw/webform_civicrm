@@ -43,7 +43,7 @@ final class ContributionSoftTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('civicrm_2_contact_1_contact_first_name', 'Max');
     $this->getSession()->getPage()->fillField('civicrm_2_contact_1_contact_last_name', 'Plank');
 
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
     $this->assertPageNoErrorMessages();
     $this->getSession()->getPage()->fillField('Contribution Amount', '20');
 
@@ -51,7 +51,7 @@ final class ContributionSoftTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '20.00');
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 

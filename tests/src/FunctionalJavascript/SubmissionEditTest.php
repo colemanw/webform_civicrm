@@ -28,7 +28,7 @@ final class SubmissionEditTest extends WebformCivicrmTestBase {
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->getSession()->getPage()->fillField('First Name', 'Dummy');
     $this->getSession()->getPage()->fillField('Last Name', 'Tester');
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
 
     // Should have created one contact
     $newMax = $this->getMaxId();
@@ -40,7 +40,7 @@ final class SubmissionEditTest extends WebformCivicrmTestBase {
     $this->drupalGet($submission->toUrl('edit-form'));
     $this->getSession()->getPage()->fillField('First Name', 'Smarty');
     $this->getSession()->getPage()->fillField('Last Name', 'Tester');
-    $this->getSession()->getPage()->pressButton('Save');
+    $this->pressButtonOverride('Save');
 
     // Should have updated not created a new contact
     $this->assertEquals($newMax, $this->getMaxId());

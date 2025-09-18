@@ -152,7 +152,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
 
     $this->getSession()->getPage()->selectFieldOption('outBound_option', 5);
 
-    $this->getSession()->getPage()->pressButton('_qf_Smtp_next');
+    $this->pressButtonOverride('_qf_Smtp_next');
   }
 
   /**
@@ -258,7 +258,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertSession()->pageTextContains('You must enable an email field for Contact 1 in order to process transactions.');
-    $this->getSession()->getPage()->pressButton('Enable It');
+    $this->pressButtonOverride('Enable It');
     $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
     $this->getSession()->getPage()->selectFieldOption('Financial Type', $params['financial_type_id'] ?? 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
@@ -422,7 +422,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       $this->assertSession()->checkboxChecked('properties[extra][multiple]');
     }
     $this->htmlOutput();
-    $this->getSession()->getPage()->pressButton('Save');
+    $this->pressButtonOverride('Save');
     $this->assertSession()->waitForText('has been updated.');
   }
 
@@ -468,7 +468,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
    * @param boolean $fieldDeleted
    */
   public function saveCiviCRMSettings($fieldDeleted = FALSE) {
-    $this->getSession()->getPage()->pressButton('Save Settings');
+    $this->pressButtonOverride('Save Settings');
     if (!$fieldDeleted) {
       $this->assertSession()->pageTextContains('Saved CiviCRM settings');
     }
@@ -496,7 +496,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->assertSession()->elementExists('xpath', '//a[contains(@id, "--advanced")]')->click();
     $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-default"]')->click();
     $this->getSession()->getPage()->fillField('properties[default_value]', $value);
-    $this->getSession()->getPage()->pressButton('Save');
+    $this->pressButtonOverride('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertSession()->pageTextContains(' has been updated');
   }
@@ -617,7 +617,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       $ajax_message_visible = $this->assertSession()->waitForElementVisible('css', '.webform-ajax-messages', 100);
     } while ($ajax_message_visible);
 
-    $this->getSession()->getPage()->pressButton('Save');
+    $this->pressButtonOverride('Save');
     $this->assertSession()->waitForElementVisible('css', '.webform-ajax-messages');
   }
 
@@ -770,7 +770,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this_year = date('Y');
     $this->getSession()->getPage()->selectFieldOption('credit_card_exp_date[Y]', $this_year + 1);
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->htmlOutput();
     $this->assertPageNoErrorMessages();
     $this->assertSession()->waitForText('New submission added to CiviCRM Webform Test.');
@@ -820,7 +820,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
 
     $this->getSession()->getPage()->selectFieldOption('edit-settings-body', '_other_');
     $this->fillCKEditor('settings[body_custom_html][value]', $params['body']);
-    $this->getSession()->getPage()->pressButton('Save');
+    $this->pressButtonOverride('Save');
   }
 
   /**
@@ -882,6 +882,30 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       $options[$value] = $label;
     }
     return $options;
+  }
+
+  /**
+   * Override pressButton to deal with new chrome issues. Stolen from
+   * https://git.drupalcode.org/project/lms/-/merge_requests/82/diffs#e8d889b2b6302fed089d688dcd74ff2f907afdd8_668_673
+   * See https://www.drupal.org/project/drupal/issues/3471113
+   */
+  protected function pressButtonOverride(string $selector, string $type = 'default'): void {
+    $session = $this->getSession();
+    $page = $session->getPage();
+    $before = $page->getHtml();
+    if ($type === 'default') {
+      $button = $page->findButton($selector);
+    }
+    else {
+      $button = $page->find($type, $selector);
+    }
+    $this->assertNotNull($button, \sprintf('Button "%s" not found.', $selector));
+    $button->press();
+    $result = $page->waitFor(5, function (\Behat\Mink\Element\DocumentElement $page) use ($before, $session) {
+      $page_html = $page->getHtml();
+      return $page_html !== '' && \strcmp($page_html, $before) !== 0 && (bool) $session->evaluateScript('document.readyState === "complete"');
+    });
+    $this->assertTrue($result, \sprintf("Pressing of the %s button didn't produce any results or page wasn't properly loaded afterwards.", $selector));
   }
 
 }

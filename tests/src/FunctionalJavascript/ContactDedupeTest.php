@@ -148,7 +148,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Phone', '4031234567');
     $this->getSession()->getPage()->fillField('Advisor Name', 'Professor Jane Smith');
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
@@ -181,7 +181,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst-edited');
     $this->getSession()->getPage()->fillField('Phone', '4031234567');
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 

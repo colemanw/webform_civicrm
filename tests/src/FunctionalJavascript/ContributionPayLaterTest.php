@@ -60,7 +60,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
 
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
     $this->assertPageNoErrorMessages();
     $this->getSession()->getPage()->fillField('Contribution Amount', '30');
 
@@ -73,7 +73,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '30.00');
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_financial_type_id', 2);
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
@@ -192,7 +192,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->selectFieldOption('State/Province', $this->state);
 
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
     $this->assertSession()->waitForField('civicrm_1_contribution_1_contribution_total_amount');
     $this->assertPageNoErrorMessages();
 
@@ -214,7 +214,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '30.00');
     $this->getSession()->getPage()->fillField('Donation Custom Field', 'Donation for xyz');
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
   }
@@ -332,7 +332,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
       $this->getSession()->getPage()->uncheckField('properties[extra][multiple]');
     }
 
-    $this->getSession()->getPage()->pressButton('Save');
+    $this->pressButtonOverride('Save');
     $this->assertSession()->waitForText('has been updated.');
   }
 
@@ -344,7 +344,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     // $this->drupalGet(\CRM_Utils_System::url('civicrm/admin/domain', 'action=update&reset=1', TRUE, NULL, FALSE));
     // $this->getSession()->getPage()->fillField('name', 'Pay Laterers');
     // $this->getSession()->getPage()->fillField('email_1_email', 'pay.later@example.org');
-    // $this->getSession()->getPage()->pressButton('_qf_Domain_next_view-bottom');
+    // $this->pressButtonOverride('_qf_Domain_next_view-bottom');
 
     civicrm_api3('Domain', 'create', ['id' => 1, 'name' => 'Pay Laterers']);
     $option_value = civicrm_api3('OptionValue', 'get', [
@@ -405,7 +405,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     ], 'value')[0] ?? NULL;
     $this->getSession()->getPage()->selectFieldOption("civicrm_1_contact_1_contact_gender_id", $femaleID);
 
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
     $this->assertPageNoErrorMessages();
     $this->getSession()->getPage()->fillField('Contribution Amount', '20');
 
@@ -413,7 +413,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '20.00');
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 

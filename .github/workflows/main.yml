@@ -73,13 +73,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install sendmail
-      # Temp thing
-      - name: Downgrade chrome
-        run: |
-          curl -L -o chrome.deb http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_127.0.6533.119-1_amd64.deb
-          sudo apt-get install libu2f-udev
-          sudo dpkg -i chrome.deb
-          google-chrome-stable --version
       - name: Setup Drupal
         run: |
           COMPOSER_MEMORY_LIMIT=-1 composer create-project drupal/recommended-project:${{ matrix.drupal }} ~/drupal --no-interaction --no-install
@@ -119,11 +112,12 @@ jobs:
       - name: Download Webform
         run: |
           cd ~/drupal
-          if [ "${{ env.ISDRUPAL11 }}" == "1" ]; then
-            COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:6.3.x-dev@dev'
-          else
-            COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:^6.2'
-          fi
+          COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:6.x-dev'
+#          if [ "${{ env.ISDRUPAL11 }}" == "1" ]; then
+#            COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:6.3.x-dev@dev'
+#          else
+#            COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:^6.2'
+#          fi
       - name: Install webform_civicrm
         run: |
           cd ~/drupal
@@ -182,9 +176,6 @@ jobs:
           curl -L -O https://github.com/agh1/com.aghstrategies.uscounties/archive/2.1.zip
           unzip 2.1.zip
       - uses: nanasess/setup-chromedriver@master
-        with:
-          # temporary to match downgraded chrome
-          chromedriver-version: '127.0.6533.119'
       - name: Run chromedriver
         run: chromedriver --port=9515 &
       - name: Run php built-in server

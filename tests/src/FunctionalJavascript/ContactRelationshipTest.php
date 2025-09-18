@@ -148,7 +148,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField("Deutschland");
     $this->getSession()->getPage()->checkField("Canada");
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
@@ -217,7 +217,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField("Child of");
     $this->getSession()->getPage()->checkField("Partner of");
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
@@ -275,7 +275,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     // Remove Partner of relationship with the contact.
     $this->getSession()->getPage()->uncheckField("Partner of");
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
@@ -348,7 +348,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Organization Name', 'Western Canada High');
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
@@ -401,7 +401,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-contact-defaults"]')->click();
     $this->getSession()->getPage()->selectFieldOption('Set default contact from', 'Relationship to...');
     $this->getSession()->getPage()->selectFieldOption('Specify Relationship(s)', 'School is Contact 1');
-    $this->getSession()->getPage()->pressButton('Save');
+    $this->pressButtonOverride('Save');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $student['contact_id']]]));
