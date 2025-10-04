@@ -1157,6 +1157,7 @@ class AdminForm implements AdminFormInterface {
     }
     $this->addAjaxItem("contribution:sets:contribution", "civicrm_1_contribution_1_contribution_financial_type_id", "..:custom");
     $this->addAjaxItem("contribution:sets:contribution", "civicrm_1_contribution_1_contribution_payment_processor_id", "..:contribution");
+    $this->addAjaxItem("contribution:sets:contribution", "civicrm_1_contribution_1_contribution_is_test", "..:contribution");
 
     //Add Currency.
     $this->form['contribution']['sets']['contribution']['contribution_1_settings_currency'] = [
