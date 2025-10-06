@@ -799,21 +799,105 @@ abstract class WebformCivicrmBase {
   public static function saveDrupalFileToCivi($id, $filename = NULL) {
     $file = File::load($id);
     if ($file) {
+      // Get CiviCRM configuration singleton instance.
       $config = \CRM_Core_Config::singleton();
-      $copyTo = $config->customFileUploadDir;
-      if(!isset($filename)) {
+
+      // Get the custom file upload directory and ensure it ends with a slash.
+      $copyTo = \CRM_Utils_File::addTrailingSlash($config->customFileUploadDir, '/');
+
+      // If no filename was provided, extract it from the file URI
+      if (!isset($filename)) {
         $filename = basename($file->getFileUri());
       }
-      $copyTo .= '/' . \CRM_Utils_File::makeFileName($filename, TRUE);
+      // Ensure the custom file upload directory exists, creating it if necessary
+      $fileSystem = \Drupal::service('file_system');
+
+      // Get unique ID from file content hash or fallback to random
+      $real_path = $fileSystem->realpath($file->getFileUri());
+      $uniqID = ($real_path && file_exists($real_path))
+        ? md5_file($real_path)
+        : md5(uniqid(rand(), TRUE));
+
+      // Parse filename components
+      $info = pathinfo($filename);
+      $extension = $info['extension'] ?? '';
+      $basename = $extension
+        ? substr($info['basename'], 0, -(strlen($extension) + 1))
+        : $info['basename'];
+
+      // Build and sanitize new filename
+      $input = "{$basename}_{$uniqID}";
+      $filename = mb_substr(preg_replace('/\W/u', '_', $input), 0, 240);
+
+      // Add extension if present
+      if ($extension) {
+        $filename .= ".{$extension}";
+      }
+      // Note : Note: We cannot use civicrm makeFileName here because it adds a random string,
+      // which makes it difficult to identify the same file later and avoid
+      // duplication in multistep application form.
+      // $filename = \CRM_Utils_File::makeFileName($filename, TRUE);
+
+      // Construct the full destination path
+      $copyTo .= $filename;
+
+      if ($fileSystem->realpath($copyTo)) {
+        // File already exists, find existing CiviCRM record.
+
+        // Extract the relative URI by removing the custom file upload directory path
+        $uri = str_replace($config->customFileUploadDir, '', $copyTo);
+
+        // Remove any leading slashes from the URI.
+        $uri = trim($uri, '/');
+
+        // Search for an existing CiviCRM file record with this URI
+        $existingFile = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('file', 'get', [
+          'uri' => $uri,
+          'sequential' => 1,
+        ]);
+
+        // If an existing file record was found, return its ID
+        if (!empty($existingFile['values'][0]['id'])) {
+          // Verify file actually exists on disk
+          if (file_exists($copyTo)) {
+            return $existingFile['values'][0]['id'];
+          }
+          else {
+            // DB record exists but file missing - delete stale record
+            \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('file', 'delete', [
+              'id' => $existingFile['values'][0]['id'],
+            ]);
+          }
+        }
+      }
+
+      // Copy the file from Drupal's file system to CiviCRM's custom upload directory
       $path = \Drupal::service('file_system')->copy($file->getFileUri(), $copyTo);
       if ($path) {
-        $result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('file', 'create', [
-          'uri' => str_replace($config->customFileUploadDir, '', $path),
-          'mime_type' => $file->getMimeType(),
-        ]);
-        return wf_crm_aval($result, 'id');
+        // Extract the relative URI from the copied file path
+        $uri = str_replace($config->customFileUploadDir, '', $path);
+
+        // Remove any leading slashes from the URI
+        $uri = trim($uri, '/');
+        try {
+          // Create a new CiviCRM file record with the URI and MIME type
+          $result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('file', 'create', [
+            'uri' => $uri,
+            'mime_type' => $file->getMimeType(),
+          ]);
+          // Return the newly created CiviCRM file ID
+          return wf_crm_aval($result, 'id');
+        }
+        catch (\Exception $e) {
+          // Cleanup: delete the copied file
+          @unlink($copyTo);
+          \Drupal::logger('webform_civicrm')->error('CiviCRM API failed: %1', ['%1' => $e->getMessage()]);
+          return NULL;
+        }
       }
     }
+
+    // Return NULL if the file couldn't be loaded or copied
     return NULL;
   }
 
