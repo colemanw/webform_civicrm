@@ -119,11 +119,6 @@ jobs:
           #else
           #  COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:^6.2'
           #fi
-          #
-          # Temporary workaround. See https://www.drupal.org/project/webform/issues/3547627.
-          cd web/modules/contrib/webform
-          curl -L -O https://gist.githubusercontent.com/demeritcowboy/77da9b094112d81c34489d092b4808f2/raw/58fc95ad0954b4d1e6daebc0e26010364f33231f/WebformInstallUpdateHooks2.diff
-          patch -p1 < WebformInstallUpdateHooks2.diff
       - name: Install webform_civicrm
         run: |
           cd ~/drupal
