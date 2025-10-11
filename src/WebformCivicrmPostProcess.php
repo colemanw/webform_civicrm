@@ -1312,6 +1312,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       if (isset($this->ent['contribution_recur'][1]['id'])) {
         $params['contribution_recur_id'] = $this->ent['contribution_recur'][1]['id'];
       }
+      $this->setTestMode($params);
 
       $result = $this->utils->wf_civicrm_api('membership', 'create', $params);
 
@@ -2308,6 +2309,8 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       }
       $params['pan_truncation'] = substr($params['credit_card_number'], -4);
     }
+
+    $this->setTestMode($params);
 
     // Save this stuff for later
     unset($params['soft'], $params['soft_credit_type_id']);
