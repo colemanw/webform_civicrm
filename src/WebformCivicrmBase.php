@@ -595,6 +595,17 @@ abstract class WebformCivicrmBase {
   }
 
   /**
+   * Enable is_test if payment is made using a test processor.
+   *
+   * @param array $params
+   */
+  protected function setTestMode(&$params) {
+    if (!empty($this->data['contribution'][1]['contribution'][1]['is_test'])) {
+      $params['is_test'] = TRUE;
+    }
+  }
+
+  /**
    * Get memberships for a contact
    * @param $cid
    * @return array
@@ -621,6 +632,8 @@ abstract class WebformCivicrmBase {
     if (!empty($mid)) {
       $params['id'] = $mid;
     }
+    $this->setTestMode($params);
+
     $existing = $this->utils->wf_crm_apivalues('membership', 'get', $params);
 
     if (!$existing) {
