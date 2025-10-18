@@ -40,6 +40,14 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
       'visibility' => "Public Pages",
     ]);
 
+    // Add contact to Group C
+    $this->utils->wf_civicrm_api4('GroupContact', 'create', [
+      'values' => [
+        'group_id' => $this->groups['GroupC'],
+        'contact_id' => $this->rootUserCid,
+      ],
+    ]);
+
     $this->drupalLogin($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
@@ -60,6 +68,25 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('GroupA');
     $this->assertSession()->pageTextContains('GroupB');
     $this->assertSession()->pageTextNotContains('GroupC');
+
+    $this->getSession()->getPage()->checkField('GroupB');
+    $this->assertSession()->checkboxChecked("GroupB");
+
+    // Submit the form.
+    $this->pressButtonOverride('Submit');
+    $this->assertPageNoErrorMessages();
+    $this->htmlOutput();
+
+    // Ensure user is still present in the admin group.
+    $contact = $this->utils->wf_civicrm_api('Contact', 'get', [
+      'sequential' => 1,
+      'return' => ["group"],
+      'contact_id' => $contactID,
+    ])['values'][0];
+    $contactGroups = explode(',', $contact['groups']);
+    $this->assertTrue(in_array($this->groups['GroupB'], $contactGroups));
+    $this->assertTrue(in_array($this->groups['GroupC'], $contactGroups));
+    $this->assertFalse(in_array($this->groups['GroupA'], $contactGroups));
   }
 
   public function testSubmitWebform() {
