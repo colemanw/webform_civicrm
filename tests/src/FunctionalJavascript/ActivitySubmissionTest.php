@@ -188,7 +188,7 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     }
 
     // Ok now let's log back in and retrieve the Activity we just stored - so that we can update it.
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLogin($this->rootUser);
     $sid = $this->getLastSubmissionId($this->webform);
     $this->drupalGet(Url::fromRoute('entity.webform_submission.canonical', [
       'webform' => $this->webform->id(),
