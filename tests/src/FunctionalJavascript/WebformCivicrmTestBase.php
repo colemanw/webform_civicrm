@@ -103,6 +103,7 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       'access administration pages',
       'access webform overview',
       'administer webform',
+      'view any webform submission',
       'edit all contacts',
       'view all activities',
     ]);
