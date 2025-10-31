@@ -78,6 +78,9 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     $this->htmlOutput();
+    // The root user appears to be logged in based on all the previous screenshots, but debugging output below says otherwise, so let's try some nonsense.
+    $u = \Drupal\user\Entity\User::load(1);
+    user_login_finalize($u);
     $this->htmlOutput('logged in user: ' . \Drupal::currentUser()->id() . ', logged in contact: ' . \CRM_Core_Session::getLoggedInContactID());
     $contribution = Contribution::get()
       ->addSelect('source', 'total_amount', 'contribution_status_id:label', 'currency', 'financial_type_id:label', 'receive_date')
