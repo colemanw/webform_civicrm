@@ -77,6 +77,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
+    $this->htmlOutput('logged in user: ' . \Drupal::currentUser()->id() . ', logged in contact: ' . \CRM_Core_Session::getLoggedInContactID());
     $contribution = Contribution::get()
       ->addSelect('source', 'total_amount', 'contribution_status_id:label', 'currency', 'financial_type_id:label', 'receive_date')
       ->setLimit(1)
