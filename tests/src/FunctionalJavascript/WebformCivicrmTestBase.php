@@ -908,4 +908,12 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->assertTrue($result, \sprintf("Pressing of the %s button didn't produce any results or page wasn't properly loaded afterwards.", $selector));
   }
 
+  /**
+   * See https://www.drupal.org/project/drupal/issues/3555844
+   */
+  protected function drupalLoginWrapper(\Drupal\Core\Session\AccountInterface $account) {
+    $this->drupalLogin($account);
+    user_login_finalize($account);
+  }
+
 }
