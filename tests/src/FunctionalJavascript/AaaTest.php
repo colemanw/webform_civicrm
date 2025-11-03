@@ -15,7 +15,7 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 #[RunTestsInSeparateProcesses]
 class AaaTest extends WebDriverTestBase {
 
-  protected $defaultTheme = 'starterkit_theme';
+  protected $defaultTheme = 'olivero';
 
   /**
    * Tests the thing
