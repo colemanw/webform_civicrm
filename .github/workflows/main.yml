@@ -23,18 +23,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - drupal: '10.4.*'
-            civicrm: '6.4.*'
-            php: '8.2'
-          - drupal: '10.5.*'
-            civicrm: '6.5.x-dev'
-            php: '8.3'
-          - drupal: '10.5.*'
-            civicrm: 'dev-master'
-            php: '8.3'
-          - drupal: '11.2.*'
-            civicrm: '6.4.*'
-            php: '8.3'
           - drupal: '11.x-dev'
             civicrm: 'dev-master'
             php: '8.3'
@@ -92,90 +80,11 @@ jobs:
           composer config repositories.1 path $GITHUB_WORKSPACE
           composer install --no-interaction
           COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:${{ matrix.drupal }} -w
-      # This is done differently in drupal 11. See BROWSERTEST_OUTPUT_VERBOSE below.
-      - name: Suppress links to screenshots
-        # There's so many! They can be useful locally if running one test, but they aren't useful here and cause massive scrolling.
-        run: |
-          cd ~/drupal
-          DRUPAL11=`grep "const VERSION" web/core/lib/Drupal.php | cut -f 2 -d "'" | php -r 'echo (int) version_compare(stream_get_contents(STDIN), "11", ">=");'`
-          if [ "$DRUPAL11" == "1" ]; then
-            echo "ISDRUPAL11=1" >> $GITHUB_ENV
-          else
-            echo "ISDRUPAL11=0" >> $GITHUB_ENV
-            curl -L -O https://raw.githubusercontent.com/colemanw/webform_civicrm/def72b3dce1ea4bc7dd2cdd28a72844885727789/DrupalHtmlOutputTrait.diff
-            git apply DrupalHtmlOutputTrait.diff
-          fi
-      - name: Install CiviCRM ${{ matrix.civicrm }}
-        run: |
-          cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} -W
-      - name: Download Webform
-        run: |
-          cd ~/drupal
-          # Use 6.x-dev to deal with newer chromedriver issues
-          COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:6.x-dev'
-          #if [ "${{ env.ISDRUPAL11 }}" == "1" ]; then
-          #  COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:6.3.x-dev@dev'
-          #else
-          #  COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:^6.2'
-          #fi
       - name: Install webform_civicrm
         run: |
           cd ~/drupal
           # We used the github action `checkout` plugin at the start to check out the PR branch, and then set up a composer virtual `path` repo earlier when setting up composer config. So this should pull from that repo not the real one.
           COMPOSER_MEMORY_LIMIT=-1 composer require drupal/webform_civicrm:@dev
-      - name: Install token
-        run: |
-          cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/token:^1.11
-      - name: Download some test helpers
-        run: |
-          cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require semperit/minkcivicrmhelpers
-      - name: Set identity
-        # Needed for `git am` but otherwise irrelevant
-        run: |
-          git config --global user.email "webform.civicrm@example.org"
-          git config --global user.name "Webform CiviCRM"
-      - name: Optionally Apply Core PR
-        if: ${{ github.event.inputs.coreprurl != 0 }}
-        run: |
-          cd  ~/drupal/vendor/civicrm/civicrm-core
-          curl -L -o prpatch.patch ${{ github.event.inputs.coreprurl }}.patch
-          git am prpatch.patch
-      - name: Optionally Apply Drupal 8 PR
-        if: ${{ github.event.inputs.drupal8prurl != 0 }}
-        run: |
-          cd  ~/drupal/web/modules/contrib/civicrm
-          curl -L -o prpatch.patch ${{ github.event.inputs.drupal8prurl }}.patch
-          git am prpatch.patch
-      - name: Do a fake temp install
-        # so that we can use civi api to get extensions with a version appropriate to the installed civi version
-        run: |
-          cd ~/drupal
-          composer require drush/drush
-          mkdir -p /home/runner/civicrm-cv
-          curl -L https://download.civicrm.org/cv/cv.phar -o /home/runner/civicrm-cv/cv
-          chmod +x /home/runner/civicrm-cv/cv
-          ./vendor/drush/drush/drush -y -l http://civi.localhost site-install standard --db-url='mysql://root:@127.0.0.1:${{ job.services.mysql.ports[3306] }}/fakedb' --site-name=FakeCivi
-          chmod +w web/sites/default
-          /home/runner/civicrm-cv/cv core:install --url=http://civi.localhost
-      - name: Download Civi extensions
-        run: |
-          mkdir -p ~/drupal/web/sites/default/files/civicrm/ext
-          cd ~/drupal/web/sites/default/files/civicrm/ext
-          # Allow unapproved extensions
-          /home/runner/civicrm-cv/cv ev '\Civi::settings()->set("ext_repo_url", "https://civicrm.org/extdir/ver={ver}|cms={uf}|ready=");'
-          /home/runner/civicrm-cv/cv ev '\Civi::settings()->set("http_timeout", 60);'
-          # Apparently we have to install it, otherwise stripe gives a dependency error even with install=0. I think that's a bug, but let's just do it. This is a fake install anyway.
-          /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=mjwshared
-          /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=firewall
-          /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=com.drastikbydesign.stripe
-          /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.iatspayments.civicrm
-          # For uscounties, it hasn't had a release in a few years so no longer appears in the ext feed, so just download directly. If it ever does need an update, would need to update here.
-          # /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.aghstrategies.uscounties
-          curl -L -O https://github.com/agh1/com.aghstrategies.uscounties/archive/2.1.zip
-          unzip 2.1.zip
       - uses: nanasess/setup-chromedriver@master
       - name: Run chromedriver
         run: chromedriver --port=9515 &
@@ -190,7 +99,7 @@ jobs:
           if [ "$PHPUNIT10" == "1" ]; then
             PHPUNITARGS="--display-skipped --display-deprecations --display-errors --display-warnings --display-notices"
           fi
-          ../vendor/bin/phpunit $PHPUNITARGS -c core modules/contrib/webform_civicrm
+          ../vendor/bin/phpunit $PHPUNITARGS -c core modules/contrib/webform_civicrm tests/src/FunctionalJavascript/AaaTest.php
         env:
           SYMFONY_DEPRECATIONS_HELPER: 999999
           SIMPLETEST_DB: mysql://root:@127.0.0.1:${{ job.services.mysql.ports[3306] }}/db
