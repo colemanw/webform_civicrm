@@ -3,6 +3,7 @@
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Drupal\Core\Url;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests submitting a Webform with CiviCRM: Contact with Activity
