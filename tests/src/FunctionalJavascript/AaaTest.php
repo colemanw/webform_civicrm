@@ -17,15 +17,11 @@ class AaaTest extends WebDriverTestBase {
 
   protected $defaultTheme = 'olivero';
 
-  protected static $modules = [
-    'token',
-  ];
-
   /**
    * Tests the thing
    */
   public function testAaa(): void {
-    //\Drupal::service('module_installer')->install(['token']);
+    \Drupal::service('module_installer')->install(['token']);
     /*
     \Drupal::service('theme_installer')->install(['olivero', 'claro']);
     $this->config('system.theme')
