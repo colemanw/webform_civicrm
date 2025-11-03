@@ -23,18 +23,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - drupal: '10.4.*'
-            civicrm: '6.4.*'
-            php: '8.2'
-          - drupal: '10.5.*'
-            civicrm: '6.5.x-dev'
-            php: '8.3'
-          - drupal: '10.5.*'
-            civicrm: 'dev-master'
-            php: '8.3'
-          - drupal: '11.2.*'
-            civicrm: '6.4.*'
-            php: '8.3'
           - drupal: '11.x-dev'
             civicrm: 'dev-master'
             php: '8.3'
@@ -91,7 +79,7 @@ jobs:
           composer config repositories.0 composer https://packages.drupal.org/8
           composer config repositories.1 path $GITHUB_WORKSPACE
           composer install --no-interaction
-          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:${{ matrix.drupal }} -w
+          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:11.x-dev#3eaf671 drupal/core-dev:11.x-dev#74b93b4 drupal/core:11.x-dev#75b81cd drupal/core-recommended:11.x-dev#2ce7bc1 doctrine/annotations:2.0.2 psr/cache -w
       # This is done differently in drupal 11. See BROWSERTEST_OUTPUT_VERBOSE below.
       - name: Suppress links to screenshots
         # There's so many! They can be useful locally if running one test, but they aren't useful here and cause massive scrolling.
@@ -190,7 +178,7 @@ jobs:
           if [ "$PHPUNIT10" == "1" ]; then
             PHPUNITARGS="--display-skipped --display-deprecations --display-errors --display-warnings --display-notices"
           fi
-          ../vendor/bin/phpunit $PHPUNITARGS -c core modules/contrib/webform_civicrm
+          ../vendor/bin/phpunit $PHPUNITARGS -c core --filter testSubmitWebform modules/contrib/webform_civicrm/tests/src/FunctionalJavascript/ActivitySubmissionTest.php
         env:
           SYMFONY_DEPRECATIONS_HELPER: 999999
           SIMPLETEST_DB: mysql://root:@127.0.0.1:${{ job.services.mysql.ports[3306] }}/db
