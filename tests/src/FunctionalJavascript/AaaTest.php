@@ -15,12 +15,18 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 #[RunTestsInSeparateProcesses]
 class AaaTest extends WebDriverTestBase {
 
-  protected $defaultTheme = 'claro';
+  protected $defaultTheme = 'starterkit_theme';
 
   /**
    * Tests the thing
    */
   public function testAaa(): void {
+    \Drupal::service('theme_installer')->install(['olivero', 'claro']);
+    $this->config('system.theme')
+      ->set('default', 'olivero')
+      ->set('admin', 'claro')
+      ->save();
+
     $this->drupalLogin($this->rootUser);
     $this->assertNotEmpty(\Drupal::currentUser()->id());
   }
