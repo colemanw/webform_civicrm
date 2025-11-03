@@ -913,7 +913,12 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
    */
   protected function drupalLoginWrapper(\Drupal\Core\Session\AccountInterface $account) {
     $this->drupalLogin($account);
-    user_login_finalize($account);
+    // Apparently the account for drupal login can be a different type of
+    // account than the account for finalizing the login. I don't really
+    // understand how that makes sense but let's just reload the account using
+    // the other type.
+    $otherTypeOfAccount = \Drupal\user\Entity\User::load($account->id());
+    user_login_finalize($otherTypeOfAccount);
   }
 
 }
