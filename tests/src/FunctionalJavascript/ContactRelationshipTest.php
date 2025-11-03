@@ -113,7 +113,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
   public function testMultipleCheckboxesOnRelationship() {
     drupal_flush_all_caches();
     $this->createCustomFields();
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -184,7 +184,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
    * Test removal of relationships.
    */
   public function testRelationshipRemoval() {
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -307,7 +307,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->createContactSubtype();
     $this->createRelationshipType();
 
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -390,7 +390,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
 
     $this->assertEquals('Student of', $relationshipType['label_b_a']);
 
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     // Edit Contact Element and enable select widget.
     $this->drupalGet($this->webform->toUrl('edit-form'));
 
@@ -461,7 +461,7 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     }
 
     // Create webform with 3 organization contacts.
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
 
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),

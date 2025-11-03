@@ -34,7 +34,7 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
 
     $this->addcontactinfo();
 
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -74,7 +74,7 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
       'relationship_type_id' => "Child of",
     ]);
 
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
 
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
@@ -183,7 +183,7 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
       'source' => 'Webform Testing',
     ]);
 
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -217,7 +217,7 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
    * Test submission of hidden fields.
    */
   public function testHiddenField() {
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -305,7 +305,7 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
       'target_id' => $this->rootUserCid,
     ])['id'];
 
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -534,7 +534,7 @@ States. State/Province - New Jersey.
 
     $contact = $this->addcontactinfo2();
 
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
 
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),

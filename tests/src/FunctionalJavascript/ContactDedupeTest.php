@@ -99,7 +99,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     // We'll be using phone_numeric so we must ensure we have the triggers that we need for that field to be populated
     \Civi::service('sql_triggers')->rebuild('civicrm_phone', TRUE);
 
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
 
     $this->createContactSubtype();
     $this->createDedupeRule();
@@ -207,7 +207,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $email = reset($api_result['values']);
     $this->assertEquals('frederick@pabst.io', $email['email']);
 
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
 
     civicrm_api4('DedupeRule', 'delete', [
       'where' => [['dedupe_rule_group_id.id', '=', $this->dedupeRuleGroupId]],

@@ -46,7 +46,7 @@ final class GrantTest extends WebformCivicrmTestBase {
    * Grant submission.
    */
   function testSubmitGrant() {
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));

@@ -103,7 +103,7 @@ final class AttachmentTest extends WebformCivicrmTestBase {
    * Check if all files are loaded on the webform.
    */
   public function testSubmitWebform() {
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));

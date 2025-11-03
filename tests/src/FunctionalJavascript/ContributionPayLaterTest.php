@@ -27,7 +27,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
   private $state;
 
   public function testReceiptParams() {
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->redirectEmailsToDB();
     $this->setOrgInfo();
 
@@ -125,7 +125,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->createFinancialCustomGroup('Donation');
     $this->createFinancialCustomGroup('Member Dues');
 
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -362,7 +362,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
    * is not passed to civicrm on webform submit.
    */
   public function testCivicrmOptionsDefaultSubmission() {
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));

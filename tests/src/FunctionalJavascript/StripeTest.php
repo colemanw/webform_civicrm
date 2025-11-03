@@ -32,7 +32,7 @@ final class StripeTest extends WebformCivicrmTestBase {
    * Verifies the payment with 1 contribution and 2 line item amounts.
    */
   public function testSubmitContribution() {
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -76,7 +76,7 @@ final class StripeTest extends WebformCivicrmTestBase {
     // Stripe payment logs a console ajax error.
     $this->failOnJavascriptConsoleErrors = FALSE;
 
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));

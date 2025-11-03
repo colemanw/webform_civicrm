@@ -297,7 +297,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
   public function testDynamicCustomFields() {
     drupal_flush_all_caches();
     $this->createCustomFields();
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -381,7 +381,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     $this->createCustomFields();
 
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -490,7 +490,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     $this->assertArrayNotHasKey('Mango', array_flip($fruitVal));
 
     // Ensure the element is still accessible.
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
 
     // Delete Custom field options.
     $listOptions = civicrm_api3('OptionValue', 'get', [
@@ -531,7 +531,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     ];
     $contactID = $this->createIndividual($createParams)['id'];
 
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -594,7 +594,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     ];
     $this->createIndividual($createParams);
 
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));

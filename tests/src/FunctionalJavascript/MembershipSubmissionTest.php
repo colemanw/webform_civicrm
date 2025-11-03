@@ -16,7 +16,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->createMembershipType(1, TRUE);
     $payment_processor = $this->createPaymentProcessor();
 
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -109,7 +109,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->createMembershipType($amount = 0, $autoRenew = FALSE, $name = 'Basic', $financialTypeId = 'Member Dues');;
     $this->createMembershipType($amount = 0, $autoRenew = FALSE, $name = 'Plus', $financialTypeId = 'Member Dues');
 
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
 
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
@@ -203,7 +203,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $membership = reset($api_result['values']);
     $mid1_plus = $membership['id'];
 
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
 
     $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['id' => $adminUserCid, 'mid' => $mid1_plus]]));
     $this->assertPageNoErrorMessages();
@@ -227,7 +227,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->createMembershipType(1, TRUE, 'Basic');
     $this->createMembershipType(1, TRUE, 'Basic Plus');
 
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -310,7 +310,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
     $payment_processor = $this->createPaymentProcessor();
 
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));

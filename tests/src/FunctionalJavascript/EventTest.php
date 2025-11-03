@@ -87,7 +87,7 @@ final class EventTest extends WebformCivicrmTestBase {
   function testParticipantContactReference() {
     $this->createCustomFields();
 
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -206,7 +206,7 @@ final class EventTest extends WebformCivicrmTestBase {
    * Verify the submission of multiple participants.
    */
   function testMultipleParticipants() {
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -252,7 +252,7 @@ final class EventTest extends WebformCivicrmTestBase {
   function testSubmitEventParticipant() {
     $payment_processor = $this->createPaymentProcessor();
 
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -377,7 +377,7 @@ final class EventTest extends WebformCivicrmTestBase {
     ]);
 
     // Create a webform with 3 contacts.
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));

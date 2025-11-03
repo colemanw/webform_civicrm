@@ -148,7 +148,7 @@ final class SaveSettingsTest extends WebformCivicrmTestBase {
    * Add fields on the webform.
    */
   private function addFieldsOnWebform() {
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));

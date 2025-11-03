@@ -19,7 +19,7 @@ final class CaseSubmissionTest extends WebformCivicrmTestBase {
   protected function setUp(): void {
     parent::setUp();
     $this->enableComponent('CiviCase');
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
 
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
@@ -73,7 +73,7 @@ final class CaseSubmissionTest extends WebformCivicrmTestBase {
       'last_name' => 'Gibson',
     ])['values'][$ufContact['contact_id']];
 
-    $this->drupalLogin($testUser);
+    $this->drupalLoginWrapper($testUser);
     $caseSubject = "Test Case create with authenticated user";
     $this->submitCaseAndVerifyResult($caseSubject, FALSE);
 

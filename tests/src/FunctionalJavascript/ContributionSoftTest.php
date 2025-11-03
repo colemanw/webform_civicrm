@@ -11,7 +11,7 @@ final class ContributionSoftTest extends WebformCivicrmTestBase {
    * Test contribution with soft-credit
    */
   public function testSoftCredit() {
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));

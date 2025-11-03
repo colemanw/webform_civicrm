@@ -40,7 +40,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
       'visibility' => "Public Pages",
     ]);
 
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -63,7 +63,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
   }
 
   public function testSubmitWebform() {
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -219,7 +219,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
       'parent_id' => "Company",
     ])['id'];
 
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));

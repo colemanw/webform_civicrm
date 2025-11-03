@@ -43,7 +43,7 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
   }
 
   public function createWebformWithAddress($locType = 'Home') {
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));

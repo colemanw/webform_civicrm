@@ -14,7 +14,7 @@ final class SubmissionEditTest extends WebformCivicrmTestBase {
 
   public function testEditSubmission() {
     // Set up webform-civicrm with one contact, create-only
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));

@@ -65,7 +65,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
   public function testAutocompleteWithGroupFilter() {
     // Create sample contacts.
     $this->createGroupWithContacts();
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -109,7 +109,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     // Create sample contacts.
     $this->createGroupWithContacts();
 
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -172,7 +172,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
    */
   public function testStaticAndAutocompleteOnContactElement() {
     $contact = $this->createIndividual();
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -280,7 +280,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
    * Test Draft Submission.
    */
   public function testDraftSubmission() {
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -309,7 +309,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
    * Test Existing Contact Element configured as Current (logged-in) User
    */
   public function testStaticCurrentUser() {
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -336,7 +336,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contact-1-contact-preferred-communication-method-operations', FALSE);
 
     $this->drupalLogout();
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
 
     $currentUserUF = $this->getUFMatchRecord($this->adminUser->id());
 
@@ -379,7 +379,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
 
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -425,7 +425,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
 
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -448,7 +448,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertPageNoErrorMessages();
 
     // Make sure the "sticky" AJAX works.
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     $this->drupalGet($this->webform->toUrl('results-submissions'));
     $stickyLink = $this->assertSession()->elementExists('css', "#webform-submission-1-sticky");
     $this->assertSession()->elementExists('css', '#webform-submission-1-sticky .webform-icon-sticky--off');
@@ -471,7 +471,7 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->assertArrayHasKey('first_name', $contact_values['contact'], 'Test contact data must contain first_name');
     $this->assertArrayHasKey('last_name', $contact_values['contact'], 'Test contact data must contain last_name');
 
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));

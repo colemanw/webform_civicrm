@@ -110,7 +110,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
   }
 
   /*public function testSubmit1stPayContribution() {
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -217,7 +217,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
    */
   public function configureWebform() {
     $this->setupSalesTax(2);
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -376,7 +376,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
   }
 
   public function testSubmitACHEFTContribution() {
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -450,7 +450,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
   }
 
   public function testSubmitRecurringContribution() {
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));

@@ -36,7 +36,7 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
    * Test submitting an activity
    */
   public function testSubmitWebform() {
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -50,7 +50,7 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
    * Test Activity with single option for Activity Type.
    */
   public function testSingleActivityTypeOption() {
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -68,7 +68,7 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
    * Test activity on multiple assignees
    */
   public function testMultipleAssignees() {
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -188,7 +188,7 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     }
 
     // Ok now let's log back in and retrieve the Activity we just stored - so that we can update it.
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     $sid = $this->getLastSubmissionId($this->webform);
     $this->drupalGet(Url::fromRoute('entity.webform_submission.canonical', [
       'webform' => $this->webform->id(),

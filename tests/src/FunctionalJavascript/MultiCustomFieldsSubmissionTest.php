@@ -121,7 +121,7 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
 
     $this->_totalMV = 1;
     $this->createMultiValueCustomFields();
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -208,7 +208,7 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
   public function testContactRefSubmission() {
     $this->_totalMV = 5;
     $this->createMultiValueCustomFields();
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -271,7 +271,7 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
   public function testSubmitWebform() {
     $this->_totalMV = 5;
     $this->createMultiValueCustomFields();
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));

@@ -17,7 +17,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
    */
   public function testOnePageDonation() {
     $payment_processor = $this->createPaymentProcessor();
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -101,7 +101,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
    */
   public function testBillingSameAs() {
     $payment_processor = $this->createPaymentProcessor();
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -195,7 +195,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     // Create a second individual contact cid2
     $cid2 = $this->createIndividual(['first_name' => 'Mark', 'last_name' => 'Cooper'])['id'];
 
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -363,7 +363,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
    */
   public function testCurrentEmployer() {
     $payment_processor = $this->createPaymentProcessor();
-    $this->drupalLogin($this->rootUser);
+    $this->drupalLoginWrapper($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -430,7 +430,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
   public function testOverThousand() {
     $payment_processor = $this->createPaymentProcessor();
 
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -487,7 +487,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
   }
 
   public function testAssignContributionSecondContact() {
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
 
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
@@ -559,7 +559,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
   }
 
   public function testAssignContributionSecondContactSelectByUser() {
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
 
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
@@ -638,7 +638,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
 
   public function testAssignContributionSecondContactSelectByUserPaymentProcessor() {
     $payment_processor = $this->createPaymentProcessor();
-    $this->drupalLogin($this->adminUser);
+    $this->drupalLoginWrapper($this->adminUser);
 
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
