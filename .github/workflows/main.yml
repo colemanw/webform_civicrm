@@ -79,7 +79,7 @@ jobs:
           composer config repositories.0 composer https://packages.drupal.org/8
           composer config repositories.1 path $GITHUB_WORKSPACE
           composer install --no-interaction
-          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:11.x-dev#3eaf671 drupal/core-dev:11.x-dev#74b93b4 drupal/core:11.x-dev#aa12cc60d44f1d78 drupal/core-recommended:11.x-dev#2ce7bc1 doctrine/annotations:2.0.2 psr/cache -w
+          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:11.x-dev#3eaf671 drupal/core-dev:11.x-dev#74b93b4 drupal/core:11.x-dev#37a23010e8220 drupal/core-recommended:11.x-dev#2ce7bc1 doctrine/annotations:2.0.2 psr/cache -w
       # This is done differently in drupal 11. See BROWSERTEST_OUTPUT_VERBOSE below.
       - name: Suppress links to screenshots
         # There's so many! They can be useful locally if running one test, but they aren't useful here and cause massive scrolling.
