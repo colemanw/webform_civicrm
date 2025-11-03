@@ -9,6 +9,7 @@ use Drupal\Core\Url;
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class ActivitySubmissionTest extends WebformCivicrmTestBase {
 
   /**
