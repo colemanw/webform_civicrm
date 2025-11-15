@@ -334,7 +334,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
       'query' => ['reset' => 1, 'action' => 'update', 'gid' => 1, 'id' => $this->_customFields['color_checkboxes']]
     ])->toString();
     $this->drupalGet($fieldURL);
-    $this->getSession()->getPage()->uncheckField('Active');
+    $this->getSession()->getPage()->uncheckField('is_active');
     // $this->createScreenshot($this->htmlOutputDirectory . '/custom_field.png');
     $this->pressButtonOverride('_qf_Field_done-bottom');
 
@@ -348,7 +348,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     //Re-enable the field.
     $this->drupalGet($fieldURL);
-    $this->getSession()->getPage()->checkField('Active');
+    $this->getSession()->getPage()->checkField('is_active');
     $this->pressButtonOverride('_qf_Field_done-bottom');
     $this->assertPageNoErrorMessages();
 
