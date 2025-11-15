@@ -334,8 +334,9 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
       'query' => ['reset' => 1, 'action' => 'update', 'gid' => 1, 'id' => $this->_customFields['color_checkboxes']]
     ])->toString();
     $this->drupalGet($fieldURL);
+    $this->createScreenshot($this->htmlOutputDirectory . '/custom_field_before.png');
     $this->getSession()->getPage()->uncheckField('is_active');
-    $this->createScreenshot($this->htmlOutputDirectory . '/custom_field.png');
+    $this->createScreenshot($this->htmlOutputDirectory . '/custom_field_after.png');
     $this->pressButtonOverride('_qf_Field_done-bottom');
 
     //Reload the webform page - the custom field should be removed.
