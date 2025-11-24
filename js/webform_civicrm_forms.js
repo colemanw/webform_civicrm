@@ -452,10 +452,12 @@ var wfCivi = (function ($, D) {
 
       // Function to update fee field with AJAX call.
       function updateFeeField(membershipId, feeFieldInput) {
-        if (!membershipId || feeFieldInput.length === 0) {
-          return;
+        if (!membershipId || membershipId == null) {
+          throw new Error('membershipId not found.');
         }
-
+        if ($(feeFieldInput).length === 0) {
+          throw new Error('membership-fee-amount-from-membership not found.');
+        }
         $.ajax({
           url: '/webform-civicrm/js/getMembershipFees/' + membershipId,
           dataType: 'json',
