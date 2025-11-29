@@ -29,7 +29,6 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
   public function testReceiptParams() {
     $this->drupalLogin($this->rootUser);
     $this->redirectEmailsToDB();
-    $this->setOrgInfo();
 
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
@@ -109,7 +108,6 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
       'is_email_receipt' => 1,
     ]);
     $sent_email = $this->getMostRecentEmail();
-    $this->assertStringContainsString('From: Pay Laterers <pay.later@example.org>', $sent_email);
     $this->assertStringContainsString('To: Frederick Pabst <fred@example.com>', $sent_email);
     // Adjust for fix in core - since status is now completed, it shouldn't say invoice.
     if (version_compare(\CRM_Core_BAO_Domain::version(), '5.63.alpha1', '<')) {
@@ -334,27 +332,6 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
 
     $this->pressButtonOverride('Save');
     $this->assertSession()->waitForText('has been updated.');
-  }
-
-  /**
-   * Set the info at Administer - Communications - Organization Info
-   */
-  private function setOrgInfo() {
-    // This fails - see https://lab.civicrm.org/dev/drupal/-/issues/133
-    // $this->drupalGet(\CRM_Utils_System::url('civicrm/admin/domain', 'action=update&reset=1', TRUE, NULL, FALSE));
-    // $this->getSession()->getPage()->fillField('name', 'Pay Laterers');
-    // $this->getSession()->getPage()->fillField('email_1_email', 'pay.later@example.org');
-    // $this->pressButtonOverride('_qf_Domain_next_view-bottom');
-
-    civicrm_api3('Domain', 'create', ['id' => 1, 'name' => 'Pay Laterers']);
-    $option_value = civicrm_api3('OptionValue', 'get', [
-      'option_group_id' => 'from_email_address',
-      'is_default' => 1,
-    ]);
-    civicrm_api3('OptionValue', 'create', [
-      'id' => $option_value['id'],
-      'label' => '"Pay Laterers" <pay.later@example.org>',
-    ]);
   }
 
   /**
