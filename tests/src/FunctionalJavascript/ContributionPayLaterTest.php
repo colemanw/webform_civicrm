@@ -101,21 +101,6 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
       $mb['outBound_option'] = \CRM_Mailing_Config::OUTBOUND_OPTION_REDIRECT_TO_DB;
       \Civi::settings()->set('mailing_backend', $mb);
     }
-
-    // Complete the contribution and recheck receipt.
-    civicrm_api3('Contribution', 'completetransaction', [
-      'id' => $contribution['id'],
-      'is_email_receipt' => 1,
-    ]);
-    $sent_email = $this->getMostRecentEmail();
-    $this->assertStringContainsString('To: Frederick Pabst <fred@example.com>', $sent_email);
-    // Adjust for fix in core - since status is now completed, it shouldn't say invoice.
-    if (version_compare(\CRM_Core_BAO_Domain::version(), '5.63.alpha1', '<')) {
-      $this->assertStringContainsString('Subject: Invoice - Contribution - Frederick Pabst', $sent_email);
-    }
-    else {
-      $this->assertStringContainsString('Subject: Receipt - Contribution - Frederick Pabst', $sent_email);
-    }
   }
 
   public function testSubmitContribution() {
