@@ -57,8 +57,8 @@ final class AuthnetExtensionTest extends WebformCivicrmTestBase {
       'last_name' => 'Pabst',
       'street_address' => '123 Milwaukee Ave',
       'city' => 'Milwaukee',
-      'country_id' => '1228',
-      'state_province_id' => '1048',
+      'country' => '1228',
+      'state_province' => '1048',
       'postal_code' => '53177',
     ];
     $this->fillBillingFields($billingValues);
