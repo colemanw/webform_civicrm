@@ -62,7 +62,7 @@ final class AuthnetExtensionTest extends WebformCivicrmTestBase {
       'postal_code' => '53177',
     ];
     $this->fillBillingFields($billingValues);
-    $this->pressButtonOverride('Submit');
+    $this->fillCardAndSubmit();
 
     $this->assertPageNoErrorMessages();
     $this->htmlOutput();
