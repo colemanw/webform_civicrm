@@ -140,6 +140,7 @@ final class AuthnetExtensionTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->selectFieldOption('Payment Processor Mode', 'Test Mode');
     $this->getSession()->getPage()->selectFieldOption('Payment Processor', $this->paymentProcessorID);
+    $this->getSession()->getPage()->selectFieldOption('Payment Processor', 'AuthorizeNetCreditcard');
 
     $this->enableBillingSection();
 
