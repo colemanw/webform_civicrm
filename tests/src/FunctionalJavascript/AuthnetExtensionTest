@@ -68,7 +68,6 @@ final class AuthnetExtensionTest extends WebformCivicrmTestBase {
     ];
     $this->fillCardAndSubmit($billingValues);
 
-    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->htmlOutput();
 
