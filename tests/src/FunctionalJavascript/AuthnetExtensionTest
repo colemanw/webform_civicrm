@@ -18,13 +18,8 @@ final class AuthnetExtensionTest extends WebformCivicrmTestBase {
     parent::setUp();
 
     $this->setUpExtension('mjwshared,firewall,com,authorizenet');
-
     $this->paymentProcessorID = $this->createAuthnetProcessor();
 
-    // KG unsure if Authnet Extension has this setting:
-    $this->utils->wf_civicrm_api('Setting', 'create', [
-      'authnet_nobillingaddress' => 1,
-    ]);
     drupal_flush_all_caches();
   }
 
