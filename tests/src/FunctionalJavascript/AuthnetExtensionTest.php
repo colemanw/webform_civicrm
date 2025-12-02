@@ -137,6 +137,7 @@ final class AuthnetExtensionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField('Contribution Amount');
     $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
     $this->getSession()->getPage()->selectFieldOption('Financial Type', 'Donation');
+    $this->getSession()->getPage()->selectFieldOption('Payment Processor Mode', 'Test Mode');
 
     $this->assertCount(3, $this->getOptions('Payment Processor'));
     $this->getSession()->getPage()->selectFieldOption('Payment Processor', $this->paymentProcessorID);
