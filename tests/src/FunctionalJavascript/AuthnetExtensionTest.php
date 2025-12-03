@@ -62,6 +62,9 @@ final class AuthnetExtensionTest extends WebformCivicrmTestBase {
       'postal_code' => '53177',
     ];
     $this->fillBillingFields($billingValues);
+    $this->getSession()->getPage()->selectFieldOption("civicrm_1_contribution_1_contribution_total_amount[radios]", '_other_');
+
+    $this->getSession()->getPage()->selectFieldOption("civicrm_1_contribution_1_contribution_payment_processor_id",'Authorize.net (Credit Card) - Extension');
     $this->fillCardAndSubmit();
 
     $this->assertPageNoErrorMessages();
@@ -140,7 +143,7 @@ final class AuthnetExtensionTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->selectFieldOption('Payment Processor Mode', 'Test Mode');
     //$this->getSession()->getPage()->selectFieldOption('Payment Processor', $this->paymentProcessorID);
-    $this->getSession()->getPage()->selectFieldOption('Payment Processor', 'AuthorizeNetCreditcard');
+    //$this->getSession()->getPage()->selectFieldOption('Payment Processor', 'AuthorizeNetCreditcard');
 
     $this->enableBillingSection();
 
