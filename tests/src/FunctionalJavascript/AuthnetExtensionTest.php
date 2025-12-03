@@ -193,7 +193,7 @@ final class AuthnetExtensionTest extends WebformCivicrmTestBase {
       'payment_processor_type_id' => 'AuthorizeNetCreditcard',
       'title' => 'Authorize.net (Credit Card) - Extension',
       'is_active' => 1,
-      'is_default' => 0,
+      'is_default' => 1,
       'is_test' => 1,
       'is_recur' => 1,
       'user_name' => '6Ys5aL6ug',
