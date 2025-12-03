@@ -157,6 +157,7 @@ final class AuthnetExtensionTest extends WebformCivicrmTestBase {
   }
 
   private function createAuthnetProcessor(): int {
+    // make live one first which we don't use, just to be more realistic
     $params = [
       'name' => 'AuthorizeNetCreditcard',
       'domain_id' => \CRM_Core_Config::domainID(),
@@ -165,6 +166,31 @@ final class AuthnetExtensionTest extends WebformCivicrmTestBase {
       'is_active' => 1,
       'is_default' => 0,
       'is_test' => 0,
+      'is_recur' => 1,
+      // magic thing to avoid status check errors
+      'user_name' => 'AUTHNETECHECK_SKIP_WEBHOOK_CHECKS',
+      'password' => '8Z9nm683Z4aDF5e9',
+      'signature_label' => '9DF8BB26F5617270F0CF96DA85372A8DEBC6898B1CA606652203B5688A6E60B82DDACF7D06F9168666950E7C7695B4FC6C16DB0D5C3F102686F0E7F74E04EAE6',
+      'url_site' => 'https://unused.org',
+      'url_recur' => 'https://unused.org',
+      'class_name' => 'Payment_AuthNetCreditcard',
+      'billing_mode' => 1
+    ];
+    // First see if it already exists.
+    $result = $this->utils->wf_civicrm_api('PaymentProcessor', 'get', $params);
+    if ($result['count'] != 1) {
+      $result = $this->utils->wf_civicrm_api('PaymentProcessor', 'create', $params);
+    }
+
+    // now make test one
+    $params = [
+      'name' => 'AuthorizeNetCreditcard',
+      'domain_id' => \CRM_Core_Config::domainID(),
+      'payment_processor_type_id' => 'AuthorizeNetCreditcard',
+      'title' => 'Authorize.net (Credit Card) - Extension',
+      'is_active' => 1,
+      'is_default' => 0,
+      'is_test' => 1,
       'is_recur' => 1,
       'user_name' => '6Ys5aL6ug',
       'password' => '8Z9nm683Z4aDF5e9',

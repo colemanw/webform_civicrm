@@ -23,19 +23,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - drupal: '10.4.*'
-            civicrm: '6.4.*'
-            php: '8.2'
           - drupal: '10.5.*'
-            civicrm: '6.9.x-dev'
-            php: '8.3'
-          - drupal: '10.5.*'
-            civicrm: 'dev-master'
-            php: '8.3'
-          - drupal: '11.2.*'
-            civicrm: '6.8.*'
-            php: '8.3'
-          - drupal: '11.x-dev'
             civicrm: 'dev-master'
             php: '8.3'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
