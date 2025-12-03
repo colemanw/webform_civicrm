@@ -141,11 +141,14 @@ final class AuthnetExtensionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('Financial Type', 'Donation');
 
     $this->getSession()->getPage()->selectFieldOption('Payment Processor Mode', 'Test Mode');
-    $this->createScreenshot($this->htmlOutputDirectory . '/righthere.png');
+    $this->createScreenshot($this->htmlOutputDirectory . '/righthere1.png');
 
     $this->enableBillingSection();
+    $this->createScreenshot($this->htmlOutputDirectory . '/righthere2.png');
 
     $this->getSession()->getPage()->selectFieldOption('lineitem_1_number_of_lineitem', 2);
+    $this->createScreenshot($this->htmlOutputDirectory . '/righthere3.png');
+
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
     $this->getSession()->getPage()->checkField("civicrm_1_lineitem_1_contribution_line_total");
