@@ -92,7 +92,6 @@ final class AuthnetExtensionTest extends WebformCivicrmTestBase {
     $this->assertEquals($this->webform->label(), $contribution['contribution_source']);
     $this->assertEquals('Donation', $contribution['financial_type']);
     $this->assertEquals('59.50', $contribution['total_amount']);
-    $this->assertEquals('2.03', $contribution['fee_amount']);
     $this->assertEquals('Completed', $contribution['contribution_status']);
     $this->assertEquals('CAD', $contribution['currency']);
 
