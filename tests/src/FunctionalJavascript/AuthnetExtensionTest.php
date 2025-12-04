@@ -93,7 +93,7 @@ final class AuthnetExtensionTest extends WebformCivicrmTestBase {
     $this->assertEquals('59.50', $contribution['total_amount']);
     $this->assertEquals('2.03', $contribution['fee_amount']);
     $this->assertEquals('Completed', $contribution['contribution_status']);
-    $this->assertEquals('USD', $contribution['currency']);
+    $this->assertEquals('CAD', $contribution['currency']);
 
     $creditCardID = $this->utils->wf_civicrm_api('OptionValue', 'getvalue', [
       'return' => "value",
@@ -137,7 +137,7 @@ final class AuthnetExtensionTest extends WebformCivicrmTestBase {
     $this->pressButtonOverride('Enable It');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->checkField('Contribution Amount');
-    $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
+    $this->getSession()->getPage()->selectFieldOption('Currency', 'CAD');
     $this->getSession()->getPage()->selectFieldOption('Financial Type', 'Donation');
 
     $this->getSession()->getPage()->selectFieldOption('Payment Processor Mode', 'Test Mode');
