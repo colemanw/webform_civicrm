@@ -62,8 +62,6 @@ final class AuthnetExtensionTest extends WebformCivicrmTestBase {
       'postal_code' => '53177',
     ];
     $this->fillBillingFields($billingValues);
-    // $this->getSession()->getPage()->selectFieldOption("civicrm_1_contribution_1_contribution_payment_processor_id",'Authorize.net (Credit Card) - Extension');
-    // ERROR: Behat\Mink\Exception\DriverException: The radio group "civicrm_1_contribution_1_contribution_payment_processor_id" does not have an option "Authorize.net (Credit Card) - Extension"
     $this->fillCardAndSubmit();
 
     $this->assertPageNoErrorMessages();
