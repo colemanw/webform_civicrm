@@ -83,6 +83,7 @@ final class AuthnetExtensionTest extends WebformCivicrmTestBase {
     $utils = \Drupal::service('webform_civicrm.utils');
     $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
       'contribution_status_id' => 'Completed',
+      'is_test' => 1,                                         
       'sequential' => 1,
     ]);
     $this->assertEquals(1, $api_result['count']);
