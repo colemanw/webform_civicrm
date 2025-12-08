@@ -96,10 +96,6 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
       ->set('admin', 'claro')
       ->save();
 
-    // Reset container after switching theme
-    // See https://www.drupal.org/project/drupal/issues/3555844
-    $this->container = \Drupal::getContainer();
-
     $this->adminUser = $this->createUser([
       'access content',
       'administer CiviCRM',
