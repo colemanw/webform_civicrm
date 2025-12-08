@@ -108,7 +108,7 @@ jobs:
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} padaliyajay/php-autoprefixer:1.4 -W
+          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} -W
       - name: Download Webform
         run: |
           cd ~/drupal
