@@ -2239,7 +2239,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     $params = $this->billing_params + $this->data['contribution'][1]['contribution'][1];
     $params['financial_type_id'] = wf_crm_aval($this->data, 'contribution:1:contribution:1:financial_type_id');
     $params['currency'] = $params['currencyID'] = wf_crm_aval($this->data, "contribution:1:currency");
-    $params['skipRecentView'] = 1;
+    $params['skipRecentView'] = $params['skipLineItem'] = 1;
 
     $i = $this->getContributionContactIndex();
     $params['contact_id'] = $this->ent['contact'][$i]['id'];
