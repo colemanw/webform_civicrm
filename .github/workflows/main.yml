@@ -137,6 +137,11 @@ jobs:
         run: |
           git config --global user.email "webform.civicrm@example.org"
           git config --global user.name "Webform CiviCRM"
+      - name: try this
+        run: |
+          cd  ~/drupal/vendor/civicrm/civicrm-core
+          curl -L -o prpatch.patch https://github.com/civicrm/civicrm-core/pull/34338.patch
+          git am prpatch.patch
       - name: Optionally Apply Core PR
         if: ${{ github.event.inputs.coreprurl != 0 }}
         run: |
