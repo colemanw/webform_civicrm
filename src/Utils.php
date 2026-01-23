@@ -938,6 +938,7 @@ class Utils implements UtilsInterface {
       'Select' => ['type' => 'select'],
       'Multi-Select' => ['type' => 'select', 'extra' => ['multiple' => 1]],
       'Radio' => ['type' => 'select', 'extra' => ['aslist' => 0]],
+      'Toggle' => ['type' => 'select', 'extra' => ['aslist' => 0]],
       'CheckBox' => ['type' => 'select', 'extra' => ['multiple' => 1]],
       'Text'  => ['type' => 'textfield'],
       'TextArea' => ['type' => 'textarea'],
@@ -1116,7 +1117,7 @@ class Utils implements UtilsInterface {
     }
     return FALSE;
   }
-  
+
   /**
    * @return string Which field is the tag display field in this version of civi?
    */
