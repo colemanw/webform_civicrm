@@ -109,10 +109,12 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
     // Early return if the form (or page) was already submitted
     $triggering_element = $this->form_state->getTriggeringElement();
 
-    // When user uploads a file using a managed_file element, avoid making any change to $this->form.
+    // When user uploads a file using a managed_file element, populate
+    // contact options before returning to ensure they persist in the cached form.
     if ($this->form_state->hasFileElement()
       && is_array($triggering_element['#submit'])
       && in_array('file_managed_file_submit', $triggering_element['#submit'], TRUE)) {
+      $this->fillForm($this->form, $this->form_state->getValues());
       return;
     }
 
