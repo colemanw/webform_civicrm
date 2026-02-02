@@ -79,11 +79,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->pressButtonOverride('Submit');
     $this->htmlOutput();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
-    // ToDo -> comment back in after removing support for 5.35.*
-    // -> 1) Drupal\Tests\webform_civicrm\FunctionalJavascript\MembershipSubmissionTest::testSubmitMembershipAutoRenew
-    // Error message Notice: Undefined index: line_item in CRM_Contribute_BAO_Contribution::checkTaxAmount()
-    // involves both Sales Tax + Recurring
-    // $this->assertPageNoErrorMessages();
+    $this->assertPageNoErrorMessages();
 
     // Assert if recur is attached to the created membership.
     $api_result = $this->utils->wf_civicrm_api('membership', 'get', [
