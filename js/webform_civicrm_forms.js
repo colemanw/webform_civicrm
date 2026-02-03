@@ -328,7 +328,10 @@ var wfCivi = (function (D, $, drupalSettings, once) {
   }
 
   function fillOptions(element, data) {
-    var sortedData = Object.entries(data).sort(([,a],[,b]) => a > b);
+    var sortedData = Object.entries(data)
+      .sort(function(a, b) {
+        return a[1].localeCompare(b[1]);
+      });
     var $el = $(element),
       value = $el.attr('data-val') ? $el.attr('data-val') : $el.val();
     $el.find('option').remove();
