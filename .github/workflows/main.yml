@@ -170,7 +170,8 @@ jobs:
           # Apparently we have to install it, otherwise stripe gives a dependency error even with install=0. I think that's a bug, but let's just do it. This is a fake install anyway.
           /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=mjwshared
           /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=firewall
-          /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=com.drastikbydesign.stripe
+          #/home/runner/civicrm-cv/cv api3 Extension.download install=1 key=com.drastikbydesign.stripe
+          git clone https://lab.civicrm.org/extensions/stripe.git com.drastikbydesign.stripe
           /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=com.donordepot.authnetecheck
           /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.iatspayments.civicrm
           # For uscounties, it hasn't had a release in a few years so no longer appears in the ext feed, so just download directly. If it ever does need an update, would need to update here.
