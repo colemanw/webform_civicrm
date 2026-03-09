@@ -108,7 +108,7 @@ jobs:
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} brick/math:'0.14.1' brick/money:'0.11.0' -W
+          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} -W
       - name: Download Webform
         run: |
           cd ~/drupal
