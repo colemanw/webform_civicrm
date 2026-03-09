@@ -181,7 +181,7 @@ jobs:
           # testing stripe patch
           cd com.drastikbydesign.stripe
           curl -L -O https://lab.civicrm.org/extensions/stripe/-/merge_requests/294.patch
-          git am 294.patch
+          git apply 294.patch
       - uses: nanasess/setup-chromedriver@master
       - name: Run chromedriver
         run: chromedriver --port=9515 &
