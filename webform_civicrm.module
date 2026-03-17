@@ -58,6 +58,10 @@ function webform_civicrm_civicrm_alterMailParams(&$params, $context) {
           $submissionData = array_merge($settings['data'], $submission->getData());
           $receiptParams = $utils->getReceiptParams($submissionData, $params['tplParams']['contributionID']);
           $params['tplParams']= array_merge($params['tplParams'], $receiptParams);
+          // Manually copy over the pay_later_receipt text if it exists
+          if (!empty($receiptParams['pay_later_receipt'])) {
+            $params['tokenContext']['contribution']['contribution_page_id.pay_later_receipt'] =  $receiptParams['pay_later_receipt'];
+          }
         }
       }
     }
