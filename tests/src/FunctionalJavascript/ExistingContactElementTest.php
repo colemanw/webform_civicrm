@@ -177,6 +177,15 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
    * searchable with all display field values.
    */
   public function testDisplayFields() {
+    // Fill with more than the widget displays, and that would come first
+    // before our desired contact
+    for ($i = 1; $i < 21; $i++) {
+      $this->createIndividual([
+        'first_name' => 'Aaron',
+        'last_name' => 'Aardvark' . $i,
+        'source' => '',
+      ]);
+    }
     $this->createIndividual([
       'first_name' => 'James',
       'last_name' => 'Doe',
@@ -209,6 +218,22 @@ final class ExistingContactElementTest extends WebformCivicrmTestBase {
     // Search on source value and verify if the contact is selected.
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', 'Webform Testing');
+    $this->assertFieldValue('edit-civicrm-1-contact-1-contact-first-name', 'James');
+    $this->assertFieldValue('edit-civicrm-1-contact-1-contact-last-name', 'Doe');
+
+    // Edit contact element and change to display contact id.
+    $this->drupalGet($this->webform->toUrl('edit-form'));
+    $editContact = [
+      'selector' => 'edit-webform-ui-elements-civicrm-1-contact-1-contact-existing-operations',
+      'widget' => 'Autocomplete',
+      'results_display' => ['display_name', 'id'],
+      'default' => '- None -',
+    ];
+    $this->editContactElement($editContact);
+
+    // Now see if name search still works
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->fillContactAutocomplete('token-input-edit-civicrm-1-contact-1-contact-existing', 'James');
     $this->assertFieldValue('edit-civicrm-1-contact-1-contact-first-name', 'James');
     $this->assertFieldValue('edit-civicrm-1-contact-1-contact-last-name', 'Doe');
   }

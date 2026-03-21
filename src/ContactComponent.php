@@ -160,7 +160,7 @@ class ContactComponent implements ContactComponentInterface {
     if ($str) {
       $searchFields = [];
       foreach ($display_fields as $fld) {
-        $searchFields[] = [$fld, 'CONTAINS', $str];
+        $searchFields[] = [$fld, 'LIKE', '%' . $str . '%'];
       }
       $params['where'][] = ['OR', $searchFields];
     }
