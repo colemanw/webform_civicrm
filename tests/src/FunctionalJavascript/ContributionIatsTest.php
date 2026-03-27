@@ -160,7 +160,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
 
     $this->pressButtonOverride('Submit');
     $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->createScreenshot($this->htmlOutputDirectory . 'faps169.png');
+    $this->createScreenshot($this->htmlOutputDirectory . '/faps169.png');
     $this->assertPageNoErrorMessages();
     $this->htmlOutput();
 
@@ -399,8 +399,12 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
 
     $this->enableBillingSection();
 
+    // For some reason it needs a delay or else it gives a warning about not being able to find the financial type and then most of the fields don't get added, including the email field which is then what it fails on later.
+    sleep(5);
+
     $this->pressButtonOverride('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    $this->assertPageNoErrorMessages();
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
