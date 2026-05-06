@@ -325,6 +325,12 @@ class CivicrmOptions extends OptionsBase {
    * @inheritDoc
    */
   protected function format($type, array &$element, WebformSubmissionInterface $webform_submission, array $options = []) {
+    // Reload live options from CiviCRM so labels stay in sync
+    if (!empty($element['#civicrm_live_options']) && $webform_submission && $webform_submission->getWebform()->getHandlers()->has('webform_civicrm')) {
+      $data = $webform_submission->getWebform()->getHandler('webform_civicrm')->getConfiguration()['settings']['data'] ?? [];
+      $element['#options'] = $this->getFieldOptions($element, $data) + $element['#options'];
+    }
+
     $value = parent::format($type, $element, $webform_submission, $options);
     $format = $this->getItemFormat($element);
     if (!str_ends_with($element['#form_key'], '_address_state_province_id')) {
