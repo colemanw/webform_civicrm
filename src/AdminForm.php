@@ -2233,7 +2233,7 @@ class AdminForm implements AdminFormInterface {
       }
       else {
         $field = $this->utils->wf_crm_get_field($key);
-        if ($field['type'] == 'hidden' && (!empty($val[0]) || $field['name'] == 'Payment Processor Mode')) {
+        if ($field['type'] == 'hidden' && (!empty($val[0]) || strpos($key, 'contribution_is_test') === FALSE)) {
           unset($fields[$key]);
         }
       }
