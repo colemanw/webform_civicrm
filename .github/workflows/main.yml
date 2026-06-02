@@ -181,6 +181,12 @@ jobs:
           # /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.aghstrategies.uscounties
           curl -L -O https://github.com/agh1/com.aghstrategies.uscounties/archive/2.1.zip
           unzip 2.1.zip
+      - name: Temp patch authnet sdk
+        run: |
+          cd ~/drupal/web/sites/default/files/civicrm/ext/com.donordepot.authnetecheck/vendor/authorizenet/authorizenet
+          sed -i -e 's/\$this->apiRequest->setClientId/\/\/\$this->apiRequest->setClientId/' lib/net/authorize/api/controller/base/ApiOperationBase.php
+          grep setClientId lib/net/authorize/api/controller/base/ApiOperationBase.php
+          cat lib/net/authorize/api/controller/base/ApiOperationBase.php
       - uses: nanasess/setup-chromedriver@master
       - name: Run chromedriver
         run: chromedriver --port=9515 &
