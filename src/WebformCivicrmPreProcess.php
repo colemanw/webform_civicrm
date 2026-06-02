@@ -150,6 +150,10 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
       // Fill cid with '0' if unknown
       $this->ent['contact'][$c] += ['id' => 0];
     }
+    // Warn and block submission if the URL carries an invalid/expired checksum.
+    if ($this->blockInvalidChecksum()) {
+      return;
+    }
     // Search for other existing entities
     if (empty($this->form_state->get('civicrm'))) {
       if (!empty($this->data['case']['number_of_case'])) {
@@ -883,6 +887,44 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
     if (empty($_POST)) {
       \Drupal::messenger()->addStatus(WebformHtmlHelper::toHtmlMarkup($message, WebformXss::getHtmlTagList()));
     }
+  }
+
+  /**
+   * If the URL carries an invalid/expired checksum for any contact, display a
+   * hint to the user and disable submission of the form.
+   *
+   * @return bool
+   *   TRUE if an invalid checksum was found and the form was blocked.
+   */
+  private function blockInvalidChecksum() {
+    $counts_count = count($this->data['contact'] ?? []);
+    for ($c = 1; $c <= $counts_count; ++$c) {
+      if (!$this->utils->isUrlChecksumInvalid($c)) {
+        continue;
+      }
+      // Show the hint (only on initial GET load, mirroring setMessage()).
+      if (empty($_POST)) {
+        \Drupal::messenger()->addWarning(t('The personalized link you followed contains an invalid or expired security token. For your protection this form cannot be submitted. Please request a new link.'));
+      }
+      // Disable every submit / navigation button so the form can't be submitted.
+      foreach (['submit', 'wizard_next', 'preview', 'draft'] as $button) {
+        if (isset($this->form['actions'][$button])) {
+          $this->form['actions'][$button]['#disabled'] = TRUE;
+        }
+      }
+      // Safety net: reject submission server-side even if the button is re-enabled client-side.
+      $this->form['#validate'][] = [static::class, 'invalidChecksumValidate'];
+      return TRUE;
+    }
+    return FALSE;
+  }
+
+  /**
+   * Form validation callback: blocks submission when an invalid checksum link
+   * was used to open the form.
+   */
+  public static function invalidChecksumValidate(array &$form, FormStateInterface $form_state) {
+    $form_state->setError($form, t('The personalized link you followed contains an invalid or expired security token. Please request a new link.'));
   }
 
   /**

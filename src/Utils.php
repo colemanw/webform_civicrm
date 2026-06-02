@@ -1086,6 +1086,31 @@ class Utils implements UtilsInterface {
   /**
    * @inheritDoc
    */
+  public function isUrlChecksumInvalid($c = 1) {
+    $request = $this->requestStack->getCurrentRequest();
+    // Contact 1 may be addressed as cid/cs or cid1/cs1.
+    if ($c == 1) {
+      $cid = $request->query->get('cid') ?? $request->query->get('cid1');
+      $cs = $request->query->get('cs') ?? $request->query->get('cs1');
+    }
+    else {
+      $cid = $request->query->get("cid$c");
+      $cs = $request->query->get("cs$c");
+    }
+    // No checksum supplied: absent is not the same as invalid.
+    if (empty($cs) || empty($cid)) {
+      return FALSE;
+    }
+    $check = $this->wf_civicrm_api4('Contact', 'validateChecksum', [
+      'contactId' => $cid,
+      'checksum' => $cs,
+    ])[0] ?? [];
+    return empty($check['valid']);
+  }
+
+  /**
+   * @inheritDoc
+   */
   public function isContactAccessible($cid) {
     $access = $this->wf_civicrm_api4('Contact', 'checkAccess', [
       'action' => 'get',
