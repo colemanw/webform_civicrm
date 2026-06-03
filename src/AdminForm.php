@@ -2040,10 +2040,25 @@ class AdminForm implements AdminFormInterface {
 
     $this->addEnabledElements($enabled);
     $this->setPaging();
-    // Update existing contact fields
+    // Refresh the allow_create flag on existing "Existing Contact" fields.
+    // It is derived from the presence of name/email fields on the form and may
+    // have changed, but insertComponent() only writes the recomputed value when
+    // adding a *new* element (see its guard) - so existing elements keep a stale
+    // value. Bring them back in sync here.
     foreach ($existing as $fid => $id) {
-      if (substr($fid, -8) === 'existing') {
-        $stop = null;
+      if (!str_ends_with($fid, '_contact_existing')) {
+        continue;
+      }
+      $element = $this->webform->getElementDecoded($fid);
+      if ($element === NULL) {
+        continue;
+      }
+      [, $c] = explode('_', $fid);
+      $contact_type = wf_crm_aval($this->settings['data']['contact'], "$c:contact:1:contact_type");
+      $allow_create = $this->utils->wf_crm_name_field_exists($enabled + $this->settings, $c, $contact_type);
+      if ((int) wf_crm_aval($element, '#allow_create', 0) !== (int) $allow_create) {
+        $element['#allow_create'] = $allow_create;
+        $this->webform->setElementProperties($fid, $element);
       }
     }
   }
