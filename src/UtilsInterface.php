@@ -331,21 +331,6 @@ interface UtilsInterface {
   function checksumUserAccess($c, $cid);
 
   /**
-   * Check if a checksum is supplied in the URL for contact $c but is invalid.
-   *
-   * Unlike checksumUserAccess(), this distinguishes "no checksum supplied"
-   * (returns FALSE) from "checksum supplied but expired / wrong" (returns TRUE),
-   * so the form can warn the user and block submission.
-   *
-   * @param int $c
-   *   Contact number.
-   *
-   * @return bool
-   *   TRUE if a checksum is present in the URL but is not valid.
-   */
-  function isUrlChecksumInvalid($c = 1);
-
-  /**
    * Wrapper for all CiviCRM APIv4 calls
    *
    * @param string $entity

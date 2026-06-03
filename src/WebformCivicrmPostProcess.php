@@ -135,6 +135,17 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       }
     }
 
+    // Block submission if a required, Static (autofill-only) Existing Contact
+    // field could not be resolved. Core skips #required validation for
+    // #access: FALSE fields, so we must enforce it here.
+    foreach (array_keys($this->data['contact'] ?? []) as $c) {
+      if ($this->requiredContactUnresolved($c)) {
+        $key = "civicrm_{$c}_contact_1_contact_existing";
+        $label = $this->node->getElement($key)['#title'] ?? $key;
+        $form_state->setErrorByName($key, t('We could not identify the required contact for “%label”. The personalized link you followed may be invalid or expired — please request a new link.', ['%label' => $label]));
+      }
+    }
+
     $this->validateThisPage($this->form);
 
     if (!empty($this->data['participant']) && !empty($this->data['participant_reg_type'])) {

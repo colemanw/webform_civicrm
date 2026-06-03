@@ -250,6 +250,38 @@ abstract class WebformCivicrmBase {
   }
 
   /**
+   * Determine whether a required, autofill-only "Existing Contact" field failed
+   * to resolve.
+   *
+   * Returns TRUE when the contact's Existing Contact element is #required, uses
+   * the Static ('hidden') widget, and no contact id was resolved (e.g. autofill
+   * via an expired/invalid checksum link failed, or no cid/cs was supplied).
+   *
+   * A Static field can only be populated by autofill (URL cid/cs or a default) —
+   * the user cannot interact with it — so a failed resolution is unrecoverable.
+   * Visible widgets (autocomplete/select) are left to core's own #required
+   * validation. We must check this ourselves because Drupal core intentionally
+   * skips #required validation for elements that are (or whose parent is)
+   * '#access' => FALSE, which is exactly how these hidden fields are typically
+   * placed — so the form would otherwise submit and then error out during
+   * CiviCRM processing.
+   *
+   * @param int $c
+   *   Contact number.
+   *
+   * @return bool
+   *   TRUE if the required autofill-only contact could not be resolved.
+   */
+  protected function requiredContactUnresolved($c) {
+    $element = $this->node->getElement("civicrm_{$c}_contact_1_contact_existing");
+    // Only enforce for required, Static (hidden) fields the user can't fill in.
+    if (empty($element) || empty($element['#required']) || ($element['#widget'] ?? '') !== 'hidden') {
+      return FALSE;
+    }
+    return empty($this->ent['contact'][$c]['id']);
+  }
+
+  /**
    * Find an existing contact based on matching criteria
    * Used to populate a webform existing contact field
    *
