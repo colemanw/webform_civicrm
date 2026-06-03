@@ -272,11 +272,13 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
    */
   public function testUnresolvedRequiredContactBlocksSubmission() {
     $this->webform = $this->loadWebform('update_contact_details');
-    // Make the (already Static/hidden) field required and resolve only from the
-    // URL (no 'user'/auto fallback) so an invalid checksum leaves it unresolved.
+    // Make the (already Static/hidden) field required, unable to create a new
+    // contact, and resolved only from the URL (no 'user'/auto fallback) so an
+    // invalid checksum leaves it unresolved.
     $element = $this->webform->getElementDecoded('civicrm_1_contact_1_contact_existing');
     $element['#required'] = TRUE;
     $element['#widget'] = 'hidden';
+    $element['#allow_create'] = FALSE;
     $element['#default'] = '';
     $this->webform->setElementProperties('civicrm_1_contact_1_contact_existing', $element);
     $this->webform->save();

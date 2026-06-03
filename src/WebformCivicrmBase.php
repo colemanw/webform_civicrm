@@ -254,17 +254,20 @@ abstract class WebformCivicrmBase {
    * to resolve.
    *
    * Returns TRUE when the contact's Existing Contact element is #required, uses
-   * the Static ('hidden') widget, and no contact id was resolved (e.g. autofill
-   * via an expired/invalid checksum link failed, or no cid/cs was supplied).
+   * the Static ('hidden') widget, cannot create a new contact (#allow_create is
+   * off, i.e. there are no name/email fields), and no contact id was resolved
+   * (e.g. autofill via an expired/invalid checksum link failed, or no cid/cs was
+   * supplied).
    *
    * A Static field can only be populated by autofill (URL cid/cs or a default) —
    * the user cannot interact with it — so a failed resolution is unrecoverable.
-   * Visible widgets (autocomplete/select) are left to core's own #required
-   * validation. We must check this ourselves because Drupal core intentionally
-   * skips #required validation for elements that are (or whose parent is)
-   * '#access' => FALSE, which is exactly how these hidden fields are typically
-   * placed — so the form would otherwise submit and then error out during
-   * CiviCRM processing.
+   * If contact creation is possible (#allow_create), the missing contact is
+   * created from submitted data instead, so we do not block. Visible widgets
+   * (autocomplete/select) are left to core's own #required validation. We must
+   * check this ourselves because Drupal core intentionally skips #required
+   * validation for elements that are (or whose parent is) '#access' => FALSE,
+   * which is exactly how these hidden fields are typically placed — so the form
+   * would otherwise submit and then error out during CiviCRM processing.
    *
    * @param int $c
    *   Contact number.
@@ -274,8 +277,15 @@ abstract class WebformCivicrmBase {
    */
   protected function requiredContactUnresolved($c) {
     $element = $this->node->getElement("civicrm_{$c}_contact_1_contact_existing");
-    // Only enforce for required, Static (hidden) fields the user can't fill in.
-    if (empty($element) || empty($element['#required']) || ($element['#widget'] ?? '') !== 'hidden') {
+    // Only enforce for a required, Static (hidden) field that also can't create
+    // a contact (no name/email fields): the contact can ONLY come from autofill.
+    // Visible widgets are covered by core's #required validation; when creation
+    // is possible the missing contact is created from submitted data instead.
+    if (empty($element)
+      || empty($element['#required'])
+      || ($element['#widget'] ?? '') !== 'hidden'
+      || !empty($element['#allow_create'])
+    ) {
       return FALSE;
     }
     return empty($this->ent['contact'][$c]['id']);

@@ -136,8 +136,8 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     }
 
     // Block submission if a required, Static (autofill-only) Existing Contact
-    // field could not be resolved. Core skips #required validation for
-    // #access: FALSE fields, so we must enforce it here.
+    // field that can't create a new contact could not be resolved. Core skips
+    // #required validation for #access: FALSE fields, so we must enforce it here.
     foreach (array_keys($this->data['contact'] ?? []) as $c) {
       if ($this->requiredContactUnresolved($c)) {
         $key = "civicrm_{$c}_contact_1_contact_existing";
