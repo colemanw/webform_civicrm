@@ -467,6 +467,7 @@ function _recursiveKeyReplace(array &$elements, $searchKey, $replacementKey) {
  * Update usage of group to crmgroup
  */
 function webform_civicrm_update_8008() {
+  Drupal::service('civicrm')->initialize();
   $webforms = Webform::loadMultiple();
 
   foreach ($webforms as $webform) {
