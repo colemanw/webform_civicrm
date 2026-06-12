@@ -186,7 +186,8 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
         }
         // Membership
         if (!empty($this->data['membership'][$c]['number_of_membership'])) {
-          $this->loadMemberships($c, $contact['id']);
+          $showMessage = (bool) wf_crm_aval($this->data, 'membership_options:show_status_message', 1, TRUE);
+          $this->loadMemberships($c, $contact['id'], $showMessage);
         }
         if ($c == 1 && !empty($this->data['billing']['number_number_of_billing'])) {
           $this->info['contribution'][1]['contribution'][1] = $this->loadBillingAddress($contact['id']);
@@ -456,7 +457,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
    * @param int $c
    * @param int $cid
    */
-  private function loadMemberships($c, $cid) {
+  private function loadMemberships($c, $cid, $showMessage = TRUE) {
     $today = date('Y-m-d');
     foreach ($this->findMemberships($cid) as $num => $membership) {
       // Only show 1 expired membership, and only if there are no active ones
@@ -464,16 +465,18 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
         break;
       }
       $type = $membership['membership_type_id'];
-      $msg = t('@type membership for @contact has a status of "@status".', [
-        '@type' => $this->getMembershipTypeField($type, 'name'),
-        '@contact' => $this->info['contact'][$c]['contact'][1]['display_name'],
-        '@status' => $membership['status'],
-      ]);
-      if (!empty($membership['end_date'])) {
-        $end = ['@date' => \CRM_Utils_Date::customFormat($membership['end_date'])];
-        $msg .= ' ' . ($membership['end_date'] > $today ? t('Expires @date.', $end) : t('Expired @date.', $end));
+      if ($showMessage) {
+        $msg = t('@type membership for @contact has a status of "@status".', [
+          '@type' => $this->getMembershipTypeField($type, 'name'),
+          '@contact' => $this->info['contact'][$c]['contact'][1]['display_name'],
+          '@status' => $membership['status'],
+        ]);
+        if (!empty($membership['end_date'])) {
+          $end = ['@date' => \CRM_Utils_Date::customFormat($membership['end_date'])];
+          $msg .= ' ' . ($membership['end_date'] > $today ? t('Expires @date.', $end) : t('Expired @date.', $end));
+        }
+        $this->setMessage($msg);
       }
-      $this->setMessage($msg);
       for ($n = 1; $n <= $this->data['membership'][$c]['number_of_membership']; ++$n) {
         $fid = "civicrm_{$c}_membership_{$n}_membership_membership_type_id";
         if (empty($info['membership'][$c]['membership'][$n]) && ($this->getData($fid) == $type ||
