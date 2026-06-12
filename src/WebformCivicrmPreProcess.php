@@ -457,7 +457,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
    * @param int $c
    * @param int $cid
    */
-  private function loadMemberships($c, $cid) {
+  private function loadMemberships($c, $cid, $showMessage = TRUE) {
     $today = date('Y-m-d');
     foreach ($this->findMemberships($cid) as $num => $membership) {
       // Only show 1 expired membership, and only if there are no active ones
