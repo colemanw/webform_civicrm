@@ -2046,6 +2046,7 @@ class AdminForm implements AdminFormInterface {
     // adding a *new* element (see its guard) - so existing elements keep a stale
     // value. Bring them back in sync here.
     foreach ($existing as $fid => $id) {
+      // find field which ends with '_contact_existing'
       if (!str_ends_with($fid, '_contact_existing')) {
         continue;
       }
