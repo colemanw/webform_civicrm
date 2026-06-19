@@ -24,9 +24,6 @@ jobs:
       matrix:
         include:
           - drupal: '10.6.*'
-            civicrm: '6.10.*'
-            php: '8.3'
-          - drupal: '10.6.*'
             civicrm: '6.15.x'
             php: '8.3'
           - drupal: '10.6.*'
