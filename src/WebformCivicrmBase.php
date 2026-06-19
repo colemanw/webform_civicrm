@@ -813,11 +813,12 @@ abstract class WebformCivicrmBase {
     $file = File::load($id);
     if ($file) {
       $config = \CRM_Core_Config::singleton();
-      $copyTo = $config->customFileUploadDir;
+      // Get the custom file upload directory and ensure it ends with a single slash.
+      $copyTo = \CRM_Utils_File::addTrailingSlash($config->customFileUploadDir, '/');
       if(!isset($filename)) {
         $filename = basename($file->getFileUri());
       }
-      $copyTo .= '/' . \CRM_Utils_File::makeFileName($filename, TRUE);
+      $copyTo .= \CRM_Utils_File::makeFileName($filename, TRUE);
       $path = \Drupal::service('file_system')->copy($file->getFileUri(), $copyTo);
       if ($path) {
         $result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('file', 'create', [
