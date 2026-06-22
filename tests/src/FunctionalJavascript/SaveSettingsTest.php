@@ -180,6 +180,8 @@ final class SaveSettingsTest extends WebformCivicrmTestBase {
    * @param int $expected
    */
   private function assertExistingContactAllowCreate($expected) {
+    // Reload the webform to ensure fresh data
+    \Drupal::entityTypeManager()->getStorage('webform')->resetCache();
     $webform = Webform::load($this->webform->id());
     $element = $webform->getElementDecoded('civicrm_1_contact_1_contact_existing');
     $this->assertNotNull($element, 'Existing Contact element is present.');
