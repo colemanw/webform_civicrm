@@ -1048,6 +1048,13 @@ class AdminForm implements AdminFormInterface {
       '#group' => 'webform_civicrm',
       '#attributes' => ['class' => ['civi_icon_fa-id-badge']],
     ];
+    $this->form['membership']['membership_show_status_message'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Show existing membership status message'),
+      '#description' => t('When a contact with an existing membership fills out the form, display a message showing their current membership status and expiry date.'),
+      '#default_value' => (bool) wf_crm_aval($this->settings, 'membership_options:show_status_message', 1, TRUE),
+      '#parents' => ['membership_options', 'show_status_message'],
+    ];
     for ($c = 1, $cMax = count($this->data['contact']); $c <= $cMax; ++$c) {
       $num = wf_crm_aval($this->data, "membership:{$c}:number_of_membership", 0);
       $this->form['membership'][$c]["membership_{$c}_number_of_membership"] = [
