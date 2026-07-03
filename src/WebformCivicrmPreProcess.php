@@ -186,7 +186,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
         }
         // Membership
         if (!empty($this->data['membership'][$c]['number_of_membership'])) {
-          $showMessage = (bool) wf_crm_aval($this->data, 'membership_options:show_status_message', 1, TRUE);
+          $showMessage = (bool) wf_crm_aval($this->settings, 'membership_options:show_status_message', 1, TRUE);
           $this->loadMemberships($c, $contact['id'], $showMessage);
         }
         if ($c == 1 && !empty($this->data['billing']['number_number_of_billing'])) {
