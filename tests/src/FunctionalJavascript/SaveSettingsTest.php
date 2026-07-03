@@ -3,6 +3,7 @@
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Drupal\Core\Url;
+use Drupal\webform\Entity\Webform;
 
 /**
  * Tests settings on the webform.
@@ -142,6 +143,49 @@ final class SaveSettingsTest extends WebformCivicrmTestBase {
       'civicrm_1_activity_1_activity_activity_type_id',
     ];
     $this->assertElementsOnBuildForm($elements, TRUE);
+  }
+
+  /**
+   * The Existing Contact #allow_create flag must be refreshed on save when the
+   * name/email fields that drive it are removed from an existing form.
+   */
+  function testExistingContactAllowCreateRefresh() {
+    // addFieldsOnWebform() enables First Name + Last Name, so contact creation
+    // is possible and allow_create should be stored as 1.
+    $this->addFieldsOnWebform();
+    $this->assertExistingContactAllowCreate(1);
+
+    // Remove both name fields, leaving no field that can create a contact.
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->getSession()->getPage()->uncheckField('civicrm_1_contact_1_contact_first_name');
+    $this->getSession()->getPage()->uncheckField('civicrm_1_contact_1_contact_last_name');
+    $this->saveCiviCRMSettings(TRUE);
+
+    // Confirm removal of the now-unneeded webform fields.
+    $this->assertSession()->waitForField('edit-delete');
+    $this->pressButtonOverride('edit-delete');
+    $this->assertSession()->waitForField('nid');
+    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    $this->assertPageNoErrorMessages();
+
+    // allow_create must now be refreshed to 0 on the (pre-existing) element.
+    $this->assertExistingContactAllowCreate(0);
+  }
+
+  /**
+   * Assert the stored #allow_create value of contact 1's Existing Contact field.
+   *
+   * @param int $expected
+   */
+  private function assertExistingContactAllowCreate($expected) {
+    // Reload the webform to ensure fresh data
+    \Drupal::entityTypeManager()->getStorage('webform')->resetCache();
+    $webform = Webform::load($this->webform->id());
+    $element = $webform->getElementDecoded('civicrm_1_contact_1_contact_existing');
+    $this->assertNotNull($element, 'Existing Contact element is present.');
+    $this->assertSame($expected, (int) ($element['#allow_create'] ?? 0));
   }
 
   /**
