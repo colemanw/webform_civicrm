@@ -24,13 +24,13 @@ jobs:
       matrix:
         include:
           - drupal: '10.6.*'
-            civicrm: '6.15.x'
+            civicrm: '6.16.x'
             php: '8.3'
           - drupal: '10.6.*'
             civicrm: 'dev-master'
             php: '8.3'
           - drupal: '11.3.*'
-            civicrm: '6.16.x-dev'
+            civicrm: '6.18.x-dev'
             php: '8.3'
           - drupal: '11.x-dev'
             civicrm: 'dev-master'
@@ -184,7 +184,7 @@ jobs:
           sed -i -e 's/\$this->apiRequest->setClientId/\/\/\$this->apiRequest->setClientId/' lib/net/authorize/api/controller/base/ApiOperationBase.php
           grep setClientId lib/net/authorize/api/controller/base/ApiOperationBase.php
           cat lib/net/authorize/api/controller/base/ApiOperationBase.php
-      - uses: nanasess/setup-chromedriver@master
+      - uses: nanasess/setup-chromedriver@v3
       - name: Run chromedriver
         run: chromedriver --port=9515 &
       - name: Run php built-in server
