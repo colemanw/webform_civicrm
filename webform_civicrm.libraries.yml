@@ -7,6 +7,12 @@ admin:
     # TODO should only be loaded if there is a select list?
     # @link https://github.com/colemanw/webform_civicrm/blob/8f285b94c4ba444fc894b24f2d23a7c52c92731b/includes/wf_crm_admin_component.inc#L97
     js/webform_civicrm_options.js: {}
+  dependencies:
+    - core/jquery
+    - core/once
+    - core/drupal
+    - core/drupalSettings
+    - webform_civicrm/forms
 forms:
   css:
     component:
