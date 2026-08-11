@@ -80,7 +80,7 @@ jobs:
           composer config repositories.1 path $GITHUB_WORKSPACE
           composer install --no-interaction
           COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev:${{ matrix.drupal }} -w
-          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core:11.x-dev#1da8fb5faeaa1a1a051334e20cdf24a0f2b03b91 -W
+          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core:11.x-dev#9f79d45812bf4fc666dc2293392d3ab9dc67c156 -W
       # This is done differently in drupal 11. See BROWSERTEST_OUTPUT_VERBOSE below.
       - name: Suppress links to screenshots
         # There's so many! They can be useful locally if running one test, but they aren't useful here and cause massive scrolling.
