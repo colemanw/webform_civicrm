@@ -175,6 +175,10 @@ jobs:
           # /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.aghstrategies.uscounties
           curl -L -O https://github.com/agh1/com.aghstrategies.uscounties/archive/2.1.zip
           unzip 2.1.zip
+          # temp patch for php 8.4
+          cd com.aghstrategies.uscounties-2.1
+          curl -L -O https://github.com/agh1/com.aghstrategies.uscounties/pull/13.patch
+          git apply 13.patch
       - name: Temp patch authnet sdk
         run: |
           cd ~/drupal/web/sites/default/files/civicrm/ext/com.donordepot.authnetecheck/vendor/authorizenet/authorizenet
