@@ -26,15 +26,12 @@ jobs:
           - drupal: '10.6.*'
             civicrm: '6.16.x'
             php: '8.3'
-          - drupal: '10.6.*'
-            civicrm: 'dev-master'
-            php: '8.3'
           - drupal: '11.4.*'
             civicrm: '6.18.x-dev'
             php: '8.3'
           - drupal: '11.x-dev'
             civicrm: 'dev-master'
-            php: '8.3'
+            php: '8.4'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
     services:
       mysql:
