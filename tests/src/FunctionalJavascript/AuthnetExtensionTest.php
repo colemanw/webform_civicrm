@@ -18,7 +18,7 @@ final class AuthnetExtensionTest extends WebformCivicrmTestBase {
     parent::setUp();
 
     $this->setUpExtension('mjwshared,firewall,com.donordepot.authnetecheck');
-    $this->paymentProcessorID = $this->createAuthnetProcessor();
+    $this->createAuthnetProcessor();
 
     drupal_flush_all_caches();
   }

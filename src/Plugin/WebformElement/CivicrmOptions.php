@@ -164,7 +164,7 @@ class CivicrmOptions extends OptionsBase {
   /**
    * {@inheritdoc}
    */
-  public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
+  public function prepare(array &$element, ?WebformSubmissionInterface $webform_submission = NULL) {
     \Drupal::service('civicrm')->initialize();
     $as_list = !empty($element['#extra']['aslist']);
     $is_multiple = !empty($element['#extra']['multiple']);
@@ -216,7 +216,7 @@ class CivicrmOptions extends OptionsBase {
   /**
    * {@inheritdoc}
    */
-  protected function prepareElementValidateCallbacks(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
+  protected function prepareElementValidateCallbacks(array &$element, ?WebformSubmissionInterface $webform_submission = NULL) {
     parent::prepareElementValidateCallbacks($element, $webform_submission);
     // Disable default form validation on state select field, since options are loaded via js.
     if (strpos($element['#form_key'], 'state_province_id') !== false) {

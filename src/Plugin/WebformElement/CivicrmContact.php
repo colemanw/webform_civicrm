@@ -77,7 +77,7 @@ class CivicrmContact extends WebformElementBase {
    * @todo port logic from _webform_render_civicrm_contact()
    * @see _webform_render_civicrm_contact()
    */
-  public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
+  public function prepare(array &$element, ?WebformSubmissionInterface $webform_submission = NULL) {
     \Drupal::service('civicrm')->initialize();
     $element['#form_key'] = $element['#form_key'] ?? $element['#webform_key'];
 
@@ -536,7 +536,7 @@ class CivicrmContact extends WebformElementBase {
    * @param array $ids
    *   Known entity ids
    */
-  public static function wf_crm_fill_contact_value(WebformInterface $node, array &$element, array $ids = NULL) {
+  public static function wf_crm_fill_contact_value(WebformInterface $node, array &$element, ?array $ids = NULL) {
     $cid = wf_crm_aval($element, '#default_value', '');
     $contactComponent = \Drupal::service('webform_civicrm.contact_component');
     if ($element['#type'] == 'hidden') {
@@ -621,7 +621,7 @@ class CivicrmContact extends WebformElementBase {
   /**
    * {@inheritdoc}
    */
-  protected function prepareElementValidateCallbacks(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
+  protected function prepareElementValidateCallbacks(array &$element, ?WebformSubmissionInterface $webform_submission = NULL) {
     parent::prepareElementValidateCallbacks($element, $webform_submission);
     if ($element['#type'] == 'hidden' && !empty($element['#required'])) {
       $element['#element_validate'][] = [get_class($this), 'validateRequired'];

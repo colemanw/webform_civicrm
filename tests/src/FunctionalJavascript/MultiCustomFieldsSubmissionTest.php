@@ -31,6 +31,7 @@ final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
    */
   private $_contact1;
   private $_contact2;
+  private $_hh;
 
   private function createMultiValueCustomFields() {
     $this->_customFields = [];
