@@ -11,6 +11,12 @@ use Drupal\Core\Url;
  */
 final class StripeTest extends WebformCivicrmTestBase {
   protected $failOnJavascriptConsoleErrors = TRUE;
+
+  /**
+   * @var int
+   */
+  private $paymentProcessorID;
+
   /**
    * {@inheritdoc}
    */
