@@ -265,4 +265,46 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
     }
   }
 
+  /**
+   * Verify that when a required, Static (autofill-only) Existing Contact field
+   * fails to resolve via an invalid checksum link, a hint is shown and
+   * submission is disabled.
+   */
+  public function testUnresolvedRequiredContactBlocksSubmission() {
+    $this->webform = $this->loadWebform('update_contact_details');
+    // Make the (already Static/hidden) field required, unable to create a new
+    // contact, and resolved only from the URL (no 'user'/auto fallback) so an
+    // invalid checksum leaves it unresolved.
+    $element = $this->webform->getElementDecoded('civicrm_1_contact_1_contact_existing');
+    $element['#required'] = TRUE;
+    $element['#widget'] = 'hidden';
+    $element['#allow_create'] = FALSE;
+    $element['#default'] = '';
+    $this->webform->setElementProperties('civicrm_1_contact_1_contact_existing', $element);
+    $this->webform->save();
+
+    $contact = $this->createIndividual([
+      'first_name' => 'Pabst',
+      'last_name' => 'Anthony',
+    ]);
+
+    // Open the form with a deliberately malformed checksum.
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => [
+      'cid1' => $contact['id'],
+      'cs' => 'this-is-not-a-valid-checksum',
+    ]]));
+
+    // The hint must be shown.
+    $this->assertSession()->pageTextContains('could not be identified');
+
+    // Submission must be disabled.
+    $submit = $this->getSession()->getPage()->findButton('Next >')
+      ?: $this->getSession()->getPage()->findButton('Submit');
+    $this->assertNotNull($submit, 'A submit/navigation button is present on the form.');
+    $this->assertTrue($submit->hasAttribute('disabled'), 'Submission is disabled when the required contact is unresolved.');
+
+    // Contact details must NOT be pre-populated from the unverified contact.
+    $this->assertSession()->fieldValueNotEquals('Last Name', $contact['last_name']);
+  }
+
 }

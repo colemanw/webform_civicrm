@@ -150,6 +150,11 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
       // Fill cid with '0' if unknown
       $this->ent['contact'][$c] += ['id' => 0];
     }
+    // Warn and disable submission if a required, Static (autofill-only) existing
+    // contact could not be resolved (e.g. an autofill / checksum link failed).
+    if ($this->blockUnresolvedRequiredContact()) {
+      return;
+    }
     // Search for other existing entities
     if (empty($this->form_state->get('civicrm'))) {
       if (!empty($this->data['case']['number_of_case'])) {
@@ -886,6 +891,37 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
     if (empty($_POST)) {
       \Drupal::messenger()->addStatus(WebformHtmlHelper::toHtmlMarkup($message, WebformXss::getHtmlTagList()));
     }
+  }
+
+  /**
+   * If a contact's required, Static (autofill-only) "Existing Contact" field
+   * could not be resolved (e.g. an autofill / checksum link failed), display a
+   * hint to the user and disable submission of the form.
+   *
+   * Submission is also blocked server-side in
+   * WebformCivicrmPostProcess::validate(); this only adds the front-end hint.
+   *
+   * @return bool
+   *   TRUE if the form was blocked.
+   */
+  private function blockUnresolvedRequiredContact() {
+    foreach (array_keys($this->data['contact'] ?? []) as $c) {
+      if (!$this->requiredContactUnresolved($c)) {
+        continue;
+      }
+      // Show the hint (only on initial GET load, mirroring setMessage()).
+      if (empty($_POST)) {
+        \Drupal::messenger()->addWarning(t('The personalized link you followed is invalid or has expired, so the required contact could not be identified. For your protection this form cannot be submitted. Please request a new link.'));
+      }
+      // Disable every submit / navigation button so the form can't be submitted.
+      foreach (['submit', 'wizard_next', 'preview', 'draft'] as $button) {
+        if (isset($this->form['actions'][$button])) {
+          $this->form['actions'][$button]['#disabled'] = TRUE;
+        }
+      }
+      return TRUE;
+    }
+    return FALSE;
   }
 
   /**
