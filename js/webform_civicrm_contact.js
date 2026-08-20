@@ -15,6 +15,7 @@
             noResultsText: field.data('none-prompt'),
             resultsFormatter: formatChoices,
             searchingText: "Searching...",
+              zindex: 1299,
             enableHTML: true
           };
         }
