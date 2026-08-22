@@ -7,12 +7,14 @@ use Drupal\Core\Test\AssertMailTrait;
 use Drupal\webform\Entity\WebformSubmission;
 use Drupal\webform\Entity\Webform;
 use Drupal\Core\Serialization\Yaml;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests submitting a Webform with CiviCRM: existing contact element.
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class ExistingContactElementTest extends WebformCivicrmTestBase {
 
   use AssertMailTrait;

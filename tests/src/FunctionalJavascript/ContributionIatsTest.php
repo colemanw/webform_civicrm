@@ -5,12 +5,14 @@ namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 use Behat\Mink\Element\NodeElement;
 use Drupal\Core\Url;
 use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests submitting a Webform with CiviCRM: Contribution with Line Items and Sales Tax
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class ContributionIatsTest extends WebformCivicrmTestBase {
 
   /**

@@ -5,12 +5,14 @@ namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 use Civi\Api4\Grant;
 use Drupal\Core\Url;
 use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests submitting a Webform with CiviCRM: Contact with Grant.
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class GrantTest extends WebformCivicrmTestBase {
 
   /**

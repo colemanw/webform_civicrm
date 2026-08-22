@@ -4,12 +4,14 @@ namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Drupal\Core\Url;
 use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests submitting a Webform with CiviCRM: Contact with Membership (Free)
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
   function testSubmitMembershipAutoRenew() {

@@ -3,12 +3,14 @@
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Drupal\Core\Url;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests submitting a Webform with CiviCRM: single contact + custom fields.
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class MultiCustomFieldsSubmissionTest extends WebformCivicrmTestBase {
 
   /**
