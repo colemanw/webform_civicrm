@@ -3,12 +3,14 @@
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Drupal\Core\Url;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests settings on the webform.
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class SaveSettingsTest extends WebformCivicrmTestBase {
 
   /**

@@ -4,7 +4,9 @@ namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Civi\Api4\Contribution;
 use Drupal\Core\Url;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
+#[RunTestsInSeparateProcesses]
 final class ContributionSoftTest extends WebformCivicrmTestBase {
 
   /**

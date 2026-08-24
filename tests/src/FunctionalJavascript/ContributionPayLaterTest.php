@@ -5,12 +5,14 @@ namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 use Civi\Api4\Contribution;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Url;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests submitting a Webform with CiviCRM: Contribution with Pay later
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class ContributionPayLaterTest extends WebformCivicrmTestBase {
 
   private $_customGroup = [];

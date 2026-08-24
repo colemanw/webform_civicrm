@@ -4,12 +4,14 @@ namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Drupal\Core\Url;
 use Drupal\webform\Entity\WebformSubmission;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests editing webform submissions.
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class SubmissionEditTest extends WebformCivicrmTestBase {
 
   public function testEditSubmission() {
