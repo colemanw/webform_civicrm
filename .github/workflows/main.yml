@@ -177,7 +177,7 @@ jobs:
           unzip 2.1.zip
           # temp patch for php 8.4
           cd com.aghstrategies.uscounties-2.1
-          curl -L -O https://github.com/agh1/com.aghstrategies.uscounties/pull/13.patch
+          curl -L -O https://patch-diff.githubusercontent.com/raw/agh1/com.aghstrategies.uscounties/pull/13.patch
           git apply 13.patch
       - name: Temp patch authnet sdk
         run: |
