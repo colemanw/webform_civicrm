@@ -173,8 +173,8 @@ jobs:
           /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.iatspayments.civicrm
           # For uscounties, it hasn't had a release in a few years so no longer appears in the ext feed, so just download directly. If it ever does need an update, would need to update here.
           # /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.aghstrategies.uscounties
-          curl -L -O https://github.com/agh1/com.aghstrategies.uscounties/archive/2.1.zip
-          unzip 2.1.zip
+          curl -L -o uscounties.zip https://github.com/agh1/com.aghstrategies.uscounties/archive/refs/heads/main.zip
+          unzip uscounties.zip
       - name: Temp patch authnet sdk
         run: |
           cd ~/drupal/web/sites/default/files/civicrm/ext/com.donordepot.authnetecheck/vendor/authorizenet/authorizenet
