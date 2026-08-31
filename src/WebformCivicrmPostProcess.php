@@ -9,6 +9,7 @@ namespace Drupal\webform_civicrm;
 
 use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\NestedArray;
+use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
 use Drupal\webform\WebformInterface;
@@ -2577,14 +2578,20 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           }
         }
         elseif ($field['type'] === 'date') {
-          $val = empty($val[0]) ? '' : str_replace('-', '', $val[0]);
-          // Add time field value
-          $time = wf_crm_aval($this->data, "$ent:$c:$table:$n:$name", '');
-          // Remove default date if it has been added
-          if (strlen($time) == 14) {
-            $time = substr($time, -6);
+          if ($component['#type'] == 'datelist' && !empty($val[0])) {
+            $val = DrupalDateTime::createFromTimestamp(strtotime($val[0]));
+            $val = (new DrupalDateTime($val))->format('Ymd H:i:s');
           }
-          $val .= $time;
+          else {
+            $val = empty($val[0]) ? '' : str_replace('-', '', $val[0]);
+            // Add time field value
+            $time = wf_crm_aval($this->data, "$ent:$c:$table:$n:$name", '');
+            // Remove default date if it has been added
+            if (strlen($time) == 14) {
+              $time = substr($time, -6);
+            }
+            $val .= $time;
+          }
         }
         // The admin can change a number field to use checkbox/radio/select/grid widget and we'll sum the result
         elseif ($field['type'] === 'number' || $field['type'] === 'civicrm_number') {
