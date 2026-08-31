@@ -901,6 +901,10 @@ class Fields implements FieldsInterface {
               'name' => t('Participant Fee'),
             ] + $moneyDefaults;
         }
+        $fields['participant_count'] = [
+          'name' => t('Participant Count'),
+          'type' => 'civicrm_number',
+        ];
       }
       if (isset($sets['membership'])) {
         $fields['membership_membership_type_id'] = [

@@ -489,16 +489,30 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           if (is_numeric($eid)) {
             $this->events[$eid]['ended'] = TRUE;
             $this->events[$eid]['title'] = t('this event');
-            $this->events[$eid]['count'] = wf_crm_aval($this->events, "$eid:count", 0) + $count;
-            $this->line_items[] = [
-              'qty' => $count,
-              'entity_table' => 'civicrm_participant',
-              'event_id' => $eid,
-              'contact_ids' => $contacts,
-              'unit_price' => $p['fee_amount'] ?? 0,
-              'element' => "civicrm_{$c}_participant_{$n}_participant_{$id_and_type}",
-              'contact_label' => $participantName,
-            ];
+            $this->events[$eid]['count'] = wf_crm_aval($this->events, "$eid:count", 0) + ($count * ($p['count'] ?? 1));
+            // Get (or create if needed) a Price Set that has a value field that correctly counts the number of participants registered on submission.
+            $participantPriceValueID = $this->utils->wf_crm_get_participant_price_set();
+            // We need a line item for each participant record.
+            foreach ($contacts as $k => $contact) {
+              if ($this->data['participant_reg_type'] == 'all') {
+                $contactIndex = $k;
+              }
+              else {
+                $contactIndex = $c;
+              }
+              $this->line_items[] = [
+                'qty' => $p['count'] ?? 1,
+                'participant_count' => $p['count'] ?? 1,
+                'entity_table' => 'civicrm_participant',
+                'event_id' => $eid,
+                'contact_ids' => $contact,
+                'unit_price' => ($p['fee_amount'] ?? 0) / ($p['count'] ?? 1),
+                'element' => "civicrm_{$contactIndex}_participant_{$n}_participant_{$id_and_type}",
+                'contact_label' => $participantName,
+                'price_field_value_id' => $participantPriceValueID,
+                'line_total' => $p['fee_amount'] ?? 0,
+              ];
+            }
           }
         }
       }
@@ -1144,6 +1158,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
   private function processParticipants($c, $cid) {
     static $registered_by_id = [];
     $n = $this->data['participant_reg_type'] == 'separate' ? $c : 1;
+    $contribution_enabled = wf_crm_aval($this->data, 'contribution:1:contribution:1:enable_contribution');
     if ($p = wf_crm_aval($this->data, "participant:$n:participant")) {
       // Fetch existing participant records
       $existing = $this->utils->wf_crm_apivalues('Participant', 'get', [
@@ -1215,11 +1230,14 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
 
               // Update line-item
               foreach ($this->line_items as &$item) {
-                if ($item['element'] == "civicrm_{$n}_participant_{$e}_participant_{$id_and_type}") {
+                if ($item['element'] == "civicrm_{$c}_participant_{$e}_participant_{$id_and_type}") {
                   if (empty($item['participant_id'])) {
                     $item['participant_id'] = $item['entity_id'] = $result['id'];
                   }
-                  $item['participant_count'] = wf_crm_aval($item, 'participant_count', 0) + 1;
+                  // Free events need line items for correct participant count.
+                  if (!$contribution_enabled) {
+                    $this->utils->wf_civicrm_api('lineItem', 'create', $item);
+                  }
                   break;
                 }
               }
