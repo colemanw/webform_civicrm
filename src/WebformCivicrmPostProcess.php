@@ -321,10 +321,13 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     }
     // Write record; we do this when creating, updating, or saving a draft of a webform submission.
     $record = $this->formatSubmission();
-    $this->database->merge('webform_civicrm_submissions')
-      ->key('sid', $record['sid'])
-      ->fields($record)
-      ->execute();
+    //If 'Disable saving of submissions' is enabled, sid is null
+    if (!is_null($record['sid'])){ 
+      $this->database->merge('webform_civicrm_submissions')
+        ->key('sid', $record['sid'])
+        ->fields($record)
+        ->execute();
+    }  
 
     // Calling an IPN payment processor will result in a redirect so this happens after everything else
     if ($this->contributionIsIncomplete && !$this->contributionIsPayLater && !empty($this->ent['contribution'][1]['id']) && !$this->submission->isDraft()) {
