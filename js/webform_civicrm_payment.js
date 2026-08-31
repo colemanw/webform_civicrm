@@ -26,13 +26,17 @@
             });
           }
           // When an express payment button is clicked, skip the billing fields and submit the form with a placeholder
-          var $expressButton = $billingPaymentBlock.find('input[name$=_upload_express]');
+          var $expressButton = $billingPaymentBlock.find('button[name$=_upload_express]');
           if ($expressButton.length) {
+            $("input[value=Submit]").hide();
             $expressButton.removeClass('crm-form-submit').click(function(e) {
               e.preventDefault();
               $billingPaymentBlock.find('input[name=credit_card_number]').val('express');
-              $(this).closest('form').find('input.webform-submit.button-primary').click();
+              $(this).closest('form').find('input.webform-button--submit.form-submit').click();
             })
+          }
+          else {
+            $("input[value=Submit]").show();
           }
           $('fieldset.billing_name_address-group').remove();
         }
