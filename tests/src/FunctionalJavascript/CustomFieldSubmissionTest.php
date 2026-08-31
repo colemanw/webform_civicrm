@@ -330,7 +330,7 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
     foreach ($customFieldLabels as $label) {
       $this->assertSession()->pageTextContains($label);
     }
-    //Disable Custom field.
+    // Disable Custom field.
     $fieldURL = Url::fromUri('internal:/civicrm/admin/custom/group/field/update', [
       'absolute' => TRUE,
       'query' => ['reset' => 1, 'action' => 'update', 'gid' => 1, 'id' => $this->_customFields['color_checkboxes']]
@@ -360,6 +360,22 @@ final class CustomFieldSubmissionTest extends WebformCivicrmTestBase {
 
     // Verify if the custom field is back on the page.
     $this->assertSession()->pageTextContains('Label for Custom Checkbox field');
+
+    // Delete Custom field.
+    $fieldURL = Url::fromUri('internal:/civicrm/admin/custom/group/field/delete', [
+      'absolute' => TRUE,
+      'query' => ['reset' => 1, 'id' => $this->_customFields['color_checkboxes']]
+    ])->toString();
+    $this->drupalGet($fieldURL);
+    $this->getSession()->getPage()->pressButton('_qf_DeleteField_next-bottom');
+
+    // Reload the webform page - the custom field should be removed.
+    $this->drupalGet($this->webform->toUrl('canonical'));
+    $this->htmlOutput();
+    $this->assertPageNoErrorMessages();
+
+    // Verify if the custom field is removed from the page.
+    $this->assertSession()->pageTextNotContains('Label for Custom Checkbox field');
 
     //Change single radio to static.
     $this->drupalGet($this->webform->toUrl('edit-form'));

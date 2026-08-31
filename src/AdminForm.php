@@ -2547,7 +2547,10 @@ class AdminForm implements AdminFormInterface {
       $data = $settings['data'];
       $field_info = $utils->wf_crm_get_field($field_name);
       // $field_info contains old data, so re-fetch
-      $fieldConfigs = $utils->wf_civicrm_api('CustomField', 'getsingle', ['id' => $fid]);
+      $fieldConfigs = [];
+      if ($op !== 'delete' && $op !== 'disable') {
+        $fieldConfigs = $utils->wf_civicrm_api('CustomField', 'getsingle', ['id' => $fid]);
+      }
       $enabled = $utils->wf_crm_enabled_fields($webform, NULL, TRUE);
       $updated = [];
       // Handle update & delete of existing components
