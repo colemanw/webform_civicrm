@@ -48,6 +48,17 @@ class WebformCivicrmConfirmForm  implements WebformCivicrmConfirmFormInterface {
         $paymentProcessor = \Civi\Payment\System::singleton()->getByName($processor_type['name'], TRUE);
       }
 
+      // Merge submitted POST values into the payment params so that
+      // processor-specific fields (e.g. tokenized payment nonces) are
+      // available to doPayment(). This mirrors what contributionParams()
+      // already does for the on-site / live payment path.
+      $request = \Drupal::request();
+      foreach ($request->request->all() as $key => $value) {
+        if (!isset($paramsDoPayment[$key]) && $value !== '' && $value !== NULL) {
+          $paramsDoPayment[$key] = $value;
+        }
+      }
+
       if (method_exists($paymentProcessor, 'setSuccessUrl')) {
         $paymentProcessor->setSuccessUrl($paramsDoPayment['successURL']);
         $paymentProcessor->setCancelUrl($paramsDoPayment['cancelURL']);
