@@ -93,7 +93,7 @@ class FieldOptions implements FieldOptionsInterface {
         // Saving will map the IDs to live or test.
         // For the frontend we display the selected payment processors (with correct ID for live or test)
         $params = wf_crm_aval($data, "$ent:$c:$table:$n", []);
-        $paymentProcessors = $utils->wf_crm_apivalues('PaymentProcessor', 'get', ['is_test' => $params['is_test'] ?? 0, 'is_active' => 1]);
+        $paymentProcessors = $utils->wf_crm_apivalues('PaymentProcessor', 'get', ['is_test' => 0, 'is_active' => 1]);
         $paymentProcessors[0]['name'] = $field['exposed_empty_option'];
         foreach ($paymentProcessors as $paymentProcessorID => $paymentProcessor) {
           if ($context === 'config_form') {
