@@ -60,7 +60,10 @@ class Fields implements FieldsInterface {
     return $this->components;
   }
 
-  protected function getSets(array $components): array {
+  /**
+   * {@inheritdoc}
+   */
+  public function getSets(array $components): array {
     if (empty($this->sets)) {
       $sets = [
         'contact' => ['entity_type' => 'contact', 'label' => t('Contact Fields')],
@@ -128,7 +131,7 @@ class Fields implements FieldsInterface {
    */
   protected function getFieldMetadata(): void {
     $components = $this->getComponents();
-    $setNames = array_keys($this->getSets($components));
+    $setNames = array_keys(\Drupal::service('webform_civicrm.fields')->getSets($components));
     foreach ($setNames as $setName) {
       $result = $this->utils->wf_crm_apivalues($setName, 'getfields');
       if ($result) {
@@ -168,7 +171,7 @@ class Fields implements FieldsInterface {
 
   protected function wf_crm_get_fields($var = 'fields') {
     $components = $this->getComponents();
-    $sets = $this->getSets($components);
+    $sets = \Drupal::service('webform_civicrm.fields')->getSets($components);
     $elements = \Drupal::service('plugin.manager.webform.element')->getInstances();
 
     static $fields = [];
