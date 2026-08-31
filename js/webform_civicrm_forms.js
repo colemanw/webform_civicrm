@@ -119,7 +119,13 @@ var wfCivi = (function (D, $, drupalSettings, once) {
         $(container).children().hide();
         container.append('<input type="submit" class="button form-submit ajax-processed civicrm-remove-file" value="' + Drupal.t('Change') + '" onclick="wfCivi.clearFileField(\'' + field + '\'); return false;">');
       }
-      container.prepend('<span class="file civicrm-file-icon file--'+info.icon+'">' + (info.name ? ('<a href="'+ info.file_url+ '" target="_blank">'+info.name +'</a>') : '') + '</span>');
+
+      if (info.data_type == 'Image_URL') {
+        container.prepend('<span class="civicrm-file-icon"><img alt="File" src="' + info.file_url + '" /></span>');
+      }
+      else {
+        container.prepend('<span class="file civicrm-file-icon file--'+info.icon+'">' + (info.name ? ('<a href="'+ info.file_url+ '" target="_blank">'+info.name +'</a>') : '') + '</span>');
+      }
     }
   };
 

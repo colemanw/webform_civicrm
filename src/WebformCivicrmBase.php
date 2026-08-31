@@ -843,11 +843,11 @@ abstract class WebformCivicrmBase {
     if (!$val) {
       return NULL;
     }
-    if ($fieldName === 'image_url') {
+    if (strtolower($fieldName) === 'image_url') {
       $parsed = UrlHelper::parse($val);
 
       return [
-        'data_type' => 'File',
+        'data_type' => 'Image_URL',
         'name' => $parsed['query']['photo'],
         'icon' => 'image',
         'file_url' => $val,
