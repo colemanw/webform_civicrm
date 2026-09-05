@@ -908,4 +908,30 @@ abstract class WebformCivicrmTestBase extends CiviCrmTestBase {
     $this->assertTrue($result, \sprintf("Pressing of the %s button didn't produce any results or page wasn't properly loaded afterwards.", $selector));
   }
 
+  /**
+   * Override drupalLogout() in tests/Drupal/Tests/UiHelperTrait.php
+   */
+  protected function drupalLogout(): void {
+    // Make a request to the logout page, and redirect to the user page, the
+    // idea being if you were properly logged out you should be seeing a login
+    // screen.
+    $assert_session = $this->assertSession();
+    $destination = Url::fromRoute('user.page')->toString();
+    $this->drupalGet(Url::fromRoute('user.logout.confirm', options: ['query' => ['destination' => $destination]]));
+    // Target the submit button using the name rather than the value to work
+    // regardless of the user interface language.
+    $this->submitForm([], 'op', 'user-logout-confirm');
+    // OVERRIDE
+    // We get lots of intermittent test fails here, where the screenshot seems
+    // to indicate the field is present, but for some reason it can't find it.
+    //$assert_session->fieldExists('name');
+    //$assert_session->fieldExists('pass');
+    // try using id instead, and wait
+    $assert_session->waitForElementVisible('css', '#edit-name');
+    $assert_session->fieldExists('edit-name');
+    $assert_session->fieldExists('edit-pass');
+
+    $this->drupalResetSession();
+  }
+
 }
