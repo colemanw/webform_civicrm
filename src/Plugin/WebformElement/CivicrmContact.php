@@ -354,6 +354,13 @@ class CivicrmContact extends WebformElementBase {
         '#title' => $this->t('Allow Duplicate Autofill'),
         '#default_value' => $element_properties['dupes_allowed'],
         '#description' => $this->t('Check this box to allow a contact to be selected even if they already autofilled a prior field on the form. (For example, if contact 1 was autofilled with Bob Smith, should this field also be allowed to select Bob Smith or should it pick a different contact?)'),
+        '#states' => [
+          'visible' => [
+            [':input[name="properties[default]"]' => ['value' => 'auto']],
+            'or',
+            [':input[name="properties[default]"]' => ['value' => 'relationship']],
+          ],
+        ],
       ];
     }
     $form['contact_defaults']['randomize'] = [
@@ -363,7 +370,9 @@ class CivicrmContact extends WebformElementBase {
       '#description' => $this->t('Pick a contact at random if more than one meets criteria.'),
       '#states' => [
         'visible' => [
-          'select[name="properties[default]"]' => ['value' => 'auto'],
+          [':input[name="properties[default]"]' => ['value' => 'auto']],
+          'or',
+          [':input[name="properties[default]"]' => ['value' => 'relationship']],
         ],
       ],
     ];
