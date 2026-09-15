@@ -107,8 +107,14 @@ final class CaseSubmissionTest extends WebformCivicrmTestBase {
       'contact_id' => $this->_caseContact['id'],
     ]);
     $this->assertEquals(1, $case_result['count']);
+
+    // Make sure  $start_date is really only start_date (and not time)
+    $start_date = $case_result['values'][0]['start_date']);
+    $dateObj = new DateTime($start_date);
+    $start_date_only = $dateObj->format('Y-m-d');
+    
     $this->assertEquals($caseSubject, $case_result['values'][0]['subject']);
-    $this->assertEquals(date('Y-m-d'), $case_result['values'][0]['start_date']);
+    $this->assertEquals(date('Y-m-d'), $start_date_only);
   }
 
 }
