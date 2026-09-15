@@ -162,13 +162,13 @@ final class EventTest extends WebformCivicrmTestBase {
   function submitWebform() {
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
-    $edit = [
-      'civicrm_1_contact_1_contact_first_name' => 'Frederick',
-      'civicrm_1_contact_1_contact_last_name' => 'Pabst',
-      'civicrm_2_contact_1_contact_first_name' => 'Mark',
-      'civicrm_2_contact_1_contact_last_name' => 'Anthony'
-    ];
-    $this->postSubmission($this->webform, $edit);
+    $this->getSession()->getPage()->fillField('civicrm_1_contact_1_contact_first_name', 'Frederick');
+    $this->getSession()->getPage()->fillField('civicrm_1_contact_1_contact_last_name', 'Pabst');
+    $this->getSession()->getPage()->fillField('civicrm_2_contact_1_contact_first_name', 'Mark');
+    $this->getSession()->getPage()->fillField('civicrm_2_contact_1_contact_last_name', 'Anthony');
+    $this->pressButtonOverride('Submit');
+    $this->assertPageNoErrorMessages();
+    $this->htmlOutput();
   }
 
   /**
