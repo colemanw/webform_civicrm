@@ -27,7 +27,7 @@ jobs:
             civicrm: '6.16.x'
             php: '8.3'
           - drupal: '11.4.*'
-            civicrm: '6.18.x-dev'
+            civicrm: '6.19.x-dev'
             php: '8.3'
           - drupal: '11.x-dev'
             civicrm: 'dev-master'
