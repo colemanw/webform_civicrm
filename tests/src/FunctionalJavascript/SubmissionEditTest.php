@@ -31,6 +31,7 @@ final class SubmissionEditTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Dummy');
     $this->getSession()->getPage()->fillField('Last Name', 'Tester');
     $this->pressButtonOverride('Submit');
+    $this->assertPageNoErrorMessages();
 
     // Should have created one contact
     $newMax = $this->getMaxId();
@@ -46,9 +47,7 @@ final class SubmissionEditTest extends WebformCivicrmTestBase {
 
     // Should have updated not created a new contact
     $this->assertEquals($newMax, $this->getMaxId());
-
     $this->assertEquals('Smarty', civicrm_api3('Contact', 'get', ['id' => $newMax])['values'][$newMax]['first_name']);
-
   }
 
   protected function getMaxId($entity = 'Contact') {
