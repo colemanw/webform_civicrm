@@ -1511,12 +1511,6 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         // Update mode
         else {
           $params['id'] = $this->ent['activity'][$n]['id'];
-
-          // Update details when user has selected he wants to update the details
-          if (!empty($data['details']['update_existing'])) {
-            // Format details as html
-            $this->formatSubmissionDetails($params, $n);
-          }
         }
         // Allow "automatic" values to pass-thru if empty
         foreach ($params as $field => $value) {
@@ -1634,7 +1628,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     if (!empty($this->data['activity'][$activity_number]['details']['view_link'])) {
       $params['details'] .= '<p>' . $this->submission->toLink(t('View Webform Submission'), 'canonical', [
         'absolute' => TRUE,
-      ])->toString() . '</p>' . \Drupal\Core\Link::fromTextAndUrl('View Webform Submission', $this->submission->getTokenUrl('view'))->toString();
+      ])->toString() . '</p>';
     }
     if (!empty($this->data['activity'][$activity_number]['details']['view_link_secure'])) {
       $params['details'] .= '<p>' . \Drupal\Core\Link::fromTextAndUrl('View Webform Submission', $this->submission->getTokenUrl('view'))->toString() . '</p>';
