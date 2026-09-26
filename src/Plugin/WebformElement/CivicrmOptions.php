@@ -6,6 +6,8 @@ use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Markup;
 use Drupal\webform\Plugin\WebformElement\OptionsBase;
+use Drupal\webform\Utility\WebformOptionsHelper;
+use Drupal\webform\WebformSubmissionConditionsValidator;
 use Drupal\webform\WebformSubmissionInterface;
 
 /**
@@ -348,6 +350,56 @@ class CivicrmOptions extends OptionsBase {
       $value['#plain_text'] = $state[$state_id];
     }
     return $value;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getElementSelectorInputsOptions(array $element) {
+    $is_multiple = !empty($element['#extra']['multiple']);
+    $as_list = !empty($element['#extra']['aslist']);
+    $use_live_options = !empty($element['#civicrm_live_options']);
+
+    // Only checkboxes support per-option conditionals.
+    $is_checkboxes = !$as_list && ($is_multiple || (!$use_live_options && count($element['#options'] ?? []) === 1));
+
+    if (!$is_checkboxes) {
+      return parent::getElementSelectorInputsOptions($element);
+    }
+
+    $selectors = $element['#options'] ?? [];
+    foreach ($selectors as $index => $text) {
+      [$text] = WebformOptionsHelper::splitOption($text);
+      $text .= ' [' . $this->t('Checkbox') . ']';
+      $selectors[$index] = $text;
+    }
+    return $selectors;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getElementSelectorInputValue($selector, $trigger, array $element, WebformSubmissionInterface $webform_submission) {
+    $is_multiple = !empty($element['#extra']['multiple']);
+    $as_list = !empty($element['#extra']['aslist']);
+    $use_live_options = !empty($element['#civicrm_live_options']);
+
+    $is_checkboxes = !$as_list && ($is_multiple || (!$use_live_options && count($element['#options'] ?? []) === 1));
+
+    if ($is_checkboxes) {
+      $input_name = WebformSubmissionConditionsValidator::getSelectorInputName($selector);
+      $option_value = WebformSubmissionConditionsValidator::getInputNameAsArray($input_name, 1);
+      $value = $this->getRawValue($element, $webform_submission) ?: [];
+
+      if (in_array($option_value, $value, TRUE)) {
+        return (in_array($trigger, ['checked', 'unchecked'])) ? TRUE : $value;
+      }
+      else {
+        return (in_array($trigger, ['checked', 'unchecked'])) ? FALSE : NULL;
+      }
+    }
+
+    return parent::getElementSelectorInputValue($selector, $trigger, $element, $webform_submission);
   }
 
 }
