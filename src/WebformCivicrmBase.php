@@ -567,7 +567,7 @@ abstract class WebformCivicrmBase {
         'extra' => wf_crm_aval($field, 'extra', []) + wf_crm_aval($field, '#extra', []),
         'form_key' => $field['#form_key'],
       ];
-      $exposed = $this->utils->wf_crm_field_options($params, 'civicrm_live_options', $this->data);
+      $exposed = $this->utils->wf_crm_field_options($params, 'civicrm_live_options', $this->settings['data'] ?? $this->data);
       foreach ($exclude as $i) {
         unset($exposed[$i]);
       }
