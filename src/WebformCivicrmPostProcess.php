@@ -2808,6 +2808,10 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
         }
       }
 
+      // Track whether the submission provides its own state/province for this
+      // address, so a value copied from the existing address is not applied
+      // to a newly submitted, different country below.
+      $submittedStateProvince = FALSE;
       foreach ($submittedLocationValues as $key => $sValue) {
         $sLocationTypeId = isset($sValue['location_type_id']) ? $sValue['location_type_id'] : NULL;
         $sEntityTypeId = isset($sValue[$entityTypeIdIndex]) ? $sValue[$entityTypeIdIndex] : NULL;
@@ -2831,8 +2835,29 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
                 $reorderedArray[$index][$field] = $sValue[$field];
               }
             }
+            if (isset($sValue['state_province_id']) && $sValue['state_province_id'] !== '') {
+              $submittedStateProvince = TRUE;
+            }
           }
           unset($submittedLocationValues[$key]);
+        }
+      }
+      // A state/province copied from the existing address belongs to the
+      // existing country. When the submission sets a different country but no
+      // state/province of its own, that stale value is not a valid option for
+      // the new country and makes the CiviCRM API reject the whole address.
+      // Discard it (and the county that depends on it) so only consistent
+      // location data is saved.
+      if ($entity == 'address' && !$submittedStateProvince) {
+        $mergedCountryId = wf_crm_aval($reorderedArray[$index], 'country_id', '');
+        $existingCountryId = wf_crm_aval($eValue, 'country_id', '');
+        if ($mergedCountryId !== '' && (string) $mergedCountryId !== (string) $existingCountryId) {
+          if (array_key_exists('state_province_id', $reorderedArray[$index])) {
+            $reorderedArray[$index]['state_province_id'] = '';
+          }
+          if (array_key_exists('county_id', $reorderedArray[$index])) {
+            $reorderedArray[$index]['county_id'] = '';
+          }
         }
       }
       $index++;
