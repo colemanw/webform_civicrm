@@ -386,6 +386,10 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
       'contact_id' => $this->ent['contact'][$c]['id'],
       'event_id' => ['IN' => array_keys($this->events)],
     ]);
+    $url_events = [];
+    if (!empty($this->data['reg_options']['allow_url_load'])) {
+      $url_events = $this->getURLEventIds($c);
+    }
     foreach ($participants as $row) {
       $par = [];
       // v3 participant api returns some non-standard keys with participant_ prepended
@@ -396,6 +400,10 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
       $status = $status_types[$row['status_id']];
       foreach ($this->events[$row['event_id']]['form'] as $event) {
         if ($event['contact'] == $c) {
+          // If we have an event specified in the url then skip other events.
+          if (!empty($url_events[$event['num']]) && !in_array($event['eid'], $url_events[$event['num']])) {
+            continue;
+          }
           // If status has been set by admin or exposed to the form, use it as a filter
           if (in_array($status['id'], $event['status_id']) ||
             // If status is "Automatic" (empty) then make sure the participant is registered
@@ -423,6 +431,19 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
    * @param int $c
    */
   private function loadURLEvents($c) {
+    foreach ($this->getURLEventIds($c) as $e => $event_ids) {
+      $this->info['participant'][$c]['participant'][$e]['event_id'] = $event_ids;
+    }
+  }
+
+  /**
+   * Get the events passed in the url for each participant
+   * @param int $c
+   * @return array
+   *   Event data, keyed by participant number
+   */
+  private function getURLEventIds($c) {
+    $result = [];
     $n = $this->data['participant_reg_type'] == 'separate' ? $c : 1;
     $p = wf_crm_aval($this->data, "participant:$n:participant");
     if ($p) {
@@ -447,9 +468,10 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
             $event_ids[] = $eids[$url_param_value];
           }
         }
-        $this->info['participant'][$c]['participant'][$e]['event_id'] = $event_ids;
+        $result[$e] = $event_ids;
       }
     }
+    return $result;
   }
 
   /**

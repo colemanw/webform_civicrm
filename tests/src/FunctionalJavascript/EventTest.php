@@ -446,4 +446,68 @@ final class EventTest extends WebformCivicrmTestBase {
     $this->assertSession()->checkboxChecked('Test Event 4');
   }
 
+  /**
+   * Participant data should be loaded for the event passed in the url,
+   * not the contact's most recent registration.
+   */
+  function testParticipantStatusFromUrlEvent() {
+    $event = $this->utils->wf_civicrm_api('Event', 'create', [
+      'event_type_id' => "Conference",
+      'title' => "Test Event 2",
+      'start_date' => date('Y-m-d'),
+      'financial_type_id' => $this->ft['id'],
+    ]);
+    $this->assertEquals(0, $event['is_error']);
+    $event2 = reset($event['values']);
+
+    // Register the contact to both events with different statuses.
+    $contact = $this->createIndividual();
+    $participant = $this->utils->wf_civicrm_api('Participant', 'create', [
+      'contact_id' => $contact['id'],
+      'event_id' => $this->_event['id'],
+      'status_id' => "Registered",
+      'role_id' => "Attendee",
+    ]);
+    $registeredStatus = reset($participant['values'])['status_id'];
+    $participant = $this->utils->wf_civicrm_api('Participant', 'create', [
+      'contact_id' => $contact['id'],
+      'event_id' => $event2['id'],
+      'status_id' => "Attended",
+      'role_id' => "Attendee",
+    ]);
+    $attendedStatus = reset($participant['values'])['status_id'];
+
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+
+    $this->getSession()->getPage()->clickLink('Event Registration');
+    $this->getSession()->getPage()->selectFieldOption('participant_reg_type', 'all');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->checkField('reg_options[allow_url_load]');
+    $this->getSession()->getPage()->selectFieldOption('participant_1_number_of_participant', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_participant_1_participant_event_id[]', '- User Select -');
+    $this->getSession()->getPage()->selectFieldOption('Registration Status', '- User Select -');
+    $this->saveCiviCRMSettings();
+
+    // The later registration (event 2, Attended) must not leak into event 1.
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $contact['id'], 'event1' => $this->_event['id']]]));
+    $this->assertPageNoErrorMessages();
+    $this->htmlOutput();
+    $this->assertSession()->checkboxChecked('Test Event 1');
+    $this->assertSession()->checkboxNotChecked('Test Event 2');
+    $this->assertSession()->fieldValueEquals('civicrm_1_participant_1_participant_status_id', $registeredStatus);
+
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $contact['id'], 'event1' => $event2['id']]]));
+    $this->assertPageNoErrorMessages();
+    $this->htmlOutput();
+    $this->assertSession()->checkboxChecked('Test Event 2');
+    $this->assertSession()->checkboxNotChecked('Test Event 1');
+    $this->assertSession()->fieldValueEquals('civicrm_1_participant_1_participant_status_id', $attendedStatus);
+  }
+
 }
