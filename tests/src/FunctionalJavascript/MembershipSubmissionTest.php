@@ -285,6 +285,62 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
     $this->assertEquals('Basic Plus', $membership['membership_name']);
     $this->assertEquals('1', $membership['status_id']);
+
+    // Now lets check pay later notifications
+    // Possibly should be in it's own test but would require
+    // Duplicating a lot of above logic.
+    $this->drupalLogin($this->rootUser);
+    $this->redirectEmailsToDB();
+
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $params = [
+      'payment_processor_id' => 'Pay Later',
+      'receipt' => [
+        'receipt_from_name' => 'Admin',
+        'receipt_from_email' => 'admin@example.com',
+        'pay_later_receipt' => 'Payment by Direct Credit to: ABC. Please quote invoice number and name.',
+        'receipt_text' => 'Thank you for your contribution.',
+      ],
+    ];
+    $this->configureContributionTab($params);
+    $this->saveCiviCRMSettings();
+
+    $this->drupalLogout();
+
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['membership' => 2]]));
+    $this->htmlOutput();
+    $this->assertPageNoErrorMessages();
+
+    $this->assertSession()->waitForField('First Name');
+    $this->getSession()->getPage()->fillField('First Name', 'Sarah');
+    $this->getSession()->getPage()->fillField('Last Name', 'Sinclar');
+    $this->getSession()->getPage()->fillField('Email', 'sarah@example.com');
+    $this->assertSession()->pageTextContains('Basic Plus');
+    $this->pressButtonOverride('Next >');
+    $this->htmlOutput();
+    $this->assertPageNoErrorMessages();
+
+    $this->pressButtonOverride('Submit');
+    $this->htmlOutput();
+    $this->assertPageNoErrorMessages();
+
+    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+
+    $api_result = $this->utils->wf_civicrm_api('membership', 'get', [
+      'sequential' => 1,
+      'status_id' => "Pending",
+    ]);
+    $this->assertEquals(1, $api_result['count']);
+    $membership = reset($api_result['values']);
+    $this->assertEquals('Basic Plus', $membership['membership_name']);
+
+    $sent_email = $this->getMostRecentEmail();
+    $this->assertStringContainsString('From: Admin <admin@example.com>', $sent_email);
+    $this->assertStringContainsString('To: Sarah Sinclar <sarah@example.com>', $sent_email);
+    $this->assertStringContainsString('Payment by Direct Credit to: ABC. Please quote invoice number and name.', $sent_email);
+    $this->assertStringContainsString('Thank you for your contribution', $sent_email);
   }
 
   /**
