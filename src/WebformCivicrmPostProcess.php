@@ -617,6 +617,15 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       if (substr($field_key, -8) === 'existing') {
         [, $c, ] = explode('_', $field_key, 3);
         $cid = wf_crm_aval($this->submissionValue($fid), 0);
+
+        // When submission data is 0, fall back to raw user input.
+        if (!$cid && !empty($this->form_state)) {
+          $user_input = $this->form_state->getUserInput();
+          $submitted_cid = isset($user_input[$fid]) ? (int) $user_input[$fid] : 0;
+          if ($submitted_cid > 0) {
+            $cid = $submitted_cid;
+          }
+        }
         $this->ent['contact'][$c]['id'] = $this->verifyExistingContact($cid, $field_key);
         if ($this->ent['contact'][$c]['id']) {
           $this->existing_contacts[$c] = $cid;
