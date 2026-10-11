@@ -521,7 +521,7 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
    */
   private function fillForm(&$elements, $submitted = []) {
     foreach ($elements as $eid => &$element) {
-      if ($eid[0] == '#' || !is_array($element)) {
+      if ((is_string($eid) && str_starts_with($eid, '#')) || !is_array($element)) {
         continue;
       }
       // Recurse through nested elements
