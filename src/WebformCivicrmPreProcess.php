@@ -499,8 +499,6 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
    */
   private function fillForm(&$elements, $submitted = []) {
     foreach ($elements as $eid => &$element) {
-      // Numeric keys are never render properties; reading $eid[0] on an int
-      // raises "Trying to access array offset on int".
       if ((is_string($eid) && str_starts_with($eid, '#')) || !is_array($element)) {
         continue;
       }
