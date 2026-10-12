@@ -48,7 +48,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
       'is_test' => FALSE,
       'is_active' => 1,
       'user_name' => 'TE4188',
-      'password' => 'abcde01',
+      'password' => 'Semper26',
       'url_site' => 'https://www.iatspayments.com/NetGate/ProcessLinkv2.asmx?WSDL',
       'url_recur' => 'https://www.iatspayments.com/NetGate/ProcessLinkv2.asmx?WSDL',
       'class_name' => 'Payment_iATSService',
