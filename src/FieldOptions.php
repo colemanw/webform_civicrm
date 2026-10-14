@@ -29,7 +29,7 @@ class FieldOptions implements FieldOptionsInterface {
         list($contact_types, $sub_types) = $utils->wf_crm_get_contact_types();
         $ret = wf_crm_aval($sub_types, $data['contact'][$c]['contact'][1]['contact_type'], []);
       }
-      elseif ((strpos($name, 'state_province_id') !== false) || (isset($field['type']) && $field['type'] === 'civicrm_number')) {
+      elseif (isset($field['type']) && $field['type'] === 'civicrm_number') {
         return [];
       }
       elseif ($name === 'relationship_type_id') {
@@ -68,7 +68,7 @@ class FieldOptions implements FieldOptionsInterface {
       }
       elseif (isset($field['table']) && $field['table'] === 'group') {
         $params = ['is_hidden' => 0];
-        $options = wf_crm_aval($data, "contact:$c:other:1:group");
+        $options = wf_crm_aval($data, "contact:$c:other:1:crmgroup");
         if (!empty($options) && !empty($options['public_groups'])) {
           $params['visibility'] = "Public Pages";
         }
@@ -109,12 +109,17 @@ class FieldOptions implements FieldOptionsInterface {
       else {
         $params = ['field' => $name, 'context' => 'create'];
         // Special case for contribution_recur fields
-        if ($table == 'contribution' && strpos($name, 'frequency_') === 0) {
-          $table = 'contribution_recur';
-        }
-        if ($table == 'contribution' && strpos($name, 'billing_address_') === 0) {
-          $table = 'address';
-          $params['field'] = str_replace('billing_address_', '', $params['field']);
+        if ($table === 'contribution') {
+          if (str_starts_with($name, 'frequency_')) {
+            $table = 'contribution_recur';
+          }
+          elseif ($name === 'soft_credit_type_id') {
+            $table = 'contribution_soft';
+          }
+          elseif (str_starts_with($name, 'billing_address_')) {
+            $table = 'address';
+            $params['field'] = str_replace('billing_address_', '', $params['field']);
+          }
         }
         // Use the Contribution table to pull up financial type id-s
         if ($table == 'membership' && $name == 'financial_type_id') {

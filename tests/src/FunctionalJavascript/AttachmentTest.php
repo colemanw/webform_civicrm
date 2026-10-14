@@ -3,15 +3,22 @@
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Drupal\Core\Url;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests submitting a Webform with CiviCRM: Contact with File.
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class AttachmentTest extends WebformCivicrmTestBase {
 
   protected static $filePrefix = NULL;
+
+  /**
+   * @var array
+   */
+  private $fileParams;
 
   /**
    * {@inheritdoc}
@@ -126,7 +133,7 @@ final class AttachmentTest extends WebformCivicrmTestBase {
       $this->assertSession()->pageTextContains($file['name']);
     }
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
   }

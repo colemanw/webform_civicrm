@@ -131,11 +131,15 @@ class Utils implements UtilsInterface {
    * @return array
    */
   function wf_crm_get_events($reg_options, $context) {
-    $ret = [];
+    static $ret = [];
+    if ($ret && $context !== 'config_form') {
+      return $ret;
+    }
     $format = wf_crm_aval($reg_options, 'title_display', 'title');
     $sort_field = wf_crm_aval($reg_options, 'event_sort_field', 'start_date');
     $sort_order = ($context == 'config_form' && $sort_field === 'start_date') ? ' DESC' : '';
     $params = [
+      'return' => ['id', 'title', 'start_date', 'end_date', 'event_type_id', 'max_participants'],
       'is_template' => 0,
       'is_active' => 1,
     ];
@@ -168,14 +172,23 @@ class Utils implements UtilsInterface {
         }
       }
     }
-    // A "full" event is one where the maximum participants is less than or equal to the number of registered participants (whose roles count toward the registration cap).
+    // A "full" event is one where the maximum participants is less than or equal to the number of registered participants (whose roles and statuses count toward the registration cap).
     // FIXME: When we move to API4, we should ensure Event.get has a calculated "registered_participants" field tp avoid an API call per event.
     // For now, keep the "show full" check last to minimize the API calls.
     if (!wf_crm_aval($reg_options, 'show_full_events', '1', TRUE)) {
       $rolesThatCount = array_column($this->wf_crm_apivalues('OptionValue', 'get', ['option_group_id' => "participant_role", 'filter' => 1]), 'value');
+      $statusesThatCount = array_column((array) $this->wf_civicrm_api4('ParticipantStatusType', 'get', [
+        'select' => ['id'],
+        'where' => [['is_counted', '=', TRUE]],
+        'checkPermissions' => FALSE,
+      ]), 'id');
       foreach ($values as $key => $value) {
         if (!empty($value['max_participants'])) {
-          $registrationCount = $this->wf_civicrm_api('Participant', 'getcount', ['event_id' => $key, 'role_id' => ['IN' => $rolesThatCount]]);
+          $registrationCount = $this->wf_civicrm_api('Participant', 'getcount', [
+            'event_id' => $key,
+            'role_id' => ['IN' => $rolesThatCount],
+            'status_id' => ['IN' => $statusesThatCount],
+          ]);
           if ($registrationCount >= $value['max_participants']) {
             unset($values[$key]);
           }
@@ -219,7 +232,7 @@ class Utils implements UtilsInterface {
       // Avoid showing redundant end-date if it is the same as the start date
       $same_day = substr($event['start_date'], 0, 10) == substr($event['end_date'], 0, 10);
       if (!$same_day || in_array('dateformatDatetime', $format) || in_array('dateformatTime', $format)) {
-        $end_format = (in_array('dateformatDatetime', $format) && $same_day) ? wf_crm_get_civi_setting('dateformatTime') : $date_format;
+        $end_format = (in_array('dateformatDatetime', $format) && $same_day) ? $this->wf_crm_get_civi_setting('dateformatTime') : $date_format;
         $title[] = \CRM_Utils_Date::customFormat($event['end_date'], $end_format);
       }
     }
@@ -925,6 +938,7 @@ class Utils implements UtilsInterface {
       'Select' => ['type' => 'select'],
       'Multi-Select' => ['type' => 'select', 'extra' => ['multiple' => 1]],
       'Radio' => ['type' => 'select', 'extra' => ['aslist' => 0]],
+      'Toggle' => ['type' => 'select', 'extra' => ['aslist' => 0]],
       'CheckBox' => ['type' => 'select', 'extra' => ['multiple' => 1]],
       'Text'  => ['type' => 'textfield'],
       'TextArea' => ['type' => 'textarea'],
@@ -998,8 +1012,6 @@ class Utils implements UtilsInterface {
     $contributionData = wf_crm_aval($data, 'contribution:1:contribution:1');
     $params = ['id' => $contributionID];
     $params['payment_processor_id'] = $contributionData['payment_processor_id'] ?? $data['civicrm_1_contribution_1_contribution_payment_processor_id'] ?? NULL;
-    unset($params['payment_processor']);
-
     $params['financial_type_id'] = $contributionData['financial_type_id'] ?? $data['civicrm_1_contribution_1_contribution_financial_type_id_raw'] ?? NULL;
     $params['currency'] = wf_crm_aval($data, "contribution:1:currency");
 
@@ -1103,7 +1115,7 @@ class Utils implements UtilsInterface {
     }
     return FALSE;
   }
-  
+
   /**
    * @return string Which field is the tag display field in this version of civi?
    */

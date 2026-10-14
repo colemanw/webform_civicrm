@@ -3,12 +3,14 @@
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Drupal\Core\Url;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests submitting a Webform with CiviCRM: Tags
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
 
   private $groups = [];
@@ -49,7 +51,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     // Enable Groups Field and then set it to -User Select (Public Group)-
     $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_other', 'Yes');
     $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->getSession()->getPage()->selectFieldOption("civicrm_1_contact_1_other_group[]", 'public_groups');
+    $this->getSession()->getPage()->selectFieldOption("civicrm_1_contact_1_other_crmgroup[]", 'public_groups');
     $this->htmlOutput();
     $this->saveCiviCRMSettings();
 
@@ -85,7 +87,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     // Enable Tags and Groups Fields and then set Tag(s) to -User Select-
     $this->getSession()->getPage()->selectFieldOption('contact_1_number_of_other', 'Yes');
     $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->getSession()->getPage()->selectFieldOption("civicrm_1_contact_1_other_group[]", 'create_civicrm_webform_element');
+    $this->getSession()->getPage()->selectFieldOption("civicrm_1_contact_1_other_crmgroup[]", 'create_civicrm_webform_element');
     $this->getSession()->getPage()->selectFieldOption("civicrm_1_contact_1_other_tag[]", 'create_civicrm_webform_element');
     $this->htmlOutput();
     $this->saveCiviCRMSettings();
@@ -94,13 +96,16 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
 
     // Change type of group field to checkbox.
-    $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contact-1-other-group-operations', FALSE, FALSE, NULL, 'checkboxes');
+    $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contact-1-other-crmgroup-operations', FALSE, FALSE, NULL, 'checkboxes');
 
     $majorDonorTagID = $this->utils->wf_civicrm_api('Tag', 'get', [
       'name' => (version_compare(\CRM_Core_BAO_Domain::version(), '5.68.alpha1', '<') ? "Major Donor" : "Major_Donor"),
     ])['id'];
     // Make Major Donor as the default option.
     $this->editCivicrmOptionElement('edit-webform-ui-elements-civicrm-1-contact-1-other-tag-operations', TRUE, FALSE, $majorDonorTagID);
+    // This shouldn't be needed but similar to elsewhere the "save" called by
+    // editCivicrmOptionElement seems to make the field "stale", so reload the form.
+    $this->drupalGet($this->webform->toUrl('edit-form'));
     // Ensure default option is loaded.
     $checkbox_edit_button = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-webform-ui-elements-civicrm-1-contact-1-other-tag-operations"] a.webform-ajax-link');
     $checkbox_edit_button->click();
@@ -134,7 +139,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->assertSession()->checkboxChecked("Volunteer");
     $this->htmlOutput();
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
@@ -167,7 +172,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     ]));
     $this->getSession()->getPage()->checkField('Existing Contact');
     $this->assertSession()->checkboxChecked('Existing Contact');
-    $this->getSession()->getPage()->pressButton('Save Settings');
+    $this->pressButtonOverride('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
     $this->assertPageNoErrorMessages();
 
@@ -183,7 +188,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->uncheckField('Volunteer');
     $this->assertSession()->checkboxNotChecked('Volunteer');
     $this->htmlOutput();
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
@@ -256,7 +261,7 @@ final class GroupsTagsSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField("- Child Tag A");
     $this->assertSession()->checkboxChecked("- Child Tag A");
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 

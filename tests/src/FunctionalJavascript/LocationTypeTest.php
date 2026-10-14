@@ -3,12 +3,14 @@
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Drupal\Core\Url;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests submission of loc types.
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class LocationTypeTest extends WebformCivicrmTestBase {
 
   /**
@@ -127,7 +129,7 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
       'widget' => 'Autocomplete',
       'hide_fields' => 'address',
       'filter' => [
-        'group' => '- None -',
+        'crmgroup' => '- None -',
       ],
     ];
     $this->editContactElement($editContact);
@@ -216,7 +218,7 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
     // Update last name & email
     $this->getSession()->getPage()->fillField('Last Name', 'Morissette');
     $this->getSession()->getPage()->fillField('Email', 'anthony.pabst1@example.com');
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
     $this->assertPageNoErrorMessages();
     $canada_id = $this->utils->wf_civicrm_api('Country', 'getvalue', [
       'return' => "id",
@@ -238,7 +240,7 @@ final class LocationTypeTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Street Address', '123 Defence Colony Updated');
     $this->getSession()->getPage()->fillField('City', 'Calgary');
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertSession()->pageTextContains('New submission added to Update Contact Details.');
 
     // Assert if last name and city is updated.

@@ -103,20 +103,33 @@ class ContactComponent implements ContactComponentInterface {
       'email' => ['email', 'email'],
       'phone' => ['phone', 'phone'],
       'city' => ['address', 'city'],
-      'state_province' => ['address', 'state_province_id:label'],
-      'country' => ['address', 'country_id:label'],
-      'county' => ['address', 'county_id:label'],
+      'state_province' => ['address', 'state_province.name'],
+      'country' => ['address', 'country.name'],
+      'county' => ['address', 'county.name'],
       'postal_code' => ['address', 'postal_code'],
+      'street_address' => ['address', 'street_address']
     ];
     $joinedTables = [];
     foreach ($fieldMappings as $field => $type) {
       if ($key = array_search($field, $display_fields)) {
         unset($display_fields[$key]);
-        [$table, $fieldName]= $type;
-        $display_fields[] = "{$table}.{$fieldName}";
-        if (empty($joinedTables[$table]) && in_array($table, ['email', 'phone', 'address'])) {
-          $joinedTables[$table] = TRUE;
-          $params['join'][] = [ucfirst($table) . " AS {$table}", 'LEFT', ["{$table}.is_primary", '=', 1]];
+        [$table, $fieldName] = $type;
+        if (in_array($field, ['state_province', 'country', 'county'])) {
+          $display_fields[] = $fieldName;
+          if (empty($joinedTables['address'])) {
+            $params['join'][] = ["Address AS address", 'LEFT', ["address.is_primary", '=', 1]];
+            $joinedTables['address'] = TRUE;
+          }
+          $table = ($field === 'state_province') ? 'StateProvince' : ucfirst($field);
+          $join = ["{$table} AS {$field}", 'LEFT', ["{$field}.id", "=", "address.{$field}_id"]];
+          $params['join'][] = $join;
+        }
+        else {
+          $display_fields[] = "{$table}.{$fieldName}";
+          if (in_array($table, ['email', 'phone', 'address']) && empty($joinedTables[$table])) {
+            $params['join'][] = [ucfirst($table) . " AS {$table}", 'LEFT', ["{$table}.is_primary", '=', 1]];
+            $joinedTables[$table] = TRUE;
+          }
         }
       }
     }
@@ -147,7 +160,7 @@ class ContactComponent implements ContactComponentInterface {
     if ($str) {
       $searchFields = [];
       foreach ($display_fields as $fld) {
-        $searchFields[] = [$fld, 'CONTAINS', $str];
+        $searchFields[] = [$fld, 'LIKE', '%' . $str . '%'];
       }
       $params['where'][] = ['OR', $searchFields];
     }
@@ -338,7 +351,7 @@ class ContactComponent implements ContactComponentInterface {
       'contact_type',
       'contact_sub_type',
       'tag',
-      'group',
+      'crmgroup',
       'relationship' => [
         'contact',
         'types',
@@ -364,9 +377,13 @@ class ContactComponent implements ContactComponentInterface {
         $this->wf_crm_search_filterArray($filterVal);
         if ($filterVal) {
           switch ($filter) {
-            case 'group':
+            case 'crmgroup':
+              $filter = 'groups';
+              $op = 'IN';
+              break;
+
             case 'tag':
-              $filter .= 's';
+              $filter = 'tags';
               $op = 'IN';
               break;
 

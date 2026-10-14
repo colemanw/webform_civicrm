@@ -269,7 +269,7 @@ var wfCiviAdmin = (function (D, $, once) {
         if ($('select[name$="_contact_sub_type[]"]', context).val()) {
           var first = true;
           $('select[name$="_contact_sub_type[]"] option:selected', context).each(function() {
-            label += (first ? ' (' : ', ') + $.trim($(this).text());
+            label += (first ? ' (' : ', ') + $(this).text().trim();
             first = false;
           });
           label += ')';
@@ -325,7 +325,7 @@ var wfCiviAdmin = (function (D, $, once) {
       $(once('wf-civi', 'details#edit-additional-options', context)).drupalSetSummary(function (context) {
         var label = [];
         $(':checked', context).each(function() {
-          label.push($.trim($(this).siblings('label').contents().first().text()));
+          label.push($(this).siblings('label').contents().first().text().trim());
         });
         return label.join(', ') || Drupal.t('- None -');
       });
@@ -499,25 +499,6 @@ var wfCiviAdmin = (function (D, $, once) {
         $(this).val(label);
         changeContactLabel.call(this);
       });
-
-      // Contribution honoree fields
-      $(once('crm-contrib', 'select[name$=contribution_honor_contact_id]', context)).change(function() {
-        if ($(this).val() == '0') {
-          $('.form-item-civicrm-1-contribution-1-contribution-honor-type-id').hide();
-        }
-        else {
-          $('.form-item-civicrm-1-contribution-1-contribution-honor-type-id').show();
-        }
-      }).change();
-      $(once('crm-contrib', 'select[name$=contribution_honor_type_id]', context)).change(function() {
-        var $label = $('.form-item-civicrm-1-contribution-1-contribution-honor-contact-id label');
-        if ($(this).val() == 'create_civicrm_webform_element') {
-          $label.html(Drupal.t('In Honor/Memory of'));
-        }
-        else {
-          $label.html($('option:selected', this).html());
-        }
-      }).change();
 
       // Membership constraints
       $(once('crm-mem-date', 'select[name$=_membership_num_terms]', context)).change(function(e, type) {

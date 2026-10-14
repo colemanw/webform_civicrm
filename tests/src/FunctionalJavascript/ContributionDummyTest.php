@@ -4,12 +4,14 @@ namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Behat\Mink\Element\NodeElement;
 use Drupal\Core\Url;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests submitting a Webform with CiviCRM: Contribution with Line Items and Sales Tax
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class ContributionDummyTest extends WebformCivicrmTestBase {
 
   /**
@@ -22,6 +24,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
       'webform' => $this->webform->id(),
     ]));
     $this->enableCivicrmOnWebform();
+    $this->getSession()->getPage()->checkField("Birth Date");
 
     $params = [
       'payment_processor_id' => $payment_processor['id'],
@@ -44,6 +47,8 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
+    $this->getSession()->getPage()->fillField('Birth Date', '01-01-1970');
+    $this->createScreenshot($this->htmlOutputDirectory . '/filled_dob.png');
 
     $this->getSession()->getPage()->fillField('Contribution Amount', '10.00');
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
@@ -64,6 +69,14 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertEquals('10.00', $contribution['total_amount']);
     $this->assertEquals('Completed', $contribution['contribution_status']);
     $this->assertEquals('USD', $contribution['currency']);
+
+    $api_result = $this->utils->wf_civicrm_api('contact', 'get', [
+      'sequential' => 1,
+      'id' => $contribution['contact_id'],
+    ]);
+    $this->assertEquals(1, $api_result['count']);
+    $contact = reset($api_result['values']);
+    $this->assertEquals('1970-01-01', $contact['birth_date']);
 
     $sid = $this->getLastSubmissionId($this->webform);
     $this->drupalGet(Url::fromRoute('entity.webform_submission.canonical', [
@@ -146,7 +159,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('Country', $billingValues['country_id']);
     $this->getSession()->wait(1000);
     $this->getSession()->getPage()->selectFieldOption('State/Province', $billingValues['state_province_id']);
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
 
     $this->getSession()->getPage()->fillField('Contribution Amount', '10.00');
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
@@ -182,7 +195,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->setupSalesTax(5, $accountParams = []);
 
     // Create a second individual contact cid2
-    $this->cid2 = $this->createIndividual(['first_name' => 'Mark', 'last_name' => 'Cooper']);
+    $cid2 = $this->createIndividual(['first_name' => 'Mark', 'last_name' => 'Cooper'])['id'];
 
     $this->drupalLogin($this->rootUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
@@ -230,7 +243,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
 
     $this->saveCiviCRMSettings();
 
-    $this->drupalGet($this->webform->toUrl('canonical',  ['query' => ['cid2' => $this->cid2['id']]]));
+    $this->drupalGet($this->webform->toUrl('canonical',  ['query' => ['cid2' => $cid2]]));
     $this->assertPageNoErrorMessages();
 
     $this->assertSession()->waitForField('First Name');
@@ -247,14 +260,14 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertFieldValue('edit-civicrm-2-contact-1-contact-last-name', 'Cooper');
     $this->addFieldValue('civicrm_2_contact_1_contact_first_name', 'MarkUpdated');
     $this->addFieldValue('civicrm_2_contact_1_contact_last_name', 'CooperUpdated');
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
 
     $this->assertSession()->waitForField('edit-wizard-prev');
-    $this->getSession()->getPage()->pressButton('edit-wizard-prev');
+    $this->pressButtonOverride('edit-wizard-prev');
     $this->assertSession()->waitForField('edit-civicrm-2-contact-1-contact-first-name');
     $this->assertFieldValue('edit-civicrm-2-contact-1-contact-first-name', 'MarkUpdated');
     $this->assertFieldValue('edit-civicrm-2-contact-1-contact-last-name', 'CooperUpdated');
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
 
     $this->getSession()->getPage()->fillField('Contribution Amount', '10.00');
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
@@ -276,7 +289,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->assertEquals($adminCid, $membership[0]['contact_id']);
     $this->assertEquals('Basic', $membership[0]['membership_name']);
 
-    $this->assertEquals($this->cid2['id'], $membership[1]['contact_id']);
+    $this->assertEquals($cid2, $membership[1]['contact_id']);
     $this->assertEquals('Advanced', $membership[1]['membership_name']);
 
     $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
@@ -401,7 +414,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
 
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
     $this->getSession()->getPage()->fillField('Contribution Amount', '1');
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->htmlOutput();
@@ -446,7 +459,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
 
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
     $this->getSession()->getPage()->fillField('Contribution Amount', '1200.00');
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->htmlOutput();
@@ -499,7 +512,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
 
     // Specific alert, not required to achieve.
     $this->assertSession()->pageTextContains('You must enable an email field for Contact 2 in order to process transactions.');
-    $this->getSession()->getPage()->pressButton('Enable It');
+    $this->pressButtonOverride('Enable It');
     $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->htmlOutput();
@@ -521,12 +534,12 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('civicrm_2_contact_1_email_email', 'max@example.com');
 
     $this->htmlOutput();
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
     $this->htmlOutput();
 
     $this->getSession()->getPage()->fillField('Contribution Amount', '11.00');
     $this->htmlOutput();
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->htmlOutput();
 
     $api_result_contribution = $this->utils->wf_civicrm_api('contribution', 'get', [
@@ -564,12 +577,10 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
     //  Assign the contribution to contact "- User Select -"
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_contact_id', 'create_civicrm_webform_element');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
     $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
 
     $this->enableBillingSection();
-    $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->htmlOutput();
     $this->saveCiviCRMSettings();
@@ -588,7 +599,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('civicrm_2_contact_1_contact_first_name', 'Max');
     $this->getSession()->getPage()->fillField('civicrm_2_contact_1_contact_last_name', 'Plank');
 
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
     $this->htmlOutput();
 
     $this->getSession()->getPage()->fillField('Contribution Amount', '11.00');
@@ -606,7 +617,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->fillBillingFields($billingValues);
 
     $this->htmlOutput();
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->htmlOutput();
 
     $api_result_contribution = $this->utils->wf_civicrm_api('contribution', 'get', [
@@ -654,12 +665,10 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
     //  Assign the contribution to contact "- User Select -"
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_contact_id', 'create_civicrm_webform_element');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
     $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
 
     $this->enableBillingSection();
-    $this->assertSession()->assertWaitOnAjaxRequest();
 
     $this->htmlOutput();
     $this->saveCiviCRMSettings();
@@ -679,7 +688,7 @@ final class ContributionDummyTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('civicrm_2_contact_1_contact_last_name', 'Plank');
     $this->getSession()->getPage()->fillField('civicrm_2_contact_1_email_email', 'maxplank@example.com');
 
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
     $this->getSession()->getPage()->selectFieldOption('edit-civicrm-1-contribution-1-contribution-contact-id', 2);
 
     $this->getSession()->getPage()->fillField('Contribution Amount', '10.00');

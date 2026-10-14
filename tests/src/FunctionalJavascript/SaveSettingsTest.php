@@ -3,12 +3,14 @@
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Drupal\Core\Url;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests settings on the webform.
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class SaveSettingsTest extends WebformCivicrmTestBase {
 
   /**
@@ -109,7 +111,7 @@ final class SaveSettingsTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextNotContains('Saved CiviCRM settings');
 
     // Cancel this action.
-    $this->getSession()->getPage()->pressButton('edit-cancel');
+    $this->pressButtonOverride('edit-cancel');
     $this->assertSession()->waitForField('nid');
     $this->htmlOutput();
 
@@ -129,7 +131,7 @@ final class SaveSettingsTest extends WebformCivicrmTestBase {
     $this->saveCiviCRMSettings(TRUE);
     $this->assertSession()->waitForField('edit-delete');
 
-    $this->getSession()->getPage()->pressButton('edit-delete');
+    $this->pressButtonOverride('edit-delete');
     $this->assertSession()->waitForField('nid');
     $this->htmlOutput();
 

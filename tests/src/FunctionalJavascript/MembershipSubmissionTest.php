@@ -4,12 +4,14 @@ namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Drupal\Core\Url;
 use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests submitting a Webform with CiviCRM: Contact with Membership (Free)
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
   function testSubmitMembershipAutoRenew() {
@@ -50,7 +52,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_membership_1_membership_membership_type_id', '1');
 
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
     $this->assertSession()->waitForField('wf-crm-billing-items');
     $this->htmlOutput();
 
@@ -76,14 +78,10 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
       'postal_code' => '53177',
     ];
     $this->fillBillingFields($billingValues);
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->htmlOutput();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
-    // ToDo -> comment back in after removing support for 5.35.*
-    // -> 1) Drupal\Tests\webform_civicrm\FunctionalJavascript\MembershipSubmissionTest::testSubmitMembershipAutoRenew
-    // Error message Notice: Undefined index: line_item in CRM_Contribute_BAO_Contribution::checkTaxAmount()
-    // involves both Sales Tax + Recurring
-    // $this->assertPageNoErrorMessages();
+    $this->assertPageNoErrorMessages();
 
     // Assert if recur is attached to the created membership.
     $api_result = $this->utils->wf_civicrm_api('membership', 'get', [
@@ -106,9 +104,11 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
    * Test submitting a Free Membership
    */
   public function testSubmitWebform() {
-    $this->createMembershipType();
+    $this->createMembershipType($amount = 0, $autoRenew = FALSE, $name = 'Basic', $financialTypeId = 'Member Dues');;
+    $this->createMembershipType($amount = 0, $autoRenew = FALSE, $name = 'Plus', $financialTypeId = 'Member Dues');
 
     $this->drupalLogin($this->adminUser);
+
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
@@ -122,27 +122,32 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
     $this->saveCiviCRMSettings();
 
+    $adminUserCid = $this->getUFMatchRecord($this->adminUser->id())['contact_id'];
     // Create two memberships with the same status with the first membership
     // having an end date after the second membership's end date.
-    $this->utils->wf_civicrm_api('membership', 'create', [
+    $api_result = $this->utils->wf_civicrm_api('membership', 'create', [
       'membership_type_id' => 'Basic',
-      'contact_id' => 2,
+      'contact_id' => $adminUserCid,
       'join_date' => '08/10/21',
       'start_date' => '08/10/21',
       'end_date' => '08/10/22',
       'is_override' => 1,
       'status_id' => 'Expired',
     ]);
+    $membership = reset($api_result['values']);
+    $mid1_basic = $membership['id'];
 
-    $this->utils->wf_civicrm_api('membership', 'create', [
+    $api_result = $this->utils->wf_civicrm_api('membership', 'create', [
       'membership_type_id' => 'Basic',
-      'contact_id' => 2,
+      'contact_id' => $adminUserCid,
       'join_date' => '01/01/21',
       'start_date' => '01/01/21',
       'end_date' => '01/01/22',
       'is_override' => 1,
       'status_id' => 'Expired',
     ]);
+    $membership = reset($api_result['values']);
+    $mid2_basic = $membership['id'];
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertSession()->elementExists('xpath', $this->assertSession()->buildXPathQuery('//div[@data-drupal-messages]//div[contains(., :message)]', [
@@ -158,7 +163,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
 
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
@@ -175,10 +180,42 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
 
     $today = date('Y-m-d');
 
-    $this->assertEquals($today,  $membership['join_date']);
-    $this->assertEquals($today,  $membership['start_date']);
+    $this->assertEquals($today, $membership['join_date']);
+    $this->assertEquals($today, $membership['start_date']);
 
     $this->assertEquals(date('Y-m-d', strtotime('+1 year -1 day')), $membership['end_date']);
+
+    // Add test to renew specific mid
+    // ToDo - really needs its own test -> to see the submission all the way through (i.e. check for dates).
+    // but key is -> that the mid argument is pulling up the correct mid in this case Plus vs Basic
+    // and that is tested here
+    $api_result = $this->utils->wf_civicrm_api('membership', 'create', [
+      'membership_type_id' => 'Plus',
+      'contact_id' => $adminUserCid,
+      'join_date' => '05/05/21',
+      'start_date' => '05/05/21',
+      'end_date' => '05/05/22',
+      'is_override' => 1,
+      'status_id' => 'Expired',
+    ]);
+    $membership = reset($api_result['values']);
+    $mid1_plus = $membership['id'];
+
+    $this->drupalLogin($this->adminUser);
+
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['id' => $adminUserCid, 'mid' => $mid1_plus]]));
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->waitForField('First Name');
+    $this->createScreenshot($this->htmlOutputDirectory . '/mid_one.png');
+    $this->assertSession()->pageTextContains('Plus membership');
+    $this->assertSession()->pageTextNotContains('Basic membership');
+
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['id' => $adminUserCid, 'mid' => $mid1_basic]]));
+    $this->assertPageNoErrorMessages();
+    $this->assertSession()->waitForField('First Name');
+    $this->createScreenshot($this->htmlOutputDirectory . '/mid_two.png');
+    $this->assertSession()->pageTextContains('Basic membership');
+    $this->assertSession()->pageTextNotContains('Plus membership');
   }
 
   /**
@@ -216,26 +253,26 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
 
     $this->getSession()->getPage()->clickLink('Advanced');
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
     $fieldset = $this->assertSession()->elementExists('css', '[data-drupal-selector="edit-default"]');
     $fieldset->click();
     $this->getSession()->getPage()->fillField('Default value', '[current-page:query:membership]');
-    $this->getSession()->getPage()->pressButton('Save');
+    $this->pressButtonOverride('Save');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+
+    $this->pressButtonOverride('Save elements');
 
     $this->drupalLogout();
     $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['membership' => 2]]));
     $this->htmlOutput();
-    // ToDo ->
     $this->assertPageNoErrorMessages();
 
     $this->assertSession()->waitForField('First Name');
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->assertSession()->pageTextContains('Basic Plus');
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->htmlOutput();
-    // ToDo ->
     $this->assertPageNoErrorMessages();
 
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
@@ -342,7 +379,7 @@ final class MembershipSubmissionTest extends WebformCivicrmTestBase {
     // $this->htmlOutputDirectory = '/Applications/MAMP/htdocs/d9civicrm.local/web/sites/default/files/simpletest/';
     // $this->createScreenshot($this->htmlOutputDirectory . 'KG.png');
 
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
     $this->assertSession()->waitForField('wf-crm-billing-items');
     $this->htmlOutput();
 

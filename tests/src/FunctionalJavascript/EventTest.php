@@ -3,15 +3,34 @@
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Drupal\Core\Url;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests submitting a Webform with CiviCRM: Contact with Event.
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class EventTest extends WebformCivicrmTestBase {
 
   private $_customFields = [];
+
+  /**
+   * @var array
+   * custom group
+   */
+  private $cg;
+
+  /**
+   * @var array
+   * financial type
+   */
+  private $ft;
+
+  /**
+   * @var array
+   */
+  private $_event;
 
   protected function setUp(): void {
     parent::setUp();
@@ -113,7 +132,7 @@ final class EventTest extends WebformCivicrmTestBase {
     }
     $refName = 'civicrm_1_participant_1_cg' . $this->cg['id'] . '_custom_' . $this->_customFields['participant_contact_ref']['id'];
     $this->getSession()->getPage()->selectFieldOption($refName, 2);
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
     $this->assertPageNoErrorMessages();
     $this->htmlOutput();
 
@@ -121,7 +140,7 @@ final class EventTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '40.00');
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->htmlOutput();
 
@@ -143,13 +162,13 @@ final class EventTest extends WebformCivicrmTestBase {
   function submitWebform() {
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
-    $edit = [
-      'civicrm_1_contact_1_contact_first_name' => 'Frederick',
-      'civicrm_1_contact_1_contact_last_name' => 'Pabst',
-      'civicrm_2_contact_1_contact_first_name' => 'Mark',
-      'civicrm_2_contact_1_contact_last_name' => 'Anthony'
-    ];
-    $this->postSubmission($this->webform, $edit);
+    $this->getSession()->getPage()->fillField('civicrm_1_contact_1_contact_first_name', 'Frederick');
+    $this->getSession()->getPage()->fillField('civicrm_1_contact_1_contact_last_name', 'Pabst');
+    $this->getSession()->getPage()->fillField('civicrm_2_contact_1_contact_first_name', 'Mark');
+    $this->getSession()->getPage()->fillField('civicrm_2_contact_1_contact_last_name', 'Anthony');
+    $this->pressButtonOverride('Submit');
+    $this->assertPageNoErrorMessages();
+    $this->htmlOutput();
   }
 
   /**
@@ -291,7 +310,7 @@ final class EventTest extends WebformCivicrmTestBase {
       'postal_code' => '53177',
     ];
     $this->fillBillingFields($billingValues);
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->htmlOutput();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
@@ -318,7 +337,7 @@ final class EventTest extends WebformCivicrmTestBase {
     ]);
     $this->assertEquals(0, $event['is_error']);
     $this->assertEquals(1, $event['count']);
-    $this->_event2 = reset($event['values']);
+    $event2 = reset($event['values']);
 
     $event = $this->utils->wf_civicrm_api('Event', 'create', [
       'event_type_id' => "Conference",
@@ -328,7 +347,6 @@ final class EventTest extends WebformCivicrmTestBase {
     ]);
     $this->assertEquals(0, $event['is_error']);
     $this->assertEquals(1, $event['count']);
-    $this->_event3 = reset($event['values']);
 
     // Enable waitlist on the event with max participant = 2.
     $this->utils->wf_civicrm_api('Event', 'create', [
@@ -355,7 +373,7 @@ final class EventTest extends WebformCivicrmTestBase {
     // Register only 1 particpant to event 2 so that 1 seat is available.
     $this->utils->wf_civicrm_api('Participant', 'create', [
       'contact_id' => $indiv1,
-      'event_id' => $this->_event2['id'],
+      'event_id' => $event2['id'],
       'status_id' => "Registered",
       'role_id' => "Attendee",
     ]);
@@ -409,7 +427,7 @@ final class EventTest extends WebformCivicrmTestBase {
     $this->assertSession()->pageTextContains('Test Event 3');
 
     // Ensure URL events are set as default on the event field.
-    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['event1' => $this->_event2['id']]]));
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['event1' => $event2['id']]]));
     $this->assertSession()->checkboxChecked('Test Event 2');
 
     // Create new event and load it from the URL.
@@ -421,11 +439,75 @@ final class EventTest extends WebformCivicrmTestBase {
     ]);
     $this->assertEquals(0, $event['is_error']);
     $this->assertEquals(1, $event['count']);
-    $this->_event4 = reset($event['values']);
+    $event4 = reset($event['values']);
 
-    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['event1' => $this->_event4['id']]]));
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['event1' => $event4['id']]]));
     $this->assertSession()->pageTextContains('Test Event 4');
     $this->assertSession()->checkboxChecked('Test Event 4');
+  }
+
+  /**
+   * Participant data should be loaded for the event passed in the url,
+   * not the contact's most recent registration.
+   */
+  function testParticipantStatusFromUrlEvent() {
+    $event = $this->utils->wf_civicrm_api('Event', 'create', [
+      'event_type_id' => "Conference",
+      'title' => "Test Event 2",
+      'start_date' => date('Y-m-d'),
+      'financial_type_id' => $this->ft['id'],
+    ]);
+    $this->assertEquals(0, $event['is_error']);
+    $event2 = reset($event['values']);
+
+    // Register the contact to both events with different statuses.
+    $contact = $this->createIndividual();
+    $participant = $this->utils->wf_civicrm_api('Participant', 'create', [
+      'contact_id' => $contact['id'],
+      'event_id' => $this->_event['id'],
+      'status_id' => "Registered",
+      'role_id' => "Attendee",
+    ]);
+    $registeredStatus = reset($participant['values'])['status_id'];
+    $participant = $this->utils->wf_civicrm_api('Participant', 'create', [
+      'contact_id' => $contact['id'],
+      'event_id' => $event2['id'],
+      'status_id' => "Attended",
+      'role_id' => "Attendee",
+    ]);
+    $attendedStatus = reset($participant['values'])['status_id'];
+
+    $this->drupalLogin($this->adminUser);
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->enableCivicrmOnWebform();
+
+    $this->getSession()->getPage()->clickLink('Event Registration');
+    $this->getSession()->getPage()->selectFieldOption('participant_reg_type', 'all');
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->getSession()->getPage()->checkField('reg_options[allow_url_load]');
+    $this->getSession()->getPage()->selectFieldOption('participant_1_number_of_participant', 1);
+    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->htmlOutput();
+    $this->getSession()->getPage()->selectFieldOption('civicrm_1_participant_1_participant_event_id[]', '- User Select -');
+    $this->getSession()->getPage()->selectFieldOption('Registration Status', '- User Select -');
+    $this->saveCiviCRMSettings();
+
+    // The later registration (event 2, Attended) must not leak into event 1.
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $contact['id'], 'event1' => $this->_event['id']]]));
+    $this->assertPageNoErrorMessages();
+    $this->htmlOutput();
+    $this->assertSession()->checkboxChecked('Test Event 1');
+    $this->assertSession()->checkboxNotChecked('Test Event 2');
+    $this->assertSession()->fieldValueEquals('civicrm_1_participant_1_participant_status_id', $registeredStatus);
+
+    $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['cid1' => $contact['id'], 'event1' => $event2['id']]]));
+    $this->assertPageNoErrorMessages();
+    $this->htmlOutput();
+    $this->assertSession()->checkboxChecked('Test Event 2');
+    $this->assertSession()->checkboxNotChecked('Test Event 1');
+    $this->assertSession()->fieldValueEquals('civicrm_1_participant_1_participant_status_id', $attendedStatus);
   }
 
 }

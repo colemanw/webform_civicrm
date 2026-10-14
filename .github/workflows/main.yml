@@ -5,7 +5,7 @@ on:
     branches:
       - 6.x
   schedule:
-    # Run Monday/Thursday at 12:13 GMT
+    # Run Monday/Thursday at 12:13 GMT.
     - cron: '13 12 * * 1,4'
   workflow_dispatch:
     inputs:
@@ -23,22 +23,19 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - drupal: '9.5.*'
-            civicrm: '5.65.*'
-            php: '7.4'
-          - drupal: '9.5.*'
-            civicrm: '5.66.*'
-            php: '7.4'
-          - drupal: '10.2.*'
-            civicrm: '5.69.x-dev'
-            php: '8.1'
-          - drupal: '10.2.*'
+          - drupal: '10.6.*'
+            civicrm: '6.16.x'
+            php: '8.3'
+          - drupal: '11.4.*'
+            civicrm: '6.19.x-dev'
+            php: '8.3'
+          - drupal: '11.x-dev'
             civicrm: 'dev-master'
-            php: '8.1'
+            php: '8.4'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
     services:
       mysql:
-        image: mysql:5.7
+        image: mysql:8.0
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: yes
           MYSQL_DATABASE: db
@@ -46,7 +43,7 @@ jobs:
           - 3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: shivammathur/setup-php@v2
         with:
             php-version: ${{ matrix.php }}
@@ -56,7 +53,7 @@ jobs:
       - name: Get composer cache directory
         id: composercache
         run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
             path: ${{ steps.composercache.outputs.dir }}
             key: ${{ runner.os }}-${{ matrix.drupal }}-composer-${{ hashFiles('**/composer.json') }}
@@ -88,13 +85,20 @@ jobs:
           composer config repositories.0 composer https://packages.drupal.org/8
           composer config repositories.1 path $GITHUB_WORKSPACE
           composer install --no-interaction
-          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev-pinned:${{ matrix.drupal }}
+          COMPOSER_MEMORY_LIMIT=-1 composer require drupal/core-dev:${{ matrix.drupal }} -w
+      # This is done differently in drupal 11. See BROWSERTEST_OUTPUT_VERBOSE below.
       - name: Suppress links to screenshots
         # There's so many! They can be useful locally if running one test, but they aren't useful here and cause massive scrolling.
         run: |
           cd ~/drupal
-          curl -L -O https://raw.githubusercontent.com/colemanw/webform_civicrm/def72b3dce1ea4bc7dd2cdd28a72844885727789/DrupalHtmlOutputTrait.diff
-          git apply DrupalHtmlOutputTrait.diff
+          DRUPAL11=`grep "const VERSION" web/core/lib/Drupal.php | cut -f 2 -d "'" | php -r 'echo (int) version_compare(stream_get_contents(STDIN), "11", ">=");'`
+          if [ "$DRUPAL11" == "1" ]; then
+            echo "ISDRUPAL11=1" >> $GITHUB_ENV
+          else
+            echo "ISDRUPAL11=0" >> $GITHUB_ENV
+            curl -L -O https://raw.githubusercontent.com/colemanw/webform_civicrm/def72b3dce1ea4bc7dd2cdd28a72844885727789/DrupalHtmlOutputTrait.diff
+            git apply DrupalHtmlOutputTrait.diff
+          fi
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
@@ -102,7 +106,13 @@ jobs:
       - name: Download Webform
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:^6.2'
+          # Use 6.x-dev to deal with newer chromedriver issues
+          COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:6.x-dev'
+          #if [ "${{ env.ISDRUPAL11 }}" == "1" ]; then
+          #  COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:6.3.x-dev@dev'
+          #else
+          #  COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:^6.2'
+          #fi
       - name: Install webform_civicrm
         run: |
           cd ~/drupal
@@ -143,47 +153,69 @@ jobs:
           chmod +x /home/runner/civicrm-cv/cv
           ./vendor/drush/drush/drush -y -l http://civi.localhost site-install standard --db-url='mysql://root:@127.0.0.1:${{ job.services.mysql.ports[3306] }}/fakedb' --site-name=FakeCivi
           chmod +w web/sites/default
-          /home/runner/civicrm-cv/cv core:install --cms-base-url=http://civi.localhost
+          /home/runner/civicrm-cv/cv core:install --url=http://civi.localhost
       - name: Download Civi extensions
         run: |
           mkdir -p ~/drupal/web/sites/default/files/civicrm/ext
           cd ~/drupal/web/sites/default/files/civicrm/ext
-          # Allow "unapproved" extensions
+          # Allow unapproved extensions
           /home/runner/civicrm-cv/cv ev '\Civi::settings()->set("ext_repo_url", "https://civicrm.org/extdir/ver={ver}|cms={uf}|ready=");'
           /home/runner/civicrm-cv/cv ev '\Civi::settings()->set("http_timeout", 60);'
           # Apparently we have to install it, otherwise stripe gives a dependency error even with install=0. I think that's a bug, but let's just do it. This is a fake install anyway.
           /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=mjwshared
           /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=firewall
-          /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=mjwpaymentapi
-          /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=com.drastikbydesign.stripe
+          # [Temporary]: we need stripe master - it has an unreleased fix for a Brick deprecation
+          # /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=com.drastikbydesign.stripe
+          git clone https://lab.civicrm.org/extensions/stripe.git com.drastikbydesign.stripe
+          # [Temporary]: try authorize master
+          # /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=com.donordepot.authnetecheck
+          git clone https://lab.civicrm.org/extensions/authnet.git com.donordepot.authnetecheck
           /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.iatspayments.civicrm
-          /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.aghstrategies.uscounties
-      - uses: nanasess/setup-chromedriver@master
+          # For uscounties, it hasn't had a release in a few years so no longer appears in the ext feed, so just download directly. If it ever does need an update, would need to update here.
+          # /home/runner/civicrm-cv/cv api3 Extension.download install=0 key=com.aghstrategies.uscounties
+          curl -L -o uscounties.zip https://github.com/agh1/com.aghstrategies.uscounties/archive/refs/heads/main.zip
+          unzip uscounties.zip
+      - name: Temp patch authnet sdk
+        run: |
+          cd ~/drupal/web/sites/default/files/civicrm/ext/com.donordepot.authnetecheck/vendor/authorizenet/authorizenet
+          sed -i -e 's/\$this->apiRequest->setClientId/\/\/\$this->apiRequest->setClientId/' lib/net/authorize/api/controller/base/ApiOperationBase.php
+          grep setClientId lib/net/authorize/api/controller/base/ApiOperationBase.php
+          cat lib/net/authorize/api/controller/base/ApiOperationBase.php
+      - uses: nanasess/setup-chromedriver@v3
       - name: Run chromedriver
-        run: chromedriver &
+        run: chromedriver --port=9515 &
       - name: Run php built-in server
         run: php -S 127.0.0.1:8080 -t ~/drupal/web &
       - name: Run PHPUnit
         run: |
-          mkdir $BROWSERTEST_OUTPUT_DIRECTORY
+          mkdir -p $BROWSERTEST_OUTPUT_DIRECTORY
           cd ~/drupal/web
-          ../vendor/bin/phpunit -c core modules/contrib/webform_civicrm
+          PHPUNITARGS=--verbose
+          PHPUNIT10=`~/drupal/vendor/bin/phpunit --version | cut -d ' ' -f 2 | php -r 'echo (int) version_compare(stream_get_contents(STDIN), "10", ">=");'`
+          if [ "$PHPUNIT10" == "1" ]; then
+            PHPUNITARGS="--display-skipped --display-errors --display-warnings --display-notices"
+          fi
+          sed -i -e 's/displayDetailsOnTestsThatTriggerDeprecations="true"/displayDetailsOnTestsThatTriggerDeprecations="false"/' core/phpunit.xml.dist
+          ../vendor/bin/phpunit $PHPUNITARGS -c core modules/contrib/webform_civicrm
         env:
-          SYMFONY_DEPRECATIONS_HELPER: 999999
+          SYMFONY_DEPRECATIONS_HELPER: 'disabled'
           SIMPLETEST_DB: mysql://root:@127.0.0.1:${{ job.services.mysql.ports[3306] }}/db
           SIMPLETEST_BASE_URL: http://127.0.0.1:8080
-          MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","chromeOptions":{"args":["--disable-gpu", "--no-sandbox", "--headless"]}}, "http://127.0.0.1:9515"]'
-          BROWSERTEST_OUTPUT_DIRECTORY: '${{ runner.temp }}/browser_output'
+          MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","goog:chromeOptions":{"args":["--disable-gpu", "--disable-dev-shm-usage", "--disable-background-networking", "--no-sandbox", "--headless"]}}, "http://127.0.0.1:9515"]'
+          BROWSERTEST_OUTPUT_FILE: 'true'
+          BROWSERTEST_OUTPUT_VERBOSE: 'false'
+          BROWSERTEST_OUTPUT_DIRECTORY: '/home/runner/drupal/web/sites/simpletest/browser_output'
           DEV_EXTENSION_DIR: /home/runner/drupal/web/sites/default/files/civicrm/ext
           DEV_EXTENSION_URL: http://127.0.0.1:8080/sites/default/files/civicrm/ext
       - name: Helper to make unique name for upload
+        if: ${{ failure() || success() }}
         run: |
           # doing this on multiple lines to avoid quote-hell
           cd ${{ runner.temp }}
           echo '${{ matrix.drupal }}_${{ matrix.civicrm }}_${{ matrix.php }}' > upload_helper.txt
           sed -i -e 's/[^0-9a-zA-Z_.\-]//g' upload_helper.txt
           echo "UPLOADNAME=$(cat upload_helper.txt)" >> $GITHUB_ENV
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ failure() || success() }}
         with:
           name: screenshots.${{ env.UPLOADNAME }}

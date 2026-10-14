@@ -3,13 +3,20 @@
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Drupal\Core\Url;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests submitting a Webform with CiviCRM: Case
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class CaseSubmissionTest extends WebformCivicrmTestBase {
+
+  /**
+   * @var array
+   */
+  private $_caseContact;
 
   protected function setUp(): void {
     parent::setUp();
@@ -58,17 +65,17 @@ final class CaseSubmissionTest extends WebformCivicrmTestBase {
    * Test Case Submission and update with non admin user.
    */
   public function testCaseSubmissionWithNonAdminUser() {
-    $this->testUser = $this->createUser([
+    $testUser = $this->createUser([
       'access content',
     ]);
-    $ufContact = $this->getUFMatchRecord($this->testUser->id());
+    $ufContact = $this->getUFMatchRecord($testUser->id());
     $this->_caseContact = $this->utils->wf_civicrm_api('Contact', 'create', [
       'id' => $ufContact['contact_id'],
       'first_name' => 'Mark',
       'last_name' => 'Gibson',
     ])['values'][$ufContact['contact_id']];
 
-    $this->drupalLogin($this->testUser);
+    $this->drupalLogin($testUser);
     $caseSubject = "Test Case create with authenticated user";
     $this->submitCaseAndVerifyResult($caseSubject, FALSE);
 
@@ -93,15 +100,20 @@ final class CaseSubmissionTest extends WebformCivicrmTestBase {
     }
 
     $this->getSession()->getPage()->fillField('Case Subject', $caseSubject);
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
     $case_result = $this->utils->wf_civicrm_api('Case', 'get', [
       'sequential' => 1,
       'contact_id' => $this->_caseContact['id'],
     ]);
     $this->assertEquals(1, $case_result['count']);
+
+    // Make sure  $start_date is really only start_date (and not time)
+    $start_date = $case_result['values'][0]['start_date'];
+    $start_date_only = date('Y-m-d', strtotime($start_date));
+    
     $this->assertEquals($caseSubject, $case_result['values'][0]['subject']);
-    $this->assertEquals(date('Y-m-d'), $case_result['values'][0]['start_date']);
+    $this->assertEquals(date('Y-m-d'), $start_date_only);
   }
 
 }

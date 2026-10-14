@@ -4,12 +4,14 @@ namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Drupal\Core\Url;
 use Drupal\webform\Entity\WebformSubmission;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests editing webform submissions.
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class SubmissionEditTest extends WebformCivicrmTestBase {
 
   public function testEditSubmission() {
@@ -28,7 +30,8 @@ final class SubmissionEditTest extends WebformCivicrmTestBase {
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->getSession()->getPage()->fillField('First Name', 'Dummy');
     $this->getSession()->getPage()->fillField('Last Name', 'Tester');
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
+    $this->assertPageNoErrorMessages();
 
     // Should have created one contact
     $newMax = $this->getMaxId();
@@ -40,13 +43,11 @@ final class SubmissionEditTest extends WebformCivicrmTestBase {
     $this->drupalGet($submission->toUrl('edit-form'));
     $this->getSession()->getPage()->fillField('First Name', 'Smarty');
     $this->getSession()->getPage()->fillField('Last Name', 'Tester');
-    $this->getSession()->getPage()->pressButton('Save');
+    $this->pressButtonOverride('Save');
 
     // Should have updated not created a new contact
     $this->assertEquals($newMax, $this->getMaxId());
-
     $this->assertEquals('Smarty', civicrm_api3('Contact', 'get', ['id' => $newMax])['values'][$newMax]['first_name']);
-
   }
 
   protected function getMaxId($entity = 'Contact') {

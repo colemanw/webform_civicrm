@@ -32,11 +32,19 @@ class CivicrmWebformHandler extends WebformHandlerBase {
   protected $civicrm;
 
   /**
+   * The Token Manager service.
+   *
+   * @var \Drupal\webform\WebformTokenManager
+   */
+  public $tokenManager;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->civicrm = $container->get('civicrm');
+    $instance->tokenManager = $container->get('webform.token_manager');
 
     return $instance;
   }

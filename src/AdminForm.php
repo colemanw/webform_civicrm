@@ -2,7 +2,6 @@
 
 namespace Drupal\webform_civicrm;
 
-
 use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\webform\Entity\Webform;
 use Drupal\Component\Render\FormattableMarkup;
@@ -45,6 +44,11 @@ class AdminForm implements AdminFormInterface {
    * @var array
    */
   public static $fieldset_entities = ['contact', 'billing_1_number_of_billing', 'activity', 'case', 'grant'];
+
+  /**
+   * @var bool
+   */
+  public $confirmPage;
 
   public function __construct(UtilsInterface $utils) {
     $this->utils = $utils;
@@ -1044,6 +1048,13 @@ class AdminForm implements AdminFormInterface {
       '#group' => 'webform_civicrm',
       '#attributes' => ['class' => ['civi_icon_fa-id-badge']],
     ];
+    $this->form['membership']['membership_show_status_message'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Show existing membership status message'),
+      '#description' => t('When a contact with an existing membership fills out the form, display a message showing their current membership status and expiry date.'),
+      '#default_value' => (bool) wf_crm_aval($this->settings, 'membership_options:show_status_message', 1, TRUE),
+      '#parents' => ['membership_options', 'show_status_message'],
+    ];
     for ($c = 1, $cMax = count($this->data['contact']); $c <= $cMax; ++$c) {
       $num = wf_crm_aval($this->data, "membership:{$c}:number_of_membership", 0);
       $this->form['membership'][$c]["membership_{$c}_number_of_membership"] = [
@@ -1153,6 +1164,7 @@ class AdminForm implements AdminFormInterface {
     }
     $this->addAjaxItem("contribution:sets:contribution", "civicrm_1_contribution_1_contribution_financial_type_id", "..:custom");
     $this->addAjaxItem("contribution:sets:contribution", "civicrm_1_contribution_1_contribution_payment_processor_id", "..:contribution");
+    $this->addAjaxItem("contribution:sets:contribution", "civicrm_1_contribution_1_contribution_is_test", "..:contribution");
 
     //Add Currency.
     $this->form['contribution']['sets']['contribution']['contribution_1_settings_currency'] = [
@@ -1380,7 +1392,7 @@ class AdminForm implements AdminFormInterface {
       '#type' => 'item',
       '#markup' => '<p>' .
         t('To have this form auto-filled for anonymous users, enable the "Existing Contact" field for :contact and send the following link from CiviMail:', [':contact' => $this->utils->wf_crm_contact_label(1, $this->data, 'escape')]) .
-        '<br /><pre>' . Url::fromRoute('entity.webform.canonical', ['webform' => $this->webform->id()], ['query' => ['cid1' => ''], 'absolute' => TRUE])->toString() . '{contact.contact_id}&amp;{contact.checksum}</pre></p>',
+        '<br /><pre>' . Url::fromRoute('entity.webform.canonical', ['webform' => $this->webform->id()], ['query' => ['cid1' => ''], 'absolute' => TRUE])->toString() . '{contact.id}&amp;{contact.checksum}</pre></p>',
     ];
     $this->form['additional_options']['create_fieldsets'] = [
       '#type' => 'checkbox',
@@ -1568,7 +1580,7 @@ class AdminForm implements AdminFormInterface {
       if ($field['type'] != 'hidden') {
         $options += ['create_civicrm_webform_element' => t('- User Select -')];
       }
-      if ($name == 'group') {
+      if ($name == 'crmgroup') {
         $options += ['public_groups' => t('- User Select - (public groups)')];
       }
       $options += $this->utils->wf_crm_field_options($field, 'config_form', $this->data);
@@ -1943,7 +1955,7 @@ class AdminForm implements AdminFormInterface {
           $val = (array) $val;
           if (in_array('create_civicrm_webform_element', $val, TRUE)
           || (!empty($val[0]) && $field['type'] == 'hidden')
-          || (preg_match('/_group$/', $key) && in_array('public_groups', $val, TRUE))) {
+          || (preg_match('/_crmgroup$/', $key) && in_array('public_groups', $val, TRUE))) {
             // Restore disabled component
             if (isset($disabled[$key])) {
               webform_component_update($disabled[$key]);
@@ -2267,7 +2279,9 @@ class AdminForm implements AdminFormInterface {
       $field['name'] = t('Relationship to :contact', [':contact' => $utils->wf_crm_contact_label($n, $settings['data'])]) . ' ' . $field['name'];
     }
     else {
-      $field['name'] = str_replace(' #', '', $field['name']);
+      // This isn't the civi "name" this is some other name, and can
+      // legitimately be missing, so avoid E_WARNING.
+      $field['name'] = str_replace(' #', '', $field['name'] ?? '');
     }
     if ($name == 'contact_sub_type') {
       list($contact_types) = $utils->wf_crm_get_contact_types();

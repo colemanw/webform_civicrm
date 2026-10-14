@@ -43,7 +43,7 @@ class CivicrmNumber extends Number {
   /**
    * {@inheritdoc}
    */
-  public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
+  public function prepare(array &$element, ?WebformSubmissionInterface $webform_submission = NULL) {
     unset($element['#options'], $element['#data_type']);
     parent::prepare($element, $webform_submission);
   }

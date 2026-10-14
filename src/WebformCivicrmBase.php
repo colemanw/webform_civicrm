@@ -212,8 +212,9 @@ abstract class WebformCivicrmBase {
       foreach (array_keys($this->enabled) as $fid) {
         // This way we support multiple tag fields (for tagsets)
         if (strpos($fid, $prefix . 'other') !== FALSE) {
-          list(, , , , , $ent) = explode('_', $fid);
-          list(, , , , , $field) = explode('_', $fid, 6);
+          [, , , , , $ent] = explode('_', $fid);
+          [, , , , , $field] = explode('_', $fid, 6);
+          $ent = ($ent === 'crmgroup') ? 'group' : $ent;
           // Cheap way to avoid fetching the same data twice from the api
           if (!is_array($api[$ent])) {
             $api[$ent] = $this->utils->wf_civicrm_api($api[$ent], 'get', ['contact_id' => $cid]);
@@ -259,7 +260,7 @@ abstract class WebformCivicrmBase {
     $contactComponent = \Drupal::service('webform_civicrm.contact_component');
     $component['#form_key'] = $component['#form_key'] ?? $component['#webform_key'];
 
-    list(, $c,) = explode('_', $component['#form_key'], 3);
+    [, $c,] = explode('_', $component['#form_key'], 3);
     $filters = $contactComponent->wf_crm_search_filters($this->node, $component);
     // Start with the url - that trumps everything.
     $element_manager = \Drupal::getContainer()->get('plugin.manager.webform.element');
@@ -508,7 +509,7 @@ abstract class WebformCivicrmBase {
     if ($r_types && $cid1 && $cid2) {
       $types = [];
       foreach ($r_types as $r_type) {
-        list($type, $side) = explode('_', $r_type);
+        [$type, $side] = explode('_', $r_type);
         $types[$type] = $type;
       }
       $params = [
@@ -534,6 +535,12 @@ abstract class WebformCivicrmBase {
           // Support multi-valued relationship type fields, fudge the rest
           $found['relationship_type_id'][] = in_array("{$type}_r", $r_types) ? "{$type}_r" : "{$type}_$side";
           $found['relationship_permission'] = (!empty($rel['is_permission_a_b']) ? 1 : 0) + (!empty($rel['is_permission_b_a']) ? 2 : 0);
+          // Fixes https://github.com/colemanw/webform_civicrm/pull/1030
+          foreach($rel as $id => $item) {
+            if (str_starts_with($id, 'custom_') && is_array($item)) {
+              $rel[$id] = array_keys($item);
+            }
+          }
           $found += $rel;
         }
       }
@@ -588,11 +595,23 @@ abstract class WebformCivicrmBase {
   }
 
   /**
+   * Enable is_test if payment is made using a test processor.
+   *
+   * @param array $params
+   */
+  protected function setTestMode(&$params) {
+    if (!empty($this->data['contribution'][1]['contribution'][1]['is_test'])) {
+      $params['is_test'] = TRUE;
+    }
+  }
+
+  /**
    * Get memberships for a contact
    * @param $cid
    * @return array
    */
   protected function findMemberships($cid) {
+
     static $status_types;
     static $membership_types;
 
@@ -601,14 +620,22 @@ abstract class WebformCivicrmBase {
       $domain = wf_crm_aval($domain, 'id', 1);
       $membership_types = array_keys($this->utils->wf_crm_apivalues('membershipType', 'get', ['is_active' => 1, 'domain_id' => $domain, 'return' => 'id']));
     }
-    $existing = $this->utils->wf_crm_apivalues('membership', 'get', [
+    $mid = \Drupal::request()->query->get('mid') ?: NULL;
+    $params = [
       'contact_id' => $cid,
       // Limit to only enabled membership types
       'membership_type_id' => ['IN' => $membership_types],
       // skip membership through Inheritance.
       'owner_membership_id' => ['IS NULL' => 1],
       'options' => ['sort' => 'end_date DESC'],
-    ]);
+    ];
+    if (!empty($mid)) {
+      $params['id'] = $mid;
+    }
+    $this->setTestMode($params);
+
+    $existing = $this->utils->wf_crm_apivalues('membership', 'get', $params);
+
     if (!$existing) {
       return [];
     }
@@ -663,7 +690,7 @@ abstract class WebformCivicrmBase {
     if (empty($parents)) {
       // Create matching table to sort fields by group
       foreach ($this->utils->wf_crm_get_fields() as $key => $value) {
-        list($group, $field) = explode('_', $key, 2);
+        [$group, $field] = explode('_', $key, 2);
         if (strpos($field, 'custom_') === 0) {
           $parents[$field] = $group;
         }
@@ -709,7 +736,7 @@ abstract class WebformCivicrmBase {
    */
   protected function getData($fid, $default = NULL, $strict = FALSE) {
     if ($pieces = $this->utils->wf_crm_explode_key($fid)) {
-      list( , $c, $ent, $n, $table, $name) = $pieces;
+      [ , $c, $ent, $n, $table, $name] = $pieces;
       return wf_crm_aval($this->data, "{$ent}:{$c}:{$table}:{$n}:{$name}", $default, $strict);
     }
   }
@@ -779,13 +806,20 @@ abstract class WebformCivicrmBase {
    * Copies a drupal file into the Civi file system
    *
    * @param int $id: drupal file id
+   * @param string $filename drupal filename
    * @return int|null Civi file id
    */
-  public static function saveDrupalFileToCivi($id) {
+  public static function saveDrupalFileToCivi($id, $filename = NULL) {
     $file = File::load($id);
     if ($file) {
       $config = \CRM_Core_Config::singleton();
-      $path = \Drupal::service('file_system')->copy($file->getFileUri(), $config->customFileUploadDir);
+      // Get the custom file upload directory and ensure it ends with a single slash.
+      $copyTo = \CRM_Utils_File::addTrailingSlash($config->customFileUploadDir, '/');
+      if(!isset($filename)) {
+        $filename = basename($file->getFileUri());
+      }
+      $copyTo .= \CRM_Utils_File::makeFileName($filename, TRUE);
+      $path = \Drupal::service('file_system')->copy($file->getFileUri(), $copyTo);
       if ($path) {
         $result = \Drupal::service('webform_civicrm.utils')->wf_civicrm_api('file', 'create', [
           'uri' => str_replace($config->customFileUploadDir, '', $path),
@@ -821,11 +855,17 @@ abstract class WebformCivicrmBase {
     }
     $file = $this->utils->wf_crm_apivalues('Attachment', 'get', $val);
     if (!empty($file[$val])) {
+      if (function_exists('file_icon_class')) {
+        $icon_class = file_icon_class($file[$val]['mime_type']);
+      }
+      else {
+        $icon_class = \Drupal\file\IconMimeTypes::getIconClass($file[$val]['mime_type']);
+      }
       return [
         'data_type' => 'File',
         'name' => $file[$val]['name'],
         'file_url'=> $file[$val]['url'],
-        'icon' => file_icon_class($file[$val]['mime_type']),
+        'icon' => $icon_class,
       ];
     }
     return NULL;

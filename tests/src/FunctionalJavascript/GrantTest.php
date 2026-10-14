@@ -5,13 +5,20 @@ namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 use Civi\Api4\Grant;
 use Drupal\Core\Url;
 use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests submitting a Webform with CiviCRM: Contact with Grant.
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class GrantTest extends WebformCivicrmTestBase {
+
+  /**
+   * @var int
+   */
+  private $grant_type_id;
 
   protected function setUp(): void {
     parent::setUp();
@@ -54,7 +61,6 @@ final class GrantTest extends WebformCivicrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
     $this->getSession()->getPage()->selectFieldOption('Grant Type', $this->grant_type_id);
-    $this->assertSession()->assertWaitOnAjaxRequest();
     $this->htmlOutput();
     $this->assertSession()->checkboxChecked("Amount Requested");
 

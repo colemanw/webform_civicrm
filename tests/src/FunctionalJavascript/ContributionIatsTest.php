@@ -5,13 +5,31 @@ namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 use Behat\Mink\Element\NodeElement;
 use Drupal\Core\Url;
 use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests submitting a Webform with CiviCRM: Contribution with Line Items and Sales Tax
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class ContributionIatsTest extends WebformCivicrmTestBase {
+
+  /**
+   * @var array
+   */
+  private $payment_processor_legacy;
+
+  /**
+   * @var array
+   */
+  private $payment_processor_legacy_acheft;
+
+  /**
+   * @var array
+   * @todo the test that uses this is commented out. Is it still needed?
+   */
+  private $payment_processor_faps;
 
   /**
    * {@inheritdoc}
@@ -30,7 +48,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
       'is_test' => FALSE,
       'is_active' => 1,
       'user_name' => 'TE4188',
-      'password' => 'abcde01',
+      'password' => 'Semper26',
       'url_site' => 'https://www.iatspayments.com/NetGate/ProcessLinkv2.asmx?WSDL',
       'url_recur' => 'https://www.iatspayments.com/NetGate/ProcessLinkv2.asmx?WSDL',
       'class_name' => 'Payment_iATSService',
@@ -39,8 +57,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
       'payment_type' => 1,
       'payment_instrument_id' => 'Credit Card',
     ];
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $result = $utils->wf_civicrm_api('payment_processor', 'create', $params);
+    $result = $this->utils->wf_civicrm_api('payment_processor', 'create', $params);
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
     $this->payment_processor_legacy = current($result['values']);
@@ -54,7 +71,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
       'is_test' => FALSE,
       'is_active' => 1,
       'user_name' => 'TE4188',
-      'password' => 'abcde01',
+      'password' => 'Semper26',
       'url_site' => 'https://www.iatspayments.com/NetGate/ProcessLinkv2.asmx?WSDL',
       'url_recur' => 'https://www.iatspayments.com/NetGate/ProcessLinkv2.asmx?WSDL',
       'class_name' => 'Payment_iATSServiceACHEFT',
@@ -63,8 +80,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
       'payment_type' => 1,
       'payment_instrument_id' => 'Debit Card',
     ];
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $result = $utils->wf_civicrm_api('payment_processor', 'create', $params);
+    $result = $this->utils->wf_civicrm_api('payment_processor', 'create', $params);
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
     $this->payment_processor_legacy_acheft = current($result['values']);
@@ -87,8 +103,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
       'payment_type' => 1,
       'payment_instrument_id' => 'Credit Card',
     ];
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $result = $utils->wf_civicrm_api('payment_processor', 'create', $params);
+    $result = $this->utils->wf_civicrm_api('payment_processor', 'create', $params);
     $this->assertEquals(0, $result['is_error']);
     $this->assertEquals(1, $result['count']);
     $this->payment_processor_faps = current($result['values']);
@@ -107,7 +122,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertSession()->pageTextContains('You must enable an email field for Contact 1 in order to process transactions.');
-    $this->getSession()->getPage()->pressButton('Enable It');
+    $this->pressButtonOverride('Enable It');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->checkField('Contribution Amount');
     $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
@@ -145,9 +160,9 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     ];
     $this->fillBillingFields($billingValues);
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->createScreenshot($this->htmlOutputDirectory . 'faps169.png');
+    $this->createScreenshot($this->htmlOutputDirectory . '/faps169.png');
     $this->assertPageNoErrorMessages();
     $this->htmlOutput();
 
@@ -156,8 +171,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->assertPageNoErrorMessages();
 
     // ToDo: load the Contribution and check the values
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $api_result = $utils->wf_civicrm_api('contribution', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
       'sequential' => 1,
     ]);
 
@@ -200,29 +214,23 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->switchToIFrame();
   }
 
-  public function testSubmitContribution() {
-    $financialAccount = $this->setupSalesTax(2, $accountParams = []);
-
+  /**
+   * Create a webform with contribution.
+   */
+  public function configureWebform() {
+    $this->setupSalesTax(2);
     $this->drupalLogin($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
     ]));
     // The label has a <div> in it which can cause weird failures here.
-    $this->assertSession()->waitForText('Enable CiviCRM Processing');
-    $this->assertSession()->waitForField('nid');
-    $this->getSession()->getPage()->checkField('nid');
-    $this->getSession()->getPage()->clickLink('Contribution');
-    $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
-    $this->assertSession()->assertWaitOnAjaxRequest();
-    $this->assertSession()->pageTextContains('You must enable an email field for Contact 1 in order to process transactions.');
-    $this->getSession()->getPage()->pressButton('Enable It');
-    $this->assertSession()->assertWaitOnAjaxRequest();
+    $this->enableCivicrmOnWebform();
+    $params = [
+      'payment_processor_id' => $this->payment_processor_legacy['id'],
+    ];
+    $this->configureContributionTab($params);
     $this->getSession()->getPage()->checkField('Contribution Amount');
-    $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
-    $this->getSession()->getPage()->selectFieldOption('Financial Type', 1);
-
     $this->assertCount(5, $this->getOptions('Payment Processor'));
-    $this->getSession()->getPage()->selectFieldOption('Payment Processor',  $this->payment_processor_legacy['id']);
 
     $this->enableBillingSection();
     $this->getSession()->getPage()->selectFieldOption('lineitem_1_number_of_lineitem', 2);
@@ -235,9 +243,13 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     // Set the Financial Type for the second line item to Member Dues (which has Sales Tax on it).
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_lineitem_2_contribution_financial_type_id', 2);
 
-    $this->getSession()->getPage()->pressButton('Save Settings');
-    $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    $this->saveCiviCRMSettings();
+  }
 
+  /**
+   * Submit the form using iATS card details.
+   */
+  public function submitWebForm() {
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
     $this->getSession()->getPage()->fillField('First Name', 'Frederick');
@@ -246,7 +258,8 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Line Item Amount', '1.75');
     $this->getSession()->getPage()->fillField('Line Item Amount 2', '5.00');
 
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
+    $this->assertSession()->waitForField('Contribution Amount');
     $this->getSession()->getPage()->fillField('Contribution Amount', '3.00');
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
     $this->htmlOutput();
@@ -269,16 +282,19 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
       'postal_code' => '53177',
     ];
     $this->fillBillingFields($billingValues);
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     // throw new \Exception(var_export($this->htmlOutputDirectory, TRUE));
-
     $this->createScreenshot($this->htmlOutputDirectory . '/legacy289.png');
     $this->htmlOutput();
     $this->assertPageNoErrorMessages();
-    $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
+    $this->assertSession()->waitForText('New submission added to CiviCRM Webform Test.');
+  }
 
-    $utils = \Drupal::service('webform_civicrm.utils');
-    $api_result = $utils->wf_civicrm_api('contribution', 'get', [
+  /**
+   * Verify payment values in CiviCRM.
+   */
+  public function verifyResults() {
+    $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
       'sequential' => 1,
     ]);
 
@@ -294,12 +310,12 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->assertEquals('USD', $contribution['currency']);
 
     // Also retrieve tax_amount (have to ask for it to be returned):
-    $api_result = $utils->wf_civicrm_api('contribution', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
       'sequential' => 1,
       'return' => ['tax_amount', 'payment_instrument_id'],
     ]);
     $contribution = reset($api_result['values']);
-    $creditCardID = $utils->wf_civicrm_api('OptionValue', 'getvalue', [
+    $creditCardID = $this->utils->wf_civicrm_api('OptionValue', 'getvalue', [
       'return' => "value",
       'label' => "Credit Card",
       'option_group_id' => "payment_instrument",
@@ -308,13 +324,13 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->assertEquals($creditCardID, $contribution['payment_instrument_id']);
     $tax_total_amount = $contribution['tax_amount'];
 
-    $contriPriceFieldID = $utils->wf_civicrm_api('PriceField', 'get', [
+    $contriPriceFieldID = $this->utils->wf_civicrm_api('PriceField', 'get', [
       'sequential' => 1,
       'price_set_id' => 'default_contribution_amount',
       'options' => ['limit' => 1],
     ])['id'] ?? NULL;
 
-    $api_result = $utils->wf_civicrm_api('line_item', 'get', [
+    $api_result = $this->utils->wf_civicrm_api('line_item', 'get', [
       'sequential' => 1,
     ]);
 
@@ -337,6 +353,30 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->assertEquals($contribution_total_amount, $sum_line_total + $sum_tax_amount);
   }
 
+  /**
+   * Test Payment using iATS processor.
+   */
+  public function testSubmitContribution() {
+    $this->configureWebform();
+    $this->submitWebForm();
+    $this->verifyResults();
+  }
+
+  /**
+   * Test Payment on AJAX webform.
+   */
+  public function testSubmitContributionAjaxEnabled() {
+    $this->configureWebform();
+    // Enable AJAX on the form.
+    $this->drupalGet($this->webform->toUrl('settings'));
+    $this->htmlOutput();
+    $this->getSession()->getPage()->checkField('Use Ajax');
+    $this->pressButtonOverride('Save');
+
+    $this->submitWebForm();
+    $this->verifyResults();
+  }
+
   public function testSubmitACHEFTContribution() {
     $this->drupalLogin($this->adminUser);
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
@@ -350,7 +390,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertSession()->pageTextContains('You must enable an email field for Contact 1 in order to process transactions.');
-    $this->getSession()->getPage()->pressButton('Enable It');
+    $this->pressButtonOverride('Enable It');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->checkField('Contribution Amount');
     $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
@@ -361,8 +401,12 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
 
     $this->enableBillingSection();
 
-    $this->getSession()->getPage()->pressButton('Save Settings');
+    // For some reason it needs a delay or else it gives a warning about not being able to find the financial type and then most of the fields don't get added, including the email field which is then what it fails on later.
+    sleep(5);
+
+    $this->pressButtonOverride('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
+    $this->assertPageNoErrorMessages();
 
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
@@ -370,7 +414,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
 
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
 
     $this->getSession()->getPage()->fillField('Contribution Amount', '99.00');
 
@@ -395,7 +439,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
       'postal_code' => '53177',
     ];
     $this->fillBillingFields($billingValues);
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
 
     $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
       'sequential' => 1,
@@ -424,7 +468,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_enable_contribution', 1);
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->assertSession()->pageTextContains('You must enable an email field for Contact 1 in order to process transactions.');
-    $this->getSession()->getPage()->pressButton('Enable It');
+    $this->pressButtonOverride('Enable It');
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->checkField('Contribution Amount');
     $this->getSession()->getPage()->selectFieldOption('Currency', 'USD');
@@ -440,7 +484,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField('Number of Installments');
     $this->htmlOutput();
 
-    $this->getSession()->getPage()->pressButton('Save Settings');
+    $this->pressButtonOverride('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
 
     // Test 1: $120 -> paid in 12 instalments -> $10/month
@@ -450,7 +494,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
 
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
 
     $this->getSession()->getPage()->fillField('Contribution Amount', '120.00');
     $this->getSession()->getPage()->fillField('Number of Installments', '12.00');
@@ -476,7 +520,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
       'postal_code' => '53177',
     ];
     $this->fillBillingFields($billingValues);
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
 
     $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
       'sequential' => 1,
@@ -516,7 +560,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
 
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
 
     $this->getSession()->getPage()->fillField('Contribution Amount', '120.00');
     $this->getSession()->getPage()->fillField('Number of Installments', '0');
@@ -542,7 +586,7 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
       'postal_code' => '53177',
     ];
     $this->fillBillingFields($billingValues);
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
 
     $api_result = $this->utils->wf_civicrm_api('contribution', 'get', [
       'sequential' => 1,

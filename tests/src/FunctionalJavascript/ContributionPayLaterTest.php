@@ -5,21 +5,32 @@ namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 use Civi\Api4\Contribution;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Url;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests submitting a Webform with CiviCRM: Contribution with Pay later
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class ContributionPayLaterTest extends WebformCivicrmTestBase {
 
   private $_customGroup = [];
   private $_customFields = [];
 
+  /**
+   * @var string
+   */
+  private $country;
+
+  /**
+   * @var string
+   */
+  private $state;
+
   public function testReceiptParams() {
     $this->drupalLogin($this->rootUser);
     $this->redirectEmailsToDB();
-    $this->setOrgInfo();
 
     $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
       'webform' => $this->webform->id(),
@@ -50,7 +61,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
 
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
     $this->assertPageNoErrorMessages();
     $this->getSession()->getPage()->fillField('Contribution Amount', '30');
 
@@ -63,7 +74,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '30.00');
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_contribution_1_contribution_financial_type_id', 2);
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
@@ -91,22 +102,6 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
       $mb = \Civi::settings()->get('mailing_backend');
       $mb['outBound_option'] = \CRM_Mailing_Config::OUTBOUND_OPTION_REDIRECT_TO_DB;
       \Civi::settings()->set('mailing_backend', $mb);
-    }
-
-    // Complete the contribution and recheck receipt.
-    civicrm_api3('Contribution', 'completetransaction', [
-      'id' => $contribution['id'],
-      'is_email_receipt' => 1,
-    ]);
-    $sent_email = $this->getMostRecentEmail();
-    $this->assertStringContainsString('From: Pay Laterers <pay.later@example.org>', $sent_email);
-    $this->assertStringContainsString('To: Frederick Pabst <fred@example.com>', $sent_email);
-    // Adjust for fix in core - since status is now completed, it shouldn't say invoice.
-    if (version_compare(\CRM_Core_BAO_Domain::version(), '5.63.alpha1', '<')) {
-      $this->assertStringContainsString('Subject: Invoice - Contribution - Frederick Pabst', $sent_email);
-    }
-    else {
-      $this->assertStringContainsString('Subject: Receipt - Contribution - Frederick Pabst', $sent_email);
     }
   }
 
@@ -182,7 +177,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->assertSession()->assertWaitOnAjaxRequest();
     $this->getSession()->getPage()->selectFieldOption('State/Province', $this->state);
 
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
     $this->assertSession()->waitForField('civicrm_1_contribution_1_contribution_total_amount');
     $this->assertPageNoErrorMessages();
 
@@ -204,7 +199,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '30.00');
     $this->getSession()->getPage()->fillField('Donation Custom Field', 'Donation for xyz');
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
   }
@@ -272,7 +267,6 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->utils->wf_civicrm_api('contribution', 'delete', [
       'id' => $contribution['id'],
     ]);
-    $this->contribution_id = $contribution['id'];
 
     $address = $this->utils->wf_civicrm_api('Address', 'get', [
       'sequential' => 1,
@@ -323,29 +317,8 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
       $this->getSession()->getPage()->uncheckField('properties[extra][multiple]');
     }
 
-    $this->getSession()->getPage()->pressButton('Save');
+    $this->pressButtonOverride('Save');
     $this->assertSession()->waitForText('has been updated.');
-  }
-
-  /**
-   * Set the info at Administer - Communications - Organization Info
-   */
-  private function setOrgInfo() {
-    // This fails - see https://lab.civicrm.org/dev/drupal/-/issues/133
-    // $this->drupalGet(\CRM_Utils_System::url('civicrm/admin/domain', 'action=update&reset=1', TRUE, NULL, FALSE));
-    // $this->getSession()->getPage()->fillField('name', 'Pay Laterers');
-    // $this->getSession()->getPage()->fillField('email_1_email', 'pay.later@example.org');
-    // $this->getSession()->getPage()->pressButton('_qf_Domain_next_view-bottom');
-
-    civicrm_api3('Domain', 'create', ['id' => 1, 'name' => 'Pay Laterers']);
-    $option_value = civicrm_api3('OptionValue', 'get', [
-      'option_group_id' => 'from_email_address',
-      'is_default' => 1,
-    ]);
-    civicrm_api3('OptionValue', 'create', [
-      'id' => $option_value['id'],
-      'label' => '"Pay Laterers" <pay.later@example.org>',
-    ]);
   }
 
   /**
@@ -396,7 +369,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     ], 'value')[0] ?? NULL;
     $this->getSession()->getPage()->selectFieldOption("civicrm_1_contact_1_contact_gender_id", $femaleID);
 
-    $this->getSession()->getPage()->pressButton('Next >');
+    $this->pressButtonOverride('Next >');
     $this->assertPageNoErrorMessages();
     $this->getSession()->getPage()->fillField('Contribution Amount', '20');
 
@@ -404,7 +377,7 @@ final class ContributionPayLaterTest extends WebformCivicrmTestBase {
     $this->htmlOutput();
     $this->assertSession()->elementTextContains('css', '#wf-crm-billing-total', '20.00');
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 

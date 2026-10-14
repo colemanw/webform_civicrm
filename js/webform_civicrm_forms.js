@@ -14,7 +14,7 @@ var wfCivi = (function (D, $, drupalSettings, once) {
     var formClass = getFormClass(nid);
     var defaults = $(formClass).data('form-defaults') || {};
 
-    if (cid.charAt(0) === '-') {
+    if (cid && cid.charAt(0) === '-') {
       resetFields(num, nid, true, 'show', toHide, hideOrDisable, showEmpty, 500, defaults);
       // Fill name fields with name typed
       if (cid.length > 1) {
@@ -328,7 +328,10 @@ var wfCivi = (function (D, $, drupalSettings, once) {
   }
 
   function fillOptions(element, data) {
-    var sortedData = Object.entries(data).sort(([,a],[,b]) => a > b);
+    var sortedData = Object.entries(data)
+      .sort(function(a, b) {
+        return a[1].localeCompare(b[1]);
+      });
     var $el = $(element),
       value = $el.attr('data-val') ? $el.attr('data-val') : $el.val();
     $el.find('option').remove();

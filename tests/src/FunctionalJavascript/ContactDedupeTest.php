@@ -3,12 +3,14 @@
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Drupal\Core\Url;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests submitting a Webform with CiviCRM: single contact + custom fields.
  *
  * @group webform_civicrm
  */
+#[RunTestsInSeparateProcesses]
 final class ContactDedupeTest extends WebformCivicrmTestBase {
 
   /**
@@ -17,6 +19,11 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
    * @var int
    */
   protected $dedupeRuleGroupId;
+
+  /**
+   * @var int
+   */
+  private $cfID;
 
   private function createContactSubtype() {
     $params = [
@@ -29,12 +36,12 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->assertEquals(1, $result['count']);
 
     // Create custom group for Student.
-    $this->cgID = $this->createCustomGroup([
+    $cgID = $this->createCustomGroup([
       'title' => "Student Extras",
       'extends_entity_column_value' => ['Student'],
     ])['id'];
     $this->cfID = $this->utils->wf_civicrm_api('CustomField', 'create', [
-      'custom_group_id' => $this->cgID,
+      'custom_group_id' => $cgID,
       'label' => 'Advisor Name',
       'html_type' => "Text",
     ])['id'];
@@ -143,7 +150,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Phone', '4031234567');
     $this->getSession()->getPage()->fillField('Advisor Name', 'Professor Jane Smith');
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
@@ -176,7 +183,7 @@ final class ContactDedupeTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Last Name', 'Pabst-edited');
     $this->getSession()->getPage()->fillField('Phone', '4031234567');
 
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 

@@ -164,7 +164,7 @@ class CivicrmOptions extends OptionsBase {
   /**
    * {@inheritdoc}
    */
-  public function prepare(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
+  public function prepare(array &$element, ?WebformSubmissionInterface $webform_submission = NULL) {
     \Drupal::service('civicrm')->initialize();
     $as_list = !empty($element['#extra']['aslist']);
     $is_multiple = !empty($element['#extra']['multiple']);
@@ -216,7 +216,7 @@ class CivicrmOptions extends OptionsBase {
   /**
    * {@inheritdoc}
    */
-  protected function prepareElementValidateCallbacks(array &$element, WebformSubmissionInterface $webform_submission = NULL) {
+  protected function prepareElementValidateCallbacks(array &$element, ?WebformSubmissionInterface $webform_submission = NULL) {
     parent::prepareElementValidateCallbacks($element, $webform_submission);
     // Disable default form validation on state select field, since options are loaded via js.
     if (strpos($element['#form_key'], 'state_province_id') !== false) {
@@ -319,6 +319,35 @@ class CivicrmOptions extends OptionsBase {
         }
       }
     }
+  }
+
+  /**
+   * @inheritDoc
+   */
+  protected function format($type, array &$element, WebformSubmissionInterface $webform_submission, array $options = []) {
+    $value = parent::format($type, $element, $webform_submission, $options);
+    $format = $this->getItemFormat($element);
+    if (!str_ends_with($element['#form_key'], '_address_state_province_id')) {
+      return $value;
+    }
+    if ($type === 'Text') {
+      $state_id = $value;
+    }
+    else {
+      $state_id = $value['#plain_text'] ?? $value['#markup'] ?? NULL;
+    }
+    if ($format === 'raw' || empty($state_id) || !is_numeric($state_id)) {
+      return $value;
+    }
+    $utils = \Drupal::service('webform_civicrm.utils');
+    $state = $utils->wf_crm_apivalues('state_province', 'get', ['id' => $state_id], 'name');
+    if (!empty($state[$state_id])) {
+      if ($type === 'Text') {
+        return $state[$state_id];
+      }
+      $value['#plain_text'] = $state[$state_id];
+    }
+    return $value;
   }
 
 }

@@ -3,12 +3,14 @@
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
 use Drupal\Core\Url;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
 * Tests submitting a Webform with CiviCRM: single contact + custom fields.
 *
 * @group webform_civicrm
 */
+#[RunTestsInSeparateProcesses]
 final class ContactRelationshipTestAdd extends WebformCivicrmTestBase {
 
   private function createContactSubtype() {
@@ -80,7 +82,7 @@ final class ContactRelationshipTestAdd extends WebformCivicrmTestBase {
     $this->htmlOutput();
     $this->getSession()->getPage()->selectFieldOption('civicrm_2_contact_1_relationship_relationship_type_id[]', '- User Select -');
 
-    $this->getSession()->getPage()->pressButton('Save Settings');
+    $this->pressButtonOverride('Save Settings');
     $this->assertSession()->pageTextContains('Saved CiviCRM settings');
     $this->assertPageNoErrorMessages();
 
@@ -89,7 +91,7 @@ final class ContactRelationshipTestAdd extends WebformCivicrmTestBase {
     $this->assertPageNoErrorMessages();
     $this->getSession()->getPage()->selectFieldOption('Relationship to Contact 1 Relationship Type(s)', 'School is');
     // $this->createScreenshot($this->htmlOutputDirectory . '/relationship_user_select.png');
-    $this->getSession()->getPage()->pressButton('Submit');
+    $this->pressButtonOverride('Submit');
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
   }
