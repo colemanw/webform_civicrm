@@ -213,6 +213,7 @@ final class ActivitySubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Activity Duration', '120');
     $this->pressButtonOverride('Submit');
     $this->htmlOutput();
+    $this->assertPageNoErrorMessages();
 
     // All we've updated is the Activity Duration
     $api_result = $this->utils->wf_civicrm_api('activity', 'get', [
