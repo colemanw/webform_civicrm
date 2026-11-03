@@ -76,6 +76,7 @@ jobs:
           composer config minimum-stability dev
           composer config prefer-stable true
           composer config preferred-install auto
+          composer config --json audit.ignore '{"PKSA-r15m-kszr-8n8q":"manually patched","PKSA-dxd5-wy68-pq29":"manually patched","PKSA-96jv-mtjg-g2v8":"manually patched","PKSA-zb3c-6qhx-m249":"manually patched"}'
           composer config allow-plugins.civicrm/composer-compile-plugin true
           composer config allow-plugins.civicrm/composer-downloads-plugin true
           composer config allow-plugins.civicrm/civicrm-asset-plugin true
@@ -102,7 +103,11 @@ jobs:
       - name: Install CiviCRM ${{ matrix.civicrm }}
         run: |
           cd ~/drupal
-          COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} -W
+          if [ "${{ matrix.civicrm }}" != "6.19.3.1" ]; then
+            COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-{core,packages,drupal-8}:${{ matrix.civicrm }} -W
+          else
+            COMPOSER_MEMORY_LIMIT=-1 composer require civicrm/civicrm-asset-plugin:'~1.1' civicrm/civicrm-core:6.19.3.1 civicrm/civicrm-{packages,drupal-8}:6.19.3 -W
+          fi
       - name: Download Webform
         run: |
           cd ~/drupal
