@@ -163,8 +163,6 @@ jobs:
         run: |
           mkdir -p ~/drupal/web/sites/default/files/civicrm/ext
           cd ~/drupal/web/sites/default/files/civicrm/ext
-          # Allow unapproved extensions
-          /home/runner/civicrm-cv/cv ev '\Civi::settings()->set("ext_repo_url", "https://civicrm.org/extdir/ver={ver}|cms={uf}|ready=");'
           /home/runner/civicrm-cv/cv ev '\Civi::settings()->set("http_timeout", 60);'
           # Apparently we have to install it, otherwise stripe gives a dependency error even with install=0. I think that's a bug, but let's just do it. This is a fake install anyway.
           /home/runner/civicrm-cv/cv api3 Extension.download install=1 key=mjwshared
