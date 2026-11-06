@@ -113,11 +113,6 @@ jobs:
           cd ~/drupal
           # Use 6.x-dev to deal with newer chromedriver issues
           COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:6.x-dev'
-          #if [ "${{ env.ISDRUPAL11 }}" == "1" ]; then
-          #  COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:6.3.x-dev@dev'
-          #else
-          #  COMPOSER_MEMORY_LIMIT=-1 composer require 'drupal/webform:^6.2'
-          #fi
       - name: Install webform_civicrm
         run: |
           cd ~/drupal
