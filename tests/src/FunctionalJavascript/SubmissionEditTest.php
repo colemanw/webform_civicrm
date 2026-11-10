@@ -45,6 +45,9 @@ final class SubmissionEditTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Last Name', 'Tester');
     $this->pressButtonOverride('Save');
 
+    // Give it some time to Save
+    $this->getSession()->wait(5000);
+    
     // Should have updated not created a new contact
     $this->assertEquals($newMax, $this->getMaxId());
     $this->assertEquals('Smarty', civicrm_api3('Contact', 'get', ['id' => $newMax])['values'][$newMax]['first_name']);
