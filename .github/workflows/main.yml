@@ -24,10 +24,10 @@ jobs:
       matrix:
         include:
           - drupal: '10.6.*'
-            civicrm: '6.16.x'
+            civicrm: '6.19.x'
             php: '8.3'
           - drupal: '11.4.*'
-            civicrm: '6.19.x-dev'
+            civicrm: '6.21.x-dev'
             php: '8.3'
           - drupal: '11.x-dev'
             civicrm: 'dev-master'
