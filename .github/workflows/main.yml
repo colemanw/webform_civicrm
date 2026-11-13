@@ -147,7 +147,7 @@ jobs:
         # so that we can use civi api to get extensions with a version appropriate to the installed civi version
         run: |
           cd ~/drupal
-          composer require drush/drush consolidation/robo symfony/console --with-all-dependencies
+          composer require drush/drush "consolidation/robo:^4.0"
           mkdir -p /home/runner/civicrm-cv
           curl -L https://download.civicrm.org/cv/cv.phar -o /home/runner/civicrm-cv/cv
           chmod +x /home/runner/civicrm-cv/cv
