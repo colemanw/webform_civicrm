@@ -147,7 +147,7 @@ jobs:
         # so that we can use civi api to get extensions with a version appropriate to the installed civi version
         run: |
           cd ~/drupal
-          if [ "${{ matrix.drupal }}" == "10.6.20" ]; then
+          if [ "${{ matrix.drupal }}" == "10.6.*" ]; then
             composer require drush/drush "consolidation/robo:^4.0"
           else
             composer require drush/drush
