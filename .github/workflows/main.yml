@@ -147,7 +147,11 @@ jobs:
         # so that we can use civi api to get extensions with a version appropriate to the installed civi version
         run: |
           cd ~/drupal
-          composer require drush/drush "consolidation/robo:^4.0"
+          if [ "${{ matrix.drupal }}" == "10.6.20" ]; then
+            composer require drush/drush "consolidation/robo:^4.0"
+          else
+            composer require drush/drush
+          fi
           mkdir -p /home/runner/civicrm-cv
           curl -L https://download.civicrm.org/cv/cv.phar -o /home/runner/civicrm-cv/cv
           chmod +x /home/runner/civicrm-cv/cv
