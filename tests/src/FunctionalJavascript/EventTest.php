@@ -245,6 +245,8 @@ final class EventTest extends WebformCivicrmTestBase {
 
     // Resubmit the form and verify the results.
     $this->submitWebform();
+    // Give it some time to Save
+    $this->getSession()->wait(3000);
     $this->verifyResults(false);
   }
 
