@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\webform_civicrm\FunctionalJavascript;
 
+use Drupal\Core\Test\AssertMailTrait;
 use Drupal\Core\Url;
 
 /**
@@ -10,6 +11,8 @@ use Drupal\Core\Url;
  * @group webform_civicrm
  */
 final class EventTest extends WebformCivicrmTestBase {
+
+  use AssertMailTrait;
 
   private $_customFields = [];
 
@@ -414,6 +417,11 @@ final class EventTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->selectFieldOption('civicrm_1_participant_1_participant_event_id[]', '- User Select -');
 
     $this->saveCiviCRMSettings();
+
+    // Email handler using the event token.
+    $this->addEmailHandler([
+      'body' => 'Event - [webform_submission:values:civicrm_1_participant_1_participant_event_id].',
+    ]);
     $this->drupalLogout();
 
     $this->drupalGet($this->webform->toUrl('canonical'));
@@ -442,6 +450,43 @@ final class EventTest extends WebformCivicrmTestBase {
     $this->drupalGet($this->webform->toUrl('canonical', ['query' => ['event1' => $event4['id']]]));
     $this->assertSession()->pageTextContains('Test Event 4');
     $this->assertSession()->checkboxChecked('Test Event 4');
+
+    // Submit the form with the event that was created after the webform was
+    // saved, so it is not part of the stored #options of the event element.
+    $this->getSession()->getPage()->fillField('First Name', 'Frederick');
+    $this->getSession()->getPage()->fillField('Last Name', 'Pabst');
+    $this->pressButtonOverride('Submit');
+    $this->assertPageNoErrorMessages();
+    $this->htmlOutput();
+
+    $participant = $this->utils->wf_civicrm_api('Participant', 'get', [
+      'event_id' => $event4['id'],
+    ]);
+    $this->assertEquals(1, $participant['count']);
+
+    // The event token in the email and the submission must display the event
+    // title, not the raw "<event_id>-<event_type_id>" value of the live option.
+    $eventTypeId = civicrm_api3('Event', 'getvalue', [
+      'id' => $event4['id'],
+      'return' => 'event_type_id',
+    ]);
+    $rawValue = "{$event4['id']}-{$eventTypeId}";
+
+    $mails = $this->getMails();
+    $this->assertNotEmpty($mails);
+    $body = end($mails)['body'];
+    $this->assertStringContainsString('Test Event 4', $body);
+    $this->assertStringNotContainsString($rawValue, $body);
+
+    $this->drupalLogin($this->rootUser);
+    $sid = $this->getLastSubmissionId($this->webform);
+    $this->drupalGet(Url::fromRoute('entity.webform_submission.canonical', [
+      'webform' => $this->webform->id(),
+      'webform_submission' => $sid,
+    ]));
+    $this->htmlOutput();
+    $this->assertSession()->pageTextContains('Test Event 4');
+    $this->assertSession()->pageTextNotContains($rawValue);
   }
 
 }
