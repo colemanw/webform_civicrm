@@ -24,13 +24,13 @@ jobs:
       matrix:
         include:
           - drupal: '10.6.*'
-            civicrm: '6.16.x'
-            php: '8.3'
+            civicrm: '6.19.x'
+            php: '8.4'
           - drupal: '11.4.*'
-            civicrm: '6.19.x-dev'
-            php: '8.3'
+            civicrm: '6.20.*'
+            php: '8.4'
           - drupal: '11.x-dev'
-            civicrm: 'dev-master'
+            civicrm: '6.21.x-dev'
             php: '8.4'
     name: Drupal ${{ matrix.drupal }} | CiviCRM ${{ matrix.civicrm }}
     services:
@@ -147,7 +147,11 @@ jobs:
         # so that we can use civi api to get extensions with a version appropriate to the installed civi version
         run: |
           cd ~/drupal
-          composer require drush/drush
+          if [ "${{ matrix.drupal }}" == "10.6.*" ]; then
+            composer require drush/drush "consolidation/robo:^4.0"
+          else
+            composer require drush/drush
+          fi
           mkdir -p /home/runner/civicrm-cv
           curl -L https://download.civicrm.org/cv/cv.phar -o /home/runner/civicrm-cv/cv
           chmod +x /home/runner/civicrm-cv/cv

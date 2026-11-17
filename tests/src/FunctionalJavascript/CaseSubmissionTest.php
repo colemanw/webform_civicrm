@@ -101,6 +101,9 @@ final class CaseSubmissionTest extends WebformCivicrmTestBase {
 
     $this->getSession()->getPage()->fillField('Case Subject', $caseSubject);
     $this->pressButtonOverride('Submit');
+    $this->createScreenshot($this->htmlOutputDirectory . '/case_submitted.png');
+    // Give it some time to Save
+    $this->getSession()->wait(3000);
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
     $case_result = $this->utils->wf_civicrm_api('Case', 'get', [
       'sequential' => 1,
