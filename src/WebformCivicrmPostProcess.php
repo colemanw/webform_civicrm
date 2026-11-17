@@ -117,9 +117,13 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     // Even though this object is destroyed between page submissions, this trick allows us to persist some data - see below
     $this->ent = $form_state->get(['civicrm', 'ent']) ?: $this->ent;
 
+    // Locked field checks below need to know which contact was selected.
+    $this->loadSelectedContactIds();
+
     $errors = $this->form_state->getErrors();
     foreach ($errors as $key => $error) {
-      $pieces = $this->utils->wf_crm_explode_key(substr($key, strrpos($key, '][') + 2));
+      $pos = strrpos($key, '][');
+      $pieces = $this->utils->wf_crm_explode_key($pos === FALSE ? $key : substr($key, $pos + 2));
       if ($pieces) {
         [ , $c, $ent, $n, $table, $name] = $pieces;
         if ($this->isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name)) {
@@ -479,7 +483,8 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       if (!trim($participantName)) {
         $participantName = $participants['webform_label'] ?? NULL;
         if (!empty($this->existing_contacts[$c])) {
-          $participantName = $this->utils->wf_crm_apivalues('contact', 'get', $this->existing_contacts[$c], 'display_name')[0];
+          $displayNames = $this->utils->wf_crm_apivalues('contact', 'get', $this->existing_contacts[$c], 'display_name');
+          $participantName = reset($displayNames) ?: $participantName;
         }
       }
       // @todo this duplicates a lot in \wf_crm_webform_preprocess::populateEvents
@@ -606,6 +611,36 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
 
       // Fill data array with submitted form values
       $this->fillDataFromSubmission();
+    }
+  }
+
+  /**
+   * During validation, record the id of contacts picked in "existing contact"
+   * fields, so loadContact() works for them.
+   *
+   * An existing contact element on the page being submitted always wins: the
+   * user may have changed the selection (or cleared it) since the id was
+   * stored. For elements on other pages, only fill in an unknown id.
+   */
+  private function loadSelectedContactIds() {
+    $input = $this->form_state->getUserInput();
+    foreach ($this->enabled as $field_key => $fid) {
+      if (substr($field_key, -8) !== 'existing') {
+        continue;
+      }
+      [, $c, ] = explode('_', $field_key, 3);
+      $current_cid = (int) ($this->ent['contact'][$c]['id'] ?? 0);
+      $on_this_page = array_key_exists($fid, $input);
+      if (!$on_this_page && $current_cid) {
+        continue;
+      }
+      $cid = $this->crmValues[$field_key] ?? wf_crm_aval($this->submissionValue($fid), 0);
+      $cid = is_array($cid) ? reset($cid) : $cid;
+      $cid = (int) $this->verifyExistingContact($cid, $field_key);
+      if ($cid !== $current_cid && ($cid || $on_this_page)) {
+        $this->ent['contact'][$c]['id'] = $cid;
+        unset($this->loadedContacts[$c]);
+      }
     }
   }
 
@@ -2648,17 +2683,17 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
           $value = wf_crm_aval($this->loadContact($c), "$table:$n:$name");
           // Check to see if configured to Submit disabled field value(s)
           if ($checkSubmitDisabledSetting && !empty($component['#submit_disabled'])) {
+            if (empty($value)) {
+              return FALSE;
+            }
             // If field is disabled on the webform, do not overwrite existing values on the contact.
-            if (!empty($value) && !empty($this->submission)) {
+            if (!empty($this->submission)) {
               $fieldKey = implode('_', ['civicrm', $c, $ent, $n, $table, $name]);
               $data = $this->submission->getData();
               if (isset($data[$fieldKey])) {
                 $data[$fieldKey] = $value;
                 $this->submission->setData($data);
               }
-            }
-            else {
-              return FALSE;
             }
           }
           // With the no_hide_blank setting we must load the contact to determine if the field was hidden
@@ -2706,15 +2741,14 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    * @param $name string
    */
   private function unsetError($name) {
-    $errors = &drupal_static('form_set_error', []);
-    $removed_messages = [];
-    if (isset($errors[$name])) {
-      $removed_messages[] = $errors[$name];
-      unset($errors[$name]);
+    $errors = $this->form_state->getErrors();
+    if (!isset($errors[$name])) {
+      return;
     }
-    $_SESSION['messages']['error'] = array_diff($_SESSION['messages']['error'], $removed_messages);
-    if (empty($_SESSION['messages']['error'])) {
-      unset($_SESSION['messages']['error']);
+    unset($errors[$name]);
+    $this->form_state->clearErrors();
+    foreach ($errors as $key => $message) {
+      $this->form_state->setErrorByName($key, $message);
     }
   }
 
