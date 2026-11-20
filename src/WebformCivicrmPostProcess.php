@@ -373,6 +373,19 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       $template = \CRM_Core_Smarty::singleton();
       $template->assign('is_pay_later', 1);
     }
+
+    if ($this->node->isTest() && !$this->contributionIsPayLater) {
+      $contribution = &$this->data['contribution'][1]['contribution'][1];
+      $contribution['is_test'] = 1;
+      $processor_type = $this->utils->wf_civicrm_api('payment_processor', 'getsingle', ['id' => $contribution['payment_processor_id']]);
+      $payment_processor = $this->utils->wf_civicrm_api('payment_processor', 'getsingle', [
+        'name' => $processor_type['name'],
+        'is_test' => 1,
+      ]);
+
+      $contribution['payment_processor_id'] = $payment_processor['id'];
+    }
+
     $this->utils->wf_civicrm_api('contribution', 'sendconfirmation', $this->utils->getReceiptParams($this->data, $this->ent['contribution'][1]['id']));
   }
 
@@ -2153,6 +2166,11 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    */
   private function submitIPNPayment() {
     $params = $this->data['contribution'][1]['contribution'][1];
+
+    if ($this->node->isTest()) {
+      $params['is_test'] = 1;
+    }
+
     $processor_type = $this->utils->wf_civicrm_api('payment_processor', 'getsingle', ['id' => $params['payment_processor_id']]);
     $paymentProcessor = \Civi\Payment\System::singleton()->getById($params['payment_processor_id']);
 
@@ -2347,6 +2365,19 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
 
     // Save this stuff for later
     unset($params['soft'], $params['soft_credit_type_id']);
+
+
+    if ($this->node->isTest() && !$this->contributionIsPayLater) {
+      $params['is_test'] = 1;
+      $processor_type = $this->utils->wf_civicrm_api('payment_processor', 'getsingle', ['id' => $params['payment_processor_id']]);
+      $payment_processor = $this->utils->wf_civicrm_api('payment_processor', 'getsingle', [
+        'name' => $processor_type['name'],
+        'is_test' => 1,
+      ]);
+
+      $params['payment_processor_id'] = $payment_processor['id'];
+    }
+
     return $params;
   }
 
@@ -2356,6 +2387,18 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    */
   private function processContribution() {
     $contribution = $this->data['contribution'][1]['contribution'][1];
+
+    if ($this->node->isTest() && !$this->contributionIsPayLater) {
+      $contribution['is_test'] = 1;
+      $processor_type = $this->utils->wf_civicrm_api('payment_processor', 'getsingle', ['id' => $contribution['payment_processor_id']]);
+      $payment_processor = $this->utils->wf_civicrm_api('payment_processor', 'getsingle', [
+        'name' => $processor_type['name'],
+        'is_test' => 1,
+      ]);
+
+      $contribution['payment_processor_id'] = $payment_processor['id'];
+    }
+
     $id = $this->ent['contribution'][1]['id'];
     // Save soft credits
     if (!empty($contribution['soft'])) {
