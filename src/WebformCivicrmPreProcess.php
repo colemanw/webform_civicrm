@@ -12,6 +12,7 @@ use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
+use Drupal\Core\Render\Element;
 use Drupal\Core\Render\Markup;
 use Drupal\Core\Url;
 use Drupal\webform\Plugin\WebformHandlerInterface;
@@ -168,7 +169,9 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
         $this->form['#prefix'] = wf_crm_aval($this->form, '#prefix', '') . '<div class="webform-civicrm-prefix contact-unknown">' . nl2br($this->settings['prefix_unknown']) . '</div>';
       }
       if ($this->settings['block_unknown_users']) {
-        $this->form['#access'] = FALSE;
+        $this->blockForm();
+        $this->setMessage(t('Sorry, you do not have permission to access this form.'), 'warning');
+        return;
       }
     }
     if (!empty($this->data['participant_reg_type'])) {
@@ -899,6 +902,31 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
   }
 
   /**
+   * Hides everything the form renders, leaving the form root renderable.
+   *
+   * Denying access to the form root makes the main content renderer read a
+   * #markup that was never set, because Renderer::doRender() returns an empty
+   * string for an inaccessible element without adding that key. The visitor
+   * then gets an empty page and Drupal logs "Undefined array key '#markup'".
+   *
+   * Keeping the root renderable also keeps the status message and the
+   * admin-defined prefix_unknown text visible.
+   *
+   * The children are walked instead of listing them, so elements that other
+   * modules or later Webform versions add are covered as well. Only the
+   * fields Drupal's own form processing expects are left in place; they render
+   * as hidden inputs and carry no form data.
+   */
+  private function blockForm() {
+    $keep = ['form_build_id', 'form_id', 'form_token'];
+    foreach (Element::children($this->form) as $key) {
+      if (!in_array($key, $keep, TRUE)) {
+        $this->form[$key]['#access'] = FALSE;
+      }
+    }
+  }
+
+  /**
    * Wrapper for \Drupal::messenger()
    * Ensures we only set the message on the first page of the node display
    * @param $message
@@ -906,7 +934,10 @@ class WebformCivicrmPreProcess extends WebformCivicrmBase implements WebformCivi
    */
   function setMessage($message, $type='status') {
     if (empty($_POST)) {
-      \Drupal::messenger()->addStatus(WebformHtmlHelper::toHtmlMarkup($message, WebformXss::getHtmlTagList()));
+      // Honour $type. The two existing callers that pass 'warning' (event
+      // ended, event full) rendered as a green success message, and the
+      // no-access message restored above passes 'warning' as well.
+      \Drupal::messenger()->addMessage(WebformHtmlHelper::toHtmlMarkup($message, WebformXss::getHtmlTagList()), $type);
     }
   }
 
