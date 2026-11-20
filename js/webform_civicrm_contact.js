@@ -22,7 +22,7 @@
         else {
           var tokenValues = false;
         }
-        
+
         wfCivi.existingInit(
           field,
           field.data('civicrm-contact'),
@@ -70,7 +70,7 @@
       function changeDefault() {
         var val = $(this).val().replace(/_/g, '-');
 
-        $('[data-drupal-selector=edit-contact-defaults] > div > .form-item', context).not('[class$=properties-default], [class*=properties-allow-url-autofill]').each(function() {
+        $('[data-drupal-selector=edit-contact-defaults] > div > .form-item', context).not('[class$=properties-default], [class*=properties-allow-url-autofill], [class*=properties-dupes-allowed], [class*=properties-randomize]').each(function() {
           if (val.length && $(this).is('[class*=form-item-properties-default-'+val+']')) {
             $(this).removeAttr('style');
           }
@@ -79,12 +79,6 @@
             $(':checkbox', this).prop('disabled', true);
           }
         });
-        if (val === 'auto' || val === 'relationship') {
-          $('.form-item-properties-randomize, .form-item-properties-dupes-allowed')
-            .removeAttr('style')
-            .find(':checkbox')
-            .removeAttr('disabled');
-        }
         $('[data-drupal-selector=edit-properties-default-relationship-to]', context).each(changeDefaultRelationTo);
       }
 
