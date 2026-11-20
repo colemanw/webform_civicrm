@@ -29,6 +29,58 @@ final class SaveSettingsTest extends WebformCivicrmTestBase {
   }
 
   /**
+   * Ensure payment process id setting persists when setting test mode.
+   */
+  function testTestMode() {
+    $payment_processor = $this->createPaymentProcessor();
+    $this->addFieldsOnWebform();
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+
+    $params = [
+      'payment_processor_id' => $payment_processor['id'],
+    ];
+    $this->configureContributionTab($params);    
+    $this->saveCiviCRMSettings(TRUE);
+    $elements_payment_processor_user_select = ['civicrm_1_contribution_1_contribution_payment_processor_id'];
+    $not_on_page = TRUE;
+
+    // We expect there to be no element for the payment_processor_id
+    $this->assertElementsOnBuildForm( $elements_payment_processor_user_select, $not_on_page);
+    
+    // Reload Contribution tab.
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->getSession()->getPage()->clickLink('Contribution');
+    
+    // Confirm we setill have payment process set.
+    $this->assertFieldValue('edit-civicrm-1-contribution-1-contribution-payment-processor-id', $payment_processor['id']);
+
+
+    // Set test mode
+    $payment_processor_modes = ['test' => 1, 'live' => 0];
+    $this->getSession()->getPage()->selectFieldOption('Payment Processor Mode', $payment_processor_modes['test']);
+    $this->saveCiviCRMSettings(TRUE);
+
+    // We expect there to be no element for the payment_processor_id
+    $this->assertElementsOnBuildForm( $elements_payment_processor_user_select, $not_on_page);
+
+
+    // Reload the Contribution tab
+    $this->drupalGet(Url::fromRoute('entity.webform.civicrm', [
+      'webform' => $this->webform->id(),
+    ]));
+    $this->getSession()->getPage()->clickLink('Contribution');
+    $this->assertFieldValue('edit-civicrm-1-contribution-1-contribution-payment-processor-id', $payment_processor['id']);
+    $this->saveCiviCRMSettings(TRUE);
+    // We expect there to be no element for the payment_processor_id
+    $this->assertElementsOnBuildForm( $elements_payment_processor_user_select, $not_on_page);
+
+  }
+
+  /**
    * Test contact paging
    */
   function testPaging() {
