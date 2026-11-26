@@ -464,7 +464,7 @@ class CivicrmContact extends WebformElementBase {
     $sets['name'] = ['label' => t('Name')];
     $elements = $webform->getElementsDecodedAndFlattened();
     foreach ($elements as $f) {
-      if ($pieces = $utils->wf_crm_explode_key($f['#form_key'])) {
+      if ($pieces = $utils->wf_crm_explode_key($f['#form_key'] ?? '')) {
         list( , $c, $ent, , $table, $field) = $pieces;
         if ($ent == 'contact' && $c == $con && isset($sets[$table])) {
           // Separate name from other contact fields
