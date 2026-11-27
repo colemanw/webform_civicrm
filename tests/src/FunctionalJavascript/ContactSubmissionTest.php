@@ -301,6 +301,8 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Nickname', 'Nick');
 
     $this->pressButtonOverride('Save Draft');
+    // Give it some time to Draft
+    $this->getSession()->wait(3000);
     $this->assertSession()->pageTextContains('Submission saved. You may return to this form later and it will restore the current values.');
     $this->assertPageNoErrorMessages();
 
