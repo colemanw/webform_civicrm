@@ -151,6 +151,8 @@ final class ContactRelationshipTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->checkField("Canada");
 
     $this->pressButtonOverride('Submit');
+    // Give it some time to Save
+    $this->getSession()->wait(3000);
     $this->assertPageNoErrorMessages();
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
