@@ -3023,7 +3023,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
 
     if ($taxTrxnID) {
       $params['amount'] = $lineItem->tax_amount;
-      $params['description'] = Civi::settings()->get('tax_term');
+      $params['description'] = \Civi::settings()->get('tax_term');
       $accountRelName = 'Sales Tax Account is';
     }
     else {
