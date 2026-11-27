@@ -155,6 +155,8 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->addFieldValue('First Name', 'Jann');
     $this->addFieldValue('Last Name', 'Arden');
     $this->pressButtonOverride('Submit');
+    // Give it some time to Save
+    $this->getSession()->wait(3000);
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     // Verify if the modified value is updated for the contact.
@@ -299,6 +301,8 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Nickname', 'Nick');
 
     $this->pressButtonOverride('Save Draft');
+    // Give it some time to Draft
+    $this->getSession()->wait(3000);
     $this->assertSession()->pageTextContains('Submission saved. You may return to this form later and it will restore the current values.');
     $this->assertPageNoErrorMessages();
 
@@ -365,6 +369,8 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->drupalGet($this->webform->toUrl('canonical'));
     $this->assertPageNoErrorMessages();
     $this->pressButtonOverride('Submit');
+    // Give it some time to Save
+    $this->getSession()->wait(3000);  
     $this->assertSession()->pageTextContains('Existing Contact field is required');
   }
 
@@ -545,6 +551,8 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
       }
     }
     $this->pressButtonOverride('Submit');
+    // Give it some time to Save
+    $this->getSession()->wait(3000);  
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
     $contact_result = $this->utils->wf_civicrm_api('contact', 'get', [
       'sequential' => 1,
