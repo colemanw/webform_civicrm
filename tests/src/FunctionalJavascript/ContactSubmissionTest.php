@@ -155,6 +155,8 @@ final class ContactSubmissionTest extends WebformCivicrmTestBase {
     $this->addFieldValue('First Name', 'Jann');
     $this->addFieldValue('Last Name', 'Arden');
     $this->pressButtonOverride('Submit');
+    // Give it some time to Save
+    $this->getSession()->wait(3000);
     $this->assertSession()->pageTextContains('New submission added to CiviCRM Webform Test.');
 
     // Verify if the modified value is updated for the contact.
