@@ -3028,12 +3028,12 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
     }
     else {
       $accountRelName = 'Income Account is';
-      if (property_exists($contribution, 'revenue_recognition_date') && !CRM_Utils_System::isNull($contribution->revenue_recognition_date)) {
+      if (property_exists($contribution, 'revenue_recognition_date') && !\CRM_Utils_System::isNull($contribution->revenue_recognition_date)) {
         $accountRelName = 'Deferred Revenue Account is';
       }
     }
     if ($lineItem->financial_type_id) {
-      $params['financial_account_id'] = CRM_Financial_BAO_FinancialAccount::getFinancialAccountForFinancialTypeByRelationship(
+      $params['financial_account_id'] = \CRM_Financial_BAO_FinancialAccount::getFinancialAccountForFinancialTypeByRelationship(
         $lineItem->financial_type_id,
         $accountRelName
       );
