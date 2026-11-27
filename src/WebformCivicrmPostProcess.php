@@ -2999,7 +2999,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
    */
   private function addFinancialItem($lineItem, $contribution, $taxTrxnID = FALSE, $trxnId = NULL) {
     $financialItemStatus = array_column(\Civi::entity('FinancialItem')->getOptions('status_id'), 'id', 'name');
-    $contributionStatus = CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'contribution_status_id', $contribution->contribution_status_id);
+    $contributionStatus = \CRM_Core_PseudoConstant::getName('CRM_Contribute_BAO_Contribution', 'contribution_status_id', $contribution->contribution_status_id);
     $itemStatus = NULL;
     if ($contributionStatus === 'Completed' || $contributionStatus === 'Pending refund') {
       $itemStatus = $financialItemStatus['Paid'];
