@@ -3042,7 +3042,7 @@ class WebformCivicrmPostProcess extends WebformCivicrmBase implements WebformCiv
       $trxn = \CRM_Core_BAO_FinancialTrxn::getFinancialTrxnId($contribution->id, 'ASC', TRUE);
       $trxnId['id'] = $trxn['financialTrxnId'];
     }
-    return self::create($params, NULL, $trxnId);
+    return \CRM_Core_BAO_FinancialTrxn::create($params, NULL, $trxnId);
   }  
   
 }
