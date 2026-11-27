@@ -415,7 +415,8 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->getSession()->getPage()->fillField('Email', 'fred@example.com');
 
     $this->pressButtonOverride('Next >');
-
+    // Give it some time to Next
+    $this->getSession()->wait(3000);  
     $this->getSession()->getPage()->fillField('Contribution Amount', '99.00');
 
     $this->assertSession()->elementExists('css', '#wf-crm-billing-items');
