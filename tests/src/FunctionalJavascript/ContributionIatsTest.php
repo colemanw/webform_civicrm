@@ -374,6 +374,8 @@ final class ContributionIatsTest extends WebformCivicrmTestBase {
     $this->pressButtonOverride('Save');
 
     $this->submitWebForm();
+    // Give it some time to Save
+    $this->getSession()->wait(3000);
     $this->verifyResults();
   }
 
